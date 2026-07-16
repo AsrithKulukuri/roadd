@@ -114,7 +114,7 @@ export default function ComparePage() {
                 key={amenity} 
                 label={amenity} 
                 properties={properties} 
-                getValue={p => p.amenities.some(a => a.name === amenity) 
+                getValue={p => p.amenities.some((a: any) => a.name === amenity)
                   ? <CheckCircle2 className="w-5 h-5 text-amber-primary mx-auto" /> 
                   : <Minus className="w-5 h-5 text-text-tertiary/30 mx-auto" />
                 } 

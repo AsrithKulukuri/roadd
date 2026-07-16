@@ -73,7 +73,7 @@ export default function AddPropertyPage() {
       area: 1500,
       facing: "east",
       ageOfProperty: 0,
-      furnishingStatus: "unfurnished",
+      furnishing: "unfurnished",
       location: {
         address: "New Location",
         locality: formData.locality,
@@ -84,17 +84,20 @@ export default function AddPropertyPage() {
         longitude: formData.lng,
       },
       amenities: [],
+      features: [],
       images: [
         { id: "img-1", url: formData.imageUrl, alt: formData.title, isPrimary: true, order: 0 }
       ],
-      owner: {
-        id: "owner-1",
-        name: "Admin User",
-        phone: "+91 8977311418",
-        email: "admin@road.com",
-        userType: "builder",
-        joinedDate: "2026-01-01"
-      },
+      ownerId: "owner-1",
+      ownerName: "Admin User",
+      ownerPhone: "+91 8977311418",
+      ownerType: "builder",
+      parking: 1,
+      isVerified: true,
+      isPremium: false,
+      viewCount: 0,
+      savedCount: 0,
+      enquiryCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
