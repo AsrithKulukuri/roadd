@@ -85,7 +85,7 @@ export default function AddPropertyPage() {
       },
       amenities: [],
       images: [
-        { id: "img-1", url: formData.imageUrl, alt: formData.title, isPrimary: true }
+        { id: "img-1", url: formData.imageUrl, alt: formData.title, isPrimary: true, order: 0 }
       ],
       owner: {
         id: "owner-1",
