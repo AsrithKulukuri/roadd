@@ -116,7 +116,6 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
           zoom={14} 
           maxZoom={14}
           scrollWheelZoom={false}
-          tap={false} /* Fix mobile scroll hijacking */
           className="w-full h-full"
         >
           {/* Using Esri World Imagery tiles for an earth view look */}

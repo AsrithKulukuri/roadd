@@ -249,7 +249,6 @@ export default function PropertyMap() {
           zoom={12}
           maxZoom={15}
           scrollWheelZoom={false}
-          tap={false}
           className="w-full h-full flex-1 min-h-[55vh] md:min-h-full"
         >
           <ZoomListener onZoomLimit={handleZoomLimit} properties={filteredProperties} />
