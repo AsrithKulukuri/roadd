@@ -1,11 +1,20 @@
 export type PropertyType =
+  // Residential
   | "apartment"
   | "villa"
   | "independent-house"
-  | "plot"
-  | "commercial"
+  | "residential-land"
+  | "farmhouse"
   | "pg-coliving"
-  | "farmhouse";
+  // Commercial
+  | "shops"
+  | "buildings"
+  | "commercial-spaces"
+  | "commercial-lands"
+  | "industrial-lands"
+  | "agricultural-lands";
+
+export type PropertyCategory = "residential" | "commercial";
 
 export type PropertyStatus =
   | "draft"
@@ -19,6 +28,10 @@ export type PropertyStatus =
   | "archived";
 
 export type ListingType = "sale" | "rent" | "pg";
+
+export type SaleType = "new" | "resale";
+
+export type AgeRange = "0-10" | "10-30" | "30+";
 
 export type FurnishingStatus = "furnished" | "semi-furnished" | "unfurnished";
 
@@ -69,6 +82,7 @@ export interface Property {
   description: string;
   propertyType: PropertyType;
   listingType: ListingType;
+  saleType?: SaleType;
   status: PropertyStatus;
   price: number;
   pricePerSqft: number;
@@ -86,6 +100,8 @@ export interface Property {
   totalFloors?: number;
   floorNumber?: number;
   parking: number;
+  roadWidth?: number;
+  undividedShare?: number;
   furnishing: FurnishingStatus;
   facing: PropertyFacing;
   ageOfProperty: number; // years
@@ -122,6 +138,10 @@ export interface Property {
   nearbyHospitals?: string[];
   nearbyMetro?: string;
   nearbyAirport?: string;
+  hasPoojaRoom?: boolean;
+  hasStudyRoom?: boolean;
+  hasServantRoom?: boolean;
+  projectAddress?: string;
 }
 
 export interface PropertyFilter {
@@ -140,6 +160,8 @@ export interface PropertyFilter {
   amenities?: string[];
   isReraVerified?: boolean;
   isReadyToMove?: boolean;
+  ageRange?: AgeRange[];
+  saleType?: SaleType[];
   postedBy?: ("owner" | "agent" | "builder" | "developer")[];
   sortBy?: "price-asc" | "price-desc" | "newest" | "popular" | "area-asc" | "area-desc";
   page?: number;

@@ -30,6 +30,11 @@ function PropertiesPage() {
     propertyType: [],
     bhk: [],
     budget: [0, 100000000],
+    ageRange: [],
+    saleType: [],
+    availability: [],
+    postedBy: [],
+    furnished: [],
   });
 
   const filteredProperties = useMemo(() => {
@@ -60,10 +65,47 @@ function PropertiesPage() {
       if (filters.bhk.length > 0) {
         const beds = property.bedrooms;
         const matchesBHK = filters.bhk.some(b => {
-          if (b === "5+") return beds >= 5;
-          return beds.toString() === b;
+          if (b.includes("5+") || b.includes("4BHK and more")) return beds >= 4;
+          return beds.toString() === b.replace("BHK", "");
         });
         if (!matchesBHK) return false;
+      }
+
+      // 5. Age of Property
+      if (filters.ageRange.length > 0) {
+        const age = property.ageOfProperty;
+        const matchesAge = filters.ageRange.some(a => {
+          if (a === "0-10 years old") return age >= 0 && age <= 10;
+          if (a === "10-30 years old") return age > 10 && age <= 30;
+          if (a === "30+ years old") return age > 30;
+          return false;
+        });
+        if (!matchesAge) return false;
+      }
+
+      // 6. Sale Type
+      if (filters.saleType.length > 0) {
+        const type = property.saleType === "new" ? "New property" : "Resale";
+        if (!filters.saleType.includes(type)) return false;
+      }
+
+      // 7. Availability
+      if (filters.availability.length > 0) {
+        const av = property.isReadyToMove ? "Ready to move" : "Under construction";
+        if (!filters.availability.includes(av)) return false;
+      }
+
+      // 8. Posted By
+      if (filters.postedBy.length > 0) {
+        const pb = property.ownerType.charAt(0).toUpperCase() + property.ownerType.slice(1);
+        if (!filters.postedBy.includes(pb)) return false;
+      }
+
+      // 9. Furnished
+      if (filters.furnished.length > 0) {
+        const fur = property.furnishing === "semi-furnished" ? "Semi furnished" 
+                  : property.furnishing === "unfurnished" ? "Unfurnished" : "Furnished";
+        if (!filters.furnished.includes(fur)) return false;
       }
 
       return true;
@@ -116,6 +158,11 @@ function PropertiesPage() {
                 propertyType: [],
                 bhk: [],
                 budget: [0, 100000000],
+                ageRange: [],
+                saleType: [],
+                availability: [],
+                postedBy: [],
+                furnished: [],
               })}
               className="text-amber-primary font-medium hover:underline"
             >

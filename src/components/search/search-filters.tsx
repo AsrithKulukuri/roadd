@@ -22,6 +22,11 @@ export interface FilterState {
   propertyType: string[];
   bhk: string[];
   budget: [number, number];
+  ageRange: string[];
+  saleType: string[];
+  availability: string[];
+  postedBy: string[];
+  furnished: string[];
 }
 
 interface SearchFiltersProps {
@@ -53,6 +58,11 @@ export function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
       propertyType: [],
       bhk: [],
       budget: [0, 100000000],
+      ageRange: [],
+      saleType: [],
+      availability: [],
+      postedBy: [],
+      furnished: [],
     });
   };
 
@@ -60,6 +70,11 @@ export function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
     filters.listingType.length > 0 || 
     filters.propertyType.length > 0 || 
     filters.bhk.length > 0 || 
+    filters.ageRange.length > 0 ||
+    filters.saleType.length > 0 ||
+    filters.availability.length > 0 ||
+    filters.postedBy.length > 0 ||
+    filters.furnished.length > 0 ||
     filters.budget[0] > 0 || 
     filters.budget[1] < 100000000 ||
     filters.query !== "";
@@ -127,11 +142,27 @@ export function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
                 <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 p-3 rounded-2xl bg-bg-card border-border-default" align="start">
-              <DropdownMenuLabel>Property Type</DropdownMenuLabel>
+            <DropdownMenuContent className="w-64 p-3 rounded-2xl bg-bg-card border-border-default max-h-[300px] overflow-y-auto" align="start">
+              <DropdownMenuLabel className="text-xs text-text-tertiary uppercase tracking-wider">Residential</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-border-subtle" />
+              <div className="space-y-3 mt-2 mb-4">
+                {["apartment", "villa", "independent-house", "residential-land", "farmhouse", "pg-coliving"].map((type) => (
+                  <label key={type} className="flex items-center space-x-3 cursor-pointer group">
+                    <Checkbox 
+                      checked={filters.propertyType.includes(type)}
+                      onCheckedChange={() => toggleFilter("propertyType", type)}
+                      className="border-text-tertiary data-[state=checked]:bg-amber-primary data-[state=checked]:border-amber-primary"
+                    />
+                    <span className="text-sm font-medium capitalize text-text-secondary group-hover:text-text-primary transition-colors">
+                      {type.replace("-", " ")}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <DropdownMenuLabel className="text-xs text-text-tertiary uppercase tracking-wider">Commercial</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border-subtle" />
               <div className="space-y-3 mt-2">
-                {["apartment", "villa", "independent-house", "plot", "commercial"].map((type) => (
+                {["shops", "buildings", "commercial-spaces", "commercial-lands", "industrial-lands", "agricultural-lands"].map((type) => (
                   <label key={type} className="flex items-center space-x-3 cursor-pointer group">
                     <Checkbox 
                       checked={filters.propertyType.includes(type)}
@@ -164,7 +195,7 @@ export function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
               <DropdownMenuLabel>Bedrooms</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border-subtle" />
               <div className="space-y-3 mt-2">
-                {["1", "2", "3", "4", "5+"].map((bhk) => (
+                {["1BHK", "2BHK", "3BHK", "4BHK and more"].map((bhk) => (
                   <label key={bhk} className="flex items-center space-x-3 cursor-pointer group">
                     <Checkbox 
                       checked={filters.bhk.includes(bhk)}
@@ -172,8 +203,90 @@ export function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
                       className="border-text-tertiary data-[state=checked]:bg-amber-primary data-[state=checked]:border-amber-primary"
                     />
                     <span className="text-sm font-medium capitalize text-text-secondary group-hover:text-text-primary transition-colors">
-                      {bhk} BHK
+                      {bhk}
                     </span>
+                  </label>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* More Filters (Advanced) */}
+          <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? "more" : null)}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-14 rounded-2xl px-5 border-border-default/50 hover:bg-bg-primary/50">
+                <SlidersHorizontal className="h-4 w-4 mr-2 opacity-50" />
+                More Filters
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-72 p-4 rounded-2xl bg-bg-card border-border-default max-h-[400px] overflow-y-auto" align="start">
+              
+              <DropdownMenuLabel className="px-0">Availability</DropdownMenuLabel>
+              <div className="space-y-2 mt-1 mb-4">
+                {["Under construction", "Ready to move"].map((av) => (
+                  <label key={av} className="flex items-center space-x-3 cursor-pointer group">
+                    <Checkbox 
+                      checked={filters.availability.includes(av)}
+                      onCheckedChange={() => toggleFilter("availability", av)}
+                      className="border-text-tertiary data-[state=checked]:bg-amber-primary"
+                    />
+                    <span className="text-sm text-text-secondary group-hover:text-text-primary">{av}</span>
+                  </label>
+                ))}
+              </div>
+
+              <DropdownMenuLabel className="px-0">Age of property</DropdownMenuLabel>
+              <div className="space-y-2 mt-1 mb-4">
+                {["0-10 years old", "10-30 years old", "30+ years old"].map((age) => (
+                  <label key={age} className="flex items-center space-x-3 cursor-pointer group">
+                    <Checkbox 
+                      checked={filters.ageRange.includes(age)}
+                      onCheckedChange={() => toggleFilter("ageRange", age)}
+                      className="border-text-tertiary data-[state=checked]:bg-amber-primary"
+                    />
+                    <span className="text-sm text-text-secondary group-hover:text-text-primary">{age}</span>
+                  </label>
+                ))}
+              </div>
+
+              <DropdownMenuLabel className="px-0">Sale type</DropdownMenuLabel>
+              <div className="space-y-2 mt-1 mb-4">
+                {["New property", "Resale"].map((st) => (
+                  <label key={st} className="flex items-center space-x-3 cursor-pointer group">
+                    <Checkbox 
+                      checked={filters.saleType.includes(st)}
+                      onCheckedChange={() => toggleFilter("saleType", st)}
+                      className="border-text-tertiary data-[state=checked]:bg-amber-primary"
+                    />
+                    <span className="text-sm text-text-secondary group-hover:text-text-primary">{st}</span>
+                  </label>
+                ))}
+              </div>
+
+              <DropdownMenuLabel className="px-0">Posted by</DropdownMenuLabel>
+              <div className="space-y-2 mt-1 mb-4">
+                {["Owner", "Agent", "Developer"].map((pb) => (
+                  <label key={pb} className="flex items-center space-x-3 cursor-pointer group">
+                    <Checkbox 
+                      checked={filters.postedBy.includes(pb)}
+                      onCheckedChange={() => toggleFilter("postedBy", pb)}
+                      className="border-text-tertiary data-[state=checked]:bg-amber-primary"
+                    />
+                    <span className="text-sm text-text-secondary group-hover:text-text-primary">{pb}</span>
+                  </label>
+                ))}
+              </div>
+
+              <DropdownMenuLabel className="px-0">Furnished</DropdownMenuLabel>
+              <div className="space-y-2 mt-1">
+                {["Furnished", "Semi furnished", "Unfurnished"].map((fur) => (
+                  <label key={fur} className="flex items-center space-x-3 cursor-pointer group">
+                    <Checkbox 
+                      checked={filters.furnished.includes(fur)}
+                      onCheckedChange={() => toggleFilter("furnished", fur)}
+                      className="border-text-tertiary data-[state=checked]:bg-amber-primary"
+                    />
+                    <span className="text-sm text-text-secondary group-hover:text-text-primary">{fur}</span>
                   </label>
                 ))}
               </div>
