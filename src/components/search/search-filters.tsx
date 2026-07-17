@@ -142,7 +142,7 @@ export function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
                 <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64 p-3 rounded-2xl bg-bg-card border-border-default max-h-[300px] overflow-y-auto" align="start">
+            <DropdownMenuContent className="w-64 p-3 rounded-2xl bg-bg-card border-border-default max-h-[50vh] md:max-h-[300px] overflow-y-auto" align="start" sideOffset={8}>
               <DropdownMenuLabel className="text-xs text-text-tertiary uppercase tracking-wider">Residential</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border-subtle" />
               <div className="space-y-3 mt-2 mb-4">
@@ -219,7 +219,7 @@ export function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
                 More Filters
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-72 p-4 rounded-2xl bg-bg-card border-border-default max-h-[400px] overflow-y-auto" align="start">
+            <DropdownMenuContent className="w-72 p-4 rounded-2xl bg-bg-card border-border-default max-h-[50vh] md:max-h-[400px] overflow-y-auto" align="end" sideOffset={8} collisionPadding={20}>
               
               <DropdownMenuLabel className="px-0">Availability</DropdownMenuLabel>
               <div className="space-y-2 mt-1 mb-4">

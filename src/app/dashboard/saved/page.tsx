@@ -104,18 +104,18 @@ export default function SavedPropertiesPage() {
                       <MoreVertical className="w-4 h-4" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 z-[200]">
-                    <DropdownMenuItem onClick={() => handleAction('Share', property.id)}>
-                      <Share2 className="w-4 h-4 mr-2 text-text-secondary" /> Share
+                  <DropdownMenuContent align="end" className="w-56 z-[200] p-2 rounded-xl bg-bg-card border border-border-default shadow-xl">
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleAction('Share', property.id)}>
+                      <Share2 className="w-4 h-4 mr-2 text-text-secondary" /> <span className="text-text-primary">Share</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleAction('Add Note', property.id)}>
-                      <PenSquare className="w-4 h-4 mr-2 text-text-secondary" /> Add Note
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleAction('Add Note', property.id)}>
+                      <PenSquare className="w-4 h-4 mr-2 text-text-secondary" /> <span className="text-text-primary">Add Note</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleAction('Move to Folder', property.id)}>
-                      <FolderHeart className="w-4 h-4 mr-2 text-text-secondary" /> Move to Folder
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleAction('Move to Folder', property.id)}>
+                      <FolderHeart className="w-4 h-4 mr-2 text-text-secondary" /> <span className="text-text-primary">Move to Folder</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-red-500 hover:text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-500/10" onClick={() => handleAction('Remove', property.id)}>
-                      <Trash2 className="w-4 h-4 mr-2" /> Remove from Saved
+                    <DropdownMenuItem className="cursor-pointer text-red-500 hover:text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-500/10" onClick={() => handleAction('Remove', property.id)}>
+                      <Trash2 className="w-4 h-4 mr-2" /> <span>Remove from Saved</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
