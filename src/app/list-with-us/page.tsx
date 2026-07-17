@@ -44,18 +44,7 @@ export default function ListWithUsPage() {
 
   return (
     <div className="min-h-screen bg-bg-primary selection:bg-amber-primary/30">
-      {/* Header */}
-      <header className="absolute top-0 left-0 right-0 z-50 py-6">
-        <div className="container-road flex items-center justify-between">
-          <Logo />
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Link href="/" className="text-sm font-medium text-text-secondary hover:text-amber-primary transition-colors">
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      </header>
+
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
