@@ -17,6 +17,7 @@ import {
   Plus,
   ChevronDown,
   LogIn,
+  Megaphone,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -251,6 +252,13 @@ export function Navbar() {
                 >
                   Contact
                 </Link>
+                <div className="h-px bg-border-default my-3" />
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-3 px-4 py-3.5 text-lg font-medium text-text-secondary hover:text-text-primary hover:bg-bg-card rounded-xl transition-all"
+                >
+                  Profile
+                </Link>
               </nav>
 
               <div className="container-road mt-auto flex flex-col gap-3 pb-6">
@@ -324,16 +332,16 @@ export function Navbar() {
             <span className="text-[0.625rem] font-medium">Saved</span>
           </Link>
           <Link
-            href="/dashboard"
+            href="/list-with-us"
             className={cn(
               "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
-              pathname === "/dashboard"
+              pathname.startsWith("/list-with-us")
                 ? "text-amber-primary"
                 : "text-text-tertiary hover:text-text-secondary"
             )}
           >
-            <User className="h-5 w-5" />
-            <span className="text-[0.625rem] font-medium">Profile</span>
+            <Megaphone className="h-5 w-5" />
+            <span className="text-[0.625rem] font-medium">Connect</span>
           </Link>
         </div>
       </nav>
