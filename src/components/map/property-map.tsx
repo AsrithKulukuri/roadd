@@ -187,9 +187,9 @@ export default function PropertyMap() {
 
   return (
     <div className="space-y-8">
-      <div className="relative w-full flex flex-col-reverse md:flex-row gap-4 border border-border-default/50 rounded-3xl overflow-hidden bg-bg-card shadow-sm h-auto md:h-[600px]">
+      <div className="relative w-full flex flex-col md:flex-row gap-0 border border-border-default/50 rounded-3xl overflow-hidden bg-bg-card shadow-sm h-auto md:h-[600px]">
       {/* Map Control Panel */}
-      <div className="w-full md:w-80 flex-shrink-0 p-6 flex flex-col gap-6 bg-bg-card z-10 border-r border-border-default/50 shadow-[4px_0_24px_rgba(0,0,0,0.1)]">
+      <div className="w-full md:w-80 flex-shrink-0 p-6 flex flex-col gap-6 bg-bg-card z-10 border-b md:border-b-0 md:border-r border-border-default/50 shadow-[0_4px_24px_rgba(0,0,0,0.08)] md:shadow-[4px_0_24px_rgba(0,0,0,0.08)]">
         <div>
           <h2 className="font-heading text-xl font-bold text-text-primary mb-2">
             Map Search
