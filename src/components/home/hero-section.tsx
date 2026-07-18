@@ -42,8 +42,8 @@ export function HeroSection() {
             'url("https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80")',
         }}
       >
-        <div className="absolute inset-0 bg-bg-primary/80 backdrop-blur-[2px]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/50 to-transparent" />
+        <div className="absolute inset-0 bg-black/65 backdrop-blur-[1px]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/20 to-black/20" />
       </div>
 
       <div className="container-road relative z-10 w-full max-w-5xl mx-auto flex flex-col items-center">
@@ -53,7 +53,7 @@ export function HeroSection() {
             Find Your <span className="text-amber-primary">Dream Property</span>{" "}
             in India
           </h1>
-          <p className="text-base md:text-xl text-text-secondary max-w-2xl mx-auto drop-shadow-md font-medium px-2">
+          <p className="text-base md:text-xl text-zinc-300 max-w-2xl mx-auto drop-shadow-md font-medium px-2">
             Discover verified homes, luxury villas, and premium commercial spaces
             in Visakhapatnam, Hyderabad, Bengaluru, and beyond.
           </p>
@@ -122,13 +122,37 @@ export function HeroSection() {
           </form>
 
           {/* Quick Links */}
-          <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-1.5 text-xs sm:text-sm text-text-tertiary px-1 sm:px-2">
-            <span className="font-medium text-text-secondary">Trending:</span>
+          <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-1.5 text-xs sm:text-sm text-text-secondary px-1 sm:px-2">
+            <span className="font-medium text-text-primary">Trending:</span>
             <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1.5">
-              <button onClick={() => setSearchQuery("Rushikonda, Vizag")} className="hover:text-amber-primary transition-colors">Rushikonda</button>
-              <button onClick={() => setSearchQuery("Gachibowli, Hyderabad")} className="hover:text-amber-primary transition-colors">Gachibowli</button>
-              <button onClick={() => setSearchQuery("Whitefield, Bengaluru")} className="hover:text-amber-primary transition-colors">Whitefield</button>
-              <button onClick={() => setSearchQuery("OMR, Chennai")} className="hover:text-amber-primary transition-colors">OMR</button>
+              <button 
+                type="button"
+                onClick={() => setSearchQuery("Rushikonda, Vizag")} 
+                className="text-text-secondary hover:text-amber-primary transition-colors font-medium"
+              >
+                Rushikonda
+              </button>
+              <button 
+                type="button"
+                onClick={() => setSearchQuery("Gachibowli, Hyderabad")} 
+                className="text-text-secondary hover:text-amber-primary transition-colors font-medium"
+              >
+                Gachibowli
+              </button>
+              <button 
+                type="button"
+                onClick={() => setSearchQuery("Whitefield, Bengaluru")} 
+                className="text-text-secondary hover:text-amber-primary transition-colors font-medium"
+              >
+                Whitefield
+              </button>
+              <button 
+                type="button"
+                onClick={() => setSearchQuery("OMR, Chennai")} 
+                className="text-text-secondary hover:text-amber-primary transition-colors font-medium"
+              >
+                OMR
+              </button>
             </div>
           </div>
         </div>
@@ -142,7 +166,7 @@ export function HeroSection() {
             { label: "Total Volume", value: "₹5k Cr+" },
           ].map((stat, i) => (
             <div key={i} className="flex flex-col items-center gap-0.5">
-              <span className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-white drop-shadow-sm">
+              <span className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary drop-shadow-sm">
                 {stat.value}
               </span>
               <span className="text-xs sm:text-sm text-text-secondary font-medium tracking-wide">
