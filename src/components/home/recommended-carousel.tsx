@@ -7,16 +7,64 @@ import { PropertyCard } from "@/components/property/property-card";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useGeolocation } from "@/hooks/use-geolocation";
+import type { Property } from "@/types/property";
+
+// Haversine formula to compute distance in kilometers
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+interface PropertyWithDistance extends Property {
+  distance?: number;
+}
 
 export function RecommendedCarousel() {
   const { properties } = usePropertiesStore();
+  const { coordinates } = useGeolocation();
   
-  // Get up to 10 recommended properties
-  const recommendedProperties = properties
-    .filter((p) => p.isRecommended)
-    .slice(0, 10);
+  // 1. Calculate distances if location coordinates are active
+  const processedProperties: PropertyWithDistance[] = properties.map((p) => {
+    if (coordinates && p.location?.latitude && p.location?.longitude) {
+      const dist = getDistance(
+        coordinates.latitude,
+        coordinates.longitude,
+        p.location.latitude,
+        p.location.longitude
+      );
+      return { ...p, distance: dist };
+    }
+    return p;
+  });
 
-  const autoplayPlugin = Autoplay({ delay: 2000, stopOnInteraction: false, stopOnMouseEnter: true });
+  // 2. Filter recommended properties
+  const recommendedList = processedProperties.filter((p) => p.isRecommended);
+
+  // 3. Sort by proximity first if location coordinates exist
+  if (coordinates) {
+    recommendedList.sort((a, b) => {
+      if (a.distance !== undefined && b.distance !== undefined) {
+        return a.distance - b.distance;
+      }
+      if (a.distance !== undefined) return -1;
+      if (b.distance !== undefined) return 1;
+      return 0;
+    });
+  }
+
+  const recommendedProperties = recommendedList.slice(0, 10);
+
+  const autoplayPlugin = Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true });
 
   // Initialize Embla Carousel with Autoplay
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -58,13 +106,16 @@ export function RecommendedCarousel() {
             Recommended Properties
           </h2>
           <p className="text-text-secondary mt-1 sm:mt-2 text-sm sm:text-base">
-            Hand-picked selections tailored just for you.
+            {coordinates 
+              ? "Handpicked premium listings closest to your location."
+              : "Hand-picked selections tailored just for you."}
           </p>
         </div>
         
         {/* Navigation Arrows */}
         <div className="hidden sm:flex gap-2">
           <Button 
+            type="button"
             variant="outline" 
             size="icon" 
             onClick={scrollPrev} 
@@ -74,6 +125,7 @@ export function RecommendedCarousel() {
             <ChevronLeft className="w-5 h-5" />
           </Button>
           <Button 
+            type="button"
             variant="outline" 
             size="icon" 
             onClick={scrollNext} 
@@ -92,7 +144,7 @@ export function RecommendedCarousel() {
               key={property.id} 
               className="flex-[0_0_80%] min-w-0 sm:flex-[0_0_50%] lg:flex-[0_0_33.333%] xl:flex-[0_0_25%] pl-3 sm:pl-4"
             >
-              <PropertyCard property={property} />
+              <PropertyCard property={property} distance={property.distance} />
             </div>
           ))}
         </div>

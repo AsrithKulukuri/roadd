@@ -24,10 +24,13 @@ import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { navigationLinks } from "@/config/site";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -52,6 +55,72 @@ export function Navbar() {
       document.body.style.overflow = "";
     };
   }, [isMobileMenuOpen]);
+
+  // Load user session from Supabase or localStorage
+  useEffect(() => {
+    const checkUser = async () => {
+      if (isSupabaseConfigured()) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            const u = session.user;
+            setUser({
+              name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
+            });
+            return;
+          }
+        } catch (e) {
+          console.error("Error fetching navbar user session:", e);
+        }
+      }
+      
+      const stored = localStorage.getItem("road_user");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed.isLoggedIn) {
+            setUser(parsed);
+            return;
+          }
+        } catch (e) {}
+      }
+      setUser(null);
+    };
+
+    checkUser();
+
+    // Subscribe to session changes
+    if (isSupabaseConfigured()) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (session?.user) {
+          const u = session.user;
+          setUser({
+            name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
+          });
+        } else {
+          const stored = localStorage.getItem("road_user");
+          if (!stored) {
+            setUser(null);
+          }
+        }
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, []);
+
+  const handleSignOut = async () => {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.error("Supabase signout failed:", err);
+      }
+    }
+    localStorage.removeItem("road_user");
+    setUser(null);
+    toast.success("Signed out successfully");
+    window.location.href = "/";
+  };
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -165,12 +234,34 @@ export function Navbar() {
               </Button>
               <ThemeToggle />
               <div className="w-px h-6 bg-border-default mx-1" />
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/login" className="gap-2">
-                  <LogIn className="h-4 w-4" />
-                  Sign In
-                </Link>
-              </Button>
+              
+              {user ? (
+                <div className="flex items-center gap-2">
+                  <Link 
+                    href="/dashboard" 
+                    className="text-sm font-semibold text-text-primary hover:text-amber-primary transition-colors flex items-center gap-1.5 bg-bg-card border border-border-default/60 hover:border-amber-primary/30 px-3.5 py-1.5 rounded-xl"
+                  >
+                    <User className="h-4 w-4 text-amber-primary" />
+                    <span className="max-w-[100px] truncate">{user.name.split(" ")[0]}</span>
+                  </Link>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleSignOut}
+                    className="text-error hover:bg-error/10 hover:text-error h-9 px-3 rounded-xl text-xs font-semibold uppercase tracking-wider transition-colors"
+                  >
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/login" className="gap-2">
+                    <LogIn className="h-4 w-4" />
+                    Sign In
+                  </Link>
+                </Button>
+              )}
+
               <Button variant="amber" size="sm" asChild>
                 <a href="https://wa.me/918977311418?text=I%20want%20to%20post%20a%20property" target="_blank" rel="noopener noreferrer" className="gap-2">
                   <Plus className="h-4 w-4" />
@@ -262,10 +353,29 @@ export function Navbar() {
               </nav>
 
               <div className="container-road mt-auto flex flex-col gap-3 pb-6">
-                <Button variant="outline" size="lg" className="w-full" asChild>
-                  <Link href="/login">Sign In</Link>
-                </Button>
-                <Button variant="amber" size="lg" className="w-full" asChild>
+                {user ? (
+                  <div className="flex flex-col gap-2">
+                    <Button variant="outline" size="lg" className="w-full justify-start gap-2.5 h-12 rounded-xl" asChild>
+                      <Link href="/dashboard">
+                        <User className="h-5 w-5 text-amber-primary" />
+                        My Profile ({user.name.split(" ")[0]})
+                      </Link>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="lg" 
+                      onClick={handleSignOut}
+                      className="w-full text-error hover:bg-error/10 hover:text-error h-12 rounded-xl"
+                    >
+                      Sign Out
+                    </Button>
+                  </div>
+                ) : (
+                  <Button variant="outline" size="lg" className="w-full h-12 rounded-xl" asChild>
+                    <Link href="/login">Sign In</Link>
+                  </Button>
+                )}
+                <Button variant="amber" size="lg" className="w-full h-12 rounded-xl" asChild>
                   <a href="https://wa.me/918977311418?text=I%20want%20to%20post%20a%20property" target="_blank" rel="noopener noreferrer" className="gap-2">
                     <Plus className="h-4 w-4" />
                     Post Property Free

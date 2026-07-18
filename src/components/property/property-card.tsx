@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
   Heart,
@@ -14,13 +16,14 @@ import {
   ChevronRight,
   Shield,
   BadgeCheck,
+  Lock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, formatPriceCompact, formatArea, formatINR } from "@/lib/utils";
 import type { Property } from "@/types/property";
-
 import { useFavoritesStore } from "@/stores/favorites-store";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 interface PropertyCardProps {
   property: Property;
@@ -31,6 +34,7 @@ interface PropertyCardProps {
   selected?: boolean;
   onSelect?: (checked: boolean) => void;
   actionMenu?: React.ReactNode;
+  distance?: number;
 }
 
 export function PropertyCard({
@@ -42,33 +46,84 @@ export function PropertyCard({
   selected,
   onSelect,
   actionMenu,
+  distance,
 }: PropertyCardProps) {
+  const router = useRouter();
   const [currentImage, setCurrentImage] = useState(0);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const isSaved = isFavorite(property.id);
 
   const images = property.images;
 
+  // Check login state
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (isSupabaseConfigured()) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            setIsLoggedIn(true);
+            return;
+          }
+        } catch (e) {}
+      }
+      
+      const stored = localStorage.getItem("road_user");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed.isLoggedIn) {
+            setIsLoggedIn(true);
+            return;
+          }
+        } catch (e) {}
+      }
+      setIsLoggedIn(false);
+    };
+
+    checkAuth();
+  }, []);
+
   const nextImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isLoggedIn) return;
     setCurrentImage((prev) => (prev + 1) % images.length);
   };
 
   const prevImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isLoggedIn) return;
     setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
   };
 
   const toggleSave = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isLoggedIn) {
+      toast.error("Sign in required", {
+        description: "Please sign in to save properties to your favorites.",
+      });
+      router.push("/login");
+      return;
+    }
     toggleFavorite(property.id);
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
+    if (!isLoggedIn) {
+      e.preventDefault();
+      e.stopPropagation();
+      toast.error("Sign in required", {
+        description: "Please sign in to unlock property specs, pricing, and details.",
+      });
+      router.push("/login");
+      return;
+    }
+    
     if (selectable && onSelect) {
       e.preventDefault();
       onSelect(!selected);
@@ -82,7 +137,7 @@ export function PropertyCard({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: index * 0.05 }}
       >
-        <Link href={`/properties/${property.slug}`}>
+        <Link href={`/properties/${property.slug}`} onClick={handleCardClick}>
           <div
             className={cn(
               "group flex flex-col sm:flex-row rounded-2xl border border-border-default bg-bg-card overflow-hidden hover-lift amber-border-glow",
@@ -97,37 +152,65 @@ export function PropertyCard({
                 fill
                 className={cn(
                   "object-cover transition-all duration-700",
-                  isImageLoaded ? "scale-100 blur-0" : "scale-110 blur-sm"
+                  !isLoggedIn ? "blur-lg scale-105" : isImageLoaded ? "scale-100 blur-0" : "scale-110 blur-sm"
                 )}
                 onLoad={() => setIsImageLoaded(true)}
                 sizes="(max-width: 640px) 100vw, 288px"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-              <div className="absolute top-3 left-3 flex gap-1.5">
+              <div className="absolute top-3 left-3 flex gap-1.5 z-10">
                 {property.isFeatured && <Badge variant="default">Featured</Badge>}
                 {property.reraId && <Badge variant="rera">RERA</Badge>}
               </div>
-              <Button
-                variant="glass"
-                size="icon-sm"
-                className="absolute top-3 right-3"
-                onClick={toggleSave}
-                aria-label={isSaved ? "Remove from saved" : "Save property"}
-              >
-                <Heart
-                  className={cn("h-4 w-4", isSaved && "fill-amber-primary text-amber-primary")}
-                />
-              </Button>
+
+              {/* Locked Glass Overlay */}
+              {!isLoggedIn && (
+                <div className="absolute inset-0 bg-black/45 backdrop-blur-[3px] flex flex-col items-center justify-center p-3 text-center z-10">
+                  <div className="w-9 h-9 rounded-full bg-amber-primary/20 flex items-center justify-center text-amber-primary border border-amber-primary/30 mb-1.5">
+                    <Lock className="w-4.5 h-4.5" />
+                  </div>
+                  <span className="text-white font-heading font-bold text-xs uppercase tracking-wider">Locked</span>
+                </div>
+              )}
+
+              {isLoggedIn && (
+                <Button
+                  type="button"
+                  variant="glass"
+                  size="icon-sm"
+                  className="absolute top-3 right-3 z-10"
+                  onClick={toggleSave}
+                  aria-label={isSaved ? "Remove from saved" : "Save property"}
+                >
+                  <Heart
+                    className={cn("h-4 w-4", isSaved && "fill-amber-primary text-amber-primary")}
+                  />
+                </Button>
+              )}
             </div>
 
             {/* Content */}
             <div className="flex-1 p-5 flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-heading text-lg font-bold text-text-primary line-clamp-1 group-hover:text-amber-primary transition-colors">
-                    {property.title}
-                  </h3>
-                  <p className="font-heading text-lg font-bold text-amber-primary whitespace-nowrap">
+                  <div>
+                    {distance !== undefined && isLoggedIn && (
+                      <div className="text-[10px] text-amber-primary font-bold bg-amber-primary/10 border border-amber-primary/20 px-2.5 py-0.5 rounded-full w-fit mb-1.5 flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {distance < 1 ? `${Math.round(distance * 1000)}m away` : `${distance.toFixed(1)} km away`}
+                      </div>
+                    )}
+                    <h3 className={cn(
+                      "font-heading text-lg font-bold text-text-primary line-clamp-1 group-hover:text-amber-primary transition-colors",
+                      !isLoggedIn && "blur-[3px] select-none"
+                    )}>
+                      {property.title}
+                    </h3>
+                  </div>
+                  <p className={cn(
+                    "font-heading text-lg font-bold text-amber-primary whitespace-nowrap",
+                    !isLoggedIn && "blur-[3px] select-none"
+                  )}>
                     {property.listingType === "rent"
                       ? `${formatINR(property.price)}/mo`
                       : formatPriceCompact(property.price)}
@@ -135,15 +218,19 @@ export function PropertyCard({
                 </div>
                 <div className="flex items-center gap-1.5 mt-1.5 text-text-secondary">
                   <MapPin className="h-3.5 w-3.5 text-amber-primary/70 flex-shrink-0" />
-                  <span className="text-sm line-clamp-1">
+                  <span className={cn("text-sm line-clamp-1", !isLoggedIn && "blur-[3px] select-none")}>
                     {property.location.locality}, {property.location.city}
                   </span>
                 </div>
-                <p className="text-sm text-text-tertiary mt-2 line-clamp-2">
+                <p className={cn("text-sm text-text-tertiary mt-2 line-clamp-2", !isLoggedIn && "blur-[4px] select-none")}>
                   {property.description}
                 </p>
               </div>
-              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border-default">
+              
+              <div className={cn(
+                "flex items-center gap-4 mt-3 pt-3 border-t border-border-default",
+                !isLoggedIn && "blur-[3px] select-none"
+              )}>
                 {property.bedrooms > 0 && (
                   <div className="flex items-center gap-1.5 text-text-secondary text-sm">
                     <Bed className="h-4 w-4" />
@@ -183,7 +270,7 @@ export function PropertyCard({
       <Link href={`/properties/${property.slug}`} onClick={handleCardClick}>
         <div
           className={cn(
-            "group rounded-2xl border bg-bg-card overflow-hidden hover-lift transition-all",
+            "group rounded-2xl border bg-bg-card overflow-hidden hover-lift transition-all relative",
             variant === "compact" ? "max-w-[280px]" : "",
             selected ? "border-amber-primary ring-2 ring-amber-primary/50" : "border-border-default hover:border-amber-primary/50",
             className
@@ -192,7 +279,7 @@ export function PropertyCard({
           {/* Image Carousel */}
           <div className="relative aspect-[4/3] overflow-hidden">
             {/* Selection Checkbox */}
-            {selectable && (
+            {selectable && isLoggedIn && (
               <div className="absolute top-3 left-3 z-20">
                 <div className={cn(
                   "w-6 h-6 rounded-md flex items-center justify-center border-2 transition-colors",
@@ -202,13 +289,14 @@ export function PropertyCard({
                 </div>
               </div>
             )}
+            
             <Image
               src={images[currentImage]?.url || ""}
               alt={images[currentImage]?.alt || property.title}
               fill
               className={cn(
                 "object-cover transition-all duration-700 group-hover:scale-105",
-                isImageLoaded ? "blur-0" : "blur-sm"
+                !isLoggedIn ? "blur-md scale-105" : isImageLoaded ? "blur-0" : "blur-sm"
               )}
               onLoad={() => setIsImageLoaded(true)}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -217,25 +305,36 @@ export function PropertyCard({
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
+            {/* Locked Glass Overlay */}
+            {!isLoggedIn && (
+              <div className="absolute inset-0 bg-black/55 backdrop-blur-[3px] flex flex-col items-center justify-center p-4 text-center z-10">
+                <div className="w-10 h-10 rounded-full bg-amber-primary/20 flex items-center justify-center text-amber-primary border border-amber-primary/40 mb-2 animate-bounce">
+                  <Lock className="w-4.5 h-4.5" />
+                </div>
+                <span className="text-white font-heading font-bold text-xs uppercase tracking-wider">Sign In Required</span>
+                <span className="text-white/60 text-[0.625rem] mt-0.5 max-w-[160px] leading-relaxed">Click to unlock pricing and location details</span>
+              </div>
+            )}
+
             {/* Image navigation */}
-            {images.length > 1 && (
+            {isLoggedIn && images.length > 1 && (
               <>
                 <button
                   onClick={prevImage}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full glass flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full glass flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10"
                   aria-label="Previous image"
                 >
                   <ChevronLeft className="h-4 w-4 text-white" />
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full glass flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full glass flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10"
                   aria-label="Next image"
                 >
                   <ChevronRight className="h-4 w-4 text-white" />
                 </button>
                 {/* Dots */}
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1 z-10">
                   {images.slice(0, 5).map((_, i) => (
                     <div
                       key={i}
@@ -264,19 +363,10 @@ export function PropertyCard({
                   RERA
                 </Badge>
               )}
-              {!property.isReadyToMove && (
-                <Badge variant="warning" className="text-[0.65rem]">
-                  Under Construction
-                </Badge>
-              )}
             </div>
 
-            {/* Save Button / Action Menu */}
-            {actionMenu ? (
-              <div className="absolute top-3 right-3 z-20" onClick={e => e.preventDefault()}>
-                {actionMenu}
-              </div>
-            ) : (
+            {/* Save Button */}
+            {isLoggedIn && !actionMenu && (
               <Button
                 variant="glass"
                 size="icon-sm"
@@ -296,35 +386,42 @@ export function PropertyCard({
             )}
 
             {/* Price */}
-            <div className="absolute bottom-3 left-3">
+            <div className={cn("absolute bottom-3 left-3 z-10", !isLoggedIn && "blur-[3px] select-none")}>
               <p className="font-heading text-xl font-bold text-white drop-shadow-lg">
                 {property.listingType === "rent" || property.listingType === "pg"
                   ? `${formatINR(property.price)}/mo`
                   : formatPriceCompact(property.price)}
               </p>
-              {property.listingType === "sale" && property.pricePerSqft > 0 && (
-                <p className="text-xs text-white/70">
-                  {formatINR(property.pricePerSqft)}/sq.ft
-                </p>
-              )}
             </div>
           </div>
 
           {/* Content */}
           <div className="p-4">
-            <h3 className="font-heading text-base font-bold text-text-primary line-clamp-1 group-hover:text-amber-primary transition-colors">
+            {distance !== undefined && isLoggedIn && (
+              <div className="text-[10px] text-amber-primary font-bold bg-amber-primary/10 border border-amber-primary/20 px-2.5 py-0.5 rounded-full w-fit mb-2 flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                {distance < 1 ? `${Math.round(distance * 1000)}m away` : `${distance.toFixed(1)} km away`}
+              </div>
+            )}
+            <h3 className={cn(
+              "font-heading text-base font-bold text-text-primary line-clamp-1 group-hover:text-amber-primary transition-colors",
+              !isLoggedIn && "blur-[3px] select-none"
+            )}>
               {property.title}
             </h3>
 
             <div className="flex items-center gap-1.5 mt-1.5">
               <MapPin className="h-3.5 w-3.5 text-amber-primary/70 flex-shrink-0" />
-              <span className="text-sm text-text-secondary line-clamp-1">
+              <span className={cn("text-sm text-text-secondary line-clamp-1", !isLoggedIn && "blur-[3.5px] select-none")}>
                 {property.location.locality}, {property.location.city}
               </span>
             </div>
 
             {/* Specs */}
-            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border-subtle">
+            <div className={cn(
+              "flex items-center gap-3 mt-3 pt-3 border-t border-border-subtle",
+              !isLoggedIn && "blur-[3px] select-none"
+            )}>
               {property.bedrooms > 0 && (
                 <div className="flex items-center gap-1 text-text-secondary">
                   <Bed className="h-3.5 w-3.5" />
@@ -354,7 +451,6 @@ export function PropertyCard({
   );
 }
 
-// Skeleton loader
 export function PropertyCardSkeleton() {
   return (
     <div className="rounded-2xl border border-border-default bg-bg-card overflow-hidden">
