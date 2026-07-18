@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 // Fix for default marker icons in Leaflet with Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -51,11 +53,39 @@ interface PropertyLocationMapProps {
 }
 
 export default function PropertyLocationMap({ latitude, longitude, title }: PropertyLocationMapProps) {
+  const router = useRouter();
   const [userLocation, setUserLocation] = useState<L.LatLng | null>(null);
   const [distance, setDistance] = useState<string | null>(null);
   const [loadingLoc, setLoadingLoc] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   const propertyPos = new L.LatLng(latitude, longitude);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (isSupabaseConfigured()) {
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsLoggedIn(!!session);
+      } else {
+        const stored = localStorage.getItem("road_user");
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            setIsLoggedIn(!!parsed.isLoggedIn);
+          } catch (e) {}
+        }
+      }
+    };
+    
+    checkAuth();
+
+    if (isSupabaseConfigured()) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setIsLoggedIn(!!session);
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, []);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -83,60 +113,60 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-bg-card border border-border-default/50 shadow-sm">
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-text-primary">
-            Distance & Navigation
-          </p>
-          <p className="text-xs text-text-secondary">
-            {distance ? (
-              <span className="text-amber-primary font-medium">You are {distance} km away from this property.</span>
-            ) : (
-              "Check how far this property is from your current location."
-            )}
-          </p>
-        </div>
+    <div className="w-full space-y-4">
+      {/* Map Control Buttons */}
+      <div className="flex gap-2">
         <Button 
+          type="button"
+          onClick={handleGetLocation} 
+          disabled={loadingLoc}
           variant="outline" 
           size="sm" 
-          onClick={handleGetLocation}
-          disabled={loadingLoc}
-          className="text-xs shrink-0"
+          className="border-border-default/60 hover:bg-bg-hover text-text-secondary hover:text-text-primary rounded-xl"
         >
-          <Navigation className="w-3.5 h-3.5 mr-2" />
-          {loadingLoc ? "Locating..." : "Get Distance"}
+          <Navigation className={`w-4 h-4 mr-2 ${loadingLoc ? 'animate-spin' : ''}`} />
+          {loadingLoc ? "Getting Location..." : "Check distance from your location"}
         </Button>
+        {distance && (
+          <div className="flex items-center text-sm font-semibold text-amber-primary bg-amber-primary/10 border border-amber-primary/20 px-3 py-1 rounded-xl">
+            {distance} km away from this property
+          </div>
+        )}
       </div>
-      
-      {/* Map Container - Important: z-0 to avoid overlapping sticky headers/navs */}
-      <div className="w-full h-[350px] md:h-[450px] rounded-3xl overflow-hidden border border-border-default/50 bg-bg-card relative z-0">
+
+      <div className="relative h-[300px] md:h-[400px] w-full rounded-2xl overflow-hidden border border-border-default/50 z-0">
         <MapContainer 
-          center={[latitude, longitude]} 
-          zoom={14} 
-          maxZoom={14}
+          center={propertyPos} 
+          zoom={13} 
           scrollWheelZoom={false}
-          className="w-full h-full"
+          style={{ height: "100%", width: "100%" }}
         >
-          {/* Using Esri World Imagery tiles for an earth view look */}
           <TileLayer
-            attribution='&copy; <a href="https://www.esri.com/">Esri</a> &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            maxZoom={14}
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {/* Approximate circle rather than pinpoint for privacy */}
+          <Circle
+            center={propertyPos}
+            radius={500}
+            pathOptions={{ color: '#F59E0B', fillColor: '#F59E0B', fillOpacity: 0.2 }}
           />
           
-          <Circle 
-            center={propertyPos} 
-            radius={300} 
-            pathOptions={{ color: '#d97706', fillColor: '#f59e0b', fillOpacity: 0.4, weight: 2 }}
-          />
-
           {userLocation && (
             <>
+              {/* Actual property marker */}
+              <Marker position={propertyPos} icon={propertyIcon}>
+                <Popup>
+                  <div className="p-1 font-semibold text-text-primary">
+                    Approximate Location
+                  </div>
+                </Popup>
+              </Marker>
+              {/* User marker */}
               <Marker position={userLocation} icon={userIcon}>
-                <Popup className="road-popup">
-                  <div className="p-1 min-w-[120px]">
-                    <div className="text-sm font-bold text-gray-800 leading-tight mb-1">
+                <Popup>
+                  <div className="p-1">
+                    <div className="font-semibold text-text-primary">
                       Your Location
                     </div>
                   </div>
@@ -154,15 +184,30 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
             <span className="text-amber-primary mr-2">🔒</span>
             Exact location is protected for privacy
           </div>
-          <Button variant="amber" size="sm" className="w-full sm:w-auto shadow-amber-glow" asChild>
-            <a 
-              href={`https://wa.me/918977311418?text=${encodeURIComponent("Hi! I'm looking for this property: " + title + ". Could you share the exact location?")}`}
-              target="_blank"
-              rel="noopener noreferrer"
+          {isLoggedIn ? (
+            <Button variant="amber" size="sm" className="w-full sm:w-auto shadow-amber-glow" asChild>
+              <a 
+                href={`https://wa.me/918977311418?text=${encodeURIComponent("Hi! I'm looking for this property: " + title + ". Could you share the exact location?")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Contact Agent for Details
+              </a>
+            </Button>
+          ) : (
+            <Button 
+              type="button"
+              variant="amber" 
+              size="sm" 
+              onClick={() => {
+                const redirectPath = typeof window !== "undefined" ? window.location.pathname : "";
+                router.push(`/login?redirect=${encodeURIComponent(redirectPath)}`);
+              }}
+              className="w-full sm:w-auto shadow-amber-glow"
             >
               Contact Agent for Details
-            </a>
-          </Button>
+            </Button>
+          )}
         </div>
       </div>
     </div>
