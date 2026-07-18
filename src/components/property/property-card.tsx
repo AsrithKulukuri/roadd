@@ -114,16 +114,6 @@ export function PropertyCard({
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
-    if (!isLoggedIn) {
-      e.preventDefault();
-      e.stopPropagation();
-      toast.error("Sign in required", {
-        description: "Please sign in to unlock property specs, pricing, and details.",
-      });
-      router.push("/login");
-      return;
-    }
-    
     if (selectable && onSelect) {
       e.preventDefault();
       onSelect(!selected);
@@ -152,7 +142,7 @@ export function PropertyCard({
                 fill
                 className={cn(
                   "object-cover transition-all duration-700",
-                  !isLoggedIn ? "blur-lg scale-105" : isImageLoaded ? "scale-100 blur-0" : "scale-110 blur-sm"
+                  isImageLoaded ? "scale-100 blur-0" : "scale-110 blur-sm"
                 )}
                 onLoad={() => setIsImageLoaded(true)}
                 sizes="(max-width: 640px) 100vw, 288px"
@@ -162,16 +152,6 @@ export function PropertyCard({
                 {property.isFeatured && <Badge variant="default">Featured</Badge>}
                 {property.reraId && <Badge variant="rera">RERA</Badge>}
               </div>
-
-              {/* Locked Glass Overlay */}
-              {!isLoggedIn && (
-                <div className="absolute inset-0 bg-black/45 backdrop-blur-[3px] flex flex-col items-center justify-center p-3 text-center z-10">
-                  <div className="w-9 h-9 rounded-full bg-amber-primary/20 flex items-center justify-center text-amber-primary border border-amber-primary/30 mb-1.5">
-                    <Lock className="w-4.5 h-4.5" />
-                  </div>
-                  <span className="text-white font-heading font-bold text-xs uppercase tracking-wider">Locked</span>
-                </div>
-              )}
 
               {isLoggedIn && (
                 <Button
@@ -200,37 +180,34 @@ export function PropertyCard({
                         {distance < 1 ? `${Math.round(distance * 1000)}m away` : `${distance.toFixed(1)} km away`}
                       </div>
                     )}
-                    <h3 className={cn(
-                      "font-heading text-lg font-bold text-text-primary line-clamp-1 group-hover:text-amber-primary transition-colors",
-                      !isLoggedIn && "blur-[3px] select-none"
-                    )}>
+                    <h3 className="font-heading text-lg font-bold text-text-primary line-clamp-1 group-hover:text-amber-primary transition-colors">
                       {property.title}
                     </h3>
                   </div>
-                  <p className={cn(
-                    "font-heading text-lg font-bold text-amber-primary whitespace-nowrap",
-                    !isLoggedIn && "blur-[3px] select-none"
-                  )}>
-                    {property.listingType === "rent"
-                      ? `${formatINR(property.price)}/mo`
-                      : formatPriceCompact(property.price)}
-                  </p>
+                  {isLoggedIn ? (
+                    <p className="font-heading text-lg font-bold text-amber-primary whitespace-nowrap">
+                      {property.listingType === "rent"
+                        ? `${formatINR(property.price)}/mo`
+                        : formatPriceCompact(property.price)}
+                    </p>
+                  ) : (
+                    <span className="text-xs font-semibold px-2.5 py-1 bg-amber-primary/10 border border-amber-primary/20 text-amber-primary rounded-full flex items-center gap-1 h-fit">
+                      <Lock className="w-3.5 h-3.5" /> Price Locked
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 mt-1.5 text-text-secondary">
                   <MapPin className="h-3.5 w-3.5 text-amber-primary/70 flex-shrink-0" />
-                  <span className={cn("text-sm line-clamp-1", !isLoggedIn && "blur-[3px] select-none")}>
+                  <span className="text-sm line-clamp-1">
                     {property.location.locality}, {property.location.city}
                   </span>
                 </div>
-                <p className={cn("text-sm text-text-tertiary mt-2 line-clamp-2", !isLoggedIn && "blur-[4px] select-none")}>
+                <p className="text-sm text-text-tertiary mt-2 line-clamp-2">
                   {property.description}
                 </p>
               </div>
               
-              <div className={cn(
-                "flex items-center gap-4 mt-3 pt-3 border-t border-border-default",
-                !isLoggedIn && "blur-[3px] select-none"
-              )}>
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border-default">
                 {property.bedrooms > 0 && (
                   <div className="flex items-center gap-1.5 text-text-secondary text-sm">
                     <Bed className="h-4 w-4" />
@@ -296,7 +273,7 @@ export function PropertyCard({
               fill
               className={cn(
                 "object-cover transition-all duration-700 group-hover:scale-105",
-                !isLoggedIn ? "blur-md scale-105" : isImageLoaded ? "blur-0" : "blur-sm"
+                isImageLoaded ? "blur-0" : "blur-sm"
               )}
               onLoad={() => setIsImageLoaded(true)}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -304,17 +281,6 @@ export function PropertyCard({
 
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-
-            {/* Locked Glass Overlay */}
-            {!isLoggedIn && (
-              <div className="absolute inset-0 bg-black/55 backdrop-blur-[3px] flex flex-col items-center justify-center p-4 text-center z-10">
-                <div className="w-10 h-10 rounded-full bg-amber-primary/20 flex items-center justify-center text-amber-primary border border-amber-primary/40 mb-2 animate-bounce">
-                  <Lock className="w-4.5 h-4.5" />
-                </div>
-                <span className="text-white font-heading font-bold text-xs uppercase tracking-wider">Sign In Required</span>
-                <span className="text-white/60 text-[0.625rem] mt-0.5 max-w-[160px] leading-relaxed">Click to unlock pricing and location details</span>
-              </div>
-            )}
 
             {/* Image navigation */}
             {isLoggedIn && images.length > 1 && (
@@ -386,12 +352,18 @@ export function PropertyCard({
             )}
 
             {/* Price */}
-            <div className={cn("absolute bottom-3 left-3 z-10", !isLoggedIn && "blur-[3px] select-none")}>
-              <p className="font-heading text-xl font-bold text-white drop-shadow-lg">
-                {property.listingType === "rent" || property.listingType === "pg"
-                  ? `${formatINR(property.price)}/mo`
-                  : formatPriceCompact(property.price)}
-              </p>
+            <div className="absolute bottom-3 left-3 z-10">
+              {isLoggedIn ? (
+                <p className="font-heading text-xl font-bold text-white drop-shadow-lg">
+                  {property.listingType === "rent" || property.listingType === "pg"
+                    ? `${formatINR(property.price)}/mo`
+                    : formatPriceCompact(property.price)}
+                </p>
+              ) : (
+                <div className="flex items-center gap-1 bg-black/60 backdrop-blur-sm border border-white/20 text-amber-primary px-2.5 py-1 rounded-full text-xs font-bold shadow-sm">
+                  <Lock className="w-3.5 h-3.5" /> Price Locked
+                </div>
+              )}
             </div>
           </div>
 
@@ -403,25 +375,19 @@ export function PropertyCard({
                 {distance < 1 ? `${Math.round(distance * 1000)}m away` : `${distance.toFixed(1)} km away`}
               </div>
             )}
-            <h3 className={cn(
-              "font-heading text-base font-bold text-text-primary line-clamp-1 group-hover:text-amber-primary transition-colors",
-              !isLoggedIn && "blur-[3px] select-none"
-            )}>
+            <h3 className="font-heading text-base font-bold text-text-primary line-clamp-1 group-hover:text-amber-primary transition-colors">
               {property.title}
             </h3>
 
             <div className="flex items-center gap-1.5 mt-1.5">
               <MapPin className="h-3.5 w-3.5 text-amber-primary/70 flex-shrink-0" />
-              <span className={cn("text-sm text-text-secondary line-clamp-1", !isLoggedIn && "blur-[3.5px] select-none")}>
+              <span className="text-sm text-text-secondary line-clamp-1">
                 {property.location.locality}, {property.location.city}
               </span>
             </div>
 
             {/* Specs */}
-            <div className={cn(
-              "flex items-center gap-3 mt-3 pt-3 border-t border-border-subtle",
-              !isLoggedIn && "blur-[3px] select-none"
-            )}>
+            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border-subtle">
               {property.bedrooms > 0 && (
                 <div className="flex items-center gap-1 text-text-secondary">
                   <Bed className="h-3.5 w-3.5" />
