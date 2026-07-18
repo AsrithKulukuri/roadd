@@ -13,26 +13,20 @@
   --color-amber-subtle: #F5A62312;
 
   /* Backgrounds */
-  --color-bg-primary: #16161A;
-  --color-bg-card: #1E1E23;
-  --color-bg-elevated: #252529;
-  --color-bg-hover: #2A2A31;
-  --color-bg-light: #F7F6F3;
-  --color-bg-light-card: #FFFFFF;
-  --color-bg-light-elevated: #EEEDE9;
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-card: var(--bg-card);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover: var(--bg-hover);
 
   /* Borders */
-  --color-border-default: #2A2A31;
-  --color-border-subtle: #22222A;
-  --color-border-light: #E5E4E0;
+  --color-border-default: var(--border-default);
+  --color-border-subtle: var(--border-subtle);
   --color-border-amber: #F5A62340;
 
   /* Text */
-  --color-text-primary: #FFFFFF;
-  --color-text-secondary: #A0A0AB;
-  --color-text-tertiary: #6B6B76;
-  --color-text-light-primary: #2B2D33;
-  --color-text-light-secondary: #6B6B76;
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
 
   /* Semantic */
   --color-success: #3BB273;
@@ -45,10 +39,8 @@
   --color-info-muted: #3B82F620;
 
   /* Glass Effects */
-  --color-glass-bg: rgba(30, 30, 35, 0.72);
-  --color-glass-border: rgba(255, 255, 255, 0.08);
-  --color-glass-bg-light: rgba(255, 255, 255, 0.72);
-  --color-glass-border-light: rgba(0, 0, 0, 0.06);
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
 
   /* Font Families */
   --font-heading: "Space Grotesk", "Sora", system-ui, sans-serif;
@@ -196,6 +188,37 @@
    Base Styles
    ======================================================================== */
 
+:root {
+  --bg-primary: #16161A;
+  --bg-card: #1E1E23;
+  --bg-elevated: #252529;
+  --bg-hover: #2A2A31;
+  --border-default: #2A2A31;
+  --border-subtle: #22222A;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A0A0AB;
+  --text-tertiary: #6B6B76;
+  --glass-bg: rgba(30, 30, 35, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+.light,
+[data-theme="light"],
+html.light,
+html[data-theme="light"] {
+  --bg-primary: #F7F6F3;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #EEEDE9;
+  --bg-hover: #E5E4E0;
+  --border-default: #E5E4E0;
+  --border-subtle: #F2F1ED;
+  --text-primary: #2B2D33;
+  --text-secondary: #6B6B76;
+  --text-tertiary: #9E9EA8;
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(0, 0, 0, 0.06);
+}
+
 * {
   border-color: var(--color-border-default);
 }
@@ -211,18 +234,6 @@ body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   overflow-x: hidden;
-}
-
-/* Dark mode is default. Light mode overrides. */
-.light body,
-[data-theme="light"] body {
-  background-color: var(--color-bg-light);
-  color: var(--color-text-light-primary);
-}
-
-.light *,
-[data-theme="light"] * {
-  border-color: var(--color-border-light);
 }
 
 /* ========================================================================
