@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/shared/logo";
 import { Eye, EyeOff, Phone, Mail, Lock, ChevronDown, Check, Shield, AlertCircle } from "lucide-react";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 const countryCodes = [
   { code: "+91", country: "India", flag: "🇮🇳" },
@@ -41,21 +41,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     const checkUser = async () => {
-      if (isSupabaseConfigured()) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          router.push("/dashboard");
-        }
-      } else {
-        const stored = localStorage.getItem("road_user");
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            if (parsed.isLoggedIn) {
-              router.push("/dashboard");
-            }
-          } catch(e) {}
-        }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const role = session.user.user_metadata?.role;
+        router.push(role === "admin" ? "/admin" : "/dashboard");
       }
     };
     checkUser();
@@ -111,143 +100,60 @@ export default function LoginPage() {
     setIsLoading(true);
     const inputVal = loginInput.trim();
 
-    if (isSupabaseConfigured()) {
-      try {
-        let response;
-        let authMethod = "email";
-        let userPhone = "";
-        
-        if (isEmailInput) {
-          // 1. Sign in with Email
-          response = await supabase.auth.signInWithPassword({
-            email: inputVal,
-            password: password,
-          });
-        } else {
-          // 2. Sign in with Phone
-          authMethod = "phone";
-          userPhone = `${selectedCountry.code}${inputVal.replace(/\D/g, "")}`;
-          response = await supabase.auth.signInWithPassword({
-            phone: userPhone,
-            password: password,
-          });
-        }
-
-        const { data, error } = response;
-
-        if (error) {
-          throw error;
-        }
-
-        if (data.user) {
-          const name = data.user.user_metadata?.full_name || data.user.user_metadata?.name || "Aasrith";
-          const role = data.user.user_metadata?.role || (isAdminLogin ? "admin" : "buyer");
-          
-          const localUser = {
-            name: name,
-            email: data.user.email || "",
-            phone: data.user.phone || userPhone,
-            role: role,
-            isProfileComplete: true,
-            isLoggedIn: true,
-            authMethod: authMethod
-          };
-
-          localStorage.setItem("road_user", JSON.stringify(localUser));
-          toast.success("Logged in successfully!");
-          router.push(role === "admin" ? "/admin" : "/dashboard");
-        }
-      } catch (err: any) {
-        console.error("Supabase sign in error:", err);
-        
-        // Provide helper guides for typical Supabase setup issues
-        if (err.message?.includes("Phone logins are disabled")) {
-          toast.error("Phone logins are disabled on your Supabase project.", {
-            description: "Please sign in with your email address instead, or enable the Phone provider in your Supabase Auth dashboard.",
-            duration: 8000
-          });
-        } else {
-          toast.error(err.message || "Invalid login credentials.");
-        }
-        setIsLoading(false);
+    try {
+      let response;
+      let userPhone = "";
+      
+      if (isEmailInput) {
+        response = await supabase.auth.signInWithPassword({
+          email: inputVal,
+          password: password,
+        });
+      } else {
+        userPhone = `${selectedCountry.code}${inputVal.replace(/\D/g, "")}`;
+        response = await supabase.auth.signInWithPassword({
+          phone: userPhone,
+          password: password,
+        });
       }
-    } else {
-      // FALLBACK: Mock Sign-in
-      setTimeout(() => {
-        setIsLoading(false);
-        const displayPhone = isEmailInput ? "" : `${selectedCountry.code}${inputVal.replace(/\D/g, "")}`;
-        const displayEmail = isEmailInput ? inputVal : "user@road.facing";
 
-        if (isAdminLogin) {
-          toast.success("Admin logged in successfully (Mock Mode)");
-          const adminUser = {
-            name: "Admin User",
-            email: displayEmail,
-            phone: displayPhone,
-            role: "admin",
-            isProfileComplete: true,
-            isLoggedIn: true,
-            authMethod: isEmailInput ? "email" : "phone"
-          };
-          localStorage.setItem("road_user", JSON.stringify(adminUser));
-          router.push("/admin");
-        } else {
-          toast.success("Logged in successfully (Mock Mode)");
-          const normalUser = {
-            name: "Aasrith",
-            email: displayEmail,
-            phone: displayPhone,
-            role: "buyer",
-            isProfileComplete: true,
-            isLoggedIn: true,
-            authMethod: isEmailInput ? "email" : "phone"
-          };
-          localStorage.setItem("road_user", JSON.stringify(normalUser));
-          router.push("/dashboard");
-        }
-        
-        toast.info("Supabase keys not configured. Running in Mock Auth Mode.");
-      }, 1200);
+      const { data, error } = response;
+
+      if (error) throw error;
+
+      if (data.user) {
+        const role = data.user.user_metadata?.role || "buyer";
+        toast.success("Logged in successfully!");
+        router.push(role === "admin" ? "/admin" : "/dashboard");
+      }
+    } catch (err: any) {
+      console.error("Sign in error:", err);
+      if (err.message?.includes("Phone logins are disabled")) {
+        toast.error("Phone logins are disabled.", {
+          description: "Please sign in with your email address instead.",
+          duration: 8000
+        });
+      } else {
+        toast.error(err.message || "Invalid login credentials.");
+      }
+      setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
-    
-    if (isSupabaseConfigured()) {
-      try {
-        toast.info("Connecting to Supabase Google OAuth...");
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
-
-        if (error) throw error;
-      } catch (err: any) {
-        console.error("Google OAuth error:", err);
-        toast.error(err.message || "OAuth connection failed.");
-        setIsGoogleLoading(false);
-      }
-    } else {
-      toast.info("Connecting to Google Accounts (Mock)...");
-      setTimeout(() => {
-        setIsGoogleLoading(false);
-        toast.success("Logged in with Google successfully! (Mock Mode)");
-        
-        const googleUser = {
-          name: "Google User",
-          email: "google.user@gmail.com",
-          phone: "",
-          role: "buyer",
-          isProfileComplete: false,
-          isLoggedIn: true,
-          authMethod: "google"
-        };
-        localStorage.setItem("road_user", JSON.stringify(googleUser));
-        router.push("/dashboard");
-      }, 1500);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      console.error("Google OAuth error:", err);
+      toast.error(err.message || "Google sign-in failed.");
+      setIsGoogleLoading(false);
     }
   };
 
