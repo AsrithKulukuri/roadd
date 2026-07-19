@@ -4,10 +4,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import { mockTrendingLocations } from "@/lib/mock-data";
-import { formatINR } from "@/lib/utils";
+import { useContentStore } from "@/stores/content-store";
+import { useEffect } from "react";
 
 export function TrendingLocations() {
+  const { trendingLocations, fetchTrendingLocations } = useContentStore();
+
+  useEffect(() => {
+    fetchTrendingLocations();
+  }, [fetchTrendingLocations]);
+
+  if (!trendingLocations || trendingLocations.length === 0) return null;
+
   return (
     <section className="py-20 bg-bg-card/50 border-y border-border-default/50">
       <div className="container-road">
@@ -24,7 +32,7 @@ export function TrendingLocations() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockTrendingLocations.map((location, index) => (
+          {trendingLocations.map((location, index) => (
             <motion.div
               key={`${location.city}-${location.locality}`}
               initial={{ opacity: 0, y: 20 }}
@@ -60,18 +68,9 @@ export function TrendingLocations() {
                     <h3 className="font-heading text-2xl font-bold text-white mb-1 drop-shadow-md">
                       {location.locality}
                     </h3>
-                    <p className="text-white/80 font-medium mb-3">
-                      {location.city}
+                    <p className="text-white/90 text-sm font-medium drop-shadow-sm">
+                      {location.city} • {location.properties_count} Properties
                     </p>
-                    
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="glass px-3 py-1.5 rounded-lg text-white">
-                        <span className="font-semibold">{location.totalListings}</span> Properties
-                      </div>
-                      <div className="glass px-3 py-1.5 rounded-lg text-amber-primary font-medium">
-                        Avg. {formatINR(location.avgPrice)}/sqft
-                      </div>
-                    </div>
                   </div>
                 </div>
               </Link>

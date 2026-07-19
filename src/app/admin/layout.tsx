@@ -11,7 +11,8 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X
+  X,
+  MonitorPlay
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -21,6 +22,7 @@ const sidebarLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/properties", label: "Properties", icon: Building2 },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/content", label: "Content", icon: MonitorPlay },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
