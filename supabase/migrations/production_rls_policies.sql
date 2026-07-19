@@ -1,11 +1,13 @@
 -- ============================================================
--- Production RLS Policies for properties table
+-- Production RLS Policies (idempotent — safe to re-run)
 -- Run this AFTER create_properties_table.sql
 -- ============================================================
 
--- Drop existing overly-permissive update/delete policies
+-- ---- properties table ----------------------------------------
 drop policy if exists "Authenticated users can update properties" on public.properties;
 drop policy if exists "Authenticated users can delete properties" on public.properties;
+drop policy if exists "Owners can update their own properties" on public.properties;
+drop policy if exists "Owners can delete their own properties" on public.properties;
 
 -- Only the owner can update their property
 create policy "Owners can update their own properties"
@@ -19,9 +21,7 @@ on public.properties for delete
 to authenticated
 using (auth.uid()::text = "ownerId");
 
--- ============================================================
--- saved_properties table
--- ============================================================
+-- ---- saved_properties table ----------------------------------
 create table if not exists public.saved_properties (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users(id) on delete cascade not null,
@@ -32,27 +32,26 @@ create table if not exists public.saved_properties (
 
 alter table public.saved_properties enable row level security;
 
--- Users can only see their own saved properties
+drop policy if exists "Users can view their own saved properties" on public.saved_properties;
+drop policy if exists "Users can save properties" on public.saved_properties;
+drop policy if exists "Users can unsave properties" on public.saved_properties;
+
 create policy "Users can view their own saved properties"
 on public.saved_properties for select
 to authenticated
 using (auth.uid() = user_id);
 
--- Users can save properties
 create policy "Users can save properties"
 on public.saved_properties for insert
 to authenticated
 with check (auth.uid() = user_id);
 
--- Users can unsave properties
 create policy "Users can unsave properties"
 on public.saved_properties for delete
 to authenticated
 using (auth.uid() = user_id);
 
--- ============================================================
--- user_profiles table (for extended user data)
--- ============================================================
+-- ---- user_profiles table ------------------------------------
 create table if not exists public.user_profiles (
   id uuid references auth.users(id) on delete cascade primary key,
   full_name text,
@@ -64,6 +63,10 @@ create table if not exists public.user_profiles (
 );
 
 alter table public.user_profiles enable row level security;
+
+drop policy if exists "Users can view their own profile" on public.user_profiles;
+drop policy if exists "Users can update their own profile" on public.user_profiles;
+drop policy if exists "Users can insert their own profile" on public.user_profiles;
 
 create policy "Users can view their own profile"
 on public.user_profiles for select
@@ -80,7 +83,7 @@ on public.user_profiles for insert
 to authenticated
 with check (auth.uid() = id);
 
--- Trigger to auto-create user profile on signup
+-- Auto-create user profile on signup
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
@@ -99,3 +102,4 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
