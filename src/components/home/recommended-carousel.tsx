@@ -67,9 +67,6 @@ export function RecommendedCarousel() {
     });
   }
 
-  if (!mounted) {
-    return <div className="h-[400px] flex items-center justify-center">Loading recommendations...</div>;
-  }
 
   const recommendedProperties = recommendedList.slice(0, 10);
 
@@ -104,8 +101,12 @@ export function RecommendedCarousel() {
     emblaApi.on("reInit", onSelect);
   }, [emblaApi, onSelect]);
 
+  if (!mounted) {
+    return <div className="h-[400px] flex items-center justify-center">Loading recommendations...</div>;
+  }
+
   // If no properties are recommended, don't render the section
-  if (recommendedProperties.length === 0) return null;
+  if (recommendedList.length === 0) return null;
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
