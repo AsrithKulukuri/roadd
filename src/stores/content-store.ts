@@ -26,7 +26,7 @@ export const useContentStore = create<ContentState>((set) => ({
     city: loc.city,
     locality: loc.locality,
     image: loc.image,
-    properties_count: loc.propertiesCount,
+    properties_count: loc.totalListings,
   })),
   isLoading: false,
 
