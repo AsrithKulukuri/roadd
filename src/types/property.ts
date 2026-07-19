@@ -25,7 +25,8 @@ export type PropertyStatus =
   | "featured"
   | "sold"
   | "rented"
-  | "archived";
+  | "archived"
+  | "hidden";
 
 export type ListingType = "sale" | "rent" | "pg";
 
@@ -73,6 +74,7 @@ export interface PropertyLocation {
   pincode: string;
   latitude: number;
   longitude: number;
+  landmark?: string;
 }
 
 export interface Property {
@@ -109,6 +111,9 @@ export interface Property {
   isReadyToMove: boolean;
   location: PropertyLocation;
   images: PropertyImage[];
+  coverImage?: string;
+  galleryImages?: string[];
+  videoUrl?: string;
   amenities: PropertyAmenity[];
   features: PropertyFeature[];
   reraId?: string;
@@ -120,6 +125,7 @@ export interface Property {
   ownerId: string;
   ownerName: string;
   ownerPhone: string;
+  ownerEmail?: string;
   ownerAvatar?: string;
   ownerType: "owner" | "agent" | "builder" | "developer";
   isOwnerVerified: boolean;

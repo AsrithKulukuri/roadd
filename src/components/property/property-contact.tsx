@@ -164,13 +164,20 @@ export function PropertyContact({ property }: PropertyContactProps) {
           </form>
 
           <div className="flex justify-between mt-4">
-            <Button variant="ghost" size="sm" className="text-text-secondary hover:text-text-primary">
-              <Phone className="w-4 h-4 mr-2" />
-              Call
+            <Button variant="ghost" size="sm" className="text-text-secondary hover:text-text-primary" asChild>
+              <a href={`tel:${property.ownerPhone}`}>
+                <Phone className="w-4 h-4 mr-2" />
+                Call
+              </a>
             </Button>
-            <Button variant="ghost" size="sm" className="text-text-secondary hover:text-text-primary">
-              <MessageSquare className="w-4 h-4 mr-2" />
-              WhatsApp
+            <Button variant="ghost" size="sm" className="text-text-secondary hover:text-text-primary" asChild>
+              <a 
+                href={`https://wa.me/${property.ownerPhone?.replace(/[\\s+]/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in "${property.title}". Is it still available?`)}`}
+                target="_blank" rel="noopener noreferrer"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                WhatsApp
+              </a>
             </Button>
           </div>
         </>

@@ -4,17 +4,27 @@ import { useState } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Grid2X2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Grid2X2, Play } from "lucide-react";
 import type { PropertyImage } from "@/types/property";
 
 interface PropertyGalleryProps {
   images: PropertyImage[];
   title: string;
+  videoUrl?: string;
 }
 
-export function PropertyGallery({ images, title }: PropertyGalleryProps) {
+export function PropertyGallery({ images, title, videoUrl }: PropertyGalleryProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+
+  const getYoutubeEmbedUrl = (url?: string) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\\/|v\\/|u\\/\\w\\/|embed\\/|watch\\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
+  };
+  const embedUrl = getYoutubeEmbedUrl(videoUrl);
 
   if (!images || images.length === 0) return null;
 
@@ -67,6 +77,18 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
           <Grid2X2 className="w-4 h-4 mr-2" />
           View All {images.length} Photos
         </Button>
+
+        {/* Watch Video Button */}
+        {embedUrl && (
+          <Button 
+            variant="amber" 
+            className="absolute bottom-4 left-4 z-10 shadow-amber-glow"
+            onClick={() => setIsVideoOpen(true)}
+          >
+            <Play className="w-4 h-4 mr-2 fill-current" />
+            Watch Property Tour
+          </Button>
+        )}
       </div>
 
       {/* Lightbox Dialog */}
@@ -107,6 +129,22 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
               <ChevronRight className="h-8 w-8" />
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Video Modal */}
+      <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>
+        <DialogContent className="max-w-4xl w-[95vw] p-0 bg-black overflow-hidden border-none aspect-video">
+          <DialogTitle className="sr-only">Property Video Tour</DialogTitle>
+          <iframe 
+            width="100%" 
+            height="100%" 
+            src={embedUrl || ""} 
+            title="Property Video Tour" 
+            frameBorder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowFullScreen 
+          />
         </DialogContent>
       </Dialog>
     </>

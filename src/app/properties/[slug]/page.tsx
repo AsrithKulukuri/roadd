@@ -80,7 +80,7 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
 
         {/* Gallery */}
         <div className="mb-10">
-          <PropertyGallery images={property.images} title={property.title} />
+          <PropertyGallery images={property.images} title={property.title} videoUrl={property.videoUrl} />
         </div>
 
         {/* Content Layout */}
