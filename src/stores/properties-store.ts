@@ -13,7 +13,9 @@ interface PropertiesState {
   toggleRecommended: (id: string) => boolean;
 }
 
-export const usePropertiesStore = create<PropertiesState>((set, get) => ({
+export const usePropertiesStore = create<PropertiesState>()(
+  persist(
+    (set, get) => ({
   properties: initialMockData.map((p, i) => ({ ...p, showOnMap: true, isRecommended: i < 4 })),
   addProperty: (property) => {
     set((state) => ({
@@ -79,4 +81,9 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
     });
     return true;
   },
-}));
+    }),
+    {
+      name: 'road-properties-storage',
+    }
+  )
+);
