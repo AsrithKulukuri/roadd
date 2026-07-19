@@ -57,7 +57,7 @@ export default function AddPropertyPage() {
     
     slug: "", metaTitle: "", metaDescription: "", ogImage: "",
     
-    featured: false, status: "draft"
+    featured: true, status: "draft"
   });
 
   // Derived video embed
@@ -151,7 +151,7 @@ export default function AddPropertyPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent, forceStatus?: string) => {
+  const handleSubmit = async (e: React.FormEvent, forceStatus?: 'published') => {
     e.preventDefault();
 
     if (!formData.title || !formData.price || !formData.ownerPhone) {
@@ -181,6 +181,7 @@ export default function AddPropertyPage() {
       listingType: formData.listingType as any,
       status: finalStatus as any,
       isFeatured: formData.featured,
+      isRecommended: true,
       isReadyToMove: true,
       isOwnerVerified: true,
       bedrooms: parseInt(formData.bedrooms) || 0,
@@ -230,13 +231,19 @@ export default function AddPropertyPage() {
       isVerified: true
     };
 
-    // Save to store
-    addProperty(newProperty);
-    toast.success(`Property ${finalStatus === 'published' ? 'Published' : 'Saved as Draft'} successfully!`);
-    
-    setTimeout(() => {
-      router.push("/admin");
-    }, 1500);
+    try {
+      setIsSubmitting(true);
+      await addProperty(newProperty);
+      toast.success(`Property ${finalStatus === 'published' ? 'Published' : 'Saved as Draft'} successfully!`);
+      
+      setTimeout(() => {
+        router.push("/admin");
+      }, 1500);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to save property. Please try again.");
+      setIsSubmitting(false);
+    }
   };
 
   return (

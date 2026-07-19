@@ -22,6 +22,11 @@ function PropertiesPage() {
   const initialLocation = searchParams.get("location");
   
   const properties = usePropertiesStore((state) => state.properties);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [filters, setFilters] = useState<FilterState>({
     query: initialLocation || "",
@@ -161,6 +166,10 @@ function PropertiesPage() {
       return true;
     });
   }, [filters]);
+
+  if (!mounted) {
+    return <div className="min-h-screen pt-24 pb-16 bg-bg-primary flex items-center justify-center">Loading properties...</div>;
+  }
 
   return (
     <div className="flex flex-col min-h-screen pt-24 pb-16 bg-bg-primary">

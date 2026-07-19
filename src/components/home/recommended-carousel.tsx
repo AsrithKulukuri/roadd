@@ -32,6 +32,11 @@ interface PropertyWithDistance extends Property {
 export function RecommendedCarousel() {
   const { properties } = usePropertiesStore();
   const { coordinates } = useGeolocation();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // 1. Calculate distances if location coordinates are active
   const processedProperties: PropertyWithDistance[] = properties.map((p) => {
@@ -60,6 +65,10 @@ export function RecommendedCarousel() {
       if (b.distance !== undefined) return 1;
       return 0;
     });
+  }
+
+  if (!mounted) {
+    return <div className="h-[400px] flex items-center justify-center">Loading recommendations...</div>;
   }
 
   const recommendedProperties = recommendedList.slice(0, 10);

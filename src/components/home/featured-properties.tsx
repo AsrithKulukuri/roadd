@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Sparkles, MapPin, Navigation } from "lucide-react";
 import { PropertyCard } from "@/components/property/property-card";
@@ -32,6 +32,11 @@ export function FeaturedProperties() {
   const [activeFilter, setActiveFilter] = useState("all");
   const properties = usePropertiesStore((state) => state.properties);
   const { coordinates, requestLocation, permissionStatus } = useGeolocation();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 1. Calculate distances if location coordinates are active
   const processedProperties: PropertyWithDistance[] = properties.map((p) => {
@@ -61,6 +66,12 @@ export function FeaturedProperties() {
       return 0;
     });
   }
+
+  if (!mounted) {
+    return <div className="h-[600px] flex items-center justify-center">Loading properties...</div>;
+  }
+
+  if (featured.length === 0) return null;
 
   const saleProperties = featured.filter((p) => p.listingType === "sale");
   const rentProperties = featured.filter((p) => p.listingType === "rent");
