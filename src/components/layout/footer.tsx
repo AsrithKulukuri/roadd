@@ -71,7 +71,7 @@ export function Footer() {
               </a>
               <div className="flex items-center gap-2.5 text-sm text-text-secondary">
                 <MapPin className="h-4 w-4 text-amber-primary/70 flex-shrink-0" />
-                Visakhapatnam, Andhra Pradesh, India
+                Vijayawada, Andhra Pradesh, India
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">

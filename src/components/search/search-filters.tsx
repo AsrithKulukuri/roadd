@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search, SlidersHorizontal, ChevronDown, Check, X } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronDown, Check, X, Building2, Bed, DollarSign, Home, Trees, Store, Map as MapIcon } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,7 +14,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { formatINR } from "@/lib/utils";
+import { formatINR, cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 
 export interface FilterState {
@@ -80,35 +81,47 @@ export function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
     filters.query !== "";
 
   return (
-    <div className="w-full bg-bg-card border border-border-default rounded-3xl p-4 shadow-sm mb-8 space-y-4">
+    <div className="w-full space-y-4 mb-2">
       {/* Search Bar Row */}
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex items-center gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-tertiary" />
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-text-tertiary" />
           <Input
             type="text"
             placeholder="Search by locality, city, or project name..."
-            className="pl-12 h-14 bg-bg-primary/50 border-border-default/50 rounded-2xl"
+            className="pl-13 h-14 bg-bg-card border-border-default/50 rounded-full shadow-sm text-base focus-visible:ring-1 focus-visible:ring-amber-primary"
             value={filters.query}
             onChange={(e) => setFilters({ ...filters, query: e.target.value })}
           />
         </div>
+        <Link 
+          href={`/properties/map${filters.query ? `?location=${encodeURIComponent(filters.query)}` : ''}`}
+          className="flex items-center justify-center gap-2 h-14 px-5 rounded-full bg-bg-card border border-border-default/50 hover:bg-bg-primary/50 shadow-sm text-text-primary font-medium transition-colors whitespace-nowrap flex-shrink-0"
+        >
+          <MapIcon className="h-5 w-5" />
+          <span className="hidden sm:inline">Map</span>
+        </Link>
+      </div>
+      
+      {/* Multi-Select Dropdowns */}
+      <div className="flex items-center gap-2.5 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar relative">
+        <style dangerouslySetInnerHTML={{__html: `
+          .no-scrollbar::-webkit-scrollbar { display: none; }
+          .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        `}} />
         
-        {/* Multi-Select Dropdowns */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Listing Type Filter */}
-          <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? "listing" : null)}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className={`h-14 rounded-2xl px-5 border-border-default/50 ${getFilterCount('listingType') > 0 ? 'bg-amber-primary/10 border-amber-primary/30 text-amber-primary' : ''}`}>
-                Buy / Rent
-                {getFilterCount('listingType') > 0 && (
-                  <Badge variant="amber" className="ml-2 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
-                    {getFilterCount('listingType')}
-                  </Badge>
-                )}
-                <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
+        {/* Listing Type Filter */}
+        <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? "listing" : null)}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className={`h-10 rounded-full px-4 border-border-default/60 hover:bg-bg-primary/50 transition-all bg-bg-card flex-shrink-0 ${getFilterCount('listingType') > 0 ? 'bg-amber-primary/10 border-amber-primary/30 text-amber-primary shadow-sm' : ''}`}>
+              Buy / Rent
+              {getFilterCount('listingType') > 0 && (
+                <Badge variant="amber" className="ml-1.5 h-4 w-4 p-0 flex items-center justify-center rounded-full text-[9px]">
+                  {getFilterCount('listingType')}
+                </Badge>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 p-3 rounded-2xl bg-bg-card border-border-default" align="start">
               <DropdownMenuLabel>Listing Type</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border-subtle" />
@@ -129,19 +142,18 @@ export function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Property Type Filter */}
-          <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? "property" : null)}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className={`h-14 rounded-2xl px-5 border-border-default/50 ${getFilterCount('propertyType') > 0 ? 'bg-amber-primary/10 border-amber-primary/30 text-amber-primary' : ''}`}>
-                Property Type
-                {getFilterCount('propertyType') > 0 && (
-                  <Badge variant="amber" className="ml-2 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
-                    {getFilterCount('propertyType')}
-                  </Badge>
-                )}
-                <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
+        {/* Property Type Filter */}
+        <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? "property" : null)}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className={`h-10 rounded-full px-4 border-border-default/60 hover:bg-bg-primary/50 transition-all bg-bg-card flex-shrink-0 ${getFilterCount('propertyType') > 0 ? 'bg-amber-primary/10 border-amber-primary/30 text-amber-primary shadow-sm' : ''}`}>
+              Property Type
+              {getFilterCount('propertyType') > 0 && (
+                <Badge variant="amber" className="ml-1.5 h-4 w-4 p-0 flex items-center justify-center rounded-full text-[9px]">
+                  {getFilterCount('propertyType')}
+                </Badge>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
             <DropdownMenuContent className="w-64 p-3 rounded-2xl bg-bg-card border-border-default max-h-[50vh] md:max-h-[300px] overflow-y-auto" align="start" side="bottom" sideOffset={8} avoidCollisions={false}>
               <DropdownMenuLabel className="text-xs text-text-tertiary uppercase tracking-wider">Residential</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border-subtle" />
@@ -178,19 +190,18 @@ export function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* BHK Filter */}
-          <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? "bhk" : null)}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className={`h-14 rounded-2xl px-5 border-border-default/50 ${getFilterCount('bhk') > 0 ? 'bg-amber-primary/10 border-amber-primary/30 text-amber-primary' : ''}`}>
-                BHK
-                {getFilterCount('bhk') > 0 && (
-                  <Badge variant="amber" className="ml-2 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
-                    {getFilterCount('bhk')}
-                  </Badge>
-                )}
-                <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
+        {/* BHK Filter */}
+        <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? "bhk" : null)}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className={`h-10 rounded-full px-4 border-border-default/60 hover:bg-bg-primary/50 transition-all bg-bg-card flex-shrink-0 ${getFilterCount('bhk') > 0 ? 'bg-amber-primary/10 border-amber-primary/30 text-amber-primary shadow-sm' : ''}`}>
+              BHK
+              {getFilterCount('bhk') > 0 && (
+                <Badge variant="amber" className="ml-1.5 h-4 w-4 p-0 flex items-center justify-center rounded-full text-[9px]">
+                  {getFilterCount('bhk')}
+                </Badge>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 p-3 rounded-2xl bg-bg-card border-border-default" align="start">
               <DropdownMenuLabel>Bedrooms</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border-subtle" />
@@ -211,128 +222,42 @@ export function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* More Filters (Advanced) */}
-          <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? "more" : null)}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-14 rounded-2xl px-5 border-border-default/50 hover:bg-bg-primary/50">
-                <SlidersHorizontal className="h-4 w-4 mr-2 opacity-50" />
-                More Filters
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-72 p-4 rounded-2xl bg-bg-card border-border-default max-h-[50vh] md:max-h-[400px] overflow-y-auto" align="end" side="bottom" sideOffset={8} avoidCollisions={false}>
-              
-              <DropdownMenuLabel className="px-0">Availability</DropdownMenuLabel>
-              <div className="space-y-2 mt-1 mb-4">
-                {["Under construction", "Ready to move"].map((av) => (
-                  <label key={av} className="flex items-center space-x-3 cursor-pointer group">
-                    <Checkbox 
-                      checked={filters.availability.includes(av)}
-                      onCheckedChange={() => toggleFilter("availability", av)}
-                      className="border-text-tertiary data-[state=checked]:bg-amber-primary"
-                    />
-                    <span className="text-sm text-text-secondary group-hover:text-text-primary">{av}</span>
-                  </label>
-                ))}
-              </div>
-
-              <DropdownMenuLabel className="px-0">Age of property</DropdownMenuLabel>
-              <div className="space-y-2 mt-1 mb-4">
-                {["0-10 years old", "10-30 years old", "30+ years old"].map((age) => (
-                  <label key={age} className="flex items-center space-x-3 cursor-pointer group">
-                    <Checkbox 
-                      checked={filters.ageRange.includes(age)}
-                      onCheckedChange={() => toggleFilter("ageRange", age)}
-                      className="border-text-tertiary data-[state=checked]:bg-amber-primary"
-                    />
-                    <span className="text-sm text-text-secondary group-hover:text-text-primary">{age}</span>
-                  </label>
-                ))}
-              </div>
-
-              <DropdownMenuLabel className="px-0">Sale type</DropdownMenuLabel>
-              <div className="space-y-2 mt-1 mb-4">
-                {["New property", "Resale"].map((st) => (
-                  <label key={st} className="flex items-center space-x-3 cursor-pointer group">
-                    <Checkbox 
-                      checked={filters.saleType.includes(st)}
-                      onCheckedChange={() => toggleFilter("saleType", st)}
-                      className="border-text-tertiary data-[state=checked]:bg-amber-primary"
-                    />
-                    <span className="text-sm text-text-secondary group-hover:text-text-primary">{st}</span>
-                  </label>
-                ))}
-              </div>
-
-              <DropdownMenuLabel className="px-0">Posted by</DropdownMenuLabel>
-              <div className="space-y-2 mt-1 mb-4">
-                {["Owner", "Agent", "Developer"].map((pb) => (
-                  <label key={pb} className="flex items-center space-x-3 cursor-pointer group">
-                    <Checkbox 
-                      checked={filters.postedBy.includes(pb)}
-                      onCheckedChange={() => toggleFilter("postedBy", pb)}
-                      className="border-text-tertiary data-[state=checked]:bg-amber-primary"
-                    />
-                    <span className="text-sm text-text-secondary group-hover:text-text-primary">{pb}</span>
-                  </label>
-                ))}
-              </div>
-
-              <DropdownMenuLabel className="px-0">Furnished</DropdownMenuLabel>
-              <div className="space-y-2 mt-1">
-                {["Furnished", "Semi furnished", "Unfurnished"].map((fur) => (
-                  <label key={fur} className="flex items-center space-x-3 cursor-pointer group">
-                    <Checkbox 
-                      checked={filters.furnished.includes(fur)}
-                      onCheckedChange={() => toggleFilter("furnished", fur)}
-                      className="border-text-tertiary data-[state=checked]:bg-amber-primary"
-                    />
-                    <span className="text-sm text-text-secondary group-hover:text-text-primary">{fur}</span>
-                  </label>
-                ))}
+        {/* Budget Filter */}
+        <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? "budget" : null)}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className={`h-10 rounded-full px-4 border-border-default/60 hover:bg-bg-primary/50 transition-all bg-bg-card flex-shrink-0 ${(filters.budget[0] > 0 || filters.budget[1] < 100000000) ? 'bg-amber-primary/10 border-amber-primary/30 text-amber-primary shadow-sm' : ''}`}>
+              Price
+            </Button>
+          </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-[300px] p-4 rounded-2xl bg-bg-card border-border-default shadow-elevated" align="start">
+              <DropdownMenuLabel className="font-semibold text-text-primary mb-3">Price Range</DropdownMenuLabel>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: "Under ₹50L", min: 0, max: 5000000 },
+                  { label: "₹50L - ₹1Cr", min: 5000000, max: 10000000 },
+                  { label: "₹1Cr - ₹3Cr", min: 10000000, max: 30000000 },
+                  { label: "₹3Cr+", min: 30000000, max: 1000000000 },
+                ].map((range) => {
+                  const isActive = filters.budget[0] === range.min && filters.budget[1] === range.max;
+                  return (
+                    <button
+                      key={range.label}
+                      onClick={() => setFilters(prev => ({ ...prev, budget: isActive ? [0, 100000000] : [range.min, range.max] }))}
+                      className={cn(
+                        "flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-medium transition-all border",
+                        isActive
+                          ? "bg-amber-primary/10 border-amber-primary text-amber-primary"
+                          : "bg-bg-primary/50 border-border-default/50 text-text-secondary hover:border-amber-primary/40"
+                      )}
+                    >
+                      {range.label}
+                    </button>
+                  );
+                })}
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          {hasActiveFilters && (
-            <Button 
-              variant="ghost" 
-              onClick={clearFilters}
-              className="h-14 text-text-tertiary hover:text-text-primary"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Clear
-            </Button>
-          )}
         </div>
       </div>
-      
-      {/* Active Filters Display */}
-      {hasActiveFilters && (
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border-default/30">
-          <span className="text-xs font-medium text-text-tertiary mr-2">Active Filters:</span>
-          
-          {filters.listingType.map(f => (
-            <Badge key={`lt-${f}`} variant="outline" className="text-xs bg-bg-primary">
-              {f === 'sale' ? 'Buy' : f.toUpperCase()}
-              <X className="h-3 w-3 ml-1 cursor-pointer hover:text-amber-primary" onClick={() => toggleFilter('listingType', f)} />
-            </Badge>
-          ))}
-          
-          {filters.propertyType.map(f => (
-            <Badge key={`pt-${f}`} variant="outline" className="text-xs bg-bg-primary capitalize">
-              {f.replace('-', ' ')}
-              <X className="h-3 w-3 ml-1 cursor-pointer hover:text-amber-primary" onClick={() => toggleFilter('propertyType', f)} />
-            </Badge>
-          ))}
-          
-          {filters.bhk.map(f => (
-            <Badge key={`bhk-${f}`} variant="outline" className="text-xs bg-bg-primary">
-              {f} BHK
-              <X className="h-3 w-3 ml-1 cursor-pointer hover:text-amber-primary" onClick={() => toggleFilter('bhk', f)} />
-            </Badge>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }

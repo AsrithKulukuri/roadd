@@ -10,6 +10,7 @@ import { MapPin, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PropertyLocationWrapper } from "@/components/property/property-location-wrapper";
 import { ContactAgentBelowMap } from "@/components/property/contact-agent-below-map";
+import { BackButton } from "@/components/ui/back-button";
 
 export function generateStaticParams() {
   return mockProperties.map((property) => ({
@@ -57,9 +58,14 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
                 </Badge>
               )}
             </div>
-            <h1 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary leading-tight">
-              {property.title}
-            </h1>
+            <div className="flex items-center gap-3">
+              <div className="lg:hidden">
+                <BackButton className="-ml-2" />
+              </div>
+              <h1 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary leading-tight">
+                {property.title}
+              </h1>
+            </div>
             <div className="flex items-center gap-2 text-text-secondary mt-2">
               <MapPin className="w-4 h-4 text-amber-primary" />
               <span>

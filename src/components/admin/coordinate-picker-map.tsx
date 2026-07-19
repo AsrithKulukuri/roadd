@@ -47,7 +47,7 @@ function LocationMarker({
 }
 
 export default function CoordinatePickerMap({ 
-  initialPosition = [17.385044, 78.486671], // Hyderabad default
+  initialPosition = [16.5062, 80.6480], // Vijayawada default
   onPositionChange 
 }: CoordinatePickerMapProps) {
   const [position, setPosition] = useState<L.LatLng | null>(

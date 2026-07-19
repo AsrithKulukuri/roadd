@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useMemo, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { PropertyCard } from "@/components/property/property-card";
 import { SearchFilters, type FilterState } from "@/components/search/search-filters";
-import { Building2 } from "lucide-react";
+import { Building2, ArrowLeft, Heart, ChevronDown } from "lucide-react";
 
 export default function PropertiesPageWrapper() {
   return (
@@ -17,6 +17,7 @@ export default function PropertiesPageWrapper() {
 
 function PropertiesPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialType = searchParams.get("type");
   const initialLocation = searchParams.get("location");
   
@@ -39,14 +40,19 @@ function PropertiesPage() {
 
   const filteredProperties = useMemo(() => {
     return properties.filter((property) => {
-      // 1. Text Query Search (Location/Title/City)
+      // 1. Text Query Search (Location/Title/City/PropertyType)
       if (filters.query) {
-        const query = filters.query.toLowerCase();
-        const matchesQuery = 
-          property.title.toLowerCase().includes(query) ||
-          property.location.locality.toLowerCase().includes(query) ||
-          property.location.city.toLowerCase().includes(query);
-        if (!matchesQuery) return false;
+        const query = filters.query.toLowerCase().trim();
+        const tokens = query.split(/\s+/).filter(t => !['in', 'at', 'near', 'for', 'a', 'an', 'the'].includes(t));
+        
+        const searchableText = `${property.title} ${property.location.locality} ${property.location.city} ${property.propertyType.replace('-', ' ')}`.toLowerCase();
+        
+        if (tokens.length > 0) {
+          const matchesAllTokens = tokens.every(token => searchableText.includes(token));
+          if (!matchesAllTokens) return false;
+        } else if (!searchableText.includes(query)) {
+          return false;
+        }
       }
 
       // 2. Listing Type (Sale, Rent, PG)
@@ -115,21 +121,30 @@ function PropertiesPage() {
   return (
     <div className="flex flex-col min-h-screen pt-24 pb-16 bg-bg-primary">
       <div className="container-road">
-        <div className="mb-8">
-          <h1 className="font-heading text-3xl md:text-4xl font-bold text-text-primary mb-2">
-            Search Properties
-          </h1>
-          <p className="text-text-secondary">
-            Find exactly what you're looking for with our advanced search filters.
-          </p>
-        </div>
-
         <SearchFilters filters={filters} setFilters={setFilters} />
 
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="font-semibold text-lg text-text-primary">
-            {filteredProperties.length} {filteredProperties.length === 1 ? "Property" : "Properties"} Found
-          </h2>
+        <div className="mb-6 flex flex-col gap-3">
+          {/* Dynamic Title */}
+          <h1 className="font-heading text-2xl md:text-3xl font-bold text-text-primary capitalize">
+            {filters.query ? `${filters.query} homes for sale & real estate` : "Homes for sale & real estate"}
+          </h1>
+          
+          {/* Count, Sort, and Save Search Row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="font-semibold text-text-primary">
+                {filteredProperties.length.toLocaleString()} {filteredProperties.length === 1 ? "Home" : "Homes"}
+              </span>
+              <button className="flex items-center gap-1 text-sm font-medium text-text-secondary hover:text-text-primary">
+                Sort <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <button className="flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-text-primary">
+              <Heart className="w-5 h-5" />
+              <span className="hidden sm:inline">Save search</span>
+            </button>
+          </div>
         </div>
 
         {filteredProperties.length > 0 ? (

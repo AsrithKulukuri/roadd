@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { MapWrapper } from "@/components/map/map-wrapper";
 
 export const metadata = {
@@ -23,7 +24,9 @@ export default function MapSearchPage() {
 
       <section className="py-8 flex-1 flex flex-col">
         <div className="container-road flex-1 flex flex-col">
-          <MapWrapper />
+          <Suspense fallback={<div className="w-full h-[600px] bg-bg-card rounded-3xl border border-border-default/50 flex items-center justify-center shadow-sm">Loading map data...</div>}>
+            <MapWrapper />
+          </Suspense>
         </div>
       </section>
     </div>

@@ -144,7 +144,7 @@ export function FeaturedProperties() {
               </div>
               <div className="space-y-0.5">
                 <h4 className="font-heading font-bold text-text-primary text-sm sm:text-base">Sort Listings by Proximity</h4>
-                <p className="text-text-secondary text-xs sm:text-sm">Allow location access to show you the nearest premium listings in Visakhapatnam first.</p>
+                <p className="text-text-secondary text-xs sm:text-sm">Allow location access to show you the nearest premium listings in Vijayawada first.</p>
               </div>
             </div>
             <Button 

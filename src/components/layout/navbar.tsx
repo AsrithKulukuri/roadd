@@ -388,87 +388,79 @@ export function Navbar() {
       </AnimatePresence>
 
       {/* Mobile Bottom Navigation */}
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-[100] bg-bg-card/95 backdrop-blur-md border-t border-border-default lg:hidden pb-[env(safe-area-inset-bottom,0px)]"
-        aria-label="Mobile bottom navigation"
-      >
-        <div className="flex items-center justify-around py-1.5 pt-2">
-          <Link
-            href="/"
-            className={cn(
-              "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
-              pathname === "/"
-                ? "text-amber-primary"
-                : "text-text-tertiary hover:text-text-secondary"
-            )}
-          >
-            <Home className="h-5 w-5" />
-            <span className="text-[0.625rem] font-medium">Home</span>
-          </Link>
-          <Link
-            href="/properties"
-            className={cn(
-              "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
-              pathname.startsWith("/properties")
-                ? "text-amber-primary"
-                : "text-text-tertiary hover:text-text-secondary"
-            )}
-          >
-            <Search className="h-5 w-5" />
-            <span className="text-[0.625rem] font-medium">Search</span>
-          </Link>
-          <Link
-            href="/properties/map"
-            className={cn(
-              "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
-              pathname.startsWith("/properties/map")
-                ? "text-amber-primary"
-                : "text-text-tertiary hover:text-text-secondary"
-            )}
-          >
-            <MapPin className="h-5 w-5" />
-            <span className="text-[0.625rem] font-medium">Map</span>
-          </Link>
-          <Link
-            href="/dashboard/saved"
-            className={cn(
-              "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
-              pathname.startsWith("/dashboard/saved")
-                ? "text-amber-primary"
-                : "text-text-tertiary hover:text-text-secondary"
-            )}
-          >
-            <Heart className="h-5 w-5" />
-            <span className="text-[0.625rem] font-medium">Saved</span>
-          </Link>
-          <Link
-            href="/list-with-us"
-            className={cn(
-              "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
-              pathname.startsWith("/list-with-us")
-                ? "text-amber-primary"
-                : "text-text-tertiary hover:text-text-secondary"
-            )}
-          >
-            <Megaphone className="h-5 w-5" />
-            <span className="text-[0.625rem] font-medium">Connect</span>
-          </Link>
-        </div>
-      </nav>
+      {!(pathname.startsWith('/properties') || pathname.startsWith('/property/')) && (
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-[100] bg-bg-card/95 backdrop-blur-md border-t border-border-default lg:hidden pb-[env(safe-area-inset-bottom,0px)]"
+          aria-label="Mobile bottom navigation"
+        >
+          <div className="flex items-center justify-around py-1.5 pt-2">
+            <Link
+              href="/"
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
+                pathname === "/"
+                  ? "text-amber-primary"
+                  : "text-text-tertiary hover:text-text-secondary"
+              )}
+            >
+              <Home className="h-5 w-5" />
+              <span className="text-[0.625rem] font-medium">Home</span>
+            </Link>
+            <Link
+              href="/properties/map"
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
+                pathname.startsWith("/properties/map")
+                  ? "text-amber-primary"
+                  : "text-text-tertiary hover:text-text-secondary"
+              )}
+            >
+              <MapPin className="h-5 w-5" />
+              <span className="text-[0.625rem] font-medium">Map</span>
+            </Link>
+            <Link
+              href="/dashboard/saved"
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
+                pathname.startsWith("/dashboard/saved")
+                  ? "text-amber-primary"
+                  : "text-text-tertiary hover:text-text-secondary"
+              )}
+            >
+              <Heart className="h-5 w-5" />
+              <span className="text-[0.625rem] font-medium">Saved</span>
+            </Link>
+            <Link
+              href="/list-with-us"
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
+                pathname.startsWith("/list-with-us")
+                  ? "text-amber-primary"
+                  : "text-text-tertiary hover:text-text-secondary"
+              )}
+            >
+              <Megaphone className="h-5 w-5" />
+              <span className="text-[0.625rem] font-medium">Connect</span>
+            </Link>
+          </div>
+        </nav>
+      )}
 
       {/* Floating Post Property CTA (Mobile) */}
-      <div className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] right-4 z-[95] lg:hidden">
-        <Button
-          variant="amber"
-          size="icon-lg"
-          className="rounded-full shadow-amber-glow animate-pulse-glow"
-          asChild
-        >
-          <a href="https://wa.me/918977311418?text=I%20want%20to%20post%20a%20property" target="_blank" rel="noopener noreferrer" aria-label="Post a property">
-            <Plus className="h-5 w-5" />
-          </a>
-        </Button>
-      </div>
+      {!(pathname.startsWith('/properties') || pathname.startsWith('/property/')) && (
+        <div className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] right-4 z-[95] lg:hidden">
+          <Button
+            variant="amber"
+            size="icon-lg"
+            className="rounded-full shadow-amber-glow animate-pulse-glow"
+            asChild
+          >
+            <a href="https://wa.me/918977311418?text=I%20want%20to%20post%20a%20property" target="_blank" rel="noopener noreferrer" aria-label="Post a property">
+              <Plus className="h-5 w-5" />
+            </a>
+          </Button>
+        </div>
+      )}
     </>
   );
 }
