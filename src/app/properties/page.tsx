@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { PropertyCard } from "@/components/property/property-card";
@@ -37,6 +37,50 @@ function PropertiesPage() {
     postedBy: [],
     furnished: [],
   });
+
+  useEffect(() => {
+    const loc = searchParams.get("location");
+    const type = searchParams.get("type");
+    const bhk = searchParams.get("bhk");
+    const budget = searchParams.get("budget");
+
+    setFilters(prev => {
+      let hasChanges = false;
+      const next = { ...prev };
+      
+      if (loc !== null && loc !== prev.query) {
+        next.query = loc;
+        hasChanges = true;
+      }
+      
+      if (type !== null) {
+        const parsedType = type.toLowerCase() === "buy" ? "sale" : type.toLowerCase();
+        if (!prev.listingType.includes(parsedType)) {
+          next.listingType = [parsedType];
+          hasChanges = true;
+        }
+      }
+      
+      if (bhk !== null && !prev.bhk.includes(bhk)) {
+        next.bhk = [bhk];
+        hasChanges = true;
+      }
+      
+      if (budget !== null) {
+        const parts = budget.split(",");
+        if (parts.length === 2) {
+          const min = parseInt(parts[0]);
+          const max = parseInt(parts[1]);
+          if (prev.budget[0] !== min || prev.budget[1] !== max) {
+            next.budget = [min, max];
+            hasChanges = true;
+          }
+        }
+      }
+      
+      return hasChanges ? next : prev;
+    });
+  }, [searchParams]);
 
   const filteredProperties = useMemo(() => {
     return properties.filter((property) => {
