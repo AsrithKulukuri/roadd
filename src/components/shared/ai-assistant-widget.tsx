@@ -55,22 +55,22 @@ export function AiAssistantWidget() {
         content: data.messageToUser 
       }]);
 
-      // Apply filters and redirect
-      setTimeout(() => {
-        const queryParams = new URLSearchParams();
-        if (data.location) queryParams.append("location", data.location);
-        if (data.propertyType && data.propertyType !== "any") queryParams.append("type", data.propertyType);
-        if (data.bhk && data.bhk !== "any") queryParams.append("bhk", data.bhk);
-        if (data.budget && data.budget.length === 2) {
-          // If a strict budget was parsed, pass it. You can format it based on your actual budget filter implementation.
-          // For now, passing max budget as a simple query param or comma separated values.
-          queryParams.append("budget", data.budget.join(","));
-        }
-        
-        toast.success("Filters applied by AI!");
-        setIsOpen(false);
-        router.push(`/properties?${queryParams.toString()}`);
-      }, 1500);
+      // Apply filters and redirect ONLY if it's an actual property search
+      if (data.isSearch) {
+        setTimeout(() => {
+          const queryParams = new URLSearchParams();
+          if (data.location) queryParams.append("location", data.location);
+          if (data.propertyType && data.propertyType !== "any") queryParams.append("type", data.propertyType);
+          if (data.bhk && data.bhk !== "any") queryParams.append("bhk", data.bhk);
+          if (data.budget && data.budget.length === 2) {
+            queryParams.append("budget", data.budget.join(","));
+          }
+          
+          toast.success("Filters applied by AI!");
+          setIsOpen(false);
+          router.push(`/properties?${queryParams.toString()}`);
+        }, 1500);
+      }
 
     } catch (error: any) {
       console.error(error);

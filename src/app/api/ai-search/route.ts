@@ -24,12 +24,16 @@ const responseSchema: Schema = {
       type: Type.STRING,
       description: "The exact BHK configuration. Allowed values: 'any', '1', '2', '3', '4', '5+'. Default to 'any'.",
     },
+    isSearch: {
+      type: Type.BOOLEAN,
+      description: "Set to true if the user's query is actually looking for properties. Set to false if it is just a greeting, a general question, or conversational (e.g. 'hi', 'sup', 'how are you').",
+    },
     messageToUser: {
       type: Type.STRING,
       description: "A friendly, conversational response to the user acknowledging their request (e.g. 'Sure! Looking for 3 BHK villas under ₹2 Cr in Jubilee Hills...'). Max 2 sentences.",
     }
   },
-  required: ["location", "propertyType", "budget", "bhk", "messageToUser"],
+  required: ["location", "propertyType", "budget", "bhk", "isSearch", "messageToUser"],
 };
 
 export async function POST(req: Request) {
