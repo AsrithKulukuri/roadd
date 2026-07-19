@@ -2019,12 +2019,12 @@ export const mockTestimonials = [
 // ============================================================================
 
 export const mockTrendingLocations = [
-  { city: "Visakhapatnam", locality: "Rushikonda", image: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=600&q=80", trendPercent: 24, avgPrice: 8500, totalListings: 145 },
-  { city: "Hyderabad", locality: "Gachibowli", image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=80", trendPercent: 18, avgPrice: 9200, totalListings: 523 },
-  { city: "Bengaluru", locality: "Whitefield", image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80", trendPercent: 15, avgPrice: 7800, totalListings: 412 },
-  { city: "Chennai", locality: "OMR", image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&q=80", trendPercent: 12, avgPrice: 6500, totalListings: 338 },
-  { city: "Mumbai", locality: "Powai", image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600&q=80", trendPercent: 9, avgPrice: 18500, totalListings: 287 },
-  { city: "Delhi NCR", locality: "Noida Sec 150", image: "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=600&q=80", trendPercent: 21, avgPrice: 4700, totalListings: 678 },
+  { city: "Vijayawada", locality: "Benz Circle", image: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=600&q=80", trendPercent: 24, avgPrice: 8500, totalListings: 145 },
+  { city: "Vijayawada", locality: "Patamata", image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=80", trendPercent: 18, avgPrice: 7200, totalListings: 123 },
+  { city: "Guntur", locality: "Brodipet", image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80", trendPercent: 15, avgPrice: 5800, totalListings: 112 },
+  { city: "Amaravati", locality: "Capital Region", image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&q=80", trendPercent: 32, avgPrice: 4500, totalListings: 338 },
+  { city: "Mangalagiri", locality: "Mangalagiri IT Park", image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600&q=80", trendPercent: 29, avgPrice: 6500, totalListings: 187 },
+  { city: "Vijayawada", locality: "Autonagar", image: "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=600&q=80", trendPercent: 11, avgPrice: 4700, totalListings: 88 },
 ];
 
 // ============================================================================

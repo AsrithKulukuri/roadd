@@ -12,8 +12,8 @@ const SUGGESTIONS = [
   "Shops in Benz Circle",
   "Houses in Autonagar",
   "Plots near Amaravati",
-  "Properties in Brodipet",
-  "Farm lands in Vijayawada",
+  "Properties in Patamata",
+  "Farm lands in Krishna District",
 ];
 
 const TYPING_SPEED = 60;

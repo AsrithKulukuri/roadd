@@ -93,6 +93,8 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+import { AiAssistantWidget } from "@/components/shared/ai-assistant-widget";
+
 export default function RootLayout({
   children,
 }: {
@@ -114,6 +116,7 @@ export default function RootLayout({
           <div className="relative flex min-h-screen flex-col">
             <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
           </div>
+          <AiAssistantWidget />
           <Toaster
             position="bottom-right"
             toastOptions={{

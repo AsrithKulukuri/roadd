@@ -14,14 +14,24 @@ import {
 import { MoreVertical, Share2, PenSquare, Trash2, ArrowRightLeft, FolderHeart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { useFavoritesStore } from "@/stores/favorites-store";
+import { useEffect } from "react";
+
 export default function SavedPropertiesPage() {
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [activeTab, setActiveTab] = useState("all"); 
+  const { savedPropertyIds, syncWithSupabase, isInitialized } = useFavoritesStore();
 
-  // In a real app, this would fetch the user's saved properties
-  const allSaved = mockProperties.slice(4, 10);
+  useEffect(() => {
+    if (!isInitialized) {
+      syncWithSupabase();
+    }
+  }, [isInitialized, syncWithSupabase]);
+
+  // Map saved IDs to property data
+  const allSaved = mockProperties.filter(p => savedPropertyIds.includes(p.id));
   
   // Filter based on mock tabs
   const savedProperties = activeTab === "all" 

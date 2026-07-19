@@ -4,12 +4,13 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Phone, Mail, MessageSquare, BadgeCheck, Lock } from "lucide-react";
+import { Phone, Mail, MessageSquare, BadgeCheck, Lock, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatPriceCompact, formatINR } from "@/lib/utils";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { TourBookingModal } from "@/components/property/tour-booking-modal";
 import type { Property } from "@/types/property";
 
 interface PropertyContactProps {
@@ -20,6 +21,7 @@ export function PropertyContact({ property }: PropertyContactProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isTourModalOpen, setIsTourModalOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -152,13 +154,13 @@ export function PropertyContact({ property }: PropertyContactProps) {
             />
             
             <Button 
-              type="submit" 
-              variant="amber" 
-              className="w-full shadow-amber-glow"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Sending..." : "Request a Tour"}
-            </Button>
+            className="w-full h-12 bg-amber-primary hover:bg-amber-primary/90 text-bg-primary font-semibold rounded-xl shadow-amber-glow"
+            onClick={() => setIsTourModalOpen(true)}
+            type="button"
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Schedule a Tour
+          </Button>
           </form>
 
           <div className="flex justify-between mt-4">
@@ -193,6 +195,13 @@ export function PropertyContact({ property }: PropertyContactProps) {
           </Button>
         </div>
       )}
+      
+      <TourBookingModal 
+        isOpen={isTourModalOpen} 
+        onClose={() => setIsTourModalOpen(false)} 
+        propertyName={property.title}
+        propertyLocation={`${property.location.locality}, ${property.location.city}`}
+      />
     </div>
   );
 }

@@ -142,7 +142,7 @@ export default function PropertyMap() {
   const initialQuery = searchParams.get("location") || "";
   
   const properties = usePropertiesStore((state) => state.properties);
-  const mapProperties = properties.filter((p) => p.showOnMap && p.status !== 'sold');
+  const mapProperties = useMemo(() => properties.filter((p) => p.showOnMap && p.status !== 'sold'), [properties]);
 
   const initialMatches = getSmartFilteredProperties(mapProperties, initialQuery);
 

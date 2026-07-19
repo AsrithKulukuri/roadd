@@ -3,6 +3,8 @@
 import { usePropertiesStore } from "@/stores/properties-store";
 import { Building2, Eye, Heart, Users } from "lucide-react";
 import { formatPriceCompact } from "@/lib/utils";
+import { AnalyticsCharts } from "@/components/admin/analytics-charts";
+import { AiWriter } from "@/components/admin/ai-writer";
 
 export default function AdminDashboardPage() {
   const properties = usePropertiesStore((state) => state.properties);
@@ -48,8 +50,14 @@ export default function AdminDashboardPage() {
         })}
       </div>
 
+      {/* Analytics Charts */}
+      <AnalyticsCharts />
+      
+      {/* AI Writer */}
+      <AiWriter />
+
       {/* Recent Activity & Portfolio Value */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-10">
         <div className="lg:col-span-2 bg-bg-card border border-border-default rounded-2xl p-6 shadow-sm">
           <h3 className="text-xl font-bold font-heading text-text-primary mb-6">Recent Properties</h3>
           <div className="space-y-4">

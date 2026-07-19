@@ -42,13 +42,13 @@ USING (true);
 
 -- Insert initial mock data if table is empty
 INSERT INTO public.trending_locations (city, locality, image, properties_count)
-SELECT 'Hyderabad', 'Jubilee Hills', 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 124
+SELECT 'Vijayawada', 'Benz Circle', 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=600&q=80', 145
 WHERE NOT EXISTS (SELECT 1 FROM public.trending_locations);
 
 INSERT INTO public.trending_locations (city, locality, image, properties_count)
-SELECT 'Mumbai', 'Bandra West', 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 86
+SELECT 'Vijayawada', 'Patamata', 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=80', 123
 WHERE NOT EXISTS (SELECT 1 FROM public.trending_locations);
 
 INSERT INTO public.trending_locations (city, locality, image, properties_count)
-SELECT 'Bangalore', 'Indiranagar', 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 92
+SELECT 'Guntur', 'Brodipet', 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80', 112
 WHERE NOT EXISTS (SELECT 1 FROM public.trending_locations);

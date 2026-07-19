@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { PropertyLocationWrapper } from "@/components/property/property-location-wrapper";
 import { ContactAgentBelowMap } from "@/components/property/contact-agent-below-map";
 import { BackButton } from "@/components/ui/back-button";
+import { MortgageCalculator } from "@/components/property/mortgage-calculator";
 
 export function generateStaticParams() {
   return mockProperties.map((property) => ({
@@ -101,6 +102,9 @@ export default async function PropertyDetailsPage({ params }: { params: Promise<
 
             {/* Amenities */}
             <PropertyAmenities amenities={property.amenities} />
+
+            {/* Mortgage Calculator */}
+            <MortgageCalculator propertyPrice={property.price} />
 
             {/* Location Map */}
             <div className="py-6 border-t border-border-default/50">
