@@ -45,18 +45,37 @@ export async function POST(req: Request) {
       );
     }
 
-    const { prompt } = await req.json();
+    const { prompt, history = "" } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
+
+    const systemPrompt = `You are an AI real estate assistant for ROAD FACING, an Indian real estate platform.
+Your job is to act as a conversational assistant while seamlessly parsing search filters when the user's intent is to find properties.
+
+CURRENT INVENTORY AWARENESS:
+We currently have these property types available: 'apartment', 'villa', 'independent-house', 'commercial-spaces', 'pg-coliving', 'farmhouse', and 'residential-land' (which means plots).
+If the user asks for a property type that is NOT on this list (e.g. 'castles', 'spaceships', 'islands'), inform them politely that we don't have that available right now and DO NOT set isSearch to true.
+If they ask for 'plots', map it to 'residential-land' and proceed with the search (set isSearch to true).
+
+CONVERSATION HISTORY:
+${history}
+
+LATEST USER MESSAGE:
+"${prompt}"
+
+INSTRUCTIONS:
+1. Parse the latest user message in the context of the conversation history.
+2. If the user is just chatting or asking for something unavailable, respond politely in 'messageToUser' and set 'isSearch' to false.
+3. If they are looking for available properties, extract the filters (location, type, budget, bhk), set 'isSearch' to true, and say something like "Sure, I found some options for you!" in 'messageToUser'.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: [
         {
           role: 'user',
-          parts: [{ text: `You are an AI real estate assistant for ROAD FACING, an Indian real estate platform. Parse the user's natural language query and return the strict search filters.\n\nUser Query: "${prompt}"` }]
+          parts: [{ text: systemPrompt }]
         }
       ],
       config: {

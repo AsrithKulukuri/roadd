@@ -36,10 +36,15 @@ export function AiAssistantWidget() {
     setIsLoading(true);
 
     try {
+      // Build a string representation of the conversation history for context
+      const historyContext = messages
+        .map(m => `${m.role.toUpperCase()}: ${m.content}`)
+        .join("\n");
+
       const response = await fetch("/api/ai-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: userMsg }),
+        body: JSON.stringify({ prompt: userMsg, history: historyContext }),
       });
 
       const data = await response.json();
