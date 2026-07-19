@@ -151,7 +151,7 @@ export default function AddPropertyPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent, forceStatus?: 'published') => {
+  const handleSubmit = async (e: React.FormEvent, forceStatus?: 'published' | 'draft') => {
     e.preventDefault();
 
     if (!formData.title || !formData.price || !formData.ownerPhone) {
