@@ -17,7 +17,6 @@ interface Message {
 
 export function AiAssistantWidget() {
   const router = useRouter();
-  const setFilters = usePropertiesStore(state => state.setFilters);
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { id: "1", role: "assistant", content: "Hi! I'm your AI Real Estate Assistant. What kind of property are you looking for today? (e.g., 'Find me a 3 BHK under 2 Cr in Jubilee Hills')" }
@@ -58,16 +57,19 @@ export function AiAssistantWidget() {
 
       // Apply filters and redirect
       setTimeout(() => {
-        setFilters({
-          query: data.location || "",
-          propertyType: data.propertyType || "any",
-          budget: data.budget || [0, 100000000],
-          bhk: data.bhk || "any"
-        });
+        const queryParams = new URLSearchParams();
+        if (data.location) queryParams.append("location", data.location);
+        if (data.propertyType && data.propertyType !== "any") queryParams.append("type", data.propertyType);
+        if (data.bhk && data.bhk !== "any") queryParams.append("bhk", data.bhk);
+        if (data.budget && data.budget.length === 2) {
+          // If a strict budget was parsed, pass it. You can format it based on your actual budget filter implementation.
+          // For now, passing max budget as a simple query param or comma separated values.
+          queryParams.append("budget", data.budget.join(","));
+        }
         
         toast.success("Filters applied by AI!");
         setIsOpen(false);
-        router.push("/properties");
+        router.push(`/properties?${queryParams.toString()}`);
       }, 1500);
 
     } catch (error: any) {
