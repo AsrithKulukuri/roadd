@@ -45,14 +45,11 @@ export default function DashboardLayout({
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
             const u = session.user;
-            const userPhone = u.phone || u.user_metadata?.phone || "";
-            const isComplete = userPhone.length > 0 && u.user_metadata?.isProfileComplete !== false;
-            
             setUser({
               email: u.email || "",
               role: u.user_metadata?.role || "buyer",
               name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
-              isProfileComplete: isComplete,
+              isProfileComplete: true,
             });
             return;
           }
@@ -71,18 +68,15 @@ export default function DashboardLayout({
     
     checkUser();
 
-    // Subscribe to session changes to update link lock status in real-time
     if (isSupabaseConfigured()) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.user) {
           const u = session.user;
-          const userPhone = u.phone || u.user_metadata?.phone || "";
-          const isComplete = userPhone.length > 0 && u.user_metadata?.isProfileComplete !== false;
           setUser({
             email: u.email || "",
             role: u.user_metadata?.role || "buyer",
             name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
-            isProfileComplete: isComplete,
+            isProfileComplete: true,
           });
         } else {
           setUser(null);
