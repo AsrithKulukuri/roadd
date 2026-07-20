@@ -52,17 +52,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Protect /dashboard routes — must be authenticated
-  if (pathname.startsWith("/dashboard")) {
-    if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      url.searchParams.set("redirectTo", pathname);
-      return NextResponse.redirect(url);
-    }
-  }
-
-  // Redirect logged-in users away from auth pages
+  // Redirect logged-in users away from login/register if server session exists
   if (
     user &&
     (pathname === "/login" || pathname === "/register")
@@ -78,13 +68,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico
-     * - public assets
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
