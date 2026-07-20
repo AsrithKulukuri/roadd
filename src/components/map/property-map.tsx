@@ -123,7 +123,7 @@ function ZoomListener({ onZoomLimit, properties }: { onZoomLimit: (isAtLimit: bo
   return null;
 }
 
-function getSmartFilteredProperties(mapProperties: any[], query: string, typeParam?: string | null) {
+function getSmartFilteredProperties(mapProperties: any[], query: string, typeParam?: string | null, bhkParam?: string | null) {
   let result = mapProperties;
 
   // 1. Filter by URL type parameter if provided (e.g. ?type=apartment or ?type=rent)
@@ -136,6 +136,14 @@ function getSmartFilteredProperties(mapProperties: any[], query: string, typePar
         p.propertyType.toLowerCase().includes(typeLower) || 
         p.listingType.toLowerCase() === typeLower
       );
+    }
+  }
+
+  // 2. Filter by BHK parameter if provided (e.g. ?bhk=3BHK)
+  if (bhkParam) {
+    const num = parseInt(bhkParam);
+    if (!isNaN(num)) {
+      result = result.filter(p => p.bedrooms === num);
     }
   }
 
@@ -191,6 +199,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
   const initialType = searchParams.get("type") || searchParams.get("category") || null;
+  const initialBhk = searchParams.get("bhk") || null;
   
   const properties = usePropertiesStore((state) => state.properties);
   const mapProperties = useMemo(() => properties.filter((p) => p.showOnMap && p.status !== 'sold'), [properties]);
@@ -199,8 +208,8 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
     if (filteredItems && Array.isArray(filteredItems)) {
       return filteredItems;
     }
-    return getSmartFilteredProperties(mapProperties, initialQuery, initialType);
-  }, [filteredItems, mapProperties, initialQuery, initialType]);
+    return getSmartFilteredProperties(mapProperties, initialQuery, initialType, initialBhk);
+  }, [filteredItems, mapProperties, initialQuery, initialType, initialBhk]);
 
   const [position, setPosition] = useState<L.LatLng | null>(
     activeFiltered.length > 0 && activeFiltered[0].location?.latitude && activeFiltered[0].location?.longitude
@@ -225,10 +234,11 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
     const query = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
     const typeParam = searchParams.get("type") || searchParams.get("category") || null;
+    const bhkParam = searchParams.get("bhk") || null;
     setSearchPlace(query);
-    const matches = getSmartFilteredProperties(mapProperties, query, typeParam);
+    const matches = getSmartFilteredProperties(mapProperties, query, typeParam, bhkParam);
     setFilteredProperties(matches);
-    if (matches.length > 0 && (query.trim() !== "" || typeParam !== null)) {
+    if (matches.length > 0) {
       if (matches[0].location?.latitude && matches[0].location?.longitude) {
         setPosition(new L.LatLng(matches[0].location.latitude, matches[0].location.longitude));
       }

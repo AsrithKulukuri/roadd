@@ -95,7 +95,15 @@ export function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
           />
         </div>
         <Link 
-          href={`/properties/map${filters.query ? `?location=${encodeURIComponent(filters.query)}` : ''}`}
+          href={(() => {
+            const params = new URLSearchParams();
+            if (filters.query) params.set("location", filters.query);
+            if (filters.propertyType.length > 0) params.set("type", filters.propertyType[0]);
+            else if (filters.listingType.length > 0) params.set("type", filters.listingType[0]);
+            if (filters.bhk.length > 0) params.set("bhk", filters.bhk[0]);
+            const str = params.toString();
+            return `/properties/map${str ? `?${str}` : ''}`;
+          })()}
           className="flex items-center justify-center gap-2 h-14 px-5 rounded-full bg-bg-card border border-border-default/50 hover:bg-bg-primary/50 shadow-sm text-text-primary font-medium transition-colors whitespace-nowrap flex-shrink-0"
         >
           <MapIcon className="h-5 w-5" />
