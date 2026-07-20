@@ -5,7 +5,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { PropertyCard } from "@/components/property/property-card";
 import { SearchFilters, type FilterState } from "@/components/search/search-filters";
-import { Building2, ArrowLeft, Heart, ChevronDown } from "lucide-react";
+import { MapWrapper } from "@/components/map/map-wrapper";
+import { Building2, ArrowLeft, Heart, ChevronDown, LayoutGrid, MapPin } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function PropertiesPageWrapper() {
   return (
@@ -18,8 +20,7 @@ export default function PropertiesPageWrapper() {
 function PropertiesPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const initialType = searchParams.get("type");
-  const initialLocation = searchParams.get("location");
+  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   
   const properties = usePropertiesStore((state) => state.properties);
   const [mounted, setMounted] = useState(false);
@@ -233,8 +234,8 @@ function PropertiesPage() {
             {filters.query ? `${filters.query} homes for sale & real estate` : "Homes for sale & real estate"}
           </h1>
           
-          {/* Count, Sort, and Save Search Row */}
-          <div className="flex items-center justify-between">
+          {/* Count, Sort, Grid/Map View Switcher, and Save Search Row */}
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="font-semibold text-text-primary">
                 {filteredProperties.length.toLocaleString()} {filteredProperties.length === 1 ? "Home" : "Homes"}
@@ -244,14 +245,48 @@ function PropertiesPage() {
               </button>
             </div>
             
-            <button className="flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-text-primary">
-              <Heart className="w-5 h-5" />
-              <span className="hidden sm:inline">Save search</span>
-            </button>
+            <div className="flex items-center gap-3">
+              {/* View Switcher: Grid View vs Map View */}
+              <div className="flex items-center gap-1 bg-bg-card border border-border-default/80 rounded-full p-1 shadow-sm">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200",
+                    viewMode === "grid"
+                      ? "bg-amber-primary text-black shadow-amber-glow"
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  Grid
+                </button>
+                <button
+                  onClick={() => setViewMode("map")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200",
+                    viewMode === "map"
+                      ? "bg-amber-primary text-black shadow-amber-glow"
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                >
+                  <MapPin className="w-3.5 h-3.5" />
+                  Map ({filteredProperties.length})
+                </button>
+              </div>
+
+              <button className="flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-text-primary">
+                <Heart className="w-5 h-5" />
+                <span className="hidden sm:inline">Save search</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {filteredProperties.length > 0 ? (
+        {viewMode === "map" ? (
+          <div className="w-full h-[650px] rounded-3xl overflow-hidden border border-border-default/60 shadow-xl bg-bg-card">
+            <MapWrapper filteredItems={filteredProperties} />
+          </div>
+        ) : filteredProperties.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProperties.map((property, index) => (
               <PropertyCard

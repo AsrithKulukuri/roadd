@@ -183,7 +183,11 @@ function getSmartFilteredProperties(mapProperties: any[], query: string, typePar
   });
 }
 
-export default function PropertyMap() {
+interface PropertyMapProps {
+  filteredItems?: any[];
+}
+
+export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
   const initialType = searchParams.get("type") || searchParams.get("category") || null;
@@ -191,30 +195,45 @@ export default function PropertyMap() {
   const properties = usePropertiesStore((state) => state.properties);
   const mapProperties = useMemo(() => properties.filter((p) => p.showOnMap && p.status !== 'sold'), [properties]);
 
-  const initialMatches = getSmartFilteredProperties(mapProperties, initialQuery, initialType);
+  const activeFiltered = useMemo(() => {
+    if (filteredItems && Array.isArray(filteredItems)) {
+      return filteredItems;
+    }
+    return getSmartFilteredProperties(mapProperties, initialQuery, initialType);
+  }, [filteredItems, mapProperties, initialQuery, initialType]);
 
   const [position, setPosition] = useState<L.LatLng | null>(
-    initialMatches.length > 0 && (initialQuery.trim() !== "" || initialType !== null)
-      ? new L.LatLng(initialMatches[0].location.latitude, initialMatches[0].location.longitude)
+    activeFiltered.length > 0 && activeFiltered[0].location?.latitude && activeFiltered[0].location?.longitude
+      ? new L.LatLng(activeFiltered[0].location.latitude, activeFiltered[0].location.longitude)
       : new L.LatLng(16.5062, 80.6480) // Default to Vijayawada
   );
   
   const [searchPlace, setSearchPlace] = useState(initialQuery);
-  const [filteredProperties, setFilteredProperties] = useState(initialMatches);
+  const [filteredProperties, setFilteredProperties] = useState(activeFiltered);
   const [isZoomRestricted, setIsZoomRestricted] = useState(false);
   const [restrictedPropertyTitle, setRestrictedPropertyTitle] = useState<string | null>(null);
   const mapRef = useRef<L.Map | null>(null);
 
   useEffect(() => {
+    if (filteredItems && Array.isArray(filteredItems)) {
+      setFilteredProperties(filteredItems);
+      if (filteredItems.length > 0 && filteredItems[0].location?.latitude && filteredItems[0].location?.longitude) {
+        setPosition(new L.LatLng(filteredItems[0].location.latitude, filteredItems[0].location.longitude));
+      }
+      return;
+    }
+
     const query = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
     const typeParam = searchParams.get("type") || searchParams.get("category") || null;
     setSearchPlace(query);
     const matches = getSmartFilteredProperties(mapProperties, query, typeParam);
     setFilteredProperties(matches);
     if (matches.length > 0 && (query.trim() !== "" || typeParam !== null)) {
-      setPosition(new L.LatLng(matches[0].location.latitude, matches[0].location.longitude));
+      if (matches[0].location?.latitude && matches[0].location?.longitude) {
+        setPosition(new L.LatLng(matches[0].location.latitude, matches[0].location.longitude));
+      }
     }
-  }, [searchParams, mapProperties]);
+  }, [filteredItems, searchParams, mapProperties]);
 
   const handleZoomLimit = (isAtLimit: boolean, title?: string) => {
     setIsZoomRestricted(isAtLimit);
