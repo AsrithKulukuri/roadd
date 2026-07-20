@@ -44,6 +44,30 @@ function PropertiesPage() {
       }
     }
 
+    // Auto-detect propertyType and listingType from text query
+    if (loc) {
+      const lowerLoc = loc.toLowerCase();
+      if ((lowerLoc.includes("apartment") || lowerLoc.includes("flat")) && propertyType.length === 0) {
+        propertyType = ["apartment"];
+      } else if ((lowerLoc.includes("villa") || lowerLoc.includes("house")) && propertyType.length === 0) {
+        propertyType = ["villa"];
+      } else if ((lowerLoc.includes("plot") || lowerLoc.includes("land")) && propertyType.length === 0) {
+        propertyType = ["residential-land"];
+      } else if ((lowerLoc.includes("commercial") || lowerLoc.includes("shop") || lowerLoc.includes("office")) && propertyType.length === 0) {
+        propertyType = ["commercial-spaces"];
+      } else if (lowerLoc.includes("pg") && propertyType.length === 0) {
+        propertyType = ["pg"];
+      } else if (lowerLoc.includes("farmhouse") && propertyType.length === 0) {
+        propertyType = ["farmhouse"];
+      }
+
+      if ((lowerLoc.includes("rent") || lowerLoc.includes("rental")) && listingType.length === 0) {
+        listingType = ["rent"];
+      } else if ((lowerLoc.includes("sale") || lowerLoc.includes("buy")) && listingType.length === 0) {
+        listingType = ["sale"];
+      }
+    }
+
     return {
       query: loc,
       listingType,
@@ -73,6 +97,28 @@ function PropertiesPage() {
       if (loc !== prev.query) {
         next.query = loc;
         hasChanges = true;
+
+        // Auto-detect category from query
+        const lowerLoc = loc.toLowerCase();
+        if (lowerLoc.includes("apartment") || lowerLoc.includes("flat")) {
+          next.propertyType = ["apartment"];
+        } else if (lowerLoc.includes("villa") || lowerLoc.includes("house")) {
+          next.propertyType = ["villa"];
+        } else if (lowerLoc.includes("plot") || lowerLoc.includes("land")) {
+          next.propertyType = ["residential-land"];
+        } else if (lowerLoc.includes("commercial") || lowerLoc.includes("shop") || lowerLoc.includes("office")) {
+          next.propertyType = ["commercial-spaces"];
+        } else if (lowerLoc.includes("pg")) {
+          next.propertyType = ["pg"];
+        } else if (lowerLoc.includes("farmhouse")) {
+          next.propertyType = ["farmhouse"];
+        }
+
+        if (lowerLoc.includes("rent") || lowerLoc.includes("rental")) {
+          next.listingType = ["rent"];
+        } else if (lowerLoc.includes("sale") || lowerLoc.includes("buy")) {
+          next.listingType = ["sale"];
+        }
       }
 
       if (typeRaw) {
@@ -129,24 +175,31 @@ function PropertiesPage() {
         const locality = (property.location?.locality || "").toLowerCase();
         const address = (property.location?.address || "").toLowerCase();
         const title = (property.title || "").toLowerCase();
-        const desc = (property.description || "").toLowerCase();
 
-        const searchableText = `${title} ${locality} ${city} ${address} ${pType} ${lType} ${desc}`;
+        const searchableText = `${title} ${locality} ${city} ${address} ${pType} ${lType}`;
 
         if (tokens.length > 0) {
           const matchesAll = tokens.every((token) => {
             const stem = token.length > 3 && token.endsWith("s") ? token.slice(0, -1) : token;
+            
+            // STRICT Category Matching — Never match descriptions of unrelated categories!
             if (stem === "apartment" || token === "flats" || token === "flat") {
-              return pType.includes("apartment") || searchableText.includes("apartment");
+              return pType.includes("apartment");
             }
             if (stem === "villa" || token === "house" || token === "houses") {
-              return pType.includes("villa") || searchableText.includes("villa");
+              return pType.includes("villa");
             }
             if (stem === "plot" || stem === "land") {
-              return pType.includes("land") || pType.includes("plot") || searchableText.includes("plot") || searchableText.includes("land");
+              return pType.includes("land") || pType.includes("plot");
             }
             if (stem === "shop" || stem === "office" || token === "commercial") {
-              return pType.includes("commercial") || searchableText.includes("commercial");
+              return pType.includes("commercial");
+            }
+            if (token === "pg" || token === "hostel") {
+              return pType.includes("pg");
+            }
+            if (token === "farmhouse" || token === "farm") {
+              return pType.includes("farmhouse");
             }
             return searchableText.includes(token) || searchableText.includes(stem);
           });
