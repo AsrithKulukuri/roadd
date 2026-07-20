@@ -123,31 +123,78 @@ function ZoomListener({ onZoomLimit, properties }: { onZoomLimit: (isAtLimit: bo
   return null;
 }
 
-function getSmartFilteredProperties(mapProperties: any[], query: string) {
-  if (!query.trim()) return mapProperties;
-  const term = query.toLowerCase().trim();
-  const tokens = term.split(/\s+/).filter(t => !['in', 'at', 'near', 'for', 'a', 'an', 'the'].includes(t));
-  
-  return mapProperties.filter(p => {
-    const searchableText = `${p.title} ${p.location.locality} ${p.location.city} ${p.propertyType.replace('-', ' ')}`.toLowerCase();
-    if (tokens.length > 0) {
-      return tokens.every(token => searchableText.includes(token));
+function getSmartFilteredProperties(mapProperties: any[], query: string, typeParam?: string | null) {
+  let result = mapProperties;
+
+  // 1. Filter by URL type parameter if provided (e.g. ?type=apartment or ?type=rent)
+  if (typeParam && typeParam !== "all" && typeParam !== "buy") {
+    const typeLower = typeParam.toLowerCase();
+    if (["sale", "rent"].includes(typeLower)) {
+      result = result.filter(p => p.listingType === typeLower);
+    } else {
+      result = result.filter(p => 
+        p.propertyType.toLowerCase().includes(typeLower) || 
+        p.listingType.toLowerCase() === typeLower
+      );
     }
-    return searchableText.includes(term);
+  }
+
+  if (!query.trim()) return result;
+
+  const rawTerm = query.toLowerCase().trim();
+  const stopWords = ["in", "at", "near", "for", "a", "an", "the", "of"];
+  const tokens = rawTerm.split(/\s+/).filter(t => !stopWords.includes(t));
+
+  return result.filter(p => {
+    const pType = (p.propertyType || "").toLowerCase().replace('-', ' ');
+    const lType = (p.listingType || "").toLowerCase();
+    const city = (p.location?.city || "").toLowerCase();
+    const locality = (p.location?.locality || "").toLowerCase();
+    const address = (p.location?.address || "").toLowerCase();
+    const title = (p.title || "").toLowerCase();
+    const desc = (p.description || "").toLowerCase();
+
+    const searchableText = `${title} ${locality} ${city} ${address} ${pType} ${lType} ${desc}`;
+
+    if (tokens.length > 0) {
+      return tokens.every(token => {
+        // Strip trailing 's' for plural match (e.g., apartments -> apartment, villas -> villa, plots -> plot)
+        const stem = token.length > 3 && token.endsWith('s') ? token.slice(0, -1) : token;
+        
+        // Category alias matching
+        if (stem === "apartment" || token === "flats" || token === "flat") {
+          return pType.includes("apartment") || searchableText.includes("apartment");
+        }
+        if (stem === "villa" || token === "house" || token === "houses") {
+          return pType.includes("villa") || searchableText.includes("villa");
+        }
+        if (stem === "plot" || stem === "land") {
+          return pType.includes("land") || pType.includes("plot") || searchableText.includes("plot") || searchableText.includes("land");
+        }
+        if (stem === "shop" || stem === "office" || token === "commercial") {
+          return pType.includes("commercial") || searchableText.includes("commercial");
+        }
+
+        return searchableText.includes(token) || searchableText.includes(stem);
+      });
+    }
+
+    return searchableText.includes(rawTerm);
   });
 }
 
 export default function PropertyMap() {
   const searchParams = useSearchParams();
-  const initialQuery = searchParams.get("location") || "";
+  const initialQuery = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
+  const initialType = searchParams.get("type") || searchParams.get("category") || null;
   
   const properties = usePropertiesStore((state) => state.properties);
   const mapProperties = useMemo(() => properties.filter((p) => p.showOnMap && p.status !== 'sold'), [properties]);
 
-  const initialMatches = getSmartFilteredProperties(mapProperties, initialQuery);
+  const initialMatches = getSmartFilteredProperties(mapProperties, initialQuery, initialType);
 
   const [position, setPosition] = useState<L.LatLng | null>(
-    initialMatches.length > 0 && initialQuery.trim() !== ""
+    initialMatches.length > 0 && (initialQuery.trim() !== "" || initialType !== null)
       ? new L.LatLng(initialMatches[0].location.latitude, initialMatches[0].location.longitude)
       : new L.LatLng(16.5062, 80.6480) // Default to Vijayawada
   );
@@ -159,11 +206,12 @@ export default function PropertyMap() {
   const mapRef = useRef<L.Map | null>(null);
 
   useEffect(() => {
-    const query = searchParams.get("location") || "";
+    const query = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
+    const typeParam = searchParams.get("type") || searchParams.get("category") || null;
     setSearchPlace(query);
-    const matches = getSmartFilteredProperties(mapProperties, query);
+    const matches = getSmartFilteredProperties(mapProperties, query, typeParam);
     setFilteredProperties(matches);
-    if (matches.length > 0 && query.trim() !== "") {
+    if (matches.length > 0 && (query.trim() !== "" || typeParam !== null)) {
       setPosition(new L.LatLng(matches[0].location.latitude, matches[0].location.longitude));
     }
   }, [searchParams, mapProperties]);

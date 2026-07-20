@@ -28,49 +28,76 @@ function PropertiesPage() {
     setMounted(true);
   }, []);
 
-  const [filters, setFilters] = useState<FilterState>({
-    query: initialLocation || "",
-    listingType: initialType && ["buy", "sale", "rent", "pg", "commercial"].includes(initialType.toLowerCase()) 
-      ? [initialType.toLowerCase() === "buy" ? "sale" : initialType.toLowerCase()] 
-      : [],
-    propertyType: [],
-    bhk: [],
-    budget: [0, 100000000],
-    ageRange: [],
-    saleType: [],
-    availability: [],
-    postedBy: [],
-    furnished: [],
-  });
+  const parseInitialParams = () => {
+    const loc = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
+    const typeRaw = searchParams.get("type")?.toLowerCase() || "";
+    
+    let listingType: string[] = [];
+    let propertyType: string[] = [];
+
+    if (typeRaw) {
+      if (typeRaw === "buy" || typeRaw === "sale") listingType = ["sale"];
+      else if (typeRaw === "rent") listingType = ["rent"];
+      else if (["apartment", "villa", "residential-land", "commercial-spaces", "pg", "farmhouse"].includes(typeRaw)) {
+        propertyType = [typeRaw];
+      }
+    }
+
+    return {
+      query: loc,
+      listingType,
+      propertyType,
+      bhk: [],
+      budget: [0, 100000000] as [number, number],
+      ageRange: [],
+      saleType: [],
+      availability: [],
+      postedBy: [],
+      furnished: [],
+    };
+  };
+
+  const [filters, setFilters] = useState<FilterState>(parseInitialParams);
 
   useEffect(() => {
-    const loc = searchParams.get("location");
-    const type = searchParams.get("type");
+    const loc = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
+    const typeRaw = searchParams.get("type")?.toLowerCase() || "";
     const bhk = searchParams.get("bhk");
     const budget = searchParams.get("budget");
 
-    setFilters(prev => {
+    setFilters((prev) => {
       let hasChanges = false;
       const next = { ...prev };
-      
-      if (loc !== null && loc !== prev.query) {
+
+      if (loc !== prev.query) {
         next.query = loc;
         hasChanges = true;
       }
-      
-      if (type !== null) {
-        const parsedType = type.toLowerCase() === "buy" ? "sale" : type.toLowerCase();
-        if (!prev.listingType.includes(parsedType)) {
-          next.listingType = [parsedType];
-          hasChanges = true;
+
+      if (typeRaw) {
+        if (typeRaw === "buy" || typeRaw === "sale") {
+          if (!prev.listingType.includes("sale")) {
+            next.listingType = ["sale"];
+            hasChanges = true;
+          }
+        } else if (typeRaw === "rent") {
+          if (!prev.listingType.includes("rent")) {
+            next.listingType = ["rent"];
+            hasChanges = true;
+          }
+        } else {
+          if (!prev.propertyType.includes(typeRaw)) {
+            next.propertyType = [typeRaw];
+            hasChanges = true;
+          }
         }
       }
-      
+
       if (bhk !== null && !prev.bhk.includes(bhk)) {
         next.bhk = [bhk];
         hasChanges = true;
       }
-      
+
       if (budget !== null) {
         const parts = budget.split(",");
         if (parts.length === 2) {
@@ -82,7 +109,7 @@ function PropertiesPage() {
           }
         }
       }
-      
+
       return hasChanges ? next : prev;
     });
   }, [searchParams]);
@@ -92,13 +119,37 @@ function PropertiesPage() {
       // 1. Text Query Search (Location/Title/City/PropertyType)
       if (filters.query) {
         const query = filters.query.toLowerCase().trim();
-        const tokens = query.split(/\s+/).filter(t => !['in', 'at', 'near', 'for', 'a', 'an', 'the'].includes(t));
-        
-        const searchableText = `${property.title} ${property.location.locality} ${property.location.city} ${property.propertyType.replace('-', ' ')}`.toLowerCase();
-        
+        const stopWords = ["in", "at", "near", "for", "a", "an", "the", "of"];
+        const tokens = query.split(/\s+/).filter((t) => !stopWords.includes(t));
+
+        const pType = (property.propertyType || "").toLowerCase().replace("-", " ");
+        const lType = (property.listingType || "").toLowerCase();
+        const city = (property.location?.city || "").toLowerCase();
+        const locality = (property.location?.locality || "").toLowerCase();
+        const address = (property.location?.address || "").toLowerCase();
+        const title = (property.title || "").toLowerCase();
+        const desc = (property.description || "").toLowerCase();
+
+        const searchableText = `${title} ${locality} ${city} ${address} ${pType} ${lType} ${desc}`;
+
         if (tokens.length > 0) {
-          const matchesAllTokens = tokens.every(token => searchableText.includes(token));
-          if (!matchesAllTokens) return false;
+          const matchesAll = tokens.every((token) => {
+            const stem = token.length > 3 && token.endsWith("s") ? token.slice(0, -1) : token;
+            if (stem === "apartment" || token === "flats" || token === "flat") {
+              return pType.includes("apartment") || searchableText.includes("apartment");
+            }
+            if (stem === "villa" || token === "house" || token === "houses") {
+              return pType.includes("villa") || searchableText.includes("villa");
+            }
+            if (stem === "plot" || stem === "land") {
+              return pType.includes("land") || pType.includes("plot") || searchableText.includes("plot") || searchableText.includes("land");
+            }
+            if (stem === "shop" || stem === "office" || token === "commercial") {
+              return pType.includes("commercial") || searchableText.includes("commercial");
+            }
+            return searchableText.includes(token) || searchableText.includes(stem);
+          });
+          if (!matchesAll) return false;
         } else if (!searchableText.includes(query)) {
           return false;
         }
