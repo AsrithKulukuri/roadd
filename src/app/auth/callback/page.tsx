@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/shared/logo";
@@ -11,82 +11,65 @@ export default function AuthCallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const handleCallback = async () => {
-      // If Supabase is not configured, redirect to login
-      if (!isSupabaseConfigured()) {
-        toast.error("Supabase environment variables are missing.");
-        router.push("/login");
-        return;
-      }
-
+    const processCallback = async () => {
       try {
-        // Exchange session and check
+        // 1. Get session from URL / PKCE exchange
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
         if (error) throw error;
-        
-        if (session && session.user) {
-          const user = session.user;
-          
-          // Determine if profile is complete (e.g. they have role and phone number)
-          const fullName = user.user_metadata?.full_name || user.user_metadata?.name || "Google User";
-          const phone = user.phone || user.user_metadata?.phone || "";
-          const role = user.user_metadata?.role || "buyer";
-          
-          // Complete if they have both role and phone number
-          const isComplete = phone.length > 0 && role.length > 0;
-          
+
+        if (session?.user) {
+          const u = session.user;
           const localUser = {
-            name: fullName,
-            email: user.email || "",
-            phone: phone,
-            role: role,
-            isProfileComplete: isComplete,
+            name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
+            email: u.email || "",
+            phone: u.phone || u.user_metadata?.phone || "",
+            role: u.user_metadata?.role || "buyer",
+            isProfileComplete: true,
             isLoggedIn: true,
-            authMethod: "google"
+            authMethod: "google",
           };
-          
-          // Sync with local storage
+
           localStorage.setItem("road_user", JSON.stringify(localUser));
-          
-          toast.success("Successfully logged in via Google!");
-          router.push("/dashboard");
-        } else {
-          // If no session found immediately, wait a brief second for onAuthStateChange to capture it
-          const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (event, currentSession) => {
-              if (currentSession && currentSession.user) {
-                subscription.unsubscribe();
-                const u = currentSession.user;
-                const localUser = {
-                  name: u.user_metadata?.full_name || u.user_metadata?.name || "Google User",
-                  email: u.email || "",
-                  phone: u.phone || u.user_metadata?.phone || "",
-                  role: u.user_metadata?.role || "buyer",
-                  isProfileComplete: (u.phone || u.user_metadata?.phone) ? true : false,
-                  isLoggedIn: true,
-                  authMethod: "google"
-                };
-                localStorage.setItem("road_user", JSON.stringify(localUser));
-                toast.success("Successfully logged in via Google!");
-                router.push("/dashboard");
-              } else if (event === "INITIAL_SESSION" && !currentSession) {
-                // If it resolves initial check and still no session, redirect to login
-                subscription.unsubscribe();
-                toast.error("Failed to retrieve Google Auth session");
-                router.push("/login");
-              }
-            }
-          );
+          toast.success("Successfully logged in!");
+          router.replace("/dashboard");
+          return;
         }
+
+        // 2. Fallback listener for async state resolution
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, currentSession) => {
+            if (currentSession?.user) {
+              subscription.unsubscribe();
+              const u = currentSession.user;
+              const localUser = {
+                name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
+                email: u.email || "",
+                phone: u.phone || u.user_metadata?.phone || "",
+                role: u.user_metadata?.role || "buyer",
+                isProfileComplete: true,
+                isLoggedIn: true,
+                authMethod: "google",
+              };
+
+              localStorage.setItem("road_user", JSON.stringify(localUser));
+              toast.success("Successfully logged in!");
+              router.replace("/dashboard");
+            } else if (event === "INITIAL_SESSION" && !currentSession) {
+              subscription.unsubscribe();
+              toast.error("Session verification failed. Please try signing in again.");
+              router.replace("/login");
+            }
+          }
+        );
       } catch (err: any) {
-        console.error("Error in auth callback:", err);
-        toast.error(err.message || "An authentication error occurred.");
-        router.push("/login");
+        console.error("Auth callback error:", err);
+        toast.error(err.message || "Authentication failed.");
+        router.replace("/login");
       }
     };
 
-    handleCallback();
+    processCallback();
   }, [router]);
 
   return (
@@ -98,18 +81,17 @@ export default function AuthCallbackPage() {
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-sm glass border border-glass-border rounded-3xl p-8 shadow-elevated text-center space-y-6 relative z-10"
       >
-        <div className="flex justify-center">
-          <Logo size="md" showText={false} />
-        </div>
-        
-        <div className="space-y-2">
-          <h2 className="font-heading text-xl font-bold text-text-primary">Authenticating</h2>
-          <p className="text-text-secondary text-sm leading-relaxed">
-            Completing sign in... Retrieving your profile and setting up session.
+        <div className="flex flex-col items-center">
+          <Logo size="lg" className="mb-4 animate-bounce" />
+          <h2 className="font-heading text-xl font-bold text-text-primary">
+            Completing Sign In...
+          </h2>
+          <p className="text-text-secondary text-sm mt-1">
+            Please wait while we verify your account credentials.
           </p>
         </div>
 
-        <div className="flex justify-center py-2">
+        <div className="flex justify-center">
           <span className="w-8 h-8 rounded-full border-3 border-amber-primary border-t-transparent animate-spin" />
         </div>
       </motion.div>

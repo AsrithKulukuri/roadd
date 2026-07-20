@@ -57,7 +57,7 @@ export function PropertyCard({
 
   const images = property.images;
 
-  // Check login state
+  // Check login state and listen for auth changes
   useEffect(() => {
     const checkAuth = async () => {
       if (isSupabaseConfigured()) {
@@ -84,32 +84,30 @@ export function PropertyCard({
     };
 
     checkAuth();
+
+    if (isSupabaseConfigured()) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setIsLoggedIn(!!session?.user);
+      });
+      return () => subscription.unsubscribe();
+    }
   }, []);
 
   const nextImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isLoggedIn) return;
     setCurrentImage((prev) => (prev + 1) % images.length);
   };
 
   const prevImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isLoggedIn) return;
     setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
   };
 
   const toggleSave = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isLoggedIn) {
-      toast.error("Sign in required", {
-        description: "Please sign in to save properties to your favorites.",
-      });
-      router.push("/login");
-      return;
-    }
     toggleFavorite(property.id);
   };
 
