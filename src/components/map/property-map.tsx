@@ -8,15 +8,16 @@ import {
   Popup,
   Polyline,
   Polygon,
+  Circle,
   useMapEvents,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star } from "lucide-react";
+import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer } from "lucide-react";
 import L from "leaflet";
 import Link from "next/link";
 import { PropertyCard } from "@/components/property/property-card";
 import { usePropertiesStore } from "@/stores/properties-store";
-import { formatPriceCompact } from "@/lib/utils";
+import { formatPriceCompact, formatINR } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 
 // Safe setup for default marker icons in Leaflet with Next.js
@@ -38,6 +39,26 @@ const quickLocalityCoords = [
   { name: "Brodipet", lat: 16.3050, lng: 80.4350 },
 ];
 
+const landmarkOverlays = [
+  { id: "s1", type: "school", name: "VP Siddhartha Public School", lat: 16.5020, lng: 80.6450, tag: "Top Rated School" },
+  { id: "s2", type: "school", name: "KCP Siddhartha Adarsh Residential", lat: 16.4880, lng: 80.6920, tag: "Premier School" },
+  { id: "s3", type: "school", name: "KL Deemed University", lat: 16.4419, lng: 80.6222, tag: "A++ University" },
+  { id: "h1", type: "hospital", name: "Ramesh Hospitals (Benz Circle)", lat: 16.5085, lng: 80.6495, tag: "Multi-Specialty Hospital" },
+  { id: "h2", type: "hospital", name: "Ayush Hospitals", lat: 16.5140, lng: 80.6610, tag: "Emergency Care" },
+  { id: "h3", type: "hospital", name: "AIIMS Mangalagiri", lat: 16.4380, lng: 80.5550, tag: "Premier Institute" },
+  { id: "it1", type: "transit", name: "Medha IT Park", lat: 16.5350, lng: 80.7920, tag: "Tech Hub" },
+  { id: "it2", type: "transit", name: "Vijayawada Railway Junction", lat: 16.5180, lng: 80.6200, tag: "Transit Hub" },
+  { id: "it3", type: "transit", name: "Vijayawada International Airport", lat: 16.5300, lng: 80.7970, tag: "International Airport" },
+];
+
+const localityHeatmaps = [
+  { name: "Benz Circle, Vijayawada", lat: 16.5062, lng: 80.6480, pricePerSqFt: "₹7,500/sq.ft", status: "🔥 Prime Luxury Zone", radius: 1200, color: "#EF4444" },
+  { name: "Poranki, Vijayawada", lat: 16.4833, lng: 80.7000, pricePerSqFt: "₹4,200/sq.ft", status: "🚀 High Growth Zone", radius: 1500, color: "#F5A623" },
+  { name: "Kanuru, Vijayawada", lat: 16.4950, lng: 80.6800, pricePerSqFt: "₹4,800/sq.ft", status: "📈 Emerging Hub", radius: 1100, color: "#3B82F6" },
+  { name: "Amaravati Capital Road", lat: 16.5131, lng: 80.5165, pricePerSqFt: "₹5,100/sq.ft", status: "⚡ Capital Hotspot", radius: 1600, color: "#10B981" },
+  { name: "Gorantla, Guntur", lat: 16.3200, lng: 80.4500, pricePerSqFt: "₹4,100/sq.ft", status: "🏡 Residential Hub", radius: 1400, color: "#8B5CF6" },
+];
+
 function isPointInPolygon(point: { lat: number; lng: number }, polygon: L.LatLng[]) {
   if (!polygon || polygon.length < 3) return true;
   const x = point.lat;
@@ -52,7 +73,44 @@ function isPointInPolygon(point: { lat: number; lng: number }, polygon: L.LatLng
   return inside;
 }
 
-// Smart Price Pill Icon Generator supporting Search Filtered Highlight Animations
+function getLandmarkIcon(type: string) {
+  if (typeof window === "undefined" || !L || !L.divIcon) return undefined;
+  
+  let bg = "#3B82F6";
+  let iconHtml = "🏫";
+  if (type === "hospital") {
+    bg = "#EF4444";
+    iconHtml = "🏥";
+  } else if (type === "transit") {
+    bg = "#10B981";
+    iconHtml = "⚡";
+  }
+
+  return L.divIcon({
+    className: "landmark-overlay-marker",
+    html: `
+      <div style="
+        background: ${bg};
+        color: #FFFFFF;
+        padding: 3px 8px;
+        border-radius: 16px;
+        font-size: 11px;
+        font-weight: 800;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        border: 1.5px solid #FFFFFF;
+        white-space: nowrap;
+      ">
+        <span>${iconHtml}</span>
+      </div>
+    `,
+    iconSize: [40, 24],
+    iconAnchor: [20, 12],
+  });
+}
+
 function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean) {
   if (typeof window === "undefined" || !L || !L.divIcon) return undefined;
   
@@ -182,7 +240,6 @@ function checkPropertyMatchesQuery(p: any, query: string): boolean {
   if (!query.trim()) return false;
   const rawTerm = query.toLowerCase().trim();
 
-  // BHK direct check e.g. "3bhk", "3 bhk", "3", "3 bed"
   const bhkMatch = rawTerm.match(/(\d+)\s*(bhk|bed|bedroom)?/);
   if (bhkMatch && (rawTerm.includes("bhk") || rawTerm.includes("bed"))) {
     const bedrooms = parseInt(bhkMatch[1]);
@@ -269,19 +326,32 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   // Real-Time Search Query State inside Map
   const [mapSearchInput, setMapSearchInput] = useState(initialQuery);
 
+  // Price Heatmap Mode State
+  const [showHeatmap, setShowHeatmap] = useState(false);
+
+  // Commute Time Radius State (0 = disabled, 15 = 15 mins, 30 = 30 mins)
+  const [maxCommuteMins, setMaxCommuteMins] = useState<number>(0);
+
+  // Landmark Overlays State (School / Hospital / Transit)
+  const [activeLandmarkTypes, setActiveLandmarkTypes] = useState<string[]>([]);
+
+  // AP Stamp Duty Calculator Modal State
+  const [showCalculatorModal, setShowCalculatorModal] = useState(false);
+  const [calcPropertyPrice, setCalcPropertyPrice] = useState<number>(7500000);
+
   // Draw Polygon Area Search State
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawPolygonPoints, setDrawPolygonPoints] = useState<L.LatLng[]>([]);
 
   const mapRef = useRef<L.Map | null>(null);
 
-  // STRICT SEARCH FILTERING: When a search term is present, render ONLY matching properties!
   const displayedProperties = useMemo(() => {
     let source = mapProperties;
     if (filteredItems && Array.isArray(filteredItems) && filteredItems.length > 0) {
       source = filteredItems;
     }
 
+    // Polygon Area Draw Filter
     if (drawPolygonPoints.length >= 3) {
       source = source.filter((p) =>
         isPointInPolygon(
@@ -291,16 +361,32 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
       );
     }
 
+    // Commute Radius Filter (approx 15 mins drive = ~8 km radius from user pin)
+    if (maxCommuteMins > 0 && position) {
+      const maxMeters = maxCommuteMins * 600; // 15 mins ~ 9,000 meters
+      const userLatLng = L.latLng(position.lat, position.lng);
+      source = source.filter((p) => {
+        const propLatLng = L.latLng(p.location.latitude, p.location.longitude);
+        return userLatLng.distanceTo(propLatLng) <= maxMeters;
+      });
+    }
+
     if (!mapSearchInput.trim()) {
       return source;
     }
 
     return source.filter((p) => checkPropertyMatchesQuery(p, mapSearchInput));
-  }, [mapProperties, filteredItems, drawPolygonPoints, mapSearchInput]);
+  }, [mapProperties, filteredItems, drawPolygonPoints, maxCommuteMins, position, mapSearchInput]);
 
   const selectedProperty = useMemo(() => {
     return displayedProperties.find((p) => p.id === selectedPropertyId);
   }, [displayedProperties, selectedPropertyId]);
+
+  const toggleLandmarkFilter = (type: string) => {
+    setActiveLandmarkTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  };
 
   const handleSearchChange = (val: string) => {
     setMapSearchInput(val);
@@ -358,17 +444,20 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
     setIsDrawing(false);
   };
 
+  // AP Registration & Stamp Duty Calculations
+  const stampDutyAmt = calcPropertyPrice * 0.05;
+  const registrationAmt = calcPropertyPrice * 0.01;
+  const transferDutyAmt = calcPropertyPrice * 0.015;
+  const totalLegalFee = stampDutyAmt + registrationAmt + transferDutyAmt;
+  const totalOnRoadPrice = calcPropertyPrice + totalLegalFee;
+
   return (
     <div className="w-full h-full flex flex-col touch-none relative" style={{ touchAction: "none" }}>
-      {/* Dynamic Animated Radar Dash & Smart Marker Pop-Up Keyframe Animations */}
+      {/* Keyframe Animations */}
       <style jsx global>{`
         @keyframes radarLinePulse {
-          0% {
-            stroke-dashoffset: 40;
-          }
-          100% {
-            stroke-dashoffset: 0;
-          }
+          0% { stroke-dashoffset: 40; }
+          100% { stroke-dashoffset: 0; }
         }
         .animated-radar-line {
           animation: radarLinePulse 1.2s linear infinite;
@@ -376,18 +465,9 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
         }
 
         @keyframes matchPopUpPulse {
-          0% {
-            transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.9);
-          }
-          50% {
-            transform: scale(1.2);
-            box-shadow: 0 0 22px 8px rgba(245, 166, 35, 0.7);
-          }
-          100% {
-            transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(245, 166, 35, 0);
-          }
+          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.9); }
+          50% { transform: scale(1.2); box-shadow: 0 0 22px 8px rgba(245, 166, 35, 0.7); }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 166, 35, 0); }
         }
         .popup-marker-match {
           animation: matchPopUpPulse 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
@@ -449,14 +529,92 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               )}
             </div>
 
-            {/* Search Filter Count Badge */}
-            {mapSearchInput.trim() && (
-              <div className="bg-amber-500/15 border border-amber-500/40 p-2.5 rounded-xl text-xs flex items-center justify-between">
-                <span className="text-amber-400 font-extrabold flex items-center gap-1">
-                  <Star className="w-3.5 h-3.5 fill-amber-400" /> {displayedProperties.length} Matching Homes
+            {/* AP PRICE HEATMAP & COMMUTE TIME RADIUS SWITCHERS */}
+            <div className="bg-slate-800/90 p-3 rounded-2xl border border-slate-700/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold uppercase text-slate-300 tracking-wider flex items-center gap-1.5">
+                  <Flame className="w-3.5 h-3.5 text-amber-400" /> AP Locality Heatmap
                 </span>
+                <button
+                  onClick={() => setShowHeatmap(!showHeatmap)}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
+                    showHeatmap ? "bg-amber-500 text-slate-950 shadow-md" : "bg-slate-700 text-slate-300"
+                  }`}
+                >
+                  {showHeatmap ? "Active ON" : "Turn ON"}
+                </button>
               </div>
-            )}
+
+              {/* Commute Time Radius Picker */}
+              <div className="space-y-1 pt-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                  <Timer className="w-3 h-3 text-amber-400" /> Max Commute Radius:
+                </label>
+                <div className="grid grid-cols-3 gap-1 text-[10px] font-bold">
+                  {[0, 15, 30].map((mins) => (
+                    <button
+                      key={mins}
+                      onClick={() => setMaxCommuteMins(mins)}
+                      className={`py-1.5 rounded-lg border transition-all cursor-pointer ${
+                        maxCommuteMins === mins
+                          ? "bg-amber-500 text-slate-950 border-amber-500 font-extrabold"
+                          : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                      }`}
+                    >
+                      {mins === 0 ? "Any Dist" : `< ${mins} Mins`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* NEIGHBORHOOD AMENITY OVERLAY SWITCHERS */}
+            <div className="bg-slate-800/90 p-3 rounded-2xl border border-slate-700/80 space-y-2">
+              <span className="text-[11px] font-extrabold uppercase text-slate-300 tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Neighborhood Overlays
+              </span>
+              <div className="grid grid-cols-3 gap-1 text-[11px] font-bold">
+                <button
+                  onClick={() => toggleLandmarkFilter("school")}
+                  className={`py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                    activeLandmarkTypes.includes("school")
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                  }`}
+                >
+                  <School className="w-3 h-3" /> Schools
+                </button>
+                <button
+                  onClick={() => toggleLandmarkFilter("hospital")}
+                  className={`py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                    activeLandmarkTypes.includes("hospital")
+                      ? "bg-red-600 text-white shadow-md"
+                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                  }`}
+                >
+                  <Hospital className="w-3 h-3" /> Hospitals
+                </button>
+                <button
+                  onClick={() => toggleLandmarkFilter("transit")}
+                  className={`py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                    activeLandmarkTypes.includes("transit")
+                      ? "bg-emerald-600 text-white shadow-md"
+                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                  }`}
+                >
+                  <Zap className="w-3 h-3" /> Transit
+                </button>
+              </div>
+            </div>
+
+            {/* AP STAMP DUTY CALCULATOR BUTTON */}
+            <button
+              onClick={() => setShowCalculatorModal(true)}
+              className="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+            >
+              <Calculator className="w-4 h-4 text-amber-400" />
+              <span>AP Stamp Duty & Govt Fee Calculator</span>
+            </button>
 
             {/* Primary Action Button */}
             <button
@@ -615,7 +773,6 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
             
             {/* FLOATING SEARCH DOCK ROW */}
             <div className="w-full bg-slate-950/90 backdrop-blur-xl border border-slate-800/90 rounded-full p-1.5 flex items-center gap-1.5 shadow-2xl">
-              {/* Search Icon & Input */}
               <div className="flex-1 flex items-center gap-2 pl-3">
                 <Search className="w-4 h-4 text-amber-400 shrink-0" />
                 <input
@@ -636,7 +793,6 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 )}
               </div>
 
-              {/* Action Buttons Integrated Right Inside Dock */}
               <div className="flex items-center gap-1 shrink-0 pr-0.5">
                 <button
                   type="button"
@@ -661,11 +817,13 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
                 <button
                   type="button"
-                  onClick={() => setMapLayerType(mapLayerType === "streets" ? "hybrid" : "streets")}
-                  title="Map View Mode"
-                  className="w-8 h-8 rounded-full bg-slate-800/90 text-amber-400 border border-slate-700 flex items-center justify-center cursor-pointer active:scale-95"
+                  onClick={() => setShowHeatmap(!showHeatmap)}
+                  title="AP Price Heatmap"
+                  className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer active:scale-95 ${
+                    showHeatmap ? "bg-amber-500 text-slate-950 shadow-md" : "bg-slate-800/90 text-amber-400 border border-slate-700"
+                  }`}
                 >
-                  <Layers3 className="w-4 h-4" />
+                  <Flame className="w-4 h-4" />
                 </button>
 
                 <button
@@ -758,6 +916,48 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
             {/* Custom Drag Pin Marker */}
             <LocationMarker position={position} setPosition={setPosition} isDrawing={isDrawing} />
 
+            {/* AP LOCALITY PRICE HEATMAP OVERLAYS */}
+            {showHeatmap &&
+              localityHeatmaps.map((hm) => (
+                <Circle
+                  key={hm.name}
+                  center={[hm.lat, hm.lng]}
+                  radius={hm.radius}
+                  pathOptions={{
+                    color: hm.color,
+                    fillColor: hm.color,
+                    fillOpacity: 0.25,
+                    weight: 2,
+                  }}
+                >
+                  <Popup>
+                    <div className="p-1 text-xs">
+                      <strong className="text-slate-900 block font-bold text-sm">{hm.name}</strong>
+                      <div className="text-amber-600 font-extrabold text-xs my-0.5">{hm.pricePerSqFt}</div>
+                      <div className="text-slate-600 font-medium">{hm.status}</div>
+                    </div>
+                  </Popup>
+                </Circle>
+              ))}
+
+            {/* Landmark Overlay Markers (Schools, Hospitals, Transit Hubs) */}
+            {landmarkOverlays
+              .filter((lm) => activeLandmarkTypes.includes(lm.type))
+              .map((lm) => (
+                <Marker
+                  key={lm.id}
+                  position={[lm.lat, lm.lng]}
+                  icon={getLandmarkIcon(lm.type)}
+                >
+                  <Popup>
+                    <div className="p-1 text-xs">
+                      <strong className="text-amber-600 block text-sm">{lm.name}</strong>
+                      <span className="text-slate-600 font-medium">{lm.tag}</span>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+
             {/* Render Drawn Custom Polygon Boundary */}
             {drawPolygonPoints.length > 0 && (
               <Polygon
@@ -788,7 +988,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               />
             )}
 
-            {/* Realtor.com Style Price Pill Markers (Exclusively Matching Properties when searching) */}
+            {/* Realtor.com Style Price Pill Markers */}
             {displayedProperties.map((property) => {
               const isSelected = selectedPropertyId === property.id;
               const hasSearch = Boolean(mapSearchInput.trim());
@@ -809,7 +1009,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   }}
                 >
                   <Popup className="property-map-popup">
-                    <div className="p-1.5 max-w-[230px]">
+                    <div className="p-1.5 max-w-[240px]">
                       <div className="text-[10px] font-extrabold uppercase text-amber-600 tracking-wider mb-0.5">
                         Brokered by ROAD FACING
                       </div>
@@ -831,12 +1031,24 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                       <div className="text-[11px] text-slate-600 font-medium truncate mb-2">
                         {property.bedrooms ? `${property.bedrooms} BHK • ` : ""}{property.location.locality}, {property.location.city}
                       </div>
-                      <Link
-                        href={`/properties/${property.id}`}
-                        className="inline-flex items-center gap-1 text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-lg w-full justify-center shadow-xs transition-colors"
-                      >
-                        View Property <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
+
+                      {/* 1-Tap Action Row: View Property & WhatsApp Inquiry */}
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <Link
+                          href={`/properties/${property.id}`}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-600 py-1.5 px-2 rounded-lg justify-center shadow-xs transition-colors"
+                        >
+                          View Property <ArrowRight className="w-3 h-3" />
+                        </Link>
+                        <a
+                          href={`https://wa.me/919999999999?text=${encodeURIComponent(`Hi ROAD FACING, I am interested in ${property.title} listed at ${formatPriceCompact(property.price)}.`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-1.5 px-2 rounded-lg justify-center shadow-xs transition-colors"
+                        >
+                          <MessageSquare className="w-3 h-3" /> WhatsApp
+                        </a>
+                      </div>
                     </div>
                   </Popup>
                 </Marker>
@@ -845,6 +1057,65 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
           </MapContainer>
         </div>
       </div>
+
+      {/* AP STAMP DUTY & REGISTRATION FEE CALCULATOR MODAL */}
+      {showCalculatorModal && (
+        <div className="fixed inset-0 z-[1000] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Calculator className="w-5 h-5 text-amber-400" />
+                <h3 className="font-heading text-lg font-bold text-white">AP Registration & Legal Cost Calculator</h3>
+              </div>
+              <button
+                onClick={() => setShowCalculatorModal(false)}
+                className="p-1 text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">Enter Property Price (₹):</label>
+                <input
+                  type="number"
+                  step="100000"
+                  value={calcPropertyPrice}
+                  onChange={(e) => setCalcPropertyPrice(Number(e.target.value))}
+                  className="w-full p-3 bg-slate-800 border border-slate-700 rounded-xl font-black text-amber-400 text-base focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-slate-300">
+                <div className="flex justify-between">
+                  <span>AP Stamp Duty (5%):</span>
+                  <span className="font-bold text-white">{formatINR(stampDutyAmt)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>AP Registration Fee (1%):</span>
+                  <span className="font-bold text-white">{formatINR(registrationAmt)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>AP Transfer Duty (1.5%):</span>
+                  <span className="font-bold text-white">{formatINR(transferDutyAmt)}</span>
+                </div>
+                <div className="border-t border-slate-800 pt-2 flex justify-between font-extrabold text-amber-400 text-sm">
+                  <span>Total On-Road Legal Cost:</span>
+                  <span>{formatINR(totalOnRoadPrice)}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowCalculatorModal(false)}
+              className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl shadow-md cursor-pointer"
+            >
+              Close Calculator
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

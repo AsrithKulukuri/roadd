@@ -7,6 +7,7 @@ import { PropertyAmenities } from "@/components/property/property-amenities";
 import { PropertyContact } from "@/components/property/property-contact";
 import { PropertySimilar } from "@/components/property/property-similar";
 import { PropertyActions } from "@/components/property/property-actions";
+import { PropertyTimeline } from "@/components/property/property-timeline";
 import { MapPin, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PropertyLocationWrapper } from "@/components/property/property-location-wrapper";
@@ -16,7 +17,6 @@ import { MortgageCalculator } from "@/components/property/mortgage-calculator";
 import type { Property } from "@/types/property";
 import type { Metadata } from "next";
 
-// Server-side Supabase client (no cookies needed for public read)
 function getSupabaseClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,7 +25,6 @@ function getSupabaseClient() {
 }
 
 async function getProperty(slug: string): Promise<Property | null> {
-  // First try Supabase (live properties)
   try {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
@@ -36,10 +35,8 @@ async function getProperty(slug: string): Promise<Property | null> {
 
     if (!error && data) return data as Property;
   } catch {
-    // Supabase not configured or unreachable, fall through to mock
   }
 
-  // Fallback to mock data for pre-seeded properties
   return mockProperties.find((p) => p.slug === slug) || null;
 }
 
@@ -59,62 +56,19 @@ export async function generateMetadata({
 
   if (!property) return { title: "Property Not Found | ROAD FACING" };
 
-  const coverImage = property.images?.[0]?.url || property.coverImage;
-  const price = new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(property.price);
-
-  const locationStr = [
-    property.location?.locality,
-    property.location?.city,
-    property.location?.state,
-  ]
-    .filter(Boolean)
-    .join(", ");
-
-  const title = `${property.title} | ROAD FACING`;
-  const description = property.description
-    ? property.description.slice(0, 160)
-    : `${property.bedrooms}BHK ${property.propertyType} for ${property.listingType} at ${price} in ${locationStr}.`;
-
   return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      type: "article",
-      url: `https://road.in/properties/${slug}`,
-      images: coverImage
-        ? [
-            {
-              url: coverImage,
-              width: 1200,
-              height: 630,
-              alt: property.title,
-            },
-          ]
-        : [],
-      siteName: "ROAD FACING",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: coverImage ? [coverImage] : [],
-    },
+    title: `${property.title} | ROAD FACING`,
+    description: property.description,
   };
 }
 
-export default async function PropertyDetailsPage({
+export default async function PropertyDetailPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const resolvedParams = await params;
-  const property = await getProperty(resolvedParams.slug);
+  const { slug } = await params;
+  const property = await getProperty(slug);
 
   if (!property) {
     notFound();
@@ -123,7 +77,6 @@ export default async function PropertyDetailsPage({
   return (
     <div className="flex flex-col min-h-screen pt-24 pb-24 bg-bg-primary">
       <div className="container-road">
-        {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -161,7 +114,6 @@ export default async function PropertyDetailsPage({
           <PropertyActions propertyId={property.id} />
         </div>
 
-        {/* Gallery */}
         <div className="mb-10">
           <PropertyGallery
             images={property.images}
@@ -170,14 +122,10 @@ export default async function PropertyDetailsPage({
           />
         </div>
 
-        {/* Content Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Main Content (Left, 2 columns wide on LG) */}
           <div className="lg:col-span-2 space-y-10">
-            {/* Specs */}
             <PropertySpecs property={property} />
 
-            {/* Description */}
             <div className="space-y-4">
               <h3 className="font-heading text-2xl font-bold text-text-primary">
                 About this property
@@ -187,13 +135,17 @@ export default async function PropertyDetailsPage({
               </p>
             </div>
 
-            {/* Amenities */}
+            {/* Construction Milestone Tracker */}
+            <PropertyTimeline
+              possessionStatus={(property as any).possessionStatus || "Under Construction"}
+              possessionDate={property.possessionDate || "Dec 2026"}
+              propertyTitle={property.title}
+            />
+
             <PropertyAmenities amenities={property.amenities} />
 
-            {/* Mortgage Calculator */}
             <MortgageCalculator propertyPrice={property.price} />
 
-            {/* Location Map */}
             <div className="py-6 border-t border-border-default/50">
               <h3 className="font-heading text-2xl font-bold text-text-primary mb-4">
                 Location
@@ -206,11 +158,9 @@ export default async function PropertyDetailsPage({
               <ContactAgentBelowMap property={property} />
             </div>
 
-            {/* Similar Properties */}
             <PropertySimilar currentProperty={property} />
           </div>
 
-          {/* Sidebar (Right, 1 column wide on LG) */}
           <div className="lg:col-span-1">
             <PropertyContact property={property} />
           </div>

@@ -17,6 +17,8 @@ import {
   Clock,
   UserCheck,
   Sparkles,
+  Mic,
+  Languages,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -54,6 +56,9 @@ export function RealtorSearchHeader({
   const [isFocused, setIsFocused] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [openDropdown, setOpenDropdown] = useState<"price" | "rooms" | "type" | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [language, setLanguage] = useState<"en" | "te">("en");
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -83,6 +88,29 @@ export function RealtorSearchHeader({
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     onFilterChange({ ...filters, query: searchInput });
+  };
+
+  // Web Speech API Voice Search Handler
+  const handleVoiceSearch = () => {
+    if (typeof window !== "undefined" && ("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = language === "te" ? "te-IN" : "en-US";
+      recognition.interimResults = false;
+
+      recognition.onstart = () => setIsListening(true);
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setSearchInput(transcript);
+        onFilterChange({ ...filters, query: transcript });
+        setIsListening(false);
+      };
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
+      recognition.start();
+    } else {
+      alert("Voice search is not supported by your browser. Try typing your search.");
+    }
   };
 
   const currentSuggestion = CAROUSEL_SUGGESTIONS[suggestionIndex];
@@ -118,364 +146,259 @@ export function RealtorSearchHeader({
     { label: "Independent Villa / House", value: "villa" },
     { label: "Plots & Lands", value: "residential-land" },
     { label: "Commercial Spaces", value: "commercial-spaces" },
-    { label: "PG / Coliving", value: "pg" },
-    { label: "Farmhouse", value: "farmhouse" },
   ];
 
-  const toggleBhk = (value: string) => {
-    const nextBhk = filters.bhk.includes(value)
-      ? filters.bhk.filter((b) => b !== value)
-      : [...filters.bhk, value];
-    onFilterChange({ ...filters, bhk: nextBhk });
-  };
-
-  const toggleType = (value: string) => {
-    const nextTypes = filters.propertyType.includes(value)
-      ? filters.propertyType.filter((t) => t !== value)
-      : [...filters.propertyType, value];
-    onFilterChange({ ...filters, propertyType: nextTypes });
-  };
-
   return (
-    <div className="w-full bg-white border-b border-slate-200 sticky top-16 z-30 shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 space-y-3">
-        {/* Top Search Bar & Action Buttons Row */}
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          {/* Main Search Input Pill with Text Carousel Placeholder (Clean white container, no golden border outline) */}
+    <header className="sticky top-16 z-30 w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-850 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3" ref={dropdownRef}>
+          
+          {/* LEFT: Realtor-Style Animated Search Box with Voice Search & Language Switcher */}
           <form
             onSubmit={handleSearchSubmit}
-            className="relative flex-1 w-full flex items-center bg-slate-100/90 hover:bg-slate-100 border border-slate-200 rounded-full px-4 py-2 sm:py-2.5 shadow-inner transition-all focus-within:bg-white focus-within:border-slate-300 focus-within:outline-none overflow-hidden"
-          >
-            {/* Text Carousel Animated Placeholder */}
-            {!searchInput && !isFocused && (
-              <div
-                onClick={() => inputRef.current?.focus()}
-                className="absolute left-4 right-14 inset-y-0 flex items-center pointer-events-none overflow-hidden"
-              >
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={suggestionIndex}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                    className="text-sm sm:text-base text-slate-400 font-medium truncate select-none block"
-                  >
-                    {currentSuggestion}
-                  </motion.span>
-                </AnimatePresence>
-              </div>
+            className={cn(
+              "relative flex-1 w-full flex items-center rounded-full border bg-slate-50 dark:bg-slate-900 transition-all duration-200",
+              isFocused
+                ? "border-amber-500 ring-2 ring-amber-500/20 bg-white dark:bg-slate-900 shadow-md"
+                : "border-slate-300 dark:border-slate-800 hover:border-slate-400"
             )}
+          >
+            <div className="pl-4 text-slate-400 dark:text-slate-500 flex items-center justify-center pointer-events-none">
+              <Search className="w-4 h-4 text-amber-500" />
+            </div>
 
-            <input
-              ref={inputRef}
-              type="text"
-              value={searchInput}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={isFocused && !searchInput ? 'Type location, BHK, or property type...' : ""}
-              className="w-full bg-transparent text-sm sm:text-base text-slate-800 placeholder-slate-400 focus:outline-none pr-8 font-medium relative z-10 border-0 ring-0 outline-none"
-            />
+            {/* Input & Carousel Placeholder Overlay */}
+            <div className="relative flex-1 flex items-center h-11 px-3">
+              <input
+                ref={inputRef}
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                className="w-full h-full bg-transparent text-sm text-slate-900 dark:text-white font-medium focus:outline-none z-10"
+              />
 
-            {searchInput ? (
+              {/* Animated Placeholder Text */}
+              {!searchInput && !isFocused && (
+                <div className="absolute inset-0 flex items-center px-3 pointer-events-none overflow-hidden text-slate-400 dark:text-slate-500 text-xs sm:text-sm">
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={suggestionIndex}
+                      initial={{ y: 15, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: -15, opacity: 0 }}
+                      transition={{ duration: 0.35, ease: "easeInOut" }}
+                      className="truncate font-normal"
+                    >
+                      {language === "te" ? "విజయవాడ, గుంటూరు లో నివాసాలు శోధించండి..." : currentSuggestion}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
+
+            {/* Clear button if typed */}
+            {searchInput && (
               <button
                 type="button"
                 onClick={() => {
                   setSearchInput("");
                   onFilterChange({ ...filters, query: "" });
+                  if (inputRef.current) inputRef.current.focus();
                 }}
-                className="p-1 text-slate-400 hover:text-slate-600 transition-colors z-20"
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full transition-colors cursor-pointer mr-1"
               >
                 <X className="w-4 h-4" />
               </button>
-            ) : null}
-            {/* Brand Logo Amber Color Search Button */}
+            )}
+
+            {/* VOICE SEARCH MICROPHONE BUTTON */}
+            <button
+              type="button"
+              onClick={handleVoiceSearch}
+              title={isListening ? "Listening..." : "Voice Search"}
+              className={cn(
+                "p-2 rounded-full text-slate-400 hover:text-amber-500 transition-colors mr-1 cursor-pointer",
+                isListening && "text-amber-500 bg-amber-500/10 animate-pulse"
+              )}
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+
+            {/* TELUGU / ENGLISH VERNACULAR TOGGLE BUTTON */}
+            <button
+              type="button"
+              onClick={() => setLanguage(language === "en" ? "te" : "en")}
+              title="Switch Language (తెలుగు / English)"
+              className="mr-1.5 px-2.5 py-1 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-[11px] rounded-full hover:bg-amber-500 hover:text-slate-950 transition-all cursor-pointer flex items-center gap-1"
+            >
+              <Languages className="w-3 h-3 text-amber-500" />
+              <span>{language === "en" ? "తెలుగు" : "ENG"}</span>
+            </button>
+
+            {/* Submit Button */}
             <button
               type="submit"
-              className="ml-2 p-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-full transition-all shadow-md hover:scale-105 flex-shrink-0 z-20 cursor-pointer"
-              aria-label="Search"
+              className="m-1 p-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 rounded-full font-bold transition-all shadow-xs flex items-center justify-center cursor-pointer"
             >
               <Search className="w-4 h-4 stroke-[2.5]" />
             </button>
           </form>
 
-          {/* Desktop Right Action Controls */}
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-            {/* Save Search Button */}
-            <button
-              type="button"
-              onClick={() => {
-                alert("Search saved to your account notifications!");
-              }}
-              className="hidden md:flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-full text-xs font-semibold shadow-xs transition-all flex-shrink-0 cursor-pointer"
-            >
-              <Heart className="w-3.5 h-3.5" />
-              <span>Save search</span>
-            </button>
-
-            {/* View Mode Toggle Pill (List | Map) */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-full border border-slate-200 flex-shrink-0">
-              <button
-                onClick={() => onViewModeChange("grid")}
-                className={cn(
-                  "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
-                  viewMode === "grid"
-                    ? "bg-white text-slate-900 shadow-xs border border-slate-200"
-                    : "text-slate-600 hover:text-slate-900"
-                )}
-              >
-                <List className="w-3.5 h-3.5" />
-                <span>List</span>
-              </button>
-              <button
-                onClick={() => onViewModeChange("map")}
-                className={cn(
-                  "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
-                  viewMode === "map"
-                    ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                )}
-              >
-                <Map className="w-3.5 h-3.5" />
-                <span>Map</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Pills Bar (Horizontal Scrollable) */}
-        <div className="relative" ref={dropdownRef}>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs">
+          {/* RIGHT: Quick Filter Chips & View Mode Toggle */}
+          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto no-scrollbar py-0.5">
             {/* All Filters Button */}
             <button
               onClick={onOpenAllFilters}
               className={cn(
-                "flex items-center gap-1.5 px-3.5 py-2 rounded-full border font-semibold transition-all flex-shrink-0 cursor-pointer",
+                "py-2 px-3.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap",
                 activeFilterCount > 0
-                  ? "bg-slate-900 text-white border-slate-900 shadow-xs"
-                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+                  ? "bg-slate-900 text-white border-slate-900 dark:bg-amber-500 dark:text-slate-950 dark:border-amber-500 shadow-xs"
+                  : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
               )}
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Filters</span>
+              <span>{language === "te" ? "ఫిల్టర్లు" : "Filters"}</span>
               {activeFilterCount > 0 && (
-                <span className="bg-amber-500 text-slate-950 text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-extrabold">
+                <span className="w-4 h-4 bg-amber-500 text-slate-950 dark:bg-slate-950 dark:text-white rounded-full text-[10px] font-black flex items-center justify-center ml-0.5">
                   {activeFilterCount}
                 </span>
               )}
             </button>
 
-            {/* Price Pill Dropdown */}
-            <button
-              onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
-              className={cn(
-                "flex items-center gap-1 px-3.5 py-2 rounded-full border font-medium transition-all flex-shrink-0 cursor-pointer",
-                filters.budget[0] > 0 || filters.budget[1] < 100000000
-                  ? "bg-amber-50 border-amber-500 text-amber-900 font-semibold"
-                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-              )}
-            >
-              <IndianRupee className="w-3 h-3" />
-              <span>Price</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
+            {/* Price Filter Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
+                className={cn(
+                  "py-2 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1 border transition-all cursor-pointer whitespace-nowrap",
+                  filters.budget[0] > 0 || filters.budget[1] < 100000000
+                    ? "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-500/30 font-bold"
+                    : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
+                )}
+              >
+                <span>{language === "te" ? "ధర" : "Price"}</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
 
-            {/* BHK / Rooms Pill Dropdown */}
-            <button
-              onClick={() => setOpenDropdown(openDropdown === "rooms" ? null : "rooms")}
-              className={cn(
-                "flex items-center gap-1 px-3.5 py-2 rounded-full border font-medium transition-all flex-shrink-0 cursor-pointer",
-                filters.bhk.length > 0
-                  ? "bg-amber-50 border-amber-500 text-amber-900 font-semibold"
-                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+              {openDropdown === "price" && (
+                <div className="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 z-50 animate-in fade-in zoom-in-95">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 py-1.5">
+                    Select Budget Range
+                  </div>
+                  <div className="space-y-0.5">
+                    {pricePresets.map((preset) => {
+                      const isSelected = filters.budget[0] === preset.min && filters.budget[1] === preset.max;
+                      return (
+                        <button
+                          key={preset.label}
+                          onClick={() => {
+                            onFilterChange({ ...filters, budget: [preset.min, preset.max] });
+                            setOpenDropdown(null);
+                          }}
+                          className={cn(
+                            "w-full text-left px-3 py-2 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
+                            isSelected
+                              ? "bg-amber-500 text-slate-950 font-bold"
+                              : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          )}
+                        >
+                          <span>{preset.label}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
-            >
-              <Home className="w-3.5 h-3.5" />
-              <span>Rooms (BHK)</span>
-              {filters.bhk.length > 0 && (
-                <span className="text-[10px] font-bold text-amber-600">({filters.bhk.join(",")})</span>
-              )}
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
+            </div>
 
-            {/* Property Type Pill Dropdown */}
-            <button
-              onClick={() => setOpenDropdown(openDropdown === "type" ? null : "type")}
-              className={cn(
-                "flex items-center gap-1 px-3.5 py-2 rounded-full border font-medium transition-all flex-shrink-0 cursor-pointer",
-                filters.propertyType.length > 0
-                  ? "bg-amber-50 border-amber-500 text-amber-900 font-semibold"
-                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-              )}
-            >
-              <Building className="w-3.5 h-3.5" />
-              <span>Home type</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
+            {/* BHK / Rooms Filter Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setOpenDropdown(openDropdown === "rooms" ? null : "rooms")}
+                className={cn(
+                  "py-2 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1 border transition-all cursor-pointer whitespace-nowrap",
+                  filters.bhk.length > 0
+                    ? "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-500/30 font-bold"
+                    : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
+                )}
+              >
+                <span>{filters.bhk.length > 0 ? `${filters.bhk.join(", ")} BHK` : language === "te" ? "గదులు" : "Bedrooms"}</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
 
-            {/* Quick Toggle: Ready to Move */}
-            <button
-              onClick={() => {
-                const isReady = filters.availability.includes("ready");
-                onFilterChange({
-                  ...filters,
-                  availability: isReady ? [] : ["ready"],
-                });
-              }}
-              className={cn(
-                "flex items-center gap-1.5 px-3.5 py-2 rounded-full border font-medium transition-all flex-shrink-0 cursor-pointer",
-                filters.availability.includes("ready")
-                  ? "bg-emerald-50 border-emerald-500 text-emerald-700 font-semibold"
-                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+              {openDropdown === "rooms" && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 z-50 animate-in fade-in zoom-in-95">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 py-1.5">
+                    Select Bedrooms
+                  </div>
+                  <div className="space-y-0.5">
+                    {bhkOptions.map((opt) => {
+                      const isSelected = filters.bhk.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          onClick={() => {
+                            const newBhk = isSelected
+                              ? filters.bhk.filter((b) => b !== opt.value)
+                              : [...filters.bhk, opt.value];
+                            onFilterChange({ ...filters, bhk: newBhk });
+                          }}
+                          className={cn(
+                            "w-full text-left px-3 py-2 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
+                            isSelected
+                              ? "bg-amber-500 text-slate-950 font-bold"
+                              : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          )}
+                        >
+                          <span>{opt.label}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
-            >
-              <Clock className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Ready to Move</span>
-            </button>
+            </div>
 
-            {/* Quick Toggle: Resale / New */}
-            <button
-              onClick={() => {
-                const isNew = filters.saleType.includes("new");
-                onFilterChange({
-                  ...filters,
-                  saleType: isNew ? [] : ["new"],
-                });
-              }}
-              className={cn(
-                "flex items-center gap-1.5 px-3.5 py-2 rounded-full border font-medium transition-all flex-shrink-0 cursor-pointer",
-                filters.saleType.includes("new")
-                  ? "bg-blue-50 border-blue-500 text-blue-700 font-semibold"
-                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-              )}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-              <span>New Construction</span>
-            </button>
+            {/* List vs Map View Mode Switcher Toggle */}
+            <div className="bg-slate-100 dark:bg-slate-900 p-1 rounded-full border border-slate-200 dark:border-slate-800 flex items-center shrink-0 ml-auto sm:ml-0">
+              <button
+                type="button"
+                onClick={() => onViewModeChange("grid")}
+                className={cn(
+                  "py-1.5 px-3 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer",
+                  viewMode === "grid"
+                    ? "bg-amber-500 text-slate-950 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                )}
+              >
+                <List className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">List</span>
+              </button>
 
-            {/* Quick Toggle: Owner Listings */}
-            <button
-              onClick={() => {
-                const isOwner = filters.postedBy.includes("owner");
-                onFilterChange({
-                  ...filters,
-                  postedBy: isOwner ? [] : ["owner"],
-                });
-              }}
-              className={cn(
-                "flex items-center gap-1.5 px-3.5 py-2 rounded-full border font-medium transition-all flex-shrink-0 cursor-pointer",
-                filters.postedBy.includes("owner")
-                  ? "bg-purple-50 border-purple-500 text-purple-700 font-semibold"
-                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-              )}
-            >
-              <UserCheck className="w-3.5 h-3.5 text-purple-600" />
-              <span>Owner Listings</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => onViewModeChange("map")}
+                className={cn(
+                  "py-1.5 px-3 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer",
+                  viewMode === "map"
+                    ? "bg-amber-500 text-slate-950 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                )}
+              >
+                <Map className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Map</span>
+              </button>
+            </div>
+
           </div>
-
-          {/* Popover Menu: Price */}
-          {openDropdown === "price" && (
-            <div className="absolute left-16 top-11 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-50 animate-in fade-in zoom-in-95">
-              <h4 className="font-semibold text-sm text-slate-900 mb-2">Budget (₹ INR)</h4>
-              <div className="space-y-1.5">
-                {pricePresets.map((preset) => {
-                  const isSelected =
-                    filters.budget[0] === preset.min && filters.budget[1] === preset.max;
-                  return (
-                    <button
-                      key={preset.label}
-                      onClick={() => {
-                        onFilterChange({
-                          ...filters,
-                          budget: [preset.min, preset.max],
-                        });
-                        setOpenDropdown(null);
-                      }}
-                      className={cn(
-                        "w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-all cursor-pointer",
-                        isSelected
-                          ? "bg-amber-50 text-amber-900 font-semibold"
-                          : "hover:bg-slate-100 text-slate-700"
-                      )}
-                    >
-                      <span>{preset.label}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-amber-600" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Popover Menu: Rooms */}
-          {openDropdown === "rooms" && (
-            <div className="absolute left-36 top-11 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-50 animate-in fade-in zoom-in-95">
-              <h4 className="font-semibold text-sm text-slate-900 mb-3">Bedrooms (BHK)</h4>
-              <div className="grid grid-cols-2 gap-2">
-                {bhkOptions.map((bhk) => {
-                  const isSelected = filters.bhk.includes(bhk.value);
-                  return (
-                    <button
-                      key={bhk.value}
-                      onClick={() => toggleBhk(bhk.value)}
-                      className={cn(
-                        "px-3 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center justify-center gap-1 cursor-pointer",
-                        isSelected
-                          ? "bg-amber-500 text-slate-950 font-bold border-amber-500 shadow-xs"
-                          : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                      )}
-                    >
-                      <span>{bhk.label}</span>
-                      {isSelected && <Check className="w-3 h-3 text-slate-950" />}
-                    </button>
-                  );
-                })}
-              </div>
-              <button
-                onClick={() => setOpenDropdown(null)}
-                className="mt-3 w-full py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-xl hover:bg-slate-800 cursor-pointer"
-              >
-                Apply
-              </button>
-            </div>
-          )}
-
-          {/* Popover Menu: Property Types */}
-          {openDropdown === "type" && (
-            <div className="absolute left-64 top-11 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-50 animate-in fade-in zoom-in-95">
-              <h4 className="font-semibold text-sm text-slate-900 mb-2">Property Category</h4>
-              <div className="space-y-1.5">
-                {propertyTypes.map((type) => {
-                  const isSelected = filters.propertyType.includes(type.value);
-                  return (
-                    <button
-                      key={type.value}
-                      onClick={() => toggleType(type.value)}
-                      className={cn(
-                        "w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-all cursor-pointer",
-                        isSelected
-                          ? "bg-amber-50 text-amber-900 font-semibold"
-                          : "hover:bg-slate-100 text-slate-700"
-                      )}
-                    >
-                      <span>{type.label}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-amber-600" />}
-                    </button>
-                  );
-                })}
-              </div>
-              <button
-                onClick={() => setOpenDropdown(null)}
-                className="mt-3 w-full py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-xl hover:bg-slate-800 cursor-pointer"
-              >
-                Apply
-              </button>
-            </div>
-          )}
         </div>
       </div>
-    </div>
+    </header>
   );
 }

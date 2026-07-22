@@ -111,7 +111,7 @@ export function PropertyContact({ property }: PropertyContactProps) {
             <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
               <Image
                 src={property.ownerAvatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80"}
-                alt={property.ownerName}
+                alt={property.ownerName || "Property Agent"}
                 fill
                 className="object-cover"
               />

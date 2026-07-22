@@ -108,6 +108,8 @@ export interface Property {
   facing: PropertyFacing;
   ageOfProperty: number; // years
   possessionDate?: string;
+  possessionStatus?: string;
+  postedBy?: string;
   isReadyToMove: boolean;
   location: PropertyLocation;
   images: PropertyImage[];
@@ -118,99 +120,31 @@ export interface Property {
   features: PropertyFeature[];
   reraId?: string;
   isVerified: boolean;
-  isFeatured: boolean;
+  isFeatured?: boolean;
   isRecommended?: boolean;
-  isPremium: boolean;
-  showOnMap?: boolean;
-  ownerId: string;
-  ownerName: string;
-  ownerPhone: string;
-  ownerEmail?: string;
-  ownerAvatar?: string;
-  ownerType: "owner" | "agent" | "builder" | "developer";
-  isOwnerVerified: boolean;
-  viewCount: number;
-  savedCount: number;
-  enquiryCount: number;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt?: string;
+  isPremium?: boolean;
   vastuCompliant?: boolean;
   petFriendly?: boolean;
   gatedSecurity?: boolean;
-  powerBackup?: boolean;
-  waterSupply?: "borewell" | "municipal" | "both";
+  powerBackup?: boolean | string;
+  waterSupply?: string;
   nearbySchools?: string[];
   nearbyHospitals?: string[];
-  nearbyMetro?: string;
-  nearbyAirport?: string;
-  hasPoojaRoom?: boolean;
-  hasStudyRoom?: boolean;
-  hasServantRoom?: boolean;
-  projectAddress?: string;
-}
-
-export interface PropertyFilter {
-  listingType: ListingType;
-  propertyTypes: PropertyType[];
-  city?: string;
-  locality?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  minArea?: number;
-  maxArea?: number;
-  bedrooms?: number[];
-  bathrooms?: number[];
-  furnishing?: FurnishingStatus[];
-  facing?: PropertyFacing[];
-  amenities?: string[];
-  isReraVerified?: boolean;
-  isReadyToMove?: boolean;
-  ageRange?: AgeRange[];
-  saleType?: SaleType[];
-  postedBy?: ("owner" | "agent" | "builder" | "developer")[];
-  sortBy?: "price-asc" | "price-desc" | "newest" | "popular" | "area-asc" | "area-desc";
-  page?: number;
-  limit?: number;
-}
-
-export interface SavedProperty {
-  id: string;
-  propertyId: string;
-  userId: string;
-  savedAt: string;
-  property: Property;
-}
-
-export interface RecentlyViewed {
-  id: string;
-  propertyId: string;
-  userId: string;
-  viewedAt: string;
-  property: Property;
-}
-
-export interface PropertyComparison {
-  properties: Property[];
-  maxProperties: 3;
-}
-
-export interface SearchHistory {
-  id: string;
-  userId: string;
-  query: string;
-  filters: PropertyFilter;
-  resultCount: number;
-  searchedAt: string;
-}
-
-export interface SavedSearch {
-  id: string;
-  userId: string;
-  name: string;
-  filters: PropertyFilter;
-  alertEnabled: boolean;
-  alertFrequency: "instant" | "daily" | "weekly";
+  ownerName?: string;
+  ownerPhone?: string;
+  ownerEmail?: string;
+  ownerAvatar?: string;
+  ownerType?: string;
+  isOwnerVerified?: boolean;
+  showOnMap?: boolean;
+  viewCount?: number;
+  viewsCount?: number;
+  savedCount?: number;
+  enquiryCount?: number;
+  favoritesCount?: number;
   createdAt: string;
-  lastNotifiedAt?: string;
+  updatedAt: string;
+  publishedAt?: string;
+  ownerId?: string;
+  agentId?: string;
 }
