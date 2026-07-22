@@ -147,7 +147,7 @@ export function RealtorSearchHeader({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3" ref={dropdownRef}>
             
-            {/* LEFT: Realtor-Style Animated Search Box with Voice Search & Language Switcher */}
+            {/* LEFT: Search Input Box */}
             <form
               onSubmit={handleSearchSubmit}
               className={cn(
@@ -240,9 +240,41 @@ export function RealtorSearchHeader({
               </button>
             </form>
 
-            {/* RIGHT: Quick Filter Chips & HIGH VISIBILITY LIST/MAP SWITCHER */}
+            {/* RIGHT: Quick Filter Chips (LIST & MAP TOGGLE PLACED FIRST BEFORE FILTERS) */}
             <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto no-scrollbar py-0.5">
-              {/* All Filters Button */}
+              
+              {/* 1. FIRST: LIST VS MAP TOGGLE CAPSULE (PLACED FIRST BEFORE FILTERS) */}
+              <div className="bg-slate-900 dark:bg-slate-900 p-1 rounded-full border border-amber-500/80 shadow-lg flex items-center shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange("grid")}
+                  className={cn(
+                    "py-1.5 px-3 rounded-full text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer",
+                    viewMode === "grid"
+                      ? "bg-amber-500 text-slate-950 shadow-md"
+                      : "text-slate-300 hover:text-white"
+                  )}
+                >
+                  <List className="w-4 h-4" />
+                  <span>{language === "te" ? "జాబితా" : "List"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange("map")}
+                  className={cn(
+                    "py-1.5 px-3 rounded-full text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer",
+                    viewMode === "map"
+                      ? "bg-amber-500 text-slate-950 shadow-md"
+                      : "text-amber-400 font-extrabold hover:text-white"
+                  )}
+                >
+                  <Map className="w-4 h-4 text-amber-400 fill-amber-500/20" />
+                  <span className="font-black">{language === "te" ? "మ్యాప్ 🗺️" : "Map 🗺️"}</span>
+                </button>
+              </div>
+
+              {/* 2. SECOND: ALL FILTERS BUTTON */}
               <button
                 onClick={onOpenAllFilters}
                 className={cn(
@@ -261,7 +293,7 @@ export function RealtorSearchHeader({
                 )}
               </button>
 
-              {/* Price Filter Dropdown */}
+              {/* 3. THIRD: PRICE FILTER DROPDOWN */}
               <div className="relative">
                 <button
                   type="button"
@@ -309,7 +341,7 @@ export function RealtorSearchHeader({
                 )}
               </div>
 
-              {/* BHK / Rooms Filter Dropdown */}
+              {/* 4. FOURTH: BHK / ROOMS FILTER DROPDOWN */}
               <div className="relative">
                 <button
                   type="button"
@@ -359,43 +391,12 @@ export function RealtorSearchHeader({
                 )}
               </div>
 
-              {/* HIGH VISIBILITY PROMINENT LIST VS MAP TOGGLE CAPSULE */}
-              <div className="bg-slate-900 dark:bg-slate-900 p-1 rounded-full border border-amber-500/60 shadow-md flex items-center shrink-0 ml-auto sm:ml-0">
-                <button
-                  type="button"
-                  onClick={() => onViewModeChange("grid")}
-                  className={cn(
-                    "py-1.5 px-3 rounded-full text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer",
-                    viewMode === "grid"
-                      ? "bg-amber-500 text-slate-950 shadow-md"
-                      : "text-slate-300 hover:text-white"
-                  )}
-                >
-                  <List className="w-4 h-4" />
-                  <span>{language === "te" ? "జాబితా" : "List"}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onViewModeChange("map")}
-                  className={cn(
-                    "py-1.5 px-3 rounded-full text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer",
-                    viewMode === "map"
-                      ? "bg-amber-500 text-slate-950 shadow-md"
-                      : "text-amber-400 font-extrabold hover:text-white"
-                  )}
-                >
-                  <Map className="w-4 h-4 text-amber-400 fill-amber-500/20" />
-                  <span className="font-black">{language === "te" ? "మ్యాప్ 🗺️" : "Map 🗺️"}</span>
-                </button>
-              </div>
-
             </div>
           </div>
         </div>
       </header>
 
-      {/* PROMINENT MOBILE FLOATING BOTTOM CENTER MAP TOGGLE BUTTON (Realtor.com / Redfin Style) */}
+      {/* PROMINENT MOBILE FLOATING BOTTOM CENTER MAP TOGGLE BUTTON */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[400] md:hidden pointer-events-auto">
         <button
           type="button"
