@@ -89,7 +89,6 @@ export function Navbar() {
 
     checkUser();
 
-    // Subscribe to session changes
     if (isSupabaseConfigured()) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (session?.user) {
@@ -129,19 +128,14 @@ export function Navbar() {
 
   return (
     <>
-      {/* Desktop Navbar */}
+      {/* Solid Navbar (Non-transparent to prevent content bleed) */}
       <header
-        className={cn(
-          "fixed top-0 left-0 right-0 z-[100] transition-all duration-500",
-          isScrolled
-            ? "glass shadow-elevated py-2"
-            : "bg-transparent py-4"
-        )}
+        className="fixed top-0 left-0 right-0 z-[100] bg-slate-900 border-b border-slate-800 shadow-md py-3 transition-all duration-300"
       >
         <div className="container-road">
           <div className="flex items-center justify-between">
             {/* Left: Logo */}
-            <Logo size={isScrolled ? "sm" : "md"} />
+            <Logo size="md" />
 
             {/* Center: Navigation Links */}
             <nav className="hidden lg:flex items-center gap-1" role="navigation" aria-label="Main navigation">
@@ -152,141 +146,84 @@ export function Navbar() {
                   className={cn(
                     "relative px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200",
                     isActive(link.href)
-                      ? "text-amber-primary"
-                      : "text-text-secondary hover:text-text-primary hover:bg-bg-card/50"
+                      ? "text-amber-400 font-bold"
+                      : "text-slate-300 hover:text-white hover:bg-slate-800/80"
                   )}
                 >
                   {link.label}
                   {isActive(link.href) && (
                     <motion.div
-                      layoutId="navbar-indicator"
-                      className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-amber-primary rounded-full"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      layoutId="navbarIndicator"
+                      className="absolute bottom-0 left-3 right-3 h-0.5 bg-amber-400 rounded-full"
+                      transition={{ type: "spring", stiffness: 500, damping: 35 }}
                     />
                   )}
                 </Link>
               ))}
-              <div className="relative group">
-                <button
-                  className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary rounded-xl transition-all duration-200 hover:bg-bg-card/50"
-                  aria-haspopup="true"
-                >
-                  More
-                  <ChevronDown className="h-3.5 w-3.5 transition-transform group-hover:rotate-180" />
-                </button>
-                <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  <div className="glass rounded-2xl p-2 min-w-[200px] shadow-elevated">
-                    <Link
-                      href="/mortgage-calculator"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-card/50 rounded-xl transition-all"
-                    >
-                      EMI Calculator
-                    </Link>
-                    <Link
-                      href="/blog"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-card/50 rounded-xl transition-all"
-                    >
-                      Blog & Guides
-                    </Link>
-                    <Link
-                      href="/about"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-card/50 rounded-xl transition-all"
-                    >
-                      About ROAD FACING
-                    </Link>
-                    <Link
-                      href="/contact"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-card/50 rounded-xl transition-all"
-                    >
-                      Contact Us
-                    </Link>
-                  </div>
-                </div>
-              </div>
             </nav>
 
-            {/* Right: Actions */}
-            <div className="hidden lg:flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-text-secondary hover:text-amber-primary"
-                aria-label="Search properties"
-              >
-                <Search className="h-4.5 w-4.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-text-secondary hover:text-amber-primary relative"
+            {/* Right Actions */}
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+
+              {/* Saved Items */}
+              <Link
+                href="/dashboard/saved"
+                className="relative p-2 text-slate-300 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
                 aria-label="Saved properties"
               >
-                <Heart className="h-4.5 w-4.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-text-secondary hover:text-amber-primary relative"
-                aria-label="Notifications"
-              >
-                <Bell className="h-4.5 w-4.5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-primary rounded-full" />
-              </Button>
-              <ThemeToggle />
-              <div className="w-px h-6 bg-border-default mx-1" />
-              
+                <Heart className="h-5 w-5" />
+              </Link>
+
               {user ? (
-                <div className="flex items-center gap-2">
-                  <Link 
-                    href="/dashboard" 
-                    className="text-sm font-semibold text-text-primary hover:text-amber-primary transition-colors flex items-center gap-1.5 bg-bg-card border border-border-default/60 hover:border-amber-primary/30 px-3.5 py-1.5 rounded-xl"
-                  >
-                    <User className="h-4 w-4 text-amber-primary" />
-                    <span className="max-w-[100px] truncate">{user.name.split(" ")[0]}</span>
+                /* User Menu */
+                <div className="flex items-center gap-3">
+                  <Link href="/dashboard">
+                    <Button variant="outline" size="sm" className="hidden sm:flex border-slate-700 text-slate-200 hover:bg-slate-800">
+                      Dashboard
+                    </Button>
                   </Link>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
                     onClick={handleSignOut}
-                    className="text-error hover:bg-error/10 hover:text-error h-9 px-3 rounded-xl text-xs font-semibold uppercase tracking-wider transition-colors"
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-slate-400 hover:text-white hover:bg-slate-800"
                   >
                     Sign Out
                   </Button>
                 </div>
               ) : (
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/login" className="gap-2">
-                    <LogIn className="h-4 w-4" />
-                    Sign In
+                /* Auth Buttons */
+                <div className="flex items-center gap-2">
+                  <Link href="/login">
+                    <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-800">
+                      Log in
+                    </Button>
                   </Link>
-                </Button>
+                  <Link href="/register">
+                    <Button variant="default" size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold">
+                      Sign up
+                    </Button>
+                  </Link>
+                </div>
               )}
 
-              <Button variant="amber" size="sm" asChild>
-                <a href="https://wa.me/918977311418?text=I%20want%20to%20post%20a%20property" target="_blank" rel="noopener noreferrer" className="gap-2">
+              {/* List Property CTA */}
+              <Link href="/list-with-us" className="hidden md:block">
+                <Button size="sm" className="gap-1.5 bg-white text-slate-950 hover:bg-slate-100 font-semibold shadow-xs">
                   <Plus className="h-4 w-4" />
-                  Post Property
-                </a>
-              </Button>
-            </div>
+                  List Property
+                </Button>
+              </Link>
 
-            {/* Mobile Menu Button */}
-            <div className="flex items-center gap-2 lg:hidden">
-              <ThemeToggle size="sm" />
-              <Button
-                variant="ghost"
-                size="icon"
+              {/* Mobile Menu Toggle */}
+              <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="text-text-secondary"
+                className="lg:hidden p-2 text-slate-300 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
                 aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-                aria-expanded={isMobileMenuOpen}
               >
-                {isMobileMenuOpen ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  <Menu className="h-5 w-5" />
-                )}
-              </Button>
+                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
             </div>
           </div>
         </div>
@@ -296,171 +233,54 @@ export function Navbar() {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-[99] bg-bg-primary/98 backdrop-blur-sm lg:hidden"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="fixed inset-0 top-[65px] z-50 bg-slate-950/95 backdrop-blur-md lg:hidden flex flex-col p-6 overflow-y-auto"
           >
-            <div className="flex flex-col h-full pt-20 pb-24 overflow-y-auto">
-              <nav className="container-road flex flex-col gap-1 py-6" aria-label="Mobile navigation">
-                {navigationLinks.main.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3.5 text-lg font-medium rounded-xl transition-all",
-                      isActive(link.href)
-                        ? "text-amber-primary bg-amber-primary/10"
-                        : "text-text-secondary hover:text-text-primary hover:bg-bg-card"
-                    )}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                <div className="h-px bg-border-default my-3" />
+            <nav className="flex flex-col gap-2">
+              {navigationLinks.main.map((link) => (
                 <Link
-                  href="/mortgage-calculator"
-                  className="flex items-center gap-3 px-4 py-3.5 text-lg font-medium text-text-secondary hover:text-text-primary hover:bg-bg-card rounded-xl transition-all"
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "px-4 py-3 rounded-xl font-medium text-base transition-colors",
+                    isActive(link.href)
+                      ? "bg-amber-500/20 text-amber-400 font-bold"
+                      : "text-slate-300 hover:bg-slate-900"
+                  )}
                 >
-                  EMI Calculator
+                  {link.label}
                 </Link>
-                <Link
-                  href="/blog"
-                  className="flex items-center gap-3 px-4 py-3.5 text-lg font-medium text-text-secondary hover:text-text-primary hover:bg-bg-card rounded-xl transition-all"
-                >
-                  Blog
-                </Link>
-                <Link
-                  href="/about"
-                  className="flex items-center gap-3 px-4 py-3.5 text-lg font-medium text-text-secondary hover:text-text-primary hover:bg-bg-card rounded-xl transition-all"
-                >
-                  About
-                </Link>
-                <Link
-                  href="/contact"
-                  className="flex items-center gap-3 px-4 py-3.5 text-lg font-medium text-text-secondary hover:text-text-primary hover:bg-bg-card rounded-xl transition-all"
-                >
-                  Contact
-                </Link>
-                <div className="h-px bg-border-default my-3" />
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-3 px-4 py-3.5 text-lg font-medium text-text-secondary hover:text-text-primary hover:bg-bg-card rounded-xl transition-all"
-                >
-                  Profile
-                </Link>
-              </nav>
+              ))}
+            </nav>
 
-              <div className="container-road mt-auto flex flex-col gap-3 pb-6">
-                {user ? (
-                  <div className="flex flex-col gap-2">
-                    <Button variant="outline" size="lg" className="w-full justify-start gap-2.5 h-12 rounded-xl" asChild>
-                      <Link href="/dashboard">
-                        <User className="h-5 w-5 text-amber-primary" />
-                        My Profile ({user.name.split(" ")[0]})
-                      </Link>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="lg" 
-                      onClick={handleSignOut}
-                      className="w-full text-error hover:bg-error/10 hover:text-error h-12 rounded-xl"
-                    >
-                      Sign Out
-                    </Button>
-                  </div>
-                ) : (
-                  <Button variant="outline" size="lg" className="w-full h-12 rounded-xl" asChild>
-                    <Link href="/login">Sign In</Link>
-                  </Button>
-                )}
-                <Button variant="amber" size="lg" className="w-full h-12 rounded-xl" asChild>
-                  <a href="https://wa.me/918977311418?text=I%20want%20to%20post%20a%20property" target="_blank" rel="noopener noreferrer" className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Post Property Free
-                  </a>
+            <div className="mt-8 pt-6 border-t border-slate-800 space-y-3">
+              <Link href="/list-with-us" className="block w-full">
+                <Button className="w-full gap-2 bg-amber-500 text-slate-950 font-bold py-6 text-base">
+                  <Plus className="h-5 w-5" />
+                  List Property Free
                 </Button>
-              </div>
+              </Link>
+
+              {!user && (
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <Link href="/login" className="block">
+                    <Button variant="outline" className="w-full border-slate-700 text-white">
+                      Log in
+                    </Button>
+                  </Link>
+                  <Link href="/register" className="block">
+                    <Button variant="secondary" className="w-full bg-slate-800 text-white">
+                      Sign up
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Mobile Bottom Navigation */}
-      {!(pathname.startsWith('/properties') || pathname.startsWith('/property/')) && (
-        <nav
-          className="fixed bottom-0 left-0 right-0 z-[100] bg-bg-card/95 backdrop-blur-md border-t border-border-default lg:hidden pb-[env(safe-area-inset-bottom,0px)]"
-          aria-label="Mobile bottom navigation"
-        >
-          <div className="flex items-center justify-around py-1.5 pt-2">
-            <Link
-              href="/"
-              className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
-                pathname === "/"
-                  ? "text-amber-primary"
-                  : "text-text-tertiary hover:text-text-secondary"
-              )}
-            >
-              <Home className="h-5 w-5" />
-              <span className="text-[0.625rem] font-medium">Home</span>
-            </Link>
-            <Link
-              href="/properties/map"
-              className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
-                pathname.startsWith("/properties/map")
-                  ? "text-amber-primary"
-                  : "text-text-tertiary hover:text-text-secondary"
-              )}
-            >
-              <MapPin className="h-5 w-5" />
-              <span className="text-[0.625rem] font-medium">Map</span>
-            </Link>
-            <Link
-              href="/dashboard/saved"
-              className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
-                pathname.startsWith("/dashboard/saved")
-                  ? "text-amber-primary"
-                  : "text-text-tertiary hover:text-text-secondary"
-              )}
-            >
-              <Heart className="h-5 w-5" />
-              <span className="text-[0.625rem] font-medium">Saved</span>
-            </Link>
-            <Link
-              href="/list-with-us"
-              className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all",
-                pathname.startsWith("/list-with-us")
-                  ? "text-amber-primary"
-                  : "text-text-tertiary hover:text-text-secondary"
-              )}
-            >
-              <Megaphone className="h-5 w-5" />
-              <span className="text-[0.625rem] font-medium">Connect</span>
-            </Link>
-          </div>
-        </nav>
-      )}
-
-      {/* Floating Post Property CTA (Mobile) */}
-      {!(pathname.startsWith('/properties') || pathname.startsWith('/property/')) && (
-        <div className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] right-4 z-[95] lg:hidden">
-          <Button
-            variant="amber"
-            size="icon-lg"
-            className="rounded-full shadow-amber-glow animate-pulse-glow"
-            asChild
-          >
-            <a href="https://wa.me/918977311418?text=I%20want%20to%20post%20a%20property" target="_blank" rel="noopener noreferrer" aria-label="Post a property">
-              <Plus className="h-5 w-5" />
-            </a>
-          </Button>
-        </div>
-      )}
     </>
   );
 }
