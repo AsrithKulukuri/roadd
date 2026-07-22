@@ -7,7 +7,6 @@ import { PropertyAmenities } from "@/components/property/property-amenities";
 import { PropertyContact } from "@/components/property/property-contact";
 import { PropertySimilar } from "@/components/property/property-similar";
 import { PropertyActions } from "@/components/property/property-actions";
-import { PropertyTimeline } from "@/components/property/property-timeline";
 import { MapPin, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PropertyLocationWrapper } from "@/components/property/property-location-wrapper";
@@ -134,13 +133,6 @@ export default async function PropertyDetailPage({
                 {property.description}
               </p>
             </div>
-
-            {/* Construction Milestone Tracker */}
-            <PropertyTimeline
-              possessionStatus={(property as any).possessionStatus || "Under Construction"}
-              possessionDate={property.possessionDate || "Dec 2026"}
-              propertyTitle={property.title}
-            />
 
             <PropertyAmenities amenities={property.amenities} />
 
