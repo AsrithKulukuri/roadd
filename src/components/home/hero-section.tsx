@@ -4,7 +4,21 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, TrendingDown, Building2, Trees, Store, Shield, Sparkles, Building, ChevronRight } from "lucide-react";
+import {
+  Search,
+  TrendingDown,
+  Building2,
+  Trees,
+  Store,
+  Shield,
+  Sparkles,
+  Building,
+  ChevronRight,
+  ChevronLeft,
+  MapPin,
+  Tag,
+  Flame,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -23,13 +37,52 @@ const CAROUSEL_SUGGESTIONS = [
   "Tadepalli, Capital view flat",
 ];
 
+const trendingHotspots = [
+  { name: "Benz Circle", city: "Vijayawada", tag: "High Demand Hub", count: "45+ Homes", badge: "🔥 #1 Hotspot" },
+  { name: "Amaravati Road", city: "Guntur", tag: "Capital Highway Corridor", count: "42+ Homes", badge: "⚡ Fast Growing" },
+  { name: "Mangalagiri", city: "Guntur", tag: "Near AIIMS & IT Park", count: "40+ Homes", badge: "🚀 High ROI" },
+  { name: "Poranki", city: "Vijayawada", tag: "Luxury Villa Township", count: "32+ Homes", badge: "⭐ Hot Listing" },
+  { name: "Gorantla", city: "Guntur", tag: "Premium Residential Hub", count: "35+ Homes", badge: "🔥 Trending" },
+  { name: "Tadepalli", city: "Vijayawada", tag: "Near AP Secretariat", count: "25+ Homes", badge: "💎 Capital Hub" },
+];
+
+const vijayawadaHotspots = [
+  { name: "Benz Circle", tag: "Prime Commercial & Hub", count: "45+ Homes" },
+  { name: "Poranki", tag: "Fastest Growing Residential", count: "32+ Homes" },
+  { name: "Kanuru", tag: "Premium Villas & Apartments", count: "28+ Homes" },
+  { name: "Patamata", tag: "Central City Living", count: "38+ Homes" },
+  { name: "Tadepalli", tag: "Near Capital Region", count: "25+ Homes" },
+  { name: "Penamaluru", tag: "Gated Communities", count: "20+ Homes" },
+  { name: "Auto Nagar", tag: "Commercial & Plots", count: "18+ Homes" },
+];
+
+const gunturHotspots = [
+  { name: "Gorantla", tag: "Top Residential Location", count: "35+ Homes" },
+  { name: "Amaravati Road", tag: "Capital Corridor", count: "42+ Homes" },
+  { name: "Brodipet", tag: "Commercial & Premium Flats", count: "30+ Homes" },
+  { name: "Pattabhipuram", tag: "Established Housing", count: "24+ Homes" },
+  { name: "Kaza", tag: "High-yield Plots & Villas", count: "22+ Homes" },
+  { name: "Mangalagiri", tag: "Near AIIMS & Highway", count: "40+ Homes" },
+];
+
+const popularQuickFilters = [
+  { label: "2 BHK under ₹50L", budget: [0, 5000000], bhk: ["2"] },
+  { label: "3 BHK Luxury Flats", bhk: ["3"] },
+  { label: "Gated Community Villas", propertyType: ["villa"] },
+  { label: "Ready to Move", availability: ["ready"] },
+  { label: "Residential Plots", propertyType: ["residential-land"] },
+  { label: "Owner Listings", postedBy: ["owner"] },
+];
+
 export function HeroSection() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("buy");
+  const [locationTab, setLocationTab] = useState<"trending" | "vijayawada" | "guntur" | "popular">("trending");
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Rotating text carousel interval
   useEffect(() => {
@@ -51,6 +104,18 @@ export function HeroSection() {
       );
     } else {
       router.push(`/properties?type=${activeTab}`);
+    }
+  };
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -260, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 260, behavior: "smooth" });
     }
   };
 
@@ -134,17 +199,16 @@ export function HeroSection() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center">
-        {/* Main Headline matching Realtor.com exact structure with generous top spacing */}
-        <div className="space-y-2 mb-6 sm:mb-8 max-w-3xl">
-          <h1 className="font-heading text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white drop-shadow-md leading-tight">
-            #1 real estate site <br className="hidden sm:inline" />
-            <span className="text-amber-400 font-extrabold uppercase tracking-wide">
-              ROAD FACING
-            </span>{" "}
-            agents recommend*
+        {/* Main Headline highlighting starting letters forming R.O.A.D */}
+        <div className="space-y-2 mb-6 sm:mb-8 max-w-4xl">
+          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white drop-shadow-md leading-tight">
+            <span className="text-amber-400 font-black">R</span>eal{" "}
+            <span className="text-amber-400 font-black">O</span>wner{" "}
+            <span className="text-amber-400 font-black">A</span>gent{" "}
+            <span className="text-amber-400 font-black">D</span>eveloper
           </h1>
-          <p className="text-sm sm:text-base text-slate-300 font-medium max-w-xl mx-auto drop-shadow-xs">
-            Search verified homes, luxury villas, and plots across Vijayawada & Guntur
+          <p className="text-sm sm:text-base md:text-lg text-slate-300 font-medium max-w-xl mx-auto drop-shadow-xs mt-2">
+            Connecting Buyers, Owners, Agents & Developers across Vijayawada & Guntur
           </p>
         </div>
 
@@ -224,6 +288,159 @@ export function HeroSection() {
             <Search className="w-5 h-5 stroke-[2.5]" />
           </button>
         </form>
+
+        {/* Senior UI/UX Location & Quick Search Carousel Card (Optimized for Desktop & Mobile) */}
+        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-5 bg-slate-950/80 backdrop-blur-md border border-white/15 rounded-2xl p-3.5 sm:p-4 text-left shadow-2xl space-y-3">
+          {/* Header Row & City Tab Switcher */}
+          <div className="flex items-center justify-between gap-2 flex-wrap border-b border-white/10 pb-2.5">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+              <span className="text-[11px] font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1 mr-1 flex-shrink-0">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> EXPLORE AP:
+              </span>
+
+              {/* Trending Locations Tab */}
+              <button
+                onClick={() => setLocationTab("trending")}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-extrabold transition-all duration-200 flex items-center gap-1.5 flex-shrink-0 cursor-pointer",
+                  locationTab === "trending"
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md scale-105"
+                    : "bg-white/10 text-slate-200 hover:bg-white/20 border border-white/10"
+                )}
+              >
+                <Flame className="w-3.5 h-3.5 text-orange-950" /> Trending Locations
+              </button>
+
+              <button
+                onClick={() => setLocationTab("vijayawada")}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 flex-shrink-0 cursor-pointer",
+                  locationTab === "vijayawada"
+                    ? "bg-amber-500 text-slate-950 font-bold shadow-md"
+                    : "bg-white/10 text-slate-200 hover:bg-white/20 border border-white/10"
+                )}
+              >
+                <MapPin className="w-3.5 h-3.5" /> Vijayawada Hubs
+              </button>
+              <button
+                onClick={() => setLocationTab("guntur")}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 flex-shrink-0 cursor-pointer",
+                  locationTab === "guntur"
+                    ? "bg-amber-500 text-slate-950 font-bold shadow-md"
+                    : "bg-white/10 text-slate-200 hover:bg-white/20 border border-white/10"
+                )}
+              >
+                <Building2 className="w-3.5 h-3.5" /> Guntur Hotspots
+              </button>
+              <button
+                onClick={() => setLocationTab("popular")}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 flex-shrink-0 cursor-pointer",
+                  locationTab === "popular"
+                    ? "bg-amber-500 text-slate-950 font-bold shadow-md"
+                    : "bg-white/10 text-slate-200 hover:bg-white/20 border border-white/10"
+                )}
+              >
+                <Tag className="w-3.5 h-3.5" /> Top Searches
+              </button>
+            </div>
+
+            {/* Desktop Chevron Navigation Controls */}
+            <div className="hidden sm:flex items-center gap-1">
+              <button
+                onClick={scrollLeft}
+                className="p-1.5 bg-white/10 hover:bg-white/20 text-slate-200 rounded-lg transition-colors border border-white/10 cursor-pointer"
+                aria-label="Scroll left"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={scrollRight}
+                className="p-1.5 bg-white/10 hover:bg-white/20 text-slate-200 rounded-lg transition-colors border border-white/10 cursor-pointer"
+                aria-label="Scroll right"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Horizontal Carousel Chips Row */}
+          <div
+            ref={scrollContainerRef}
+            className="flex items-center gap-2.5 overflow-x-auto pb-1 no-scrollbar scroll-smooth"
+          >
+            {locationTab === "trending" &&
+              trendingHotspots.map((spot) => (
+                <button
+                  key={spot.name}
+                  onClick={() => router.push(`/properties?type=${activeTab}&location=${encodeURIComponent(spot.name)}`)}
+                  className="flex-shrink-0 flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-white text-xs transition-all duration-200 cursor-pointer group shadow-sm"
+                >
+                  <Flame className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                  <div className="text-left">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-extrabold text-amber-300 block leading-tight">{spot.name}</span>
+                      <span className="text-[9px] bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded font-black uppercase">
+                        {spot.badge}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-300 block leading-tight">{spot.tag}</span>
+                  </div>
+                </button>
+              ))}
+
+            {locationTab === "vijayawada" &&
+              vijayawadaHotspots.map((spot) => (
+                <button
+                  key={spot.name}
+                  onClick={() => router.push(`/properties?type=${activeTab}&location=${encodeURIComponent(spot.name)}`)}
+                  className="flex-shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 hover:bg-white/20 text-white text-xs transition-all duration-200 cursor-pointer group"
+                >
+                  <MapPin className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                  <div className="text-left">
+                    <span className="font-bold block leading-tight">{spot.name}</span>
+                    <span className="text-[10px] text-slate-300 block leading-tight">{spot.tag}</span>
+                  </div>
+                </button>
+              ))}
+
+            {locationTab === "guntur" &&
+              gunturHotspots.map((spot) => (
+                <button
+                  key={spot.name}
+                  onClick={() => router.push(`/properties?type=${activeTab}&location=${encodeURIComponent(spot.name)}`)}
+                  className="flex-shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 hover:bg-white/20 text-white text-xs transition-all duration-200 cursor-pointer group"
+                >
+                  <Building2 className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                  <div className="text-left">
+                    <span className="font-bold block leading-tight">{spot.name}</span>
+                    <span className="text-[10px] text-slate-300 block leading-tight">{spot.tag}</span>
+                  </div>
+                </button>
+              ))}
+
+            {locationTab === "popular" &&
+              popularQuickFilters.map((filter) => (
+                <button
+                  key={filter.label}
+                  onClick={() => {
+                    const queryParams = new URLSearchParams();
+                    queryParams.append("type", activeTab);
+                    if (filter.bhk) queryParams.append("bhk", filter.bhk.join(","));
+                    if (filter.budget) queryParams.append("budget", filter.budget.join(","));
+                    if (filter.propertyType) queryParams.append("propertyType", filter.propertyType.join(","));
+                    if (filter.availability) queryParams.append("availability", filter.availability.join(","));
+                    router.push(`/properties?${queryParams.toString()}`);
+                  }}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-all duration-200 cursor-pointer"
+                >
+                  <Tag className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{filter.label}</span>
+                </button>
+              ))}
+          </div>
+        </div>
 
         {/* Expanded "Browse homes" Category Cards Section */}
         <div className="w-full mt-12 text-left space-y-4">
