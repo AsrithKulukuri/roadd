@@ -11,7 +11,7 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal } from "lucide-react";
+import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star } from "lucide-react";
 import L from "leaflet";
 import Link from "next/link";
 import { PropertyCard } from "@/components/property/property-card";
@@ -52,36 +52,52 @@ function isPointInPolygon(point: { lat: number; lng: number }, polygon: L.LatLng
   return inside;
 }
 
-function getPricePillIcon(price: number, isSelected: boolean) {
+// Smart Price Pill Icon Generator supporting Search Pop-Up & Highlight Animations
+function getPricePillIcon(price: number, isSelected: boolean, isMatch: boolean, hasSearch: boolean) {
   if (typeof window === "undefined" || !L || !L.divIcon) return undefined;
   
   const priceText = formatPriceCompact(price);
+  const isPopUp = isMatch && hasSearch;
+  const isDimmed = !isMatch && hasSearch;
+
+  const bg = isSelected || isPopUp ? '#F5A623' : '#0F172A';
+  const color = isSelected || isPopUp ? '#020617' : '#FFFFFF';
+  const border = isSelected || isPopUp ? '2.5px solid #FFFFFF' : '1.5px solid rgba(255, 255, 255, 0.3)';
+  const opacity = isDimmed ? 0.35 : 1;
+  const scale = isSelected ? 'scale(1.3)' : isPopUp ? 'scale(1.2)' : isDimmed ? 'scale(0.85)' : 'scale(1)';
+  const shadow = isPopUp
+    ? '0 0 24px rgba(245, 166, 37, 0.95), 0 6px 16px rgba(0,0,0,0.5)'
+    : isSelected
+    ? '0 0 18px rgba(245, 166, 37, 0.9)'
+    : '0 4px 12px rgba(0, 0, 0, 0.4)';
+
   return L.divIcon({
-    className: "realtor-price-pill-marker",
+    className: `realtor-price-pill-marker ${isPopUp ? 'popup-marker-match' : ''}`,
     html: `
       <div style="
-        background: ${isSelected ? '#F5A623' : '#0F172A'};
-        color: ${isSelected ? '#020617' : '#FFFFFF'};
-        border: ${isSelected ? '2.5px solid #FFFFFF' : '1.5px solid rgba(255, 255, 255, 0.3)'};
+        background: ${bg};
+        color: ${color};
+        border: ${border};
         padding: 4px 10px;
         border-radius: 20px;
         font-size: 12px;
         font-weight: 800;
-        box-shadow: ${isSelected ? '0 0 18px rgba(245, 166, 37, 0.9)' : '0 4px 12px rgba(0, 0, 0, 0.4)'};
+        box-shadow: ${shadow};
         white-space: nowrap;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 3px;
-        transform: ${isSelected ? 'scale(1.15)' : 'scale(1)'};
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: ${scale};
+        opacity: ${opacity};
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       ">
-        <span style="color: ${isSelected ? '#020617' : '#F5A623'}; font-weight: 900;">₹</span>
+        ${isPopUp ? '<span style="font-size: 11px;">⭐</span>' : `<span style="color: ${isSelected || isPopUp ? '#020617' : '#F5A623'}; font-weight: 900;">₹</span>`}
         <span>${priceText.replace('₹', '')}</span>
       </div>
     `,
-    iconSize: [64, 28],
-    iconAnchor: [32, 14],
+    iconSize: [68, 30],
+    iconAnchor: [34, 15],
   });
 }
 
@@ -166,68 +182,57 @@ function DrawMapListener({
   return null;
 }
 
-function getSmartFilteredProperties(mapProperties: any[], query: string, typeParam?: string | null, bhkParam?: string | null) {
-  let result = mapProperties;
-
-  if (typeParam && typeParam !== "all" && typeParam !== "buy") {
-    const typeLower = typeParam.toLowerCase();
-    if (["sale", "rent"].includes(typeLower)) {
-      result = result.filter(p => p.listingType === typeLower);
-    } else {
-      result = result.filter(p => 
-        p.propertyType.toLowerCase().includes(typeLower) || 
-        p.listingType.toLowerCase() === typeLower
-      );
-    }
-  }
-
-  if (bhkParam) {
-    const num = parseInt(bhkParam);
-    if (!isNaN(num)) {
-      result = result.filter(p => p.bedrooms === num);
-    }
-  }
-
-  if (!query.trim()) return result;
-
+function checkPropertyMatchesQuery(p: any, query: string): boolean {
+  if (!query.trim()) return false;
   const rawTerm = query.toLowerCase().trim();
+
+  // BHK direct check e.g. "3bhk", "3 bhk", "3", "3 bed"
+  const bhkMatch = rawTerm.match(/(\d+)\s*(bhk|bed|bedroom)?/);
+  if (bhkMatch && (rawTerm.includes("bhk") || rawTerm.includes("bed"))) {
+    const bedrooms = parseInt(bhkMatch[1]);
+    if (p.bedrooms === bedrooms) return true;
+  }
+
   const stopWords = ["in", "at", "near", "for", "a", "an", "the", "of"];
   const tokens = rawTerm.split(/\s+/).filter(t => !stopWords.includes(t));
 
-  return result.filter(p => {
-    const pType = (p.propertyType || "").toLowerCase().replace('-', ' ');
-    const lType = (p.listingType || "").toLowerCase();
-    const city = (p.location?.city || "").toLowerCase();
-    const locality = (p.location?.locality || "").toLowerCase();
-    const address = (p.location?.address || "").toLowerCase();
-    const title = (p.title || "").toLowerCase();
-    const desc = (p.description || "").toLowerCase();
+  const pType = (p.propertyType || "").toLowerCase().replace('-', ' ');
+  const lType = (p.listingType || "").toLowerCase();
+  const city = (p.location?.city || "").toLowerCase();
+  const locality = (p.location?.locality || "").toLowerCase();
+  const address = (p.location?.address || "").toLowerCase();
+  const title = (p.title || "").toLowerCase();
+  const desc = (p.description || "").toLowerCase();
 
-    const searchableText = `${title} ${locality} ${city} ${address} ${pType} ${lType} ${desc}`;
+  const searchableText = `${title} ${locality} ${city} ${address} ${pType} ${lType} ${desc}`;
 
-    if (tokens.length > 0) {
-      return tokens.every(token => {
-        const stem = token.length > 3 && token.endsWith('s') ? token.slice(0, -1) : token;
-        
-        if (stem === "apartment" || token === "flats" || token === "flat") {
-          return pType.includes("apartment") || searchableText.includes("apartment");
-        }
-        if (stem === "villa" || token === "house" || token === "houses") {
-          return pType.includes("villa") || searchableText.includes("villa");
-        }
-        if (stem === "plot" || stem === "land") {
-          return pType.includes("land") || pType.includes("plot") || searchableText.includes("plot") || searchableText.includes("land");
-        }
-        if (stem === "shop" || stem === "office" || token === "commercial") {
-          return pType.includes("commercial") || searchableText.includes("commercial");
-        }
+  if (tokens.length > 0) {
+    return tokens.every(token => {
+      const stem = token.length > 3 && token.endsWith('s') ? token.slice(0, -1) : token;
+      
+      if (stem === "3bhk" || token === "3bhk") return p.bedrooms === 3;
+      if (stem === "2bhk" || token === "2bhk") return p.bedrooms === 2;
+      if (stem === "4bhk" || token === "4bhk") return p.bedrooms === 4;
+      if (stem === "1bhk" || token === "1bhk") return p.bedrooms === 1;
 
-        return searchableText.includes(token) || searchableText.includes(stem);
-      });
-    }
+      if (stem === "apartment" || token === "flats" || token === "flat") {
+        return pType.includes("apartment") || searchableText.includes("apartment");
+      }
+      if (stem === "villa" || token === "house" || token === "houses") {
+        return pType.includes("villa") || searchableText.includes("villa");
+      }
+      if (stem === "plot" || stem === "land") {
+        return pType.includes("land") || pType.includes("plot") || searchableText.includes("plot") || searchableText.includes("land");
+      }
+      if (stem === "shop" || stem === "office" || token === "commercial") {
+        return pType.includes("commercial") || searchableText.includes("commercial");
+      }
 
-    return searchableText.includes(rawTerm);
-  });
+      return searchableText.includes(token) || searchableText.includes(stem);
+    });
+  }
+
+  return searchableText.includes(rawTerm);
 }
 
 function calculateDistanceStr(userPos: L.LatLng, propLat: number, propLng: number) {
@@ -254,23 +259,15 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const properties = usePropertiesStore((state) => state.properties);
   const mapProperties = useMemo(() => properties.filter((p) => p.showOnMap && p.status !== 'sold'), [properties]);
 
-  const activeFiltered = useMemo(() => {
-    if (filteredItems && Array.isArray(filteredItems)) {
-      return filteredItems;
-    }
-    return getSmartFilteredProperties(mapProperties, initialQuery, initialType, initialBhk);
-  }, [filteredItems, mapProperties, initialQuery, initialType, initialBhk]);
-
   const [position, setPosition] = useState<L.LatLng | null>(
-    activeFiltered.length > 0 && activeFiltered[0].location?.latitude && activeFiltered[0].location?.longitude
-      ? new L.LatLng(activeFiltered[0].location.latitude, activeFiltered[0].location.longitude)
+    mapProperties.length > 0 && mapProperties[0].location?.latitude && mapProperties[0].location?.longitude
+      ? new L.LatLng(mapProperties[0].location.latitude, mapProperties[0].location.longitude)
       : new L.LatLng(16.5062, 80.6480)
   );
   
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
-  const [filteredProperties, setFilteredProperties] = useState(activeFiltered);
   const [mapLayerType, setMapLayerType] = useState<"streets" | "hybrid">("streets");
   
   // Real-Time Search Query State inside Map
@@ -282,49 +279,60 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
   const mapRef = useRef<L.Map | null>(null);
 
-  const displayedProperties = useMemo(() => {
+  // Filter & Sort Properties so Matching Homes Pop Up First!
+  const { matchingProperties, nonMatchingProperties, displayedProperties } = useMemo(() => {
+    let source = mapProperties;
+    if (filteredItems && Array.isArray(filteredItems) && filteredItems.length > 0) {
+      source = filteredItems;
+    }
+
     if (drawPolygonPoints.length >= 3) {
-      return filteredProperties.filter((p) =>
+      source = source.filter((p) =>
         isPointInPolygon(
           { lat: p.location.latitude, lng: p.location.longitude },
           drawPolygonPoints
         )
       );
     }
-    return filteredProperties;
-  }, [filteredProperties, drawPolygonPoints]);
+
+    if (!mapSearchInput.trim()) {
+      return {
+        matchingProperties: [],
+        nonMatchingProperties: source,
+        displayedProperties: source,
+      };
+    }
+
+    const matches: any[] = [];
+    const others: any[] = [];
+
+    source.forEach((p) => {
+      if (checkPropertyMatchesQuery(p, mapSearchInput)) {
+        matches.push(p);
+      } else {
+        others.push(p);
+      }
+    });
+
+    return {
+      matchingProperties: matches,
+      nonMatchingProperties: others,
+      displayedProperties: [...matches, ...others],
+    };
+  }, [mapProperties, filteredItems, drawPolygonPoints, mapSearchInput]);
 
   const selectedProperty = useMemo(() => {
     return displayedProperties.find((p) => p.id === selectedPropertyId);
   }, [displayedProperties, selectedPropertyId]);
 
-  useEffect(() => {
-    if (filteredItems && Array.isArray(filteredItems)) {
-      setFilteredProperties(filteredItems);
-      if (filteredItems.length > 0 && filteredItems[0].location?.latitude && filteredItems[0].location?.longitude) {
-        setPosition(new L.LatLng(filteredItems[0].location.latitude, filteredItems[0].location.longitude));
-      }
-      return;
-    }
-
-    const query = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
-    const typeParam = searchParams.get("type") || searchParams.get("category") || null;
-    const bhkParam = searchParams.get("bhk") || null;
-    const matches = getSmartFilteredProperties(mapProperties, query, typeParam, bhkParam);
-    setFilteredProperties(matches);
-    if (matches.length > 0) {
-      if (matches[0].location?.latitude && matches[0].location?.longitude) {
-        setPosition(new L.LatLng(matches[0].location.latitude, matches[0].location.longitude));
-      }
-    }
-  }, [filteredItems, searchParams, mapProperties]);
-
   const handleSearchChange = (val: string) => {
     setMapSearchInput(val);
-    const matches = getSmartFilteredProperties(mapProperties, val, initialType, initialBhk);
-    setFilteredProperties(matches);
-    if (matches.length > 0 && matches[0].location?.latitude && matches[0].location?.longitude) {
-      const newPos = new L.LatLng(matches[0].location.latitude, matches[0].location.longitude);
+    if (!val.trim()) return;
+
+    // Automatically fly to the first matching property when user searches e.g. "3bhk"
+    const matching = mapProperties.filter((p) => checkPropertyMatchesQuery(p, val));
+    if (matching.length > 0 && matching[0].location?.latitude && matching[0].location?.longitude) {
+      const newPos = new L.LatLng(matching[0].location.latitude, matching[0].location.longitude);
       setPosition(newPos);
       if (mapRef.current) {
         mapRef.current.flyTo(newPos, 13, { duration: 1.2 });
@@ -376,7 +384,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
   return (
     <div className="w-full h-full flex flex-col touch-none relative" style={{ touchAction: "none" }}>
-      {/* Dynamic Animated Radar Dash & Leaflet Control Offsets */}
+      {/* Dynamic Animated Radar Dash & Smart Marker Pop-Up Keyframe Animations */}
       <style jsx global>{`
         @keyframes radarLinePulse {
           0% {
@@ -390,6 +398,26 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
           animation: radarLinePulse 1.2s linear infinite;
           filter: drop-shadow(0 0 8px rgba(245, 166, 35, 0.9));
         }
+
+        @keyframes matchPopUpPulse {
+          0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.9);
+          }
+          50% {
+            transform: scale(1.22);
+            box-shadow: 0 0 25px 10px rgba(245, 166, 35, 0.7);
+          }
+          100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(245, 166, 35, 0);
+          }
+        }
+        .popup-marker-match {
+          animation: matchPopUpPulse 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+          z-index: 99999 !important;
+        }
+
         @media (max-width: 767px) {
           .leaflet-top.leaflet-left {
             top: 105px !important;
@@ -425,14 +453,14 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               )}
             </div>
 
-            {/* Desktop Search Input Box */}
+            {/* Smart Search Input Box */}
             <div className="relative">
               <Search className="w-4 h-4 text-amber-400 absolute left-3 top-3" />
               <input
                 type="text"
                 value={mapSearchInput}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Search city, locality, or project..."
+                placeholder="Try '3bhk', 'villa', 'Benz Circle'..."
                 className="w-full pl-9 pr-8 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
               />
               {mapSearchInput && (
@@ -444,6 +472,18 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 </button>
               )}
             </div>
+
+            {/* Smart Pop-Up Search Result Badge */}
+            {mapSearchInput.trim() && (
+              <div className="bg-amber-500/15 border border-amber-500/40 p-2.5 rounded-xl text-xs flex items-center justify-between">
+                <span className="text-amber-400 font-extrabold flex items-center gap-1">
+                  <Star className="w-3.5 h-3.5 fill-amber-400" /> {matchingProperties.length} Pop-Up Matches
+                </span>
+                <span className="text-slate-300 font-medium text-[11px]">
+                  {nonMatchingProperties.length} dimmed
+                </span>
+              </div>
+            )}
 
             {/* Primary Action Button */}
             <button
@@ -609,7 +649,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   type="text"
                   value={mapSearchInput}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Search Vijayawada, Guntur..."
+                  placeholder="Try '3bhk', 'villa', 'Benz Circle'..."
                   className="w-full bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none border-0 ring-0"
                 />
                 {mapSearchInput && (
@@ -678,6 +718,15 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 </button>
               ))}
             </div>
+
+            {/* Search Match Popup Badge on Mobile */}
+            {mapSearchInput.trim() && (
+              <div className="bg-amber-500/90 text-slate-950 font-extrabold text-[11px] px-3 py-1 rounded-full shadow-lg flex items-center justify-between animate-pulse self-start">
+                <span className="flex items-center gap-1">
+                  ⭐ {matchingProperties.length} Pop-Up Matches for "{mapSearchInput}"
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Drawing Mode Overlay Banner */}
@@ -766,10 +815,12 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               />
             )}
 
-            {/* Realtor.com Style Price Pill Markers */}
+            {/* Realtor.com Style Price Pill Markers with Smart Pop-Up Animations */}
             {displayedProperties.map((property) => {
               const isSelected = selectedPropertyId === property.id;
-              const pricePillIcon = getPricePillIcon(property.price, isSelected);
+              const isMatch = checkPropertyMatchesQuery(property, mapSearchInput);
+              const hasSearch = Boolean(mapSearchInput.trim());
+              const pricePillIcon = getPricePillIcon(property.price, isSelected, isMatch, hasSearch);
 
               return (
                 <Marker
