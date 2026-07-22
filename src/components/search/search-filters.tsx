@@ -1,19 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { Search, SlidersHorizontal, ChevronDown, Check, X, Building2, Bed, DollarSign, Home, Trees, Store, Map as MapIcon } from "lucide-react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+  SlidersHorizontal,
+  X,
+  Building2,
+  Check,
+  Compass,
+  Home,
+  Trees,
+  Store,
+  RotateCcw,
+  Sparkles,
+  Droplets,
+  Sprout,
+  ShieldCheck,
+  UserCheck,
+  ArrowRight,
+  Layers,
+  Car,
+  DoorOpen,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { formatINR, cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 
@@ -22,250 +30,482 @@ export interface FilterState {
   listingType: string[];
   propertyType: string[];
   bhk: string[];
+  bathrooms: string[];
+  balconies: string[];
+  additionalRooms: string[]; // Pooja Room, Study Room, Servant Room
+  facing: string[]; // East, West, North, South, etc.
   budget: [number, number];
   ageRange: string[];
   saleType: string[];
-  availability: string[];
-  postedBy: string[];
+  availability: string[]; // Ready to Occupy / Under Construction
+  postedBy: string[]; // Owner / Agent / Developer
   furnished: string[];
+  waterSource: string[]; // Bore Water, Lake Water, Canal Water
+  cultivationCrop: string[]; // Paddy, Chilli, Cotton, Tobacco, Horticulture
+  vastuCompliant: boolean;
+  gatedCommunity: boolean;
+  reraApproved: boolean;
 }
 
-interface SearchFiltersProps {
+export const initialFilterState: FilterState = {
+  query: "",
+  listingType: [],
+  propertyType: [],
+  bhk: [],
+  bathrooms: [],
+  balconies: [],
+  additionalRooms: [],
+  facing: [],
+  budget: [0, 100000000],
+  ageRange: [],
+  saleType: [],
+  availability: [],
+  postedBy: [],
+  furnished: [],
+  waterSource: [],
+  cultivationCrop: [],
+  vastuCompliant: false,
+  gatedCommunity: false,
+  reraApproved: false,
+};
+
+interface SearchFiltersModalProps {
+  isOpen: boolean;
+  onClose: () => void;
   filters: FilterState;
-  setFilters: (filters: FilterState | ((prev: FilterState) => FilterState)) => void;
+  onApplyFilters: (newFilters: FilterState) => void;
+  totalResults: number;
 }
 
-export function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+export function SearchFiltersModal({
+  isOpen,
+  onClose,
+  filters,
+  onApplyFilters,
+  totalResults,
+}: SearchFiltersModalProps) {
+  const [localFilters, setLocalFilters] = useState<FilterState>(filters);
 
-  const toggleFilter = (category: keyof FilterState, value: string) => {
-    setFilters((prev) => {
-      const current = prev[category] as string[];
+  if (!isOpen) return null;
+
+  const toggleArrayFilter = (field: keyof FilterState, value: string) => {
+    setLocalFilters((prev) => {
+      const current = (prev[field] as string[]) || [];
       const updated = current.includes(value)
-        ? current.filter((item) => item !== value)
+        ? current.filter((v) => v !== value)
         : [...current, value];
-      return { ...prev, [category]: updated };
+      return { ...prev, [field]: updated };
     });
   };
 
-  const getFilterCount = (category: keyof FilterState) => {
-    return (filters[category] as string[]).length;
+  const handleReset = () => {
+    setLocalFilters({ ...initialFilterState, query: localFilters.query });
   };
 
-  const clearFilters = () => {
-    setFilters({
-      query: "",
-      listingType: [],
-      propertyType: [],
-      bhk: [],
-      budget: [0, 100000000],
-      ageRange: [],
-      saleType: [],
-      availability: [],
-      postedBy: [],
-      furnished: [],
-    });
+  const handleApply = () => {
+    onApplyFilters(localFilters);
+    onClose();
   };
-
-  const hasActiveFilters = 
-    filters.listingType.length > 0 || 
-    filters.propertyType.length > 0 || 
-    filters.bhk.length > 0 || 
-    filters.ageRange.length > 0 ||
-    filters.saleType.length > 0 ||
-    filters.availability.length > 0 ||
-    filters.postedBy.length > 0 ||
-    filters.furnished.length > 0 ||
-    filters.budget[0] > 0 || 
-    filters.budget[1] < 100000000 ||
-    filters.query !== "";
 
   return (
-    <div className="w-full space-y-4 mb-2">
-      {/* Search Bar Row */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-text-tertiary" />
-          <Input
-            type="text"
-            placeholder="Search by locality, city, or project name..."
-            className="pl-13 h-14 bg-bg-card border-border-default/50 rounded-full shadow-sm text-base focus-visible:ring-1 focus-visible:ring-amber-primary"
-            value={filters.query}
-            onChange={(e) => setFilters({ ...filters, query: e.target.value })}
-          />
-        </div>
-        <Link 
-          href={(() => {
-            const params = new URLSearchParams();
-            if (filters.query) params.set("location", filters.query);
-            if (filters.propertyType.length > 0) params.set("type", filters.propertyType[0]);
-            else if (filters.listingType.length > 0) params.set("type", filters.listingType[0]);
-            if (filters.bhk.length > 0) params.set("bhk", filters.bhk[0]);
-            const str = params.toString();
-            return `/properties/map${str ? `?${str}` : ''}`;
-          })()}
-          className="flex items-center justify-center gap-2 h-14 px-5 rounded-full bg-bg-card border border-border-default/50 hover:bg-bg-primary/50 shadow-sm text-text-primary font-medium transition-colors whitespace-nowrap flex-shrink-0"
-        >
-          <MapIcon className="h-5 w-5" />
-          <span className="hidden sm:inline">Map</span>
-        </Link>
-      </div>
-      
-      {/* Multi-Select Dropdowns */}
-      <div className="flex items-center gap-2.5 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar relative">
-        <style dangerouslySetInnerHTML={{__html: `
-          .no-scrollbar::-webkit-scrollbar { display: none; }
-          .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        `}} />
+    <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300">
         
-        {/* Listing Type Filter */}
-        <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? "listing" : null)}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className={`h-10 rounded-full px-4 border-border-default/60 hover:bg-bg-primary/50 transition-all bg-bg-card flex-shrink-0 ${getFilterCount('listingType') > 0 ? 'bg-amber-primary/10 border-amber-primary/30 text-amber-primary shadow-sm' : ''}`}>
-              Buy / Rent
-              {getFilterCount('listingType') > 0 && (
-                <Badge variant="amber" className="ml-1.5 h-4 w-4 p-0 flex items-center justify-center rounded-full text-[9px]">
-                  {getFilterCount('listingType')}
-                </Badge>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 p-3 rounded-2xl bg-bg-card border-border-default" align="start">
-              <DropdownMenuLabel>Listing Type</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-border-subtle" />
-              <div className="space-y-3 mt-2">
-                {["sale", "rent", "pg"].map((type) => (
-                  <label key={type} className="flex items-center space-x-3 cursor-pointer group">
-                    <Checkbox 
-                      checked={filters.listingType.includes(type)}
-                      onCheckedChange={() => toggleFilter("listingType", type)}
-                      className="border-text-tertiary data-[state=checked]:bg-amber-primary data-[state=checked]:border-amber-primary"
-                    />
-                    <span className="text-sm font-medium capitalize text-text-secondary group-hover:text-text-primary transition-colors">
-                      {type === "sale" ? "Buy" : type}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        {/* Modal Header */}
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950/80 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 font-extrabold flex items-center justify-center">
+              <SlidersHorizontal className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="font-heading text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                Senior Real Estate Search Filters
+              </h2>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Customized according to AP Property Specifications
+              </p>
+            </div>
+          </div>
 
-        {/* Property Type Filter */}
-        <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? "property" : null)}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className={`h-10 rounded-full px-4 border-border-default/60 hover:bg-bg-primary/50 transition-all bg-bg-card flex-shrink-0 ${getFilterCount('propertyType') > 0 ? 'bg-amber-primary/10 border-amber-primary/30 text-amber-primary shadow-sm' : ''}`}>
-              Property Type
-              {getFilterCount('propertyType') > 0 && (
-                <Badge variant="amber" className="ml-1.5 h-4 w-4 p-0 flex items-center justify-center rounded-full text-[9px]">
-                  {getFilterCount('propertyType')}
-                </Badge>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64 p-3 rounded-2xl bg-bg-card border-border-default max-h-[50vh] md:max-h-[300px] overflow-y-auto" align="start" side="bottom" sideOffset={8} avoidCollisions={false}>
-              <DropdownMenuLabel className="text-xs text-text-tertiary uppercase tracking-wider">Residential</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-border-subtle" />
-              <div className="space-y-3 mt-2 mb-4">
-                {["apartment", "villa", "independent-house", "residential-land", "farmhouse", "pg-coliving"].map((type) => (
-                  <label key={type} className="flex items-center space-x-3 cursor-pointer group">
-                    <Checkbox 
-                      checked={filters.propertyType.includes(type)}
-                      onCheckedChange={() => toggleFilter("propertyType", type)}
-                      className="border-text-tertiary data-[state=checked]:bg-amber-primary data-[state=checked]:border-amber-primary"
-                    />
-                    <span className="text-sm font-medium capitalize text-text-secondary group-hover:text-text-primary transition-colors">
-                      {type.replace("-", " ")}
-                    </span>
-                  </label>
-                ))}
-              </div>
-              <DropdownMenuLabel className="text-xs text-text-tertiary uppercase tracking-wider">Commercial</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-border-subtle" />
-              <div className="space-y-3 mt-2">
-                {["shops", "buildings", "commercial-spaces", "commercial-lands", "industrial-lands", "agricultural-lands"].map((type) => (
-                  <label key={type} className="flex items-center space-x-3 cursor-pointer group">
-                    <Checkbox 
-                      checked={filters.propertyType.includes(type)}
-                      onCheckedChange={() => toggleFilter("propertyType", type)}
-                      className="border-text-tertiary data-[state=checked]:bg-amber-primary data-[state=checked]:border-amber-primary"
-                    />
-                    <span className="text-sm font-medium capitalize text-text-secondary group-hover:text-text-primary transition-colors">
-                      {type.replace("-", " ")}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <button
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-full bg-slate-200 dark:bg-slate-800 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-        {/* BHK Filter */}
-        <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? "bhk" : null)}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className={`h-10 rounded-full px-4 border-border-default/60 hover:bg-bg-primary/50 transition-all bg-bg-card flex-shrink-0 ${getFilterCount('bhk') > 0 ? 'bg-amber-primary/10 border-amber-primary/30 text-amber-primary shadow-sm' : ''}`}>
-              BHK
-              {getFilterCount('bhk') > 0 && (
-                <Badge variant="amber" className="ml-1.5 h-4 w-4 p-0 flex items-center justify-center rounded-full text-[9px]">
-                  {getFilterCount('bhk')}
-                </Badge>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 p-3 rounded-2xl bg-bg-card border-border-default" align="start">
-              <DropdownMenuLabel>Bedrooms</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-border-subtle" />
-              <div className="space-y-3 mt-2">
-                {["1BHK", "2BHK", "3BHK", "4BHK and more"].map((bhk) => (
-                  <label key={bhk} className="flex items-center space-x-3 cursor-pointer group">
-                    <Checkbox 
-                      checked={filters.bhk.includes(bhk)}
-                      onCheckedChange={() => toggleFilter("bhk", bhk)}
-                      className="border-text-tertiary data-[state=checked]:bg-amber-primary data-[state=checked]:border-amber-primary"
-                    />
-                    <span className="text-sm font-medium capitalize text-text-secondary group-hover:text-text-primary transition-colors">
-                      {bhk}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        {/* Scrollable Filter Content Sections (Logical Senior Agent Order) */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 text-xs no-scrollbar">
+          
+          {/* 1. POSTED BY (Owner / Verified Agent / Developer) */}
+          <div className="space-y-2">
+            <label className="font-extrabold uppercase text-slate-400 text-[10px] tracking-wider flex items-center gap-1.5">
+              <UserCheck className="w-3.5 h-3.5 text-amber-500" /> Posted By
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Owner (No Broker)", val: "owner" },
+                { label: "Verified Agent", val: "agent" },
+                { label: "Developer / Builder", val: "builder" },
+              ].map((p) => {
+                const isSelected = localFilters.postedBy.includes(p.val);
+                return (
+                  <button
+                    key={p.val}
+                    type="button"
+                    onClick={() => toggleArrayFilter("postedBy", p.val)}
+                    className={cn(
+                      "py-2.5 px-3 rounded-xl border font-bold text-center transition-all cursor-pointer truncate",
+                      isSelected
+                        ? "bg-amber-500 text-slate-950 border-amber-500 shadow-sm"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-        {/* Budget Filter */}
-        <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? "budget" : null)}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className={`h-10 rounded-full px-4 border-border-default/60 hover:bg-bg-primary/50 transition-all bg-bg-card flex-shrink-0 ${(filters.budget[0] > 0 || filters.budget[1] < 100000000) ? 'bg-amber-primary/10 border-amber-primary/30 text-amber-primary shadow-sm' : ''}`}>
-              Price
-            </Button>
-          </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-[300px] p-4 rounded-2xl bg-bg-card border-border-default shadow-elevated" align="start">
-              <DropdownMenuLabel className="font-semibold text-text-primary mb-3">Price Range</DropdownMenuLabel>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label: "Under ₹50L", min: 0, max: 5000000 },
-                  { label: "₹50L - ₹1Cr", min: 5000000, max: 10000000 },
-                  { label: "₹1Cr - ₹3Cr", min: 10000000, max: 30000000 },
-                  { label: "₹3Cr+", min: 30000000, max: 1000000000 },
-                ].map((range) => {
-                  const isActive = filters.budget[0] === range.min && filters.budget[1] === range.max;
+          {/* 2. TRANSACTION TYPE (Buy/Sale, Rent, PG) */}
+          <div className="space-y-2">
+            <label className="font-extrabold uppercase text-slate-400 text-[10px] tracking-wider flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-amber-500" /> Listing Purpose
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Buy / For Sale", val: "sale" },
+                { label: "For Rent", val: "rent" },
+                { label: "PG / Co-Living", val: "pg" },
+              ].map((item) => {
+                const isSelected = localFilters.listingType.includes(item.val);
+                return (
+                  <button
+                    key={item.val}
+                    type="button"
+                    onClick={() => toggleArrayFilter("listingType", item.val)}
+                    className={cn(
+                      "py-2.5 px-3 rounded-xl border font-bold text-center transition-all cursor-pointer",
+                      isSelected
+                        ? "bg-amber-500 text-slate-950 border-amber-500 shadow-sm"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. PROPERTY CATEGORY & TYPE */}
+          <div className="space-y-2">
+            <label className="font-extrabold uppercase text-slate-400 text-[10px] tracking-wider flex items-center gap-1.5">
+              <Home className="w-3.5 h-3.5 text-amber-500" /> Property Type
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[
+                { label: "Apartment / Flat", val: "apartment" },
+                { label: "Villa / House", val: "villa" },
+                { label: "Plot / Land (Sq.Yds)", val: "residential-land" },
+                { label: "Commercial Space", val: "commercial-spaces" },
+                { label: "Agricultural Land", val: "agricultural-lands" },
+                { label: "Farm House", val: "farmhouse" },
+              ].map((t) => {
+                const isSelected = localFilters.propertyType.includes(t.val);
+                return (
+                  <button
+                    key={t.val}
+                    type="button"
+                    onClick={() => toggleArrayFilter("propertyType", t.val)}
+                    className={cn(
+                      "py-2.5 px-3 rounded-xl border font-bold text-left transition-all cursor-pointer truncate",
+                      isSelected
+                        ? "bg-amber-500 text-slate-950 border-amber-500 shadow-sm"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
+                    )}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 4. BUDGET & PRICE RANGE */}
+          <div className="space-y-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <div className="flex justify-between items-center">
+              <label className="font-extrabold uppercase text-slate-400 text-[10px] tracking-wider">
+                Budget Range (INR)
+              </label>
+              <span className="font-black text-amber-500 text-sm">
+                {formatINR(localFilters.budget[0])} - {localFilters.budget[1] >= 100000000 ? "₹10+ Crores" : formatINR(localFilters.budget[1])}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 pt-1">
+              {[
+                { label: "Under 30L", min: 0, max: 3000000 },
+                { label: "30L-60L", min: 3000000, max: 6000000 },
+                { label: "60L-1 Cr", min: 6000000, max: 10000000 },
+                { label: "1 Cr-2 Cr", min: 10000000, max: 20000000 },
+                { label: "Above 2 Cr", min: 20000000, max: 100000000 },
+              ].map((p) => {
+                const isSelected = localFilters.budget[0] === p.min && localFilters.budget[1] === p.max;
+                return (
+                  <button
+                    key={p.label}
+                    type="button"
+                    onClick={() => setLocalFilters({ ...localFilters, budget: [p.min, p.max] })}
+                    className={cn(
+                      "py-1.5 px-2 rounded-lg text-[10px] font-extrabold border text-center transition-all cursor-pointer",
+                      isSelected
+                        ? "bg-amber-500 text-slate-950 border-amber-500"
+                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800"
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 5. BEDROOMS (BHK), BATHROOMS & BALCONIES */}
+          <div className="space-y-3">
+            <label className="font-extrabold uppercase text-slate-400 text-[10px] tracking-wider">
+              Bedrooms (BHK)
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              {["1", "2", "3", "4+"].map((bhk) => {
+                const isSelected = localFilters.bhk.includes(bhk);
+                return (
+                  <button
+                    key={bhk}
+                    type="button"
+                    onClick={() => toggleArrayFilter("bhk", bhk)}
+                    className={cn(
+                      "py-2 px-3 rounded-xl border font-extrabold text-center transition-all cursor-pointer",
+                      isSelected
+                        ? "bg-amber-500 text-slate-950 border-amber-500 shadow-sm"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    )}
+                  >
+                    {bhk} BHK
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 6. ADDITIONAL ROOMS (Pooja Room, Study Room, Servant Room - EXCEL SHEET REQUIREMENT) */}
+          <div className="space-y-2">
+            <label className="font-extrabold uppercase text-slate-400 text-[10px] tracking-wider flex items-center gap-1.5">
+              <DoorOpen className="w-3.5 h-3.5 text-amber-500" /> Additional Rooms (Excel Specs)
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Pooja Room", val: "pooja" },
+                { label: "Study Room", val: "study" },
+                { label: "Servant Room", val: "servant" },
+              ].map((rm) => {
+                const isSelected = localFilters.additionalRooms.includes(rm.val);
+                return (
+                  <button
+                    key={rm.val}
+                    type="button"
+                    onClick={() => toggleArrayFilter("additionalRooms", rm.val)}
+                    className={cn(
+                      "py-2 px-3 rounded-xl border font-bold text-center transition-all cursor-pointer truncate",
+                      isSelected
+                        ? "bg-amber-500 text-slate-950 border-amber-500"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    )}
+                  >
+                    {rm.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 7. FACING DIRECTION (East, West, North, South, etc. - EXCEL REQUIREMENT) */}
+          <div className="space-y-2">
+            <label className="font-extrabold uppercase text-slate-400 text-[10px] tracking-wider flex items-center gap-1.5">
+              <Compass className="w-3.5 h-3.5 text-amber-500" /> Facing Direction
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              {["East", "West", "North", "South", "North-East", "North-West", "South-East", "South-West"].map((face) => {
+                const val = face.toLowerCase();
+                const isSelected = localFilters.facing.includes(val);
+                return (
+                  <button
+                    key={face}
+                    type="button"
+                    onClick={() => toggleArrayFilter("facing", val)}
+                    className={cn(
+                      "py-2 px-2 rounded-xl border font-extrabold text-center transition-all text-[11px] cursor-pointer",
+                      isSelected
+                        ? "bg-amber-500 text-slate-950 border-amber-500"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    )}
+                  >
+                    {face}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 8. CONSTRUCTION STATUS (Ready to Occupy / Under Construction - EXCEL REQUIREMENT) */}
+          <div className="space-y-2">
+            <label className="font-extrabold uppercase text-slate-400 text-[10px] tracking-wider flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Construction Status
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: "Ready to Occupy", val: "ready" },
+                { label: "Under Construction", val: "under-construction" },
+              ].map((st) => {
+                const isSelected = localFilters.availability.includes(st.val);
+                return (
+                  <button
+                    key={st.val}
+                    type="button"
+                    onClick={() => toggleArrayFilter("availability", st.val)}
+                    className={cn(
+                      "py-2.5 px-3 rounded-xl border font-bold text-center transition-all cursor-pointer",
+                      isSelected
+                        ? "bg-amber-500 text-slate-950 border-amber-500"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    )}
+                  >
+                    {st.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 9. WATER SOURCE & CULTIVATION CROP (AGRICULTURAL & FARM LAND EXCEL REQUIREMENT) */}
+          <div className="space-y-3 bg-emerald-500/5 dark:bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/30">
+            <label className="font-extrabold uppercase text-emerald-600 dark:text-emerald-400 text-[10px] tracking-wider flex items-center gap-1.5">
+              <Sprout className="w-3.5 h-3.5" /> Agricultural & Farm House Options (Excel Specs)
+            </label>
+            
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-slate-500">Water Source:</span>
+              <div className="grid grid-cols-3 gap-2">
+                {["Bore Water", "Lake Water", "Canal Water"].map((w) => {
+                  const isSelected = localFilters.waterSource.includes(w);
                   return (
                     <button
-                      key={range.label}
-                      onClick={() => setFilters(prev => ({ ...prev, budget: isActive ? [0, 100000000] : [range.min, range.max] }))}
+                      key={w}
+                      type="button"
+                      onClick={() => toggleArrayFilter("waterSource", w)}
                       className={cn(
-                        "flex items-center justify-center px-3 py-2.5 rounded-xl text-xs font-medium transition-all border",
-                        isActive
-                          ? "bg-amber-primary/10 border-amber-primary text-amber-primary"
-                          : "bg-bg-primary/50 border-border-default/50 text-text-secondary hover:border-amber-primary/40"
+                        "py-1.5 px-2 rounded-lg border text-[11px] font-bold text-center transition-all cursor-pointer",
+                        isSelected
+                          ? "bg-emerald-600 text-white border-emerald-600"
+                          : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800"
                       )}
                     >
-                      {range.label}
+                      {w}
                     </button>
                   );
                 })}
               </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </div>
+
+            <div className="space-y-1.5 pt-1">
+              <span className="text-[11px] font-bold text-slate-500">Cultivation Crop:</span>
+              <div className="grid grid-cols-4 gap-1.5">
+                {["Paddy", "Chilli", "Cotton", "Horticulture"].map((c) => {
+                  const isSelected = localFilters.cultivationCrop.includes(c);
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => toggleArrayFilter("cultivationCrop", c)}
+                      className={cn(
+                        "py-1.5 px-2 rounded-lg border text-[10px] font-extrabold text-center transition-all cursor-pointer",
+                        isSelected
+                          ? "bg-emerald-600 text-white border-emerald-600"
+                          : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800"
+                      )}
+                    >
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* 10. SPECIAL AP VERIFICATION & VASTU TOGGLES */}
+          <div className="space-y-2 pt-2">
+            <label className="font-extrabold uppercase text-slate-400 text-[10px] tracking-wider flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-500" /> AP Legal & Vastu Badges
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setLocalFilters({ ...localFilters, vastuCompliant: !localFilters.vastuCompliant })}
+                className={cn(
+                  "py-2.5 px-3 rounded-xl border font-extrabold text-xs text-center transition-all cursor-pointer flex items-center justify-center gap-1.5",
+                  localFilters.vastuCompliant
+                    ? "bg-amber-500 text-slate-950 border-amber-500"
+                    : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                )}
+              >
+                <span>🧭 100% Vastu Compliant</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLocalFilters({ ...localFilters, reraApproved: !localFilters.reraApproved })}
+                className={cn(
+                  "py-2.5 px-3 rounded-xl border font-extrabold text-xs text-center transition-all cursor-pointer flex items-center justify-center gap-1.5",
+                  localFilters.reraApproved
+                    ? "bg-amber-500 text-slate-950 border-amber-500"
+                    : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                )}
+              >
+                <span>🛡️ RERA Approved Only</span>
+              </button>
+            </div>
+          </div>
+
         </div>
+
+        {/* Modal Sticky Action Footer Bar */}
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-center justify-between gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={handleReset}
+            className="py-3 px-4 rounded-xl font-bold text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800 flex items-center gap-1.5 cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Reset All
+          </button>
+
+          <button
+            type="button"
+            onClick={handleApply}
+            className="flex-1 py-3 px-5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+          >
+            <span>Apply Filters ({totalResults} Homes)</span>
+            <ArrowRight className="w-4 h-4 stroke-[3]" />
+          </button>
+        </div>
+
       </div>
+    </div>
   );
+}
+
+// Fallback exports for backward compatibility
+export function SearchFilters({ filters, setFilters }: any) {
+  return null;
 }

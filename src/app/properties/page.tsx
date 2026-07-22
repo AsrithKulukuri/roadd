@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { PropertyCard } from "@/components/property/property-card";
-import { SearchFilters, type FilterState } from "@/components/search/search-filters";
+import { SearchFiltersModal, initialFilterState, type FilterState } from "@/components/search/search-filters";
 import { RealtorSearchHeader } from "@/components/search/realtor-search-header";
 import { LocationCarousels } from "@/components/search/location-carousels";
 import { MapWrapper } from "@/components/map/map-wrapper";
@@ -25,6 +25,7 @@ function PropertiesPage() {
   const router = useRouter();
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [sortBy, setSortBy] = useState<"relevant" | "price-asc" | "price-desc" | "newest">("relevant");
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   
   const properties = usePropertiesStore((state) => state.properties);
   const [mounted, setMounted] = useState(false);
@@ -45,7 +46,7 @@ function PropertiesPage() {
     };
   }, [viewMode]);
 
-  const parseInitialParams = () => {
+  const parseInitialParams = (): FilterState => {
     const loc = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
     const typeRaw = searchParams.get("type")?.toLowerCase() || "";
     
@@ -55,7 +56,7 @@ function PropertiesPage() {
     if (typeRaw) {
       if (typeRaw === "buy" || typeRaw === "sale") listingType = ["sale"];
       else if (typeRaw === "rent") listingType = ["rent"];
-      else if (["apartment", "villa", "residential-land", "commercial-spaces", "pg", "farmhouse"].includes(typeRaw)) {
+      else if (["apartment", "villa", "residential-land", "commercial-spaces", "pg", "farmhouse", "agricultural-lands"].includes(typeRaw)) {
         propertyType = [typeRaw];
       }
     }
@@ -84,16 +85,10 @@ function PropertiesPage() {
     }
 
     return {
+      ...initialFilterState,
       query: loc,
       listingType,
       propertyType,
-      bhk: [],
-      budget: [0, 100000000] as [number, number],
-      ageRange: [],
-      saleType: [],
-      availability: [],
-      postedBy: [],
-      furnished: [],
     };
   };
 
@@ -120,7 +115,7 @@ function PropertiesPage() {
         } else if (typeRaw === "rent") {
           next.listingType = ["rent"];
           hasChanges = true;
-        } else if (["apartment", "villa", "residential-land", "commercial-spaces", "pg", "farmhouse"].includes(typeRaw)) {
+        } else if (["apartment", "villa", "residential-land", "commercial-spaces", "pg", "farmhouse", "agricultural-lands"].includes(typeRaw)) {
           next.propertyType = [typeRaw];
           hasChanges = true;
         }
@@ -180,12 +175,12 @@ function PropertiesPage() {
         if (!isMatch) return false;
       }
 
-      // 2. Listing Type (sale/rent)
+      // 2. Listing Type (sale/rent/pg)
       if (filters.listingType.length > 0) {
         if (!filters.listingType.includes(property.listingType)) return false;
       }
 
-      // 3. Property Type (apartment/villa/land/commercial)
+      // 3. Property Type (apartment/villa/land/commercial/agricultural)
       if (filters.propertyType.length > 0) {
         if (!filters.propertyType.includes(property.propertyType)) return false;
       }
@@ -205,9 +200,15 @@ function PropertiesPage() {
         return false;
       }
 
-      // 6. Availability (ready/under-construction)
-      if (filters.availability.length > 0 && property.possessionStatus) {
-        if (!filters.availability.includes(property.possessionStatus)) return false;
+      // 6. Availability / Construction Status
+      if (filters.availability.length > 0) {
+        const isReady = property.isReadyToMove;
+        const matchesAvailability = filters.availability.some((av) => {
+          if (av === "ready") return isReady;
+          if (av === "under-construction") return !isReady;
+          return true;
+        });
+        if (!matchesAvailability) return false;
       }
 
       // 7. Posted By (owner/agent/builder)
@@ -215,10 +216,14 @@ function PropertiesPage() {
         if (!filters.postedBy.includes(property.postedBy)) return false;
       }
 
-      // 8. Sale Type (new/resale)
-      if (filters.saleType.length > 0 && property.saleType) {
-        if (!filters.saleType.includes(property.saleType)) return false;
+      // 8. Facing Direction (East, West, North, South)
+      if (filters.facing.length > 0 && property.facing) {
+        if (!filters.facing.includes(property.facing.toLowerCase())) return false;
       }
+
+      // 9. Vastu & RERA Badges
+      if (filters.vastuCompliant && !property.vastuCompliant) return false;
+      if (filters.reraApproved && !property.reraId) return false;
 
       return true;
     }).sort((a, b) => {
@@ -268,7 +273,16 @@ function PropertiesPage() {
         onFilterChange={setFilters}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        onOpenAllFilters={() => {}}
+        onOpenAllFilters={() => setIsFilterModalOpen(true)}
+        totalResults={filteredProperties.length}
+      />
+
+      {/* Senior Real Estate Agent Level Filters Drawer Modal */}
+      <SearchFiltersModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        filters={filters}
+        onApplyFilters={setFilters}
         totalResults={filteredProperties.length}
       />
 
@@ -365,20 +379,7 @@ function PropertiesPage() {
               We couldn't find any properties matching your search in Vijayawada & Guntur. Try resetting or selecting a different location.
             </p>
             <button
-              onClick={() =>
-                setFilters({
-                  query: "",
-                  listingType: [],
-                  propertyType: [],
-                  bhk: [],
-                  budget: [0, 100000000],
-                  ageRange: [],
-                  saleType: [],
-                  availability: [],
-                  postedBy: [],
-                  furnished: [],
-                })
-              }
+              onClick={() => setFilters(initialFilterState)}
               className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm rounded-full transition-all shadow-xs cursor-pointer"
             >
               Clear all filters
