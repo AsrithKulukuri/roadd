@@ -4,16 +4,19 @@ import { useState } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Grid2X2, Play } from "lucide-react";
+import { ChevronLeft, ChevronRight, Grid2X2, Play, Camera, Tag } from "lucide-react";
 import type { PropertyImage } from "@/types/property";
 
 interface PropertyGalleryProps {
   images: PropertyImage[];
   title: string;
   videoUrl?: string;
+  isReadyToMove?: boolean;
 }
 
-export function PropertyGallery({ images, title, videoUrl }: PropertyGalleryProps) {
+const DEFAULT_ROOM_TAGS = ["Living Room", "Master Bedroom", "Kitchen", "Floor Plan"];
+
+export function PropertyGallery({ images, title, videoUrl, isReadyToMove = true }: PropertyGalleryProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVideoOpen, setIsVideoOpen] = useState(false);
@@ -33,118 +36,121 @@ export function PropertyGallery({ images, title, videoUrl }: PropertyGalleryProp
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-[300px] md:h-[500px] rounded-3xl overflow-hidden relative">
-        {/* Main Image */}
+      {/* Realtor.com Style Main Photo Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5 h-[320px] sm:h-[420px] lg:h-[500px] rounded-3xl overflow-hidden relative shadow-2xl bg-slate-950">
+        
+        {/* Main Hero Left Image (Takes 2 Columns on LG) */}
         <div 
-          className="md:col-span-2 relative h-full cursor-pointer group"
+          className="lg:col-span-2 relative h-full cursor-pointer group overflow-hidden"
           onClick={() => { setCurrentIndex(0); setIsOpen(true); }}
         >
           <Image
-            src={images[0].url}
-            alt={images[0].alt || title}
+            src={typeof images[0] === "string" ? images[0] : (images[0] as any).url || images[0]}
+            alt={title}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            className="object-cover group-hover:scale-105 transition-transform duration-700"
             priority
           />
-          <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-black/30 group-hover:from-slate-950/40 transition-colors" />
+
+          {/* Realtor.com Badges on Top Left */}
+          <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2 z-10">
+            <span className="bg-emerald-600 text-white font-extrabold text-[11px] px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
+              <Tag className="w-3 h-3" /> Special Promotion
+            </span>
+            <span className="bg-slate-950/80 backdrop-blur-md text-white font-extrabold text-[11px] px-3 py-1 rounded-full border border-white/20">
+              {isReadyToMove ? "Ready to Move" : "New Construction"}
+            </span>
+          </div>
+
+          {/* Realtor.com Photo Counter Badge on Bottom Left */}
+          <div className="absolute bottom-4 left-4 bg-slate-950/85 backdrop-blur-md text-white px-3.5 py-1.5 rounded-full font-black text-xs border border-white/20 flex items-center gap-1.5 shadow-xl">
+            <Camera className="w-3.5 h-3.5 text-amber-400" />
+            <span>1/{images.length} - Listing Photos</span>
+          </div>
         </div>
 
-        {/* Small Images */}
-        <div className="hidden md:grid col-span-2 grid-cols-2 grid-rows-2 gap-2 h-full">
-          {images.slice(1, 5).map((img, idx) => (
-            <div 
-              key={img.id} 
-              className="relative h-full cursor-pointer group"
-              onClick={() => { setCurrentIndex(idx + 1); setIsOpen(true); }}
+        {/* Realtor.com Small Image Right Stack (Takes 1 Column on LG) */}
+        <div className="hidden lg:grid grid-cols-1 grid-rows-3 gap-2 h-full">
+          {images.slice(1, 4).map((img, idx) => {
+            const imgSrc = typeof img === "string" ? img : (img as any).url || img;
+            const roomLabel = DEFAULT_ROOM_TAGS[idx] || "Property Photo";
+
+            return (
+              <div 
+                key={idx} 
+                className="relative h-full cursor-pointer group overflow-hidden rounded-xl border border-white/10"
+                onClick={() => { setCurrentIndex(idx + 1); setIsOpen(true); }}
+              >
+                <Image
+                  src={imgSrc}
+                  alt={title}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
+                
+                {/* Room Name Tag Label (Realtor.com Style) */}
+                <div className="absolute bottom-2 left-2 bg-slate-950/80 backdrop-blur-md text-white font-bold text-[10px] px-2.5 py-1 rounded-md border border-white/10">
+                  {roomLabel}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Action Floating Buttons (View All Photos & Watch Video) */}
+        <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
+          {embedUrl && (
+            <Button
+              onClick={() => setIsVideoOpen(true)}
+              className="bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-full px-4 py-2 shadow-xl flex items-center gap-1.5 cursor-pointer"
             >
-              <Image
-                src={img.url}
-                alt={img.alt || title}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
-            </div>
-          ))}
-        </div>
+              <Play className="w-4 h-4 fill-white" /> Watch Video Tour
+            </Button>
+          )}
 
-        {/* View All Button */}
-        <Button 
-          variant="secondary" 
-          className="absolute bottom-4 right-4 z-10 glass hover:bg-white/20 text-white border-white/30"
-          onClick={() => { setCurrentIndex(0); setIsOpen(true); }}
-        >
-          <Grid2X2 className="w-4 h-4 mr-2" />
-          View All {images.length} Photos
-        </Button>
-
-        {/* Watch Video Button */}
-        {embedUrl && (
-          <Button 
-            variant="amber" 
-            className="absolute bottom-4 left-4 z-10 shadow-amber-glow"
-            onClick={() => setIsVideoOpen(true)}
+          <Button
+            onClick={() => { setCurrentIndex(0); setIsOpen(true); }}
+            className="bg-slate-950/90 hover:bg-slate-900 text-white border border-white/20 font-extrabold text-xs rounded-full px-4 py-2 shadow-xl flex items-center gap-1.5 cursor-pointer"
           >
-            <Play className="w-4 h-4 mr-2 fill-current" />
-            Watch Property Tour
+            <Grid2X2 className="w-4 h-4 text-amber-400" /> View All ({images.length})
           </Button>
-        )}
+        </div>
       </div>
 
-      {/* Lightbox Dialog */}
+      {/* Fullscreen Photo Gallery Lightbox Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-[95vw] w-full max-h-[95vh] h-full p-0 bg-black/95 border-none flex flex-col">
-          <DialogTitle className="sr-only">Property Images</DialogTitle>
-          <DialogDescription className="sr-only">Fullscreen gallery view</DialogDescription>
-          
-          <div className="flex justify-between items-center p-4 text-white z-50">
-            <span className="font-medium">{currentIndex + 1} / {images.length}</span>
-          </div>
+        <DialogContent className="max-w-5xl p-0 bg-slate-950 border-slate-800 text-white overflow-hidden">
+          <DialogTitle className="sr-only">{title} Photo Gallery</DialogTitle>
+          <DialogDescription className="sr-only">Full screen gallery images for {title}</DialogDescription>
 
-          <div className="relative flex-1 flex items-center justify-center p-4">
-            <div className="relative w-full h-full">
-              <Image
-                src={images[currentIndex]?.url}
-                alt={images[currentIndex]?.alt || title}
-                fill
-                className="object-contain"
-              />
-            </div>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 rounded-full h-12 w-12"
+          <div className="relative h-[80vh] w-full flex items-center justify-center bg-black">
+            <Image
+              src={typeof images[currentIndex] === "string" ? (images[currentIndex] as any) : (images[currentIndex] as any).url || images[currentIndex]}
+              alt={title}
+              fill
+              className="object-contain"
+            />
+
+            <button
               onClick={handlePrev}
+              className="absolute left-4 p-3 rounded-full bg-slate-900/80 hover:bg-amber-500 hover:text-slate-950 text-white transition-all cursor-pointer z-10"
             >
-              <ChevronLeft className="h-8 w-8" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 rounded-full h-12 w-12"
-              onClick={handleNext}
-            >
-              <ChevronRight className="h-8 w-8" />
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              <ChevronLeft className="w-6 h-6" />
+            </button>
 
-      {/* Video Modal */}
-      <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>
-        <DialogContent className="max-w-4xl w-[95vw] p-0 bg-black overflow-hidden border-none aspect-video">
-          <DialogTitle className="sr-only">Property Video Tour</DialogTitle>
-          <iframe 
-            width="100%" 
-            height="100%" 
-            src={embedUrl || ""} 
-            title="Property Video Tour" 
-            frameBorder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowFullScreen 
-          />
+            <button
+              onClick={handleNext}
+              className="absolute right-4 p-3 rounded-full bg-slate-900/80 hover:bg-amber-500 hover:text-slate-950 text-white transition-all cursor-pointer z-10"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md px-4 py-1.5 rounded-full font-bold text-xs border border-white/20">
+              {currentIndex + 1} / {images.length}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

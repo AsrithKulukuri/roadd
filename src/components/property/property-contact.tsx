@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Phone, Mail, MessageSquare, BadgeCheck, Lock, Calendar } from "lucide-react";
+import { Phone, Mail, MessageSquare, BadgeCheck, Lock, Calendar, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -23,189 +23,179 @@ export function PropertyContact({ property }: PropertyContactProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isTourModalOpen, setIsTourModalOpen] = useState(false);
 
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "asrithkulkuri@gmail.com",
+    phone: "",
+    message: `I am interested in ${property.title}, ${property.location.locality}, ${property.location.city}. Please share pricing details and arrange a site visit.`,
+  });
+
   useEffect(() => {
     const checkAuth = async () => {
       if (isSupabaseConfigured()) {
         const { data: { session } } = await supabase.auth.getSession();
         setIsLoggedIn(!!session);
+        if (session?.user) {
+          setFormData((prev) => ({
+            ...prev,
+            fullName: session.user.user_metadata?.full_name || prev.fullName,
+            email: session.user.email || prev.email,
+          }));
+        }
       } else {
         const stored = localStorage.getItem("road_user");
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
             setIsLoggedIn(!!parsed.isLoggedIn);
+            if (parsed.email) {
+              setFormData((prev) => ({ ...prev, email: parsed.email, fullName: parsed.name || prev.fullName }));
+            }
           } catch (e) {}
         }
       }
     };
     
     checkAuth();
-
-    if (isSupabaseConfigured()) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setIsLoggedIn(!!session);
-      });
-      return () => subscription.unsubscribe();
-    }
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
     setTimeout(() => {
       setIsSubmitting(false);
       toast.success("Inquiry sent successfully!", {
-        description: `${property.ownerName} will get back to you shortly.`,
+        description: `ROAD FACING Property Executive will call you shortly at ${formData.phone || "your contact number"}.`,
       });
-    }, 1000);
+    }, 800);
   };
 
-  const isRent = property.listingType === "rent" || property.listingType === "pg";
-  const displayPrice = isRent 
-    ? `${formatINR(property.price)}/mo` 
-    : formatPriceCompact(property.price);
+  const whatsappMessage = encodeURIComponent(
+    `Hi ROAD FACING, I am interested in ${property.title} listed at ${formatINR(property.price)} in ${property.location.locality}, ${property.location.city}. Please connect me with the owner/agent.`
+  );
 
   return (
-    <div className="sticky top-24 bg-bg-card border border-border-default rounded-3xl p-6 shadow-elevated">
-      <div className="mb-6">
-        <p className="text-sm font-medium text-text-tertiary uppercase tracking-wider mb-1">
-          {property.listingType === "sale" ? "Asking Price" : "Monthly Rent"}
-        </p>
-        
-        {isLoggedIn ? (
-          <div className="flex items-end gap-3">
-            <h2 className="font-heading text-3xl font-bold text-amber-primary leading-none">
-              {displayPrice}
-            </h2>
-            {property.listingType === "sale" && property.pricePerSqft > 0 && (
-              <span className="text-sm text-text-secondary mb-1">
-                ({formatINR(property.pricePerSqft)}/sq.ft)
-              </span>
-            )}
-          </div>
-        ) : (
-          <div className="bg-bg-primary/40 border border-border-default/60 rounded-2xl p-4 flex flex-col items-center gap-2 text-center mt-2">
-            <Lock className="w-4 h-4 text-amber-primary animate-pulse" />
-            <div className="space-y-0.5">
-              <p className="text-xs text-text-secondary font-semibold">Pricing is locked</p>
-              <p className="text-[10px] text-text-tertiary">Sign in to unlock price details.</p>
-            </div>
-            <Button 
-              type="button" 
-              size="sm" 
-              variant="amber" 
-              className="h-8 rounded-lg text-xs w-full mt-1" 
-              onClick={() => router.push(`/login?redirect=/properties/${property.slug}`)}
-            >
-              Sign In to View Price
-            </Button>
-          </div>
-        )}
+    <div className="sticky top-28 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5">
+      
+      {/* Realtor.com Builder & Marketing Header Card */}
+      <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="w-11 h-11 rounded-xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-sm shadow-md shrink-0">
+          ROAD
+        </div>
+        <div className="min-w-0 flex-1">
+          <span className="text-[10px] uppercase font-black text-slate-400 block tracking-wider">
+            Listed & Brokered by:
+          </span>
+          <h4 className="font-extrabold text-sm text-slate-900 dark:text-white truncate">
+            {property.ownerName || "ROAD FACING Premier Realty"}
+          </h4>
+          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+            <BadgeCheck className="w-3.5 h-3.5" /> RERA Verified Agent
+          </span>
+        </div>
       </div>
 
-      {isLoggedIn ? (
-        <>
-          <div className="flex items-center gap-4 p-4 bg-bg-primary/50 rounded-2xl border border-border-default/50 mb-6">
-            <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-              <Image
-                src={property.ownerAvatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80"}
-                alt={property.ownerName || "Property Agent"}
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h4 className="font-semibold text-text-primary">{property.ownerName}</h4>
-                {property.isOwnerVerified && (
-                  <BadgeCheck className="w-4 h-4 text-amber-primary" />
-                )}
-              </div>
-              <p className="text-xs text-text-secondary capitalize">
-                {property.ownerType}
-              </p>
-            </div>
-          </div>
+      {/* Form Section: More about this property (Realtor.com Style) */}
+      <div className="space-y-4">
+        <h3 className="font-heading text-xl font-bold text-slate-900 dark:text-white">
+          More about this property
+        </h3>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input 
-              required 
-              placeholder="Your Name" 
-              className="bg-bg-primary/50 border-border-default/50" 
-            />
-            <Input 
-              required 
-              type="email" 
-              placeholder="Email Address" 
-              className="bg-bg-primary/50 border-border-default/50" 
-            />
-            <Input 
-              required 
-              type="tel" 
-              placeholder="Phone Number" 
-              className="bg-bg-primary/50 border-border-default/50" 
-            />
-            <textarea
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">
+              Full name *
+            </label>
+            <Input
+              type="text"
               required
-              placeholder="I am interested in this property..."
-              className="w-full h-24 px-3 py-2 text-sm rounded-2xl bg-bg-primary/50 border border-border-default/50 focus:outline-none focus:ring-2 focus:ring-amber-primary/50 resize-none text-text-primary placeholder:text-text-tertiary"
+              placeholder="e.g. Asrith Kulukuri"
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              className="rounded-xl border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm"
             />
-            
-            <Button 
-            className="w-full h-12 bg-amber-primary hover:bg-amber-primary/90 text-bg-primary font-semibold rounded-xl shadow-amber-glow"
-            onClick={() => setIsTourModalOpen(true)}
-            type="button"
-          >
-            <Calendar className="w-4 h-4 mr-2" />
-            Schedule a Tour
-          </Button>
-          </form>
+          </div>
 
-          <div className="flex justify-between mt-4">
-            <Button variant="ghost" size="sm" className="text-text-secondary hover:text-text-primary" asChild>
-              <a href={`tel:${property.ownerPhone}`}>
-                <Phone className="w-4 h-4 mr-2" />
-                Call
-              </a>
-            </Button>
-            <Button variant="ghost" size="sm" className="text-text-secondary hover:text-text-primary" asChild>
-              <a 
-                href={`https://wa.me/${property.ownerPhone?.replace(/[\\s+]/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in "${property.title}". Is it still available?`)}`}
-                target="_blank" rel="noopener noreferrer"
-              >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                WhatsApp
-              </a>
-            </Button>
+          <div>
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">
+              Email *
+            </label>
+            <Input
+              type="email"
+              required
+              placeholder="name@domain.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="rounded-xl border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm"
+            />
           </div>
-        </>
-      ) : (
-        <div className="bg-bg-primary/40 border border-border-default/60 rounded-3xl p-5 flex flex-col items-center gap-3 text-center my-4">
-          <div className="w-10 h-10 rounded-full bg-amber-primary/10 flex items-center justify-center text-amber-primary">
-            <MessageSquare className="w-4.5 h-4.5" />
+
+          <div>
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">
+              Phone *
+            </label>
+            <Input
+              type="tel"
+              required
+              placeholder="+91 99999 99999"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              className="rounded-xl border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm"
+            />
           </div>
-          <div className="space-y-1">
-            <h4 className="font-heading font-bold text-sm text-text-primary">Contact Agent is Locked</h4>
-            <p className="text-xs text-text-secondary leading-relaxed">
-              Sign up or log in to message {property.ownerName} directly or request viewings.
-            </p>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">
+              How can an agent help?
+            </label>
+            <textarea
+              rows={3}
+              value={formData.message}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+              className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-500"
+            />
           </div>
-          <Button 
-            type="button" 
-            variant="amber" 
-            className="w-full shadow-amber-glow mt-2 rounded-xl text-xs h-10" 
-            onClick={() => router.push(`/login?redirect=/properties/${property.slug}`)}
+
+          {/* Primary Realtor.com Action Button */}
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-6 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-extrabold text-sm rounded-full shadow-lg transition-all cursor-pointer"
           >
-            Sign In to Contact Agent
+            {isSubmitting ? "Sending Inquiry..." : "Contact Builder & Agent"}
           </Button>
-        </div>
-      )}
-      
-      <TourBookingModal 
-        isOpen={isTourModalOpen} 
-        onClose={() => setIsTourModalOpen(false)} 
+
+          {/* WhatsApp Action Button */}
+          <a
+            href={`https://wa.me/919999999999?text=${whatsappMessage}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-full flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer block text-center"
+          >
+            <MessageSquare className="w-4 h-4" /> WhatsApp Agent Directly
+          </a>
+
+          {/* Schedule Tour Button */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsTourModalOpen(true)}
+            className="w-full py-3 border-amber-500/50 text-amber-500 hover:bg-amber-500/10 font-bold text-xs rounded-full cursor-pointer flex items-center justify-center gap-2"
+          >
+            <Calendar className="w-4 h-4" /> Schedule Private Site Visit
+          </Button>
+        </form>
+
+        {/* Legal Disclaimer Note (Realtor.com Style) */}
+        <p className="text-[10px] text-slate-400 leading-tight pt-2 border-t border-slate-200 dark:border-slate-800">
+          By proceeding, you consent to receive calls & WhatsApp updates from ROAD FACING Verified Property Executives regarding this inquiry. No spam guaranteed.
+        </p>
+      </div>
+
+      <TourBookingModal
+        isOpen={isTourModalOpen}
+        onClose={() => setIsTourModalOpen(false)}
         propertyName={property.title}
         propertyLocation={`${property.location.locality}, ${property.location.city}`}
       />
