@@ -130,6 +130,8 @@ export interface Property {
   waterSupply?: string;
   nearbySchools?: string[];
   nearbyHospitals?: string[];
+  nearbyMetro?: string;
+  nearbyAirport?: string;
   ownerName?: string;
   ownerPhone?: string;
   ownerEmail?: string;
