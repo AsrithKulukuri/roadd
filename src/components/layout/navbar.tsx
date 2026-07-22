@@ -17,6 +17,7 @@ import {
   Plus,
   ChevronDown,
   LogIn,
+  LogOut,
   Megaphone,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
@@ -128,16 +129,16 @@ export function Navbar() {
 
   return (
     <>
-      {/* Solid Navbar (Non-transparent to prevent content bleed) */}
+      {/* Solid Dark Navbar for Crisp High-Contrast Display */}
       <header
-        className="fixed top-0 left-0 right-0 z-[100] bg-slate-900 border-b border-slate-800 shadow-md py-3 transition-all duration-300"
+        className="fixed top-0 left-0 right-0 z-[100] bg-slate-950 border-b border-slate-850 shadow-lg py-2.5 sm:py-3 transition-all duration-300"
       >
-        <div className="container-road">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6">
           <div className="flex items-center justify-between">
-            {/* Left: Logo */}
-            <Logo size="md" />
+            {/* Left: Brand Logo with Bright White & Amber Gold Text */}
+            <Logo size="md" isDarkBg={true} />
 
-            {/* Center: Navigation Links */}
+            {/* Center: Navigation Links for Desktop */}
             <nav className="hidden lg:flex items-center gap-1" role="navigation" aria-label="Main navigation">
               {navigationLinks.main.map((link) => (
                 <Link
@@ -147,7 +148,7 @@ export function Navbar() {
                     "relative px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200",
                     isActive(link.href)
                       ? "text-amber-400 font-bold"
-                      : "text-slate-300 hover:text-white hover:bg-slate-800/80"
+                      : "text-slate-300 hover:text-white hover:bg-slate-850"
                   )}
                 >
                   {link.label}
@@ -162,24 +163,24 @@ export function Navbar() {
               ))}
             </nav>
 
-            {/* Right Actions */}
-            <div className="flex items-center gap-3">
+            {/* Right Action Icons & Controls */}
+            <div className="flex items-center gap-1.5 sm:gap-3">
               <ThemeToggle />
 
-              {/* Saved Items */}
+              {/* Saved Items Heart Button */}
               <Link
                 href="/dashboard/saved"
-                className="relative p-2 text-slate-300 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+                className="p-2 text-slate-300 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
                 aria-label="Saved properties"
               >
                 <Heart className="h-5 w-5" />
               </Link>
 
               {user ? (
-                /* User Menu */
-                <div className="flex items-center gap-3">
+                /* User Menu for Desktop */
+                <div className="hidden sm:flex items-center gap-2">
                   <Link href="/dashboard">
-                    <Button variant="outline" size="sm" className="hidden sm:flex border-slate-700 text-slate-200 hover:bg-slate-800">
+                    <Button variant="outline" size="sm" className="border-slate-700 text-slate-200 hover:bg-slate-800">
                       Dashboard
                     </Button>
                   </Link>
@@ -193,8 +194,8 @@ export function Navbar() {
                   </Button>
                 </div>
               ) : (
-                /* Auth Buttons */
-                <div className="flex items-center gap-2">
+                /* Auth Buttons for Desktop */
+                <div className="hidden sm:flex items-center gap-2">
                   <Link href="/login">
                     <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-800">
                       Log in
@@ -208,7 +209,7 @@ export function Navbar() {
                 </div>
               )}
 
-              {/* List Property CTA */}
+              {/* List Property CTA Button */}
               <Link href="/list-with-us" className="hidden md:block">
                 <Button size="sm" className="gap-1.5 bg-white text-slate-950 hover:bg-slate-100 font-semibold shadow-xs">
                   <Plus className="h-4 w-4" />
@@ -216,10 +217,10 @@ export function Navbar() {
                 </Button>
               </Link>
 
-              {/* Mobile Menu Toggle */}
+              {/* Mobile Menu Toggle Hamburger */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 text-slate-300 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+                className="lg:hidden p-2 text-slate-300 hover:text-white rounded-xl hover:bg-slate-850 transition-colors cursor-pointer"
                 aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -229,14 +230,14 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Drawer Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="fixed inset-0 top-[65px] z-50 bg-slate-950/95 backdrop-blur-md lg:hidden flex flex-col p-6 overflow-y-auto"
+            className="fixed inset-0 top-[60px] z-50 bg-slate-950/98 backdrop-blur-md lg:hidden flex flex-col p-6 overflow-y-auto"
           >
             <nav className="flex flex-col gap-2">
               {navigationLinks.main.map((link) => (
@@ -244,7 +245,7 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "px-4 py-3 rounded-xl font-medium text-base transition-colors",
+                    "px-4 py-3 rounded-xl font-semibold text-base transition-colors",
                     isActive(link.href)
                       ? "bg-amber-500/20 text-amber-400 font-bold"
                       : "text-slate-300 hover:bg-slate-900"
@@ -257,13 +258,28 @@ export function Navbar() {
 
             <div className="mt-8 pt-6 border-t border-slate-800 space-y-3">
               <Link href="/list-with-us" className="block w-full">
-                <Button className="w-full gap-2 bg-amber-500 text-slate-950 font-bold py-6 text-base">
+                <Button className="w-full gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-6 text-base shadow-md">
                   <Plus className="h-5 w-5" />
                   List Property Free
                 </Button>
               </Link>
 
-              {!user && (
+              {user ? (
+                <div className="space-y-2 pt-2">
+                  <Link href="/dashboard" className="block">
+                    <Button variant="outline" className="w-full border-slate-700 text-white justify-start">
+                      <User className="w-4 h-4 mr-2" /> My Dashboard ({user.name})
+                    </Button>
+                  </Link>
+                  <Button
+                    onClick={handleSignOut}
+                    variant="ghost"
+                    className="w-full text-red-400 hover:text-red-300 hover:bg-slate-900 justify-start"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                  </Button>
+                </div>
+              ) : (
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <Link href="/login" className="block">
                     <Button variant="outline" className="w-full border-slate-700 text-white">

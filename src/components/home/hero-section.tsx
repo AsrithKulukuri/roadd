@@ -120,7 +120,7 @@ export function HeroSection() {
   ];
 
   return (
-    <section className="relative w-full overflow-hidden bg-slate-900 text-white pt-24 sm:pt-28 pb-12 md:pb-16">
+    <section className="relative w-full overflow-hidden bg-slate-900 text-white pt-28 sm:pt-32 md:pt-36 pb-12 md:pb-16">
       {/* Background Image with Dark Vignette Gradient */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-transform duration-10000 scale-105"
@@ -134,7 +134,7 @@ export function HeroSection() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center">
-        {/* Main Headline matching Realtor.com exact structure */}
+        {/* Main Headline matching Realtor.com exact structure with generous top spacing */}
         <div className="space-y-2 mb-6 sm:mb-8 max-w-3xl">
           <h1 className="font-heading text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white drop-shadow-md leading-tight">
             #1 real estate site <br className="hidden sm:inline" />
@@ -176,7 +176,7 @@ export function HeroSection() {
           })}
         </div>
 
-        {/* Search Bar Pill: Clean White Container with NO Golden Border Outline whatsoever */}
+        {/* Search Bar Pill: Clean White Container with NO Golden Border Outline */}
         <form
           onSubmit={handleSearchSubmit}
           className="relative w-full max-w-2xl flex items-center bg-white rounded-full p-2 sm:p-2.5 shadow-2xl border-0 outline-none ring-0 focus-within:outline-none focus-within:ring-0 focus-within:border-0"

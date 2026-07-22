@@ -7,6 +7,7 @@ interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl";
   showText?: boolean;
   href?: string;
+  isDarkBg?: boolean;
 }
 
 const sizeMap = {
@@ -21,11 +22,12 @@ export function Logo({
   size = "md",
   showText = true,
   href = "/",
+  isDarkBg = true, // Default true for dark header context
 }: LogoProps) {
   const { width, height, textClass } = sizeMap[size];
 
   const content = (
-    <div className={cn("flex items-center gap-2.5", className)}>
+    <div className={cn("flex items-center gap-2", className)}>
       <div className="relative flex-shrink-0 rounded-full overflow-hidden">
         <Image
           src="/logooo.jpeg"
@@ -40,15 +42,17 @@ export function Logo({
         <div className="flex flex-col">
           <span
             className={cn(
-              "font-heading font-bold tracking-tight leading-none",
+              "font-heading font-extrabold tracking-tight leading-none",
               textClass
             )}
           >
-            <span className="text-amber-primary">R</span>
-            <span className="text-text-primary">OAD FACING</span>
+            <span className="text-amber-400">R</span>
+            <span className={isDarkBg ? "text-white" : "text-slate-900"}>
+              OAD FACING
+            </span>
           </span>
           {size !== "sm" && (
-            <span className="text-[0.55rem] uppercase tracking-[0.2em] text-text-tertiary leading-none mt-0.5">
+            <span className="text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.18em] text-slate-400 leading-none mt-1 font-semibold hidden sm:block">
               Real Owner Agent Developer
             </span>
           )}
@@ -59,7 +63,7 @@ export function Logo({
 
   if (href) {
     return (
-      <Link href={href} className="focus-visible:outline-none">
+      <Link href={href} className="focus-visible:outline-none flex items-center">
         {content}
       </Link>
     );
