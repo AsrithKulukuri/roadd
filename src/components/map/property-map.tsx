@@ -9,10 +9,9 @@ import {
   Polyline,
   Polygon,
   useMapEvents,
-  useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, CheckCircle } from "lucide-react";
+import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal } from "lucide-react";
 import L from "leaflet";
 import Link from "next/link";
 import { PropertyCard } from "@/components/property/property-card";
@@ -39,7 +38,6 @@ const quickLocalityCoords = [
   { name: "Brodipet", lat: 16.3050, lng: 80.4350 },
 ];
 
-// Helper to check if a point (lat/lng) falls inside a polygon array of latlngs
 function isPointInPolygon(point: { lat: number; lng: number }, polygon: L.LatLng[]) {
   if (!polygon || polygon.length < 3) return true;
   const x = point.lat;
@@ -54,7 +52,6 @@ function isPointInPolygon(point: { lat: number; lng: number }, polygon: L.LatLng
   return inside;
 }
 
-// Helper to generate Realtor.com style price pill divIcons safely on client
 function getPricePillIcon(price: number, isSelected: boolean) {
   if (typeof window === "undefined" || !L || !L.divIcon) return undefined;
   
@@ -152,7 +149,6 @@ function LocationMarker({
   );
 }
 
-// Map Click Listener for Freehand Area Drawing
 function DrawMapListener({
   isDrawing,
   onAddPoint,
@@ -277,13 +273,15 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const [filteredProperties, setFilteredProperties] = useState(activeFiltered);
   const [mapLayerType, setMapLayerType] = useState<"streets" | "hybrid">("streets");
   
+  // Real-Time Search Query State inside Map
+  const [mapSearchInput, setMapSearchInput] = useState(initialQuery);
+
   // Draw Polygon Area Search State
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawPolygonPoints, setDrawPolygonPoints] = useState<L.LatLng[]>([]);
 
   const mapRef = useRef<L.Map | null>(null);
 
-  // Filter properties based on drawn polygon boundary
   const displayedProperties = useMemo(() => {
     if (drawPolygonPoints.length >= 3) {
       return filteredProperties.filter((p) =>
@@ -320,6 +318,19 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
       }
     }
   }, [filteredItems, searchParams, mapProperties]);
+
+  const handleSearchChange = (val: string) => {
+    setMapSearchInput(val);
+    const matches = getSmartFilteredProperties(mapProperties, val, initialType, initialBhk);
+    setFilteredProperties(matches);
+    if (matches.length > 0 && matches[0].location?.latitude && matches[0].location?.longitude) {
+      const newPos = new L.LatLng(matches[0].location.latitude, matches[0].location.longitude);
+      setPosition(newPos);
+      if (mapRef.current) {
+        mapRef.current.flyTo(newPos, 13, { duration: 1.2 });
+      }
+    }
+  };
 
   const handleGetLocation = () => {
     setIsLocating(true);
@@ -364,8 +375,8 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   };
 
   return (
-    <div className="space-y-4 w-full">
-      {/* Dynamic Animated Radar Dash Styles */}
+    <div className="w-full h-full flex flex-col touch-none relative" style={{ touchAction: "none" }}>
+      {/* Dynamic Animated Radar Dash & Leaflet Control Offsets */}
       <style jsx global>{`
         @keyframes radarLinePulse {
           0% {
@@ -379,57 +390,68 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
           animation: radarLinePulse 1.2s linear infinite;
           filter: drop-shadow(0 0 8px rgba(245, 166, 35, 0.9));
         }
+        @media (max-width: 767px) {
+          .leaflet-top.leaflet-left {
+            top: 105px !important;
+            left: 12px !important;
+          }
+        }
       `}</style>
 
-      {/* Mobile Action Controls Header Bar */}
-      <div className="flex items-center justify-between gap-2 md:hidden bg-slate-900 text-white p-3 rounded-2xl border border-slate-800 shadow-md">
-        <button
-          type="button"
-          onClick={handleGetLocation}
-          disabled={isLocating}
-          className="flex-1 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
-        >
-          <Navigation className={`w-4 h-4 ${isLocating ? "animate-spin" : ""}`} />
-          <span>{isLocating ? "Locating..." : "Find My Location"}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setShowMobileDrawer(!showMobileDrawer)}
-          className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 border border-slate-700 cursor-pointer"
-        >
-          <Compass className="w-4 h-4 text-amber-400" />
-          <span>{showMobileDrawer ? "Close" : "Options"}</span>
-          {showMobileDrawer ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        </button>
-      </div>
-
       {/* Main Container */}
-      <div className="relative w-full flex flex-col md:flex-row gap-0 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden bg-slate-900 shadow-xl min-h-[550px] md:h-[650px]">
+      <div className="relative w-full flex-1 flex flex-col md:flex-row gap-0 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden bg-slate-900 shadow-xl h-full touch-none" style={{ touchAction: "none" }}>
         
         {/* Desktop Sidebar Control Panel / Mobile Collapsible Drawer */}
         <div
           className={`w-full md:w-80 flex-shrink-0 p-5 md:p-6 flex-col justify-between bg-slate-900 text-white z-10 border-b md:border-b-0 md:border-r border-slate-800 shadow-2xl space-y-5 ${
-            showMobileDrawer ? "flex" : "hidden md:flex"
+            showMobileDrawer ? "flex absolute inset-x-0 top-0 bottom-0 z-[600]" : "hidden md:flex"
           }`}
         >
           <div className="space-y-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
                 <Compass className="w-5 h-5 text-amber-400" />
                 <h2 className="font-heading text-xl font-bold text-white tracking-tight">
                   Map Explorer
                 </h2>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Draw custom area on map or tap price pills to inspect available homes.
-              </p>
+              {showMobileDrawer && (
+                <button
+                  onClick={() => setShowMobileDrawer(false)}
+                  className="p-1.5 bg-slate-800 text-slate-300 rounded-xl hover:text-white"
+                >
+                  <ChevronUp className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+
+            {/* Desktop Search Input Box */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-amber-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                value={mapSearchInput}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="Search city, locality, or project..."
+                className="w-full pl-9 pr-8 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
+              />
+              {mapSearchInput && (
+                <button
+                  onClick={() => handleSearchChange("")}
+                  className="absolute right-3 top-3 text-slate-400 hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             {/* Primary Action Button */}
             <button
               type="button"
-              onClick={handleGetLocation}
+              onClick={() => {
+                handleGetLocation();
+                setShowMobileDrawer(false);
+              }}
               disabled={isLocating}
               className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-extrabold text-sm rounded-2xl shadow-lg hover:shadow-amber-500/25 flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer disabled:opacity-75"
             >
@@ -456,7 +478,10 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               <div className="grid grid-cols-2 gap-1.5">
                 <button
                   type="button"
-                  onClick={() => setIsDrawing(!isDrawing)}
+                  onClick={() => {
+                    setIsDrawing(!isDrawing);
+                    setShowMobileDrawer(false);
+                  }}
                   className={`py-2 px-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     isDrawing
                       ? "bg-amber-500 text-slate-950 shadow-md animate-pulse"
@@ -569,19 +594,103 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
           </div>
         </div>
 
-        {/* The Leaflet Map Container */}
-        <div className="flex-1 w-full relative bg-slate-950 h-[550px] md:h-[650px]">
+        {/* The Leaflet Map Canvas Container */}
+        <div className="flex-1 w-full h-full relative bg-slate-950 touch-none" style={{ touchAction: "none" }}>
+          
+          {/* ULTRA-MODERN COMPACT GLASSMORPHIC FLOATING SEARCH DOCK ON MOBILE */}
+          <div className="absolute top-2.5 left-2.5 right-2.5 z-[500] md:hidden flex flex-col gap-1.5 pointer-events-auto">
+            
+            {/* FLOATING SEARCH DOCK ROW */}
+            <div className="w-full bg-slate-950/90 backdrop-blur-xl border border-slate-800/90 rounded-full p-1.5 flex items-center gap-1.5 shadow-2xl">
+              {/* Search Icon & Input */}
+              <div className="flex-1 flex items-center gap-2 pl-3">
+                <Search className="w-4 h-4 text-amber-400 shrink-0" />
+                <input
+                  type="text"
+                  value={mapSearchInput}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder="Search Vijayawada, Guntur..."
+                  className="w-full bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none border-0 ring-0"
+                />
+                {mapSearchInput && (
+                  <button
+                    type="button"
+                    onClick={() => handleSearchChange("")}
+                    className="p-1 text-slate-400 hover:text-white"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Action Buttons Integrated Right Inside Dock */}
+              <div className="flex items-center gap-1 shrink-0 pr-0.5">
+                <button
+                  type="button"
+                  onClick={handleGetLocation}
+                  disabled={isLocating}
+                  title="Find My Location"
+                  className="w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 text-slate-950 flex items-center justify-center cursor-pointer shadow-xs active:scale-95 transition-all"
+                >
+                  <Navigation className={`w-4 h-4 stroke-[2.5] ${isLocating ? "animate-spin" : ""}`} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsDrawing(!isDrawing)}
+                  title="Draw Search Area"
+                  className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all active:scale-95 ${
+                    isDrawing ? "bg-amber-500 text-slate-950 animate-pulse shadow-md" : "bg-slate-800/90 text-slate-200 border border-slate-700"
+                  }`}
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setMapLayerType(mapLayerType === "streets" ? "hybrid" : "streets")}
+                  title="Map View Mode"
+                  className="w-8 h-8 rounded-full bg-slate-800/90 text-amber-400 border border-slate-700 flex items-center justify-center cursor-pointer active:scale-95"
+                >
+                  <Layers3 className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowMobileDrawer(true)}
+                  title="More Options"
+                  className="w-8 h-8 rounded-full bg-slate-800/90 text-slate-200 border border-slate-700 flex items-center justify-center cursor-pointer active:scale-95"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Locality Jump Chips Capsule Row */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar px-1 py-0.5">
+              {quickLocalityCoords.map((loc) => (
+                <button
+                  key={loc.name}
+                  onClick={() => handleFlyToLocality(loc.lat, loc.lng)}
+                  className="px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-slate-200 border border-slate-800/80 text-[11px] font-bold flex-shrink-0 hover:bg-amber-500 hover:text-slate-950 transition-colors shadow-xs"
+                >
+                  📍 {loc.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Drawing Mode Overlay Banner */}
           {isDrawing && (
-            <div className="absolute top-4 left-4 right-4 z-[500] bg-amber-500 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-2xl shadow-2xl flex items-center justify-between animate-pulse">
-              <span className="flex items-center gap-2">
-                <Pencil className="w-4 h-4" /> Tap points on the map to enclose your custom search area!
+            <div className="absolute top-24 left-3 right-3 z-[550] bg-amber-500 text-slate-950 font-extrabold text-xs px-3.5 py-2 rounded-2xl shadow-2xl flex items-center justify-between animate-pulse">
+              <span className="flex items-center gap-1.5">
+                <Pencil className="w-4 h-4" /> Tap points on map to enclose area!
               </span>
               <button
                 onClick={handleClearDraw}
-                className="bg-slate-950 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold"
+                className="bg-slate-950 text-white px-2 py-1 rounded-lg text-[10px] font-bold cursor-pointer"
               >
-                Finish / Done
+                Done / Clear
               </button>
             </div>
           )}
@@ -592,7 +701,12 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
             zoom={12}
             maxZoom={18}
             scrollWheelZoom={false}
-            className="w-full h-full min-h-[550px]"
+            dragging={true}
+            touchZoom={true}
+            doubleClickZoom={true}
+            bounceAtZoomLimits={true}
+            className="w-full h-full min-h-full touch-none"
+            style={{ touchAction: "none" }}
           >
             <DrawMapListener isDrawing={isDrawing} onAddPoint={handleAddDrawPoint} />
 

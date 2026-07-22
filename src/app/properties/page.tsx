@@ -24,7 +24,6 @@ function PropertiesPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState<"relevant" | "price-asc" | "price-desc" | "newest">("relevant");
   
   const properties = usePropertiesStore((state) => state.properties);
@@ -33,6 +32,18 @@ function PropertiesPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Lock body scroll on mobile when map view is active so ONLY the map moves
+  useEffect(() => {
+    if (viewMode === "map" && typeof window !== "undefined" && window.innerWidth < 768) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [viewMode]);
 
   const parseInitialParams = () => {
     const loc = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
@@ -102,35 +113,27 @@ function PropertiesPage() {
         next.query = loc;
         hasChanges = true;
       }
-
       if (typeRaw) {
         if (typeRaw === "buy" || typeRaw === "sale") {
-          if (!prev.listingType.includes("sale")) {
-            next.listingType = ["sale"];
-            hasChanges = true;
-          }
+          next.listingType = ["sale"];
+          hasChanges = true;
         } else if (typeRaw === "rent") {
-          if (!prev.listingType.includes("rent")) {
-            next.listingType = ["rent"];
-            hasChanges = true;
-          }
+          next.listingType = ["rent"];
+          hasChanges = true;
+        } else if (["apartment", "villa", "residential-land", "commercial-spaces", "pg", "farmhouse"].includes(typeRaw)) {
+          next.propertyType = [typeRaw];
+          hasChanges = true;
         }
       }
-
-      if (bhk !== null && !prev.bhk.includes(bhk)) {
-        next.bhk = [bhk];
+      if (bhk) {
+        next.bhk = bhk.split(",");
         hasChanges = true;
       }
-
-      if (budget !== null) {
-        const parts = budget.split(",");
-        if (parts.length === 2) {
-          const min = parseInt(parts[0]);
-          const max = parseInt(parts[1]);
-          if (prev.budget[0] !== min || prev.budget[1] !== max) {
-            next.budget = [min, max];
-            hasChanges = true;
-          }
+      if (budget) {
+        const parts = budget.split(",").map(Number);
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          next.budget = [parts[0], parts[1]];
+          hasChanges = true;
         }
       }
 
@@ -138,115 +141,99 @@ function PropertiesPage() {
     });
   }, [searchParams]);
 
+  // Filter properties based on FilterState
   const filteredProperties = useMemo(() => {
-    let result = properties.filter((property) => {
-      // 1. Text Query Search (Location/Title/City/PropertyType)
-      if (filters.query) {
-        const query = filters.query.toLowerCase().trim();
-        const stopWords = ["in", "at", "near", "for", "a", "an", "the", "of", "and"];
-        const tokens = query.split(/\s+/).filter((t) => !stopWords.includes(t));
+    return properties.filter((property: any) => {
+      // 1. Location & Free Text Query Match
+      if (filters.query.trim()) {
+        const queryLower = filters.query.toLowerCase().trim();
+        const stopWords = ["in", "at", "near", "for", "a", "an", "the", "of"];
+        const tokens = queryLower.split(/\s+/).filter((t) => !stopWords.includes(t));
 
-        const pType = (property.propertyType || "").toLowerCase().replace("-", " ");
-        const lType = (property.listingType || "").toLowerCase();
+        const title = (property.title || "").toLowerCase();
         const city = (property.location?.city || "").toLowerCase();
         const locality = (property.location?.locality || "").toLowerCase();
         const address = (property.location?.address || "").toLowerCase();
-        const title = (property.title || "").toLowerCase();
+        const propType = (property.propertyType || "").toLowerCase().replace("-", " ");
+        const listType = (property.listingType || "").toLowerCase();
+        const desc = (property.description || "").toLowerCase();
 
-        const searchableText = `${title} ${locality} ${city} ${address} ${pType} ${lType}`;
+        const searchableText = `${title} ${locality} ${city} ${address} ${propType} ${listType} ${desc}`;
 
-        if (tokens.length > 0) {
-          const matchesAll = tokens.every((token) => {
-            const stem = token.length > 3 && token.endsWith("s") ? token.slice(0, -1) : token;
-            
-            if (stem === "apartment" || token === "flats" || token === "flat") {
-              return pType.includes("apartment");
-            }
-            if (stem === "villa" || token === "house" || token === "houses") {
-              return pType.includes("villa");
-            }
-            if (stem === "plot" || stem === "land") {
-              return pType.includes("land") || pType.includes("plot");
-            }
-            if (stem === "shop" || stem === "office" || token === "commercial") {
-              return pType.includes("commercial");
-            }
-            if (token === "pg" || token === "hostel") {
-              return pType.includes("pg");
-            }
-            if (token === "farmhouse" || token === "farm") {
-              return pType.includes("farmhouse");
-            }
-            return searchableText.includes(token) || searchableText.includes(stem);
-          });
-          if (!matchesAll) return false;
-        } else if (!searchableText.includes(query)) {
-          return false;
-        }
+        const isMatch = tokens.every((token) => {
+          const stem = token.length > 3 && token.endsWith("s") ? token.slice(0, -1) : token;
+          if (stem === "apartment" || token === "flats" || token === "flat") {
+            return propType.includes("apartment") || searchableText.includes("apartment");
+          }
+          if (stem === "villa" || token === "house" || token === "houses") {
+            return propType.includes("villa") || searchableText.includes("villa");
+          }
+          if (stem === "plot" || stem === "land") {
+            return propType.includes("land") || propType.includes("plot") || searchableText.includes("plot") || searchableText.includes("land");
+          }
+          if (stem === "shop" || stem === "office" || token === "commercial") {
+            return propType.includes("commercial") || searchableText.includes("commercial");
+          }
+          return searchableText.includes(token) || searchableText.includes(stem);
+        });
+
+        if (!isMatch) return false;
       }
 
-      // 2. Budget Range Filter
-      if (filters.budget[0] > 0 || filters.budget[1] < 100000000) {
-        if (property.price < filters.budget[0] || property.price > filters.budget[1]) {
-          return false;
-        }
-      }
-
-      // 3. Listing Type (Sale, Rent, PG)
+      // 2. Listing Type (sale/rent)
       if (filters.listingType.length > 0) {
-        const allowedTypes = filters.listingType.map((t) => (t === "buy" ? "sale" : t));
-        if (!allowedTypes.includes(property.listingType)) return false;
+        if (!filters.listingType.includes(property.listingType)) return false;
       }
 
-      // 4. Property Type (Apartment, Villa, Plot, etc.)
+      // 3. Property Type (apartment/villa/land/commercial)
       if (filters.propertyType.length > 0) {
         if (!filters.propertyType.includes(property.propertyType)) return false;
       }
 
-      // 5. BHK / Bedrooms
+      // 4. BHK Filter
       if (filters.bhk.length > 0) {
-        const beds = property.bedrooms;
-        const matchesBHK = filters.bhk.some((b) => {
-          if (b === "4+" || b.includes("4BHK and more") || b.includes("5+")) return beds >= 4;
-          return beds.toString() === b.replace("BHK", "").trim();
+        const propBhk = property.bedrooms ? property.bedrooms.toString() : "";
+        const matchesBhk = filters.bhk.some((b) => {
+          if (b === "4+") return (property.bedrooms || 0) >= 4;
+          return propBhk === b;
         });
-        if (!matchesBHK) return false;
+        if (!matchesBhk) return false;
       }
 
-      // 6. Availability
-      if (filters.availability.length > 0) {
-        if (filters.availability.includes("ready") && !property.isReadyToMove) return false;
-        if (filters.availability.includes("under-construction") && property.isReadyToMove) return false;
+      // 5. Budget Range (INR)
+      if (property.price < filters.budget[0] || property.price > filters.budget[1]) {
+        return false;
       }
 
-      // 7. Sale Type (New / Resale)
-      if (filters.saleType.length > 0) {
-        if (filters.saleType.includes("new") && property.saleType !== "new") return false;
-        if (filters.saleType.includes("resale") && property.saleType !== "resale") return false;
+      // 6. Availability (ready/under-construction)
+      if (filters.availability.length > 0 && property.possessionStatus) {
+        if (!filters.availability.includes(property.possessionStatus)) return false;
       }
 
-      // 8. Posted By (Owner / Agent / Builder)
-      if (filters.postedBy.length > 0) {
-        if (!filters.postedBy.includes(property.ownerType)) return false;
+      // 7. Posted By (owner/agent/builder)
+      if (filters.postedBy.length > 0 && property.postedBy) {
+        if (!filters.postedBy.includes(property.postedBy)) return false;
+      }
+
+      // 8. Sale Type (new/resale)
+      if (filters.saleType.length > 0 && property.saleType) {
+        if (!filters.saleType.includes(property.saleType)) return false;
       }
 
       return true;
+    }).sort((a, b) => {
+      if (sortBy === "price-asc") return a.price - b.price;
+      if (sortBy === "price-desc") return b.price - a.price;
+      if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return 0; // default relevant
     });
-
-    // Sorting
-    if (sortBy === "price-asc") {
-      result.sort((a, b) => a.price - b.price);
-    } else if (sortBy === "price-desc") {
-      result.sort((a, b) => b.price - a.price);
-    } else if (sortBy === "newest") {
-      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
-
-    return result;
   }, [properties, filters, sortBy]);
 
   const handleSelectLocationFromCarousel = (locationName: string) => {
-    setFilters((prev) => ({ ...prev, query: locationName }));
+    setFilters((prev) => ({
+      ...prev,
+      query: locationName === prev.query ? "" : locationName,
+    }));
   };
 
   const handleSelectFilterFromCarousel = (filterType: string, value: any) => {
@@ -281,72 +268,80 @@ function PropertiesPage() {
         onFilterChange={setFilters}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        onOpenAllFilters={() => setIsFilterModalOpen(true)}
+        onOpenAllFilters={() => {}}
         totalResults={filteredProperties.length}
       />
 
       {/* Vijayawada & Guntur Location Highlights Carousel Bar */}
-      <LocationCarousels
-        onSelectLocation={handleSelectLocationFromCarousel}
-        onSelectFilter={handleSelectFilterFromCarousel}
-        activeLocation={filters.query}
-      />
+      {viewMode === "grid" && (
+        <LocationCarousels
+          onSelectLocation={handleSelectLocationFromCarousel}
+          onSelectFilter={handleSelectFilterFromCarousel}
+          activeLocation={filters.query}
+        />
+      )}
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 w-full mt-4">
-        {/* Results Page Header Title & Control Bar */}
-        <div className="mb-6 space-y-2">
-          {/* Main Title */}
-          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-slate-900 capitalize tracking-tight">
-            {searchHeading}
-          </h1>
+      <main className={cn("w-full transition-all", viewMode === "map" ? "mt-0" : "max-w-7xl mx-auto px-4 sm:px-6 mt-4")}>
+        {/* Results Page Header Title & Control Bar (Grid View Only) */}
+        {viewMode === "grid" && (
+          <div className="mb-6 space-y-2">
+            <h1 className="text-2xl sm:text-3xl font-bold font-heading text-slate-900 capitalize tracking-tight">
+              {searchHeading}
+            </h1>
 
-          {/* Sub Header Meta Row */}
-          <div className="flex flex-wrap items-center justify-between gap-3 text-sm pt-1">
-            {/* Left: Count & Sort Dropdown */}
-            <div className="flex items-center gap-3">
-              <span className="font-semibold text-slate-900">
-                {filteredProperties.length.toLocaleString()} {filteredProperties.length === 1 ? "Home" : "Homes"}
-              </span>
-              <span className="text-slate-300">|</span>
-              <div className="flex items-center gap-1 text-slate-600 font-medium">
-                <span>Sort by</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="bg-transparent font-semibold text-slate-900 focus:outline-none cursor-pointer border-b border-transparent hover:border-slate-400"
+            <div className="flex flex-wrap items-center justify-between gap-3 text-sm pt-1">
+              <div className="flex items-center gap-3">
+                <span className="font-semibold text-slate-900">
+                  {filteredProperties.length.toLocaleString()} {filteredProperties.length === 1 ? "Home" : "Homes"}
+                </span>
+                <span className="text-slate-300">|</span>
+                <div className="flex items-center gap-1 text-slate-600 font-medium">
+                  <span>Sort by</span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="bg-transparent font-semibold text-slate-900 focus:outline-none cursor-pointer border-b border-transparent hover:border-slate-400"
+                  >
+                    <option value="relevant">Relevant listings</option>
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="newest">Newest listings</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/mortgage-calculator"
+                  className="text-xs sm:text-sm font-semibold text-amber-600 hover:text-amber-700 hover:underline flex items-center gap-1"
                 >
-                  <option value="relevant">Relevant listings</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="newest">Newest listings</option>
-                </select>
+                  <HelpCircle className="w-4 h-4 text-amber-500" />
+                  <span>How much home can I afford?</span>
+                </Link>
+                <button
+                  onClick={() => alert("Search saved to your favorites!")}
+                  className="flex items-center gap-1.5 text-slate-700 hover:text-amber-600 font-semibold text-xs sm:hidden"
+                >
+                  <Heart className="w-4 h-4" /> Save search
+                </button>
               </div>
             </div>
-
-            {/* Right: How much home can I afford / Save Search */}
-            <div className="flex items-center gap-4">
-              <Link
-                href="/mortgage-calculator"
-                className="text-xs sm:text-sm font-semibold text-amber-600 hover:text-amber-700 hover:underline flex items-center gap-1"
-              >
-                <HelpCircle className="w-4 h-4 text-amber-500" />
-                <span>How much home can I afford?</span>
-              </Link>
-              <button
-                onClick={() => alert("Search saved to your favorites!")}
-                className="flex items-center gap-1.5 text-slate-700 hover:text-amber-600 font-semibold text-xs sm:hidden"
-              >
-                <Heart className="w-4 h-4" /> Save search
-              </button>
-            </div>
           </div>
-        </div>
+        )}
 
-        {/* View Mode Rendering: Grid View vs Map View */}
+        {/* View Mode Rendering: Mobile Fixed Full-Viewport Map Mode vs Grid View */}
         {viewMode === "map" ? (
-          <div className="w-full h-[650px] rounded-3xl overflow-hidden border border-slate-200 shadow-lg bg-white">
-            <MapWrapper filteredItems={filteredProperties} />
+          <div>
+            {/* Mobile View: Fixed Full Screen Viewport directly below header */}
+            <div className="md:hidden fixed top-16 left-0 right-0 bottom-0 z-40 bg-slate-950 overflow-hidden touch-none flex flex-col">
+              <MapWrapper filteredItems={filteredProperties} />
+            </div>
+
+            {/* Desktop View: Sleek Container */}
+            <div className="hidden md:block w-full h-[650px] rounded-3xl overflow-hidden border border-slate-200 shadow-lg bg-white">
+              <MapWrapper filteredItems={filteredProperties} />
+            </div>
           </div>
         ) : filteredProperties.length > 0 ? (
           /* Realtor.com 3-Column Responsive Grid Layout on Desktop */
