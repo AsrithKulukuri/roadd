@@ -6,40 +6,103 @@ import {
   TileLayer,
   Marker,
   Popup,
+  Polyline,
+  Polygon,
   useMapEvents,
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { Search, MapPin, Navigation, ArrowRight } from "lucide-react";
+import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, CheckCircle } from "lucide-react";
 import L from "leaflet";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { PropertyCard } from "@/components/property/property-card";
-
-// Fix for default marker icons in Leaflet with Next.js
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
-});
-
 import { usePropertiesStore } from "@/stores/properties-store";
 import { formatPriceCompact } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 
+// Safe setup for default marker icons in Leaflet with Next.js
+if (typeof window !== "undefined") {
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+  });
+}
+
+const quickLocalityCoords = [
+  { name: "Benz Circle", lat: 16.5062, lng: 80.6480 },
+  { name: "Poranki", lat: 16.4833, lng: 80.7000 },
+  { name: "Kanuru", lat: 16.4950, lng: 80.6800 },
+  { name: "Gorantla", lat: 16.3200, lng: 80.4500 },
+  { name: "Amaravati Road", lat: 16.5131, lng: 80.5165 },
+  { name: "Brodipet", lat: 16.3050, lng: 80.4350 },
+];
+
+// Helper to check if a point (lat/lng) falls inside a polygon array of latlngs
+function isPointInPolygon(point: { lat: number; lng: number }, polygon: L.LatLng[]) {
+  if (!polygon || polygon.length < 3) return true;
+  const x = point.lat;
+  const y = point.lng;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].lat, yi = polygon[i].lng;
+    const xj = polygon[j].lat, yj = polygon[j].lng;
+    const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+// Helper to generate Realtor.com style price pill divIcons safely on client
+function getPricePillIcon(price: number, isSelected: boolean) {
+  if (typeof window === "undefined" || !L || !L.divIcon) return undefined;
+  
+  const priceText = formatPriceCompact(price);
+  return L.divIcon({
+    className: "realtor-price-pill-marker",
+    html: `
+      <div style="
+        background: ${isSelected ? '#F5A623' : '#0F172A'};
+        color: ${isSelected ? '#020617' : '#FFFFFF'};
+        border: ${isSelected ? '2.5px solid #FFFFFF' : '1.5px solid rgba(255, 255, 255, 0.3)'};
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 800;
+        box-shadow: ${isSelected ? '0 0 18px rgba(245, 166, 37, 0.9)' : '0 4px 12px rgba(0, 0, 0, 0.4)'};
+        white-space: nowrap;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        transform: ${isSelected ? 'scale(1.15)' : 'scale(1)'};
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      ">
+        <span style="color: ${isSelected ? '#020617' : '#F5A623'}; font-weight: 900;">₹</span>
+        <span>${priceText.replace('₹', '')}</span>
+      </div>
+    `,
+    iconSize: [64, 28],
+    iconAnchor: [32, 14],
+  });
+}
+
 function LocationMarker({
   position,
   setPosition,
+  isDrawing,
 }: {
   position: L.LatLng | null;
   setPosition: (pos: L.LatLng) => void;
+  isDrawing: boolean;
 }) {
   const map = useMapEvents({
     click(e) {
-      setPosition(e.latlng);
-      map.flyTo(e.latlng, map.getZoom());
+      if (!isDrawing) {
+        setPosition(e.latlng);
+        map.flyTo(e.latlng, map.getZoom());
+      }
     },
   });
 
@@ -59,15 +122,17 @@ function LocationMarker({
     [setPosition, map]
   );
 
-  // Custom icon for the draggable user marker
-  const customIcon = new L.Icon({
-    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
-    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-  });
+  const customIcon = useMemo(() => {
+    if (typeof window === "undefined") return undefined;
+    return new L.Icon({
+      iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
+      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+  }, []);
 
   return position === null ? null : (
     <Marker
@@ -77,48 +142,30 @@ function LocationMarker({
       ref={markerRef}
       icon={customIcon}
     >
-      <Popup minWidth={90}>
-        <div className="font-medium text-center">
-          <strong>Your Location</strong>
-          <br />
-          {position.lat.toFixed(4)}, {position.lng.toFixed(4)}
+      <Popup minWidth={100}>
+        <div className="font-medium text-center text-xs">
+          <strong className="text-amber-600 block">Your Location Pin</strong>
+          <span>{position.lat.toFixed(4)}° N, {position.lng.toFixed(4)}° E</span>
         </div>
       </Popup>
     </Marker>
   );
 }
 
-// Center Map Component to programmatically change view
-function CenterMap({ center }: { center: [number, number] }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center);
-  }, [center, map]);
-  return null;
-}
-
-function ZoomListener({ onZoomLimit, properties }: { onZoomLimit: (isAtLimit: boolean, propertyTitle?: string) => void, properties: any[] }) {
-  const map = useMapEvents({
-    zoomend: () => {
-      const isAtLimit = map.getZoom() >= 15;
-      if (isAtLimit) {
-        const center = map.getCenter();
-        let closestProp: any = null;
-        let minDistance = Infinity;
-        
-        properties.forEach(p => {
-          const propLatLng = new L.LatLng(p.location.latitude, p.location.longitude);
-          const dist = center.distanceTo(propLatLng);
-          if (dist < minDistance) {
-            minDistance = dist;
-            closestProp = p;
-          }
-        });
-        onZoomLimit(true, closestProp?.title);
-      } else {
-        onZoomLimit(false);
+// Map Click Listener for Freehand Area Drawing
+function DrawMapListener({
+  isDrawing,
+  onAddPoint,
+}: {
+  isDrawing: boolean;
+  onAddPoint: (point: L.LatLng) => void;
+}) {
+  useMapEvents({
+    click(e) {
+      if (isDrawing) {
+        onAddPoint(e.latlng);
       }
-    }
+    },
   });
   return null;
 }
@@ -126,7 +173,6 @@ function ZoomListener({ onZoomLimit, properties }: { onZoomLimit: (isAtLimit: bo
 function getSmartFilteredProperties(mapProperties: any[], query: string, typeParam?: string | null, bhkParam?: string | null) {
   let result = mapProperties;
 
-  // 1. Filter by URL type parameter if provided (e.g. ?type=apartment or ?type=rent)
   if (typeParam && typeParam !== "all" && typeParam !== "buy") {
     const typeLower = typeParam.toLowerCase();
     if (["sale", "rent"].includes(typeLower)) {
@@ -139,7 +185,6 @@ function getSmartFilteredProperties(mapProperties: any[], query: string, typePar
     }
   }
 
-  // 2. Filter by BHK parameter if provided (e.g. ?bhk=3BHK)
   if (bhkParam) {
     const num = parseInt(bhkParam);
     if (!isNaN(num)) {
@@ -166,10 +211,8 @@ function getSmartFilteredProperties(mapProperties: any[], query: string, typePar
 
     if (tokens.length > 0) {
       return tokens.every(token => {
-        // Strip trailing 's' for plural match (e.g., apartments -> apartment, villas -> villa, plots -> plot)
         const stem = token.length > 3 && token.endsWith('s') ? token.slice(0, -1) : token;
         
-        // Category alias matching
         if (stem === "apartment" || token === "flats" || token === "flat") {
           return pType.includes("apartment") || searchableText.includes("apartment");
         }
@@ -189,6 +232,17 @@ function getSmartFilteredProperties(mapProperties: any[], query: string, typePar
 
     return searchableText.includes(rawTerm);
   });
+}
+
+function calculateDistanceStr(userPos: L.LatLng, propLat: number, propLng: number) {
+  if (!userPos || !propLat || !propLng) return "";
+  const userLatLng = L.latLng(userPos.lat, userPos.lng);
+  const propLatLng = L.latLng(propLat, propLng);
+  const meters = userLatLng.distanceTo(propLatLng);
+  if (meters < 1000) {
+    return `${Math.round(meters)} meters`;
+  }
+  return `${(meters / 1000).toFixed(1)} km`;
 }
 
 interface PropertyMapProps {
@@ -214,14 +268,37 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const [position, setPosition] = useState<L.LatLng | null>(
     activeFiltered.length > 0 && activeFiltered[0].location?.latitude && activeFiltered[0].location?.longitude
       ? new L.LatLng(activeFiltered[0].location.latitude, activeFiltered[0].location.longitude)
-      : new L.LatLng(16.5062, 80.6480) // Default to Vijayawada
+      : new L.LatLng(16.5062, 80.6480)
   );
   
-  const [searchPlace, setSearchPlace] = useState(initialQuery);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
   const [filteredProperties, setFilteredProperties] = useState(activeFiltered);
-  const [isZoomRestricted, setIsZoomRestricted] = useState(false);
-  const [restrictedPropertyTitle, setRestrictedPropertyTitle] = useState<string | null>(null);
+  const [mapLayerType, setMapLayerType] = useState<"streets" | "hybrid">("streets");
+  
+  // Draw Polygon Area Search State
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawPolygonPoints, setDrawPolygonPoints] = useState<L.LatLng[]>([]);
+
   const mapRef = useRef<L.Map | null>(null);
+
+  // Filter properties based on drawn polygon boundary
+  const displayedProperties = useMemo(() => {
+    if (drawPolygonPoints.length >= 3) {
+      return filteredProperties.filter((p) =>
+        isPointInPolygon(
+          { lat: p.location.latitude, lng: p.location.longitude },
+          drawPolygonPoints
+        )
+      );
+    }
+    return filteredProperties;
+  }, [filteredProperties, drawPolygonPoints]);
+
+  const selectedProperty = useMemo(() => {
+    return displayedProperties.find((p) => p.id === selectedPropertyId);
+  }, [displayedProperties, selectedPropertyId]);
 
   useEffect(() => {
     if (filteredItems && Array.isArray(filteredItems)) {
@@ -235,7 +312,6 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
     const query = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
     const typeParam = searchParams.get("type") || searchParams.get("category") || null;
     const bhkParam = searchParams.get("bhk") || null;
-    setSearchPlace(query);
     const matches = getSmartFilteredProperties(mapProperties, query, typeParam, bhkParam);
     setFilteredProperties(matches);
     if (matches.length > 0) {
@@ -245,220 +321,391 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
     }
   }, [filteredItems, searchParams, mapProperties]);
 
-  const handleZoomLimit = (isAtLimit: boolean, title?: string) => {
-    setIsZoomRestricted(isAtLimit);
-    if (isAtLimit && title) {
-      setRestrictedPropertyTitle(title);
-    }
-  };
-
-  const handleSearchPlace = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    
-    // If search is empty, reset the filter
-    if (!searchPlace.trim()) {
-      setFilteredProperties(mapProperties);
-      return;
-    }
-    
-    const matches = getSmartFilteredProperties(mapProperties, searchPlace);
-    
-    if (matches.length > 0) {
-      setFilteredProperties(matches);
-      // Center on the first match
-      setPosition(new L.LatLng(matches[0].location.latitude, matches[0].location.longitude));
-    } else {
-      alert(`No properties found matching "${searchPlace}". Try a different location or keyword.`);
-    }
-  };
-
   const handleGetLocation = () => {
+    setIsLocating(true);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
-          setPosition(new L.LatLng(latitude, longitude));
+          const newPos = new L.LatLng(latitude, longitude);
+          setPosition(newPos);
+          if (mapRef.current) {
+            mapRef.current.flyTo(newPos, 14, { duration: 1.5 });
+          }
+          setIsLocating(false);
         },
         (err) => {
           console.error("Geolocation error:", err);
-          alert("Unable to retrieve your location. Please check browser permissions.");
+          setIsLocating(false);
+          alert("Unable to retrieve your location. Defaulting to Benz Circle, Vijayawada.");
         }
       );
     } else {
+      setIsLocating(false);
       alert("Geolocation is not supported by your browser.");
     }
   };
 
+  const handleFlyToLocality = (lat: number, lng: number) => {
+    const newPos = new L.LatLng(lat, lng);
+    setPosition(newPos);
+    if (mapRef.current) {
+      mapRef.current.flyTo(newPos, 14, { duration: 1.2 });
+    }
+  };
+
+  const handleAddDrawPoint = (point: L.LatLng) => {
+    setDrawPolygonPoints((prev) => [...prev, point]);
+  };
+
+  const handleClearDraw = () => {
+    setDrawPolygonPoints([]);
+    setIsDrawing(false);
+  };
+
   return (
-    <div className="space-y-8">
-      <div className="relative w-full flex flex-col md:flex-row gap-0 border border-border-default/50 rounded-3xl overflow-hidden bg-bg-card shadow-sm h-auto md:h-[600px]">
-      {/* Map Control Panel */}
-      <div className="w-full md:w-80 flex-shrink-0 p-6 flex flex-col gap-6 bg-bg-card z-10 border-b md:border-b-0 md:border-r border-border-default/50 shadow-[0_4px_24px_rgba(0,0,0,0.08)] md:shadow-[4px_0_24px_rgba(0,0,0,0.08)]">
-        <div>
-          <h2 className="font-heading text-xl font-bold text-text-primary mb-2">
-            Map Search
-          </h2>
-          <p className="text-sm text-text-secondary">
-            Drag the orange pin, click on the map, or paste coordinates to explore areas.
-          </p>
-        </div>
+    <div className="space-y-4 w-full">
+      {/* Dynamic Animated Radar Dash Styles */}
+      <style jsx global>{`
+        @keyframes radarLinePulse {
+          0% {
+            stroke-dashoffset: 40;
+          }
+          100% {
+            stroke-dashoffset: 0;
+          }
+        }
+        .animated-radar-line {
+          animation: radarLinePulse 1.2s linear infinite;
+          filter: drop-shadow(0 0 8px rgba(245, 166, 35, 0.9));
+        }
+      `}</style>
 
-        <form onSubmit={handleSearchPlace} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-text-tertiary uppercase tracking-wider">
-              Search Location
-            </label>
-            <div className="flex gap-2">
-              <Input
-                value={searchPlace}
-                onChange={(e) => setSearchPlace(e.target.value)}
-                placeholder="e.g. MVP Colony, Madhapur..."
-                className="bg-bg-primary/50 flex-1"
-              />
-              <Button type="submit" variant="amber" size="icon" className="shrink-0">
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          <Button 
-            type="button"
-            className="w-full mt-2"
-            onClick={handleGetLocation}
-          >
-            <Navigation className="h-4 w-4 mr-2" />
-            Find My Location
-          </Button>
-        </form>
+      {/* Mobile Action Controls Header Bar */}
+      <div className="flex items-center justify-between gap-2 md:hidden bg-slate-900 text-white p-3 rounded-2xl border border-slate-800 shadow-md">
+        <button
+          type="button"
+          onClick={handleGetLocation}
+          disabled={isLocating}
+          className="flex-1 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
+        >
+          <Navigation className={`w-4 h-4 ${isLocating ? "animate-spin" : ""}`} />
+          <span>{isLocating ? "Locating..." : "Find My Location"}</span>
+        </button>
 
-        <div className="mt-auto pt-6 border-t border-border-default/50">
-          <h3 className="font-medium text-text-primary mb-3 text-sm">Property Legend</h3>
-          <div className="space-y-2 text-sm text-text-secondary flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-              <span>Available Properties</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-orange-500"></span>
-              <span>Your Custom Pin</span>
-            </div>
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => setShowMobileDrawer(!showMobileDrawer)}
+          className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 border border-slate-700 cursor-pointer"
+        >
+          <Compass className="w-4 h-4 text-amber-400" />
+          <span>{showMobileDrawer ? "Close" : "Options"}</span>
+          {showMobileDrawer ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </button>
       </div>
 
-      {/* The Map itself */}
-      <div className="flex-1 w-full flex flex-col z-0 relative bg-bg-primary min-h-[55vh] md:min-h-full">
-        <MapContainer
-          ref={mapRef}
-          center={position ? [position.lat, position.lng] : [17.4326, 78.4071]}
-          zoom={12}
-          maxZoom={15}
-          scrollWheelZoom={false}
-          className="w-full h-full flex-1 min-h-[55vh] md:min-h-full"
+      {/* Main Container */}
+      <div className="relative w-full flex flex-col md:flex-row gap-0 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden bg-slate-900 shadow-xl min-h-[550px] md:h-[650px]">
+        
+        {/* Desktop Sidebar Control Panel / Mobile Collapsible Drawer */}
+        <div
+          className={`w-full md:w-80 flex-shrink-0 p-5 md:p-6 flex-col justify-between bg-slate-900 text-white z-10 border-b md:border-b-0 md:border-r border-slate-800 shadow-2xl space-y-5 ${
+            showMobileDrawer ? "flex" : "hidden md:flex"
+          }`}
         >
-          <ZoomListener onZoomLimit={handleZoomLimit} properties={filteredProperties} />
-          {/* Using Esri World Imagery tiles for an earth view look */}
-          <TileLayer
-            attribution='&copy; <a href="https://www.esri.com/">Esri</a> &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          />
-          
-          <LocationMarker position={position} setPosition={setPosition} />
-          
-          {position && <CenterMap center={[position.lat, position.lng]} />}
-
-          {/* Render Active Map Properties */}
-          {filteredProperties.map((prop) => {
-            let distanceText = "";
-            if (position) {
-              const propLatLng = new L.LatLng(prop.location.latitude, prop.location.longitude);
-              const distInMeters = position.distanceTo(propLatLng);
-              distanceText = `${(distInMeters / 1000).toFixed(1)} km`;
-            }
-            
-            return (
-              <Marker key={prop.id} position={[prop.location.latitude, prop.location.longitude]}>
-                <Popup className="road-popup">
-                  <div className="p-2 min-w-[180px]">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="font-bold text-amber-600">{formatPriceCompact(prop.price)}</div>
-                      {distanceText && (
-                        <div className="text-[10px] bg-bg-primary px-1.5 py-0.5 rounded text-text-secondary border border-border-default">
-                          {distanceText} away
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-sm font-medium text-text-primary leading-tight mb-1 line-clamp-2">
-                      {prop.title}
-                    </div>
-                    <div className="text-xs text-text-secondary capitalize mb-3">{prop.listingType} • {prop.propertyType.replace('-', ' ')}</div>
-                    
-                    <Link href={`/properties/${prop.slug}`}>
-                      <Button variant="amber" size="sm" className="w-full h-8 text-xs">
-                        See Details
-                      </Button>
-                    </Link>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
-        </MapContainer>
-
-        {/* Privacy Zoom Overlay */}
-        {isZoomRestricted && (
-          <div className="absolute inset-0 z-[1000] bg-bg-primary/70 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300">
-            <div className="bg-bg-card border border-border-default shadow-elevated rounded-3xl p-8 max-w-md w-full text-center flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
-              <div className="w-16 h-16 bg-amber-primary/10 rounded-full flex items-center justify-center mb-2">
-                <span className="text-3xl">🔒</span>
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Compass className="w-5 h-5 text-amber-400" />
+                <h2 className="font-heading text-xl font-bold text-white tracking-tight">
+                  Map Explorer
+                </h2>
               </div>
-              <h3 className="font-heading text-xl font-bold text-text-primary">
-                Exact Location Protected
-              </h3>
-              <p className="text-sm text-text-secondary leading-relaxed">
-                You've reached the maximum zoom level. To ensure the privacy of our property owners, exact street views are hidden. 
-                <br/><br/>
-                Want to know more or arrange a site visit?
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Draw custom area on map or tap price pills to inspect available homes.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 mt-4 w-full">
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => {
-                    if (mapRef.current) {
-                      mapRef.current.setZoom(13);
-                      setIsZoomRestricted(false);
-                    }
+            </div>
+
+            {/* Primary Action Button */}
+            <button
+              type="button"
+              onClick={handleGetLocation}
+              disabled={isLocating}
+              className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-extrabold text-sm rounded-2xl shadow-lg hover:shadow-amber-500/25 flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer disabled:opacity-75"
+            >
+              <Navigation className={`w-4 h-4 stroke-[2.5] ${isLocating ? "animate-spin" : ""}`} />
+              <span>{isLocating ? "Detecting GPS..." : "Find My Location"}</span>
+            </button>
+
+            {/* DRAW SEARCH AREA TOOL PANEL */}
+            <div className="bg-slate-800/90 p-3 rounded-2xl border border-slate-700/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-amber-400 flex items-center gap-1.5">
+                  <Pencil className="w-4 h-4" /> Draw Search Area
+                </span>
+                {drawPolygonPoints.length > 0 && (
+                  <button
+                    onClick={handleClearDraw}
+                    className="text-[11px] text-red-400 hover:text-red-300 flex items-center gap-1 font-bold cursor-pointer"
+                  >
+                    <Trash2 className="w-3 h-3" /> Clear
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsDrawing(!isDrawing)}
+                  className={`py-2 px-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    isDrawing
+                      ? "bg-amber-500 text-slate-950 shadow-md animate-pulse"
+                      : "bg-slate-700 text-white hover:bg-slate-600"
+                  }`}
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>{isDrawing ? "Click Map..." : "Start Drawing"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleClearDraw}
+                  disabled={drawPolygonPoints.length === 0}
+                  className="py-2 px-2.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 disabled:opacity-40 cursor-pointer"
+                >
+                  Reset Draw
+                </button>
+              </div>
+
+              {drawPolygonPoints.length > 0 && (
+                <div className="text-[11px] text-slate-300 bg-slate-950 p-2 rounded-xl border border-amber-500/30 flex items-center justify-between">
+                  <span>📍 {drawPolygonPoints.length} points placed</span>
+                  <span className="font-extrabold text-amber-400">{displayedProperties.length} homes</span>
+                </div>
+              )}
+            </div>
+
+            {/* Selected Property Distance Display Card */}
+            {selectedProperty && position && (
+              <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-3 text-xs space-y-1.5 animate-in fade-in">
+                <div className="flex items-center gap-1.5 text-amber-400 font-extrabold">
+                  <Route className="w-4 h-4 text-amber-400" /> Live Route Distance:
+                </div>
+                <div className="font-bold text-white text-sm truncate">
+                  {selectedProperty.title}
+                </div>
+                <div className="flex items-center justify-between text-slate-200 pt-0.5">
+                  <span className="flex items-center gap-1">
+                    <Car className="w-3.5 h-3.5 text-amber-400" /> Distance:
+                  </span>
+                  <span className="font-black text-amber-400 bg-slate-950 px-2 py-0.5 rounded-md border border-amber-500/30">
+                    {calculateDistanceStr(position, selectedProperty.location.latitude, selectedProperty.location.longitude)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Map Layer Mode Switcher */}
+            <div className="bg-slate-800/90 p-1.5 rounded-xl border border-slate-700/80 space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 flex items-center gap-1">
+                <Layers3 className="w-3 h-3 text-amber-400" /> Map View Mode:
+              </label>
+              <div className="grid grid-cols-2 gap-1 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setMapLayerType("streets")}
+                  className={`py-1.5 px-2 rounded-lg transition-all text-center cursor-pointer ${
+                    mapLayerType === "streets"
+                      ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
+                      : "text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  Clear Streets
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMapLayerType("hybrid")}
+                  className={`py-1.5 px-2 rounded-lg transition-all text-center cursor-pointer ${
+                    mapLayerType === "hybrid"
+                      ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
+                      : "text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  Satellite + Names
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Explore Hotspots */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-amber-400" /> Quick Jump Locality:
+              </label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {quickLocalityCoords.map((loc) => (
+                  <button
+                    key={loc.name}
+                    onClick={() => {
+                      handleFlyToLocality(loc.lat, loc.lng);
+                      setShowMobileDrawer(false);
+                    }}
+                    className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-300 text-xs font-semibold border border-slate-700 hover:border-amber-500 transition-all text-left truncate cursor-pointer"
+                  >
+                    📍 {loc.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-800 space-y-2 text-xs text-slate-300">
+            <div className="flex items-center justify-between bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/50">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span>Active Properties</span>
+              </div>
+              <span className="font-extrabold text-amber-400 text-sm">{displayedProperties.length}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* The Leaflet Map Container */}
+        <div className="flex-1 w-full relative bg-slate-950 h-[550px] md:h-[650px]">
+          {/* Drawing Mode Overlay Banner */}
+          {isDrawing && (
+            <div className="absolute top-4 left-4 right-4 z-[500] bg-amber-500 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-2xl shadow-2xl flex items-center justify-between animate-pulse">
+              <span className="flex items-center gap-2">
+                <Pencil className="w-4 h-4" /> Tap points on the map to enclose your custom search area!
+              </span>
+              <button
+                onClick={handleClearDraw}
+                className="bg-slate-950 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold"
+              >
+                Finish / Done
+              </button>
+            </div>
+          )}
+
+          <MapContainer
+            ref={mapRef}
+            center={position ? [position.lat, position.lng] : [16.5062, 80.6480]}
+            zoom={12}
+            maxZoom={18}
+            scrollWheelZoom={false}
+            className="w-full h-full min-h-[550px]"
+          >
+            <DrawMapListener isDrawing={isDrawing} onAddPoint={handleAddDrawPoint} />
+
+            {mapLayerType === "streets" ? (
+              <TileLayer
+                attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                maxNativeZoom={18}
+                maxZoom={19}
+              />
+            ) : (
+              <>
+                <TileLayer
+                  attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                  maxNativeZoom={18}
+                  maxZoom={19}
+                />
+                <TileLayer
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+                  maxNativeZoom={18}
+                  maxZoom={19}
+                />
+              </>
+            )}
+
+            {/* Custom Drag Pin Marker */}
+            <LocationMarker position={position} setPosition={setPosition} isDrawing={isDrawing} />
+
+            {/* Render Drawn Custom Polygon Boundary */}
+            {drawPolygonPoints.length > 0 && (
+              <Polygon
+                positions={drawPolygonPoints}
+                pathOptions={{
+                  color: "#F5A623",
+                  fillColor: "#F5A623",
+                  fillOpacity: 0.25,
+                  weight: 3,
+                  dashArray: "6, 6",
+                }}
+              />
+            )}
+
+            {/* Animated Glowing Radar Line from User Location to Selected Property */}
+            {position && selectedProperty && selectedProperty.location?.latitude && selectedProperty.location?.longitude && (
+              <Polyline
+                positions={[
+                  [position.lat, position.lng],
+                  [selectedProperty.location.latitude, selectedProperty.location.longitude],
+                ]}
+                pathOptions={{
+                  color: "#F5A623",
+                  weight: 4,
+                  dashArray: "10, 12",
+                  className: "animated-radar-line",
+                }}
+              />
+            )}
+
+            {/* Realtor.com Style Price Pill Markers */}
+            {displayedProperties.map((property) => {
+              const isSelected = selectedPropertyId === property.id;
+              const pricePillIcon = getPricePillIcon(property.price, isSelected);
+
+              return (
+                <Marker
+                  key={property.id}
+                  position={[property.location.latitude, property.location.longitude]}
+                  icon={pricePillIcon}
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedPropertyId(property.id);
+                      if (mapRef.current) {
+                        mapRef.current.panTo([property.location.latitude, property.location.longitude]);
+                      }
+                    },
                   }}
                 >
-                  Zoom Out
-                </Button>
-                <Button variant="amber" className="flex-1 shadow-amber-glow" asChild>
-                  <a 
-                    href={`https://wa.me/918977311418?text=${encodeURIComponent(restrictedPropertyTitle ? `Hi! I'm exploring properties on the map and would like to know the exact location details for "${restrictedPropertyTitle}".` : "Hi! I'm exploring properties on the map and would like to know the exact location details.")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Contact Agent
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-      </div>
+                  <Popup className="property-map-popup">
+                    <div className="p-1.5 max-w-[230px]">
+                      <div className="text-[10px] font-extrabold uppercase text-amber-600 tracking-wider mb-0.5">
+                        Brokered by ROAD FACING
+                      </div>
+                      <div className="font-extrabold text-sm text-slate-900 truncate leading-snug">
+                        {property.title}
+                      </div>
+                      <div className="text-amber-600 font-black text-base my-0.5">
+                        {formatPriceCompact(property.price)}
+                      </div>
 
-      {/* Nearby/Filtered Properties Grid */}
-      <div className="pt-4 px-2">
-        <h2 className="text-xl font-heading font-bold mb-6 text-text-primary">
-          {filteredProperties.length === mapProperties.length 
-            ? "Featured Map Properties" 
-            : `Properties found for "${searchPlace}" (${filteredProperties.length})`}
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredProperties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
+                      {/* Distance Badge */}
+                      {position && (
+                        <div className="bg-amber-500/15 border border-amber-500/40 text-slate-950 px-2 py-1 rounded-md text-[11px] font-extrabold flex items-center gap-1.5 my-1.5">
+                          <Navigation className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                          <span>{calculateDistanceStr(position, property.location.latitude, property.location.longitude)} from you</span>
+                        </div>
+                      )}
+
+                      <div className="text-[11px] text-slate-600 font-medium truncate mb-2">
+                        {property.bedrooms ? `${property.bedrooms} BHK • ` : ""}{property.location.locality}, {property.location.city}
+                      </div>
+                      <Link
+                        href={`/properties/${property.id}`}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-lg w-full justify-center shadow-xs transition-colors"
+                      >
+                        View Property <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </MapContainer>
         </div>
       </div>
     </div>
