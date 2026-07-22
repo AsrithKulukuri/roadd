@@ -52,27 +52,24 @@ function isPointInPolygon(point: { lat: number; lng: number }, polygon: L.LatLng
   return inside;
 }
 
-// Smart Price Pill Icon Generator supporting Search Pop-Up & Highlight Animations
-function getPricePillIcon(price: number, isSelected: boolean, isMatch: boolean, hasSearch: boolean) {
+// Smart Price Pill Icon Generator supporting Search Filtered Highlight Animations
+function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean) {
   if (typeof window === "undefined" || !L || !L.divIcon) return undefined;
   
   const priceText = formatPriceCompact(price);
-  const isPopUp = isMatch && hasSearch;
-  const isDimmed = !isMatch && hasSearch;
 
-  const bg = isSelected || isPopUp ? '#F5A623' : '#0F172A';
-  const color = isSelected || isPopUp ? '#020617' : '#FFFFFF';
-  const border = isSelected || isPopUp ? '2.5px solid #FFFFFF' : '1.5px solid rgba(255, 255, 255, 0.3)';
-  const opacity = isDimmed ? 0.35 : 1;
-  const scale = isSelected ? 'scale(1.3)' : isPopUp ? 'scale(1.2)' : isDimmed ? 'scale(0.85)' : 'scale(1)';
-  const shadow = isPopUp
-    ? '0 0 24px rgba(245, 166, 37, 0.95), 0 6px 16px rgba(0,0,0,0.5)'
+  const bg = isSelected || hasSearch ? '#F5A623' : '#0F172A';
+  const color = isSelected || hasSearch ? '#020617' : '#FFFFFF';
+  const border = isSelected || hasSearch ? '2.5px solid #FFFFFF' : '1.5px solid rgba(255, 255, 255, 0.3)';
+  const scale = isSelected ? 'scale(1.25)' : hasSearch ? 'scale(1.15)' : 'scale(1)';
+  const shadow = hasSearch
+    ? '0 0 20px rgba(245, 166, 37, 0.9), 0 4px 14px rgba(0,0,0,0.5)'
     : isSelected
     ? '0 0 18px rgba(245, 166, 37, 0.9)'
     : '0 4px 12px rgba(0, 0, 0, 0.4)';
 
   return L.divIcon({
-    className: `realtor-price-pill-marker ${isPopUp ? 'popup-marker-match' : ''}`,
+    className: `realtor-price-pill-marker ${hasSearch ? 'popup-marker-match' : ''}`,
     html: `
       <div style="
         background: ${bg};
@@ -89,10 +86,9 @@ function getPricePillIcon(price: number, isSelected: boolean, isMatch: boolean, 
         align-items: center;
         gap: 3px;
         transform: ${scale};
-        opacity: ${opacity};
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       ">
-        ${isPopUp ? '<span style="font-size: 11px;">⭐</span>' : `<span style="color: ${isSelected || isPopUp ? '#020617' : '#F5A623'}; font-weight: 900;">₹</span>`}
+        ${hasSearch ? '<span style="font-size: 11px;">⭐</span>' : `<span style="color: ${isSelected || hasSearch ? '#020617' : '#F5A623'}; font-weight: 900;">₹</span>`}
         <span>${priceText.replace('₹', '')}</span>
       </div>
     `,
@@ -279,8 +275,8 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
   const mapRef = useRef<L.Map | null>(null);
 
-  // Filter & Sort Properties so Matching Homes Pop Up First!
-  const { matchingProperties, nonMatchingProperties, displayedProperties } = useMemo(() => {
+  // STRICT SEARCH FILTERING: When a search term is present, render ONLY matching properties!
+  const displayedProperties = useMemo(() => {
     let source = mapProperties;
     if (filteredItems && Array.isArray(filteredItems) && filteredItems.length > 0) {
       source = filteredItems;
@@ -296,29 +292,10 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
     }
 
     if (!mapSearchInput.trim()) {
-      return {
-        matchingProperties: [],
-        nonMatchingProperties: source,
-        displayedProperties: source,
-      };
+      return source;
     }
 
-    const matches: any[] = [];
-    const others: any[] = [];
-
-    source.forEach((p) => {
-      if (checkPropertyMatchesQuery(p, mapSearchInput)) {
-        matches.push(p);
-      } else {
-        others.push(p);
-      }
-    });
-
-    return {
-      matchingProperties: matches,
-      nonMatchingProperties: others,
-      displayedProperties: [...matches, ...others],
-    };
+    return source.filter((p) => checkPropertyMatchesQuery(p, mapSearchInput));
   }, [mapProperties, filteredItems, drawPolygonPoints, mapSearchInput]);
 
   const selectedProperty = useMemo(() => {
@@ -329,7 +306,6 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
     setMapSearchInput(val);
     if (!val.trim()) return;
 
-    // Automatically fly to the first matching property when user searches e.g. "3bhk"
     const matching = mapProperties.filter((p) => checkPropertyMatchesQuery(p, val));
     if (matching.length > 0 && matching[0].location?.latitude && matching[0].location?.longitude) {
       const newPos = new L.LatLng(matching[0].location.latitude, matching[0].location.longitude);
@@ -405,8 +381,8 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
             box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.9);
           }
           50% {
-            transform: scale(1.22);
-            box-shadow: 0 0 25px 10px rgba(245, 166, 35, 0.7);
+            transform: scale(1.2);
+            box-shadow: 0 0 22px 8px rgba(245, 166, 35, 0.7);
           }
           100% {
             transform: scale(1);
@@ -460,7 +436,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 type="text"
                 value={mapSearchInput}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Try '3bhk', 'villa', 'Benz Circle'..."
+                placeholder="Try 'villa', '3bhk', 'Benz Circle'..."
                 className="w-full pl-9 pr-8 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
               />
               {mapSearchInput && (
@@ -473,14 +449,11 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               )}
             </div>
 
-            {/* Smart Pop-Up Search Result Badge */}
+            {/* Search Filter Count Badge */}
             {mapSearchInput.trim() && (
               <div className="bg-amber-500/15 border border-amber-500/40 p-2.5 rounded-xl text-xs flex items-center justify-between">
                 <span className="text-amber-400 font-extrabold flex items-center gap-1">
-                  <Star className="w-3.5 h-3.5 fill-amber-400" /> {matchingProperties.length} Pop-Up Matches
-                </span>
-                <span className="text-slate-300 font-medium text-[11px]">
-                  {nonMatchingProperties.length} dimmed
+                  <Star className="w-3.5 h-3.5 fill-amber-400" /> {displayedProperties.length} Matching Homes
                 </span>
               </div>
             )}
@@ -649,7 +622,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   type="text"
                   value={mapSearchInput}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Try '3bhk', 'villa', 'Benz Circle'..."
+                  placeholder="Try 'villa', '3bhk', 'Benz Circle'..."
                   className="w-full bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none border-0 ring-0"
                 />
                 {mapSearchInput && (
@@ -719,11 +692,11 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               ))}
             </div>
 
-            {/* Search Match Popup Badge on Mobile */}
+            {/* Search Match Badge on Mobile */}
             {mapSearchInput.trim() && (
-              <div className="bg-amber-500/90 text-slate-950 font-extrabold text-[11px] px-3 py-1 rounded-full shadow-lg flex items-center justify-between animate-pulse self-start">
+              <div className="bg-amber-500/95 text-slate-950 font-extrabold text-[11px] px-3 py-1 rounded-full shadow-lg flex items-center justify-between animate-pulse self-start">
                 <span className="flex items-center gap-1">
-                  ⭐ {matchingProperties.length} Pop-Up Matches for "{mapSearchInput}"
+                  ⭐ Showing {displayedProperties.length} matches for "{mapSearchInput}"
                 </span>
               </div>
             )}
@@ -815,12 +788,11 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               />
             )}
 
-            {/* Realtor.com Style Price Pill Markers with Smart Pop-Up Animations */}
+            {/* Realtor.com Style Price Pill Markers (Exclusively Matching Properties when searching) */}
             {displayedProperties.map((property) => {
               const isSelected = selectedPropertyId === property.id;
-              const isMatch = checkPropertyMatchesQuery(property, mapSearchInput);
               const hasSearch = Boolean(mapSearchInput.trim());
-              const pricePillIcon = getPricePillIcon(property.price, isSelected, isMatch, hasSearch);
+              const pricePillIcon = getPricePillIcon(property.price, isSelected, hasSearch);
 
               return (
                 <Marker
