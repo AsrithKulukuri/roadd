@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -10,6 +10,7 @@ import {
   Polygon,
   Circle,
   useMapEvents,
+  useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer } from "lucide-react";
@@ -17,7 +18,7 @@ import L from "leaflet";
 import Link from "next/link";
 import { PropertyCard } from "@/components/property/property-card";
 import { usePropertiesStore } from "@/stores/properties-store";
-import { formatPriceCompact, formatINR } from "@/lib/utils";
+import { formatPriceCompact, formatINR, cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 
@@ -220,20 +221,111 @@ function LocationMarker({
   );
 }
 
-function DrawMapListener({
+function FreehandDrawListener({
   isDrawing,
-  onAddPoint,
+  onDrawStart,
+  onDrawMove,
+  onDrawEnd,
 }: {
   isDrawing: boolean;
-  onAddPoint: (point: L.LatLng) => void;
+  onDrawStart: (point: L.LatLng) => void;
+  onDrawMove: (point: L.LatLng) => void;
+  onDrawEnd: () => void;
 }) {
-  useMapEvents({
-    click(e) {
-      if (isDrawing) {
-        onAddPoint(e.latlng);
+  const map = useMap();
+  const isMouseDownRef = useRef(false);
+
+  useEffect(() => {
+    if (!map) return;
+
+    const container = map.getContainer();
+    if (!container) return;
+
+    if (isDrawing) {
+      map.dragging.disable();
+      if (map.touchZoom) map.touchZoom.disable();
+      if (map.doubleClickZoom) map.doubleClickZoom.disable();
+      if (map.scrollWheelZoom) map.scrollWheelZoom.disable();
+      container.style.cursor = "crosshair";
+    } else {
+      map.dragging.enable();
+      if (map.touchZoom) map.touchZoom.enable();
+      if (map.doubleClickZoom) map.doubleClickZoom.enable();
+      if (map.scrollWheelZoom) map.scrollWheelZoom.enable();
+      container.style.cursor = "";
+      return;
+    }
+
+    const getLatLngFromEvent = (e: MouseEvent | TouchEvent): L.LatLng | null => {
+      let clientX = 0;
+      let clientY = 0;
+
+      if ("touches" in e && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else if ("clientX" in e) {
+        clientX = (e as MouseEvent).clientX;
+        clientY = (e as MouseEvent).clientY;
+      } else {
+        return null;
       }
-    },
-  });
+
+      const rect = container.getBoundingClientRect();
+      const containerPoint = L.point(clientX - rect.left, clientY - rect.top);
+      return map.containerPointToLatLng(containerPoint);
+    };
+
+    const handleStart = (e: MouseEvent | TouchEvent) => {
+      if (!isDrawing) return;
+      isMouseDownRef.current = true;
+      const latlng = getLatLngFromEvent(e);
+      if (latlng) {
+        onDrawStart(latlng);
+      }
+    };
+
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDrawing || !isMouseDownRef.current) return;
+      if (e.cancelable) {
+        e.preventDefault(); // Prevent page scroll on touchscreens while sketching
+      }
+      const latlng = getLatLngFromEvent(e);
+      if (latlng) {
+        onDrawMove(latlng);
+      }
+    };
+
+    const handleEnd = () => {
+      if (!isDrawing || !isMouseDownRef.current) return;
+      isMouseDownRef.current = false;
+      onDrawEnd();
+    };
+
+    container.addEventListener("mousedown", handleStart);
+    container.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleEnd);
+
+    container.addEventListener("touchstart", handleStart, { passive: false });
+    container.addEventListener("touchmove", handleMove, { passive: false });
+    window.addEventListener("touchend", handleEnd);
+
+    return () => {
+      container.removeEventListener("mousedown", handleStart);
+      container.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleEnd);
+
+      container.removeEventListener("touchstart", handleStart);
+      container.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", handleEnd);
+
+      map.dragging.enable();
+      if (map.touchZoom) map.touchZoom.enable();
+      if (map.doubleClickZoom) map.doubleClickZoom.enable();
+      if (map.scrollWheelZoom) map.scrollWheelZoom.enable();
+      container.style.cursor = "";
+    };
+  }, [isDrawing, map, onDrawStart, onDrawMove, onDrawEnd]);
+
   return null;
 }
 
@@ -344,6 +436,10 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawPolygonPoints, setDrawPolygonPoints] = useState<L.LatLng[]>([]);
 
+  // Realtor.com Map Controls State
+  const [showMapOptionsMenu, setShowMapOptionsMenu] = useState(false);
+  const [searchAsMove, setSearchAsMove] = useState(true);
+
   const mapRef = useRef<L.Map | null>(null);
 
   const displayedProperties = useMemo(() => {
@@ -450,8 +546,24 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
     }
   };
 
-  const handleAddDrawPoint = (point: L.LatLng) => {
-    setDrawPolygonPoints((prev) => [...prev, point]);
+  const handleDrawStart = (point: L.LatLng) => {
+    setDrawPolygonPoints([point]);
+  };
+
+  const handleDrawMove = (point: L.LatLng) => {
+    setDrawPolygonPoints((prev) => {
+      if (prev.length === 0) return [point];
+      const last = prev[prev.length - 1];
+      const distSq = (last.lat - point.lat) ** 2 + (last.lng - point.lng) ** 2;
+      if (distSq > 0.00000001) {
+        return [...prev, point];
+      }
+      return prev;
+    });
+  };
+
+  const handleDrawEnd = () => {
+    setIsDrawing(false);
   };
 
   const handleClearDraw = () => {
@@ -783,102 +895,213 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
         {/* The Leaflet Map Canvas Container */}
         <div className="flex-1 w-full h-full relative bg-slate-950 touch-none" style={{ touchAction: "none" }}>
           
-          {/* ULTRA-MODERN COMPACT GLASSMORPHIC FLOATING SEARCH DOCK ON MOBILE */}
-          <div className="absolute top-2.5 left-2.5 right-2.5 z-[500] md:hidden flex flex-col gap-1.5 pointer-events-auto">
-            
-            {/* FLOATING SEARCH DOCK ROW */}
-            <div className="w-full bg-slate-950/90 backdrop-blur-xl border border-slate-800/90 rounded-full p-1.5 flex items-center gap-1.5 shadow-2xl">
-              <div className="flex-1 flex items-center gap-2 pl-3">
-                <Search className="w-4 h-4 text-amber-400 shrink-0" />
-                <input
-                  type="text"
-                  value={mapSearchInput}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Try 'villa', '3bhk', 'Benz Circle'..."
-                  className="w-full bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none border-0 ring-0"
-                />
-                {mapSearchInput && (
+          {/* REALTOR.COM INSPIRED FLOATING TOP-RIGHT MAP CONTROLS (MY LOCATION | SATELLITE | OPTIONS | CLEAR) */}
+          <div className="absolute top-3 right-3 z-[550] flex flex-col items-end gap-2 pointer-events-auto">
+            <div className="flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl border border-slate-800 shadow-2xl">
+              {/* 1. FETCH MY GPS LOCATION BUTTON */}
+              <button
+                type="button"
+                onClick={handleGetLocation}
+                disabled={isLocating}
+                title="Fetch My GPS Location"
+                className={cn(
+                  "px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95",
+                  isLocating
+                    ? "bg-amber-500 text-slate-950 shadow-md font-black animate-pulse"
+                    : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                )}
+              >
+                <Navigation className={cn("w-4 h-4 text-amber-400 stroke-[2.5]", isLocating && "animate-spin")} />
+                <span>{isLocating ? "Locating..." : "My Location"}</span>
+              </button>
+
+              {/* 1.5 FREEHAND DRAW BUTTON */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDrawing(!isDrawing);
+                  setShowMapOptionsMenu(false);
+                }}
+                title="Draw Custom Boundary Area"
+                className={cn(
+                  "px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95",
+                  isDrawing
+                    ? "bg-amber-500 text-slate-950 shadow-md font-black animate-pulse"
+                    : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                )}
+              >
+                <Pencil className="w-4 h-4 text-amber-400" />
+                <span>{isDrawing ? "Drawing..." : "Draw"}</span>
+              </button>
+
+              {/* 2. SATELLITE TILE SWITCHER */}
+              <button
+                type="button"
+                onClick={() => setMapLayerType(mapLayerType === "streets" ? "hybrid" : "streets")}
+                className={cn(
+                  "px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs",
+                  mapLayerType === "hybrid"
+                    ? "bg-amber-500 text-slate-950 shadow-md font-black"
+                    : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                )}
+              >
+                <Layers3 className="w-4 h-4 text-amber-400" />
+                <span>{mapLayerType === "hybrid" ? "Satellite" : "Map Mode"}</span>
+              </button>
+
+              {/* 2. OPTIONS / LAYERS BUTTON */}
+              <button
+                type="button"
+                onClick={() => setShowMapOptionsMenu(!showMapOptionsMenu)}
+                className={cn(
+                  "px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs",
+                  showMapOptionsMenu
+                    ? "bg-white text-slate-950 shadow-md font-black"
+                    : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                )}
+              >
+                <SlidersHorizontal className="w-4 h-4 text-amber-400" />
+                <span>Options</span>
+              </button>
+
+              {/* 3. CLEAR BUTTON */}
+              {(drawPolygonPoints.length > 0 || showHeatmap || activeLandmarkTypes.length > 0 || mapSearchInput) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleClearDraw();
+                    setShowHeatmap(false);
+                    setActiveLandmarkTypes([]);
+                    setMapSearchInput("");
+                    if (mapRef.current) {
+                      mapRef.current.flyTo(new L.LatLng(16.5062, 80.6480), 12);
+                    }
+                  }}
+                  className="px-3 py-2 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-200 hover:bg-red-500 hover:text-white transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Clear</span>
+                </button>
+              )}
+            </div>
+
+            {/* FLOATING OPTIONS POPOVER MENU */}
+            {showMapOptionsMenu && (
+              <div className="w-64 bg-slate-900/95 backdrop-blur-xl border border-slate-800 text-white rounded-2xl p-4 shadow-2xl space-y-3 text-xs animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <span className="font-extrabold text-amber-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                    <Layers3 className="w-4 h-4" /> Map Display Options
+                  </span>
                   <button
-                    type="button"
-                    onClick={() => handleSearchChange("")}
+                    onClick={() => setShowMapOptionsMenu(false)}
                     className="p-1 text-slate-400 hover:text-white"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-4 h-4" />
                   </button>
-                )}
-              </div>
+                </div>
 
-              <div className="flex items-center gap-1 shrink-0 pr-0.5">
-                <button
-                  type="button"
-                  onClick={handleGetLocation}
-                  disabled={isLocating}
-                  title="Find My Location"
-                  className="w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 text-slate-950 flex items-center justify-center cursor-pointer shadow-xs active:scale-95 transition-all"
-                >
-                  <Navigation className={`w-4 h-4 stroke-[2.5] ${isLocating ? "animate-spin" : ""}`} />
-                </button>
+                {/* Satellite Layer Toggle */}
+                <div className="flex items-center justify-between py-1">
+                  <span className="font-bold text-slate-200">Satellite Imagery</span>
+                  <input
+                    type="checkbox"
+                    checked={mapLayerType === "hybrid"}
+                    onChange={(e) => setMapLayerType(e.target.checked ? "hybrid" : "streets")}
+                    className="accent-amber-500 w-4 h-4 cursor-pointer"
+                  />
+                </div>
 
+                {/* Heatmap Toggle */}
+                <div className="flex items-center justify-between py-1">
+                  <span className="font-bold text-slate-200">AP Price Heatmaps</span>
+                  <input
+                    type="checkbox"
+                    checked={showHeatmap}
+                    onChange={(e) => setShowHeatmap(e.target.checked)}
+                    className="accent-amber-500 w-4 h-4 cursor-pointer"
+                  />
+                </div>
+
+                {/* Neighborhood Layers */}
+                <div className="space-y-1.5 pt-1 border-t border-slate-800">
+                  <span className="text-[10px] font-bold uppercase text-slate-400">Neighborhood Overlays</span>
+                  <div className="grid grid-cols-3 gap-1">
+                    <button
+                      onClick={() => toggleLandmarkFilter("school")}
+                      className={cn(
+                        "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
+                        activeLandmarkTypes.includes("school") ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300"
+                      )}
+                    >
+                      Schools
+                    </button>
+                    <button
+                      onClick={() => toggleLandmarkFilter("hospital")}
+                      className={cn(
+                        "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
+                        activeLandmarkTypes.includes("hospital") ? "bg-red-600 text-white" : "bg-slate-800 text-slate-300"
+                      )}
+                    >
+                      Hospitals
+                    </button>
+                    <button
+                      onClick={() => toggleLandmarkFilter("transit")}
+                      className={cn(
+                        "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
+                        activeLandmarkTypes.includes("transit") ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300"
+                      )}
+                    >
+                      Transit
+                    </button>
+                  </div>
+                </div>
+
+                {/* Draw Custom Boundary */}
                 <button
-                  type="button"
-                  onClick={() => setIsDrawing(!isDrawing)}
-                  title="Draw Search Area"
-                  className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all active:scale-95 ${
-                    isDrawing ? "bg-amber-500 text-slate-950 animate-pulse shadow-md" : "bg-slate-800/90 text-slate-200 border border-slate-700"
-                  }`}
+                  onClick={() => {
+                    setIsDrawing(!isDrawing);
+                    setShowMapOptionsMenu(false);
+                  }}
+                  className={cn(
+                    "w-full py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                    isDrawing ? "bg-amber-500 text-slate-950 font-black" : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                  )}
                 >
                   <Pencil className="w-4 h-4" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowHeatmap(!showHeatmap)}
-                  title="AP Price Heatmap"
-                  className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer active:scale-95 ${
-                    showHeatmap ? "bg-amber-500 text-slate-950 shadow-md" : "bg-slate-800/90 text-amber-400 border border-slate-700"
-                  }`}
-                >
-                  <Flame className="w-4 h-4" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowMobileDrawer(true)}
-                  title="More Options"
-                  className="w-8 h-8 rounded-full bg-slate-800/90 text-slate-200 border border-slate-700 flex items-center justify-center cursor-pointer active:scale-95"
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
+                  <span>{isDrawing ? "Drawing Mode Active" : "Draw Custom Boundary"}</span>
                 </button>
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* Quick Locality Jump Chips Capsule Row */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar px-1 py-0.5">
-              {quickLocalityCoords.map((loc) => (
-                <button
-                  key={loc.name}
-                  onClick={() => handleFlyToLocality(loc.lat, loc.lng)}
-                  className="px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-slate-200 border border-slate-800/80 text-[11px] font-bold flex-shrink-0 hover:bg-amber-500 hover:text-slate-950 transition-colors shadow-xs"
-                >
-                  📍 {loc.name}
-                </button>
-              ))}
-            </div>
-
-
+          {/* FLOATING BOTTOM CENTER "SEARCH AS I MOVE THE MAP" PILL */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[550] pointer-events-auto">
+            <button
+              type="button"
+              onClick={() => setSearchAsMove(!searchAsMove)}
+              className={cn(
+                "px-4 py-2 rounded-full text-xs font-extrabold flex items-center gap-2 transition-all shadow-2xl border active:scale-95 cursor-pointer",
+                searchAsMove
+                  ? "bg-slate-950 text-white border-amber-500/80"
+                  : "bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-white"
+              )}
+            >
+              <div className={cn("w-2 h-2 rounded-full", searchAsMove ? "bg-emerald-400 animate-pulse" : "bg-slate-400")} />
+              <span>Search as I move map</span>
+            </button>
           </div>
 
           {/* Drawing Mode Overlay Banner */}
           {isDrawing && (
-            <div className="absolute top-24 left-3 right-3 z-[550] bg-amber-500 text-slate-950 font-extrabold text-xs px-3.5 py-2 rounded-2xl shadow-2xl flex items-center justify-between animate-pulse">
+            <div className="absolute top-14 sm:top-16 left-3 right-3 sm:left-auto sm:right-3 sm:w-96 z-[550] bg-amber-500 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-2xl shadow-2xl flex items-center justify-between animate-pulse border border-slate-950/20">
               <span className="flex items-center gap-1.5">
-                <Pencil className="w-4 h-4" /> Tap points on map to enclose area!
+                <Pencil className="w-4 h-4 shrink-0" /> Freehand: Drag finger or mouse to draw area!
               </span>
               <button
                 onClick={handleClearDraw}
-                className="bg-slate-950 text-white px-2 py-1 rounded-lg text-[10px] font-bold cursor-pointer"
+                className="bg-slate-950 text-white px-2.5 py-1 rounded-xl text-[10px] font-bold cursor-pointer shrink-0"
               >
-                Done / Clear
+                Cancel
               </button>
             </div>
           )}
@@ -896,7 +1119,12 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
             className="w-full h-full min-h-full touch-none"
             style={{ touchAction: "none" }}
           >
-            <DrawMapListener isDrawing={isDrawing} onAddPoint={handleAddDrawPoint} />
+            <FreehandDrawListener
+              isDrawing={isDrawing}
+              onDrawStart={handleDrawStart}
+              onDrawMove={handleDrawMove}
+              onDrawEnd={handleDrawEnd}
+            />
 
             {mapLayerType === "streets" ? (
               <TileLayer

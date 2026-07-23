@@ -344,16 +344,16 @@ function PropertiesPage() {
           </div>
         )}
 
-        {/* View Mode Rendering: Mobile Fixed Full-Viewport Map Mode vs Grid View */}
+        {/* View Mode Rendering: Mobile Viewport Map Mode vs Grid View */}
         {viewMode === "map" ? (
           <div>
-            {/* Mobile View: Fixed Full Screen Viewport directly below header */}
-            <div className="md:hidden fixed top-16 left-0 right-0 bottom-0 z-40 bg-slate-950 overflow-hidden touch-none flex flex-col">
+            {/* Mobile View: Fixed Viewport below sticky header so header & filter pills remain visible */}
+            <div className="md:hidden fixed top-[160px] left-0 right-0 bottom-0 z-20 bg-slate-950 overflow-hidden flex flex-col">
               <MapWrapper filteredItems={filteredProperties} />
             </div>
 
-            {/* Desktop View: Sleek Container */}
-            <div className="hidden md:block w-full h-[650px] rounded-3xl overflow-hidden border border-slate-200 shadow-lg bg-white">
+            {/* Desktop View: Full height Map Container */}
+            <div className="hidden md:block w-full h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-slate-900">
               <MapWrapper filteredItems={filteredProperties} />
             </div>
           </div>

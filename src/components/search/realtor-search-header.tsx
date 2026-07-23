@@ -29,6 +29,7 @@ import { usePropertiesStore } from "@/stores/properties-store";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { toast } from "sonner";
 import type { FilterState } from "./search-filters";
+import { RealtorFilterBar } from "./realtor-filter-bar";
 
 interface RealtorSearchHeaderProps {
   filters: FilterState;
@@ -162,26 +163,22 @@ export function RealtorSearchHeader({
 
   return (
     <>
-      <header className="sticky top-16 z-30 w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-850 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3" ref={dropdownRef}>
-            
+      <header className="sticky top-16 z-30 w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-2.5 space-y-2">
+          {/* ROW 1: REALTOR-INSPIRED SEARCH BAR + SAVE SEARCH + LIST/MAP SWITCH */}
+          <div className="flex items-center justify-between gap-3">
             {/* LEFT: Search Input Box */}
             <form
               onSubmit={handleSearchSubmit}
               className={cn(
-                "relative flex-1 w-full flex items-center rounded-full border bg-slate-50 dark:bg-slate-900 transition-all duration-200",
+                "relative flex-1 w-full flex items-center rounded-full border bg-white dark:bg-slate-900 transition-all duration-200 shadow-xs",
                 isFocused
-                  ? "border-amber-500 ring-2 ring-amber-500/20 bg-white dark:bg-slate-900 shadow-md"
+                  ? "border-amber-500 ring-2 ring-amber-500/20 shadow-md"
                   : "border-slate-300 dark:border-slate-800 hover:border-slate-400"
               )}
             >
-              <div className="pl-4 text-slate-400 dark:text-slate-500 flex items-center justify-center pointer-events-none">
-                <Search className="w-4 h-4 text-amber-500" />
-              </div>
-
-              {/* Input & Carousel Placeholder Overlay */}
-              <div className="relative flex-1 flex items-center h-11 px-3">
+              {/* Input & Animated Carousel Placeholder Overlay */}
+              <div className="relative flex-1 flex items-center h-10 sm:h-11 pl-3.5 pr-1">
                 <input
                   ref={inputRef}
                   type="text"
@@ -189,12 +186,12 @@ export function RealtorSearchHeader({
                   onChange={(e) => setSearchInput(e.target.value)}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
-                  className="w-full h-full bg-transparent text-sm text-slate-900 dark:text-white font-medium focus:outline-none z-10"
+                  className="w-full h-full bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white font-medium focus:outline-none z-10"
                 />
 
-                {/* Animated Placeholder Text */}
+                {/* Animated Placeholder Text starting with "Try..." */}
                 {!searchInput && !isFocused && (
-                  <div className="absolute inset-0 flex items-center px-3 pointer-events-none overflow-hidden text-slate-400 dark:text-slate-500 text-xs sm:text-sm">
+                  <div className="absolute inset-0 flex items-center px-3.5 pointer-events-none overflow-hidden text-slate-400 dark:text-slate-500 text-xs sm:text-sm">
                     <AnimatePresence mode="wait">
                       <motion.span
                         key={suggestionIndex}
@@ -220,9 +217,9 @@ export function RealtorSearchHeader({
                     onFilterChange({ ...filters, query: "" });
                     if (inputRef.current) inputRef.current.focus();
                   }}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full transition-colors cursor-pointer mr-1"
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full transition-colors cursor-pointer mr-0.5"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               )}
 
@@ -232,28 +229,29 @@ export function RealtorSearchHeader({
                 onClick={handleVoiceSearch}
                 title={isListening ? "Listening..." : "Voice Search"}
                 className={cn(
-                  "p-2 rounded-full text-slate-400 hover:text-amber-500 transition-colors mr-1 cursor-pointer",
+                  "p-1.5 sm:p-2 rounded-full text-slate-400 hover:text-amber-500 transition-colors mr-0.5 cursor-pointer",
                   isListening && "text-amber-500 bg-amber-500/10 animate-pulse"
                 )}
               >
-                <Mic className="w-4 h-4" />
+                <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
 
-              {/* TELUGU / ENGLISH VERNACULAR TOGGLE BUTTON */}
+              {/* TELUGU / ENGLISH TOGGLE BUTTON */}
               <button
                 type="button"
                 onClick={() => setLanguage(language === "en" ? "te" : "en")}
                 title="Switch Language (తెలుగు / English)"
-                className="mr-1.5 px-2.5 py-1 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-[11px] rounded-full hover:bg-amber-500 hover:text-slate-950 transition-all cursor-pointer flex items-center gap-1"
+                className="mr-1 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-[10px] sm:text-[11px] rounded-full hover:bg-amber-500 hover:text-slate-950 transition-all cursor-pointer flex items-center gap-0.5 sm:gap-1 border border-slate-200 dark:border-slate-700"
               >
-                <Languages className="w-3 h-3 text-amber-500" />
+                <Languages className="w-3 h-3 text-amber-500 shrink-0" />
                 <span>{language === "en" ? "తెలుగు" : "ENG"}</span>
               </button>
 
-              {/* Submit Button */}
+              {/* Search Icon Submit Button inside search box */}
               <button
                 type="submit"
-                className="m-1 p-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 rounded-full font-bold transition-all shadow-xs flex items-center justify-center cursor-pointer"
+                title="Search"
+                className="mr-1 sm:mr-1.5 p-2 sm:p-2.5 text-slate-500 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400 active:scale-95 transition-all cursor-pointer shrink-0"
               >
                 <Search className="w-4 h-4 stroke-[2.5]" />
               </button>
@@ -278,159 +276,54 @@ export function RealtorSearchHeader({
               )}
             </form>
 
-            {/* RIGHT: Quick Filter Chips */}
-            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto no-scrollbar py-0.5">
-              
-              {/* 1. FIRST: LIST VS MAP TOGGLE CAPSULE */}
-              <div className="bg-slate-900 dark:bg-slate-900 p-1 rounded-full border border-amber-500/80 shadow-lg flex items-center shrink-0">
-                <button
-                  type="button"
-                  onClick={() => onViewModeChange("grid")}
-                  className={cn(
-                    "py-1.5 px-3 rounded-full text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer",
-                    viewMode === "grid"
-                      ? "bg-amber-500 text-slate-950 shadow-md"
-                      : "text-slate-300 hover:text-white"
-                  )}
-                >
-                  <List className="w-4 h-4" />
-                  <span>{language === "te" ? "జాబితా" : "List"}</span>
-                </button>
+            {/* MIDDLE/RIGHT: REALTOR "SAVE SEARCH" BUTTON (Desktop Only) */}
+            <button
+              type="button"
+              onClick={() => toast.success("❤️ Search saved to your saved searches!")}
+              className="hidden md:flex h-11 px-4.5 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-850 dark:hover:bg-slate-800 text-white text-xs font-extrabold items-center gap-2 transition-all cursor-pointer shrink-0 shadow-xs border border-slate-800 active:scale-95"
+            >
+              <Heart className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+              <span>Save search</span>
+            </button>
 
-                <button
-                  type="button"
-                  onClick={() => onViewModeChange("map")}
-                  className={cn(
-                    "py-1.5 px-3 rounded-full text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer",
-                    viewMode === "map"
-                      ? "bg-amber-500 text-slate-950 shadow-md"
-                      : "text-amber-400 font-extrabold hover:text-white"
-                  )}
-                >
-                  <Map className="w-4 h-4 text-amber-400 fill-amber-500/20" />
-                  <span className="font-black">{language === "te" ? "మ్యాప్ 🗺️" : "Map 🗺️"}</span>
-                </button>
-              </div>
-
-              {/* 2. SECOND: ALL FILTERS BUTTON */}
+            {/* RIGHT: REALTOR "LIST | MAP" SWITCH CAPSULE (Desktop Only) */}
+            <div className="hidden md:flex bg-slate-100 dark:bg-slate-900 p-1 rounded-full border border-slate-300 dark:border-slate-800 shadow-xs items-center shrink-0">
               <button
-                onClick={onOpenAllFilters}
+                type="button"
+                onClick={() => onViewModeChange("grid")}
                 className={cn(
-                  "py-2 px-3.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap",
-                  activeFilterCount > 0
-                    ? "bg-slate-900 text-white border-slate-900 dark:bg-amber-500 dark:text-slate-950 dark:border-amber-500 shadow-xs"
-                    : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
+                  "py-1.5 px-3.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
+                  viewMode === "grid"
+                    ? "bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 )}
               >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>{language === "te" ? "ఫిల్టర్లు" : "Filters"}</span>
-                {activeFilterCount > 0 && (
-                  <span className="w-4 h-4 bg-amber-500 text-slate-950 dark:bg-slate-950 dark:text-white rounded-full text-[10px] font-black flex items-center justify-center ml-0.5">
-                    {activeFilterCount}
-                  </span>
-                )}
+                <span>List</span>
               </button>
 
-              {/* 3. THIRD: PRICE FILTER BUTTON & INLINE DROPDOWN */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
-                  className={cn(
-                    "py-2 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1 border transition-all cursor-pointer whitespace-nowrap",
-                    filters.budget[0] > 0 || filters.budget[1] < 100000000
-                      ? "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-500/30 font-bold"
-                      : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
-                  )}
-                >
-                  <span>{language === "te" ? "ధర" : "Price"}</span>
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-
-                {openDropdown === "price" && (
-                  <div className="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-2 z-[100] animate-in fade-in zoom-in-95">
-                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 py-1.5">
-                      Select Budget Range
-                    </div>
-                    <div className="space-y-0.5">
-                      {pricePresets.map((preset) => {
-                        const isSelected = filters.budget[0] === preset.min && filters.budget[1] === preset.max;
-                        return (
-                          <button
-                            key={preset.label}
-                            type="button"
-                            onClick={() => {
-                              onFilterChange({ ...filters, budget: [preset.min, preset.max] });
-                              setOpenDropdown(null);
-                            }}
-                            className={cn(
-                              "w-full text-left px-3 py-2 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
-                              isSelected
-                                ? "bg-amber-500 text-slate-950 font-bold"
-                                : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                            )}
-                          >
-                            <span>{preset.label}</span>
-                            {isSelected && <Check className="w-3.5 h-3.5" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+              <button
+                type="button"
+                onClick={() => onViewModeChange("map")}
+                className={cn(
+                  "py-1.5 px-3.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
+                  viewMode === "map"
+                    ? "bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 )}
-              </div>
-
-              {/* 4. FOURTH: BHK / ROOMS FILTER BUTTON & INLINE DROPDOWN */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setOpenDropdown(openDropdown === "rooms" ? null : "rooms")}
-                  className={cn(
-                    "py-2 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1 border transition-all cursor-pointer whitespace-nowrap",
-                    filters.bhk.length > 0
-                      ? "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-500/30 font-bold"
-                      : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
-                  )}
-                >
-                  <span>{filters.bhk.length > 0 ? `${filters.bhk.join(", ")} BHK` : language === "te" ? "గదులు" : "Bedrooms"}</span>
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-
-                {openDropdown === "rooms" && (
-                  <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-2 z-[100] animate-in fade-in zoom-in-95">
-                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 py-1.5">
-                      Select Bedrooms
-                    </div>
-                    <div className="space-y-0.5">
-                      {bhkOptions.map((opt) => {
-                        const isSelected = filters.bhk.includes(opt.value);
-                        return (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => {
-                              const newBhk = isSelected
-                                ? filters.bhk.filter((b) => b !== opt.value)
-                                : [...filters.bhk, opt.value];
-                              onFilterChange({ ...filters, bhk: newBhk });
-                            }}
-                            className={cn(
-                              "w-full text-left px-3 py-2 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
-                              isSelected
-                                ? "bg-amber-500 text-slate-950 font-bold"
-                                : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                            )}
-                          >
-                            <span>{opt.label}</span>
-                            {isSelected && <Check className="w-3.5 h-3.5" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
+              >
+                <span>Map</span>
+              </button>
             </div>
+          </div>
+
+          {/* ROW 2: REALTOR-STYLE HORIZONTAL INDIAN FILTERS BAR */}
+          <div className="pt-0.5">
+            <RealtorFilterBar
+              filters={filters}
+              onFilterChange={onFilterChange}
+              onOpenAllFilters={onOpenAllFilters}
+              totalResults={totalResults}
+            />
           </div>
         </div>
       </header>
