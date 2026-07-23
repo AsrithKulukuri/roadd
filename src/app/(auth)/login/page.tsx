@@ -19,6 +19,8 @@ const countryCodes = [
   { code: "+65", country: "Singapore", flag: "🇸🇬" },
 ];
 
+import { verifyAdminSession } from "@/lib/admin-auth";
+
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -41,10 +43,20 @@ export default function LoginPage() {
 
   useEffect(() => {
     const checkUser = async () => {
+      console.log("[AUTH DEBUG] LoginPage checking existing user session...");
+      const adminCheck = await verifyAdminSession();
+      console.log("[AUTH DEBUG] LoginPage admin verification result:", adminCheck);
+
+      if (adminCheck.isAdmin) {
+        console.log("[AUTH DEBUG] Existing admin session found. Redirecting to /admin/dashboard");
+        window.location.href = "/admin/dashboard";
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const role = session.user.user_metadata?.role;
-        router.push(role === "admin" ? "/admin" : "/dashboard");
+        console.log("[AUTH DEBUG] Existing standard user session found. Redirecting to /dashboard");
+        router.push("/dashboard");
       }
     };
     checkUser();
@@ -99,11 +111,12 @@ export default function LoginPage() {
 
     // 1. Immediate Hard Redirection for Admin Login (Checked BEFORE form validation)
     if (isAdminLogin || inputVal.toLowerCase() === "admin@road.com" || inputVal.toLowerCase().startsWith("admin")) {
+      console.log("[AUTH DEBUG] Admin login requested. Redirecting to /admin/dashboard");
       toast.success("Welcome back, Admin!");
       if (typeof window !== "undefined") {
-        window.location.href = "/admin";
+        window.location.href = "/admin/dashboard";
       } else {
-        router.push("/admin");
+        router.push("/admin/dashboard");
       }
       return;
     }
@@ -130,30 +143,28 @@ export default function LoginPage() {
       }
 
       const { data, error } = response;
+      console.log("[AUTH DEBUG] LoginPage signInWithPassword result:", { user: data?.user?.email, error: error?.message });
 
-      if (error) {
-        if (isAdminLogin) {
-          toast.success("Logged in as Admin!");
-          window.location.href = "/admin";
-          return;
-        }
-        throw error;
-      }
+      if (error) throw error;
 
       if (data.user) {
-        const role = data.user.user_metadata?.role || (isAdminLogin ? "admin" : "buyer");
+        const adminCheck = await verifyAdminSession();
+        const role = adminCheck.isAdmin ? "admin" : (data.user.user_metadata?.role || "buyer");
+        
         toast.success("Logged in successfully!");
-        if (role === "admin" || isAdminLogin) {
-          window.location.href = "/admin";
+        const targetRoute = role === "admin" ? "/admin/dashboard" : "/dashboard";
+        console.log("[AUTH DEBUG] LoginPage redirecting to:", targetRoute);
+        if (role === "admin") {
+          window.location.href = targetRoute;
         } else {
-          router.push("/dashboard");
+          router.push(targetRoute);
         }
       }
     } catch (err: any) {
-      console.error("Sign in error:", err);
+      console.error("[AUTH DEBUG] Sign in error:", err);
       if (isAdminLogin) {
         toast.success("Logged in as Admin!");
-        window.location.href = "/admin";
+        window.location.href = "/admin/dashboard";
       } else if (err.message?.includes("Phone logins are disabled")) {
         toast.error("Phone logins are disabled.", {
           description: "Please sign in with your email address instead.",
@@ -420,10 +431,10 @@ export default function LoginPage() {
         {isAdminLogin && (
           <div className="mt-4">
             <a
-              href="/admin"
+              href="/admin/dashboard"
               className="w-full h-12 rounded-xl bg-slate-900 border-2 border-amber-500 text-amber-400 font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-amber-500 hover:text-slate-950 transition-all cursor-pointer block text-center py-3"
             >
-              <span>⚡ Open Admin Portal Direct (/admin)</span>
+              <span>⚡ Open Admin Portal Direct (/admin/dashboard)</span>
             </a>
           </div>
         )}

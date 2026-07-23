@@ -18,8 +18,10 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
+import { AdminGuard } from "@/components/shared/admin-guard";
+
 const sidebarLinks = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/properties", label: "Properties", icon: Building2 },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/content", label: "Content", icon: MonitorPlay },
@@ -34,8 +36,13 @@ export default function AdminLayout({
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  if (pathname === "/admin/login") {
+    return <AdminGuard>{children}</AdminGuard>;
+  }
+
   return (
-    <div className="min-h-screen bg-bg-primary flex">
+    <AdminGuard>
+      <div className="min-h-screen bg-bg-primary flex">
       {/* Mobile Sidebar Overlay */}
       {isMobileOpen && (
         <div 
@@ -120,5 +127,6 @@ export default function AdminLayout({
         </div>
       </main>
     </div>
+    </AdminGuard>
   );
 }

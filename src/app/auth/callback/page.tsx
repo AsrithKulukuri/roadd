@@ -7,11 +7,14 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/shared/logo";
 
+import { verifyAdminSession } from "@/lib/admin-auth";
+
 export default function AuthCallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
     const processCallback = async () => {
+      console.log("[AUTH DEBUG] AuthCallbackPage processing callback...");
       try {
         // 1. Get session from URL / PKCE exchange
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -20,50 +23,71 @@ export default function AuthCallbackPage() {
 
         if (session?.user) {
           const u = session.user;
+          const adminCheck = await verifyAdminSession();
+          console.log("[AUTH DEBUG] AuthCallback admin verification result:", adminCheck);
+
+          const role = adminCheck.isAdmin ? "admin" : (u.user_metadata?.role || "buyer");
           const localUser = {
             name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
             email: u.email || "",
             phone: u.phone || u.user_metadata?.phone || "",
-            role: u.user_metadata?.role || "buyer",
+            role: role,
             isProfileComplete: true,
             isLoggedIn: true,
-            authMethod: "google",
+            authMethod: "oauth",
           };
 
           localStorage.setItem("road_user", JSON.stringify(localUser));
+          if (adminCheck.isAdmin) {
+            localStorage.setItem("road_admin_user", JSON.stringify(localUser));
+          }
+
           toast.success("Successfully logged in!");
-          router.replace("/dashboard");
+          const targetRoute = adminCheck.isAdmin ? "/admin/dashboard" : "/dashboard";
+          console.log("[AUTH DEBUG] Redirecting authenticated user to:", targetRoute);
+          router.replace(targetRoute);
           return;
         }
 
         // 2. Fallback listener for async state resolution
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, currentSession) => {
+            console.log("[AUTH DEBUG] AuthCallback onAuthStateChange:", event, currentSession?.user?.email);
             if (currentSession?.user) {
               subscription.unsubscribe();
               const u = currentSession.user;
+              const adminCheck = await verifyAdminSession();
+              const role = adminCheck.isAdmin ? "admin" : (u.user_metadata?.role || "buyer");
+
               const localUser = {
                 name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
                 email: u.email || "",
                 phone: u.phone || u.user_metadata?.phone || "",
-                role: u.user_metadata?.role || "buyer",
+                role: role,
                 isProfileComplete: true,
                 isLoggedIn: true,
-                authMethod: "google",
+                authMethod: "oauth",
               };
 
               localStorage.setItem("road_user", JSON.stringify(localUser));
+              if (adminCheck.isAdmin) {
+                localStorage.setItem("road_admin_user", JSON.stringify(localUser));
+              }
+
               toast.success("Successfully logged in!");
-              router.replace("/dashboard");
+              const targetRoute = adminCheck.isAdmin ? "/admin/dashboard" : "/dashboard";
+              console.log("[AUTH DEBUG] Redirecting from listener to:", targetRoute);
+              router.replace(targetRoute);
             } else if (event === "INITIAL_SESSION" && !currentSession) {
               subscription.unsubscribe();
               toast.error("Session verification failed. Please try signing in again.");
+              console.log("[AUTH DEBUG] AuthCallback initial session empty. Redirecting to /login");
               router.replace("/login");
             }
           }
         );
       } catch (err: any) {
-        console.error("Auth callback error:", err);
+        console.error("[AUTH DEBUG] Auth callback error:", err);
         toast.error(err.message || "Authentication failed.");
         router.replace("/login");
       }
