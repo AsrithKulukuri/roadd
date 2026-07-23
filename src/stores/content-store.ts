@@ -14,11 +14,15 @@ export interface TrendingLocation {
 export interface HomeCategory {
   id: string;
   name: string;
+  subtitle?: string;
+  badge?: string;
+  badgeClass?: string;
+  href?: string;
   type: string; // e.g., 'apartment', 'villa', 'residential-land', 'shops', etc.
   icon: string;
   description: string;
   count: number;
-  image?: string;
+  image: string;
   isFeatured?: boolean;
 }
 
@@ -32,11 +36,106 @@ export interface ApRegion {
 }
 
 const initialCategories: HomeCategory[] = [
-  { id: "cat-1", name: "Gated Apartments", type: "apartment", icon: "Building2", description: "Modern multi-storey luxury flats", count: 42, isFeatured: true, image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80" },
-  { id: "cat-2", name: "Luxury Villas", type: "villa", icon: "Home", description: "Independent sea-view & city villas", count: 18, isFeatured: true, image: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600&q=80" },
-  { id: "cat-3", name: "Plots & Open Land", type: "residential-land", icon: "Trees", description: "CRDA & DTCP approved plots", count: 65, isFeatured: true, image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80" },
-  { id: "cat-4", name: "Commercial Space", type: "shops", icon: "Store", description: "Retail shops, offices & complexes", count: 14, isFeatured: false, image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80" },
-  { id: "cat-5", name: "Farmhouses & Estates", type: "farmhouse", icon: "Sun", description: "Green getaway agricultural land", count: 9, isFeatured: false, image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=80" },
+  {
+    id: "new-listings",
+    name: "New listings",
+    subtitle: "Explore newly added homes",
+    badge: "12,450",
+    href: "/properties?type=buy&saleType=new",
+    type: "apartment",
+    icon: "Building2",
+    description: "Explore newly added homes",
+    count: 12450,
+    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80",
+    isFeatured: true,
+  },
+  {
+    id: "price-reduced",
+    name: "Price reduced",
+    subtitle: "Best value properties",
+    badge: "Hot Deals",
+    badgeClass: "bg-emerald-500 text-slate-950 font-extrabold",
+    href: "/properties?type=buy",
+    type: "apartment",
+    icon: "Tag",
+    description: "Best value properties",
+    count: 85,
+    image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80",
+    isFeatured: true,
+  },
+  {
+    id: "ready-to-move",
+    name: "Ready to move",
+    subtitle: "Move in immediately",
+    badge: "Verified",
+    href: "/properties?type=buy&availability=ready",
+    type: "apartment",
+    icon: "CheckCircle2",
+    description: "Move in immediately",
+    count: 120,
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80",
+    isFeatured: true,
+  },
+  {
+    id: "villas-estates",
+    name: "Villas & Estates",
+    subtitle: "Independent luxury houses",
+    href: "/properties?type=buy&propertyType=villa",
+    type: "villa",
+    icon: "Home",
+    description: "Independent luxury houses",
+    count: 18,
+    image: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600&q=80",
+    isFeatured: true,
+  },
+  {
+    id: "plots-lands",
+    name: "Residential Plots",
+    subtitle: "Capital region plots & land",
+    href: "/properties?type=buy&propertyType=residential-land",
+    type: "residential-land",
+    icon: "Trees",
+    description: "Capital region plots & land",
+    count: 65,
+    image: "https://images.unsplash.com/photo-1628624747186-a941c476b7ef?w=600&q=80",
+    isFeatured: true,
+  },
+  {
+    id: "commercial-spaces",
+    name: "Commercial Spaces",
+    subtitle: "Shops, offices & complexes",
+    href: "/properties?type=buy&propertyType=commercial-spaces",
+    type: "shops",
+    icon: "Store",
+    description: "Shops, offices & complexes",
+    count: 14,
+    image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80",
+    isFeatured: true,
+  },
+  {
+    id: "gated-communities",
+    name: "Gated Communities",
+    subtitle: "24/7 security townships",
+    href: "/properties?type=buy&propertyType=apartment",
+    type: "apartment",
+    icon: "Shield",
+    description: "24/7 security townships",
+    count: 42,
+    image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80",
+    isFeatured: true,
+  },
+  {
+    id: "luxury-penthouses",
+    name: "Luxury Penthouses",
+    subtitle: "Skyline views & amenities",
+    href: "/properties?type=buy",
+    type: "apartment",
+    icon: "Sparkles",
+    description: "Skyline views & amenities",
+    count: 9,
+    image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&q=80",
+    isFeatured: true,
+  },
 ];
 
 const initialApRegions: ApRegion[] = [
@@ -112,7 +211,7 @@ export const useContentStore = create<ContentState>((set) => ({
       ...location,
     };
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("trending_locations")
         .insert([newLoc])
         .select()
@@ -166,6 +265,8 @@ export const useContentStore = create<ContentState>((set) => ({
   addCategory: (category) => {
     const newCat: HomeCategory = {
       id: `cat-${Date.now()}`,
+      subtitle: category.description || category.subtitle,
+      href: category.href || "/properties?type=buy",
       ...category,
     };
     set((state) => ({ homeCategories: [...state.homeCategories, newCat] }));
@@ -175,10 +276,10 @@ export const useContentStore = create<ContentState>((set) => ({
   updateCategory: (id, category) => {
     set((state) => ({
       homeCategories: state.homeCategories.map((c) =>
-        c.id === id ? { ...c, ...category } : c
+        c.id === id ? { ...c, ...category, subtitle: category.subtitle || category.description || c.subtitle } : c
       ),
     }));
-    toast.success("Home Category updated!");
+    toast.success("Home Category card updated!");
   },
 
   deleteCategory: (id) => {

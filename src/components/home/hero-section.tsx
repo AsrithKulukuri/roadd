@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePropertiesStore } from "@/stores/properties-store";
+import { useContentStore } from "@/stores/content-store";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { toast } from "sonner";
 
@@ -133,68 +134,19 @@ export function HeroSection() {
 
   const currentSuggestion = CAROUSEL_SUGGESTIONS[suggestionIndex];
 
-  const browseCategories = [
-    {
-      id: "new-listings",
-      title: "New listings",
-      subtitle: "Explore newly added homes",
-      badge: "12,450",
-      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80",
-      href: "/properties?type=buy&saleType=new",
-    },
-    {
-      id: "price-reduced",
-      title: "Price reduced",
-      subtitle: "Best value properties",
-      badge: "Hot Deals",
-      badgeClass: "bg-emerald-500 text-slate-950 font-extrabold",
-      image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80",
-      href: "/properties?type=buy",
-    },
-    {
-      id: "ready-to-move",
-      title: "Ready to move",
-      subtitle: "Move in immediately",
-      badge: "Verified",
-      image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80",
-      href: "/properties?type=buy&availability=ready",
-    },
-    {
-      id: "villas-estates",
-      title: "Villas & Estates",
-      subtitle: "Independent luxury houses",
-      image: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600&q=80",
-      href: "/properties?type=buy&propertyType=villa",
-    },
-    {
-      id: "plots-lands",
-      title: "Residential Plots",
-      subtitle: "Capital region plots & land",
-      image: "https://images.unsplash.com/photo-1628624747186-a941c476b7ef?w=600&q=80",
-      href: "/properties?type=buy&propertyType=residential-land",
-    },
-    {
-      id: "commercial-spaces",
-      title: "Commercial Spaces",
-      subtitle: "Shops, offices & complexes",
-      image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80",
-      href: "/properties?type=buy&propertyType=commercial-spaces",
-    },
-    {
-      id: "gated-communities",
-      title: "Gated Communities",
-      subtitle: "24/7 security townships",
-      image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80",
-      href: "/properties?type=buy&propertyType=apartment",
-    },
-    {
-      id: "luxury-penthouses",
-      title: "Luxury Penthouses",
-      subtitle: "Skyline views & amenities",
-      image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&q=80",
-      href: "/properties?type=buy",
-    },
-  ];
+  const homeCategories = useContentStore((state) => state.homeCategories);
+
+  const browseCategories = useMemo(() => {
+    return homeCategories.map((cat) => ({
+      id: cat.id,
+      title: cat.name,
+      subtitle: cat.subtitle || cat.description,
+      badge: cat.badge,
+      badgeClass: cat.badgeClass,
+      image: cat.image,
+      href: cat.href || `/properties?type=buy&propertyType=${cat.type}`,
+    }));
+  }, [homeCategories]);
 
   return (
     <section className="relative w-full overflow-hidden bg-slate-900 text-white pt-28 sm:pt-32 md:pt-36 pb-12 md:pb-16">

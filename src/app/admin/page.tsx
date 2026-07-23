@@ -93,6 +93,9 @@ export default function AdminDashboardPage() {
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [editCatId, setEditCatId] = useState<string | null>(null);
   const [catName, setCatName] = useState("");
+  const [catSubtitle, setCatSubtitle] = useState("");
+  const [catBadge, setCatBadge] = useState("");
+  const [catHref, setCatHref] = useState("");
   const [catType, setCatType] = useState("apartment");
   const [catDesc, setCatDesc] = useState("");
   const [catIcon, setCatIcon] = useState("Building2");
@@ -178,29 +181,40 @@ export default function AdminDashboardPage() {
       toast.error("Category name is required!");
       return;
     }
+    const fallbackImage = catImage || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80";
+
     if (editCatId) {
       updateCategory(editCatId, {
         name: catName,
+        subtitle: catSubtitle,
+        badge: catBadge,
+        href: catHref,
         type: catType,
-        description: catDesc,
+        description: catDesc || catSubtitle,
         icon: catIcon,
-        image: catImage || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80",
+        image: fallbackImage,
         count: Number(catCount),
       });
       setEditCatId(null);
     } else {
       addCategory({
         name: catName,
+        subtitle: catSubtitle,
+        badge: catBadge,
+        href: catHref || "/properties?type=buy",
         type: catType,
-        description: catDesc,
+        description: catDesc || catSubtitle,
         icon: catIcon,
-        image: catImage || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80",
+        image: fallbackImage,
         count: Number(catCount),
         isFeatured: true,
       });
     }
     setShowCategoryForm(false);
     setCatName("");
+    setCatSubtitle("");
+    setCatBadge("");
+    setCatHref("");
     setCatDesc("");
     setCatImage("");
   };
@@ -847,17 +861,61 @@ export default function AdminDashboardPage() {
           {showCategoryForm && (
             <form onSubmit={handleSaveCategory} className="bg-slate-900 text-white p-5 rounded-3xl border border-slate-800 space-y-4 shadow-xl">
               <h3 className="font-extrabold text-sm text-amber-400 uppercase tracking-wider">
-                {editCatId ? "Edit Category" : "Create New Home Category"}
+                {editCatId ? "Edit Category Card" : "Create New Home Category Card"}
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
-                  <label className="block text-slate-300 font-bold mb-1">Category Title:</label>
+                  <label className="block text-slate-300 font-bold mb-1">Card Title (e.g. New listings):</label>
                   <input
                     type="text"
                     value={catName}
                     onChange={(e) => setCatName(e.target.value)}
-                    placeholder="e.g. Gated Apartments, Open Plots"
+                    placeholder="e.g. New listings, Villas & Estates"
+                    className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Subtitle Text:</label>
+                  <input
+                    type="text"
+                    value={catSubtitle}
+                    onChange={(e) => setCatSubtitle(e.target.value)}
+                    placeholder="e.g. Explore newly added homes"
+                    className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Badge Text (e.g. 12,450, Hot Deals):</label>
+                  <input
+                    type="text"
+                    value={catBadge}
+                    onChange={(e) => setCatBadge(e.target.value)}
+                    placeholder="e.g. 12,450, Hot Deals, Verified"
+                    className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Redirect Link URL:</label>
+                  <input
+                    type="text"
+                    value={catHref}
+                    onChange={(e) => setCatHref(e.target.value)}
+                    placeholder="e.g. /properties?type=buy&saleType=new"
+                    className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Image URL:</label>
+                  <input
+                    type="text"
+                    value={catImage}
+                    onChange={(e) => setCatImage(e.target.value)}
+                    placeholder="https://images.unsplash.com/..."
                     className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
@@ -877,38 +935,6 @@ export default function AdminDashboardPage() {
                     <option value="commercial-spaces">commercial-spaces</option>
                   </select>
                 </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-slate-300 font-bold mb-1">Short Description:</label>
-                  <input
-                    type="text"
-                    value={catDesc}
-                    onChange={(e) => setCatDesc(e.target.value)}
-                    placeholder="e.g. Luxury multi-storey flats with amenities"
-                    className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-bold mb-1">Image URL:</label>
-                  <input
-                    type="text"
-                    value={catImage}
-                    onChange={(e) => setCatImage(e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-bold mb-1">Initial Property Count:</label>
-                  <input
-                    type="number"
-                    value={catCount}
-                    onChange={(e) => setCatCount(Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-amber-500"
-                  />
-                </div>
               </div>
 
               <div className="flex items-center gap-2 pt-1">
@@ -916,7 +942,7 @@ export default function AdminDashboardPage() {
                   type="submit"
                   className="py-2.5 px-5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-md cursor-pointer"
                 >
-                  Save Category
+                  Save Category Card
                 </button>
                 <button
                   type="button"
@@ -935,16 +961,21 @@ export default function AdminDashboardPage() {
               <div key={cat.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 font-bold">
-                      <LayoutGrid className="w-6 h-6" />
+                    <div className="w-14 h-14 rounded-xl bg-slate-800 overflow-hidden shrink-0 relative">
+                      <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
+                      {cat.badge && (
+                        <span className="absolute top-1 right-1 bg-amber-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-full">
+                          {cat.badge}
+                        </span>
+                      )}
                     </div>
                     <div>
                       <h4 className="font-extrabold text-slate-900 dark:text-white text-base">
                         {cat.name}
                       </h4>
-                      <span className="text-[11px] font-extrabold uppercase text-amber-500 tracking-wider">
-                        {cat.type}
-                      </span>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+                        {cat.subtitle || cat.description}
+                      </p>
                     </div>
                   </div>
 
@@ -953,6 +984,9 @@ export default function AdminDashboardPage() {
                       onClick={() => {
                         setEditCatId(cat.id);
                         setCatName(cat.name);
+                        setCatSubtitle(cat.subtitle || cat.description || "");
+                        setCatBadge(cat.badge || "");
+                        setCatHref(cat.href || "");
                         setCatType(cat.type);
                         setCatDesc(cat.description);
                         setCatImage(cat.image || "");
