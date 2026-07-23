@@ -329,7 +329,7 @@ export function RealtorSearchHeader({
       </header>
 
       {/* PROMINENT MOBILE FLOATING BOTTOM CENTER MAP TOGGLE BUTTON */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[400] md:hidden pointer-events-auto">
+      <div className="fixed bottom-9 left-1/2 -translate-x-1/2 z-[400] md:hidden pointer-events-auto">
         <button
           type="button"
           onClick={() => onViewModeChange(viewMode === "grid" ? "map" : "grid")}

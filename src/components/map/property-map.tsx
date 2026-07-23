@@ -1280,7 +1280,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
           {/* Realtor.com Style Drawn Area Property Results Card */}
           {drawPolygonPoints.length >= 3 && !isDrawing && (
-            <div className="absolute top-14 left-3 right-3 sm:left-auto sm:right-3 sm:w-84 z-[550] bg-slate-900/95 backdrop-blur-xl border border-amber-500/50 text-white p-3.5 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="absolute top-12 left-3 right-3 sm:left-auto sm:right-3 sm:w-84 z-[540] bg-slate-900/95 backdrop-blur-xl border border-amber-500/50 text-white p-3.5 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
                 <div className="flex items-center gap-1.5 text-amber-400 font-extrabold text-xs">
                   <Sparkles className="w-4 h-4 text-amber-400" />
@@ -1353,7 +1353,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
           {/* Searched Locality Boundary Status Pill */}
           {activeLocalityBoundary && !isDrawing && drawPolygonPoints.length < 3 && (
-            <div className="absolute top-14 left-3 right-3 sm:left-auto sm:right-3 sm:w-80 z-[540] bg-blue-950/90 backdrop-blur-md border border-blue-500/50 text-white px-3.5 py-2 rounded-2xl shadow-xl flex items-center justify-between animate-in fade-in">
+            <div className="absolute top-12 left-3 right-3 sm:left-auto sm:right-3 sm:w-80 z-[530] bg-blue-950/90 backdrop-blur-md border border-blue-500/50 text-white px-3.5 py-2 rounded-2xl shadow-xl flex items-center justify-between animate-in fade-in">
               <div className="flex items-center gap-2 text-xs font-bold truncate">
                 <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
                 <span className="truncate">📍 {activeLocalityBoundary.name}, {activeLocalityBoundary.city} Boundary Active</span>
@@ -1367,11 +1367,32 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
             </div>
           )}
 
+          {/* FLOATING CUSTOM ZOOM + / - CONTROLS (BOTTOM-LEFT, NEVER OVERLAPS CARDS OR HEADERS) */}
+          <div className="absolute bottom-20 left-3 z-[500] flex flex-col gap-1.5 pointer-events-auto">
+            <button
+              type="button"
+              onClick={() => mapRef.current?.zoomIn()}
+              title="Zoom In"
+              className="w-8 h-8 rounded-xl bg-slate-900/90 text-white border border-slate-700 shadow-xl flex items-center justify-center font-bold text-base hover:bg-amber-500 hover:text-slate-950 transition-colors active:scale-95 cursor-pointer"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={() => mapRef.current?.zoomOut()}
+              title="Zoom Out"
+              className="w-8 h-8 rounded-xl bg-slate-900/90 text-white border border-slate-700 shadow-xl flex items-center justify-center font-bold text-base hover:bg-amber-500 hover:text-slate-950 transition-colors active:scale-95 cursor-pointer"
+            >
+              −
+            </button>
+          </div>
+
           <MapContainer
             ref={mapRef}
             center={position ? [position.lat, position.lng] : [16.5062, 80.6480]}
             zoom={12}
             maxZoom={18}
+            zoomControl={false}
             scrollWheelZoom={false}
             dragging={true}
             touchZoom={true}

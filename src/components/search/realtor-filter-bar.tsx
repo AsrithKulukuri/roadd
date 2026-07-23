@@ -413,50 +413,42 @@ export function RealtorFilterBar({
       {openDropdown !== null && (
         <>
           {/* BACKDROP FOR MOBILE BOTTOM SHEET */}
-          {isMobile && (
-            <div
-              onClick={() => setOpenDropdown(null)}
-              className="fixed inset-0 z-[999] bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
-            />
-          )}
-
-          {/* DROPDOWN PANEL CONTAINER (Desktop Popover vs Mobile Bottom Sheet) */}
           <div
-            className={cn(
-              isMobile
-                ? "fixed bottom-0 left-0 right-0 z-[1000] bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 p-5 shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[85vh] overflow-y-auto"
-                : "absolute top-full left-0 mt-2 z-[100] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-4 animate-in fade-in zoom-in-95 duration-150"
-            )}
+            onClick={() => setOpenDropdown(null)}
+            className="fixed inset-0 z-[999] bg-slate-950/70 backdrop-blur-xs md:hidden animate-in fade-in duration-200"
+          />
+
+          {/* DROPDOWN PANEL CONTAINER (Mobile Bottom Sheet vs Desktop Popover) */}
+          <div
+            className="fixed bottom-0 left-0 right-0 z-[1000] bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 p-5 shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[85vh] overflow-y-auto md:absolute md:bottom-auto md:top-full md:left-0 md:right-auto md:z-[100] md:rounded-2xl md:border md:p-4 md:shadow-2xl md:animate-in md:fade-in md:zoom-in-95 md:max-h-none md:overflow-visible"
             style={{
-              width: !isMobile ? (openDropdown === "price" ? "320px" : "280px") : undefined,
+              width: undefined,
             }}
           >
-            {/* MOBILE DRAG/CLOSE HANDLE */}
-            {isMobile && (
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-amber-500" />
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white capitalize">
-                    {openDropdown === "bhk"
-                      ? "Select BHK Configuration"
-                      : openDropdown === "price"
-                      ? "Select Budget Range (INR)"
-                      : openDropdown === "propertyType"
-                      ? "Property Type"
-                      : openDropdown === "possession"
-                      ? "Possession Status"
-                      : "Posted By"}
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setOpenDropdown(null)}
-                  className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full bg-slate-100 dark:bg-slate-800"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+            {/* MOBILE DRAG/CLOSE HEADER */}
+            <div className="flex md:hidden items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-500" />
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white capitalize">
+                  {openDropdown === "bhk"
+                    ? "Select BHK Configuration"
+                    : openDropdown === "price"
+                    ? "Select Budget Range (INR)"
+                    : openDropdown === "propertyType"
+                    ? "Property Type"
+                    : openDropdown === "possession"
+                    ? "Possession Status"
+                    : "Posted By"}
+                </h3>
               </div>
-            )}
+              <button
+                type="button"
+                onClick={() => setOpenDropdown(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full bg-slate-100 dark:bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
             {/* 1. PRICE DROPDOWN CONTENT */}
             {openDropdown === "price" && (
