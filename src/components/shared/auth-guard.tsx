@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  // Ignore admin routes completely — AdminGuard handles admin routes
+  if (pathname.startsWith("/admin")) {
+    return <>{children}</>;
+  }
 
   useEffect(() => {
     const checkAuth = async () => {

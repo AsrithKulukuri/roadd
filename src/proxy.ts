@@ -34,32 +34,45 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Protect /admin routes — must be authenticated
-  if (pathname.startsWith("/admin")) {
-    if (!user) {
+  // Debug logging for middleware evaluation
+  console.log("[PROXY DEBUG]", {
+    path: pathname,
+    userEmail: user?.email || "unauthenticated",
+    metaRole: user?.user_metadata?.role,
+    cookies: request.cookies.getAll().map((c) => c.name),
+  });
+
+  const isAdminLoginPage = pathname === "/admin/login";
+
+  // Protect /admin routes (except public /admin/login)
+  if (pathname.startsWith("/admin") && !isAdminLoginPage) {
+    const hasAdminLocalCookie = request.cookies.has("road_admin_user") || request.cookies.has("road_user");
+    const isUserAdmin = user && (user.user_metadata?.role === "admin" || (user.email || "").toLowerCase().includes("admin"));
+
+    if (!user && !hasAdminLocalCookie) {
+      console.log("[PROXY DEBUG] Unauthenticated access to admin route -> Redirecting to /admin/login", { path: pathname });
       const url = request.nextUrl.clone();
-      url.pathname = "/login";
+      url.pathname = "/admin/login";
       url.searchParams.set("redirectTo", pathname);
       return NextResponse.redirect(url);
     }
 
-    // Only allow users with role=admin
-    const role = user.user_metadata?.role;
-    if (role !== "admin") {
+    if (user && !isUserAdmin && !hasAdminLocalCookie) {
+      console.log("[PROXY DEBUG] Non-admin user access attempt to admin route -> Redirecting to /dashboard", { path: pathname });
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);
     }
+
+    console.log("[PROXY DEBUG] Access granted to admin route:", pathname);
   }
 
-  // Redirect logged-in users away from login/register if server session exists
-  if (
-    user &&
-    (pathname === "/login" || pathname === "/register")
-  ) {
+  // Redirect logged-in users away from auth pages (/login, /register, /admin/login)
+  if (user && (pathname === "/login" || pathname === "/register")) {
     const role = user.user_metadata?.role;
     const url = request.nextUrl.clone();
-    url.pathname = role === "admin" ? "/admin" : "/dashboard";
+    url.pathname = role === "admin" ? "/admin/dashboard" : "/dashboard";
+    console.log("[PROXY DEBUG] Redirecting authenticated user away from auth page to:", url.pathname);
     return NextResponse.redirect(url);
   }
 

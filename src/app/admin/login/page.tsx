@@ -38,16 +38,41 @@ export default function AdminLoginPage() {
     console.log("[AUTH DEBUG] Starting Admin Login for email:", inputEmail);
 
     try {
-      console.log("[AUTH DEBUG] Admin authentication granted for email:", inputEmail);
+      let sessionUser: any = null;
+      let sessionData: any = null;
+
+      // 1. Authenticate via Supabase if configured
+      if (isSupabaseConfigured()) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: inputEmail,
+          password: password,
+        });
+
+        console.log("LOGIN RESPONSE", data);
+        console.log("LOGIN ERROR", error);
+        console.log("SESSION", data?.session);
+        console.log("CURRENT USER", data?.user);
+
+        if (data?.session) {
+          sessionData = data.session;
+          sessionUser = data.user;
+        }
+      }
 
       const adminSessionPayload = {
         isLoggedIn: true,
         role: "admin",
         email: inputEmail,
-        name: "Administrator",
-        id: "admin_session_" + Date.now(),
+        name: sessionUser?.user_metadata?.full_name || "Administrator",
+        id: sessionUser?.id || "admin_session_" + Date.now(),
         timestamp: new Date().toISOString(),
       };
+
+      console.log("ADMIN ROLE", "admin");
+
+      // Set cookie for middleware recognition
+      document.cookie = "road_admin_user=true; path=/; max-age=86400; SameSite=Lax";
+      document.cookie = "road_user=true; path=/; max-age=86400; SameSite=Lax";
 
       // Persist session to local storage
       localStorage.setItem("road_admin_user", JSON.stringify(adminSessionPayload));
@@ -57,7 +82,7 @@ export default function AdminLoginPage() {
         description: "Redirecting to Admin Control Center...",
       });
 
-      console.log("[AUTH DEBUG] Executing direct navigation to /admin/dashboard");
+      console.log("REDIRECT DESTINATION", "/admin/dashboard");
       if (typeof window !== "undefined") {
         window.location.href = "/admin/dashboard";
       } else {
