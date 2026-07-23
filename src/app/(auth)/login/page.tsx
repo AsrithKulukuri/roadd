@@ -100,15 +100,18 @@ export default function LoginPage() {
     setIsLoading(true);
     const inputVal = loginInput.trim();
 
-    try {
-      // 1. Direct Admin Access / Demo Admin Bypass
-      if (isAdminLogin || inputVal.toLowerCase() === "admin@road.com" || inputVal.toLowerCase().startsWith("admin")) {
-        toast.success("Welcome back, Admin!");
+    // 1. Hard browser redirection for Admin Login
+    if (isAdminLogin || inputVal.toLowerCase() === "admin@road.com" || inputVal.toLowerCase().startsWith("admin")) {
+      toast.success("Welcome back, Admin!");
+      if (typeof window !== "undefined") {
+        window.location.href = "/admin";
+      } else {
         router.push("/admin");
-        setIsLoading(false);
-        return;
       }
+      return;
+    }
 
+    try {
       let response;
       let userPhone = "";
       
@@ -130,8 +133,7 @@ export default function LoginPage() {
       if (error) {
         if (isAdminLogin) {
           toast.success("Logged in as Admin!");
-          router.push("/admin");
-          setIsLoading(false);
+          window.location.href = "/admin";
           return;
         }
         throw error;
@@ -140,13 +142,17 @@ export default function LoginPage() {
       if (data.user) {
         const role = data.user.user_metadata?.role || (isAdminLogin ? "admin" : "buyer");
         toast.success("Logged in successfully!");
-        router.push(role === "admin" || isAdminLogin ? "/admin" : "/dashboard");
+        if (role === "admin" || isAdminLogin) {
+          window.location.href = "/admin";
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch (err: any) {
       console.error("Sign in error:", err);
       if (isAdminLogin) {
         toast.success("Logged in as Admin!");
-        router.push("/admin");
+        window.location.href = "/admin";
       } else if (err.message?.includes("Phone logins are disabled")) {
         toast.error("Phone logins are disabled.", {
           description: "Please sign in with your email address instead.",
@@ -402,12 +408,21 @@ export default function LoginPage() {
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="w-5 h-5 rounded-full border-2 border-bg-primary border-t-transparent animate-spin" />
-                Signing in...
+                Opening Admin Dashboard...
               </span>
             ) : (
               isAdminLogin ? "Sign In as Admin" : "Sign In"
             )}
           </Button>
+
+          {isAdminLogin && (
+            <a
+              href="/admin"
+              className="mt-3 w-full h-12 rounded-xl bg-slate-900 border-2 border-amber-500 text-amber-400 font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-amber-500 hover:text-slate-950 transition-all cursor-pointer"
+            >
+              <span>⚡ Open Admin Portal Direct (/admin)</span>
+            </a>
+          )}
         </form>
 
         <div className="mt-8 text-center text-sm text-text-secondary">
