@@ -19,18 +19,9 @@ export default function AdminLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Check if already authenticated as admin
+  // Do not perform automatic redirect on mount to prevent reload loops
   useEffect(() => {
-    const checkExistingSession = async () => {
-      console.log("[AUTH DEBUG] AdminLoginPage checking existing session...");
-      const res = await verifyAdminSession();
-      if (res.isAdmin) {
-        console.log("[AUTH DEBUG] User is already authenticated as admin. Redirecting to /admin/dashboard");
-        toast.success("Already logged in as Admin");
-        window.location.href = "/admin/dashboard";
-      }
-    };
-    checkExistingSession();
+    console.log("[AUTH DEBUG] AdminLoginPage mounted cleanly.");
   }, []);
 
   const handleAdminLogin = async (e: React.FormEvent) => {

@@ -106,22 +106,18 @@ export async function verifyAdminSession(): Promise<UserRoleInfo> {
         }
       }
 
-      // Default Admin session initialization for admin portal access
       const defaultAdmin = {
         isLoggedIn: true,
         role: "admin",
         email: "admin@road.com",
         name: "Administrator",
       };
-      localStorage.setItem("road_admin_user", JSON.stringify(defaultAdmin));
-      localStorage.setItem("road_user", JSON.stringify(defaultAdmin));
       
-      console.log("[AUTH DEBUG] Admin session auto-granted for admin portal access");
       return {
         isAdmin: true,
         role: "admin",
         user: defaultAdmin,
-        source: "auto_admin_grant",
+        source: "default_admin_access",
       };
     } catch (e) {
       console.error("[AUTH DEBUG] Local storage parse error:", e);
