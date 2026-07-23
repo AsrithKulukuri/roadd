@@ -95,12 +95,9 @@ export default function LoginPage() {
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
-
-    setIsLoading(true);
     const inputVal = loginInput.trim();
 
-    // 1. Hard browser redirection for Admin Login
+    // 1. Immediate Hard Redirection for Admin Login (Checked BEFORE form validation)
     if (isAdminLogin || inputVal.toLowerCase() === "admin@road.com" || inputVal.toLowerCase().startsWith("admin")) {
       toast.success("Welcome back, Admin!");
       if (typeof window !== "undefined") {
@@ -110,6 +107,10 @@ export default function LoginPage() {
       }
       return;
     }
+
+    if (!validateForm()) return;
+
+    setIsLoading(true);
 
     try {
       let response;
@@ -414,16 +415,18 @@ export default function LoginPage() {
               isAdminLogin ? "Sign In as Admin" : "Sign In"
             )}
           </Button>
+        </form>
 
-          {isAdminLogin && (
+        {isAdminLogin && (
+          <div className="mt-4">
             <a
               href="/admin"
-              className="mt-3 w-full h-12 rounded-xl bg-slate-900 border-2 border-amber-500 text-amber-400 font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-amber-500 hover:text-slate-950 transition-all cursor-pointer"
+              className="w-full h-12 rounded-xl bg-slate-900 border-2 border-amber-500 text-amber-400 font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-amber-500 hover:text-slate-950 transition-all cursor-pointer block text-center py-3"
             >
               <span>⚡ Open Admin Portal Direct (/admin)</span>
             </a>
-          )}
-        </form>
+          </div>
+        )}
 
         <div className="mt-8 text-center text-sm text-text-secondary">
           Don't have an account?{" "}
