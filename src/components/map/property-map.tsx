@@ -34,12 +34,112 @@ if (typeof window !== "undefined") {
 
 const quickLocalityCoords = [
   { name: "Benz Circle", lat: 16.5062, lng: 80.6480 },
+  { name: "Auto Nagar", lat: 16.4950, lng: 80.6650 },
   { name: "Poranki", lat: 16.4833, lng: 80.7000 },
   { name: "Kanuru", lat: 16.4950, lng: 80.6800 },
   { name: "Gorantla", lat: 16.3200, lng: 80.4500 },
   { name: "Amaravati Road", lat: 16.5131, lng: 80.5165 },
   { name: "Brodipet", lat: 16.3050, lng: 80.4350 },
+  { name: "Pattabhipuram", lat: 16.3100, lng: 80.4280 },
 ];
+
+interface LocalityBoundary {
+  name: string;
+  city: string;
+  center: [number, number];
+  bounds: [number, number][];
+}
+
+const LOCALITY_BOUNDARIES: Record<string, LocalityBoundary> = {
+  "auto nagar": {
+    name: "Auto Nagar",
+    city: "Vijayawada",
+    center: [16.4950, 80.6650],
+    bounds: [
+      [16.5050, 80.6520],
+      [16.5080, 80.6780],
+      [16.4860, 80.6820],
+      [16.4810, 80.6550],
+    ],
+  },
+  "benz circle": {
+    name: "Benz Circle",
+    city: "Vijayawada",
+    center: [16.5062, 80.6480],
+    bounds: [
+      [16.5150, 80.6380],
+      [16.5170, 80.6600],
+      [16.4970, 80.6620],
+      [16.4950, 80.6400],
+    ],
+  },
+  "poranki": {
+    name: "Poranki",
+    city: "Vijayawada",
+    center: [16.4833, 80.7000],
+    bounds: [
+      [16.4960, 80.6880],
+      [16.4980, 80.7180],
+      [16.4700, 80.7220],
+      [16.4680, 80.6900],
+    ],
+  },
+  "kanuru": {
+    name: "Kanuru",
+    city: "Vijayawada",
+    center: [16.4950, 80.6800],
+    bounds: [
+      [16.5050, 80.6680],
+      [16.5070, 80.6940],
+      [16.4850, 80.6970],
+      [16.4830, 80.6700],
+    ],
+  },
+  "pattabhipuram": {
+    name: "Pattabhipuram",
+    city: "Guntur",
+    center: [16.3100, 80.4280],
+    bounds: [
+      [16.3190, 80.4180],
+      [16.3210, 80.4400],
+      [16.3010, 80.4420],
+      [16.2990, 80.4200],
+    ],
+  },
+  "brodipet": {
+    name: "Brodipet",
+    city: "Guntur",
+    center: [16.3050, 80.4350],
+    bounds: [
+      [16.3140, 80.4260],
+      [16.3160, 80.4450],
+      [16.2960, 80.4470],
+      [16.2940, 80.4280],
+    ],
+  },
+  "gorantla": {
+    name: "Gorantla",
+    city: "Guntur",
+    center: [16.3200, 80.4500],
+    bounds: [
+      [16.3310, 80.4380],
+      [16.3330, 80.4640],
+      [16.3090, 80.4660],
+      [16.3070, 80.4400],
+    ],
+  },
+  "amaravati": {
+    name: "Amaravati Road",
+    city: "Guntur",
+    center: [16.5131, 80.5165],
+    bounds: [
+      [16.5230, 80.5030],
+      [16.5260, 80.5320],
+      [16.5030, 80.5350],
+      [16.5000, 80.5060],
+    ],
+  },
+};
 
 const landmarkOverlays = [
   { id: "s1", type: "school", name: "VP Siddhartha Public School", lat: 16.5020, lng: 80.6450, tag: "Top Rated School" },
@@ -392,6 +492,65 @@ function calculateDistanceStr(userPos: L.LatLng, propLat: number, propLng: numbe
   return `${(meters / 1000).toFixed(1)} km`;
 }
 
+function getDynamicLocalityBoundary(query: string, properties: any[]): { name: string; city?: string; bounds: [number, number][] } | null {
+  if (!query.trim()) return null;
+  const qLower = query.toLowerCase().trim();
+
+  // 1. Check if explicit preset boundary exists in LOCALITY_BOUNDARIES
+  for (const [key, boundary] of Object.entries(LOCALITY_BOUNDARIES)) {
+    if (qLower.includes(key) || key.includes(qLower)) {
+      return boundary;
+    }
+  }
+
+  // 2. Otherwise, dynamically generate a boundary polygon around matching properties for ANY search query!
+  const matchingProps = properties.filter((p) => checkPropertyMatchesQuery(p, query));
+  if (matchingProps.length === 0) return null;
+
+  const lats = matchingProps.map((p) => p.location?.latitude).filter(Boolean);
+  const lngs = matchingProps.map((p) => p.location?.longitude).filter(Boolean);
+
+  if (lats.length === 0 || lngs.length === 0) return null;
+
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+
+  // Calculate organic surrounding padding
+  const latPad = Math.max((maxLat - minLat) * 0.35, 0.008);
+  const lngPad = Math.max((maxLng - minLng) * 0.35, 0.008);
+
+  const top = maxLat + latPad;
+  const bottom = minLat - latPad;
+  const right = maxLng + lngPad;
+  const left = minLng - lngPad;
+
+  const midLat = (top + bottom) / 2;
+  const midLng = (left + right) / 2;
+
+  // Generate an 8-point organic neighborhood polygon for ANY location
+  const bounds: [number, number][] = [
+    [top, midLng],
+    [top - latPad * 0.2, right - lngPad * 0.15],
+    [midLat, right],
+    [bottom + latPad * 0.2, right - lngPad * 0.2],
+    [bottom, midLng],
+    [bottom + latPad * 0.15, left + lngPad * 0.2],
+    [midLat, left],
+    [top - latPad * 0.15, left + lngPad * 0.15],
+  ];
+
+  const matchedLocality = matchingProps[0].location?.locality || matchingProps[0].location?.city || query;
+  const matchedCity = matchingProps[0].location?.city || "";
+
+  return {
+    name: matchedLocality,
+    city: matchedCity,
+    bounds,
+  };
+}
+
 interface PropertyMapProps {
   filteredItems?: any[];
 }
@@ -439,8 +598,21 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   // Realtor.com Map Controls State
   const [showMapOptionsMenu, setShowMapOptionsMenu] = useState(false);
   const [searchAsMove, setSearchAsMove] = useState(true);
-
   const mapRef = useRef<L.Map | null>(null);
+
+  // Active Locality Highlight Boundary (Dynamic for ANY searched location!)
+  const activeLocalityBoundary = useMemo(() => {
+    if (!mapSearchInput.trim()) return null;
+    return getDynamicLocalityBoundary(mapSearchInput, mapProperties);
+  }, [mapSearchInput, mapProperties]);
+
+  // Fly map to locality boundary when detected
+  useEffect(() => {
+    if (activeLocalityBoundary && mapRef.current) {
+      const bounds = L.latLngBounds(activeLocalityBoundary.bounds);
+      mapRef.current.flyToBounds(bounds, { padding: [40, 40], duration: 1.2 });
+    }
+  }, [activeLocalityBoundary]);
 
   const displayedProperties = useMemo(() => {
     let source = mapProperties;
@@ -895,9 +1067,9 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
         {/* The Leaflet Map Canvas Container */}
         <div className="flex-1 w-full h-full relative bg-slate-950 touch-none" style={{ touchAction: "none" }}>
           
-          {/* REALTOR.COM INSPIRED FLOATING TOP-RIGHT MAP CONTROLS (MY LOCATION | SATELLITE | OPTIONS | CLEAR) */}
-          <div className="absolute top-3 right-3 z-[550] flex flex-col items-end gap-2 pointer-events-auto">
-            <div className="flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl border border-slate-800 shadow-2xl">
+          {/* REALTOR.COM INSPIRED FLOATING TOP-RIGHT MAP CONTROLS (MY LOCATION | DRAW | SATELLITE | OPTIONS | CLEAR) */}
+          <div className="absolute top-2 left-2 right-2 sm:left-auto sm:right-3 z-[550] flex flex-col items-end gap-2 pointer-events-auto max-w-full">
+            <div className="w-full sm:w-auto max-w-full overflow-x-auto no-scrollbar flex items-center justify-start sm:justify-end gap-1.5 bg-slate-900/95 backdrop-blur-md p-1.5 rounded-2xl border border-slate-800 shadow-2xl touch-pan-x">
               {/* 1. FETCH MY GPS LOCATION BUTTON */}
               <button
                 type="button"
@@ -905,14 +1077,14 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 disabled={isLocating}
                 title="Fetch My GPS Location"
                 className={cn(
-                  "px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95",
+                  "px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0 active:scale-95",
                   isLocating
                     ? "bg-amber-500 text-slate-950 shadow-md font-black animate-pulse"
                     : "bg-slate-800 text-slate-200 hover:bg-slate-700"
                 )}
               >
-                <Navigation className={cn("w-4 h-4 text-amber-400 stroke-[2.5]", isLocating && "animate-spin")} />
-                <span>{isLocating ? "Locating..." : "My Location"}</span>
+                <Navigation className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 stroke-[2.5]", isLocating && "animate-spin")} />
+                <span className="text-[11px] sm:text-xs">{isLocating ? "Locating..." : "Location"}</span>
               </button>
 
               {/* 1.5 FREEHAND DRAW BUTTON */}
@@ -924,14 +1096,14 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 }}
                 title="Draw Custom Boundary Area"
                 className={cn(
-                  "px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95",
+                  "px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0 active:scale-95",
                   isDrawing
                     ? "bg-amber-500 text-slate-950 shadow-md font-black animate-pulse"
                     : "bg-slate-800 text-slate-200 hover:bg-slate-700"
                 )}
               >
-                <Pencil className="w-4 h-4 text-amber-400" />
-                <span>{isDrawing ? "Drawing..." : "Draw"}</span>
+                <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+                <span className="text-[11px] sm:text-xs">{isDrawing ? "Drawing..." : "Draw"}</span>
               </button>
 
               {/* 2. SATELLITE TILE SWITCHER */}
@@ -939,32 +1111,32 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 type="button"
                 onClick={() => setMapLayerType(mapLayerType === "streets" ? "hybrid" : "streets")}
                 className={cn(
-                  "px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs",
+                  "px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0",
                   mapLayerType === "hybrid"
                     ? "bg-amber-500 text-slate-950 shadow-md font-black"
                     : "bg-slate-800 text-slate-200 hover:bg-slate-700"
                 )}
               >
-                <Layers3 className="w-4 h-4 text-amber-400" />
-                <span>{mapLayerType === "hybrid" ? "Satellite" : "Map Mode"}</span>
+                <Layers3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+                <span className="text-[11px] sm:text-xs">{mapLayerType === "hybrid" ? "Satellite" : "Map Mode"}</span>
               </button>
 
-              {/* 2. OPTIONS / LAYERS BUTTON */}
+              {/* 3. OPTIONS / LAYERS BUTTON */}
               <button
                 type="button"
                 onClick={() => setShowMapOptionsMenu(!showMapOptionsMenu)}
                 className={cn(
-                  "px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs",
+                  "px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0",
                   showMapOptionsMenu
                     ? "bg-white text-slate-950 shadow-md font-black"
                     : "bg-slate-800 text-slate-200 hover:bg-slate-700"
                 )}
               >
-                <SlidersHorizontal className="w-4 h-4 text-amber-400" />
-                <span>Options</span>
+                <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+                <span className="text-[11px] sm:text-xs">Options</span>
               </button>
 
-              {/* 3. CLEAR BUTTON */}
+              {/* 4. CLEAR BUTTON */}
               {(drawPolygonPoints.length > 0 || showHeatmap || activeLandmarkTypes.length > 0 || mapSearchInput) && (
                 <button
                   type="button"
@@ -977,10 +1149,10 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                       mapRef.current.flyTo(new L.LatLng(16.5062, 80.6480), 12);
                     }
                   }}
-                  className="px-3 py-2 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-200 hover:bg-red-500 hover:text-white transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                  className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-200 hover:bg-red-500 hover:text-white transition-all cursor-pointer flex items-center gap-1 shrink-0"
                 >
-                  <X className="w-4 h-4" />
-                  <span>Clear</span>
+                  <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="text-[11px] sm:text-xs">Clear</span>
                 </button>
               )}
             </div>
@@ -1106,6 +1278,95 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
             </div>
           )}
 
+          {/* Realtor.com Style Drawn Area Property Results Card */}
+          {drawPolygonPoints.length >= 3 && !isDrawing && (
+            <div className="absolute top-14 left-3 right-3 sm:left-auto sm:right-3 sm:w-84 z-[550] bg-slate-900/95 backdrop-blur-xl border border-amber-500/50 text-white p-3.5 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+                <div className="flex items-center gap-1.5 text-amber-400 font-extrabold text-xs">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>Drawn Area Results</span>
+                </div>
+                <button
+                  onClick={handleClearDraw}
+                  className="text-slate-400 hover:text-white p-1 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {displayedProperties.length > 0 ? (
+                <div className="space-y-2">
+                  <div className="text-sm font-bold text-white flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>{displayedProperties.length} {displayedProperties.length === 1 ? "Property" : "Properties"} found inside area!</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300">
+                    Map pins filtered strictly matching your custom sketched shape.
+                  </p>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={() => {
+                        setIsDrawing(true);
+                        setDrawPolygonPoints([]);
+                      }}
+                      className="flex-1 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1 shadow-md cursor-pointer"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Redraw Area
+                    </button>
+                    <button
+                      onClick={handleClearDraw}
+                      className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="text-sm font-bold text-amber-400 flex items-center gap-1.5">
+                    <span>⚠️ No properties found in drawn area</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300">
+                    No active property listings fall within your custom boundary. Try redrawing a larger area or clearing boundary.
+                  </p>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={() => {
+                        setIsDrawing(true);
+                        setDrawPolygonPoints([]);
+                      }}
+                      className="flex-1 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1 shadow-md cursor-pointer"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Redraw Larger Area
+                    </button>
+                    <button
+                      onClick={handleClearDraw}
+                      className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Searched Locality Boundary Status Pill */}
+          {activeLocalityBoundary && !isDrawing && drawPolygonPoints.length < 3 && (
+            <div className="absolute top-14 left-3 right-3 sm:left-auto sm:right-3 sm:w-80 z-[540] bg-blue-950/90 backdrop-blur-md border border-blue-500/50 text-white px-3.5 py-2 rounded-2xl shadow-xl flex items-center justify-between animate-in fade-in">
+              <div className="flex items-center gap-2 text-xs font-bold truncate">
+                <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
+                <span className="truncate">📍 {activeLocalityBoundary.name}, {activeLocalityBoundary.city} Boundary Active</span>
+              </div>
+              <button
+                onClick={() => setMapSearchInput("")}
+                className="text-blue-200 hover:text-white text-xs font-bold shrink-0 ml-2 cursor-pointer"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
           <MapContainer
             ref={mapRef}
             center={position ? [position.lat, position.lng] : [16.5062, 80.6480]}
@@ -1193,6 +1454,20 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   </Popup>
                 </Marker>
               ))}
+
+            {/* Render Searched Locality Highlight Boundary (Auto Nagar, Benz Circle, Poranki, etc.) */}
+            {activeLocalityBoundary && (
+              <Polygon
+                positions={activeLocalityBoundary.bounds}
+                pathOptions={{
+                  color: "#3B82F6",
+                  fillColor: "#3B82F6",
+                  fillOpacity: 0.18,
+                  weight: 3,
+                  dashArray: "8, 8",
+                }}
+              />
+            )}
 
             {/* Render Drawn Custom Polygon Boundary */}
             {drawPolygonPoints.length > 0 && (
