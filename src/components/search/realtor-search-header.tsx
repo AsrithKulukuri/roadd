@@ -293,7 +293,7 @@ export function RealtorSearchHeader({
                 )}
               </button>
 
-              {/* 3. THIRD: PRICE FILTER BUTTON */}
+              {/* 3. THIRD: PRICE FILTER BUTTON & INLINE DROPDOWN */}
               <div className="relative">
                 <button
                   type="button"
@@ -309,9 +309,8 @@ export function RealtorSearchHeader({
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
 
-                {/* DESKTOP POPOVER FOR PRICE */}
                 {openDropdown === "price" && (
-                  <div className="hidden sm:block absolute top-full left-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 z-50 animate-in fade-in zoom-in-95">
+                  <div className="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-2 z-[100] animate-in fade-in zoom-in-95">
                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 py-1.5">
                       Select Budget Range
                     </div>
@@ -343,7 +342,7 @@ export function RealtorSearchHeader({
                 )}
               </div>
 
-              {/* 4. FOURTH: BHK / ROOMS FILTER BUTTON */}
+              {/* 4. FOURTH: BHK / ROOMS FILTER BUTTON & INLINE DROPDOWN */}
               <div className="relative">
                 <button
                   type="button"
@@ -359,9 +358,8 @@ export function RealtorSearchHeader({
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
 
-                {/* DESKTOP POPOVER FOR BEDROOMS */}
                 {openDropdown === "rooms" && (
-                  <div className="hidden sm:block absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 z-50 animate-in fade-in zoom-in-95">
+                  <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-2 z-[100] animate-in fade-in zoom-in-95">
                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 py-1.5">
                       Select Bedrooms
                     </div>
@@ -394,99 +392,10 @@ export function RealtorSearchHeader({
                   </div>
                 )}
               </div>
-
             </div>
           </div>
         </div>
       </header>
-
-      {/* MOBILE FIX: ROOT-LEVEL FIXED OVERLAY BOTTOM DRAWER FOR PRICE (NEVER OVERFLOWS) */}
-      {openDropdown === "price" && (
-        <div className="fixed inset-0 z-[10000] sm:hidden bg-slate-950/75 backdrop-blur-xs flex items-end justify-center p-0">
-          <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl w-full p-5 shadow-2xl space-y-3 animate-in slide-in-from-bottom duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-              <span className="font-extrabold text-base text-slate-900 dark:text-white">Select Budget Range</span>
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(null)}
-                className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 rounded-full"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-1.5 pt-1">
-              {pricePresets.map((preset) => {
-                const isSelected = filters.budget[0] === preset.min && filters.budget[1] === preset.max;
-                return (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    onClick={() => {
-                      onFilterChange({ ...filters, budget: [preset.min, preset.max] });
-                      setOpenDropdown(null);
-                    }}
-                    className={cn(
-                      "w-full text-left px-4 py-3.5 text-sm rounded-xl font-bold flex items-center justify-between transition-all cursor-pointer",
-                      isSelected
-                        ? "bg-amber-500 text-slate-950 shadow-md"
-                        : "bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-slate-100"
-                    )}
-                  >
-                    <span>{preset.label}</span>
-                    {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MOBILE FIX: ROOT-LEVEL FIXED OVERLAY BOTTOM DRAWER FOR BEDROOMS (NEVER OVERFLOWS) */}
-      {openDropdown === "rooms" && (
-        <div className="fixed inset-0 z-[10000] sm:hidden bg-slate-950/75 backdrop-blur-xs flex items-end justify-center p-0">
-          <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl w-full p-5 shadow-2xl space-y-3 animate-in slide-in-from-bottom duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-              <span className="font-extrabold text-base text-slate-900 dark:text-white">Select Bedrooms (BHK)</span>
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(null)}
-                className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 rounded-full"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-1.5 pt-1">
-              {bhkOptions.map((opt) => {
-                const isSelected = filters.bhk.includes(opt.value);
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => {
-                      const newBhk = isSelected
-                        ? filters.bhk.filter((b) => b !== opt.value)
-                        : [...filters.bhk, opt.value];
-                      onFilterChange({ ...filters, bhk: newBhk });
-                    }}
-                    className={cn(
-                      "w-full text-left px-4 py-3.5 text-sm rounded-xl font-bold flex items-center justify-between transition-all cursor-pointer",
-                      isSelected
-                        ? "bg-amber-500 text-slate-950 shadow-md"
-                        : "bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-slate-100"
-                    )}
-                  >
-                    <span>{opt.label}</span>
-                    {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* PROMINENT MOBILE FLOATING BOTTOM CENTER MAP TOGGLE BUTTON */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[400] md:hidden pointer-events-auto">

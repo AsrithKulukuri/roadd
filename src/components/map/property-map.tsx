@@ -850,14 +850,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               ))}
             </div>
 
-            {/* Search Match Badge on Mobile */}
-            {mapSearchInput.trim() && (
-              <div className="bg-amber-500/95 text-slate-950 font-extrabold text-[11px] px-3 py-1 rounded-full shadow-lg flex items-center justify-between animate-pulse self-start">
-                <span className="flex items-center gap-1">
-                  ⭐ Showing {displayedProperties.length} matches for "{mapSearchInput}"
-                </span>
-              </div>
-            )}
+
           </div>
 
           {/* Drawing Mode Overlay Banner */}
