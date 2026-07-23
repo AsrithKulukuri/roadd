@@ -21,6 +21,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePropertiesStore } from "@/stores/properties-store";
+import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
+import { toast } from "sonner";
 
 // Only keep Buy and Sell as requested
 const tabs = [
@@ -92,6 +95,8 @@ export function HeroSection() {
     return () => clearInterval(interval);
   }, []);
 
+  const properties = usePropertiesStore((state) => state.properties);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (activeTab === "sell") {
@@ -99,6 +104,13 @@ export function HeroSection() {
       return;
     }
     if (searchQuery.trim()) {
+      const refMatch = findPropertyByRefId(searchQuery, properties);
+      if (refMatch) {
+        toast.success(`🎯 Direct match for Reference ID ${getPropertyRefId(refMatch)}! Redirecting...`);
+        router.push(`/properties/${refMatch.id}`);
+        return;
+      }
+
       router.push(
         `/properties?type=${activeTab}&location=${encodeURIComponent(searchQuery)}`
       );

@@ -19,6 +19,7 @@ import { PropertyCard } from "@/components/property/property-card";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { formatPriceCompact, formatINR } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
+import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 
 // Safe setup for default marker icons in Leaflet with Next.js
 if (typeof window !== "undefined") {
@@ -391,6 +392,20 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const handleSearchChange = (val: string) => {
     setMapSearchInput(val);
     if (!val.trim()) return;
+
+    // Check Reference ID Match (e.g. ref345, REF345)
+    const refMatch = findPropertyByRefId(val, mapProperties);
+    if (refMatch) {
+      setSelectedPropertyId(refMatch.id);
+      if (refMatch.location?.latitude && refMatch.location?.longitude) {
+        const newPos = new L.LatLng(refMatch.location.latitude, refMatch.location.longitude);
+        setPosition(newPos);
+        if (mapRef.current) {
+          mapRef.current.flyTo(newPos, 16, { duration: 1.2 });
+        }
+      }
+      return;
+    }
 
     const matching = mapProperties.filter((p) => checkPropertyMatchesQuery(p, val));
     if (matching.length > 0 && matching[0].location?.latitude && matching[0].location?.longitude) {

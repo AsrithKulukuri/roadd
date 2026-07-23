@@ -143,7 +143,7 @@ export interface Property {
   viewsCount?: number;
   savedCount?: number;
   enquiryCount?: number;
-  favoritesCount?: number;
+  refId?: string;
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;

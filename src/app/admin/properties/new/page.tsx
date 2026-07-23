@@ -43,6 +43,7 @@ export default function AddPropertyPage() {
   const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState({
+    refId: `REF${Math.floor(100 + Math.random() * 900)}`,
     title: "", description: "", propertyType: "apartment", listingType: "sale", price: "", negotiable: false,
     bedrooms: "1", bathrooms: "1", balconies: "0", parking: "0", area: "", builtUpArea: "", carpetArea: "",
     furnishing: "unfurnished", facing: "east", yearBuilt: "",
@@ -172,6 +173,7 @@ export default function AddPropertyPage() {
 
     const newProperty: Property = {
       id: propertyId,
+      refId: formData.refId || `REF${Math.floor(100 + Math.random() * 900)}`,
       slug: formData.slug || propertyId,
       title: formData.title,
       description: formData.description,
@@ -270,6 +272,13 @@ export default function AddPropertyPage() {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
+                  Property Reference ID (e.g. REF345) *
+                </label>
+                <Input name="refId" required value={formData.refId} onChange={handleChange} placeholder="e.g. REF345" className="h-12 uppercase font-black tracking-wide" />
+              </div>
+
               <div className="md:col-span-2 space-y-2">
                 <label className="text-sm font-medium text-text-secondary">Property Title *</label>
                 <Input name="title" required value={formData.title} onChange={handleChange} placeholder="e.g. Luxury 3 BHK Villa in Jubilee Hills" className="h-12" />

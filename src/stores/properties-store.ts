@@ -13,6 +13,7 @@ interface PropertiesState {
   toggleSoldOut: (id: string) => Promise<void>;
   toggleShowOnMap: (id: string) => Promise<void>;
   toggleRecommended: (id: string) => Promise<boolean>;
+  updateRefId: (id: string, refId: string) => Promise<void>;
 }
 
 export const usePropertiesStore = create<PropertiesState>((set, get) => ({
@@ -193,5 +194,23 @@ export const usePropertiesStore = create<PropertiesState>((set, get) => ({
       console.error('Error setting recommendation:', error);
       return false;
     }
+  },
+
+  updateRefId: async (id: string, refId: string) => {
+    const cleanRef = refId.trim().toUpperCase();
+    try {
+      await supabase
+        .from('properties')
+        .update({ refId: cleanRef })
+        .eq('id', id);
+    } catch (error) {
+      console.error('Error updating refId in Supabase:', error);
+    }
+
+    set((state) => ({
+      properties: state.properties.map((p) =>
+        p.id === id ? { ...p, refId: cleanRef } : p
+      ),
+    }));
   },
 }));

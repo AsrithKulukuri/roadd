@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search,
   SlidersHorizontal,
@@ -19,9 +20,14 @@ import {
   Sparkles,
   Mic,
   Languages,
+  ArrowRight,
+  Hash,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { usePropertiesStore } from "@/stores/properties-store";
+import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
+import { toast } from "sonner";
 import type { FilterState } from "./search-filters";
 
 interface RealtorSearchHeaderProps {
@@ -85,8 +91,21 @@ export function RealtorSearchHeader({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const router = useRouter();
+  const properties = usePropertiesStore((state) => state.properties);
+
+  const refMatch = useMemo(() => {
+    if (!searchInput.trim()) return null;
+    return findPropertyByRefId(searchInput, properties);
+  }, [searchInput, properties]);
+
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (refMatch) {
+      toast.success(`🎯 Direct match for Reference ID ${getPropertyRefId(refMatch)}! Redirecting...`);
+      router.push(`/properties/${refMatch.id}`);
+      return;
+    }
     onFilterChange({ ...filters, query: searchInput });
   };
 
@@ -238,6 +257,25 @@ export function RealtorSearchHeader({
               >
                 <Search className="w-4 h-4 stroke-[2.5]" />
               </button>
+
+              {/* INSTANT REFERENCE ID MATCH REDIRECT BANNER */}
+              {refMatch && (
+                <div
+                  onClick={() => {
+                    toast.success(`🎯 Direct match for Reference ID ${getPropertyRefId(refMatch)}! Redirecting...`);
+                    router.push(`/properties/${refMatch.id}`);
+                  }}
+                  className="absolute left-0 right-0 top-full mt-2 z-[120] bg-amber-500 text-slate-950 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center justify-between font-extrabold text-xs cursor-pointer border-2 border-slate-950 animate-in fade-in zoom-in-95"
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <Hash className="w-4 h-4 text-slate-950 shrink-0" />
+                    <span className="truncate">Found Ref ID <strong className="bg-slate-950 text-amber-400 px-1.5 py-0.5 rounded ml-1">{getPropertyRefId(refMatch)}</strong>: {refMatch.title}</span>
+                  </div>
+                  <span className="flex items-center gap-1 bg-slate-950 text-white px-2.5 py-1 rounded-xl text-[11px] shrink-0 ml-2 shadow-md">
+                    Jump to Property <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+              )}
             </form>
 
             {/* RIGHT: Quick Filter Chips */}
