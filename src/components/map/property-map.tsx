@@ -1149,9 +1149,9 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
         {/* The Leaflet Map Canvas Container */}
         <div className="flex-1 w-full h-full relative bg-slate-950 touch-none" style={{ touchAction: "none" }}>
           
-          {/* REALTOR.COM INSPIRED FLOATING TOP-RIGHT MAP CONTROLS (MY LOCATION | DRAW | SATELLITE | OPTIONS | CLEAR) */}
-          <div className="absolute top-2 left-2 right-2 sm:left-auto sm:right-3 z-[550] flex flex-col items-end gap-2 pointer-events-auto max-w-full">
-            <div className="w-full sm:w-auto max-w-full overflow-x-auto no-scrollbar flex items-center justify-start sm:justify-end gap-1.5 bg-slate-900/95 backdrop-blur-md p-1.5 rounded-2xl border border-slate-800 shadow-2xl touch-pan-x">
+          {/* REALTOR.COM INSPIRED FLOATING TOP-RIGHT MAP CONTROLS (LOCATION | DRAW | MODE | OPTIONS | CLEAR) */}
+          <div className="absolute top-2 left-1.5 right-1.5 sm:left-auto sm:right-3 z-[550] flex flex-col items-end gap-2 pointer-events-auto max-w-full">
+            <div className="w-full sm:w-auto max-w-full overflow-x-auto no-scrollbar flex items-center justify-between sm:justify-end gap-1 sm:gap-1.5 bg-slate-900/95 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-slate-800 shadow-2xl touch-pan-x">
               {/* 1. FETCH MY GPS LOCATION BUTTON */}
               <button
                 type="button"
@@ -1159,14 +1159,14 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 disabled={isLocating}
                 title="Fetch My GPS Location"
                 className={cn(
-                  "px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0 active:scale-95",
+                  "px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0 active:scale-95",
                   isLocating
                     ? "bg-amber-500 text-slate-950 shadow-md font-black animate-pulse"
                     : "bg-slate-800 text-slate-200 hover:bg-slate-700"
                 )}
               >
-                <Navigation className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 stroke-[2.5]", isLocating && "animate-spin")} />
-                <span className="text-[11px] sm:text-xs">{isLocating ? "Locating..." : "Location"}</span>
+                <Navigation className={cn("w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 stroke-[2.5]", isLocating && "animate-spin")} />
+                <span>{isLocating ? "Locating..." : "Location"}</span>
               </button>
 
               {/* 1.5 FREEHAND DRAW BUTTON */}
@@ -1178,14 +1178,14 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 }}
                 title="Draw Custom Boundary Area"
                 className={cn(
-                  "px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0 active:scale-95",
+                  "px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0 active:scale-95",
                   isDrawing
                     ? "bg-amber-500 text-slate-950 shadow-md font-black animate-pulse"
                     : "bg-slate-800 text-slate-200 hover:bg-slate-700"
                 )}
               >
-                <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-                <span className="text-[11px] sm:text-xs">{isDrawing ? "Drawing..." : "Draw"}</span>
+                <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
+                <span>{isDrawing ? "Drawing..." : "Draw"}</span>
               </button>
 
               {/* 2. SATELLITE TILE SWITCHER */}
@@ -1193,14 +1193,14 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 type="button"
                 onClick={() => setMapLayerType(mapLayerType === "streets" ? "hybrid" : "streets")}
                 className={cn(
-                  "px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0",
+                  "px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0",
                   mapLayerType === "hybrid"
                     ? "bg-amber-500 text-slate-950 shadow-md font-black"
                     : "bg-slate-800 text-slate-200 hover:bg-slate-700"
                 )}
               >
-                <Layers3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-                <span className="text-[11px] sm:text-xs">{mapLayerType === "hybrid" ? "Satellite" : "Map Mode"}</span>
+                <Layers3 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
+                <span>{mapLayerType === "hybrid" ? "Satellite" : "Mode"}</span>
               </button>
 
               {/* 3. OPTIONS / LAYERS BUTTON */}
@@ -1208,14 +1208,14 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 type="button"
                 onClick={() => setShowMapOptionsMenu(!showMapOptionsMenu)}
                 className={cn(
-                  "px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0",
+                  "px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0",
                   showMapOptionsMenu
                     ? "bg-white text-slate-950 shadow-md font-black"
                     : "bg-slate-800 text-slate-200 hover:bg-slate-700"
                 )}
               >
-                <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-                <span className="text-[11px] sm:text-xs">Options</span>
+                <SlidersHorizontal className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
+                <span>Options</span>
               </button>
 
               {/* 4. CLEAR BUTTON */}
@@ -1231,10 +1231,10 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                       mapRef.current.flyTo(new L.LatLng(16.5062, 80.6480), 12);
                     }
                   }}
-                  className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-200 hover:bg-red-500 hover:text-white transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                  className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-extrabold bg-slate-800 text-slate-200 hover:bg-red-500 hover:text-white transition-all cursor-pointer flex items-center gap-1 shrink-0"
                 >
-                  <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="text-[11px] sm:text-xs">Clear</span>
+                  <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  <span>Clear</span>
                 </button>
               )}
             </div>
