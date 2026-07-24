@@ -162,21 +162,21 @@ export function RealtorSearchHeader({
   return (
     <>
       <header className="sticky top-16 z-30 w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-2.5 space-y-2">
-          {/* ROW 1: REALTOR-INSPIRED SEARCH BAR + SAVE SEARCH + LIST/MAP SWITCH */}
-          <div className="flex items-center justify-between gap-3">
-            {/* LEFT: Search Input Box */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2">
+          {/* ROW 1: REALTOR SEARCH BOX & LIST/MAP VIEW TOGGLE */}
+          <div className="flex items-center gap-2 w-full">
+            {/* SEARCH INPUT BOX CONTAINER */}
             <form
               onSubmit={handleSearchSubmit}
               className={cn(
-                "relative flex-1 w-full flex items-center rounded-full border bg-white dark:bg-slate-900 transition-all duration-200 shadow-xs",
+                "relative flex-1 min-w-0 flex items-center h-10 sm:h-11 rounded-full border bg-white dark:bg-slate-900 transition-all duration-200 shadow-xs",
                 isFocused
                   ? "border-amber-500 ring-2 ring-amber-500/20 shadow-md"
                   : "border-slate-300 dark:border-slate-800 hover:border-slate-400"
               )}
             >
               {/* Input & Animated Carousel Placeholder Overlay */}
-              <div className="relative flex-1 flex items-center h-10 sm:h-11 pl-3.5 pr-1">
+              <div className="relative flex-1 flex items-center h-full pl-3 sm:pl-4 pr-1 min-w-0">
                 <input
                   ref={inputRef}
                   type="text"
@@ -189,7 +189,7 @@ export function RealtorSearchHeader({
 
                 {/* Animated Placeholder Text starting with "Try..." */}
                 {!searchInput && !isFocused && (
-                  <div className="absolute inset-0 flex items-center px-3.5 pointer-events-none overflow-hidden text-slate-400 dark:text-slate-500 text-xs sm:text-sm">
+                  <div className="absolute inset-0 flex items-center px-3 sm:px-4 pointer-events-none overflow-hidden text-slate-400 dark:text-slate-500 text-xs sm:text-sm">
                     <AnimatePresence mode="wait">
                       <motion.span
                         key={suggestionIndex}
@@ -206,49 +206,53 @@ export function RealtorSearchHeader({
                 )}
               </div>
 
-              {/* Clear button if typed */}
-              {searchInput && (
+              {/* ACTION ICONS INSIDE SEARCH BOX: CLEAR (X), MIC (🎙️), SEARCH (🔍) */}
+              <div className="flex items-center gap-0.5 sm:gap-1 pr-1.5 shrink-0 z-20">
+                {/* Clear button if typed */}
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchInput("");
+                      onFilterChange({ ...filters, query: "" });
+                      if (inputRef.current) inputRef.current.focus();
+                    }}
+                    title="Clear search"
+                    className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+
+                {/* VOICE SEARCH MICROPHONE BUTTON */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearchInput("");
-                    onFilterChange({ ...filters, query: "" });
-                    if (inputRef.current) inputRef.current.focus();
-                  }}
-                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full transition-colors cursor-pointer mr-0.5"
+                  onClick={handleVoiceSearch}
+                  title={isListening ? "Listening..." : "Voice Search"}
+                  className={cn(
+                    "p-1 sm:p-1.5 rounded-full text-slate-400 hover:text-amber-500 transition-colors cursor-pointer",
+                    isListening && "text-amber-500 bg-amber-500/10 animate-pulse"
+                  )}
                 >
-                  <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
                 </button>
-              )}
 
-              {/* VOICE SEARCH MICROPHONE BUTTON */}
-              <button
-                type="button"
-                onClick={handleVoiceSearch}
-                title={isListening ? "Listening..." : "Voice Search"}
-                className={cn(
-                  "p-1.5 sm:p-2 rounded-full text-slate-400 hover:text-amber-500 transition-colors mr-0.5 cursor-pointer",
-                  isListening && "text-amber-500 bg-amber-500/10 animate-pulse"
-                )}
-              >
-                <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </button>
-
-              {/* Search Icon Submit Button inside search box */}
-              <button
-                type="submit"
-                title="Search"
-                className="mr-1 sm:mr-1.5 p-2 sm:p-2.5 text-slate-500 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400 active:scale-95 transition-all cursor-pointer shrink-0"
-              >
-                <Search className="w-4 h-4 stroke-[2.5]" />
-              </button>
+                {/* Search Icon Submit Button */}
+                <button
+                  type="submit"
+                  title="Search"
+                  className="p-1 sm:p-1.5 text-slate-500 hover:text-amber-500 dark:text-slate-400 dark:hover:text-amber-400 active:scale-95 transition-all cursor-pointer shrink-0"
+                >
+                  <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                </button>
+              </div>
 
               {/* INSTANT REFERENCE ID MATCH REDIRECT BANNER */}
               {refMatch && (
                 <div
                   onClick={() => {
                     toast.success(`🎯 Direct match for Reference ID ${getPropertyRefId(refMatch)}! Redirecting...`);
-                    router.push(`/properties/${refMatch.id}`);
+                    router.push(`/properties/${refMatch.slug || refMatch.id}`);
                   }}
                   className="absolute left-0 right-0 top-full mt-2 z-[120] bg-amber-500 text-slate-950 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center justify-between font-extrabold text-xs cursor-pointer border-2 border-slate-950 animate-in fade-in zoom-in-95"
                 >
@@ -263,44 +267,34 @@ export function RealtorSearchHeader({
               )}
             </form>
 
-            {/* MIDDLE/RIGHT: REALTOR "SAVE SEARCH" BUTTON (Desktop Only) */}
+            {/* REALTOR "SAVE SEARCH" BUTTON (Desktop Only) */}
             <button
               type="button"
               onClick={() => toast.success("❤️ Search saved to your saved searches!")}
-              className="hidden md:flex h-11 px-4.5 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-850 dark:hover:bg-slate-800 text-white text-xs font-extrabold items-center gap-2 transition-all cursor-pointer shrink-0 shadow-xs border border-slate-800 active:scale-95"
+              className="hidden lg:flex h-10 sm:h-11 px-4 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-850 dark:hover:bg-slate-800 text-white text-xs font-extrabold items-center gap-1.5 transition-all cursor-pointer shrink-0 shadow-xs border border-slate-800 active:scale-95"
             >
               <Heart className="w-4 h-4 text-amber-400 fill-amber-400/20" />
               <span>Save search</span>
             </button>
 
-            {/* RIGHT: REALTOR "LIST | MAP" SWITCH CAPSULE (Desktop Only) */}
-            <div className="hidden md:flex bg-slate-100 dark:bg-slate-900 p-1 rounded-full border border-slate-300 dark:border-slate-800 shadow-xs items-center shrink-0">
-              <button
-                type="button"
-                onClick={() => onViewModeChange("grid")}
-                className={cn(
-                  "py-1.5 px-3.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
-                  viewMode === "grid"
-                    ? "bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-sm"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                )}
-              >
-                <span>List</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onViewModeChange("map")}
-                className={cn(
-                  "py-1.5 px-3.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
-                  viewMode === "map"
-                    ? "bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-sm"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                )}
-              >
-                <span>Map</span>
-              </button>
-            </div>
+            {/* INTEGRATED MAP VIEW / LIST VIEW TOGGLE BUTTON (IN SEARCH BOX ROW FOR BOTH MOBILE & DESKTOP) */}
+            <button
+              type="button"
+              onClick={() => onViewModeChange(viewMode === "grid" ? "map" : "grid")}
+              className="h-10 sm:h-11 px-3 sm:px-4 rounded-full bg-slate-950 dark:bg-slate-900 text-white border-2 border-amber-500/80 hover:border-amber-400 shadow-md font-black text-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
+            >
+              {viewMode === "grid" ? (
+                <>
+                  <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 fill-amber-400/30 shrink-0" />
+                  <span className="text-amber-400">Map View 🗺️</span>
+                </>
+              ) : (
+                <>
+                  <List className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+                  <span>List View 📋</span>
+                </>
+              )}
+            </button>
           </div>
 
           {/* ROW 2: REALTOR-STYLE HORIZONTAL INDIAN FILTERS BAR */}
@@ -314,27 +308,6 @@ export function RealtorSearchHeader({
           </div>
         </div>
       </header>
-
-      {/* PROMINENT MOBILE TOP-RIGHT FLOATING MAP TOGGLE BUTTON (NEVER OVERLAPS BOTTOM PROPERTY CARDS) */}
-      <div className="fixed top-20 right-3 z-[580] md:hidden pointer-events-auto">
-        <button
-          type="button"
-          onClick={() => onViewModeChange(viewMode === "grid" ? "map" : "grid")}
-          className="bg-slate-950/95 text-white border-2 border-amber-500 shadow-2xl px-3.5 py-1.5 rounded-full font-black text-[11px] flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer backdrop-blur-md"
-        >
-          {viewMode === "grid" ? (
-            <>
-              <Map className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
-              <span className="text-amber-400">Map View 🗺️</span>
-            </>
-          ) : (
-            <>
-              <List className="w-3.5 h-3.5 text-amber-400" />
-              <span>List View 📋</span>
-            </>
-          )}
-        </button>
-      </div>
     </>
   );
 }
