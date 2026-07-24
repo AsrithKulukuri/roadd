@@ -492,32 +492,113 @@ function calculateDistanceStr(userPos: L.LatLng, propLat: number, propLng: numbe
   return `${(meters / 1000).toFixed(1)} km`;
 }
 
+function resolvePropertyMapCoords(p: any): { lat: number; lng: number } {
+  if (!p) return { lat: 16.5062, lng: 80.6480 };
+
+  const pLocality = (p.location?.locality || "").toLowerCase();
+  const pAddress = (p.location?.address || "").toLowerCase();
+  const pTitle = (p.title || "").toLowerCase();
+  const combined = `${pTitle} ${pLocality} ${pAddress}`;
+
+  // Check if property matches any known locality preset
+  for (const [key, b] of Object.entries(LOCALITY_BOUNDARIES)) {
+    if (combined.includes(key)) {
+      const centerLat = b.center[0];
+      const centerLng = b.center[1];
+      const currentLat = p.location?.latitude;
+      const currentLng = p.location?.longitude;
+
+      // If missing or further than ~0.015 deg (~1.5km) away from locality center, snap to locality center with deterministic offset
+      if (
+        !currentLat ||
+        !currentLng ||
+        Math.abs(currentLat - centerLat) > 0.015 ||
+        Math.abs(currentLng - centerLng) > 0.015
+      ) {
+        const hash = (p.id || "1").split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+        const latOffset = ((hash % 7) - 3) * 0.0018; // ±0.0054 deg (~600m)
+        const lngOffset = (((hash * 13) % 7) - 3) * 0.0018;
+        return {
+          lat: centerLat + latOffset,
+          lng: centerLng + lngOffset,
+        };
+      }
+    }
+  }
+
+  // Fallback to existing coords or default Vijayawada
+  return {
+    lat: p.location?.latitude || 16.5062,
+    lng: p.location?.longitude || 80.6480,
+  };
+}
+
 function getDynamicLocalityBoundary(query: string, properties: any[]): { name: string; city?: string; bounds: [number, number][] } | null {
   if (!query.trim()) return null;
   const qLower = query.toLowerCase().trim();
 
-  // 1. Check if explicit preset boundary exists in LOCALITY_BOUNDARIES
-  for (const [key, boundary] of Object.entries(LOCALITY_BOUNDARIES)) {
+  // Find all properties matching the search query
+  const matchingProps = properties.filter((p) => checkPropertyMatchesQuery(p, query));
+  
+  // Resolve coordinates for matching properties
+  const propCoords = matchingProps.map((p) => resolvePropertyMapCoords(p));
+  const lats = propCoords.map((c) => c.lat);
+  const lngs = propCoords.map((c) => c.lng);
+
+  let presetBoundary: LocalityBoundary | null = null;
+  for (const [key, b] of Object.entries(LOCALITY_BOUNDARIES)) {
     if (qLower.includes(key) || key.includes(qLower)) {
-      return boundary;
+      presetBoundary = b;
+      break;
     }
   }
 
-  // 2. Otherwise, dynamically generate a boundary polygon around matching properties for ANY search query!
-  const matchingProps = properties.filter((p) => checkPropertyMatchesQuery(p, query));
-  if (matchingProps.length === 0) return null;
+  if (presetBoundary) {
+    // Include preset bounds AND all matching property coords
+    const allLats = [...presetBoundary.bounds.map((b) => b[0]), ...lats];
+    const allLngs = [...presetBoundary.bounds.map((b) => b[1]), ...lngs];
+    const minLat = Math.min(...allLats);
+    const maxLat = Math.max(...allLats);
+    const minLng = Math.min(...allLngs);
+    const maxLng = Math.max(...allLngs);
 
-  const lats = matchingProps.map((p) => p.location?.latitude).filter(Boolean);
-  const lngs = matchingProps.map((p) => p.location?.longitude).filter(Boolean);
+    const latPad = 0.005;
+    const lngPad = 0.005;
 
-  if (lats.length === 0 || lngs.length === 0) return null;
+    const top = maxLat + latPad;
+    const bottom = minLat - latPad;
+    const right = maxLng + lngPad;
+    const left = minLng - lngPad;
 
+    const midLat = (top + bottom) / 2;
+    const midLng = (left + right) / 2;
+
+    const bounds: [number, number][] = [
+      [top, midLng],
+      [top - (top - bottom) * 0.12, right - (right - left) * 0.12],
+      [midLat, right],
+      [bottom + (top - bottom) * 0.12, right - (right - left) * 0.12],
+      [bottom, midLng],
+      [bottom + (top - bottom) * 0.12, left + (right - left) * 0.12],
+      [midLat, left],
+      [top - (top - bottom) * 0.12, left + (right - left) * 0.12],
+    ];
+
+    return {
+      name: presetBoundary.name,
+      city: presetBoundary.city,
+      bounds,
+    };
+  }
+
+  if (matchingProps.length === 0 || lats.length === 0 || lngs.length === 0) return null;
+
+  // Dynamic boundary calculation for any search query
   const minLat = Math.min(...lats);
   const maxLat = Math.max(...lats);
   const minLng = Math.min(...lngs);
   const maxLng = Math.max(...lngs);
 
-  // Calculate organic surrounding padding
   const latPad = Math.max((maxLat - minLat) * 0.35, 0.008);
   const lngPad = Math.max((maxLng - minLng) * 0.35, 0.008);
 
@@ -529,7 +610,6 @@ function getDynamicLocalityBoundary(query: string, properties: any[]): { name: s
   const midLat = (top + bottom) / 2;
   const midLng = (left + right) / 2;
 
-  // Generate an 8-point organic neighborhood polygon for ANY location
   const bounds: [number, number][] = [
     [top, midLng],
     [top - latPad * 0.2, right - lngPad * 0.15],
@@ -562,7 +642,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const initialBhk = searchParams.get("bhk") || null;
   
   const properties = usePropertiesStore((state) => state.properties);
-  const mapProperties = useMemo(() => properties.filter((p) => p.showOnMap && p.status !== 'sold'), [properties]);
+  const mapProperties = useMemo(() => properties.filter((p) => p.showOnMap !== false && p.status !== 'sold'), [properties]);
 
   const [position, setPosition] = useState<L.LatLng | null>(
     mapProperties.length > 0 && mapProperties[0].location?.latitude && mapProperties[0].location?.longitude
@@ -1525,17 +1605,18 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               const isSelected = selectedPropertyId === property.id;
               const hasSearch = Boolean(mapSearchInput.trim());
               const pricePillIcon = getPricePillIcon(property.price, isSelected, hasSearch);
+              const coords = resolvePropertyMapCoords(property);
 
               return (
                 <Marker
                   key={property.id}
-                  position={[property.location.latitude, property.location.longitude]}
+                  position={[coords.lat, coords.lng]}
                   icon={pricePillIcon}
                   eventHandlers={{
                     click: () => {
                       setSelectedPropertyId(property.id);
                       if (mapRef.current) {
-                        mapRef.current.panTo([property.location.latitude, property.location.longitude]);
+                        mapRef.current.panTo([coords.lat, coords.lng]);
                       }
                     },
                   }}
