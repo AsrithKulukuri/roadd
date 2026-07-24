@@ -675,6 +675,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawShapeType, setDrawShapeType] = useState<"freehand" | "circle" | "box">("freehand");
   const [drawPolygonPoints, setDrawPolygonPoints] = useState<L.LatLng[]>([]);
+  const [showPropertiesTray, setShowPropertiesTray] = useState(true);
 
   // Realtor.com Map Controls State
   const [showMapOptionsMenu, setShowMapOptionsMenu] = useState(false);
@@ -1166,12 +1167,49 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
           </div>
 
           <div className="pt-3 border-t border-slate-800 space-y-2 text-xs text-slate-300">
-            <div className="flex items-center justify-between bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/50">
+            <div className="flex items-center justify-between bg-slate-800/60 px-3 py-2 rounded-xl border border-slate-700/50">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                <span>Active Properties</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="font-extrabold text-white">Found Listings</span>
               </div>
               <span className="font-extrabold text-amber-400 text-sm">{displayedProperties.length}</span>
+            </div>
+
+            {/* Sidebar Mini Property Listings List */}
+            <div className="max-h-48 overflow-y-auto space-y-1.5 no-scrollbar pr-1">
+              {displayedProperties.map((p) => {
+                const isSel = selectedPropertyId === p.id;
+                const coords = resolvePropertyMapCoords(p);
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => {
+                      setSelectedPropertyId(p.id);
+                      if (mapRef.current) {
+                        mapRef.current.panTo([coords.lat, coords.lng]);
+                      }
+                    }}
+                    className={cn(
+                      "p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 group",
+                      isSel
+                        ? "bg-amber-500/15 border-amber-500 text-white"
+                        : "bg-slate-800/80 border-slate-700/80 text-slate-300 hover:bg-slate-700 hover:border-slate-600"
+                    )}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-xs text-white truncate group-hover:text-amber-400">
+                        {p.title}
+                      </div>
+                      <div className="text-[10px] text-slate-400 truncate">
+                        📍 {p.location.locality} • {p.bedrooms ? `${p.bedrooms} BHK` : p.propertyType}
+                      </div>
+                    </div>
+                    <div className="text-amber-400 font-extrabold text-xs shrink-0">
+                      {formatPriceCompact(p.price)}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1509,19 +1547,111 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
             </div>
           )}
 
-          {/* Searched Locality Boundary Status Pill */}
-          {activeLocalityBoundary && !isDrawing && drawPolygonPoints.length < 3 && (
-            <div className="absolute top-12 left-3 right-3 sm:left-auto sm:right-3 sm:w-80 z-[530] bg-blue-950/90 backdrop-blur-md border border-blue-500/50 text-white px-3.5 py-2 rounded-2xl shadow-xl flex items-center justify-between animate-in fade-in">
-              <div className="flex items-center gap-2 text-xs font-bold truncate">
-                <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
-                <span className="truncate">📍 {activeLocalityBoundary.name}, {activeLocalityBoundary.city} Boundary Active</span>
-              </div>
+          {/* FLOATING BOTTOM FOUND PROPERTIES TRAY (REALTOR / ZILLOW / REDFIN SENIOR DEVELOPER STYLE) */}
+          {displayedProperties.length > 0 && !isDrawing && (
+            <div className="absolute bottom-3 left-2 right-2 sm:left-4 sm:right-4 z-[550] pointer-events-auto flex flex-col items-center gap-2">
+              {/* TRAY TOGGLE CAPSULE BUTTON */}
               <button
-                onClick={() => setMapSearchInput("")}
-                className="text-blue-200 hover:text-white text-xs font-bold shrink-0 ml-2 cursor-pointer"
+                type="button"
+                onClick={() => setShowPropertiesTray(!showPropertiesTray)}
+                className="px-4 py-2 rounded-full bg-slate-950/95 text-white border-2 border-amber-500 shadow-2xl backdrop-blur-xl font-extrabold text-xs flex items-center gap-2 transition-all active:scale-95 cursor-pointer hover:bg-slate-900"
               >
-                Clear
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>{displayedProperties.length} {displayedProperties.length === 1 ? "Property" : "Properties"} Found</span>
+                {drawPolygonPoints.length >= 3 && (
+                  <span className="bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded text-[10px] font-black">In Drawn Area</span>
+                )}
+                {showPropertiesTray ? <ChevronDown className="w-4 h-4 text-amber-400" /> : <ChevronUp className="w-4 h-4 text-amber-400" />}
               </button>
+
+              {/* HORIZONTAL SCROLLABLE PROPERTY CARDS TRAY */}
+              {showPropertiesTray && (
+                <div className="w-full max-w-5xl bg-slate-950/95 border border-slate-800 rounded-3xl p-3 shadow-2xl backdrop-blur-2xl animate-in slide-in-from-bottom duration-300">
+                  <div className="flex items-center justify-between px-2 pb-2 border-b border-slate-800/80 mb-2">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      <span>Found Properties Carousel ({displayedProperties.length})</span>
+                    </div>
+                    <button
+                      onClick={() => setShowPropertiesTray(false)}
+                      className="text-slate-400 hover:text-white p-1 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1 touch-pan-x">
+                    {displayedProperties.map((prop) => {
+                      const isSelected = selectedPropertyId === prop.id;
+                      const coords = resolvePropertyMapCoords(prop);
+                      const distStr = position ? calculateDistanceStr(position, prop.location.latitude, prop.location.longitude) : "";
+                      const mainImg = prop.images && prop.images[0] ? prop.images[0] : "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80";
+
+                      return (
+                        <div
+                          key={prop.id}
+                          onClick={() => {
+                            setSelectedPropertyId(prop.id);
+                            if (mapRef.current) {
+                              mapRef.current.panTo([coords.lat, coords.lng]);
+                            }
+                          }}
+                          className={cn(
+                            "w-72 sm:w-80 shrink-0 bg-slate-900 border rounded-2xl p-2.5 transition-all duration-200 cursor-pointer flex gap-3 group hover:border-amber-500",
+                            isSelected ? "border-amber-500 ring-2 ring-amber-500/30 bg-slate-850 shadow-lg" : "border-slate-800"
+                          )}
+                        >
+                          {/* Thumbnail Image */}
+                          <div className="relative w-24 sm:w-28 h-24 rounded-xl overflow-hidden shrink-0 bg-slate-800">
+                            <img
+                              src={mainImg}
+                              alt={prop.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                            <div className="absolute top-1 left-1 bg-slate-950/80 text-amber-400 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md backdrop-blur-xs">
+                              {prop.bedrooms ? `${prop.bedrooms} BHK` : prop.propertyType}
+                            </div>
+                          </div>
+
+                          {/* Card Details */}
+                          <div className="flex-1 min-w-0 flex flex-col justify-between">
+                            <div>
+                              <div className="text-amber-400 font-black text-sm tracking-tight leading-tight">
+                                {formatPriceCompact(prop.price)}
+                              </div>
+                              <h4 className="text-white font-bold text-xs truncate group-hover:text-amber-300 transition-colors mt-0.5">
+                                {prop.title}
+                              </h4>
+                              <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                                📍 {prop.location.locality}, {prop.location.city}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[10px]">
+                              {distStr ? (
+                                <span className="text-amber-400 font-extrabold flex items-center gap-1 truncate max-w-[110px]">
+                                  <Navigation className="w-3 h-3 text-amber-400 shrink-0" /> {distStr}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 font-medium capitalize">{prop.listingType}</span>
+                              )}
+
+                              <Link
+                                href={`/properties/${prop.id}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shrink-0 shadow-xs"
+                              >
+                                <span>View</span>
+                                <ArrowRight className="w-3 h-3" />
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
