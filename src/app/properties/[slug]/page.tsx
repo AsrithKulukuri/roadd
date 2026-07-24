@@ -31,14 +31,14 @@ async function getProperty(slug: string): Promise<Property | null> {
     const { data, error } = await supabase
       .from("properties")
       .select("*")
-      .eq("slug", slug)
+      .or(`slug.eq.${slug},id.eq.${slug}`)
       .single();
 
     if (!error && data) return data as Property;
   } catch {
   }
 
-  return mockProperties.find((p) => p.slug === slug) || null;
+  return mockProperties.find((p) => p.slug === slug || p.id === slug) || null;
 }
 
 export async function generateStaticParams() {

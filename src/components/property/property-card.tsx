@@ -143,7 +143,7 @@ export function PropertyCard({
         <div className="text-[11px] text-slate-500 mb-1 font-medium px-1">
           Brokered by {brokerName}
         </div>
-        <Link href={`/properties/${property.slug}`} onClick={handleCardClick}>
+        <Link href={`/properties/${property.slug || property.id}`} onClick={handleCardClick}>
           <div
             className={cn(
               "group flex flex-col sm:flex-row rounded-2xl border border-slate-200 bg-white overflow-hidden hover:shadow-xl transition-all duration-300",
@@ -245,7 +245,7 @@ export function PropertyCard({
         Brokered by {brokerName}
       </div>
 
-      <Link href={`/properties/${property.slug}`} onClick={handleCardClick} className="block group">
+      <Link href={`/properties/${property.slug || property.id}`} onClick={handleCardClick} className="block group">
         <div
           className={cn(
             "rounded-2xl border border-slate-200/90 bg-white overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 relative flex flex-col justify-between",

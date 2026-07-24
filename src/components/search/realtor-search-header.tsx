@@ -315,22 +315,22 @@ export function RealtorSearchHeader({
         </div>
       </header>
 
-      {/* PROMINENT MOBILE FLOATING BOTTOM CENTER MAP TOGGLE BUTTON */}
-      <div className="fixed bottom-9 left-1/2 -translate-x-1/2 z-[400] md:hidden pointer-events-auto">
+      {/* PROMINENT MOBILE FLOATING BOTTOM RIGHT MAP TOGGLE BUTTON */}
+      <div className="fixed bottom-3 right-3 z-[600] md:hidden pointer-events-auto">
         <button
           type="button"
           onClick={() => onViewModeChange(viewMode === "grid" ? "map" : "grid")}
-          className="bg-slate-950 text-white border-2 border-amber-500 shadow-2xl px-6 py-3 rounded-full font-black text-sm flex items-center gap-2.5 active:scale-95 transition-all cursor-pointer"
+          className="bg-slate-950 text-white border-2 border-amber-500 shadow-2xl px-4 py-2.5 rounded-full font-black text-xs flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
         >
           {viewMode === "grid" ? (
             <>
-              <Map className="w-4 h-4 text-amber-400 animate-pulse fill-amber-400/30" />
-              <span className="tracking-wide text-amber-400">Map View 🗺️</span>
+              <Map className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
+              <span className="text-amber-400">Map View 🗺️</span>
             </>
           ) : (
             <>
-              <List className="w-4 h-4 text-amber-400" />
-              <span className="tracking-wide">List View 📋</span>
+              <List className="w-3.5 h-3.5 text-amber-400" />
+              <span>List View 📋</span>
             </>
           )}
         </button>

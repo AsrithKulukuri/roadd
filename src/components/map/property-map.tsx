@@ -1574,9 +1574,11 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                     </div>
                     <button
                       onClick={() => setShowPropertiesTray(false)}
-                      className="text-slate-400 hover:text-white p-1 cursor-pointer"
+                      title="Close Carousel"
+                      className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-red-600 hover:text-white text-slate-300 font-bold text-xs flex items-center gap-1 transition-all cursor-pointer border border-slate-700"
                     >
-                      <X className="w-4 h-4" />
+                      <span>Close</span>
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
@@ -1638,7 +1640,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                               )}
 
                               <Link
-                                href={`/properties/${prop.id}`}
+                                href={`/properties/${prop.slug || prop.id}`}
                                 onClick={(e) => e.stopPropagation()}
                                 className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shrink-0 shadow-xs"
                               >
@@ -1857,7 +1859,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                       {/* 1-Tap Action Row: View Property & WhatsApp Inquiry */}
                       <div className="grid grid-cols-2 gap-1.5">
                         <Link
-                          href={`/properties/${property.id}`}
+                          href={`/properties/${property.slug || property.id}`}
                           className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-600 py-1.5 px-2 rounded-lg justify-center shadow-xs transition-colors"
                         >
                           View Property <ArrowRight className="w-3 h-3" />
@@ -1877,6 +1879,79 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               );
             })}
           </MapContainer>
+
+          {/* DEDICATED SELECTED PROPERTY PREVIEW CARD WITH PROMINENT CLOSE (X) BUTTON */}
+          {selectedProperty && !isDrawing && (
+            <div className="absolute top-16 right-2 sm:right-6 z-[650] w-80 sm:w-96 bg-slate-950/95 border-2 border-amber-500 rounded-3xl p-4 shadow-2xl backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-200 text-white pointer-events-auto">
+              {/* Header with Title & Close (X) Button */}
+              <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-2 mb-2.5">
+                <div className="min-w-0">
+                  <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider block">Selected Property</span>
+                  <h3 className="font-heading text-sm sm:text-base font-extrabold text-white truncate">{selectedProperty.title}</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPropertyId(null)}
+                  title="Close Property Details"
+                  className="px-2 py-1 rounded-xl bg-slate-800 hover:bg-red-600 hover:text-white text-slate-300 transition-colors shrink-0 cursor-pointer border border-slate-700 font-bold text-xs flex items-center gap-1"
+                >
+                  <span>Close</span>
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Cover Image & Badges */}
+              <div className="relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden bg-slate-900 mb-2.5">
+                <img
+                  src={
+                    typeof (selectedProperty.images && selectedProperty.images[0]) === "string"
+                      ? (selectedProperty.images[0] as string)
+                      : (selectedProperty.images?.[0] as any)?.url || selectedProperty.coverImage || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80"
+                  }
+                  alt={selectedProperty.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-2 left-2 bg-slate-950/80 text-amber-400 text-xs font-black px-2 py-0.5 rounded-lg backdrop-blur-xs">
+                  {formatPriceCompact(selectedProperty.price)}
+                </div>
+                <div className="absolute top-2 right-2 bg-slate-950/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg backdrop-blur-xs">
+                  {selectedProperty.bedrooms ? `${selectedProperty.bedrooms} BHK` : selectedProperty.propertyType}
+                </div>
+              </div>
+
+              {/* Location & Distance */}
+              <div className="space-y-1 text-xs mb-3">
+                <div className="text-slate-300 font-medium truncate">
+                  📍 {selectedProperty.location.locality}, {selectedProperty.location.city}
+                </div>
+                {position && (
+                  <div className="text-amber-400 font-extrabold flex items-center gap-1">
+                    <Navigation className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                    <span>{calculateDistanceStr(position, selectedProperty.location.latitude, selectedProperty.location.longitude)} from your location</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons: View Details & Close */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+                <Link
+                  href={`/properties/${selectedProperty.slug || selectedProperty.id}`}
+                  className="py-2.5 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl flex items-center justify-center gap-1 shadow-md transition-all cursor-pointer"
+                >
+                  <span>View Details</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPropertyId(null)}
+                  className="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-1 border border-slate-700 transition-all cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5 text-red-400" />
+                  <span>Dismiss</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
