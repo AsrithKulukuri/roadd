@@ -46,13 +46,13 @@ export default function ContentAdminPage() {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Content Management</h1>
-          <p className="text-text-secondary mt-1">Manage trending locations shown on the home page.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-text-primary">Content Management</h1>
+          <p className="text-text-secondary text-xs sm:text-sm mt-1">Manage trending locations shown on the home page.</p>
         </div>
-        <Button onClick={() => { setIsAdding(true); setEditingId(null); setFormData({ properties_count: 0 }); }}>
+        <Button onClick={() => { setIsAdding(true); setEditingId(null); setFormData({ properties_count: 0 }); }} className="self-start sm:self-auto">
           <Plus className="w-4 h-4 mr-2" />
           Add Location
         </Button>

@@ -12,10 +12,10 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold font-heading text-text-primary">Settings</h1>
-        <p className="text-text-secondary mt-1">Manage global platform configurations.</p>
+    <div className="p-4 sm:p-6 lg:p-10 max-w-4xl mx-auto">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold font-heading text-text-primary">Settings</h1>
+        <p className="text-text-secondary text-xs sm:text-sm mt-1">Manage global platform configurations.</p>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">

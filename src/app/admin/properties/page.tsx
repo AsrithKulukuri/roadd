@@ -31,7 +31,91 @@ export default function AdminPropertiesPage() {
       </div>
 
       <div className="bg-bg-card border border-border-default rounded-2xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+        
+        {/* Mobile View: Property Cards */}
+        <div className="block md:hidden divide-y divide-border-subtle">
+          {properties.map((property) => (
+            <div key={property.id} className="p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl bg-border-default overflow-hidden shrink-0">
+                  <img src={property.images[0]?.url} alt="" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-text-primary text-sm truncate">
+                    {property.title}
+                  </h4>
+                  <div className="text-xs text-amber-primary font-black mt-0.5">
+                    {formatPriceCompact(property.price)}
+                  </div>
+                  <div className="text-xs text-text-tertiary truncate">
+                    📍 {property.location.locality}, {property.location.city}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Badges Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border-subtle text-xs">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button 
+                    onClick={() => toggleShowOnMap(property.id)}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
+                      property.showOnMap 
+                        ? 'border-amber-primary/50 text-amber-primary bg-amber-primary/10' 
+                        : 'border-border-default text-text-tertiary hover:text-text-primary'
+                    }`}
+                  >
+                    <MapPin className="w-3 h-3" />
+                    {property.showOnMap ? 'On Map' : 'Hidden'}
+                  </button>
+
+                  <button 
+                    onClick={() => toggleFeatured(property.id)}
+                    className={`p-1.5 rounded-full ${
+                      property.isFeatured ? 'text-amber-primary bg-amber-primary/10' : 'text-text-tertiary'
+                    }`}
+                  >
+                    <Star className={`w-4 h-4 ${property.isFeatured ? 'fill-amber-primary' : ''}`} />
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      const success = toggleRecommended(property.id);
+                      if (!success && !property.isRecommended) {
+                        alert("You can only have up to 10 recommended properties at a time.");
+                      }
+                    }}
+                    className={`p-1.5 rounded-full ${
+                      property.isRecommended ? 'text-blue-500 bg-blue-500/10' : 'text-text-tertiary'
+                    }`}
+                  >
+                    <ThumbsUp className={`w-4 h-4 ${property.isRecommended ? 'fill-blue-500' : ''}`} />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleSoldOut(property.id)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                      property.status === 'sold' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'
+                    }`}
+                  >
+                    {property.status === 'sold' ? 'Sold Out' : 'Active'}
+                  </button>
+
+                  <button
+                    onClick={() => deleteProperty(property.id)}
+                    className="p-1 text-red-500 hover:bg-red-500/10 rounded-lg"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop View: Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-sm text-text-secondary">
             <thead className="bg-bg-primary/50 text-text-primary border-b border-border-default uppercase text-xs font-semibold">
               <tr>

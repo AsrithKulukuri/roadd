@@ -310,49 +310,49 @@ export default function AdminDashboardPage() {
 
       {/* QUICK STATS CARDS GRID */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-2">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Total Listings</span>
-            <Building2 className="w-5 h-5 text-blue-500" />
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Total Listings</span>
+            <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 shrink-0" />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading">
+          <div className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading truncate">
             {totalProperties}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-2">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Active Homes</span>
-            <Eye className="w-5 h-5 text-emerald-500" />
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Active Homes</span>
+            <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0" />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading">
+          <div className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading truncate">
             {activeProperties}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-2">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Featured Homes</span>
-            <Star className="w-5 h-5 text-amber-500 fill-amber-500/20" />
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Featured Homes</span>
+            <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 fill-amber-500/20 shrink-0" />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading">
+          <div className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading truncate">
             {featuredProperties}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-2">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Portfolio Value</span>
-            <Sparkles className="w-5 h-5 text-amber-400" />
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Portfolio Value</span>
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 shrink-0" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-amber-500 font-heading truncate">
+          <div className="text-lg sm:text-2xl font-black text-amber-500 font-heading truncate">
             {formatPriceCompact(totalValue)}
           </div>
         </div>
       </div>
 
       {/* MOBILE-FRIENDLY ADMIN POWER TABS CAPSULE NAVIGATION */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 bg-slate-900/90 p-2 rounded-2xl border border-slate-800 shadow-md">
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 px-1 touch-pan-x bg-slate-900/90 p-2 rounded-2xl border border-slate-800 shadow-md">
         <button
           type="button"
           onClick={() => setActiveTab("overview")}

@@ -72,6 +72,7 @@ export default function AdminLayout({
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={() => setIsMobileOpen(false)}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium",
                     isActive
@@ -89,6 +90,7 @@ export default function AdminLayout({
           <div className="p-4 border-t border-border-default shrink-0">
             <Link
               href="/"
+              onClick={() => setIsMobileOpen(false)}
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all font-medium"
             >
               <LogOut className="w-5 h-5" />
@@ -101,7 +103,7 @@ export default function AdminLayout({
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">
         {/* Top Header */}
-        <header className="h-16 bg-bg-card border-b border-border-default shrink-0 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-30">
+        <header className="h-16 bg-bg-card border-b border-border-default shrink-0 flex items-center justify-between px-4 sm:px-6 lg:px-10 sticky top-0 z-30">
           <div className="flex items-center gap-4">
             <button 
               className="lg:hidden text-text-secondary hover:text-text-primary"
