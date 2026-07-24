@@ -176,14 +176,14 @@ export function RealtorFilterBar({
           className={cn(
             "h-9 px-3.5 rounded-full text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-xs active:scale-95",
             activeFilterCount > 0
-              ? "bg-slate-950 text-white border-slate-950 dark:bg-amber-500 dark:text-slate-950 dark:border-amber-500"
-              : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-800 hover:border-slate-400"
+              ? "bg-slate-900 text-white border-slate-900 dark:bg-amber-500 dark:text-slate-950 dark:border-amber-500"
+              : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-800 hover:border-slate-900 dark:hover:border-slate-600"
           )}
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
           <span>Filters</span>
           {activeFilterCount > 0 && (
-            <span className="w-4 h-4 bg-amber-500 text-slate-950 dark:bg-slate-950 dark:text-amber-400 rounded-full text-[10px] font-black flex items-center justify-center ml-0.5">
+            <span className="w-4 h-4 bg-white text-slate-900 dark:bg-slate-950 dark:text-amber-400 rounded-full text-[10px] font-black flex items-center justify-center ml-0.5 shadow-xs">
               {activeFilterCount}
             </span>
           )}
@@ -198,8 +198,8 @@ export function RealtorFilterBar({
           className={cn(
             "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
             filters.propertyType.length > 0 || openDropdown === "propertyType"
-              ? "bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border-amber-400 dark:border-amber-500/40 font-bold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
+              ? "bg-slate-900 text-white border-slate-900 dark:bg-amber-500 dark:text-slate-950 font-bold shadow-xs"
+              : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-900 dark:hover:border-slate-600"
           )}
         >
           <span>{getPropertyTypeLabel()}</span>
@@ -218,11 +218,11 @@ export function RealtorFilterBar({
           className={cn(
             "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
             filters.budget[0] > 0 || filters.budget[1] < 100000000 || openDropdown === "price"
-              ? "bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border-amber-400 dark:border-amber-500/40 font-bold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
+              ? "bg-slate-900 text-white border-slate-900 dark:bg-amber-500 dark:text-slate-950 font-bold shadow-xs"
+              : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-900 dark:hover:border-slate-600"
           )}
         >
-          <IndianRupee className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+          <IndianRupee className="w-3.5 h-3.5 shrink-0" />
           <span>{getPriceLabel()}</span>
           <ChevronDown
             className={cn(
@@ -241,8 +241,8 @@ export function RealtorFilterBar({
           className={cn(
             "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
             filters.postedBy.length > 0 || openDropdown === "postedBy"
-              ? "bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border-amber-400 dark:border-amber-500/40 font-bold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
+              ? "bg-slate-900 text-white border-slate-900 dark:bg-amber-500 dark:text-slate-950 font-bold shadow-xs"
+              : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-900 dark:hover:border-slate-600"
           )}
         >
           <span>{getPostedByLabel()}</span>
@@ -261,8 +261,8 @@ export function RealtorFilterBar({
           className={cn(
             "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
             filters.availability.includes("ready")
-              ? "bg-emerald-500 text-slate-950 border-emerald-500 font-extrabold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
+              ? "bg-slate-900 text-white border-slate-900 dark:bg-amber-500 dark:text-slate-950 font-bold shadow-xs"
+              : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-900 dark:hover:border-slate-600"
           )}
         >
           <Clock className="w-3.5 h-3.5" />
@@ -279,8 +279,8 @@ export function RealtorFilterBar({
           className={cn(
             "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
             filters.gatedCommunity
-              ? "bg-teal-600 text-white border-teal-600 font-extrabold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
+              ? "bg-slate-900 text-white border-slate-900 dark:bg-amber-500 dark:text-slate-950 font-bold shadow-xs"
+              : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-900 dark:hover:border-slate-600"
           )}
         >
           <Building2 className="w-3.5 h-3.5" />

@@ -281,7 +281,7 @@ export function RealtorSearchHeader({
             <button
               type="button"
               onClick={() => onViewModeChange(viewMode === "grid" ? "map" : "grid")}
-              className="h-10 sm:h-11 px-3 sm:px-4 rounded-full bg-slate-950 dark:bg-slate-900 text-white border-2 border-amber-500/80 hover:border-amber-400 shadow-md font-black text-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
+              className="h-10 sm:h-11 px-3 sm:px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-900 border border-slate-900 dark:border-amber-500/80 shadow-sm font-extrabold text-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
             >
               {viewMode === "grid" ? (
                 <>
@@ -290,7 +290,7 @@ export function RealtorSearchHeader({
                 </>
               ) : (
                 <>
-                  <List className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+                  <List className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-300 dark:text-amber-400 shrink-0" />
                   <span>List View 📋</span>
                 </>
               )}
