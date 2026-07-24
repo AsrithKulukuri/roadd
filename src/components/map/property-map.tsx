@@ -1901,23 +1901,28 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               </div>
 
               {/* Cover Image & Badges */}
-              <div className="relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden bg-slate-900 mb-2.5">
-                <img
-                  src={
-                    typeof (selectedProperty.images && selectedProperty.images[0]) === "string"
-                      ? (selectedProperty.images[0] as string)
-                      : (selectedProperty.images?.[0] as any)?.url || selectedProperty.coverImage || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80"
-                  }
-                  alt={selectedProperty.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-2 left-2 bg-slate-950/80 text-amber-400 text-xs font-black px-2 py-0.5 rounded-lg backdrop-blur-xs">
-                  {formatPriceCompact(selectedProperty.price)}
-                </div>
-                <div className="absolute top-2 right-2 bg-slate-950/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg backdrop-blur-xs">
-                  {selectedProperty.bedrooms ? `${selectedProperty.bedrooms} BHK` : selectedProperty.propertyType}
-                </div>
-              </div>
+              {(() => {
+                const selFirstImg = selectedProperty.images && selectedProperty.images[0];
+                const selCoverImg: string = typeof selFirstImg === "string"
+                  ? selFirstImg
+                  : (selFirstImg as any)?.url || (selectedProperty as any).coverImage || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80";
+
+                return (
+                  <div className="relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden bg-slate-900 mb-2.5">
+                    <img
+                      src={selCoverImg}
+                      alt={selectedProperty.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 left-2 bg-slate-950/80 text-amber-400 text-xs font-black px-2 py-0.5 rounded-lg backdrop-blur-xs">
+                      {formatPriceCompact(selectedProperty.price)}
+                    </div>
+                    <div className="absolute top-2 right-2 bg-slate-950/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg backdrop-blur-xs">
+                      {selectedProperty.bedrooms ? `${selectedProperty.bedrooms} BHK` : selectedProperty.propertyType}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Location & Distance */}
               <div className="space-y-1 text-xs mb-3">
