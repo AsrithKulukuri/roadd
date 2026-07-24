@@ -33,9 +33,9 @@ export function RealtorFilterBar({
   onOpenAllFilters,
   totalResults,
 }: RealtorFilterBarProps) {
-  // Track open dropdown popover/sheet: "price" | "bhk" | "propertyType" | "possession" | "postedBy" | null
+  // Track open dropdown popover/sheet: "propertyType" | "price" | "postedBy" | null
   const [openDropdown, setOpenDropdown] = useState<
-    "price" | "bhk" | "propertyType" | "possession" | "postedBy" | null
+    "propertyType" | "price" | "postedBy" | null
   >(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -107,14 +107,6 @@ export function RealtorFilterBar({
     { label: "Above ₹2 Crores", min: 20000000, max: 100000000 },
   ];
 
-  // BHK options
-  const bhkOptions = [
-    { label: "1 BHK", value: "1" },
-    { label: "2 BHK", value: "2" },
-    { label: "3 BHK", value: "3" },
-    { label: "4+ BHK", value: "4+" },
-  ];
-
   // Property Type options
   const propertyTypes = [
     { label: "Apartment / Flat", value: "apartment", icon: Building2 },
@@ -124,12 +116,6 @@ export function RealtorFilterBar({
     { label: "PG / Co-living", value: "pg", icon: Home },
     { label: "Farmhouse", value: "farmhouse", icon: Trees },
     { label: "Agricultural Land", value: "agricultural-lands", icon: Compass },
-  ];
-
-  // Possession options
-  const possessionOptions = [
-    { label: "Ready to Occupy", value: "ready", icon: Clock },
-    { label: "Under Construction", value: "under-construction", icon: Building2 },
   ];
 
   // Posted By options
@@ -151,12 +137,6 @@ export function RealtorFilterBar({
     return "Price";
   };
 
-  // BHK summary label
-  const getBhkLabel = () => {
-    if (filters.bhk.length === 0) return "BHK / Rooms";
-    return `${filters.bhk.join(", ")} BHK`;
-  };
-
   // Property Type summary label
   const getPropertyTypeLabel = () => {
     if (filters.propertyType.length === 0) return "Home type";
@@ -165,14 +145,6 @@ export function RealtorFilterBar({
       return match ? match.label : filters.propertyType[0];
     }
     return `${filters.propertyType.length} Types`;
-  };
-
-  // Possession summary label
-  const getPossessionLabel = () => {
-    if (filters.availability.length === 0) return "Possession";
-    if (filters.availability.includes("ready")) return "Ready to Move";
-    if (filters.availability.includes("under-construction")) return "Under Construction";
-    return "Possession";
   };
 
   // Posted By summary label
@@ -217,48 +189,7 @@ export function RealtorFilterBar({
           )}
         </button>
 
-        {/* 2. PRICE FILTER BUTTON */}
-        <button
-          type="button"
-          onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
-          className={cn(
-            "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
-            filters.budget[0] > 0 || filters.budget[1] < 100000000 || openDropdown === "price"
-              ? "bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border-amber-400 dark:border-amber-500/40 font-bold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
-          )}
-        >
-          <IndianRupee className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-          <span>{getPriceLabel()}</span>
-          <ChevronDown
-            className={cn(
-              "w-3.5 h-3.5 transition-transform duration-200",
-              openDropdown === "price" && "rotate-180"
-            )}
-          />
-        </button>
-
-        {/* 3. BHK FILTER BUTTON */}
-        <button
-          type="button"
-          onClick={() => setOpenDropdown(openDropdown === "bhk" ? null : "bhk")}
-          className={cn(
-            "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
-            filters.bhk.length > 0 || openDropdown === "bhk"
-              ? "bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border-amber-400 dark:border-amber-500/40 font-bold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
-          )}
-        >
-          <span>{getBhkLabel()}</span>
-          <ChevronDown
-            className={cn(
-              "w-3.5 h-3.5 transition-transform duration-200",
-              openDropdown === "bhk" && "rotate-180"
-            )}
-          />
-        </button>
-
-        {/* 4. PROPERTY TYPE BUTTON */}
+        {/* 2. HOME TYPE BUTTON */}
         <button
           type="button"
           onClick={() =>
@@ -280,29 +211,28 @@ export function RealtorFilterBar({
           />
         </button>
 
-        {/* 5. POSSESSION / AVAILABILITY BUTTON */}
+        {/* 3. PRICE FILTER BUTTON */}
         <button
           type="button"
-          onClick={() =>
-            setOpenDropdown(openDropdown === "possession" ? null : "possession")
-          }
+          onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
           className={cn(
             "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
-            filters.availability.length > 0 || openDropdown === "possession"
+            filters.budget[0] > 0 || filters.budget[1] < 100000000 || openDropdown === "price"
               ? "bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border-amber-400 dark:border-amber-500/40 font-bold shadow-xs"
               : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
           )}
         >
-          <span>{getPossessionLabel()}</span>
+          <IndianRupee className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+          <span>{getPriceLabel()}</span>
           <ChevronDown
             className={cn(
               "w-3.5 h-3.5 transition-transform duration-200",
-              openDropdown === "possession" && "rotate-180"
+              openDropdown === "price" && "rotate-180"
             )}
           />
         </button>
 
-        {/* 6. POSTED BY BUTTON */}
+        {/* 4. POSTED BY BUTTON */}
         <button
           type="button"
           onClick={() =>
@@ -324,12 +254,7 @@ export function RealtorFilterBar({
           />
         </button>
 
-        {/* DIVIDER */}
-        <div className="h-5 w-[1px] bg-slate-300 dark:bg-slate-800 shrink-0 mx-0.5" />
-
-        {/* 7. QUICK TOGGLE PILLS */}
-
-        {/* READY TO OCCUPY TOGGLE */}
+        {/* 5. READY TO OCCUPY TOGGLE */}
         <button
           type="button"
           onClick={() => toggleArrayItem("availability", "ready")}
@@ -345,59 +270,7 @@ export function RealtorFilterBar({
           {filters.availability.includes("ready") && <Check className="w-3.5 h-3.5 stroke-[3]" />}
         </button>
 
-        {/* RERA APPROVED TOGGLE */}
-        <button
-          type="button"
-          onClick={() =>
-            onFilterChange({ ...filters, reraApproved: !filters.reraApproved })
-          }
-          className={cn(
-            "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
-            filters.reraApproved
-              ? "bg-blue-600 text-white border-blue-600 font-extrabold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
-          )}
-        >
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>RERA Approved</span>
-          {filters.reraApproved && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-        </button>
-
-        {/* VASTU COMPLIANT TOGGLE */}
-        <button
-          type="button"
-          onClick={() =>
-            onFilterChange({ ...filters, vastuCompliant: !filters.vastuCompliant })
-          }
-          className={cn(
-            "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
-            filters.vastuCompliant
-              ? "bg-amber-500 text-slate-950 border-amber-500 font-extrabold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
-          )}
-        >
-          <Compass className="w-3.5 h-3.5" />
-          <span>Vastu Compliant</span>
-          {filters.vastuCompliant && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-        </button>
-
-        {/* OWNER DIRECT TOGGLE */}
-        <button
-          type="button"
-          onClick={() => toggleArrayItem("postedBy", "owner")}
-          className={cn(
-            "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
-            filters.postedBy.includes("owner")
-              ? "bg-purple-600 text-white border-purple-600 font-extrabold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-400"
-          )}
-        >
-          <UserCheck className="w-3.5 h-3.5" />
-          <span>Owner Direct</span>
-          {filters.postedBy.includes("owner") && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-        </button>
-
-        {/* GATED COMMUNITY TOGGLE */}
+        {/* 6. GATED COMMUNITY TOGGLE */}
         <button
           type="button"
           onClick={() =>
@@ -432,14 +305,10 @@ export function RealtorFilterBar({
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                   <h3 className="text-base font-extrabold text-slate-900 dark:text-white capitalize">
-                    {openDropdown === "bhk"
-                      ? "Select BHK Configuration"
-                      : openDropdown === "price"
+                    {openDropdown === "price"
                       ? "Select Budget Range (INR)"
                       : openDropdown === "propertyType"
-                      ? "Property Type"
-                      : openDropdown === "possession"
-                      ? "Possession Status"
+                      ? "Home Type"
                       : "Posted By"}
                   </h3>
                 </div>
@@ -507,50 +376,7 @@ export function RealtorFilterBar({
                 </div>
               )}
 
-              {/* 2. BHK CONTENT */}
-              {openDropdown === "bhk" && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    {bhkOptions.map((opt) => {
-                      const isSelected = filters.bhk.includes(opt.value);
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => toggleArrayItem("bhk", opt.value)}
-                          className={cn(
-                            "px-3 py-3 rounded-xl text-xs font-bold border flex items-center justify-between transition-all cursor-pointer",
-                            isSelected
-                              ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
-                              : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100"
-                          )}
-                        >
-                          <span>{opt.label}</span>
-                          {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => onFilterChange({ ...filters, bhk: [] })}
-                      className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
-                    >
-                      <RotateCcw className="w-3 h-3" /> Clear BHK
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOpenDropdown(null)}
-                      className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
-                    >
-                      Apply ({filters.bhk.length})
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* 3. PROPERTY TYPE CONTENT */}
+              {/* 2. PROPERTY TYPE CONTENT */}
               {openDropdown === "propertyType" && (
                 <div className="space-y-3">
                   <div className="space-y-1">
@@ -593,50 +419,7 @@ export function RealtorFilterBar({
                 </div>
               )}
 
-              {/* 4. POSSESSION CONTENT */}
-              {openDropdown === "possession" && (
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    {possessionOptions.map((opt) => {
-                      const isSelected = filters.availability.includes(opt.value);
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => toggleArrayItem("availability", opt.value)}
-                          className={cn(
-                            "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
-                            isSelected
-                              ? "bg-amber-500 text-slate-950 font-bold"
-                              : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                          )}
-                        >
-                          <span>{opt.label}</span>
-                          {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => onFilterChange({ ...filters, availability: [] })}
-                      className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
-                    >
-                      <RotateCcw className="w-3 h-3" /> Reset
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOpenDropdown(null)}
-                      className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* 5. POSTED BY CONTENT */}
+              {/* 3. POSTED BY CONTENT */}
               {openDropdown === "postedBy" && (
                 <div className="space-y-3">
                   <div className="space-y-1">
@@ -750,54 +533,7 @@ export function RealtorFilterBar({
             </div>
           )}
 
-          {/* 2. BHK DROPDOWN CONTENT */}
-          {openDropdown === "bhk" && (
-            <div className="space-y-3">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
-                Select Bedrooms / BHK
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {bhkOptions.map((opt) => {
-                  const isSelected = filters.bhk.includes(opt.value);
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => toggleArrayItem("bhk", opt.value)}
-                      className={cn(
-                        "px-3 py-3 rounded-xl text-xs font-bold border flex items-center justify-between transition-all cursor-pointer",
-                        isSelected
-                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
-                          : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100"
-                      )}
-                    >
-                      <span>{opt.label}</span>
-                      {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => onFilterChange({ ...filters, bhk: [] })}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
-                >
-                  <RotateCcw className="w-3 h-3" /> Clear BHK
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOpenDropdown(null)}
-                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
-                >
-                  Apply ({filters.bhk.length})
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 3. PROPERTY TYPE DROPDOWN CONTENT */}
+          {/* 2. PROPERTY TYPE DROPDOWN CONTENT */}
           {openDropdown === "propertyType" && (
             <div className="space-y-3">
               <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
@@ -844,54 +580,7 @@ export function RealtorFilterBar({
             </div>
           )}
 
-          {/* 4. POSSESSION DROPDOWN CONTENT */}
-          {openDropdown === "possession" && (
-            <div className="space-y-3">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
-                Possession Status
-              </div>
-              <div className="space-y-1">
-                {possessionOptions.map((opt) => {
-                  const isSelected = filters.availability.includes(opt.value);
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => toggleArrayItem("availability", opt.value)}
-                      className={cn(
-                        "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
-                        isSelected
-                          ? "bg-amber-500 text-slate-950 font-bold"
-                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                      )}
-                    >
-                      <span>{opt.label}</span>
-                      {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => onFilterChange({ ...filters, availability: [] })}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
-                >
-                  <RotateCcw className="w-3 h-3" /> Reset
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOpenDropdown(null)}
-                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
-                >
-                  Apply
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 5. POSTED BY DROPDOWN CONTENT */}
+          {/* 3. POSTED BY DROPDOWN CONTENT */}
           {openDropdown === "postedBy" && (
             <div className="space-y-3">
               <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
