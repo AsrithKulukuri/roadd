@@ -505,3 +505,73 @@ a, button {
 .road-popup .leaflet-popup-close-button:hover {
   color: var(--color-amber-primary);
 }
+
+/* ========================================================================
+   Production Fluid Typography with clamp()
+   ======================================================================== */
+
+.fluid-hero {
+  font-size: clamp(2rem, 5vw + 1rem, 4.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.fluid-h1 {
+  font-size: clamp(1.75rem, 3.5vw + 0.5rem, 3rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.fluid-h2 {
+  font-size: clamp(1.35rem, 2.5vw + 0.4rem, 2.25rem);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+.fluid-h3 {
+  font-size: clamp(1.15rem, 1.8vw + 0.3rem, 1.75rem);
+  line-height: 1.3;
+}
+
+.fluid-body {
+  font-size: clamp(0.875rem, 0.5vw + 0.75rem, 1.125rem);
+  line-height: 1.6;
+}
+
+/* Minimum Touch Targets (44px x 44px for WCAG AA compliance) */
+button,
+a[role="button"],
+input[type="button"],
+input[type="submit"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Ultra-wide Displays (1920px - 2560px+) */
+@media (min-width: 1920px) {
+  .container-road {
+    max-width: 1800px;
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+@media (min-width: 2560px) {
+  .container-road {
+    max-width: 2300px;
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
