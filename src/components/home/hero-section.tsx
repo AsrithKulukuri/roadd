@@ -253,75 +253,75 @@ export function HeroSection() {
           </button>
         </form>
 
-        {/* Senior UI/UX Location & Quick Search Carousel Card (Optimized for Desktop & Mobile) */}
-        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-5 bg-slate-950/80 backdrop-blur-md border border-white/15 rounded-2xl p-3.5 sm:p-4 text-left shadow-2xl space-y-3">
+        {/* Ultra-Modern Glassmorphic Location & Quick Search Carousel Card */}
+        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-6 bg-slate-950/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-4 sm:p-5 text-left shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-4">
           {/* Header Row & City Tab Switcher */}
-          <div className="flex items-center justify-between gap-2 flex-wrap border-b border-white/10 pb-2.5">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
-              <span className="text-[11px] font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1 mr-1 flex-shrink-0">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> EXPLORE AP:
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar scrollbar-none">
+              <span className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5 mr-1 shrink-0">
+                <Sparkles className="w-4 h-4 text-amber-400" /> EXPLORE AP:
               </span>
 
               {/* Trending Locations Tab */}
               <button
                 onClick={() => setLocationTab("trending")}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-extrabold transition-all duration-200 flex items-center gap-1.5 flex-shrink-0 cursor-pointer",
+                  "px-4 py-2 rounded-full text-xs font-extrabold transition-all duration-300 flex items-center gap-1.5 shrink-0 cursor-pointer",
                   locationTab === "trending"
-                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md scale-105"
-                    : "bg-white/10 text-slate-200 hover:bg-white/20 border border-white/10"
+                    ? "bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/25 scale-105 font-black"
+                    : "bg-white/5 hover:bg-white/15 text-slate-300 border border-white/5"
                 )}
               >
-                <Flame className="w-3.5 h-3.5 text-orange-950" /> Trending Locations
+                <Flame className={cn("w-3.5 h-3.5", locationTab === "trending" ? "text-slate-950" : "text-amber-400")} /> Trending Locations
               </button>
 
               <button
                 onClick={() => setLocationTab("vijayawada")}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 flex-shrink-0 cursor-pointer",
+                  "px-4 py-2 rounded-full text-xs font-bold transition-all duration-300 flex items-center gap-1.5 shrink-0 cursor-pointer",
                   locationTab === "vijayawada"
-                    ? "bg-amber-500 text-slate-950 font-bold shadow-md"
-                    : "bg-white/10 text-slate-200 hover:bg-white/20 border border-white/10"
+                    ? "bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/25 scale-105 font-black"
+                    : "bg-white/5 hover:bg-white/15 text-slate-300 border border-white/5"
                 )}
               >
-                <MapPin className="w-3.5 h-3.5" /> Vijayawada Hubs
+                <MapPin className={cn("w-3.5 h-3.5", locationTab === "vijayawada" ? "text-slate-950" : "text-amber-400")} /> Vijayawada Hubs
               </button>
               <button
                 onClick={() => setLocationTab("guntur")}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 flex-shrink-0 cursor-pointer",
+                  "px-4 py-2 rounded-full text-xs font-bold transition-all duration-300 flex items-center gap-1.5 shrink-0 cursor-pointer",
                   locationTab === "guntur"
-                    ? "bg-amber-500 text-slate-950 font-bold shadow-md"
-                    : "bg-white/10 text-slate-200 hover:bg-white/20 border border-white/10"
+                    ? "bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/25 scale-105 font-black"
+                    : "bg-white/5 hover:bg-white/15 text-slate-300 border border-white/5"
                 )}
               >
-                <Building2 className="w-3.5 h-3.5" /> Guntur Hotspots
+                <Building2 className={cn("w-3.5 h-3.5", locationTab === "guntur" ? "text-slate-950" : "text-amber-400")} /> Guntur Hotspots
               </button>
               <button
                 onClick={() => setLocationTab("popular")}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 flex-shrink-0 cursor-pointer",
+                  "px-4 py-2 rounded-full text-xs font-bold transition-all duration-300 flex items-center gap-1.5 shrink-0 cursor-pointer",
                   locationTab === "popular"
-                    ? "bg-amber-500 text-slate-950 font-bold shadow-md"
-                    : "bg-white/10 text-slate-200 hover:bg-white/20 border border-white/10"
+                    ? "bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/25 scale-105 font-black"
+                    : "bg-white/5 hover:bg-white/15 text-slate-300 border border-white/5"
                 )}
               >
-                <Tag className="w-3.5 h-3.5" /> Top Searches
+                <Tag className={cn("w-3.5 h-3.5", locationTab === "popular" ? "text-slate-950" : "text-amber-400")} /> Top Searches
               </button>
             </div>
 
             {/* Desktop Chevron Navigation Controls */}
-            <div className="hidden sm:flex items-center gap-1">
+            <div className="hidden sm:flex items-center gap-1.5">
               <button
                 onClick={scrollLeft}
-                className="p-1.5 bg-white/10 hover:bg-white/20 text-slate-200 rounded-lg transition-colors border border-white/10 cursor-pointer"
+                className="p-2 bg-white/5 hover:bg-white/15 text-slate-300 rounded-full transition-all border border-white/10 cursor-pointer active:scale-95"
                 aria-label="Scroll left"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={scrollRight}
-                className="p-1.5 bg-white/10 hover:bg-white/20 text-slate-200 rounded-lg transition-colors border border-white/10 cursor-pointer"
+                className="p-2 bg-white/5 hover:bg-white/15 text-slate-300 rounded-full transition-all border border-white/10 cursor-pointer active:scale-95"
                 aria-label="Scroll right"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -332,24 +332,26 @@ export function HeroSection() {
           {/* Horizontal Carousel Chips Row */}
           <div
             ref={scrollContainerRef}
-            className="flex items-center gap-2.5 overflow-x-auto pb-1 no-scrollbar scroll-smooth"
+            className="flex items-center gap-3 overflow-x-auto pt-1 pb-1.5 no-scrollbar scrollbar-none scroll-smooth touch-pan-x"
           >
             {locationTab === "trending" &&
               trendingHotspots.map((spot) => (
                 <button
                   key={spot.name}
                   onClick={() => router.push(`/properties?type=${activeTab}&location=${encodeURIComponent(spot.name)}`)}
-                  className="flex-shrink-0 flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-white text-xs transition-all duration-200 cursor-pointer group shadow-sm"
+                  className="shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-amber-500/15 hover:border-amber-500/40 text-white text-xs transition-all duration-300 cursor-pointer group shadow-sm hover:shadow-xl hover:shadow-amber-500/10 hover:-translate-y-0.5"
                 >
-                  <Flame className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                  <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/30 group-hover:scale-110 transition-transform">
+                    <Flame className="w-4 h-4 text-amber-400" />
+                  </div>
                   <div className="text-left">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-extrabold text-amber-300 block leading-tight">{spot.name}</span>
-                      <span className="text-[9px] bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded font-black uppercase">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-amber-300 block leading-tight text-xs">{spot.name}</span>
+                      <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-black uppercase">
                         {spot.badge}
                       </span>
                     </div>
-                    <span className="text-[10px] text-slate-300 block leading-tight">{spot.tag}</span>
+                    <span className="text-[11px] text-slate-400 block leading-tight mt-0.5 font-medium">{spot.tag}</span>
                   </div>
                 </button>
               ))}
@@ -359,12 +361,14 @@ export function HeroSection() {
                 <button
                   key={spot.name}
                   onClick={() => router.push(`/properties?type=${activeTab}&location=${encodeURIComponent(spot.name)}`)}
-                  className="flex-shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 hover:bg-white/20 text-white text-xs transition-all duration-200 cursor-pointer group"
+                  className="shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-amber-500/15 hover:border-amber-500/40 text-white text-xs transition-all duration-300 cursor-pointer group shadow-sm hover:shadow-xl hover:shadow-amber-500/10 hover:-translate-y-0.5"
                 >
-                  <MapPin className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                  <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/30 group-hover:scale-110 transition-transform">
+                    <MapPin className="w-4 h-4 text-amber-400" />
+                  </div>
                   <div className="text-left">
-                    <span className="font-bold block leading-tight">{spot.name}</span>
-                    <span className="text-[10px] text-slate-300 block leading-tight">{spot.tag}</span>
+                    <span className="font-extrabold text-white block leading-tight text-xs">{spot.name}</span>
+                    <span className="text-[11px] text-slate-400 block leading-tight mt-0.5 font-medium">{spot.tag}</span>
                   </div>
                 </button>
               ))}
@@ -374,12 +378,14 @@ export function HeroSection() {
                 <button
                   key={spot.name}
                   onClick={() => router.push(`/properties?type=${activeTab}&location=${encodeURIComponent(spot.name)}`)}
-                  className="flex-shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 hover:bg-white/20 text-white text-xs transition-all duration-200 cursor-pointer group"
+                  className="shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-amber-500/15 hover:border-amber-500/40 text-white text-xs transition-all duration-300 cursor-pointer group shadow-sm hover:shadow-xl hover:shadow-amber-500/10 hover:-translate-y-0.5"
                 >
-                  <Building2 className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                  <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/30 group-hover:scale-110 transition-transform">
+                    <Building2 className="w-4 h-4 text-amber-400" />
+                  </div>
                   <div className="text-left">
-                    <span className="font-bold block leading-tight">{spot.name}</span>
-                    <span className="text-[10px] text-slate-300 block leading-tight">{spot.tag}</span>
+                    <span className="font-extrabold text-white block leading-tight text-xs">{spot.name}</span>
+                    <span className="text-[11px] text-slate-400 block leading-tight mt-0.5 font-medium">{spot.tag}</span>
                   </div>
                 </button>
               ))}
@@ -397,10 +403,12 @@ export function HeroSection() {
                     if (filter.availability) queryParams.append("availability", filter.availability.join(","));
                     router.push(`/properties?${queryParams.toString()}`);
                   }}
-                  className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/15 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-all duration-200 cursor-pointer"
+                  className="shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-amber-500/15 hover:border-amber-500/40 text-white text-xs transition-all duration-300 cursor-pointer group shadow-sm hover:shadow-xl hover:shadow-amber-500/10 hover:-translate-y-0.5"
                 >
-                  <Tag className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{filter.label}</span>
+                  <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/30 group-hover:scale-110 transition-transform">
+                    <Tag className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <span className="font-extrabold text-white text-xs">{filter.label}</span>
                 </button>
               ))}
           </div>
