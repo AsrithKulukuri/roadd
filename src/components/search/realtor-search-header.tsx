@@ -19,7 +19,6 @@ import {
   UserCheck,
   Sparkles,
   Mic,
-  Languages,
   ArrowRight,
   Hash,
 } from "lucide-react";
@@ -64,7 +63,6 @@ export function RealtorSearchHeader({
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [openDropdown, setOpenDropdown] = useState<"price" | "rooms" | null>(null);
   const [isListening, setIsListening] = useState(false);
-  const [language, setLanguage] = useState<"en" | "te">("en");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -115,7 +113,7 @@ export function RealtorSearchHeader({
     if (typeof window !== "undefined" && ("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
       const recognition = new SpeechRecognition();
-      recognition.lang = language === "te" ? "te-IN" : "en-US";
+      recognition.lang = "en-IN";
       recognition.interimResults = false;
 
       recognition.onstart = () => setIsListening(true);
@@ -201,7 +199,7 @@ export function RealtorSearchHeader({
                         transition={{ duration: 0.35, ease: "easeInOut" }}
                         className="truncate font-normal"
                       >
-                        {language === "te" ? "విజయవాడ, గుంటూరు లో నివాసాలు శోధించండి..." : currentSuggestion}
+                        {currentSuggestion}
                       </motion.span>
                     </AnimatePresence>
                   </div>
@@ -234,17 +232,6 @@ export function RealtorSearchHeader({
                 )}
               >
                 <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </button>
-
-              {/* TELUGU / ENGLISH TOGGLE BUTTON */}
-              <button
-                type="button"
-                onClick={() => setLanguage(language === "en" ? "te" : "en")}
-                title="Switch Language (తెలుగు / English)"
-                className="mr-1 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-[10px] sm:text-[11px] rounded-full hover:bg-amber-500 hover:text-slate-950 transition-all cursor-pointer flex items-center gap-0.5 sm:gap-1 border border-slate-200 dark:border-slate-700"
-              >
-                <Languages className="w-3 h-3 text-amber-500 shrink-0" />
-                <span>{language === "en" ? "తెలుగు" : "ENG"}</span>
               </button>
 
               {/* Search Icon Submit Button inside search box */}
