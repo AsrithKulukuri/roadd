@@ -252,22 +252,22 @@ export function HeroSection() {
         </form>
 
         {/* Open Trending Locations Carousel Section */}
-        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-[24px] text-left">
-          {/* Category Chips Bar + Carousel Navigation Buttons */}
-          <div className="flex items-center justify-between gap-3 mb-[16px]">
+        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-5 sm:mt-[24px] text-left">
+          {/* Category Chips Bar + Carousel Navigation Buttons (Buttons Hidden on Mobile) */}
+          <div className="flex items-center justify-between gap-3 mb-3 sm:mb-[16px]">
             {/* Category Filter Chips */}
-            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x pb-1 flex-1 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x pb-1 flex-1 min-w-0">
               <button
                 type="button"
                 onClick={() => setLocationTab("trending")}
                 className={cn(
-                  "h-[40px] px-[20px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                   locationTab === "trending"
-                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
+                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
                     : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
                 )}
               >
-                <Flame className={cn("w-4 h-4", locationTab === "trending" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
+                <Flame className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", locationTab === "trending" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
                 <span>Trending</span>
               </button>
 
@@ -275,13 +275,13 @@ export function HeroSection() {
                 type="button"
                 onClick={() => setLocationTab("vijayawada")}
                 className={cn(
-                  "h-[40px] px-[20px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                   locationTab === "vijayawada"
-                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
+                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
                     : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
                 )}
               >
-                <MapPin className={cn("w-4 h-4", locationTab === "vijayawada" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
+                <MapPin className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", locationTab === "vijayawada" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
                 <span>Vijayawada</span>
               </button>
 
@@ -289,13 +289,13 @@ export function HeroSection() {
                 type="button"
                 onClick={() => setLocationTab("guntur")}
                 className={cn(
-                  "h-[40px] px-[20px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                   locationTab === "guntur"
-                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
+                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
                     : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
                 )}
               >
-                <Building2 className={cn("w-4 h-4", locationTab === "guntur" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
+                <Building2 className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", locationTab === "guntur" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
                 <span>Guntur</span>
               </button>
 
@@ -303,13 +303,13 @@ export function HeroSection() {
                 type="button"
                 onClick={() => setLocationTab("popular")}
                 className={cn(
-                  "h-[40px] px-[20px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                   locationTab === "popular"
-                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
+                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
                     : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
                 )}
               >
-                <Sparkles className={cn("w-4 h-4", locationTab === "popular" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
+                <Sparkles className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", locationTab === "popular" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
                 <span>Premium</span>
               </button>
 
@@ -317,19 +317,19 @@ export function HeroSection() {
                 type="button"
                 onClick={() => setLocationTab("nearyou")}
                 className={cn(
-                  "h-[40px] px-[20px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                   locationTab === "nearyou"
-                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
+                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
                     : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
                 )}
               >
-                <MapPin className={cn("w-4 h-4", locationTab === "nearyou" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
+                <MapPin className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", locationTab === "nearyou" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
                 <span>Near You</span>
               </button>
             </div>
 
-            {/* Carousel Nav Arrows */}
-            <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l border-white/10">
+            {/* Carousel Nav Arrows - HIDDEN ON MOBILE UI */}
+            <div className="hidden md:flex items-center gap-1.5 shrink-0 pl-2 border-l border-white/10">
               <button
                 type="button"
                 onClick={scrollLeft}
@@ -349,10 +349,10 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Location Cards Horizontal Carousel Track */}
+          {/* Location Cards Horizontal Carousel Track - Compact Mobile Proportions */}
           <div
             ref={scrollContainerRef}
-            className="flex items-center gap-4 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x py-1 scroll-smooth"
+            className="flex items-center gap-3 sm:gap-4 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x py-1 scroll-smooth"
           >
             {(locationTab === "trending"
               ? trendingHotspots
@@ -367,24 +367,24 @@ export function HeroSection() {
               <div
                 key={spot.name}
                 onClick={() => router.push(`/properties?type=${activeTab}&location=${encodeURIComponent(spot.name)}`)}
-                className="w-[290px] shrink-0 snap-start h-[84px] rounded-[20px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-[18px] flex items-center justify-between gap-3 cursor-pointer transition-all duration-250 hover:-translate-y-[2px] hover:border-[#F5A623]/60 hover:bg-[rgba(255,255,255,0.06)] hover:shadow-lg group"
+                className="w-[230px] sm:w-[275px] shrink-0 snap-start h-[72px] sm:h-[80px] rounded-[16px] sm:rounded-[20px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-3 sm:p-4 flex items-center justify-between gap-2.5 sm:gap-3 cursor-pointer transition-all duration-250 hover:-translate-y-[2px] hover:border-[#F5A623]/60 hover:bg-[rgba(255,255,255,0.06)] hover:shadow-lg group"
               >
-                <div className="w-[42px] h-[42px] rounded-full bg-[rgba(20,22,30,0.85)] border border-[rgba(255,255,255,0.08)] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform group-hover:border-[#F5A623]/40">
-                  <MapPin className="w-5 h-5 text-[#F5A623]" />
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[rgba(20,22,30,0.85)] border border-[rgba(255,255,255,0.08)] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform group-hover:border-[#F5A623]/40">
+                  <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F5A623]" />
                 </div>
                 <div className="flex-1 min-w-0 text-left">
-                  <div className="text-[18px] font-bold text-white leading-tight truncate group-hover:text-[#FFC661] transition-colors">
+                  <div className="text-[14px] sm:text-[16px] font-bold text-white leading-tight truncate group-hover:text-[#FFC661] transition-colors">
                     {spot.name}
                   </div>
-                  <div className="text-[14px] font-medium text-white/60 leading-tight truncate mt-0.5">
+                  <div className="text-[11px] sm:text-[13px] font-medium text-white/60 leading-tight truncate mt-0.5">
                     {spot.tag}
                   </div>
-                  <div className="text-[13px] font-semibold text-[#F5A623] leading-tight truncate mt-1">
+                  <div className="text-[10px] sm:text-[12px] font-semibold text-[#F5A623] leading-tight truncate mt-0.5">
                     {spot.count || "45+ Homes"}
                   </div>
                 </div>
                 {spot.badge && (
-                  <div className="h-[22px] px-[10px] py-[3px] rounded-full bg-[rgba(245,166,35,0.12)] text-[#F5A623] border border-[rgba(245,166,35,0.22)] text-[11px] font-bold flex items-center justify-center shrink-0 whitespace-nowrap">
+                  <div className="h-[18px] sm:h-[20px] px-2 py-[2px] rounded-full bg-[rgba(245,166,35,0.12)] text-[#F5A623] border border-[rgba(245,166,35,0.22)] text-[9px] sm:text-[10px] font-bold flex items-center justify-center shrink-0 whitespace-nowrap">
                     {spot.badge}
                   </div>
                 )}
