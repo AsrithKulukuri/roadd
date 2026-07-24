@@ -113,9 +113,10 @@ export function AiAssistantWidget() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-[calc(7.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6 right-4 lg:right-6 w-14 h-14 bg-amber-primary rounded-full shadow-amber-glow flex items-center justify-center z-[90] text-bg-primary"
+            aria-label="Open AI Assistant"
+            className="fixed bottom-4 left-4 lg:bottom-6 lg:left-auto lg:right-6 w-12 h-12 lg:w-14 lg:h-14 bg-amber-primary rounded-full shadow-amber-glow flex items-center justify-center z-[450] text-bg-primary border-2 border-amber-400"
           >
-            <Sparkles className="w-6 h-6" />
+            <Sparkles className="w-5 h-5 lg:w-6 lg:h-6" />
           </motion.button>
         )}
       </AnimatePresence>

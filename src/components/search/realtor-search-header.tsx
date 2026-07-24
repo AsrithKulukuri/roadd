@@ -315,12 +315,12 @@ export function RealtorSearchHeader({
         </div>
       </header>
 
-      {/* PROMINENT MOBILE FLOATING BOTTOM RIGHT MAP TOGGLE BUTTON */}
-      <div className="fixed bottom-3 right-3 z-[600] md:hidden pointer-events-auto">
+      {/* PROMINENT MOBILE TOP-RIGHT FLOATING MAP TOGGLE BUTTON (NEVER OVERLAPS BOTTOM PROPERTY CARDS) */}
+      <div className="fixed top-20 right-3 z-[580] md:hidden pointer-events-auto">
         <button
           type="button"
           onClick={() => onViewModeChange(viewMode === "grid" ? "map" : "grid")}
-          className="bg-slate-950 text-white border-2 border-amber-500 shadow-2xl px-4 py-2.5 rounded-full font-black text-xs flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
+          className="bg-slate-950/95 text-white border-2 border-amber-500 shadow-2xl px-3.5 py-1.5 rounded-full font-black text-[11px] flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer backdrop-blur-md"
         >
           {viewMode === "grid" ? (
             <>

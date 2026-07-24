@@ -1570,15 +1570,15 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   <div className="flex items-center justify-between px-2 pb-2 border-b border-slate-800/80 mb-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
                       <Sparkles className="w-4 h-4 text-amber-400" />
-                      <span>Found Properties Carousel ({displayedProperties.length})</span>
+                      <span>Found Properties ({displayedProperties.length})</span>
                     </div>
                     <button
                       onClick={() => setShowPropertiesTray(false)}
                       title="Close Carousel"
-                      className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-red-600 hover:text-white text-slate-300 font-bold text-xs flex items-center gap-1 transition-all cursor-pointer border border-slate-700"
+                      className="px-3 py-1 rounded-xl bg-red-500/20 hover:bg-red-600 text-red-300 hover:text-white font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-red-500/40 shadow-sm shrink-0"
                     >
-                      <span>Close</span>
                       <X className="w-3.5 h-3.5" />
+                      <span>Close</span>
                     </button>
                   </div>
 
