@@ -347,8 +347,8 @@ function PropertiesPage() {
         {/* View Mode Rendering: Mobile Viewport Map Mode vs Grid View */}
         {viewMode === "map" ? (
           <div>
-            {/* Mobile View: Fixed Viewport below sticky header so header & filter pills remain visible */}
-            <div className="md:hidden fixed top-[160px] left-0 right-0 bottom-0 z-20 bg-slate-950 overflow-hidden flex flex-col">
+            {/* Mobile View: Fixed Viewport below sticky header so header & filter pills remain visible without overlapping map controls */}
+            <div className="md:hidden fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-slate-950 overflow-hidden flex flex-col">
               <MapWrapper filteredItems={filteredProperties} />
             </div>
 

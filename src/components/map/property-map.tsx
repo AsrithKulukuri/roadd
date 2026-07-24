@@ -1150,7 +1150,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
         <div className="flex-1 w-full h-full relative bg-slate-950 touch-none" style={{ touchAction: "none" }}>
           
           {/* REALTOR.COM INSPIRED FLOATING TOP-RIGHT MAP CONTROLS (LOCATION | DRAW | MODE | OPTIONS | CLEAR) */}
-          <div className="absolute top-2 left-1.5 right-1.5 sm:left-auto sm:right-3 z-[550] flex flex-col items-end gap-2 pointer-events-auto max-w-full">
+          <div className="absolute top-3 sm:top-2 left-1.5 right-1.5 sm:left-auto sm:right-3 z-[550] flex flex-col items-end gap-2 pointer-events-auto max-w-full">
             <div className="w-full sm:w-auto max-w-full overflow-x-auto no-scrollbar flex items-center justify-between sm:justify-end gap-1 sm:gap-1.5 bg-slate-900/95 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-slate-800 shadow-2xl touch-pan-x">
               {/* 1. FETCH MY GPS LOCATION BUTTON */}
               <button
