@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   SlidersHorizontal,
   ChevronDown,
@@ -38,6 +39,12 @@ export function RealtorFilterBar({
   >(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Mounted check for React Portal
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Detect mobile device (< 768px)
   const [isMobile, setIsMobile] = useState(false);
@@ -410,323 +417,529 @@ export function RealtorFilterBar({
       </div>
 
       {/* DROPDOWN POPOVERS & MOBILE BOTTOM SHEETS */}
-      {openDropdown !== null && (
-        <>
-          {/* BACKDROP FOR MOBILE BOTTOM SHEET */}
-          <div
-            onClick={() => setOpenDropdown(null)}
-            className="fixed inset-0 z-[999] bg-slate-950/70 backdrop-blur-xs md:hidden animate-in fade-in duration-200"
-          />
+      {openDropdown !== null && mounted && typeof document !== "undefined" &&
+        createPortal(
+          <div className="md:hidden">
+            {/* BACKDROP FOR MOBILE BOTTOM SHEET */}
+            <div
+              onClick={() => setOpenDropdown(null)}
+              className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
+            />
 
-          {/* DROPDOWN PANEL CONTAINER (Mobile Bottom Sheet vs Desktop Popover) */}
-          <div
-            className="fixed bottom-0 left-0 right-0 z-[1000] bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 p-5 shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[85vh] overflow-y-auto md:absolute md:bottom-auto md:top-full md:left-0 md:right-auto md:z-[100] md:rounded-2xl md:border md:p-4 md:shadow-2xl md:animate-in md:fade-in md:zoom-in-95 md:max-h-none md:overflow-visible"
-            style={{
-              width: undefined,
-            }}
-          >
-            {/* MOBILE DRAG/CLOSE HEADER */}
-            <div className="flex md:hidden items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-amber-500" />
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white capitalize">
-                  {openDropdown === "bhk"
-                    ? "Select BHK Configuration"
-                    : openDropdown === "price"
-                    ? "Select Budget Range (INR)"
-                    : openDropdown === "propertyType"
-                    ? "Property Type"
-                    : openDropdown === "possession"
-                    ? "Possession Status"
-                    : "Posted By"}
-                </h3>
+            {/* MOBILE BOTTOM SHEET DRAWER */}
+            <div className="fixed bottom-0 left-0 right-0 z-[10000] bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 p-5 shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[85vh] overflow-y-auto">
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white capitalize">
+                    {openDropdown === "bhk"
+                      ? "Select BHK Configuration"
+                      : openDropdown === "price"
+                      ? "Select Budget Range (INR)"
+                      : openDropdown === "propertyType"
+                      ? "Property Type"
+                      : openDropdown === "possession"
+                      ? "Possession Status"
+                      : "Posted By"}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(null)}
+                  className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full bg-slate-100 dark:bg-slate-800 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(null)}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full bg-slate-100 dark:bg-slate-800"
-              >
-                <X className="w-4 h-4" />
-              </button>
+
+              {/* 1. PRICE CONTENT */}
+              {openDropdown === "price" && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    {pricePresets.map((preset) => {
+                      const isSelected =
+                        filters.budget[0] === preset.min &&
+                        filters.budget[1] === preset.max;
+                      return (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => {
+                            onFilterChange({
+                              ...filters,
+                              budget: [preset.min, preset.max],
+                            });
+                            setOpenDropdown(null);
+                          }}
+                          className={cn(
+                            "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
+                            isSelected
+                              ? "bg-amber-500 text-slate-950 font-bold"
+                              : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          )}
+                        >
+                          <span>{preset.label}</span>
+                          {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onFilterChange({ ...filters, budget: [0, 100000000] });
+                        setOpenDropdown(null);
+                      }}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Reset Price
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOpenDropdown(null)}
+                      className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. BHK CONTENT */}
+              {openDropdown === "bhk" && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    {bhkOptions.map((opt) => {
+                      const isSelected = filters.bhk.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => toggleArrayItem("bhk", opt.value)}
+                          className={cn(
+                            "px-3 py-3 rounded-xl text-xs font-bold border flex items-center justify-between transition-all cursor-pointer",
+                            isSelected
+                              ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
+                              : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100"
+                          )}
+                        >
+                          <span>{opt.label}</span>
+                          {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => onFilterChange({ ...filters, bhk: [] })}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Clear BHK
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOpenDropdown(null)}
+                      className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                    >
+                      Apply ({filters.bhk.length})
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. PROPERTY TYPE CONTENT */}
+              {openDropdown === "propertyType" && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    {propertyTypes.map((opt) => {
+                      const isSelected = filters.propertyType.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => toggleArrayItem("propertyType", opt.value)}
+                          className={cn(
+                            "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
+                            isSelected
+                              ? "bg-amber-500 text-slate-950 font-bold"
+                              : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          )}
+                        >
+                          <span>{opt.label}</span>
+                          {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => onFilterChange({ ...filters, propertyType: [] })}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Reset
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOpenDropdown(null)}
+                      className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                    >
+                      Apply ({filters.propertyType.length})
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. POSSESSION CONTENT */}
+              {openDropdown === "possession" && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    {possessionOptions.map((opt) => {
+                      const isSelected = filters.availability.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => toggleArrayItem("availability", opt.value)}
+                          className={cn(
+                            "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
+                            isSelected
+                              ? "bg-amber-500 text-slate-950 font-bold"
+                              : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          )}
+                        >
+                          <span>{opt.label}</span>
+                          {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => onFilterChange({ ...filters, availability: [] })}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Reset
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOpenDropdown(null)}
+                      className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. POSTED BY CONTENT */}
+              {openDropdown === "postedBy" && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    {postedByOptions.map((opt) => {
+                      const isSelected = filters.postedBy.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => toggleArrayItem("postedBy", opt.value)}
+                          className={cn(
+                            "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
+                            isSelected
+                              ? "bg-amber-500 text-slate-950 font-bold"
+                              : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          )}
+                        >
+                          <span>{opt.label}</span>
+                          {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => onFilterChange({ ...filters, postedBy: [] })}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Reset
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOpenDropdown(null)}
+                      className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
+          </div>,
+          document.body
+        )
+      }
 
-            {/* 1. PRICE DROPDOWN CONTENT */}
-            {openDropdown === "price" && (
-              <div className="space-y-3">
-                {!isMobile && (
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
-                    Select Budget Range (INR)
-                  </div>
-                )}
-                <div className="space-y-1">
-                  {pricePresets.map((preset) => {
-                    const isSelected =
-                      filters.budget[0] === preset.min &&
-                      filters.budget[1] === preset.max;
-                    return (
-                      <button
-                        key={preset.label}
-                        type="button"
-                        onClick={() => {
-                          onFilterChange({
-                            ...filters,
-                            budget: [preset.min, preset.max],
-                          });
-                          setOpenDropdown(null);
-                        }}
-                        className={cn(
-                          "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
-                          isSelected
-                            ? "bg-amber-500 text-slate-950 font-bold"
-                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        )}
-                      >
-                        <span>{preset.label}</span>
-                        {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onFilterChange({ ...filters, budget: [0, 100000000] });
-                      setOpenDropdown(null);
-                    }}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
-                  >
-                    <RotateCcw className="w-3 h-3" /> Reset Price
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOpenDropdown(null)}
-                    className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
-                  >
-                    Done
-                  </button>
-                </div>
+      {/* DESKTOP POPOVER CONTAINER (INLINE UNDER BUTTON) */}
+      {openDropdown !== null && (
+        <div
+          className="hidden md:block absolute top-full left-0 mt-2 z-[100] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-4 animate-in fade-in zoom-in-95 duration-150"
+          style={{
+            width: openDropdown === "price" ? "320px" : "280px",
+          }}
+        >
+          {/* 1. PRICE DROPDOWN CONTENT */}
+          {openDropdown === "price" && (
+            <div className="space-y-3">
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
+                Select Budget Range (INR)
               </div>
-            )}
-
-            {/* 2. BHK DROPDOWN CONTENT */}
-            {openDropdown === "bhk" && (
-              <div className="space-y-3">
-                {!isMobile && (
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
-                    Select Bedrooms / BHK
-                  </div>
-                )}
-                <div className="grid grid-cols-2 gap-2">
-                  {bhkOptions.map((opt) => {
-                    const isSelected = filters.bhk.includes(opt.value);
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => toggleArrayItem("bhk", opt.value)}
-                        className={cn(
-                          "px-3 py-3 rounded-xl text-xs font-bold border flex items-center justify-between transition-all cursor-pointer",
-                          isSelected
-                            ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
-                            : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100"
-                        )}
-                      >
-                        <span>{opt.label}</span>
-                        {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onFilterChange({ ...filters, bhk: [] });
-                    }}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
-                  >
-                    <RotateCcw className="w-3 h-3" /> Clear BHK
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOpenDropdown(null)}
-                    className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
-                  >
-                    Apply ({filters.bhk.length})
-                  </button>
-                </div>
+              <div className="space-y-1">
+                {pricePresets.map((preset) => {
+                  const isSelected =
+                    filters.budget[0] === preset.min &&
+                    filters.budget[1] === preset.max;
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        onFilterChange({
+                          ...filters,
+                          budget: [preset.min, preset.max],
+                        });
+                        setOpenDropdown(null);
+                      }}
+                      className={cn(
+                        "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
+                        isSelected
+                          ? "bg-amber-500 text-slate-950 font-bold"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <span>{preset.label}</span>
+                      {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                    </button>
+                  );
+                })}
               </div>
-            )}
 
-            {/* 3. PROPERTY TYPE DROPDOWN CONTENT */}
-            {openDropdown === "propertyType" && (
-              <div className="space-y-3">
-                {!isMobile && (
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
-                    Select Property Type
-                  </div>
-                )}
-                <div className="space-y-1">
-                  {propertyTypes.map((pt) => {
-                    const isSelected = filters.propertyType.includes(pt.value);
-                    const IconComponent = pt.icon;
-                    return (
-                      <button
-                        key={pt.value}
-                        type="button"
-                        onClick={() => toggleArrayItem("propertyType", pt.value)}
-                        className={cn(
-                          "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
-                          isSelected
-                            ? "bg-amber-500 text-slate-950 font-bold"
-                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="w-4 h-4 shrink-0" />
-                          <span>{pt.label}</span>
-                        </div>
-                        {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onFilterChange({ ...filters, propertyType: [] });
-                    }}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
-                  >
-                    <RotateCcw className="w-3 h-3" /> Clear Types
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOpenDropdown(null)}
-                    className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
-                  >
-                    Apply ({filters.propertyType.length})
-                  </button>
-                </div>
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onFilterChange({ ...filters, budget: [0, 100000000] });
+                    setOpenDropdown(null);
+                  }}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" /> Reset Price
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(null)}
+                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                >
+                  Done
+                </button>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* 4. POSSESSION DROPDOWN CONTENT */}
-            {openDropdown === "possession" && (
-              <div className="space-y-3">
-                {!isMobile && (
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
-                    Select Possession Status
-                  </div>
-                )}
-                <div className="space-y-1">
-                  {possessionOptions.map((opt) => {
-                    const isSelected = filters.availability.includes(opt.value);
-                    const IconComponent = opt.icon;
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => toggleArrayItem("availability", opt.value)}
-                        className={cn(
-                          "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
-                          isSelected
-                            ? "bg-amber-500 text-slate-950 font-bold"
-                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="w-4 h-4 shrink-0" />
-                          <span>{opt.label}</span>
-                        </div>
-                        {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onFilterChange({ ...filters, availability: [] });
-                    }}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
-                  >
-                    <RotateCcw className="w-3 h-3" /> Reset
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOpenDropdown(null)}
-                    className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
-                  >
-                    Apply
-                  </button>
-                </div>
+          {/* 2. BHK DROPDOWN CONTENT */}
+          {openDropdown === "bhk" && (
+            <div className="space-y-3">
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
+                Select Bedrooms / BHK
               </div>
-            )}
-
-            {/* 5. POSTED BY DROPDOWN CONTENT */}
-            {openDropdown === "postedBy" && (
-              <div className="space-y-3">
-                {!isMobile && (
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
-                    Select Advertiser / Posted By
-                  </div>
-                )}
-                <div className="space-y-1">
-                  {postedByOptions.map((opt) => {
-                    const isSelected = filters.postedBy.includes(opt.value);
-                    const IconComponent = opt.icon;
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => toggleArrayItem("postedBy", opt.value)}
-                        className={cn(
-                          "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
-                          isSelected
-                            ? "bg-amber-500 text-slate-950 font-bold"
-                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="w-4 h-4 shrink-0" />
-                          <span>{opt.label}</span>
-                        </div>
-                        {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onFilterChange({ ...filters, postedBy: [] });
-                    }}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
-                  >
-                    <RotateCcw className="w-3 h-3" /> Reset
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOpenDropdown(null)}
-                    className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
-                  >
-                    Apply
-                  </button>
-                </div>
+              <div className="grid grid-cols-2 gap-2">
+                {bhkOptions.map((opt) => {
+                  const isSelected = filters.bhk.includes(opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => toggleArrayItem("bhk", opt.value)}
+                      className={cn(
+                        "px-3 py-3 rounded-xl text-xs font-bold border flex items-center justify-between transition-all cursor-pointer",
+                        isSelected
+                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
+                          : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100"
+                      )}
+                    >
+                      <span>{opt.label}</span>
+                      {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                    </button>
+                  );
+                })}
               </div>
-            )}
-          </div>
-        </>
+
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => onFilterChange({ ...filters, bhk: [] })}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" /> Clear BHK
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(null)}
+                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                >
+                  Apply ({filters.bhk.length})
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 3. PROPERTY TYPE DROPDOWN CONTENT */}
+          {openDropdown === "propertyType" && (
+            <div className="space-y-3">
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
+                Property Type
+              </div>
+              <div className="space-y-1">
+                {propertyTypes.map((opt) => {
+                  const isSelected = filters.propertyType.includes(opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => toggleArrayItem("propertyType", opt.value)}
+                      className={cn(
+                        "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
+                        isSelected
+                          ? "bg-amber-500 text-slate-950 font-bold"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <span>{opt.label}</span>
+                      {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => onFilterChange({ ...filters, propertyType: [] })}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" /> Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(null)}
+                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                >
+                  Apply ({filters.propertyType.length})
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 4. POSSESSION DROPDOWN CONTENT */}
+          {openDropdown === "possession" && (
+            <div className="space-y-3">
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
+                Possession Status
+              </div>
+              <div className="space-y-1">
+                {possessionOptions.map((opt) => {
+                  const isSelected = filters.availability.includes(opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => toggleArrayItem("availability", opt.value)}
+                      className={cn(
+                        "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
+                        isSelected
+                          ? "bg-amber-500 text-slate-950 font-bold"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <span>{opt.label}</span>
+                      {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => onFilterChange({ ...filters, availability: [] })}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" /> Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(null)}
+                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 5. POSTED BY DROPDOWN CONTENT */}
+          {openDropdown === "postedBy" && (
+            <div className="space-y-3">
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
+                Posted By
+              </div>
+              <div className="space-y-1">
+                {postedByOptions.map((opt) => {
+                  const isSelected = filters.postedBy.includes(opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => toggleArrayItem("postedBy", opt.value)}
+                      className={cn(
+                        "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
+                        isSelected
+                          ? "bg-amber-500 text-slate-950 font-bold"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <span>{opt.label}</span>
+                      {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onFilterChange({ ...filters, postedBy: [] });
+                  }}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" /> Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(null)}
+                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
