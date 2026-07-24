@@ -1217,99 +1217,91 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
         {/* The Leaflet Map Canvas Container */}
         <div className="flex-1 w-full h-full relative bg-slate-950 touch-none" style={{ touchAction: "none" }}>
           
-          {/* REALTOR.COM INSPIRED FLOATING TOP-RIGHT MAP CONTROLS (LOCATION | DRAW | MODE | OPTIONS | CLEAR) */}
-          <div className="absolute top-3 sm:top-2 left-1.5 right-1.5 sm:left-auto sm:right-3 z-[550] flex flex-col items-end gap-2 pointer-events-auto max-w-full">
-            <div className="w-full sm:w-auto max-w-full overflow-x-auto no-scrollbar flex items-center justify-between sm:justify-end gap-1 sm:gap-1.5 bg-slate-900/95 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-slate-800 shadow-2xl touch-pan-x">
-              {/* 1. FETCH MY GPS LOCATION BUTTON */}
-              <button
-                type="button"
-                onClick={handleGetLocation}
-                disabled={isLocating}
-                title="Fetch My GPS Location"
-                className={cn(
-                  "px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0 active:scale-95",
-                  isLocating
-                    ? "bg-amber-500 text-slate-950 shadow-md font-black animate-pulse"
-                    : "bg-slate-800 text-slate-200 hover:bg-slate-700"
-                )}
-              >
-                <Navigation className={cn("w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 stroke-[2.5]", isLocating && "animate-spin")} />
-                <span>{isLocating ? "Locating..." : "Location"}</span>
-              </button>
+          {/* REALTOR.COM AUTHENTIC VERTICAL RIGHT-SIDE MAP CONTROL STACK */}
+          <div className="absolute top-4 right-3 z-[550] flex flex-col items-center gap-2.5 pointer-events-auto">
 
-              {/* 1.5 FREEHAND DRAW BUTTON */}
+            {/* 1. SATELLITE MAP TILE PREVIEW CARD BUTTON */}
+            <button
+              type="button"
+              onClick={() => setMapLayerType(mapLayerType === "streets" ? "hybrid" : "streets")}
+              title="Toggle Satellite View"
+              className="relative w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl overflow-hidden shadow-xl border-2 border-white dark:border-slate-800 flex flex-col justify-end p-1 transition-all hover:scale-105 active:scale-95 cursor-pointer group shrink-0"
+            >
+              <img
+                src={
+                  mapLayerType === "hybrid"
+                    ? "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=200&q=80"
+                    : "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=200&q=80"
+                }
+                alt="Map View Mode"
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+              <span className="relative z-10 text-[10px] sm:text-[11px] font-black text-white text-center leading-tight tracking-tight drop-shadow-md">
+                {mapLayerType === "hybrid" ? "Streets" : "Satellite"}
+              </span>
+            </button>
+
+            {/* 2. FREEHAND DRAW BUTTON */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsDrawing(!isDrawing);
+                setShowMapOptionsMenu(false);
+              }}
+              title="Draw Custom Area"
+              className={cn(
+                "w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 cursor-pointer border shrink-0",
+                isDrawing
+                  ? "bg-amber-500 text-slate-950 border-amber-600 font-black animate-pulse"
+                  : "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+              )}
+            >
+              <Pencil className={cn("w-5 h-5", isDrawing ? "text-slate-950" : "text-slate-900 dark:text-white")} />
+              <span className="text-[10px] font-extrabold leading-none">Draw</span>
+            </button>
+
+            {/* 3. OPTIONS / LAYERS BUTTON */}
+            <button
+              type="button"
+              onClick={() => setShowMapOptionsMenu(!showMapOptionsMenu)}
+              title="Map Display Options"
+              className={cn(
+                "w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 cursor-pointer border shrink-0",
+                showMapOptionsMenu
+                  ? "bg-slate-900 text-white border-slate-900 dark:bg-amber-500 dark:text-slate-950 font-black"
+                  : "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+              )}
+            >
+              <SlidersHorizontal className="w-5 h-5 text-slate-900 dark:text-white" />
+              <span className="text-[10px] font-extrabold leading-none">Options</span>
+            </button>
+
+            {/* 4. CLEAR BUTTON (When boundaries/filters active) */}
+            {(drawPolygonPoints.length > 0 || showHeatmap || activeLandmarkTypes.length > 0 || mapSearchInput) && (
               <button
                 type="button"
                 onClick={() => {
-                  setIsDrawing(!isDrawing);
-                  setShowMapOptionsMenu(false);
+                  handleClearDraw();
+                  setShowHeatmap(false);
+                  setActiveLandmarkTypes([]);
+                  setMapSearchInput("");
+                  if (mapRef.current) {
+                    mapRef.current.flyTo(new L.LatLng(16.5062, 80.6480), 12);
+                  }
                 }}
-                title="Draw Custom Boundary Area"
-                className={cn(
-                  "px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0 active:scale-95",
-                  isDrawing
-                    ? "bg-amber-500 text-slate-950 shadow-md font-black animate-pulse"
-                    : "bg-slate-800 text-slate-200 hover:bg-slate-700"
-                )}
+                title="Clear Active Boundaries & Filters"
+                className="w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl bg-slate-950 text-white shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-900 hover:bg-red-600 shrink-0"
               >
-                <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
-                <span>{isDrawing ? "Drawing..." : "Draw"}</span>
+                <X className="w-5 h-5 text-white" />
+                <span className="text-[10px] font-extrabold leading-none">Clear</span>
               </button>
+            )}
+          </div>
 
-              {/* 2. SATELLITE TILE SWITCHER */}
-              <button
-                type="button"
-                onClick={() => setMapLayerType(mapLayerType === "streets" ? "hybrid" : "streets")}
-                className={cn(
-                  "px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0",
-                  mapLayerType === "hybrid"
-                    ? "bg-amber-500 text-slate-950 shadow-md font-black"
-                    : "bg-slate-800 text-slate-200 hover:bg-slate-700"
-                )}
-              >
-                <Layers3 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
-                <span>{mapLayerType === "hybrid" ? "Satellite" : "Mode"}</span>
-              </button>
-
-              {/* 3. OPTIONS / LAYERS BUTTON */}
-              <button
-                type="button"
-                onClick={() => setShowMapOptionsMenu(!showMapOptionsMenu)}
-                className={cn(
-                  "px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-extrabold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0",
-                  showMapOptionsMenu
-                    ? "bg-white text-slate-950 shadow-md font-black"
-                    : "bg-slate-800 text-slate-200 hover:bg-slate-700"
-                )}
-              >
-                <SlidersHorizontal className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
-                <span>Options</span>
-              </button>
-
-              {/* 4. CLEAR BUTTON */}
-              {(drawPolygonPoints.length > 0 || showHeatmap || activeLandmarkTypes.length > 0 || mapSearchInput) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleClearDraw();
-                    setShowHeatmap(false);
-                    setActiveLandmarkTypes([]);
-                    setMapSearchInput("");
-                    if (mapRef.current) {
-                      mapRef.current.flyTo(new L.LatLng(16.5062, 80.6480), 12);
-                    }
-                  }}
-                  className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-extrabold bg-slate-800 text-slate-200 hover:bg-red-500 hover:text-white transition-all cursor-pointer flex items-center gap-1 shrink-0"
-                >
-                  <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                  <span>Clear</span>
-                </button>
-              )}
-            </div>
-
-            {/* FLOATING OPTIONS POPOVER MENU */}
+            {/* FLOATING OPTIONS POPOVER MENU (OPENS TO THE LEFT OF CONTROL STACK) */}
             {showMapOptionsMenu && (
-              <div className="w-64 bg-slate-900/95 backdrop-blur-xl border border-slate-800 text-white rounded-2xl p-4 shadow-2xl space-y-3 text-xs animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute top-4 right-20 sm:right-22 z-[560] w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl p-4 shadow-2xl space-y-3 text-xs animate-in fade-in zoom-in-95 duration-150 pointer-events-auto">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                   <span className="font-extrabold text-amber-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
                     <Layers3 className="w-4 h-4" /> Map Display Options
@@ -1394,7 +1386,6 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 </button>
               </div>
             )}
-          </div>
 
           {/* FLOATING BOTTOM CENTER "SEARCH AS I MOVE THE MAP" PILL */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[550] pointer-events-auto">
