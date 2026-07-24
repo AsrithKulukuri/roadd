@@ -204,24 +204,23 @@ export function HeroSection() {
           })}
         </div>
 
-        {/* Search Bar Pill: Clean White Container with NO Golden Border Outline */}
         <form
           onSubmit={handleSearchSubmit}
-          className="relative w-full max-w-2xl flex items-center bg-white rounded-full p-2 sm:p-2.5 shadow-2xl border-0 outline-none ring-0 focus-within:outline-none focus-within:ring-0 focus-within:border-0"
-          style={{ border: "none", outline: "none", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)" }}
+          className="relative w-full max-w-[720px] h-[60px] mx-auto flex items-center bg-white rounded-full px-3 shadow-[0_12px_32px_rgba(0,0,0,0.18)] transition-all duration-300 focus-within:ring-2 focus-within:ring-[#F5A623]/80 focus-within:shadow-[0_0_24px_rgba(245,166,35,0.25)]"
         >
-          {/* Text Carousel Animated Placeholder */}
+          <Search className="w-5 h-5 text-slate-400 ml-3 mr-2 shrink-0 pointer-events-none" />
+
           {!searchQuery && !isFocused && (
             <div
               onClick={() => inputRef.current?.focus()}
-              className="absolute left-6 right-16 inset-y-0 flex items-center pointer-events-none overflow-hidden"
+              className="absolute left-12 right-28 inset-y-0 flex items-center pointer-events-none overflow-hidden"
             >
               <AnimatePresence mode="wait">
                 <motion.span
                   key={suggestionIndex}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
+                  exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.35, ease: "easeOut" }}
                   className="text-sm sm:text-base text-slate-400 font-medium truncate select-none block"
                 >
@@ -238,25 +237,22 @@ export function HeroSection() {
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={isFocused && !searchQuery ? "Enter city, locality, BHK, or project..." : ""}
-            className="w-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-slate-400 pl-4 pr-12 font-medium border-0 outline-none ring-0 focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0"
-            style={{ border: "none", outline: "none", boxShadow: "none" }}
+            placeholder={isFocused && !searchQuery ? "Search locality, builder, project or landmark..." : ""}
+            className="w-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-slate-400 pl-1 pr-4 font-medium border-0 outline-none ring-0 focus:outline-none focus:ring-0 focus:border-0"
           />
 
-          {/* Search Button styled in Brand Logo Amber Color */}
           <button
             type="submit"
-            className="p-3 sm:p-3.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold rounded-full transition-all shadow-md hover:scale-105 cursor-pointer flex-shrink-0"
+            className="h-[46px] px-5 sm:px-6 bg-[#F5A623] hover:bg-[#FFC661] text-slate-950 font-bold text-sm rounded-full transition-all shadow-md hover:scale-105 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
             aria-label="Search"
           >
-            <Search className="w-5 h-5 stroke-[2.5]" />
+            <span>Search</span>
+            <Search className="w-4 h-4 stroke-[2.5]" />
           </button>
         </form>
 
-        {/* Luxury Glassmorphic Trending Locations Discovery Section */}
-        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-[28px] bg-[rgba(20,22,30,0.72)] backdrop-blur-[18px] border border-[rgba(255,255,255,0.05)] rounded-[26px] p-6 text-left shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-          {/* Header Row: Title & Market Insight + View All Link */}
-          <div className="flex items-start justify-between gap-4 mb-[18px]">
+        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-[28px] text-left">
+          <div className="flex items-start justify-between gap-4 mb-[16px]">
             <div>
               <h3 className="text-[20px] font-bold text-white tracking-tight flex items-center gap-2 leading-tight">
                 <Flame className="w-5 h-5 text-[#F5A623]" /> Trending Locations
@@ -267,23 +263,14 @@ export function HeroSection() {
                 <span>this month</span>
               </p>
             </div>
-
-            <Link
-              href="/properties?sort=trending"
-              className="text-[15px] font-semibold text-[#F5A623] hover:text-[#FFC661] flex items-center gap-1 group transition-colors shrink-0 pt-0.5"
-            >
-              <span className="group-hover:underline">View All</span>
-              <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
-            </Link>
           </div>
 
-          {/* Category Chips Bar */}
           <div className="flex items-center gap-3 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x mb-[20px] pb-1">
             <button
               type="button"
               onClick={() => setLocationTab("trending")}
               className={cn(
-                "h-[40px] px-[22px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                "h-[40px] px-[20px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                 locationTab === "trending"
                   ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
                   : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
@@ -297,7 +284,7 @@ export function HeroSection() {
               type="button"
               onClick={() => setLocationTab("vijayawada")}
               className={cn(
-                "h-[40px] px-[22px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                "h-[40px] px-[20px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                 locationTab === "vijayawada"
                   ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
                   : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
@@ -311,7 +298,7 @@ export function HeroSection() {
               type="button"
               onClick={() => setLocationTab("guntur")}
               className={cn(
-                "h-[40px] px-[22px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                "h-[40px] px-[20px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                 locationTab === "guntur"
                   ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
                   : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
@@ -325,7 +312,7 @@ export function HeroSection() {
               type="button"
               onClick={() => setLocationTab("popular")}
               className={cn(
-                "h-[40px] px-[22px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                "h-[40px] px-[20px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                 locationTab === "popular"
                   ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
                   : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
@@ -339,7 +326,7 @@ export function HeroSection() {
               type="button"
               onClick={() => setLocationTab("nearyou")}
               className={cn(
-                "h-[40px] px-[22px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                "h-[40px] px-[20px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                 locationTab === "nearyou"
                   ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
                   : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
@@ -350,11 +337,7 @@ export function HeroSection() {
             </button>
           </div>
 
-          {/* Location Cards Horizontal Carousel */}
-          <div
-            ref={scrollContainerRef}
-            className="flex items-center gap-4 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x py-1"
-          >
+          <div className="flex items-center gap-4 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x py-1">
             {(locationTab === "trending"
               ? trendingHotspots
               : locationTab === "vijayawada"
@@ -368,14 +351,11 @@ export function HeroSection() {
               <div
                 key={spot.name}
                 onClick={() => router.push(`/properties?type=${activeTab}&location=${encodeURIComponent(spot.name)}`)}
-                className="w-[280px] sm:w-[320px] shrink-0 snap-start h-[90px] rounded-[22px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-[18px] flex items-center justify-between gap-3 cursor-pointer transition-all duration-250 hover:-translate-y-[3px] hover:scale-[1.01] hover:border-[#F5A623]/60 hover:bg-[rgba(255,255,255,0.06)] hover:shadow-lg group"
+                className="w-[290px] shrink-0 snap-start h-[84px] rounded-[20px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-[18px] flex items-center justify-between gap-3 cursor-pointer transition-all duration-250 hover:-translate-y-[2px] hover:border-[#F5A623]/60 hover:bg-[rgba(255,255,255,0.06)] hover:shadow-lg group"
               >
-                {/* Left: 46px Circular Icon with Lucide MapPin Icon */}
-                <div className="w-[46px] h-[46px] rounded-full bg-[rgba(20,22,30,0.85)] border border-[rgba(255,255,255,0.1)] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform group-hover:border-[#F5A623]/40">
+                <div className="w-[42px] h-[42px] rounded-full bg-[rgba(20,22,30,0.85)] border border-[rgba(255,255,255,0.08)] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform group-hover:border-[#F5A623]/40">
                   <MapPin className="w-5 h-5 text-[#F5A623]" />
                 </div>
-
-                {/* Center: Location Name, Subtitle, Properties Stat */}
                 <div className="flex-1 min-w-0 text-left">
                   <div className="text-[18px] font-bold text-white leading-tight truncate group-hover:text-[#FFC661] transition-colors">
                     {spot.name}
@@ -384,11 +364,9 @@ export function HeroSection() {
                     {spot.tag}
                   </div>
                   <div className="text-[13px] font-semibold text-[#F5A623] leading-tight truncate mt-1">
-                    {spot.count || "321 Properties"}
+                    {spot.count || "45+ Homes"}
                   </div>
                 </div>
-
-                {/* Right: Tiny Status Badge */}
                 {spot.badge && (
                   <div className="h-[22px] px-[10px] py-[3px] rounded-full bg-[rgba(245,166,35,0.12)] text-[#F5A623] border border-[rgba(245,166,35,0.22)] text-[11px] font-bold flex items-center justify-center shrink-0 whitespace-nowrap">
                     {spot.badge}
@@ -399,7 +377,6 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* Expanded "Browse homes" Category Cards Section */}
         <div className="w-full mt-12 text-left space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
