@@ -673,6 +673,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
   // Draw Polygon Area Search State
   const [isDrawing, setIsDrawing] = useState(false);
+  const [drawShapeType, setDrawShapeType] = useState<"freehand" | "circle" | "box">("freehand");
   const [drawPolygonPoints, setDrawPolygonPoints] = useState<L.LatLng[]>([]);
 
   // Realtor.com Map Controls State
@@ -805,11 +806,40 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const handleDrawMove = (point: L.LatLng) => {
     setDrawPolygonPoints((prev) => {
       if (prev.length === 0) return [point];
-      const last = prev[prev.length - 1];
-      const distSq = (last.lat - point.lat) ** 2 + (last.lng - point.lng) ** 2;
-      if (distSq > 0.00000001) {
-        return [...prev, point];
+
+      if (drawShapeType === "freehand") {
+        const last = prev[prev.length - 1];
+        const distSq = (last.lat - point.lat) ** 2 + (last.lng - point.lng) ** 2;
+        if (distSq > 0.00000000001) {
+          return [...prev, point];
+        }
+        return prev;
       }
+
+      if (drawShapeType === "box") {
+        const start = prev[0];
+        return [
+          start,
+          new L.LatLng(start.lat, point.lng),
+          point,
+          new L.LatLng(point.lat, start.lng),
+        ];
+      }
+
+      if (drawShapeType === "circle") {
+        const start = prev[0];
+        const radiusDeg = Math.sqrt((start.lat - point.lat) ** 2 + (start.lng - point.lng) ** 2);
+        const points: L.LatLng[] = [];
+        const numPoints = 32;
+        for (let i = 0; i < numPoints; i++) {
+          const angle = (i * 2 * Math.PI) / numPoints;
+          const lat = start.lat + radiusDeg * Math.sin(angle);
+          const lng = start.lng + radiusDeg * Math.cos(angle);
+          points.push(new L.LatLng(lat, lng));
+        }
+        return points;
+      }
+
       return prev;
     });
   };
@@ -1347,16 +1377,62 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
           {/* Drawing Mode Overlay Banner */}
           {isDrawing && (
-            <div className="absolute top-14 sm:top-16 left-3 right-3 sm:left-auto sm:right-3 sm:w-96 z-[550] bg-amber-500 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-2xl shadow-2xl flex items-center justify-between animate-pulse border border-slate-950/20">
-              <span className="flex items-center gap-1.5">
-                <Pencil className="w-4 h-4 shrink-0" /> Freehand: Drag finger or mouse to draw area!
-              </span>
-              <button
-                onClick={handleClearDraw}
-                className="bg-slate-950 text-white px-2.5 py-1 rounded-xl text-[10px] font-bold cursor-pointer shrink-0"
-              >
-                Cancel
-              </button>
+            <div className="absolute top-14 sm:top-16 left-3 right-3 sm:left-auto sm:right-3 sm:w-[420px] z-[550] bg-slate-950/95 backdrop-blur-xl text-white font-extrabold text-xs p-3 rounded-2xl shadow-2xl border-2 border-amber-500 space-y-2 animate-in fade-in zoom-in-95">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-amber-400 font-extrabold">
+                  <Pencil className="w-4 h-4 shrink-0 text-amber-400 animate-pulse" /> Freehand Drawing Active
+                </span>
+                <button
+                  onClick={handleClearDraw}
+                  className="bg-red-500/20 text-red-300 hover:bg-red-500 hover:text-white px-2 py-1 rounded-xl text-[10px] font-bold cursor-pointer transition-colors"
+                >
+                  Cancel Draw
+                </button>
+              </div>
+
+              {/* Shape Mode Selector Tabs */}
+              <div className="grid grid-cols-3 gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setDrawShapeType("freehand")}
+                  className={cn(
+                    "py-1 px-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                    drawShapeType === "freehand"
+                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                      : "text-slate-300 hover:text-white"
+                  )}
+                >
+                  <span>✏️ Freehand</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDrawShapeType("circle")}
+                  className={cn(
+                    "py-1 px-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                    drawShapeType === "circle"
+                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                      : "text-slate-300 hover:text-white"
+                  )}
+                >
+                  <span>⭕ Circle</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDrawShapeType("box")}
+                  className={cn(
+                    "py-1 px-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                    drawShapeType === "box"
+                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                      : "text-slate-300 hover:text-white"
+                  )}
+                >
+                  <span>🔲 Box</span>
+                </button>
+              </div>
+
+              <p className="text-[10px] text-slate-300 font-normal">
+                Drag your mouse or finger freely across the map canvas to draw any random shape.
+              </p>
             </div>
           )}
 
