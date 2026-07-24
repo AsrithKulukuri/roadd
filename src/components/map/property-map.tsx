@@ -229,9 +229,9 @@ function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean
     : '0 4px 12px rgba(0, 0, 0, 0.4)';
 
   return L.divIcon({
-    className: `realtor-price-pill-marker ${hasSearch ? 'popup-marker-match' : ''}`,
+    className: "realtor-price-pill-marker",
     html: `
-      <div style="
+      <div class="${hasSearch ? 'pulse-inner-pill' : ''}" style="
         background: ${bg};
         color: ${color};
         border: ${border};
@@ -843,14 +843,16 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
           filter: drop-shadow(0 0 8px rgba(245, 166, 35, 0.9));
         }
 
-        @keyframes matchPopUpPulse {
+        @keyframes innerPillPulse {
           0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.9); }
-          50% { transform: scale(1.2); box-shadow: 0 0 22px 8px rgba(245, 166, 35, 0.7); }
+          50% { transform: scale(1.15); box-shadow: 0 0 22px 8px rgba(245, 166, 37, 0.8); }
           100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 166, 35, 0); }
         }
-        .popup-marker-match {
-          animation: matchPopUpPulse 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-          z-index: 99999 !important;
+        .pulse-inner-pill {
+          animation: innerPillPulse 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        .realtor-price-pill-marker {
+          z-index: 9999 !important;
         }
 
         @media (max-width: 767px) {
