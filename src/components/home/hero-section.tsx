@@ -81,7 +81,7 @@ const popularQuickFilters = [
 export function HeroSection() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("buy");
-  const [locationTab, setLocationTab] = useState<"trending" | "vijayawada" | "guntur" | "popular" | "topsearches">("trending");
+  const [locationTab, setLocationTab] = useState<"trending" | "vijayawada" | "guntur" | "popular" | "nearyou">("trending");
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
@@ -253,23 +253,40 @@ export function HeroSection() {
           </button>
         </form>
 
-        {/* Luxury Glassmorphic Trending Locations Section */}
-        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-6 bg-[rgba(20,22,30,0.75)] backdrop-blur-[18px] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-6 text-left shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
-          {/* Clean Section Header */}
-          <h3 className="text-[18px] font-bold text-white mb-4 tracking-tight flex items-center gap-2">
-            <Flame className="w-4.5 h-4.5 text-[#F5A623]" /> Trending Locations
-          </h3>
+        {/* Luxury Glassmorphic Trending Locations Discovery Section */}
+        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-[28px] bg-[rgba(20,22,30,0.72)] backdrop-blur-[18px] border border-[rgba(255,255,255,0.05)] rounded-[26px] p-6 text-left shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          {/* Header Row: Title & Market Insight + View All Link */}
+          <div className="flex items-start justify-between gap-4 mb-[18px]">
+            <div>
+              <h3 className="text-[20px] font-bold text-white tracking-tight flex items-center gap-2 leading-tight">
+                <Flame className="w-5 h-5 text-[#F5A623]" /> Trending Locations
+              </h3>
+              <p className="text-[13px] font-medium text-white/55 mt-1 leading-tight flex items-center gap-1">
+                <span>AP Market</span>
+                <span className="text-[#F5A623] font-semibold">↑12%</span>
+                <span>this month</span>
+              </p>
+            </div>
+
+            <Link
+              href="/properties?sort=trending"
+              className="text-[15px] font-semibold text-[#F5A623] hover:text-[#FFC661] flex items-center gap-1 group transition-colors shrink-0 pt-0.5"
+            >
+              <span className="group-hover:underline">View All</span>
+              <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
+            </Link>
+          </div>
 
           {/* Category Chips Bar */}
-          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x mb-5 pb-1">
+          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x mb-[20px] pb-1">
             <button
               type="button"
               onClick={() => setLocationTab("trending")}
               className={cn(
-                "h-[40px] px-[22px] rounded-full text-[15px] font-semibold flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                "h-[40px] px-[22px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                 locationTab === "trending"
-                  ? "bg-gradient-to-b from-[#F5A623] to-[#D98C0F] text-[#16161A] font-bold shadow-[0_8px_22px_rgba(245,166,35,0.18)]"
-                  : "bg-transparent border border-[rgba(255,255,255,0.12)] text-[#D5D8E2] hover:border-[rgba(255,255,255,0.25)] hover:text-white"
+                  ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
+                  : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
               )}
             >
               <Flame className={cn("w-4 h-4", locationTab === "trending" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
@@ -280,10 +297,10 @@ export function HeroSection() {
               type="button"
               onClick={() => setLocationTab("vijayawada")}
               className={cn(
-                "h-[40px] px-[22px] rounded-full text-[15px] font-semibold flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                "h-[40px] px-[22px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                 locationTab === "vijayawada"
-                  ? "bg-gradient-to-b from-[#F5A623] to-[#D98C0F] text-[#16161A] font-bold shadow-[0_8px_22px_rgba(245,166,35,0.18)]"
-                  : "bg-transparent border border-[rgba(255,255,255,0.12)] text-[#D5D8E2] hover:border-[rgba(255,255,255,0.25)] hover:text-white"
+                  ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
+                  : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
               )}
             >
               <MapPin className={cn("w-4 h-4", locationTab === "vijayawada" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
@@ -294,10 +311,10 @@ export function HeroSection() {
               type="button"
               onClick={() => setLocationTab("guntur")}
               className={cn(
-                "h-[40px] px-[22px] rounded-full text-[15px] font-semibold flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                "h-[40px] px-[22px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                 locationTab === "guntur"
-                  ? "bg-gradient-to-b from-[#F5A623] to-[#D98C0F] text-[#16161A] font-bold shadow-[0_8px_22px_rgba(245,166,35,0.18)]"
-                  : "bg-transparent border border-[rgba(255,255,255,0.12)] text-[#D5D8E2] hover:border-[rgba(255,255,255,0.25)] hover:text-white"
+                  ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
+                  : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
               )}
             >
               <Building2 className={cn("w-4 h-4", locationTab === "guntur" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
@@ -308,10 +325,10 @@ export function HeroSection() {
               type="button"
               onClick={() => setLocationTab("popular")}
               className={cn(
-                "h-[40px] px-[22px] rounded-full text-[15px] font-semibold flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                "h-[40px] px-[22px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
                 locationTab === "popular"
-                  ? "bg-gradient-to-b from-[#F5A623] to-[#D98C0F] text-[#16161A] font-bold shadow-[0_8px_22px_rgba(245,166,35,0.18)]"
-                  : "bg-transparent border border-[rgba(255,255,255,0.12)] text-[#D5D8E2] hover:border-[rgba(255,255,255,0.25)] hover:text-white"
+                  ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
+                  : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
               )}
             >
               <Sparkles className={cn("w-4 h-4", locationTab === "popular" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
@@ -320,23 +337,23 @@ export function HeroSection() {
 
             <button
               type="button"
-              onClick={() => setLocationTab("topsearches")}
+              onClick={() => setLocationTab("nearyou")}
               className={cn(
-                "h-[40px] px-[22px] rounded-full text-[15px] font-semibold flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
-                locationTab === "topsearches"
-                  ? "bg-gradient-to-b from-[#F5A623] to-[#D98C0F] text-[#16161A] font-bold shadow-[0_8px_22px_rgba(245,166,35,0.18)]"
-                  : "bg-transparent border border-[rgba(255,255,255,0.12)] text-[#D5D8E2] hover:border-[rgba(255,255,255,0.25)] hover:text-white"
+                "h-[40px] px-[22px] rounded-full text-[15px] flex items-center gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                locationTab === "nearyou"
+                  ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_10px_24px_rgba(245,166,35,0.18)]"
+                  : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
               )}
             >
-              <Tag className={cn("w-4 h-4", locationTab === "topsearches" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
-              <span>Top Searches</span>
+              <MapPin className={cn("w-4 h-4", locationTab === "nearyou" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
+              <span>Near You</span>
             </button>
           </div>
 
           {/* Location Cards Horizontal Carousel */}
           <div
             ref={scrollContainerRef}
-            className="flex items-center gap-[14px] overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x py-1"
+            className="flex items-center gap-4 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x py-1"
           >
             {(locationTab === "trending"
               ? trendingHotspots
@@ -345,32 +362,35 @@ export function HeroSection() {
               : locationTab === "guntur"
               ? gunturHotspots
               : locationTab === "popular"
-              ? trendingHotspots.filter((h) => h.badge === "Hot" || h.badge === "Top")
+              ? trendingHotspots.filter((h) => h.badge === "Demand ↑18%" || h.badge === "Top Pick" || h.badge === "Hot")
               : trendingHotspots
             ).map((spot) => (
               <div
                 key={spot.name}
                 onClick={() => router.push(`/properties?type=${activeTab}&location=${encodeURIComponent(spot.name)}`)}
-                className="w-[270px] sm:w-[260px] lg:w-[245px] shrink-0 snap-start h-[76px] rounded-[22px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-[18px] flex items-center justify-between gap-3 cursor-pointer transition-all duration-250 hover:-translate-y-[2px] hover:border-[rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.06)] hover:shadow-lg group"
+                className="w-[280px] sm:w-[320px] shrink-0 snap-start h-[90px] rounded-[22px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-[18px] flex items-center justify-between gap-3 cursor-pointer transition-all duration-250 hover:-translate-y-[3px] hover:scale-[1.01] hover:border-[#F5A623]/60 hover:bg-[rgba(255,255,255,0.06)] hover:shadow-lg group"
               >
-                {/* Left: Circular Icon */}
-                <div className="w-[40px] h-[40px] rounded-full bg-[rgba(20,22,30,0.8)] border border-[#F5A623]/40 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Flame className="w-4 h-4 text-[#F5A623]" />
+                {/* Left: 46px Circular Icon with Lucide MapPin Icon */}
+                <div className="w-[46px] h-[46px] rounded-full bg-[rgba(20,22,30,0.85)] border border-[rgba(255,255,255,0.1)] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform group-hover:border-[#F5A623]/40">
+                  <MapPin className="w-5 h-5 text-[#F5A623]" />
                 </div>
 
-                {/* Middle: Title & Subtitle */}
+                {/* Center: Location Name, Subtitle, Properties Stat */}
                 <div className="flex-1 min-w-0 text-left">
-                  <div className="text-[17px] font-bold text-white leading-tight truncate group-hover:text-[#F5A623] transition-colors">
+                  <div className="text-[18px] font-bold text-white leading-tight truncate group-hover:text-[#FFC661] transition-colors">
                     {spot.name}
                   </div>
-                  <div className="text-[14px] font-medium text-[rgba(255,255,255,0.65)] leading-tight truncate mt-0.5">
+                  <div className="text-[14px] font-medium text-white/60 leading-tight truncate mt-0.5">
                     {spot.tag}
+                  </div>
+                  <div className="text-[13px] font-semibold text-[#F5A623] leading-tight truncate mt-1">
+                    {spot.count || "321 Properties"}
                   </div>
                 </div>
 
-                {/* Right: Tiny Badge Only */}
+                {/* Right: Tiny Status Badge */}
                 {spot.badge && (
-                  <div className="h-[22px] px-[10px] py-[3px] rounded-full bg-[#F5A623]/15 text-[#F5A623] border border-[#F5A623]/30 text-[11px] font-bold flex items-center justify-center shrink-0 whitespace-nowrap">
+                  <div className="h-[22px] px-[10px] py-[3px] rounded-full bg-[rgba(245,166,35,0.12)] text-[#F5A623] border border-[rgba(245,166,35,0.22)] text-[11px] font-bold flex items-center justify-center shrink-0 whitespace-nowrap">
                     {spot.badge}
                   </div>
                 )}
