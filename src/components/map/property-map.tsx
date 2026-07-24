@@ -1585,7 +1585,8 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                       const isSelected = selectedPropertyId === prop.id;
                       const coords = resolvePropertyMapCoords(prop);
                       const distStr = position ? calculateDistanceStr(position, prop.location.latitude, prop.location.longitude) : "";
-                      const mainImg = prop.images && prop.images[0] ? prop.images[0] : "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80";
+                      const firstImg = prop.images && prop.images[0];
+                      const mainImg: string = typeof firstImg === "string" ? firstImg : (firstImg as any)?.url || (prop as any).coverImage || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80";
 
                       return (
                         <div
