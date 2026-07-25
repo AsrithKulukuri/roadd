@@ -22,7 +22,7 @@ export function Logo({
   size = "md",
   showText = true,
   href = "/",
-  isDarkBg = true, // Default true for dark header context
+  isDarkBg = false,
 }: LogoProps) {
   const { width, height, textClass } = sizeMap[size];
 
@@ -46,13 +46,13 @@ export function Logo({
               textClass
             )}
           >
-            <span className="text-amber-400">R</span>
-            <span className={isDarkBg ? "text-white" : "text-slate-900"}>
+            <span className="text-amber-500 font-black">R</span>
+            <span className={isDarkBg ? "text-white font-black" : "text-slate-900 dark:text-white font-black"}>
               OAD FACING
             </span>
           </span>
           {size !== "sm" && (
-            <span className="text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.18em] text-slate-400 leading-none mt-1 font-semibold hidden sm:block">
+            <span className="text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.18em] text-slate-600 dark:text-slate-400 leading-none mt-1 font-bold hidden sm:block">
               Real Owner Agent Developer
             </span>
           )}

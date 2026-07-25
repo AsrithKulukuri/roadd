@@ -180,7 +180,7 @@ export function Navbar() {
                 /* User Menu for Desktop */
                 <div className="hidden sm:flex items-center gap-2">
                   <Link href="/dashboard">
-                    <Button variant="outline" size="sm" className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-extrabold hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <Button variant="outline" size="sm" className="bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-extrabold hover:bg-slate-100 dark:hover:bg-slate-800 shadow-xs">
                       Dashboard
                     </Button>
                   </Link>
@@ -188,7 +188,7 @@ export function Navbar() {
                     onClick={handleSignOut}
                     variant="ghost"
                     size="sm"
-                    className="text-xs text-slate-900 dark:text-slate-200 font-extrabold hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="text-xs text-slate-900 dark:text-slate-100 font-extrabold hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     Sign Out
                   </Button>
