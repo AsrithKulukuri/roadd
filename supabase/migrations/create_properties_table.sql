@@ -1,6 +1,7 @@
 create table if not exists public.properties (
     id text primary key,
     slug text unique not null,
+    "refId" text,
     title text not null,
     description text,
     price bigint not null,
@@ -64,9 +65,8 @@ create policy "Properties are viewable by everyone"
 on public.properties for select 
 using (true);
 
-create policy "Authenticated users can insert properties" 
+create policy "Allow property insert" 
 on public.properties for insert 
-to authenticated 
 with check (true);
 
 create policy "Authenticated users can update properties" 

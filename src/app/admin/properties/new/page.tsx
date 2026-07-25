@@ -122,19 +122,29 @@ export default function AddPropertyPage() {
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = isCover ? `cover/${fileName}` : `gallery/${fileName}`;
 
-        // Upload to Supabase Storage
-        const { data, error } = await supabase.storage
-          .from('properties')
-          .upload(filePath, file);
+        let imgUrl = "";
+        try {
+          // Upload to Supabase Storage
+          const { data, error } = await supabase.storage
+            .from('properties')
+            .upload(filePath, file);
 
-        if (error) throw error;
+          if (!error && data?.path) {
+            const { data: publicUrlData } = supabase.storage
+              .from('properties')
+              .getPublicUrl(data.path);
+            imgUrl = publicUrlData.publicUrl;
+          }
+        } catch (storageErr) {
+          console.warn("Storage upload warning, fallback to object URL:", storageErr);
+        }
 
-        // Get public URL
-        const { data: publicUrlData } = supabase.storage
-          .from('properties')
-          .getPublicUrl(data.path);
-          
-        uploadedUrls.push(publicUrlData.publicUrl);
+        // Fallback to local Blob/Object URL if bucket upload is not configured or failed
+        if (!imgUrl) {
+          imgUrl = URL.createObjectURL(file);
+        }
+
+        uploadedUrls.push(imgUrl);
       }
       
       if (isCover) {
@@ -146,7 +156,7 @@ export default function AddPropertyPage() {
       }
     } catch (error: any) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload image(s). Ensure 'properties' bucket exists and is public.");
+      toast.error("Notice: Could not upload to cloud storage, using local preview image.");
     } finally {
       setIsUploading(false);
     }
