@@ -131,7 +131,7 @@ export function Navbar() {
     <>
       {/* Realtor.com Style Clean Navbar */}
       <header
-        className="fixed top-0 left-0 right-0 z-[100] bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs py-2.5 sm:py-3 transition-all duration-300"
+        className="fixed top-0 left-0 right-0 z-[100] bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs py-2.5 sm:py-3 transition-all duration-300"
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-6">
           <div className="flex items-center justify-between">
@@ -220,7 +220,7 @@ export function Navbar() {
               {/* Mobile Menu Toggle Hamburger */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 text-slate-300 hover:text-white rounded-xl hover:bg-slate-850 transition-colors cursor-pointer"
+                className="lg:hidden p-2 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
