@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Grid2X2, Play, Camera, Tag } from "lucide-react";
 import type { PropertyImage } from "@/types/property";
 
+import { getYoutubeEmbedUrl } from "@/lib/utils";
+
 interface PropertyGalleryProps {
   images: PropertyImage[];
   title: string;
@@ -21,12 +23,6 @@ export function PropertyGallery({ images, title, videoUrl, isReadyToMove = true 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVideoOpen, setIsVideoOpen] = useState(false);
 
-  const getYoutubeEmbedUrl = (url?: string) => {
-    if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
-  };
   const embedUrl = getYoutubeEmbedUrl(videoUrl);
 
   if (!images || images.length === 0) return null;
@@ -104,7 +100,7 @@ export function PropertyGallery({ images, title, videoUrl, isReadyToMove = true 
           {embedUrl && (
             <Button
               onClick={() => setIsVideoOpen(true)}
-              className="bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-full px-4 py-2 shadow-xl flex items-center gap-1.5 cursor-pointer"
+              className="bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-full px-4 py-2 shadow-xl flex items-center gap-1.5 cursor-pointer animate-pulse"
             >
               <Play className="w-4 h-4 fill-white" /> Watch Video Tour
             </Button>
@@ -153,6 +149,29 @@ export function PropertyGallery({ images, title, videoUrl, isReadyToMove = true 
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Video Tour Dialog Modal */}
+      {embedUrl && (
+        <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>
+          <DialogContent className="max-w-4xl p-0 bg-slate-950 border-slate-800 text-white overflow-hidden rounded-3xl">
+            <DialogTitle className="p-4 bg-slate-900 border-b border-slate-800 font-extrabold text-sm text-white flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Play className="w-4 h-4 text-red-500 fill-red-500" /> Property Video Tour - {title}
+              </span>
+            </DialogTitle>
+            <DialogDescription className="sr-only">Video tour for {title}</DialogDescription>
+            <div className="relative aspect-video w-full bg-black">
+              <iframe
+                src={`${embedUrl}?autoplay=1`}
+                title={`${title} Video Tour`}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

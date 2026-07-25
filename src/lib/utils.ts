@@ -58,6 +58,37 @@ export function formatPriceCompact(amount: number): string {
  * @param sqft - Area in square feet
  * @param unit - Display unit (sqft or sqm)
  */
+
+/**
+ * Extracts and formats YouTube video embed URLs from any format:
+ * Standard watch URLs, Share (youtu.be) links, Shorts, Live streams, or raw 11-char IDs.
+ */
+export function getYoutubeEmbedUrl(url?: string): string | null {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  // 1. YouTube Shorts: youtube.com/shorts/VIDEO_ID
+  const shortsMatch = trimmed.match(/(?:youtube\.com|youtu\.be)\/shorts\/([a-zA-Z0-9_-]{11})/i);
+  if (shortsMatch && shortsMatch[1]) return `https://www.youtube.com/embed/${shortsMatch[1]}`;
+
+  // 2. YouTube Live: youtube.com/live/VIDEO_ID
+  const liveMatch = trimmed.match(/(?:youtube\.com|youtu\.be)\/live\/([a-zA-Z0-9_-]{11})/i);
+  if (liveMatch && liveMatch[1]) return `https://www.youtube.com/embed/${liveMatch[1]}`;
+
+  // 3. YouTube Embed: youtube.com/embed/VIDEO_ID
+  const embedMatch = trimmed.match(/(?:youtube\.com|youtu\.be)\/embed\/([a-zA-Z0-9_-]{11})/i);
+  if (embedMatch && embedMatch[1]) return `https://www.youtube.com/embed/${embedMatch[1]}`;
+
+  // 4. Standard watch / youtu.be share URLs
+  const standardMatch = trimmed.match(/(?:youtu\.be\/|youtube\.com\/(?:v\/|watch\?v=|watch\?.+&v=))([a-zA-Z0-9_-]{11})/i);
+  if (standardMatch && standardMatch[1]) return `https://www.youtube.com/embed/${standardMatch[1]}`;
+
+  // 5. Raw 11-char Video ID
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return `https://www.youtube.com/embed/${trimmed}`;
+
+  return null;
+}
 export function formatArea(sqft: number, unit: "sqft" | "sqm" = "sqft"): string {
   if (unit === "sqm") {
     const sqm = Math.round(sqft * 0.092903);

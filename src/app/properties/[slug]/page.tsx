@@ -7,13 +7,13 @@ import { PropertyAmenities } from "@/components/property/property-amenities";
 import { PropertyContact } from "@/components/property/property-contact";
 import { PropertySimilar } from "@/components/property/property-similar";
 import { PropertyActions } from "@/components/property/property-actions";
-import { MapPin, Shield, ChevronLeft, Building2, Tag, Percent, ArrowDownRight, Sparkles } from "lucide-react";
+import { MapPin, Shield, ChevronLeft, Building2, Tag, Percent, ArrowDownRight, Sparkles, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PropertyLocationWrapper } from "@/components/property/property-location-wrapper";
 import { ContactAgentBelowMap } from "@/components/property/contact-agent-below-map";
 import { BackButton } from "@/components/ui/back-button";
 import { MortgageCalculator } from "@/components/property/mortgage-calculator";
-import { formatINR, formatPriceCompact } from "@/lib/utils";
+import { formatINR, formatPriceCompact, getYoutubeEmbedUrl } from "@/lib/utils";
 import Link from "next/link";
 import type { Property } from "@/types/property";
 import type { Metadata } from "next";
@@ -211,6 +211,24 @@ export default async function PropertyDetailPage({
                 {property.description}
               </p>
             </div>
+
+            {/* Embedded Property Video Tour */}
+            {property.videoUrl && getYoutubeEmbedUrl(property.videoUrl) && (
+              <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <h3 className="font-heading text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Play className="w-6 h-6 text-red-500 fill-red-500" /> Property Video Tour
+                </h3>
+                <div className="relative aspect-video w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 bg-slate-950">
+                  <iframe
+                    src={getYoutubeEmbedUrl(property.videoUrl)!}
+                    title={`${property.title} Video Tour`}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Amenities */}
             <PropertyAmenities amenities={property.amenities} />
