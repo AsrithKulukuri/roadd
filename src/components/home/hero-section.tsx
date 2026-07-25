@@ -166,16 +166,13 @@ export function HeroSection() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center">
-        {/* Realtor.com Headline with R.O.A.D Branding */}
+        {/* R.O.A.D Branding Headline */}
         <div className="space-y-2 mb-6 sm:mb-8 max-w-4xl">
-          <p className="font-heading text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-wide drop-shadow-md">
+          <h1 className="font-heading text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-wide drop-shadow-lg leading-tight">
             <span className="text-amber-400 font-black">R</span>eal{" "}
             <span className="text-amber-400 font-black">O</span>wner{" "}
             <span className="text-amber-400 font-black">A</span>gent{" "}
             <span className="text-amber-400 font-black">D</span>eveloper
-          </p>
-          <h1 className="font-heading text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-white drop-shadow-lg leading-tight">
-            ROAD FACING agents recommend<span className="text-amber-400">*</span>
           </h1>
         </div>
 
