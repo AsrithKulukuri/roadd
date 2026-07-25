@@ -1259,7 +1259,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               }}
               title={
                 drawPolygonPoints.length > 0
-                  ? "Clear Drawn Boundary"
+                  ? "Clear Drawn Area"
                   : isDrawing
                   ? "Cancel Drawing"
                   : "Draw Custom Area"
@@ -1267,7 +1267,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               className={cn(
                 "w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 cursor-pointer border shrink-0",
                 drawPolygonPoints.length > 0
-                  ? "bg-slate-950 text-white border-amber-500 hover:bg-slate-900"
+                  ? "bg-slate-950 text-white border-red-500 hover:bg-slate-900"
                   : isDrawing
                   ? "bg-amber-500 text-slate-950 border-amber-600 font-black animate-pulse"
                   : "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -1275,8 +1275,8 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
             >
               {drawPolygonPoints.length > 0 ? (
                 <>
-                  <X className="w-5 h-5 text-amber-400" />
-                  <span className="text-[10px] font-extrabold leading-none text-amber-400">Clear</span>
+                  <X className="w-5 h-5 text-red-400" />
+                  <span className="text-[10px] font-extrabold leading-none text-red-400">Clear</span>
                 </>
               ) : isDrawing ? (
                 <>
@@ -1306,116 +1306,80 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               <SlidersHorizontal className="w-5 h-5 text-slate-900 dark:text-white" />
               <span className="text-[10px] font-extrabold leading-none">Options</span>
             </button>
-
-            {/* 4. CLEAR BUTTON (When boundaries/filters active) */}
-            {(drawPolygonPoints.length > 0 || showHeatmap || activeLandmarkTypes.length > 0 || mapSearchInput) && (
-              <button
-                type="button"
-                onClick={() => {
-                  handleClearDraw();
-                  setShowHeatmap(false);
-                  setActiveLandmarkTypes([]);
-                  setMapSearchInput("");
-                  if (mapRef.current) {
-                    mapRef.current.flyTo(new L.LatLng(16.5062, 80.6480), 12);
-                  }
-                }}
-                title="Clear Active Boundaries & Filters"
-                className="w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl bg-slate-950 text-white shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-900 hover:bg-red-600 shrink-0"
-              >
-                <X className="w-5 h-5 text-white" />
-                <span className="text-[10px] font-extrabold leading-none">Clear</span>
-              </button>
-            )}
           </div>
 
-            {/* FLOATING OPTIONS POPOVER MENU (OPENS TO THE LEFT OF CONTROL STACK) */}
-            {showMapOptionsMenu && (
-              <div className="absolute top-4 right-20 sm:right-22 z-[560] w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl p-4 shadow-2xl space-y-3 text-xs animate-in fade-in zoom-in-95 duration-150 pointer-events-auto">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <span className="font-extrabold text-amber-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                    <Layers3 className="w-4 h-4" /> Map Display Options
-                  </span>
-                  <button
-                    onClick={() => setShowMapOptionsMenu(false)}
-                    className="p-1 text-slate-400 hover:text-white"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Satellite Layer Toggle */}
-                <div className="flex items-center justify-between py-1">
-                  <span className="font-bold text-slate-200">Satellite Imagery</span>
-                  <input
-                    type="checkbox"
-                    checked={mapLayerType === "hybrid"}
-                    onChange={(e) => setMapLayerType(e.target.checked ? "hybrid" : "streets")}
-                    className="accent-amber-500 w-4 h-4 cursor-pointer"
-                  />
-                </div>
-
-                {/* Heatmap Toggle */}
-                <div className="flex items-center justify-between py-1">
-                  <span className="font-bold text-slate-200">AP Price Heatmaps</span>
-                  <input
-                    type="checkbox"
-                    checked={showHeatmap}
-                    onChange={(e) => setShowHeatmap(e.target.checked)}
-                    className="accent-amber-500 w-4 h-4 cursor-pointer"
-                  />
-                </div>
-
-                {/* Neighborhood Layers */}
-                <div className="space-y-1.5 pt-1 border-t border-slate-800">
-                  <span className="text-[10px] font-bold uppercase text-slate-400">Neighborhood Overlays</span>
-                  <div className="grid grid-cols-3 gap-1">
-                    <button
-                      onClick={() => toggleLandmarkFilter("school")}
-                      className={cn(
-                        "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
-                        activeLandmarkTypes.includes("school") ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300"
-                      )}
-                    >
-                      Schools
-                    </button>
-                    <button
-                      onClick={() => toggleLandmarkFilter("hospital")}
-                      className={cn(
-                        "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
-                        activeLandmarkTypes.includes("hospital") ? "bg-red-600 text-white" : "bg-slate-800 text-slate-300"
-                      )}
-                    >
-                      Hospitals
-                    </button>
-                    <button
-                      onClick={() => toggleLandmarkFilter("transit")}
-                      className={cn(
-                        "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
-                        activeLandmarkTypes.includes("transit") ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300"
-                      )}
-                    >
-                      Transit
-                    </button>
-                  </div>
-                </div>
-
-                {/* Draw Custom Boundary */}
+          {/* FLOATING OPTIONS POPOVER MENU */}
+          {showMapOptionsMenu && (
+            <div className="absolute top-4 right-20 sm:right-22 z-[560] w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl p-4 shadow-2xl space-y-3 text-xs animate-in fade-in zoom-in-95 duration-150 pointer-events-auto">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span className="font-extrabold text-amber-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers3 className="w-4 h-4" /> Map Display Options
+                </span>
                 <button
-                  onClick={() => {
-                    setIsDrawing(!isDrawing);
-                    setShowMapOptionsMenu(false);
-                  }}
-                  className={cn(
-                    "w-full py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
-                    isDrawing ? "bg-amber-500 text-slate-950 font-black" : "bg-slate-800 text-slate-200 hover:bg-slate-700"
-                  )}
+                  onClick={() => setShowMapOptionsMenu(false)}
+                  className="p-1 text-slate-400 hover:text-white"
                 >
-                  <Pencil className="w-4 h-4" />
-                  <span>{isDrawing ? "Drawing Mode Active" : "Draw Custom Boundary"}</span>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
-            )}
+
+              {/* Satellite Layer Toggle */}
+              <div className="flex items-center justify-between py-1">
+                <span className="font-bold text-slate-200">Satellite Imagery</span>
+                <input
+                  type="checkbox"
+                  checked={mapLayerType === "hybrid"}
+                  onChange={(e) => setMapLayerType(e.target.checked ? "hybrid" : "streets")}
+                  className="accent-amber-500 w-4 h-4 cursor-pointer"
+                />
+              </div>
+
+              {/* Heatmap Toggle */}
+              <div className="flex items-center justify-between py-1">
+                <span className="font-bold text-slate-200">AP Price Heatmaps</span>
+                <input
+                  type="checkbox"
+                  checked={showHeatmap}
+                  onChange={(e) => setShowHeatmap(e.target.checked)}
+                  className="accent-amber-500 w-4 h-4 cursor-pointer"
+                />
+              </div>
+
+              {/* Neighborhood Layers */}
+              <div className="space-y-1.5 pt-1 border-t border-slate-800">
+                <span className="text-[10px] font-bold uppercase text-slate-400">Neighborhood Overlays</span>
+                <div className="grid grid-cols-3 gap-1">
+                  <button
+                    onClick={() => toggleLandmarkFilter("school")}
+                    className={cn(
+                      "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
+                      activeLandmarkTypes.includes("school") ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300"
+                    )}
+                  >
+                    Schools
+                  </button>
+                  <button
+                    onClick={() => toggleLandmarkFilter("hospital")}
+                    className={cn(
+                      "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
+                      activeLandmarkTypes.includes("hospital") ? "bg-red-600 text-white" : "bg-slate-800 text-slate-300"
+                    )}
+                  >
+                    Hospitals
+                  </button>
+                  <button
+                    onClick={() => toggleLandmarkFilter("transit")}
+                    className={cn(
+                      "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
+                      activeLandmarkTypes.includes("transit") ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300"
+                    )}
+                  >
+                    Transit
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* FLOATING BOTTOM CENTER "SEARCH AS I MOVE THE MAP" PILL */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[550] pointer-events-auto">
@@ -1434,137 +1398,25 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
             </button>
           </div>
 
-          {/* Drawing Mode Overlay Banner */}
-          {isDrawing && (
-            <div className="absolute top-14 sm:top-16 left-3 right-3 sm:left-auto sm:right-3 sm:w-[420px] z-[550] bg-slate-950/95 backdrop-blur-xl text-white font-extrabold text-xs p-3 rounded-2xl shadow-2xl border-2 border-amber-500 space-y-2 animate-in fade-in zoom-in-95">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-amber-400 font-extrabold">
-                  <Pencil className="w-4 h-4 shrink-0 text-amber-400 animate-pulse" /> Freehand Drawing Active
-                </span>
-                <button
-                  onClick={handleClearDraw}
-                  className="bg-red-500/20 text-red-300 hover:bg-red-500 hover:text-white px-2 py-1 rounded-xl text-[10px] font-bold cursor-pointer transition-colors"
-                >
-                  Cancel Draw
-                </button>
-              </div>
-
-              {/* Shape Mode Selector Tabs */}
-              <div className="grid grid-cols-3 gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => setDrawShapeType("freehand")}
-                  className={cn(
-                    "py-1 px-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
-                    drawShapeType === "freehand"
-                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
-                      : "text-slate-300 hover:text-white"
-                  )}
-                >
-                  <span>✏️ Freehand</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDrawShapeType("circle")}
-                  className={cn(
-                    "py-1 px-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
-                    drawShapeType === "circle"
-                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
-                      : "text-slate-300 hover:text-white"
-                  )}
-                >
-                  <span>⭕ Circle</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDrawShapeType("box")}
-                  className={cn(
-                    "py-1 px-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
-                    drawShapeType === "box"
-                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
-                      : "text-slate-300 hover:text-white"
-                  )}
-                >
-                  <span>🔲 Box</span>
-                </button>
-              </div>
-
-              <p className="text-[10px] text-slate-300 font-normal">
-                Drag your mouse or finger freely across the map canvas to draw any random shape.
-              </p>
-            </div>
-          )}
-
-          {/* Realtor.com Style Drawn Area Property Results Card */}
+          {/* REALTOR.COM AUTHENTIC FLOATING COUNT BADGE (TOP-LEFT) */}
           {drawPolygonPoints.length >= 3 && !isDrawing && (
-            <div className="absolute top-12 left-3 right-3 sm:left-auto sm:right-3 sm:w-84 z-[540] bg-slate-900/95 backdrop-blur-xl border border-amber-500/50 text-white p-3.5 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
-                <div className="flex items-center gap-1.5 text-amber-400 font-extrabold text-xs">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span>Drawn Area Results</span>
+            <div className="absolute top-4 left-4 z-[550] bg-slate-950/95 text-white border border-slate-800 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <div>
+                <div className="font-extrabold text-xs text-white">
+                  Showing {displayedProperties.length} of {mapProperties.length} properties
                 </div>
-                <button
-                  onClick={handleClearDraw}
-                  className="text-slate-400 hover:text-white p-1 cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                <div className="text-[10px] text-slate-400 font-medium">
+                  Filtered by custom drawn boundary
+                </div>
               </div>
-
-              {displayedProperties.length > 0 ? (
-                <div className="space-y-2">
-                  <div className="text-sm font-bold text-white flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>{displayedProperties.length} {displayedProperties.length === 1 ? "Property" : "Properties"} found inside area!</span>
-                  </div>
-                  <p className="text-[11px] text-slate-300">
-                    Map pins filtered strictly matching your custom sketched shape.
-                  </p>
-                  <div className="flex items-center gap-2 pt-1">
-                    <button
-                      onClick={() => {
-                        setIsDrawing(true);
-                        setDrawPolygonPoints([]);
-                      }}
-                      className="flex-1 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1 shadow-md cursor-pointer"
-                    >
-                      <Pencil className="w-3.5 h-3.5" /> Redraw Area
-                    </button>
-                    <button
-                      onClick={handleClearDraw}
-                      className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="text-sm font-bold text-amber-400 flex items-center gap-1.5">
-                    <span>⚠️ No properties found in drawn area</span>
-                  </div>
-                  <p className="text-[11px] text-slate-300">
-                    No active property listings fall within your custom boundary. Try redrawing a larger area or clearing boundary.
-                  </p>
-                  <div className="flex items-center gap-2 pt-1">
-                    <button
-                      onClick={() => {
-                        setIsDrawing(true);
-                        setDrawPolygonPoints([]);
-                      }}
-                      className="flex-1 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1 shadow-md cursor-pointer"
-                    >
-                      <Pencil className="w-3.5 h-3.5" /> Redraw Larger Area
-                    </button>
-                    <button
-                      onClick={handleClearDraw}
-                      className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-              )}
+              <button
+                onClick={handleClearDraw}
+                className="ml-1 p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                title="Clear Drawn Area"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           )}
 
@@ -1802,16 +1654,27 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               />
             )}
 
-            {/* Render Drawn Custom Polygon Boundary */}
-            {drawPolygonPoints.length > 0 && (
+            {/* Active Sketching Polyline (Follows Finger Smoothly without closing wedge) */}
+            {isDrawing && drawPolygonPoints.length > 0 && (
+              <Polyline
+                positions={drawPolygonPoints}
+                pathOptions={{
+                  color: "#EF4444",
+                  weight: 3.5,
+                  opacity: 0.95,
+                }}
+              />
+            )}
+
+            {/* Render Completed Drawn Custom Polygon Boundary */}
+            {!isDrawing && drawPolygonPoints.length >= 3 && (
               <Polygon
                 positions={drawPolygonPoints}
                 pathOptions={{
-                  color: "#F5A623",
-                  fillColor: "#F5A623",
-                  fillOpacity: 0.25,
-                  weight: 3,
-                  dashArray: "6, 6",
+                  color: "#EF4444",
+                  fillColor: "#EF4444",
+                  fillOpacity: 0.15,
+                  weight: 3.5,
                 }}
               />
             )}
