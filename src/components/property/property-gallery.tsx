@@ -33,7 +33,7 @@ export function PropertyGallery({ images, title, videoUrl, isReadyToMove = true 
   return (
     <>
       {/* Realtor.com Style Main Photo Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5 h-[320px] sm:h-[420px] lg:h-[500px] rounded-3xl overflow-hidden relative shadow-2xl bg-slate-950">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5 h-[320px] sm:h-[420px] lg:h-[500px] rounded-3xl overflow-hidden relative shadow-md bg-slate-100">
         
         {/* Main Hero Left Image (Takes 2 Columns on LG) */}
         <div 

@@ -161,9 +161,9 @@ export function PropertyContact({ property }: PropertyContactProps) {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-6 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-extrabold text-sm rounded-full shadow-lg transition-all cursor-pointer"
+            className="w-full py-6 bg-[#d92228] hover:bg-[#b91c21] active:scale-95 text-white font-extrabold text-sm rounded-full shadow-md transition-all cursor-pointer"
           >
-            {isSubmitting ? "Sending Inquiry..." : "Contact Builder & Agent"}
+            {isSubmitting ? "Sending Inquiry..." : "Contact builder"}
           </Button>
 
           {/* WhatsApp Action Button */}
