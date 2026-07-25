@@ -45,6 +45,7 @@
   /* Font Families — Realtor.com Style Inter */
   --font-heading: "Inter", var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-body: "Inter", var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-sans: "Inter", var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* Font Sizes */

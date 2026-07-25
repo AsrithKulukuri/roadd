@@ -11,7 +11,7 @@ const inter = Inter({
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
+const spaceGrotesk = Inter({
   subsets: ["latin"],
   variable: "--font-space-grotesk",
   display: "swap",
