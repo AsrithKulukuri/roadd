@@ -558,6 +558,13 @@ export default function AdminDashboardPage() {
                       </div>
 
                       <div className="flex items-center gap-1.5">
+                        <Link
+                          href={`/admin/properties/${p.id}/edit`}
+                          className="px-2.5 py-1 bg-amber-500/15 border border-amber-500/40 text-amber-500 hover:bg-amber-500 hover:text-slate-950 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition-all"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          <span>Edit</span>
+                        </Link>
                         <button
                           onClick={() => toggleSoldOut(p.id)}
                           className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold ${
@@ -569,6 +576,7 @@ export default function AdminDashboardPage() {
                         <button
                           onClick={() => deleteProperty(p.id)}
                           className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg"
+                          title="Delete Property"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -688,12 +696,22 @@ export default function AdminDashboardPage() {
                         </td>
 
                         <td className="px-6 py-4 text-right whitespace-nowrap">
-                          <button
-                            onClick={() => deleteProperty(p.id)}
-                            className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Link
+                              href={`/admin/properties/${p.id}/edit`}
+                              title="Edit Property"
+                              className="p-2 text-amber-500 hover:bg-amber-500/10 rounded-xl transition-colors inline-flex items-center justify-center cursor-pointer"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </Link>
+                            <button
+                              onClick={() => deleteProperty(p.id)}
+                              className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+                              title="Delete Property"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

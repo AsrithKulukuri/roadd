@@ -15,6 +15,7 @@ interface PropertiesState {
   toggleShowOnMap: (id: string) => Promise<void>;
   toggleRecommended: (id: string) => Promise<boolean>;
   updateRefId: (id: string, refId: string) => Promise<void>;
+  updateProperty: (id: string, updatedProperty: Property) => Promise<void>;
 }
 
 export const usePropertiesStore = create<PropertiesState>()(
@@ -219,6 +220,39 @@ export const usePropertiesStore = create<PropertiesState>()(
           if (error) console.warn('Error updating refId in Supabase:', error.message);
         } catch (error) {
           console.warn('Error updating refId in Supabase:', error);
+        }
+      },
+
+      updateProperty: async (id: string, updatedProperty: Property) => {
+        // 1. Optimistically update local Zustand state & localStorage persistence
+        set((state) => ({
+          properties: state.properties.map((p) =>
+            p.id === id ? { ...updatedProperty, id, updatedAt: new Date().toISOString() } : p
+          ),
+        }));
+
+        try {
+          // 2. Try updating full object in Supabase DB
+          let { error } = await supabase
+            .from('properties')
+            .update(updatedProperty)
+            .eq('id', id);
+
+          // 3. If failure due to missing column (e.g. refId), strip refId and retry
+          if (error && (error.message?.includes('refId') || error.code === 'PGRST204')) {
+            const { refId, ...dbPayload } = updatedProperty as any;
+            const retryRes = await supabase
+              .from('properties')
+              .update(dbPayload)
+              .eq('id', id);
+            error = retryRes.error;
+          }
+
+          if (error) {
+            console.warn('Supabase update warning (updated in local state):', error.message || error);
+          }
+        } catch (err: any) {
+          console.warn('Supabase update exception (updated in local state):', err?.message || err);
         }
       },
     }),

@@ -3,7 +3,7 @@
 import { usePropertiesStore } from "@/stores/properties-store";
 import { Button } from "@/components/ui/button";
 import { formatPriceCompact } from "@/lib/utils";
-import { MoreHorizontal, Plus, Star, Trash2, PowerOff, MapPin, ThumbsUp } from "lucide-react";
+import { MoreHorizontal, Plus, Star, Trash2, PowerOff, MapPin, ThumbsUp, Edit3 } from "lucide-react";
 import Link from "next/link";
 import { 
   DropdownMenu, 
@@ -93,6 +93,14 @@ export default function AdminPropertiesPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <Link
+                    href={`/admin/properties/${property.id}/edit`}
+                    className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center gap-1"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span>Edit</span>
+                  </Link>
+
                   <button
                     onClick={() => toggleSoldOut(property.id)}
                     className={`px-2.5 py-1 rounded-full text-xs font-bold ${
@@ -213,6 +221,12 @@ export default function AdminPropertiesPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48 bg-bg-card border-border-default">
+                        <DropdownMenuItem asChild className="cursor-pointer gap-2 text-amber-500 focus:text-amber-500 focus:bg-amber-500/10">
+                          <Link href={`/admin/properties/${property.id}/edit`}>
+                            <Edit3 className="w-4 h-4" />
+                            Edit Property
+                          </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuItem 
                           className="cursor-pointer gap-2"
                           onClick={() => toggleSoldOut(property.id)}
