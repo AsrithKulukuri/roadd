@@ -57,23 +57,31 @@ create table if not exists public.properties (
     "gatedSecurity" boolean default false
 );
 
+-- Safely add refId column if table already existed without it
+alter table public.properties add column if not exists "refId" text;
+
 -- Enable RLS
 alter table public.properties enable row level security;
 
--- Policies
+-- Policies (Idempotent: drop before creating)
+drop policy if exists "Properties are viewable by everyone" on public.properties;
 create policy "Properties are viewable by everyone" 
 on public.properties for select 
 using (true);
 
+drop policy if exists "Allow property insert" on public.properties;
+drop policy if exists "Authenticated users can insert properties" on public.properties;
 create policy "Allow property insert" 
 on public.properties for insert 
 with check (true);
 
+drop policy if exists "Authenticated users can update properties" on public.properties;
 create policy "Authenticated users can update properties" 
 on public.properties for update
 to authenticated 
 using (true);
 
+drop policy if exists "Authenticated users can delete properties" on public.properties;
 create policy "Authenticated users can delete properties" 
 on public.properties for delete
 to authenticated 
