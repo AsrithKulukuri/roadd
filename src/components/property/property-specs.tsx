@@ -19,17 +19,17 @@ export function PropertySpecs({ property }: PropertySpecsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-6 border-y border-border-default/50">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-6 border-y border-slate-200 dark:border-slate-800">
       {specs.map((spec, i) => {
         const Icon = spec.icon;
         return (
-          <div key={i} className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-bg-card flex items-center justify-center border border-border-default/50">
-              <Icon className="w-5 h-5 text-amber-primary" />
+          <div key={i} className="flex items-center gap-3 p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/80">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0 font-bold">
+              <Icon className="w-5 h-5 text-amber-500" />
             </div>
-            <div>
-              <p className="text-xs text-text-tertiary font-medium uppercase tracking-wider">{spec.label}</p>
-              <p className="font-semibold text-text-primary text-sm">{spec.value}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] text-amber-500 font-black uppercase tracking-wider truncate">{spec.label}</p>
+              <p className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm truncate">{spec.value}</p>
             </div>
           </div>
         );

@@ -115,21 +115,21 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
   return (
     <div className="w-full space-y-4">
       {/* Map Control Buttons */}
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
         <Button 
           type="button"
           onClick={handleGetLocation} 
           disabled={loadingLoc}
           variant="outline" 
           size="sm" 
-          className="border-border-default/60 hover:bg-bg-hover text-text-secondary hover:text-text-primary rounded-xl"
+          className="w-full sm:w-auto h-10 border-slate-300 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-xs"
         >
-          <Navigation className={`w-4 h-4 mr-2 ${loadingLoc ? 'animate-spin' : ''}`} />
-          {loadingLoc ? "Getting Location..." : "Check distance from your location"}
+          <Navigation className={`w-4 h-4 text-amber-500 ${loadingLoc ? 'animate-spin' : ''}`} />
+          <span>{loadingLoc ? "Getting Location..." : "Check distance from your location"}</span>
         </Button>
         {distance && (
-          <div className="flex items-center text-sm font-semibold text-amber-primary bg-amber-primary/10 border border-amber-primary/20 px-3 py-1 rounded-xl">
-            {distance} km away from this property
+          <div className="w-full sm:w-auto h-10 flex items-center justify-center text-xs font-black text-amber-500 bg-amber-500/15 border border-amber-500/30 px-3.5 rounded-xl shadow-xs shrink-0">
+            📍 {distance} km away from this property
           </div>
         )}
       </div>
