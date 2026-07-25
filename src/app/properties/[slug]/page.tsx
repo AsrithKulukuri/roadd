@@ -79,16 +79,16 @@ export default async function PropertyDetailPage({
     <div className="flex flex-col min-h-screen pt-16 pb-24 bg-bg-primary text-text-primary">
       
       {/* REALTOR.COM STYLE TOP NAVBAR (Left: Search Back, Center: ROAD FACING Logo, Right: Actions) */}
-      <div className="sticky top-16 z-30 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 py-3 shadow-xs">
+      <div className="sticky top-16 z-30 w-full bg-white backdrop-blur-md border-b border-slate-200 py-3 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
           
           {/* Left: < Search Back Link */}
           <Link
             href="/properties"
-            className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-amber-500 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-black text-slate-900 hover:text-amber-500 transition-colors"
           >
-            <ChevronLeft className="w-4 h-4 text-amber-500" />
-            <span className="underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4">Search Properties</span>
+            <ChevronLeft className="w-4 h-4 text-amber-500 stroke-[3]" />
+            <span className="underline decoration-slate-400 underline-offset-4 font-extrabold">Search Properties</span>
           </Link>
 
           {/* Center: Realtor.com Style CENTERED ROAD FACING BRANDING */}
@@ -96,7 +96,7 @@ export default async function PropertyDetailPage({
             <div className="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 font-black flex items-center justify-center text-xs shadow-xs">
               R
             </div>
-            <span className="font-heading font-black text-base sm:text-lg tracking-tight text-slate-900 dark:text-white">
+            <span className="font-heading font-black text-base sm:text-lg tracking-tight text-slate-900">
               ROAD <span className="text-amber-500">FACING</span>
             </span>
           </div>
@@ -109,13 +109,13 @@ export default async function PropertyDetailPage({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
         
         {/* REALTOR.COM STYLE BUILDER & MARKETING BADGE CARD ABOVE GALLERY */}
-        <div className="flex items-center gap-3 p-3 mb-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm w-fit">
+        <div className="flex items-center gap-3 p-3 mb-4 bg-white border border-slate-200 rounded-2xl shadow-xs w-fit">
           <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-500 border border-amber-500/30 flex items-center justify-center shrink-0 font-bold">
-            <Building2 className="w-5 h-5" />
+            <Building2 className="w-5 h-5 text-amber-500" />
           </div>
           <div className="text-xs">
-            <span className="text-slate-400 font-medium block">Marketed & Brokered by:</span>
-            <span className="font-bold text-slate-900 dark:text-white underline underline-offset-2">
+            <span className="text-slate-600 font-bold block">Marketed & Brokered by:</span>
+            <span className="font-extrabold text-slate-900 underline underline-offset-2">
               {property.ownerName || "ROAD FACING Premier Realty AP"}
             </span>
           </div>

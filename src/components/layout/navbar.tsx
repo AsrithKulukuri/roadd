@@ -145,10 +145,10 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "relative px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200",
+                    "relative px-4 py-2 text-sm font-bold rounded-xl transition-all duration-200",
                     isActive(link.href)
-                      ? "text-amber-500 font-extrabold"
-                      : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-850"
+                      ? "text-amber-500 font-black"
+                      : "text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                   )}
                 >
                   {link.label}
@@ -170,17 +170,17 @@ export function Navbar() {
               {/* Saved Items Heart Button */}
               <Link
                 href="/dashboard/saved"
-                className="p-2 text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-2 text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 aria-label="Saved properties"
               >
-                <Heart className="h-5 w-5" />
+                <Heart className="h-5 w-5 stroke-[2.5]" />
               </Link>
 
               {user ? (
                 /* User Menu for Desktop */
                 <div className="hidden sm:flex items-center gap-2">
                   <Link href="/dashboard">
-                    <Button variant="outline" size="sm" className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <Button variant="outline" size="sm" className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-extrabold hover:bg-slate-100 dark:hover:bg-slate-800">
                       Dashboard
                     </Button>
                   </Link>
@@ -188,7 +188,7 @@ export function Navbar() {
                     onClick={handleSignOut}
                     variant="ghost"
                     size="sm"
-                    className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="text-xs text-slate-900 dark:text-slate-200 font-extrabold hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     Sign Out
                   </Button>
@@ -197,12 +197,12 @@ export function Navbar() {
                 /* Auth Buttons for Desktop */
                 <div className="hidden sm:flex items-center gap-2">
                   <Link href="/login">
-                    <Button variant="ghost" size="sm" className="text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <Button variant="ghost" size="sm" className="text-slate-900 dark:text-slate-100 font-extrabold hover:bg-slate-100 dark:hover:bg-slate-800">
                       Log in
                     </Button>
                   </Link>
                   <Link href="/register">
-                    <Button variant="default" size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold">
+                    <Button variant="default" size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black">
                       Sign up
                     </Button>
                   </Link>
