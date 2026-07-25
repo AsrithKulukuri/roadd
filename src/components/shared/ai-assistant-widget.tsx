@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X, Send, Bot, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,13 @@ interface Message {
 
 export function AiAssistantWidget() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+
+  // Hide AI assistant on admin panel to prevent blocking UI buttons
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
   const [messages, setMessages] = useState<Message[]>([
     { id: "1", role: "assistant", content: "Hi! I'm your AI Real Estate Assistant. What kind of property are you looking for today? (e.g., 'Find me a 3 BHK under 2 Cr in Jubilee Hills')" }
   ]);

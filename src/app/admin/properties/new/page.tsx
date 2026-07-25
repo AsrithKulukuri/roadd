@@ -259,17 +259,27 @@ export default function AddPropertyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-primary pt-24 pb-32">
+    <div className="min-h-screen bg-bg-primary pt-20 sm:pt-24 pb-44 sm:pb-32">
       <div className="max-w-5xl mx-auto px-4 md:px-6">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4 pb-4 border-b border-border-default/60">
           <div>
-            <Link href="/admin" className="inline-flex items-center text-text-tertiary hover:text-text-primary transition-colors mb-2">
+            <Link href="/admin" className="inline-flex items-center text-text-tertiary hover:text-text-primary transition-colors mb-2 text-sm font-medium">
               <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
             </Link>
-            <h1 className="text-3xl font-heading font-bold text-text-primary">Create New Property</h1>
-            <p className="text-text-secondary mt-1">Add a new property listing to the platform.</p>
+            <h1 className="text-2xl sm:text-3xl font-heading font-bold text-text-primary">Create New Property</h1>
+            <p className="text-text-secondary text-xs sm:text-sm mt-1">Add a new property listing to the platform.</p>
+          </div>
+
+          <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0">
+            <Button variant="outline" size="sm" type="button" onClick={(e) => handleSubmit(e, "draft")} disabled={isSubmitting || isUploading} className="flex-1 sm:flex-none h-10 text-xs font-semibold">
+              Save Draft
+            </Button>
+            <Button variant="amber" size="sm" type="button" onClick={(e) => handleSubmit(e, "published")} disabled={isSubmitting || isUploading} className="flex-1 sm:flex-none h-10 text-xs font-bold">
+              <CheckCircle2 className="w-4 h-4 mr-1.5" />
+              Publish
+            </Button>
           </div>
         </div>
 
@@ -505,22 +515,22 @@ export default function AddPropertyPage() {
       </div>
 
       {/* SECTION 7: Sticky Publishing Panel */}
-      <div className="fixed bottom-0 left-0 right-0 bg-bg-card/90 backdrop-blur-xl border-t border-border-default py-4 px-6 z-50">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+      <div className="fixed bottom-0 left-0 right-0 bg-bg-card/95 backdrop-blur-xl border-t border-border-default p-3 sm:py-4 sm:px-6 z-40 shadow-elevated">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           
-          <div className="flex items-center gap-6">
+          <div className="flex items-center justify-between sm:justify-start gap-4">
             <div className="flex items-center gap-2">
               <Checkbox 
                 id="featured" name="featured"
                 checked={formData.featured}
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: checked as boolean }))} 
               />
-              <label htmlFor="featured" className="text-sm font-medium text-text-primary cursor-pointer">Mark as Featured</label>
+              <label htmlFor="featured" className="text-xs sm:text-sm font-medium text-text-primary cursor-pointer select-none">Mark as Featured</label>
             </div>
             
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-text-secondary">Status:</span>
-              <select name="status" value={formData.status} onChange={handleChange} className="h-9 rounded-lg bg-bg-primary border border-border-default/50 px-3 text-sm text-text-primary">
+              <span className="text-xs sm:text-sm font-medium text-text-secondary">Status:</span>
+              <select name="status" value={formData.status} onChange={handleChange} className="h-8 sm:h-9 rounded-lg bg-bg-primary border border-border-default/50 px-2 sm:px-3 text-xs sm:text-sm text-text-primary font-medium">
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
                 <option value="sold">Sold</option>
@@ -529,12 +539,12 @@ export default function AddPropertyPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button variant="outline" type="button" onClick={(e) => handleSubmit(e, "draft")} disabled={isSubmitting || isUploading}>
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <Button variant="outline" type="button" onClick={(e) => handleSubmit(e, "draft")} disabled={isSubmitting || isUploading} className="flex-1 sm:flex-none h-10 text-xs sm:text-sm">
               Save Draft
             </Button>
-            <Button variant="amber" type="button" onClick={(e) => handleSubmit(e, "published")} disabled={isSubmitting || isUploading}>
-              <CheckCircle2 className="w-4 h-4 mr-2" />
+            <Button variant="amber" type="button" onClick={(e) => handleSubmit(e, "published")} disabled={isSubmitting || isUploading} className="flex-1 sm:flex-none h-10 text-xs sm:text-sm font-bold">
+              <CheckCircle2 className="w-4 h-4 mr-1.5" />
               Publish Listing
             </Button>
           </div>

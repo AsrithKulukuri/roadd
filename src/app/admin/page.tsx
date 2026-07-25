@@ -352,66 +352,85 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* MOBILE-FRIENDLY ADMIN POWER TABS CAPSULE NAVIGATION */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 px-1 touch-pan-x bg-slate-900/90 p-2 rounded-2xl border border-slate-800 shadow-md">
-        <button
-          type="button"
-          onClick={() => setActiveTab("overview")}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
-            activeTab === "overview"
-              ? "bg-amber-500 text-slate-950 shadow-md"
-              : "text-slate-300 hover:text-white hover:bg-slate-800"
-          }`}
-        >
-          <Sparkles className="w-4 h-4" /> Overview & Charts
-        </button>
+      <div className="w-full">
+        {/* Mobile Dropdown Selector for small screens */}
+        <div className="sm:hidden mb-3">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Active Section</label>
+          <select 
+            value={activeTab} 
+            onChange={(e) => setActiveTab(e.target.value as any)}
+            className="w-full h-11 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold text-xs px-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          >
+            <option value="overview">✨ Overview & Charts</option>
+            <option value="properties">🏢 Properties & Ref IDs ({properties.length})</option>
+            <option value="locations">🔥 Trending Locations ({trendingLocations.length})</option>
+            <option value="categories">📐 Home Categories ({homeCategories.length})</option>
+            <option value="regions">🌐 Explore AP & Sub-regions ({apRegions.length})</option>
+          </select>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab("properties")}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
-            activeTab === "properties"
-              ? "bg-amber-500 text-slate-950 shadow-md"
-              : "text-slate-300 hover:text-white hover:bg-slate-800"
-          }`}
-        >
-          <Building2 className="w-4 h-4" /> Properties & Ref IDs ({properties.length})
-        </button>
+        {/* Scrollable Capsule Navigation Pills (shrink-0 prevents text overlapping) */}
+        <div className="flex items-center gap-2 overflow-x-auto py-2 px-2 touch-pan-x bg-slate-900/90 rounded-2xl border border-slate-800 shadow-md max-w-full">
+          <button
+            type="button"
+            onClick={() => setActiveTab("overview")}
+            className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer select-none ${
+              activeTab === "overview"
+                ? "bg-amber-500 text-slate-950 shadow-md"
+                : "text-slate-300 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <Sparkles className="w-4 h-4 shrink-0" /> Overview & Charts
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab("locations")}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
-            activeTab === "locations"
-              ? "bg-amber-500 text-slate-950 shadow-md"
-              : "text-slate-300 hover:text-white hover:bg-slate-800"
-          }`}
-        >
-          <Flame className="w-4 h-4" /> Trending Locations ({trendingLocations.length})
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("properties")}
+            className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer select-none ${
+              activeTab === "properties"
+                ? "bg-amber-500 text-slate-950 shadow-md"
+                : "text-slate-300 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <Building2 className="w-4 h-4 shrink-0" /> Properties & Ref IDs ({properties.length})
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab("categories")}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
-            activeTab === "categories"
-              ? "bg-amber-500 text-slate-950 shadow-md"
-              : "text-slate-300 hover:text-white hover:bg-slate-800"
-          }`}
-        >
-          <LayoutGrid className="w-4 h-4" /> Home Categories ({homeCategories.length})
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("locations")}
+            className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer select-none ${
+              activeTab === "locations"
+                ? "bg-amber-500 text-slate-950 shadow-md"
+                : "text-slate-300 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <Flame className="w-4 h-4 shrink-0" /> Trending Locations ({trendingLocations.length})
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab("regions")}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
-            activeTab === "regions"
-              ? "bg-amber-500 text-slate-950 shadow-md"
-              : "text-slate-300 hover:text-white hover:bg-slate-800"
-          }`}
-        >
-          <Globe2 className="w-4 h-4" /> Explore AP & Sub-regions ({apRegions.length})
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("categories")}
+            className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer select-none ${
+              activeTab === "categories"
+                ? "bg-amber-500 text-slate-950 shadow-md"
+                : "text-slate-300 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4 shrink-0" /> Home Categories ({homeCategories.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("regions")}
+            className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer select-none ${
+              activeTab === "regions"
+                ? "bg-amber-500 text-slate-950 shadow-md"
+                : "text-slate-300 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <Globe2 className="w-4 h-4 shrink-0" /> Explore AP & Sub-regions ({apRegions.length})
+          </button>
+        </div>
       </div>
 
       {/* TAB CONTENT SECTIONS */}
