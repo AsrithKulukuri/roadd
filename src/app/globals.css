@@ -42,9 +42,9 @@
   --color-glass-bg: var(--glass-bg);
   --color-glass-border: var(--glass-border);
 
-  /* Font Families */
-  --font-heading: "Space Grotesk", "Sora", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
+  /* Font Families — Realtor.com Style Inter */
+  --font-heading: "Inter", var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-body: "Inter", var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* Font Sizes */

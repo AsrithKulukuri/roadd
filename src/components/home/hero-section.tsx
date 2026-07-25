@@ -168,11 +168,11 @@ export function HeroSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center">
         {/* R.O.A.D Branding Headline */}
         <div className="space-y-2 mb-6 sm:mb-8 max-w-4xl">
-          <h1 className="font-heading text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-wide drop-shadow-lg leading-tight">
-            <span className="text-amber-400 font-black">R</span>eal{" "}
-            <span className="text-amber-400 font-black">O</span>wner{" "}
-            <span className="text-amber-400 font-black">A</span>gent{" "}
-            <span className="text-amber-400 font-black">D</span>eveloper
+          <h1 className="font-heading text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-md leading-tight">
+            <span className="text-amber-400 font-extrabold">R</span>eal{" "}
+            <span className="text-amber-400 font-extrabold">O</span>wner{" "}
+            <span className="text-amber-400 font-extrabold">A</span>gent{" "}
+            <span className="text-amber-400 font-extrabold">D</span>eveloper
           </h1>
         </div>
 
