@@ -76,10 +76,10 @@ export default async function PropertyDetailPage({
   }
 
   return (
-    <div className="flex flex-col min-h-screen pt-16 pb-24 bg-white text-slate-900">
+    <div className="flex flex-col min-h-screen pt-16 pb-24 bg-bg-primary text-text-primary">
       
       {/* REALTOR.COM STYLE TOP NAVBAR (Left: Search Back, Center: ROAD FACING Logo, Right: Actions) */}
-      <div className="sticky top-16 z-30 w-full bg-white/95 backdrop-blur-md border-b border-slate-200 py-3 shadow-xs">
+      <div className="sticky top-16 z-30 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 py-3 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
           
           {/* Left: < Search Back Link */}

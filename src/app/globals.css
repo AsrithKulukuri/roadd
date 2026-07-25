@@ -219,6 +219,23 @@ html[data-theme="light"] {
   --glass-border: rgba(0, 0, 0, 0.08);
 }
 
+.dark,
+[data-theme="dark"],
+html.dark,
+html[data-theme="dark"] {
+  --bg-primary: #0F172A;
+  --bg-card: #1E293B;
+  --bg-elevated: #334155;
+  --bg-hover: #1E293B;
+  --border-default: #334155;
+  --border-subtle: #1E293B;
+  --text-primary: #FFFFFF;
+  --text-secondary: #CBD5E1;
+  --text-tertiary: #94A3B8;
+  --glass-bg: rgba(15, 23, 42, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
 * {
   border-color: var(--color-border-default);
 }
