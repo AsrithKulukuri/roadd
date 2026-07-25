@@ -76,7 +76,7 @@ export function PropertyContact({ property }: PropertyContactProps) {
   );
 
   return (
-    <div className="sticky top-28 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5">
+    <div className="sticky top-28 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
       
       {/* Realtor.com Builder & Marketing Header Card */}
       <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
@@ -84,7 +84,7 @@ export function PropertyContact({ property }: PropertyContactProps) {
           ROAD
         </div>
         <div className="min-w-0 flex-1">
-          <span className="text-[10px] uppercase font-black text-slate-400 block tracking-wider">
+          <span className="text-[10px] uppercase font-black text-slate-500 dark:text-slate-400 block tracking-wider">
             Listed & Brokered by:
           </span>
           <h4 className="font-extrabold text-sm text-slate-900 dark:text-white truncate">
@@ -104,7 +104,7 @@ export function PropertyContact({ property }: PropertyContactProps) {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
               Full name *
             </label>
             <Input
@@ -113,12 +113,12 @@ export function PropertyContact({ property }: PropertyContactProps) {
               placeholder="e.g. Asrith Kulukuri"
               value={formData.fullName}
               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              className="rounded-xl border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm"
+              className="rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-sm focus:border-amber-500 font-medium"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
               Email *
             </label>
             <Input
@@ -127,12 +127,12 @@ export function PropertyContact({ property }: PropertyContactProps) {
               placeholder="name@domain.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="rounded-xl border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm"
+              className="rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-sm focus:border-amber-500 font-medium"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
               Phone *
             </label>
             <Input
@@ -141,19 +141,19 @@ export function PropertyContact({ property }: PropertyContactProps) {
               placeholder="+91 99999 99999"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="rounded-xl border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm"
+              className="rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-sm focus:border-amber-500 font-medium"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
               How can an agent help?
             </label>
             <textarea
               rows={3}
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-500"
+              className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-500 font-medium"
             />
           </div>
 
