@@ -78,6 +78,7 @@ export default function AdminDashboardPage() {
   // Edit Reference ID Modal / Inline State
   const [editingRefPropId, setEditingRefPropId] = useState<string | null>(null);
   const [tempRefId, setTempRefId] = useState("");
+  const [adminCategoryFilter, setAdminCategoryFilter] = useState<string>("all");
 
   // --- FORM STATES FOR MANAGERS ---
 
@@ -464,12 +465,32 @@ export default function AdminDashboardPage() {
             </Link>
           </div>
 
+          {/* CATEGORY & SUBTYPE FILTER CHIPS BAR */}
+          <div className="flex items-center gap-2 overflow-x-auto py-1.5 px-1">
+            {["all", "residential", "commercial", "industrial", "agricultural"].map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setAdminCategoryFilter(cat)}
+                className={`py-1.5 px-3.5 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer whitespace-nowrap ${
+                  adminCategoryFilter === cat
+                    ? "bg-amber-500 text-slate-950 font-black shadow-sm"
+                    : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white"
+                }`}
+              >
+                {cat === "all" ? "All Categories" : cat}
+              </button>
+            ))}
+          </div>
+
           {/* Properties Mobile Cards & Desktop Table */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
             
             {/* Mobile View: Cards */}
             <div className="block md:hidden divide-y divide-slate-200 dark:divide-slate-800">
-              {properties.map((p) => {
+              {properties
+                .filter((p) => adminCategoryFilter === "all" || p.category === adminCategoryFilter)
+                .map((p) => {
                 const refId = getPropertyRefId(p);
                 const isEditingRef = editingRefPropId === p.id;
 
@@ -602,7 +623,9 @@ export default function AdminDashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {properties.map((p) => {
+                  {properties
+                    .filter((p) => adminCategoryFilter === "all" || p.category === adminCategoryFilter)
+                    .map((p) => {
                     const refId = getPropertyRefId(p);
                     const isEditingRef = editingRefPropId === p.id;
 

@@ -12,7 +12,7 @@ import {
   ArrowLeft, Save, Upload, X, MapPin, 
   Video, Info, Phone, Search, 
   CheckCircle2, Image as ImageIcon,
-  Building2, Trees, Shield, Car, Waves, Zap
+  Building2, Trees, Shield, Car, Waves, Zap, Sparkles
 } from "lucide-react";
 import Link from "next/link";
 import { Property, PropertyLocation } from "@/types/property";
@@ -35,6 +35,13 @@ const AMENITIES_LIST = [
   { id: "pet-friendly", label: "Pet Friendly", icon: Info, category: "basic" },
 ];
 
+import { 
+  PROPERTY_CATEGORY_SCHEMA, 
+  CATEGORY_SUBTYPES, 
+  PropertyCategory, 
+  PropertySubtype 
+} from "@/lib/property-schema";
+
 export default function AddPropertyPage() {
   const router = useRouter();
   const addProperty = usePropertiesStore((state) => state.addProperty);
@@ -45,6 +52,10 @@ export default function AddPropertyPage() {
   const [formData, setFormData] = useState({
     refId: `REF${Math.floor(100 + Math.random() * 900)}`,
     title: "", description: "", propertyType: "apartment", listingType: "sale", price: "", negotiable: false,
+    category: "residential" as PropertyCategory,
+    subtype: "flat" as PropertySubtype,
+    listingContext: "standalone" as "standalone" | "project" | "both",
+    attributes: {} as Record<string, any>,
     bedrooms: "1", bathrooms: "1", balconies: "0", parking: "0", area: "", builtUpArea: "", carpetArea: "",
     furnishing: "unfurnished", facing: "east", yearBuilt: "",
     
@@ -187,6 +198,10 @@ export default function AddPropertyPage() {
       slug: formData.slug || propertyId,
       title: formData.title,
       description: formData.description,
+      category: formData.category,
+      subtype: formData.subtype,
+      listingContext: formData.listingContext,
+      attributes: formData.attributes,
       price: parseInt(formData.price) || 0,
       pricePerSqft: parseInt(formData.price) / (parseInt(formData.area) || 1),
       propertyType: formData.propertyType as any,
@@ -313,15 +328,201 @@ export default function AddPropertyPage() {
                 />
               </div>
 
+              {/* Category & Subtype Cascading Selectors (Master Schema) */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Property Type</label>
-                <select name="propertyType" value={formData.propertyType} onChange={handleChange} className="w-full h-12 rounded-xl bg-bg-primary border border-border-default/50 px-4 text-text-primary focus:outline-none focus:ring-2 focus:ring-amber-primary">
-                  <option value="apartment">Apartment</option>
-                  <option value="villa">Villa</option>
-                  <option value="independent-house">Independent House</option>
-                  <option value="residential-land">Residential Land / Plot</option>
-                  <option value="commercial-spaces">Commercial Space</option>
+                <label className="text-sm font-bold text-amber-400 uppercase tracking-wider">
+                  Category *
+                </label>
+                <select 
+                  name="category" 
+                  value={formData.category} 
+                  onChange={(e) => {
+                    const cat = e.target.value as PropertyCategory;
+                    const defaultSubtype = CATEGORY_SUBTYPES[cat]?.[0]?.id || "flat";
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      category: cat, 
+                      subtype: defaultSubtype,
+                      attributes: {} 
+                    }));
+                  }} 
+                  className="w-full h-12 rounded-xl bg-slate-900 border border-amber-500/50 px-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  <option value="residential">Residential</option>
+                  <option value="commercial">Commercial</option>
+                  <option value="industrial">Industrial</option>
+                  <option value="agricultural">Agricultural</option>
                 </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-amber-400 uppercase tracking-wider">
+                  Subtype *
+                </label>
+                <select 
+                  name="subtype" 
+                  value={formData.subtype} 
+                  onChange={(e) => {
+                    const sub = e.target.value as PropertySubtype;
+                    setFormData(prev => ({ ...prev, subtype: sub, attributes: {} }));
+                  }} 
+                  className="w-full h-12 rounded-xl bg-slate-900 border border-amber-500/50 px-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  {CATEGORY_SUBTYPES[formData.category]?.map((sub) => (
+                    <option key={sub.id} value={sub.id}>
+                      {sub.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Dynamic Schema Fields Container */}
+              <div className="md:col-span-2 p-5 rounded-2xl bg-slate-900/90 border-2 border-amber-500/30 space-y-4">
+                <div className="flex items-center gap-2 text-amber-400 font-black text-xs uppercase tracking-wider border-b border-slate-800 pb-3">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>{formData.category.toUpperCase()} — {formData.subtype.replace("-", " ").toUpperCase()} Specific Fields</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(PROPERTY_CATEGORY_SCHEMA[formData.category]?.[formData.subtype] || []).map((field) => {
+                    const val = formData.attributes[field.key] ?? "";
+
+                    if (field.inputType === "dropdown") {
+                      return (
+                        <div key={field.key} className="space-y-1">
+                          <label className="text-xs font-bold text-slate-300">
+                            {field.label} {field.required && <span className="text-red-400">*</span>}
+                          </label>
+                          <select
+                            value={val}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setFormData(prev => ({
+                                ...prev,
+                                attributes: { ...prev.attributes, [field.key]: v },
+                                ...(field.key === "facing" ? { facing: v as any } : {}),
+                                ...(field.key === "furnishing" ? { furnishing: v as any } : {}),
+                                ...(field.key === "totalFloors" ? { totalFloors: parseInt(v) || 0 } : {}),
+                                ...(field.key === "bathrooms" ? { bathrooms: v } : {}),
+                                ...(field.key === "balconies" ? { balconies: v } : {}),
+                                ...(field.key === "parking" ? { parking: v } : {})
+                              }));
+                            }}
+                            className="w-full h-11 rounded-xl bg-slate-950 border border-slate-800 px-3 text-xs text-white focus:border-amber-500"
+                          >
+                            <option value="">-- Select {field.label} --</option>
+                            {field.options?.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                          {field.helpText && <p className="text-[10px] text-slate-400">{field.helpText}</p>}
+                        </div>
+                      );
+                    }
+
+                    if (field.inputType === "yesno") {
+                      return (
+                        <div key={field.key} className="space-y-1">
+                          <label className="text-xs font-bold text-slate-300 block">{field.label}</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  attributes: { ...prev.attributes, [field.key]: "yes" }
+                                }));
+                              }}
+                              className={`py-2 px-3 rounded-xl text-xs font-black border transition-all cursor-pointer ${
+                                val === "yes"
+                                  ? "bg-amber-500 text-slate-950 border-amber-500"
+                                  : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
+                              }`}
+                            >
+                              Yes
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  attributes: { ...prev.attributes, [field.key]: "no" }
+                                }));
+                              }}
+                              className={`py-2 px-3 rounded-xl text-xs font-black border transition-all cursor-pointer ${
+                                val === "no"
+                                  ? "bg-slate-900 text-slate-300 border-slate-700"
+                                  : "bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800"
+                              }`}
+                            >
+                              No
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (field.inputType === "multiselect") {
+                      const selectedList: string[] = Array.isArray(val) ? val : [];
+                      return (
+                        <div key={field.key} className="md:col-span-2 space-y-2">
+                          <label className="text-xs font-bold text-slate-300 block">{field.label}</label>
+                          <div className="flex flex-wrap gap-2">
+                            {field.options?.map((crop) => {
+                              const isSelected = selectedList.includes(crop);
+                              return (
+                                <button
+                                  key={crop}
+                                  type="button"
+                                  onClick={() => {
+                                    const next = isSelected
+                                      ? selectedList.filter((c) => c !== crop)
+                                      : [...selectedList, crop];
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      attributes: { ...prev.attributes, [field.key]: next }
+                                    }));
+                                  }}
+                                  className={`py-1.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                                    isSelected
+                                      ? "bg-amber-500 text-slate-950 border-amber-500 font-black"
+                                      : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
+                                  }`}
+                                >
+                                  {isSelected ? "✓ " : "+ "} {crop}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={field.key} className="space-y-1">
+                        <label className="text-xs font-bold text-slate-300">
+                          {field.label} {field.required && <span className="text-red-400">*</span>}
+                        </label>
+                        <Input
+                          type={field.inputType === "number" ? "number" : "text"}
+                          value={val}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setFormData(prev => ({
+                              ...prev,
+                              attributes: { ...prev.attributes, [field.key]: v },
+                              ...(field.key === "superBuiltUpArea" || field.key === "builtUpArea" || field.key === "carpetArea" || field.key === "totalAreaSqyd" ? { area: v } : {})
+                            }));
+                          }}
+                          placeholder={field.helpText || `Enter ${field.label}...`}
+                          className="h-11 text-xs bg-slate-950 border-slate-800 text-white"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="space-y-2">

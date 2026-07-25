@@ -12,9 +12,13 @@ export type PropertyType =
   | "commercial-spaces"
   | "commercial-lands"
   | "industrial-lands"
-  | "agricultural-lands";
+export type PropertyCategory = "residential" | "commercial" | "industrial" | "agricultural";
 
-export type PropertyCategory = "residential" | "commercial";
+export type PropertySubtype =
+  | "flat" | "duplex-flat" | "house" | "villa" | "venture-plot" | "land" | "pent-house"
+  | "floor" | "shop" | "building"
+  | "godown" | "warehouse"
+  | "farm-house";
 
 export type PropertyStatus =
   | "draft"
@@ -82,6 +86,10 @@ export interface Property {
   slug: string;
   title: string;
   description: string;
+  category?: PropertyCategory;
+  subtype?: PropertySubtype;
+  attributes?: Record<string, any>;
+  listingContext?: "standalone" | "project" | "both";
   propertyType: PropertyType;
   listingType: ListingType;
   saleType?: SaleType;
