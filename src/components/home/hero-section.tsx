@@ -26,10 +26,14 @@ import { useContentStore } from "@/stores/content-store";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { toast } from "sonner";
 
-// Only keep Buy and Sell as requested
+// Realtor.com Search Tabs
 const tabs = [
   { id: "buy", label: "Buy" },
+  { id: "rent", label: "Rent" },
   { id: "sell", label: "Sell" },
+  { id: "pre-approval", label: "Pre-approval" },
+  { id: "just-sold", label: "Just sold" },
+  { id: "home-value", label: "Home value" },
 ];
 
 const CAROUSEL_SUGGESTIONS = [
@@ -104,6 +108,10 @@ export function HeroSection() {
       router.push("/list-with-us");
       return;
     }
+    if (activeTab === "pre-approval") {
+      router.push("/mortgage-calculator");
+      return;
+    }
     if (searchQuery.trim()) {
       const refMatch = findPropertyByRefId(searchQuery, properties);
       if (refMatch) {
@@ -113,10 +121,8 @@ export function HeroSection() {
       }
 
       router.push(
-        `/properties?type=${activeTab}&location=${encodeURIComponent(searchQuery)}`
+        `/properties?type=${activeTab === "just-sold" ? "sale" : activeTab}&location=${encodeURIComponent(searchQuery)}`
       );
-    } else {
-      router.push(`/properties?type=${activeTab}`);
     }
   };
 
@@ -149,53 +155,56 @@ export function HeroSection() {
   }, [homeCategories]);
 
   return (
-    <section className="relative w-full overflow-hidden bg-slate-900 text-white pt-28 sm:pt-32 md:pt-36 pb-12 md:pb-16">
-      {/* Background Image with Dark Vignette Gradient */}
+    <section className="relative w-full overflow-hidden text-white pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-20">
+      {/* Crystal Clear High-Definition Background Image with Subtle Scrim Overlay */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-transform duration-10000 scale-105"
         style={{
           backgroundImage:
-            'url("https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80")',
+            'url("https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=2400&q=95")',
         }}
       >
-        <div className="absolute inset-0 bg-slate-950/65 backdrop-blur-[1px]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-black/30" />
+        {/* Subtle Scrim Gradient Overlay for Maximum Background Clarity */}
+        <div className="absolute inset-0 bg-black/35" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/40" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center">
-        {/* Main Headline highlighting starting letters forming R.O.A.D */}
+        {/* Realtor.com Headline */}
         <div className="space-y-2 mb-6 sm:mb-8 max-w-4xl">
-          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white drop-shadow-md leading-tight">
-            <span className="text-amber-400 font-black">R</span>eal{" "}
-            <span className="text-amber-400 font-black">O</span>wner{" "}
-            <span className="text-amber-400 font-black">A</span>gent{" "}
-            <span className="text-amber-400 font-black">D</span>eveloper
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg text-slate-300 font-medium max-w-xl mx-auto drop-shadow-xs mt-2">
-            Connecting Buyers, Owners, Agents & Developers across Vijayawada & Guntur
+          <p className="font-heading text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-wide drop-shadow-md">
+            #1 real estate site
           </p>
+          <h1 className="font-heading text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-white drop-shadow-lg leading-tight">
+            ROAD FACING agents recommend<span className="text-amber-400">*</span>
+          </h1>
         </div>
 
-        {/* Tab Selector: Only Buy and Sell */}
-        <div className="flex items-center gap-8 sm:gap-12 mb-5 justify-center">
+        {/* Realtor.com Search Options Bar */}
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-5 px-2">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  if (tab.id === "pre-approval") {
+                    router.push("/mortgage-calculator");
+                  }
+                }}
                 className={cn(
-                  "relative py-1.5 text-base sm:text-lg font-bold transition-all cursor-pointer",
+                  "relative py-1.5 text-base sm:text-lg font-extrabold transition-all cursor-pointer",
                   isActive
                     ? "text-white"
-                    : "text-slate-300 hover:text-white opacity-80 hover:opacity-100"
+                    : "text-white/80 hover:text-white"
                 )}
               >
                 {tab.label}
                 {isActive && (
                   <motion.div
                     layoutId="realtorTabLine"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-white rounded-full shadow-xs"
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-white rounded-full shadow-md"
                     transition={{ type: "spring", stiffness: 350, damping: 30 }}
                   />
                 )}
@@ -204,16 +213,17 @@ export function HeroSection() {
           })}
         </div>
 
+        {/* Realtor.com Search Input Bar */}
         <form
           onSubmit={handleSearchSubmit}
-          className="relative w-full max-w-[720px] h-[60px] mx-auto flex items-center bg-white rounded-full px-3 shadow-[0_12px_32px_rgba(0,0,0,0.18)] transition-all duration-300 focus-within:ring-2 focus-within:ring-[#F5A623]/80 focus-within:shadow-[0_0_24px_rgba(245,166,35,0.25)]"
+          className="relative w-full max-w-[760px] h-[64px] mx-auto flex items-center bg-white rounded-full px-3 shadow-2xl transition-all duration-300 focus-within:ring-4 focus-within:ring-amber-500/30"
         >
           <Search className="w-5 h-5 text-slate-400 ml-3 mr-2 shrink-0 pointer-events-none" />
 
           {!searchQuery && !isFocused && (
             <div
               onClick={() => inputRef.current?.focus()}
-              className="absolute left-12 right-28 inset-y-0 flex items-center pointer-events-none overflow-hidden"
+              className="absolute left-12 right-36 inset-y-0 flex items-center pointer-events-none overflow-hidden text-left"
             >
               <AnimatePresence mode="wait">
                 <motion.span
@@ -222,7 +232,7 @@ export function HeroSection() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.35, ease: "easeOut" }}
-                  className="text-sm sm:text-base text-slate-400 font-medium truncate select-none block"
+                  className="text-base text-slate-500 font-semibold truncate select-none block"
                 >
                   {currentSuggestion}
                 </motion.span>
@@ -237,17 +247,27 @@ export function HeroSection() {
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={isFocused && !searchQuery ? "Search locality, builder, project or landmark..." : ""}
-            className="w-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-slate-400 pl-1 pr-4 font-medium border-0 outline-none ring-0 focus:outline-none focus:ring-0 focus:border-0"
+            placeholder={isFocused && !searchQuery ? "Search city, locality, builder or project..." : ""}
+            className="w-full bg-transparent text-base text-slate-900 placeholder-slate-400 pl-1 pr-4 font-bold border-0 outline-none ring-0 focus:outline-none focus:ring-0 focus:border-0"
           />
+
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="p-1 mr-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              ✕
+            </button>
+          )}
 
           <button
             type="submit"
-            className="h-[46px] px-5 sm:px-6 bg-[#F5A623] hover:bg-[#FFC661] text-slate-950 font-bold text-sm rounded-full transition-all shadow-md hover:scale-105 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+            className="h-[48px] px-6 sm:px-8 bg-[#d92228] hover:bg-[#b91c21] text-white font-black text-base rounded-full transition-all shadow-lg hover:scale-105 cursor-pointer flex items-center justify-center gap-2 shrink-0"
             aria-label="Search"
           >
             <span>Search</span>
-            <Search className="w-4 h-4 stroke-[2.5]" />
+            <Search className="w-5 h-5 stroke-[3]" />
           </button>
         </form>
 
