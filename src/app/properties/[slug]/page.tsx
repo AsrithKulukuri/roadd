@@ -175,28 +175,6 @@ export default async function PropertyDetailPage({
                   <ArrowDownRight className="w-4 h-4" /> ₹{formatPriceCompact(Math.round(property.price * 0.04))} Price Reduced
                 </span>
               </div>
-
-              {/* Affordability Link */}
-              <div>
-                <a href="#mortgage-calculator" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1">
-                  How much home can you afford? Calculate monthly EMI ➔
-                </a>
-              </div>
-
-              {/* REALTOR.COM SPECIAL PROMOTION BANNER BOX */}
-              <div className="mt-4 p-4 bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl flex items-start gap-3">
-                <div className="p-2 bg-amber-500 text-slate-950 rounded-xl font-bold shrink-0">
-                  <Tag className="w-5 h-5" />
-                </div>
-                <div className="space-y-1 text-xs">
-                  <strong className="font-extrabold text-slate-900 dark:text-white text-sm block">
-                    Special Builder Promotion
-                  </strong>
-                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                    Exclusive zero processing fee & complimentary modular kitchen upgrade for bookings done via ROAD FACING this month.
-                  </p>
-                </div>
-              </div>
             </div>
 
             {/* Property Specs */}
@@ -232,11 +210,6 @@ export default async function PropertyDetailPage({
 
             {/* Amenities */}
             <PropertyAmenities amenities={property.amenities} />
-
-            {/* Mortgage Calculator */}
-            <div id="mortgage-calculator">
-              <MortgageCalculator propertyPrice={property.price} />
-            </div>
 
             {/* Location Map */}
             <div className="py-6 border-t border-slate-200 dark:border-slate-800">

@@ -51,9 +51,6 @@ export function PropertyGallery({ images, title, videoUrl, isReadyToMove = true 
 
           {/* Realtor.com Badges on Top Left */}
           <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2 z-10">
-            <span className="bg-emerald-600 text-white font-extrabold text-[11px] px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
-              <Tag className="w-3 h-3" /> Special Promotion
-            </span>
             <span className="bg-slate-950/80 backdrop-blur-md text-white font-extrabold text-[11px] px-3 py-1 rounded-full border border-white/20">
               {isReadyToMove ? "Ready to Move" : "New Construction"}
             </span>
