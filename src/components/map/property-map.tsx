@@ -704,12 +704,13 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
     // Polygon Area Draw Filter
     if (drawPolygonPoints.length >= 3) {
-      source = source.filter((p) =>
-        isPointInPolygon(
-          { lat: p.location.latitude, lng: p.location.longitude },
+      source = source.filter((p) => {
+        const coords = resolvePropertyMapCoords(p);
+        return isPointInPolygon(
+          { lat: coords.lat, lng: coords.lng },
           drawPolygonPoints
-        )
-      );
+        );
+      });
     }
 
     // Commute Radius Filter (approx 15 mins drive = ~8 km radius from user pin)
@@ -1242,23 +1243,52 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               </span>
             </button>
 
-            {/* 2. FREEHAND DRAW BUTTON */}
+            {/* 2. REALTOR.COM DYNAMIC DRAW / CANCEL / CLEAR BUTTON */}
             <button
               type="button"
               onClick={() => {
-                setIsDrawing(!isDrawing);
-                setShowMapOptionsMenu(false);
+                if (drawPolygonPoints.length > 0) {
+                  handleClearDraw();
+                } else if (isDrawing) {
+                  setIsDrawing(false);
+                  setDrawPolygonPoints([]);
+                } else {
+                  setIsDrawing(true);
+                  setShowMapOptionsMenu(false);
+                }
               }}
-              title="Draw Custom Area"
+              title={
+                drawPolygonPoints.length > 0
+                  ? "Clear Drawn Boundary"
+                  : isDrawing
+                  ? "Cancel Drawing"
+                  : "Draw Custom Area"
+              }
               className={cn(
                 "w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 cursor-pointer border shrink-0",
-                isDrawing
+                drawPolygonPoints.length > 0
+                  ? "bg-slate-950 text-white border-amber-500 hover:bg-slate-900"
+                  : isDrawing
                   ? "bg-amber-500 text-slate-950 border-amber-600 font-black animate-pulse"
                   : "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
               )}
             >
-              <Pencil className={cn("w-5 h-5", isDrawing ? "text-slate-950" : "text-slate-900 dark:text-white")} />
-              <span className="text-[10px] font-extrabold leading-none">Draw</span>
+              {drawPolygonPoints.length > 0 ? (
+                <>
+                  <X className="w-5 h-5 text-amber-400" />
+                  <span className="text-[10px] font-extrabold leading-none text-amber-400">Clear</span>
+                </>
+              ) : isDrawing ? (
+                <>
+                  <X className="w-5 h-5 text-slate-950" />
+                  <span className="text-[10px] font-extrabold leading-none">Cancel</span>
+                </>
+              ) : (
+                <>
+                  <Pencil className="w-5 h-5 text-slate-900 dark:text-white" />
+                  <span className="text-[10px] font-extrabold leading-none">Draw</span>
+                </>
+              )}
             </button>
 
             {/* 3. OPTIONS / LAYERS BUTTON */}
