@@ -131,7 +131,7 @@ export function Navbar() {
     <>
       {/* Realtor.com Style Clean Navbar */}
       <header
-        className="fixed top-0 left-0 right-0 z-[100] bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs py-2.5 sm:py-3 transition-all duration-300"
+        className="fixed top-0 left-0 right-0 z-[100] bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs py-2.5 sm:py-3 transition-all duration-300"
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-6">
           <div className="flex items-center justify-between">
@@ -237,7 +237,7 @@ export function Navbar() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="fixed inset-0 top-[60px] z-50 bg-slate-950/98 backdrop-blur-md lg:hidden flex flex-col p-6 overflow-y-auto"
+            className="fixed inset-0 top-[60px] z-50 bg-white/98 backdrop-blur-md lg:hidden flex flex-col p-6 overflow-y-auto"
           >
             <nav className="flex flex-col gap-2">
               {navigationLinks.main.map((link) => (
@@ -247,8 +247,8 @@ export function Navbar() {
                   className={cn(
                     "px-4 py-3 rounded-xl font-semibold text-base transition-colors",
                     isActive(link.href)
-                      ? "bg-amber-500/20 text-amber-400 font-bold"
-                      : "text-slate-300 hover:bg-slate-900"
+                      ? "bg-amber-500/10 text-amber-600 font-bold"
+                      : "text-slate-700 hover:bg-slate-100"
                   )}
                 >
                   {link.label}

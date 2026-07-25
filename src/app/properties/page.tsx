@@ -348,12 +348,12 @@ function PropertiesPage() {
         {viewMode === "map" ? (
           <div>
             {/* Mobile View: Fixed Viewport below sticky header so header & filter pills remain visible without overlapping map controls */}
-            <div className="md:hidden fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-slate-950 overflow-hidden flex flex-col">
+            <div className="md:hidden fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-white overflow-hidden flex flex-col">
               <MapWrapper filteredItems={filteredProperties} />
             </div>
 
             {/* Desktop View: Full height Map Container */}
-            <div className="hidden md:block w-full h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-slate-900">
+            <div className="hidden md:block w-full h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white">
               <MapWrapper filteredItems={filteredProperties} />
             </div>
           </div>

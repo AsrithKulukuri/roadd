@@ -161,7 +161,7 @@ export function RealtorSearchHeader({
 
   return (
     <>
-      <header className="sticky top-16 z-30 w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
+      <header className="sticky top-16 z-30 w-full bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2">
           {/* ROW 1: REALTOR SEARCH BOX & LIST/MAP VIEW TOGGLE */}
           <div className="flex items-center gap-2 w-full">
@@ -169,10 +169,10 @@ export function RealtorSearchHeader({
             <form
               onSubmit={handleSearchSubmit}
               className={cn(
-                "relative flex-1 min-w-0 flex items-center h-10 sm:h-11 rounded-full border bg-white dark:bg-slate-900 transition-all duration-200 shadow-xs",
+                "relative flex-1 min-w-0 flex items-center h-10 sm:h-11 rounded-full border bg-white transition-all duration-200 shadow-xs",
                 isFocused
                   ? "border-amber-500 ring-2 ring-amber-500/20 shadow-md"
-                  : "border-slate-300 dark:border-slate-800 hover:border-slate-400"
+                  : "border-slate-300 hover:border-slate-400"
               )}
             >
               {/* Input & Animated Carousel Placeholder Overlay */}
