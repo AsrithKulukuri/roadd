@@ -58,12 +58,6 @@ export function PropertyGallery({ images, title, videoUrl, isReadyToMove = true 
               {isReadyToMove ? "Ready to Move" : "New Construction"}
             </span>
           </div>
-
-          {/* Realtor.com Photo Counter Badge on Bottom Left */}
-          <div className="absolute bottom-4 left-4 bg-slate-950/85 backdrop-blur-md text-white px-3.5 py-1.5 rounded-full font-black text-xs border border-white/20 flex items-center gap-1.5 shadow-xl">
-            <Camera className="w-3.5 h-3.5 text-amber-400" />
-            <span>1/{images.length} - Listing Photos</span>
-          </div>
         </div>
 
         {/* Realtor.com Small Image Right Stack (Takes 1 Column on LG) */}
@@ -95,23 +89,38 @@ export function PropertyGallery({ images, title, videoUrl, isReadyToMove = true 
           })}
         </div>
 
-        {/* Action Floating Buttons (View All Photos & Watch Video) */}
-        <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
-          {embedUrl && (
-            <Button
-              onClick={() => setIsVideoOpen(true)}
-              className="bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-full px-4 py-2 shadow-xl flex items-center gap-1.5 cursor-pointer animate-pulse"
-            >
-              <Play className="w-4 h-4 fill-white" /> Watch Video Tour
-            </Button>
-          )}
+        {/* Bottom Floating Bar: Listing Photo Count & Action Buttons (Non-Overlapping Flex Layout) */}
+        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2 z-20 pointer-events-none">
+          
+          {/* Photo Counter Badge (Left) */}
+          <div className="bg-slate-950/85 backdrop-blur-md text-white px-3 py-1.5 rounded-full font-black text-[11px] sm:text-xs border border-white/20 flex items-center gap-1.5 shadow-xl pointer-events-auto shrink-0">
+            <Camera className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">1/{images.length} - Listing Photos</span>
+            <span className="sm:hidden">1/{images.length}</span>
+          </div>
 
-          <Button
-            onClick={() => { setCurrentIndex(0); setIsOpen(true); }}
-            className="bg-slate-950/90 hover:bg-slate-900 text-white border border-white/20 font-extrabold text-xs rounded-full px-4 py-2 shadow-xl flex items-center gap-1.5 cursor-pointer"
-          >
-            <Grid2X2 className="w-4 h-4 text-amber-400" /> View All ({images.length})
-          </Button>
+          {/* Action Buttons (Right) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+            {embedUrl && (
+              <Button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setIsVideoOpen(true); }}
+                className="bg-white/90 hover:bg-white text-slate-950 backdrop-blur-md border border-white/40 font-black text-[11px] sm:text-xs rounded-full px-3 sm:px-4 py-1.5 sm:py-2 shadow-xl flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 shrink-0"
+              >
+                <Play className="w-3.5 h-3.5 fill-red-600 text-red-600" />
+                <span>Watch Tour</span>
+              </Button>
+            )}
+
+            <Button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setCurrentIndex(0); setIsOpen(true); }}
+              className="bg-slate-950/85 hover:bg-slate-900 text-white backdrop-blur-md border border-white/20 font-black text-[11px] sm:text-xs rounded-full px-3 sm:px-4 py-1.5 sm:py-2 shadow-xl flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
+            >
+              <Grid2X2 className="w-3.5 h-3.5 text-amber-400" />
+              <span>View All ({images.length})</span>
+            </Button>
+          </div>
         </div>
       </div>
 
