@@ -182,10 +182,10 @@ export default async function PropertyDetailPage({
 
             {/* Description */}
             <div className="space-y-3">
-              <h3 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">
+              <h3 className="font-heading text-2xl font-black text-slate-900 dark:text-white">
                 About this property
               </h3>
-              <p className="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line text-sm sm:text-base">
+              <p className="text-slate-900 dark:text-slate-100 font-medium leading-relaxed whitespace-pre-line text-base sm:text-lg">
                 {property.description}
               </p>
             </div>
