@@ -129,14 +129,14 @@ export function Navbar() {
 
   return (
     <>
-      {/* Solid Dark Navbar for Crisp High-Contrast Display */}
+      {/* Realtor.com Style Clean Navbar */}
       <header
-        className="fixed top-0 left-0 right-0 z-[100] bg-slate-950 border-b border-slate-850 shadow-lg py-2.5 sm:py-3 transition-all duration-300"
+        className="fixed top-0 left-0 right-0 z-[100] bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs py-2.5 sm:py-3 transition-all duration-300"
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-6">
           <div className="flex items-center justify-between">
-            {/* Left: Brand Logo with Bright White & Amber Gold Text */}
-            <Logo size="md" isDarkBg={true} />
+            {/* Left: Brand Logo */}
+            <Logo size="md" />
 
             {/* Center: Navigation Links for Desktop */}
             <nav className="hidden lg:flex items-center gap-1" role="navigation" aria-label="Main navigation">
@@ -145,17 +145,17 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "relative px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200",
+                    "relative px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200",
                     isActive(link.href)
-                      ? "text-amber-400 font-bold"
-                      : "text-slate-300 hover:text-white hover:bg-slate-850"
+                      ? "text-amber-500 font-extrabold"
+                      : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-850"
                   )}
                 >
                   {link.label}
                   {isActive(link.href) && (
                     <motion.div
                       layoutId="navbarIndicator"
-                      className="absolute bottom-0 left-3 right-3 h-0.5 bg-amber-400 rounded-full"
+                      className="absolute bottom-0 left-3 right-3 h-0.5 bg-amber-500 rounded-full"
                       transition={{ type: "spring", stiffness: 500, damping: 35 }}
                     />
                   )}
@@ -170,7 +170,7 @@ export function Navbar() {
               {/* Saved Items Heart Button */}
               <Link
                 href="/dashboard/saved"
-                className="p-2 text-slate-300 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+                className="p-2 text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 aria-label="Saved properties"
               >
                 <Heart className="h-5 w-5" />
@@ -180,7 +180,7 @@ export function Navbar() {
                 /* User Menu for Desktop */
                 <div className="hidden sm:flex items-center gap-2">
                   <Link href="/dashboard">
-                    <Button variant="outline" size="sm" className="border-slate-700 text-slate-200 hover:bg-slate-800">
+                    <Button variant="outline" size="sm" className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
                       Dashboard
                     </Button>
                   </Link>
@@ -188,7 +188,7 @@ export function Navbar() {
                     onClick={handleSignOut}
                     variant="ghost"
                     size="sm"
-                    className="text-xs text-slate-400 hover:text-white hover:bg-slate-800"
+                    className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     Sign Out
                   </Button>
@@ -197,7 +197,7 @@ export function Navbar() {
                 /* Auth Buttons for Desktop */
                 <div className="hidden sm:flex items-center gap-2">
                   <Link href="/login">
-                    <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-800">
+                    <Button variant="ghost" size="sm" className="text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800">
                       Log in
                     </Button>
                   </Link>
@@ -211,7 +211,7 @@ export function Navbar() {
 
               {/* List Property CTA Button */}
               <Link href="/list-with-us" className="hidden md:block">
-                <Button size="sm" className="gap-1.5 bg-white text-slate-950 hover:bg-slate-100 font-semibold shadow-xs">
+                <Button size="sm" className="gap-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-100 font-bold shadow-xs">
                   <Plus className="h-4 w-4" />
                   List Property
                 </Button>

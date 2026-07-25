@@ -206,17 +206,17 @@
 [data-theme="light"],
 html.light,
 html[data-theme="light"] {
-  --bg-primary: #F7F6F3;
+  --bg-primary: #FFFFFF;
   --bg-card: #FFFFFF;
-  --bg-elevated: #EEEDE9;
-  --bg-hover: #E5E4E0;
-  --border-default: #E5E4E0;
-  --border-subtle: #F2F1ED;
-  --text-primary: #2B2D33;
-  --text-secondary: #6B6B76;
-  --text-tertiary: #9E9EA8;
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(0, 0, 0, 0.06);
+  --bg-elevated: #F8FAFC;
+  --bg-hover: #F1F5F9;
+  --border-default: #E2E8F0;
+  --border-subtle: #F1F5F9;
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
+  --text-tertiary: #64748B;
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(0, 0, 0, 0.08);
 }
 
 * {

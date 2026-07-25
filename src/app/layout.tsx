@@ -109,8 +109,8 @@ export default function RootLayout({
       <body suppressHydrationWarning className="min-h-screen bg-bg-primary font-body text-text-primary antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <div className="relative flex min-h-screen flex-col">
