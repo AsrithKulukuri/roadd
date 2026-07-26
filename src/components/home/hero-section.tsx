@@ -219,7 +219,7 @@ export function HeroSection() {
           {!searchQuery && !isFocused && (
             <div
               onClick={() => inputRef.current?.focus()}
-              className="absolute left-12 right-36 inset-y-0 flex items-center pointer-events-none overflow-hidden text-left"
+              className="absolute left-12 right-[145px] sm:right-[165px] inset-y-0 flex items-center pointer-events-none overflow-hidden text-left"
             >
               <AnimatePresence mode="wait">
                 <motion.span
@@ -228,7 +228,7 @@ export function HeroSection() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.35, ease: "easeOut" }}
-                  className="text-base text-slate-500 font-semibold truncate select-none block"
+                  className="text-sm sm:text-base text-slate-500 font-semibold truncate select-none block"
                 >
                   {currentSuggestion}
                 </motion.span>
@@ -244,7 +244,7 @@ export function HeroSection() {
             onBlur={() => setIsFocused(false)}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={isFocused && !searchQuery ? "Search city, locality, builder or project..." : ""}
-            className="w-full bg-transparent text-base text-slate-900 placeholder-slate-400 pl-1 pr-4 font-bold border-0 outline-none ring-0 focus:outline-none focus:ring-0 focus:border-0"
+            className="w-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-slate-400 pl-1 pr-36 sm:pr-40 font-bold border-0 outline-none ring-0 focus:outline-none focus:ring-0 focus:border-0"
           />
 
           {searchQuery && (
@@ -259,11 +259,11 @@ export function HeroSection() {
 
           <button
             type="submit"
-            className="h-[48px] px-6 sm:px-8 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-base rounded-full transition-all shadow-md hover:scale-105 cursor-pointer flex items-center justify-center gap-2 shrink-0"
+            className="h-[44px] px-4 sm:px-6 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm sm:text-base rounded-full transition-all shadow-md hover:scale-105 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
             aria-label="Search"
           >
             <span>Search</span>
-            <Search className="w-5 h-5 stroke-[3] text-slate-950" />
+            <Search className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3] text-slate-950" />
           </button>
         </form>
 
