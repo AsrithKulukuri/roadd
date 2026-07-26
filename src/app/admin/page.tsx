@@ -254,15 +254,15 @@ export default function AdminDashboardPage() {
     <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto space-y-6">
       
       {/* MOBILE-FIRST HEADER & REFERENCE ID TEST DOCK */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 text-white rounded-3xl p-5 sm:p-6 shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-3xl p-5 sm:p-6 shadow-sm">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6 text-amber-400" />
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-heading">
+            <ShieldCheck className="w-6 h-6 text-amber-500" />
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight font-heading text-slate-900 dark:text-white">
               Admin Control Center
             </h1>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
             Full admin power to manage Properties, Reference IDs, Trending Locations, Categories & AP Sub-regions.
           </p>
         </div>
@@ -270,15 +270,15 @@ export default function AdminDashboardPage() {
         {/* INSTANT REFERENCE ID QUICK LOOKUP BAR */}
         <form
           onSubmit={handleExecuteRefSearch}
-          className="relative flex items-center bg-slate-950 border border-slate-700/80 rounded-2xl p-1.5 w-full md:w-80 shadow-md"
+          className="relative flex items-center bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700/80 rounded-2xl p-1.5 w-full md:w-80 shadow-xs"
         >
-          <Hash className="w-4 h-4 text-amber-400 ml-2 shrink-0" />
+          <Hash className="w-4 h-4 text-amber-500 ml-2 shrink-0" />
           <input
             type="text"
             value={refSearchQuery}
             onChange={(e) => setRefSearchQuery(e.target.value)}
             placeholder="Test Ref ID e.g. ref345, REF101..."
-            className="w-full pl-2 pr-2 py-1.5 bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none"
+            className="w-full pl-2 pr-2 py-1.5 bg-transparent text-xs text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none font-bold"
           />
           <button
             type="submit"
@@ -356,11 +356,11 @@ export default function AdminDashboardPage() {
       <div className="w-full">
         {/* Mobile Dropdown Selector for small screens */}
         <div className="sm:hidden mb-3">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Active Section</label>
+          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">Active Section</label>
           <select 
             value={activeTab} 
             onChange={(e) => setActiveTab(e.target.value as any)}
-            className="w-full h-11 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold text-xs px-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white font-extrabold text-xs px-3 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
           >
             <option value="overview">✨ Overview & Charts</option>
             <option value="properties">🏢 Properties & Ref IDs ({properties.length})</option>
@@ -371,14 +371,14 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Scrollable Capsule Navigation Pills (shrink-0 prevents text overlapping) */}
-        <div className="flex items-center gap-2 overflow-x-auto py-2 px-2 touch-pan-x bg-slate-900/90 rounded-2xl border border-slate-800 shadow-md max-w-full">
+        <div className="flex items-center gap-2 overflow-x-auto py-2 px-2 touch-pan-x bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs max-w-full">
           <button
             type="button"
             onClick={() => setActiveTab("overview")}
             className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer select-none ${
               activeTab === "overview"
-                ? "bg-amber-500 text-slate-950 shadow-md"
-                : "text-slate-300 hover:text-white hover:bg-slate-800"
+                ? "bg-amber-500 text-slate-950 font-black shadow-sm"
+                : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             <Sparkles className="w-4 h-4 shrink-0" /> Overview & Charts
@@ -389,8 +389,8 @@ export default function AdminDashboardPage() {
             onClick={() => setActiveTab("properties")}
             className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer select-none ${
               activeTab === "properties"
-                ? "bg-amber-500 text-slate-950 shadow-md"
-                : "text-slate-300 hover:text-white hover:bg-slate-800"
+                ? "bg-amber-500 text-slate-950 font-black shadow-sm"
+                : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             <Building2 className="w-4 h-4 shrink-0" /> Properties & Ref IDs ({properties.length})
@@ -401,8 +401,8 @@ export default function AdminDashboardPage() {
             onClick={() => setActiveTab("locations")}
             className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer select-none ${
               activeTab === "locations"
-                ? "bg-amber-500 text-slate-950 shadow-md"
-                : "text-slate-300 hover:text-white hover:bg-slate-800"
+                ? "bg-amber-500 text-slate-950 font-black shadow-sm"
+                : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             <Flame className="w-4 h-4 shrink-0" /> Trending Locations ({trendingLocations.length})
@@ -413,8 +413,8 @@ export default function AdminDashboardPage() {
             onClick={() => setActiveTab("categories")}
             className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer select-none ${
               activeTab === "categories"
-                ? "bg-amber-500 text-slate-950 shadow-md"
-                : "text-slate-300 hover:text-white hover:bg-slate-800"
+                ? "bg-amber-500 text-slate-950 font-black shadow-sm"
+                : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             <LayoutGrid className="w-4 h-4 shrink-0" /> Home Categories ({homeCategories.length})
@@ -425,8 +425,8 @@ export default function AdminDashboardPage() {
             onClick={() => setActiveTab("regions")}
             className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer select-none ${
               activeTab === "regions"
-                ? "bg-amber-500 text-slate-950 shadow-md"
-                : "text-slate-300 hover:text-white hover:bg-slate-800"
+                ? "bg-amber-500 text-slate-950 font-black shadow-sm"
+                : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             <Globe2 className="w-4 h-4 shrink-0" /> Explore AP & Sub-regions ({apRegions.length})
@@ -466,16 +466,16 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* CATEGORY & SUBTYPE FILTER CHIPS BAR */}
-          <div className="flex items-center gap-2 overflow-x-auto py-1.5 px-1">
+          <div className="flex items-center gap-2 overflow-x-auto py-2 px-1 touch-pan-x scrollbar-none">
             {["all", "residential", "commercial", "industrial", "agricultural"].map((cat) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setAdminCategoryFilter(cat)}
-                className={`py-1.5 px-3.5 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer whitespace-nowrap ${
+                className={`shrink-0 min-w-max px-4 py-2 rounded-xl text-xs font-extrabold capitalize transition-all cursor-pointer whitespace-nowrap ${
                   adminCategoryFilter === cat
                     ? "bg-amber-500 text-slate-950 font-black shadow-sm"
-                    : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white"
+                    : "bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
                 {cat === "all" ? "All Categories" : cat}
