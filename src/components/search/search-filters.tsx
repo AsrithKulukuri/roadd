@@ -234,36 +234,62 @@ export function SearchFiltersModal({
             </div>
           </div>
 
-          {/* 4. BUDGET & PRICE RANGE */}
-          <div className="space-y-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          {/* 4. BUDGET & PRICE RANGE — Dual-handle drag slider */}
+          <div className="space-y-4 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
             <div className="flex justify-between items-center">
               <label className="font-extrabold uppercase text-slate-400 text-[10px] tracking-wider">
                 Budget Range (INR)
               </label>
               <span className="font-black text-amber-500 text-sm">
-                {formatINR(localFilters.budget[0])} - {localFilters.budget[1] >= 100000000 ? "₹10+ Crores" : formatINR(localFilters.budget[1])}
+                {formatINR(localFilters.budget[0])} –{" "}
+                {localFilters.budget[1] >= 100000000
+                  ? "₹10+ Cr"
+                  : formatINR(localFilters.budget[1])}
               </span>
             </div>
 
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 pt-1">
+            {/* Dual-handle slider */}
+            <Slider
+              min={0}
+              max={100000000}
+              step={500000}
+              value={localFilters.budget}
+              onValueChange={(val) =>
+                setLocalFilters({ ...localFilters, budget: val as [number, number] })
+              }
+              className="w-full"
+            />
+
+            {/* Min / Max labels */}
+            <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1">
+              <span>₹0</span>
+              <span>₹10+ Crores</span>
+            </div>
+
+            {/* Quick-select preset chips */}
+            <div className="flex flex-wrap gap-1.5 pt-1">
               {[
                 { label: "Under 30L", min: 0, max: 3000000 },
-                { label: "30L-60L", min: 3000000, max: 6000000 },
-                { label: "60L-1 Cr", min: 6000000, max: 10000000 },
-                { label: "1 Cr-2 Cr", min: 10000000, max: 20000000 },
-                { label: "Above 2 Cr", min: 20000000, max: 100000000 },
+                { label: "30L–60L", min: 3000000, max: 6000000 },
+                { label: "60L–1 Cr", min: 6000000, max: 10000000 },
+                { label: "1–2 Cr", min: 10000000, max: 20000000 },
+                { label: "2 Cr+", min: 20000000, max: 100000000 },
               ].map((p) => {
-                const isSelected = localFilters.budget[0] === p.min && localFilters.budget[1] === p.max;
+                const isSelected =
+                  localFilters.budget[0] === p.min &&
+                  localFilters.budget[1] === p.max;
                 return (
                   <button
                     key={p.label}
                     type="button"
-                    onClick={() => setLocalFilters({ ...localFilters, budget: [p.min, p.max] })}
+                    onClick={() =>
+                      setLocalFilters({ ...localFilters, budget: [p.min, p.max] })
+                    }
                     className={cn(
-                      "py-1.5 px-2 rounded-lg text-[10px] font-extrabold border text-center transition-all cursor-pointer",
+                      "py-1 px-2.5 rounded-full text-[10px] font-extrabold border transition-all cursor-pointer",
                       isSelected
                         ? "bg-amber-500 text-slate-950 border-amber-500"
-                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800"
+                        : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400"
                     )}
                   >
                     {p.label}
@@ -272,6 +298,7 @@ export function SearchFiltersModal({
               })}
             </div>
           </div>
+
 
           {/* 5. BEDROOMS (BHK), BATHROOMS & BALCONIES */}
           <div className="space-y-3">
