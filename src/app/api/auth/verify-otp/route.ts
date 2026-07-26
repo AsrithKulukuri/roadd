@@ -125,39 +125,42 @@ export async function POST(request: Request) {
       }
     }
 
-    // 8. Generate Auth Session Link / Custom Session Token
-    const userRole = user?.user_metadata?.role || "buyer";
+    // 8. Fetch Profile Details and Check Completion
+    let profileData: any = null;
+    try {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name, email, role")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profile) profileData = profile;
+    } catch (e) {}
+
+    const existingName = profileData?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || "";
+    const rawEmail = profileData?.email || user.email || "";
+    const isInternalEmail = rawEmail.endsWith("@road.internal");
+    const cleanEmail = isInternalEmail ? "" : rawEmail;
+
+    const isProfileComplete = Boolean(existingName.length >= 2 && cleanEmail && cleanEmail.includes("@"));
+    const userRole = profileData?.role || user?.user_metadata?.role || "buyer";
+
     const userPayload = {
       id: user.id,
       phone: user.phone || phone,
-      email: user.email || `${phone.replace(/\D/g, "")}@road.internal`,
+      name: existingName,
+      email: cleanEmail,
       role: userRole,
     };
 
-    // Attempt to generate link token for passwordless sign in
-    let sessionData = undefined;
-    try {
-      const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
-        type: "magiclink",
-        email: userPayload.email,
-      });
-      if (linkData?.properties?.action_link) {
-        sessionData = {
-          actionLink: linkData.properties.action_link,
-          hashedToken: linkData.properties.hashed_token,
-        };
-      }
-    } catch (e) {}
-
-    logger.security("VERIFY_OTP_SUCCESS", phone, true, { userId: user.id, role: userRole });
+    logger.security("VERIFY_OTP_SUCCESS", phone, true, { userId: user.id, role: userRole, isProfileComplete });
 
     // 9. Return Authenticated Session Response
     return NextResponse.json(
       {
         success: true,
-        message: "WhatsApp OTP verified successfully. Authenticated into ROAD.",
+        isProfileComplete,
+        message: "WhatsApp OTP verified successfully.",
         user: userPayload,
-        session: sessionData,
       },
       { status: 200 }
     );

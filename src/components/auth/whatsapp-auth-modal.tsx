@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MessageSquare, ShieldCheck, Lock } from "lucide-react";
+import { X, MessageSquare, Lock, UserCheck } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { PhoneInput } from "@/components/auth/phone-input";
 import { OTPInput } from "@/components/auth/otp-input";
+import { CompleteProfileStep } from "@/components/auth/complete-profile-step";
 import { useWhatsAppAuth } from "@/hooks/useWhatsAppAuth";
 
 interface WhatsAppAuthModalProps {
@@ -15,9 +17,7 @@ interface WhatsAppAuthModalProps {
 
 export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthModalProps) {
   const {
-    step,
     phone,
-    isLoading,
     isSending,
     isVerifying,
     canResend,
@@ -28,24 +28,76 @@ export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthMo
     reset,
   } = useWhatsAppAuth();
 
+  const [activeStep, setActiveStep] = useState<"phone" | "otp" | "profile">("phone");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
   if (!isOpen) return null;
 
   const handlePhoneSubmit = async (targetPhone: string) => {
-    await sendOTP(targetPhone);
+    const ok = await sendOTP(targetPhone);
+    if (ok) {
+      setActiveStep("otp");
+    }
   };
 
   const handleVerifySubmit = async (otpCode: string) => {
     const res = await verifyOTP(otpCode);
     if (res && res.success) {
-      if (onSuccess) onSuccess(res.user);
-      setTimeout(() => {
-        reset();
-        onClose();
-        if (typeof window !== "undefined") {
-          window.location.reload();
-        }
-      }, 800);
+      const user = res.user;
+      setCurrentUser(user);
+
+      // Save session to localStorage
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "road_user",
+          JSON.stringify({
+            isLoggedIn: true,
+            id: user?.id,
+            phone: user?.phone,
+            name: user?.name,
+            email: user?.email,
+            role: user?.role || "buyer",
+          })
+        );
+      }
+
+      if (res.isProfileComplete) {
+        // User details exist! Complete login immediately
+        if (onSuccess) onSuccess(user);
+        setTimeout(() => {
+          handleClose();
+          if (typeof window !== "undefined") {
+            window.location.href = "/dashboard";
+          }
+        }, 500);
+      } else {
+        // Profile incomplete: ask for Name & Email
+        setActiveStep("profile");
+      }
     }
+  };
+
+  const handleProfileComplete = (updatedUser: any) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "road_user",
+        JSON.stringify({
+          isLoggedIn: true,
+          id: updatedUser?.id,
+          phone: updatedUser?.phone || phone,
+          name: updatedUser?.name,
+          email: updatedUser?.email,
+          role: updatedUser?.role || "buyer",
+        })
+      );
+    }
+    if (onSuccess) onSuccess(updatedUser);
+    setTimeout(() => {
+      handleClose();
+      if (typeof window !== "undefined") {
+        window.location.href = "/dashboard";
+      }
+    }, 500);
   };
 
   const handleResend = async () => {
@@ -56,6 +108,8 @@ export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthMo
 
   const handleClose = () => {
     reset();
+    setActiveStep("phone");
+    setCurrentUser(null);
     onClose();
   };
 
@@ -96,34 +150,54 @@ export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthMo
           <div className="flex flex-col items-center text-center mb-6">
             <Logo size="md" className="mb-4" />
             <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-emerald-400" />
-              <span>WhatsApp Login</span>
+              {activeStep === "profile" ? (
+                <>
+                  <UserCheck className="w-5 h-5 text-amber-400" />
+                  <span>Complete Profile</span>
+                </>
+              ) : (
+                <>
+                  <MessageSquare className="w-5 h-5 text-emerald-400" />
+                  <span>WhatsApp Sign In</span>
+                </>
+              )}
             </h2>
             <p className="text-xs text-slate-400 mt-1 max-w-xs">
-              {step === "phone"
-                ? "Enter your mobile number to receive a secure WhatsApp verification code."
-                : `Enter 6-digit code sent to ${phone}`}
+              {activeStep === "phone" && "Enter your mobile number to receive a WhatsApp OTP code."}
+              {activeStep === "otp" && `Enter 6-digit code sent to ${phone}`}
+              {activeStep === "profile" && "Please enter your name and email to complete your account."}
             </p>
           </div>
 
           {/* Body Content Steps */}
-          {step === "phone" ? (
+          {activeStep === "phone" && (
             <PhoneInput
               onSubmit={handlePhoneSubmit}
               isLoading={isSending}
               initialValue={phone}
               error={error}
             />
-          ) : (
+          )}
+
+          {activeStep === "otp" && (
             <OTPInput
               phone={phone}
               onVerify={handleVerifySubmit}
               onResend={handleResend}
-              onBack={() => reset()}
+              onBack={() => setActiveStep("phone")}
               isLoading={isVerifying}
               canResend={canResend}
               resendTimer={resendTimer}
               error={error}
+            />
+          )}
+
+          {activeStep === "profile" && (
+            <CompleteProfileStep
+              phone={phone}
+              initialName={currentUser?.name || ""}
+              initialEmail={currentUser?.email || ""}
+              onComplete={handleProfileComplete}
             />
           )}
 

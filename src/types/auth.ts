@@ -19,10 +19,12 @@ export interface VerifyOTPRequest {
 
 export interface VerifyOTPResponse {
   success: boolean;
+  isProfileComplete?: boolean;
   message: string;
   user?: {
     id: string;
     phone: string;
+    name?: string;
     email?: string;
     role: string;
   };
