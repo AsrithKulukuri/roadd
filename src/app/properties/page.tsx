@@ -84,11 +84,21 @@ function PropertiesPage() {
       }
     }
 
+    const budgetRaw = searchParams.get("budget");
+    let budget: [number, number] = [0, 100000000];
+    if (budgetRaw) {
+      const parts = budgetRaw.split(",").map(Number);
+      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        budget = [parts[0], parts[1]];
+      }
+    }
+
     return {
       ...initialFilterState,
       query: loc,
       listingType,
       propertyType,
+      budget,
     };
   };
 

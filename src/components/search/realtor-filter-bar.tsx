@@ -41,6 +41,16 @@ export function RealtorFilterBar({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const handlePresetClick = (min: number, max: number, e?: React.SyntheticEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    onFilterChange({
+      ...filters,
+      budget: [min, max],
+    });
+  };
+
   // Mounted check for React Portal
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -356,17 +366,16 @@ export function RealtorFilterBar({
                   <div className="flex flex-wrap gap-2 pt-1">
                     {pricePresets.map((preset) => {
                       const isSelected =
-                        filters.budget[0] === preset.min &&
-                        filters.budget[1] === preset.max;
+                        Number(filters.budget[0]) === preset.min &&
+                        Number(filters.budget[1]) === preset.max;
                       return (
                         <button
                           key={preset.label}
                           type="button"
-                          onClick={() =>
-                            onFilterChange({ ...filters, budget: [preset.min, preset.max] })
-                          }
+                          onPointerDown={(e) => handlePresetClick(preset.min, preset.max, e)}
+                          onClick={(e) => handlePresetClick(preset.min, preset.max, e)}
                           className={cn(
-                            "py-2 px-3.5 rounded-full text-xs font-bold border transition-all cursor-pointer select-none active:scale-95",
+                            "py-2 px-3.5 rounded-full text-xs font-bold border transition-all cursor-pointer select-none active:scale-95 touch-manipulation z-10",
                             isSelected
                               ? "bg-amber-500 text-slate-950 border-amber-500 shadow-md font-extrabold"
                               : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-amber-400"
@@ -532,17 +541,16 @@ export function RealtorFilterBar({
               <div className="flex flex-wrap gap-2 pt-1">
                 {pricePresets.map((preset) => {
                   const isSelected =
-                    filters.budget[0] === preset.min &&
-                    filters.budget[1] === preset.max;
+                    Number(filters.budget[0]) === preset.min &&
+                    Number(filters.budget[1]) === preset.max;
                   return (
                     <button
                       key={preset.label}
                       type="button"
-                      onClick={() =>
-                        onFilterChange({ ...filters, budget: [preset.min, preset.max] })
-                      }
+                      onPointerDown={(e) => handlePresetClick(preset.min, preset.max, e)}
+                      onClick={(e) => handlePresetClick(preset.min, preset.max, e)}
                       className={cn(
-                        "py-2 px-3.5 rounded-full text-xs font-bold border transition-all cursor-pointer select-none active:scale-95",
+                        "py-2 px-3.5 rounded-full text-xs font-bold border transition-all cursor-pointer select-none active:scale-95 touch-manipulation z-10",
                         isSelected
                           ? "bg-amber-500 text-slate-950 border-amber-500 shadow-md font-extrabold"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-amber-400"
