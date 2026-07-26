@@ -292,71 +292,6 @@ export function HeroSection() {
           </button>
         </form>
 
-        {/* ── Compact Budget Slider ── */}
-        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-3 sm:mt-4">
-          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3">
-            <div className="flex justify-between items-center mb-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white/60">Budget (INR)</span>
-              <span className="text-xs sm:text-sm font-black text-amber-400">
-                {heroBudget[0] === 0 && heroBudget[1] === 100000000
-                  ? "Any Price"
-                  : `${formatINR(heroBudget[0])} – ${heroBudget[1] >= 100000000 ? "₹10+ Cr" : formatINR(heroBudget[1])}`}
-              </span>
-            </div>
-
-            <Slider
-              min={0}
-              max={100000000}
-              step={500000}
-              value={heroBudget}
-              onValueChange={(val) => setHeroBudget(val as [number, number])}
-              className="w-full mb-1"
-            />
-
-            <div className="flex justify-between text-[9px] font-bold text-white/40 mb-2">
-              <span>₹0</span><span>₹10+ Cr</span>
-            </div>
-
-            <div className="flex items-center justify-between gap-1.5">
-              <div className="flex flex-wrap gap-1 items-center">
-                {[
-                  { label: "Any", min: 0, max: 100000000 },
-                  { label: "<30L", min: 0, max: 3000000 },
-                  { label: "30L–60L", min: 3000000, max: 6000000 },
-                  { label: "60L–1Cr", min: 6000000, max: 10000000 },
-                  { label: "1–2Cr", min: 10000000, max: 20000000 },
-                  { label: "2Cr+", min: 20000000, max: 100000000 },
-                ].map((p) => {
-                  const isSelected = heroBudget[0] === p.min && heroBudget[1] === p.max;
-                  return (
-                    <button
-                      key={p.label}
-                      type="button"
-                      onClick={() => setHeroBudget([p.min, p.max])}
-                      className={cn(
-                        "py-0.5 px-2 rounded-full text-[10px] font-extrabold border transition-all cursor-pointer",
-                        isSelected
-                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
-                          : "border-white/20 text-white/70 hover:border-amber-400 hover:text-white"
-                      )}
-                    >
-                      {p.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleSearchSubmit()}
-                className="py-0.5 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[11px] rounded-full shadow-sm transition-all hover:scale-105 cursor-pointer shrink-0 ml-auto"
-              >
-                Apply ({matchingCount})
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Open Trending Locations Carousel Section */}
         <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-5 sm:mt-[24px] text-left">
           {/* Category Chips Bar + Carousel Navigation Buttons (Buttons Hidden on Mobile) */}
@@ -496,6 +431,71 @@ export function HeroSection() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* ── Compact Budget Slider ── */}
+        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-3 sm:mt-4">
+          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3">
+            <div className="flex justify-between items-center mb-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/60">Budget (INR)</span>
+              <span className="text-xs sm:text-sm font-black text-amber-400">
+                {heroBudget[0] === 0 && heroBudget[1] === 100000000
+                  ? "Any Price"
+                  : `${formatINR(heroBudget[0])} – ${heroBudget[1] >= 100000000 ? "₹10+ Cr" : formatINR(heroBudget[1])}`}
+              </span>
+            </div>
+
+            <Slider
+              min={0}
+              max={100000000}
+              step={500000}
+              value={heroBudget}
+              onValueChange={(val) => setHeroBudget(val as [number, number])}
+              className="w-full mb-1"
+            />
+
+            <div className="flex justify-between text-[9px] font-bold text-white/40 mb-2">
+              <span>₹0</span><span>₹10+ Cr</span>
+            </div>
+
+            <div className="flex items-center justify-between gap-1.5">
+              <div className="flex flex-wrap gap-1 items-center">
+                {[
+                  { label: "Any", min: 0, max: 100000000 },
+                  { label: "<30L", min: 0, max: 3000000 },
+                  { label: "30L–60L", min: 3000000, max: 6000000 },
+                  { label: "60L–1Cr", min: 6000000, max: 10000000 },
+                  { label: "1–2Cr", min: 10000000, max: 20000000 },
+                  { label: "2Cr+", min: 20000000, max: 100000000 },
+                ].map((p) => {
+                  const isSelected = heroBudget[0] === p.min && heroBudget[1] === p.max;
+                  return (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => setHeroBudget([p.min, p.max])}
+                      className={cn(
+                        "py-0.5 px-2 rounded-full text-[10px] font-extrabold border transition-all cursor-pointer",
+                        isSelected
+                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
+                          : "border-white/20 text-white/70 hover:border-amber-400 hover:text-white"
+                      )}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleSearchSubmit()}
+                className="py-0.5 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[11px] rounded-full shadow-sm transition-all hover:scale-105 cursor-pointer shrink-0 ml-auto"
+              >
+                Apply ({matchingCount})
+              </button>
+            </div>
           </div>
         </div>
 
