@@ -3,6 +3,7 @@ import { HeroSection } from "@/components/home/hero-section";
 import { FeaturedProperties } from "@/components/home/featured-properties";
 import { RecommendedCarousel } from "@/components/home/recommended-carousel";
 import { TrendingLocations } from "@/components/home/trending-locations";
+import { BudgetSection } from "@/components/home/budget-section";
 import { WhyChooseUs } from "@/components/home/why-choose-us";
 import { Testimonials } from "@/components/home/testimonials";
 import { CTASection } from "@/components/home/cta-section";
@@ -21,6 +22,9 @@ export default function HomePage() {
       <Suspense fallback={<div className="h-[600px] flex items-center justify-center">Loading properties...</div>}>
         <FeaturedProperties />
       </Suspense>
+
+      {/* Budget Filter Section */}
+      <BudgetSection />
 
       {/* Trending Locations */}
       <TrendingLocations />
