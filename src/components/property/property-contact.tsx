@@ -157,7 +157,43 @@ export function PropertyContact({ property }: PropertyContactProps) {
             />
           </div>
 
-          {/* Primary Realtor.com Action Button */}
+          {/* Owner Phone & Contact details */}
+          {isLoggedIn ? (
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs space-y-1 text-emerald-400 font-medium mb-3">
+              <div className="flex items-center justify-between font-bold text-white">
+                <span>Verified Direct Contact:</span>
+                <span className="text-[10px] uppercase bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-black">Unlocked</span>
+              </div>
+              <p className="text-sm font-extrabold text-white flex items-center gap-1.5 pt-0.5">
+                <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
+                <a href="tel:+918977311418" className="hover:underline">+91 8977311418</a>
+              </p>
+              <p className="text-xs text-slate-300 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span>asrithkulkuri@gmail.com</span>
+              </p>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-2 mb-3">
+              <div className="flex items-center gap-2 text-amber-400 font-bold">
+                <Lock className="w-4 h-4" />
+                <span>Contact Details Protected</span>
+              </div>
+              <p className="text-slate-300 text-xs leading-relaxed">
+                Sign in with WhatsApp OTP to view direct contact numbers (+91 8977311418) and send inquiries.
+              </p>
+              <Button
+                type="button"
+                variant="amber"
+                onClick={() => router.push(`/login?redirect=/properties/${property.slug}`)}
+                className="w-full h-11 font-extrabold text-xs rounded-xl shadow-amber-glow mt-1"
+              >
+                Sign In with WhatsApp OTP
+              </Button>
+            </div>
+          )}
+
+          {/* Primary Action Button */}
           <Button
             type="submit"
             disabled={isSubmitting}
@@ -166,14 +202,14 @@ export function PropertyContact({ property }: PropertyContactProps) {
             {isSubmitting ? "Sending Inquiry..." : "Contact builder"}
           </Button>
 
-          {/* WhatsApp Action Button */}
+          {/* WhatsApp Direct Action Button */}
           <a
-            href={`https://wa.me/919999999999?text=${whatsappMessage}`}
+            href={`https://wa.me/918977311418?text=${whatsappMessage}`}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-full flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer block text-center"
           >
-            <MessageSquare className="w-4 h-4" /> WhatsApp Agent Directly
+            <MessageSquare className="w-4 h-4" /> WhatsApp Owner (+91 8977311418)
           </a>
 
           {/* Schedule Tour Button */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/shared/logo";
 import { PhoneInput } from "@/components/auth/phone-input";
@@ -27,6 +27,9 @@ export default function LoginPage() {
   const [activeStep, setActiveStep] = useState<"phone" | "otp" | "profile">("phone");
   const [currentUser, setCurrentUser] = useState<any>(null);
 
+  const searchParams = useSearchParams();
+  const redirectTarget = searchParams.get("redirect") || searchParams.get("redirectTo") || "/dashboard";
+
   // Check if user is already logged in
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -35,12 +38,12 @@ export default function LoginPage() {
         try {
           const parsed = JSON.parse(stored);
           if (parsed.isLoggedIn) {
-            router.replace("/dashboard");
+            router.replace(redirectTarget);
           }
         } catch (e) {}
       }
     }
-  }, [router]);
+  }, [router, redirectTarget]);
 
   const handlePhoneSubmit = async (targetPhone: string) => {
     const ok = await sendOTP(targetPhone);
@@ -70,12 +73,12 @@ export default function LoginPage() {
       }
 
       if (res.isProfileComplete) {
-        // User has full details (name & email)! Redirect immediately
+        // User has full details (name & email)! Redirect to target property or dashboard
         setTimeout(() => {
           if (typeof window !== "undefined") {
-            window.location.href = "/dashboard";
+            window.location.href = redirectTarget;
           } else {
-            router.push("/dashboard");
+            router.push(redirectTarget);
           }
         }, 500);
       } else {
@@ -101,9 +104,9 @@ export default function LoginPage() {
     }
     setTimeout(() => {
       if (typeof window !== "undefined") {
-        window.location.href = "/dashboard";
+        window.location.href = redirectTarget;
       } else {
-        router.push("/dashboard");
+        router.push(redirectTarget);
       }
     }, 500);
   };
