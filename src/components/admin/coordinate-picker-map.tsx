@@ -14,6 +14,7 @@ export interface LocationDetails {
   city: string;
   state: string;
   pincode: string;
+  locality?: string;
 }
 
 interface CoordinatePickerMapProps {
@@ -25,24 +26,40 @@ const reverseGeocode = async (lat: number, lng: number): Promise<LocationDetails
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`, {
       headers: {
-        'Accept-Language': 'en'
+        'Accept-Language': 'en',
+        'User-Agent': 'ROADFacingApp/1.0 (contact@road.in)'
       }
     });
     if (!res.ok) return null;
     const data = await res.json();
     
-    // Attempt to extract meaningful address components
+    const addr = data.address || {};
+    const cityVal = addr.city || addr.town || addr.village || addr.county || addr.suburb || "";
+    const localityVal = addr.suburb || addr.neighbourhood || addr.residential || addr.quarter || addr.town || addr.village || cityVal || "";
+    const fullAddress = data.name ? `${data.name}, ${data.display_name}` : (data.display_name || "");
+
     return {
-      address: data.name || data.display_name?.split(',').slice(0, 2).join(',') || "",
-      city: data.address?.city || data.address?.town || data.address?.village || data.address?.county || "",
-      state: data.address?.state || "",
-      pincode: data.address?.postcode || ""
+      address: fullAddress,
+      city: cityVal,
+      state: addr.state || "",
+      pincode: addr.postcode || "",
+      locality: localityVal
     };
   } catch (error) {
     console.error("Reverse geocoding failed", error);
     return null;
   }
 };
+
+function MapViewController({ center }: { center: [number, number] }) {
+  const map = useMapEvents({});
+  useEffect(() => {
+    if (center && center[0] && center[1]) {
+      map.flyTo(center, 15, { animate: true, duration: 1.2 });
+    }
+  }, [center[0], center[1], map]);
+  return null;
+}
 
 function LocationMarker({ 
   position, 
@@ -84,6 +101,15 @@ export default function CoordinatePickerMap({
     initialPosition ? new L.LatLng(initialPosition[0], initialPosition[1]) : null
   );
 
+  // Sync internal position state when initialPosition prop changes
+  useEffect(() => {
+    if (initialPosition && initialPosition[0] && initialPosition[1]) {
+      if (!position || Math.abs(position.lat - initialPosition[0]) > 0.0001 || Math.abs(position.lng - initialPosition[1]) > 0.0001) {
+        setPosition(new L.LatLng(initialPosition[0], initialPosition[1]));
+      }
+    }
+  }, [initialPosition[0], initialPosition[1]]);
+
   useEffect(() => {
     if (position) {
       // Provide coordinates immediately
@@ -95,7 +121,7 @@ export default function CoordinatePickerMap({
         if (details) {
           onPositionChange(position.lat, position.lng, details);
         }
-      }, 500);
+      }, 300);
 
       return () => clearTimeout(timeoutId);
     }
@@ -114,6 +140,7 @@ export default function CoordinatePickerMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <MapViewController center={initialPosition} />
         <LocationMarker position={position} setPosition={setPosition} />
       </MapContainer>
     </div>

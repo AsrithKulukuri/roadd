@@ -31,7 +31,37 @@ export async function GET(request: Request) {
     const finalUrl = response.url;
     let coords = parseGoogleMapsUrl(finalUrl);
 
-    // 3. Fallback: Parse Google Maps HTML body for coordinates
+    // 3. Fallback: Extract place name from URL path (e.g. /place/Madhurawada+Visakhapatnam...)
+    if (!coords && finalUrl.includes("/place/")) {
+      const placeMatch = finalUrl.match(/\/place\/([^\/]+)/);
+      if (placeMatch && placeMatch[1]) {
+        const rawPlaceName = decodeURIComponent(placeMatch[1].replace(/\+/g, " "));
+        // Clean address query for geocoding
+        const placeName = rawPlaceName.replace(/Dr\s*no:[^,]+,/i, "").trim();
+        try {
+          const nomRes = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(placeName)}&format=json`,
+            {
+              headers: {
+                "User-Agent": "ROADFacingApp/1.0 (contact@road.in)",
+                "Accept-Language": "en",
+              },
+            }
+          );
+          if (nomRes.ok) {
+            const nomData = await nomRes.json();
+            if (nomData && nomData[0]) {
+              coords = {
+                latitude: parseFloat(nomData[0].lat),
+                longitude: parseFloat(nomData[0].lon),
+              };
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    // 4. Fallback: Parse Google Maps HTML body for coordinates
     if (!coords) {
       const htmlText = await response.text();
 

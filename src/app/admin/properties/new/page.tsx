@@ -685,7 +685,7 @@ export default function AddPropertyPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <div className="h-[400px] w-full rounded-2xl overflow-hidden relative border border-border-default/50">
-                  <CoordinatePickerMap onPositionChange={handlePositionChange} />
+                  <CoordinatePickerMap initialPosition={[formData.latitude || 16.5062, formData.longitude || 80.6480]} onPositionChange={handlePositionChange} />
                 </div>
                 <p className="text-xs text-text-tertiary text-center">Drag the marker or click on the map to set exact location. Address fields will auto-fill.</p>
               </div>
