@@ -101,8 +101,8 @@ export function HeroSection() {
 
   const properties = usePropertiesStore((state) => state.properties);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearchSubmit = (e?: React.FormEvent, customBudget?: [number, number]) => {
+    if (e) e.preventDefault();
     if (activeTab === "sell") {
       router.push("/list-with-us");
       return;
@@ -111,6 +111,9 @@ export function HeroSection() {
       router.push("/mortgage-calculator");
       return;
     }
+
+    const b = customBudget ?? heroBudget;
+
     if (searchQuery.trim()) {
       const refMatch = findPropertyByRefId(searchQuery, properties);
       if (refMatch) {
@@ -118,12 +121,30 @@ export function HeroSection() {
         router.push(`/properties/${refMatch.id}`);
         return;
       }
-
-      router.push(
-        `/properties?type=${activeTab === "just-sold" ? "sale" : activeTab}&location=${encodeURIComponent(searchQuery)}`
-      );
     }
+
+    const params = new URLSearchParams();
+    if (activeTab === "rent") {
+      params.set("type", "rent");
+    } else {
+      params.set("type", "buy");
+    }
+    if (searchQuery.trim()) {
+      params.set("location", searchQuery.trim());
+    }
+    if (b[0] > 0 || b[1] < 100000000) {
+      params.set("budget", `${b[0]},${b[1]}`);
+    }
+
+    router.push(`/properties?${params.toString()}`);
   };
+
+  const matchingCount = useMemo(() => {
+    return properties.filter((p) => {
+      if (p.status === "sold") return false;
+      return p.price >= heroBudget[0] && p.price <= heroBudget[1];
+    }).length;
+  }, [properties, heroBudget]);
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -293,32 +314,44 @@ export function HeroSection() {
             <div className="flex justify-between text-[10px] font-bold text-white/40 mb-3">
               <span>₹0</span><span>₹10+ Crores</span>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { label: "Any Price", min: 0, max: 100000000 },
-                { label: "Under 30L", min: 0, max: 3000000 },
-                { label: "30L–60L", min: 3000000, max: 6000000 },
-                { label: "60L–1 Cr", min: 6000000, max: 10000000 },
-                { label: "1–2 Cr", min: 10000000, max: 20000000 },
-                { label: "2 Cr+", min: 20000000, max: 100000000 },
-              ].map((p) => {
-                const isSelected = heroBudget[0] === p.min && heroBudget[1] === p.max;
-                return (
-                  <button
-                    key={p.label}
-                    type="button"
-                    onClick={() => setHeroBudget([p.min, p.max])}
-                    className={cn(
-                      "py-0.5 px-2.5 rounded-full text-[10px] font-extrabold border transition-all cursor-pointer",
-                      isSelected
-                        ? "bg-amber-500 text-slate-950 border-amber-500"
-                        : "border-white/20 text-white/70 hover:border-amber-400/60 hover:text-white"
-                    )}
-                  >
-                    {p.label}
-                  </button>
-                );
-              })}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: "Any Price", min: 0, max: 100000000 },
+                  { label: "Under 30L", min: 0, max: 3000000 },
+                  { label: "30L–60L", min: 3000000, max: 6000000 },
+                  { label: "60L–1 Cr", min: 6000000, max: 10000000 },
+                  { label: "1–2 Cr", min: 10000000, max: 20000000 },
+                  { label: "2 Cr+", min: 20000000, max: 100000000 },
+                ].map((p) => {
+                  const isSelected = heroBudget[0] === p.min && heroBudget[1] === p.max;
+                  return (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => {
+                        setHeroBudget([p.min, p.max]);
+                        handleSearchSubmit(undefined, [p.min, p.max]);
+                      }}
+                      className={cn(
+                        "py-1 px-3 rounded-full text-[11px] font-extrabold border transition-all cursor-pointer",
+                        isSelected
+                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-sm"
+                          : "border-white/20 text-white/80 hover:border-amber-400 hover:text-white hover:bg-white/10"
+                      )}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={() => handleSearchSubmit()}
+                className="py-1 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-full shadow-md transition-all hover:scale-105 cursor-pointer ml-auto"
+              >
+                Apply ({matchingCount})
+              </button>
             </div>
           </div>
         </div>
