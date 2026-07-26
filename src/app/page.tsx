@@ -24,7 +24,9 @@ export default function HomePage() {
       </Suspense>
 
       {/* Budget Filter Section */}
-      <BudgetSection />
+      <Suspense fallback={<div className="h-[400px] flex items-center justify-center">Loading budget filter...</div>}>
+        <BudgetSection />
+      </Suspense>
 
       {/* Trending Locations */}
       <TrendingLocations />
