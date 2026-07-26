@@ -212,7 +212,7 @@ export function HeroSection() {
         {/* Realtor.com Search Input Bar */}
         <form
           onSubmit={handleSearchSubmit}
-          className="relative w-full max-w-[760px] h-[64px] mx-auto flex items-center bg-white rounded-full px-3 shadow-2xl transition-all duration-300 focus-within:ring-4 focus-within:ring-amber-500/30"
+          className="relative w-full max-w-[760px] h-[64px] mx-auto flex items-center bg-white rounded-full px-3 shadow-2xl transition-all duration-300"
         >
           <Search className="w-5 h-5 text-slate-400 ml-3 mr-2 shrink-0 pointer-events-none" />
 
@@ -244,7 +244,7 @@ export function HeroSection() {
             onBlur={() => setIsFocused(false)}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={isFocused && !searchQuery ? "Search city, locality, builder or project..." : ""}
-            className="w-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-slate-400 pl-1 pr-36 sm:pr-40 font-bold border-0 outline-none ring-0 focus:outline-none focus:ring-0 focus:border-0"
+            className="w-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-slate-400 pl-1 pr-36 sm:pr-40 font-bold border-none outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none shadow-none"
           />
 
           {searchQuery && (
