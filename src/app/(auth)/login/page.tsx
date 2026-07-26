@@ -8,8 +8,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/shared/logo";
-import { Eye, EyeOff, Phone, Mail, Lock, ChevronDown, Check, Shield, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Phone, Mail, Lock, ChevronDown, Check, Shield, AlertCircle, MessageSquare } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { WhatsAppAuthModal } from "@/components/auth/whatsapp-auth-modal";
 
 const countryCodes = [
   { code: "+91", country: "India", flag: "🇮🇳" },
@@ -26,6 +27,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isAdminLogin, setIsAdminLogin] = useState(false);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   
   // Form fields
   const [loginInput, setLoginInput] = useState(""); // Can be email or phone number
@@ -229,8 +231,18 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* 1. Google OAuth Sign In */}
-        <div className="space-y-4 mb-6">
+        {/* 1. WhatsApp & Google Sign In */}
+        <div className="space-y-3 mb-6">
+          <Button
+            type="button"
+            className="w-full h-12 rounded-xl text-slate-950 bg-emerald-400 hover:bg-emerald-300 font-extrabold text-sm gap-2.5 shadow-md hover:shadow-emerald-500/20 transition-all active:scale-[0.98] cursor-pointer"
+            onClick={() => setIsWhatsAppModalOpen(true)}
+            disabled={isLoading || isGoogleLoading}
+          >
+            <MessageSquare className="w-5 h-5 text-slate-950 fill-slate-950" />
+            <span>Continue with WhatsApp OTP</span>
+          </Button>
+
           <Button
             type="button"
             variant="outline"
@@ -244,7 +256,7 @@ export default function LoginPage() {
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
                   fill="#EA4335"
-                  d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.48 0-6.3-2.82-6.3-6.3s2.82-6.3 6.3-6.3c1.602 0 3.06.602 4.178 1.693l3.12-3.12C19.123 2.115 15.93 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c5.897 0 10.864-4.148 10.864-11.24 0-.668-.073-1.295-.192-1.955H12.24z"
+                  d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.48 0-6.3-2.82-6.3-6.3s2.82-6.3 6.3-6.3c1.602 0 3.06.602 4.178 1.693l3.12-3.12C19.123 2.115 15.93 1 12.24 1 6.033 1 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c5.897 0 10.864-4.148 10.864-11.24 0-.668-.073-1.295-.192-1.955H12.24z"
                 />
               </svg>
             )}
@@ -256,7 +268,7 @@ export default function LoginPage() {
               <span className="w-full border-t border-border-default/50" />
             </div>
             <span className="relative px-3 bg-bg-card text-xs text-text-tertiary uppercase tracking-wider">
-              Or sign in below
+              Or sign in with password
             </span>
           </div>
         </div>
@@ -446,6 +458,16 @@ export default function LoginPage() {
           </Link>
         </div>
       </motion.div>
+
+      {/* WhatsApp OTP Authentication Modal */}
+      <WhatsAppAuthModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
+        onSuccess={() => {
+          setIsWhatsAppModalOpen(false);
+          router.push("/dashboard");
+        }}
+      />
     </div>
   );
 }
