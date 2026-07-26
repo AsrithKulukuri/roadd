@@ -58,6 +58,8 @@ export async function POST(request: Request) {
           email: email,
           phone: phone,
           role: targetUser.user_metadata?.role || "buyer",
+          is_verified: true,
+          is_profile_complete: true,
         },
       });
     }
@@ -72,6 +74,8 @@ export async function POST(request: Request) {
             full_name: name,
             email: email,
             role: "buyer",
+            is_verified: true,
+            is_profile_complete: true,
             updated_at: new Date().toISOString(),
           },
           { onConflict: "id" }
@@ -87,6 +91,8 @@ export async function POST(request: Request) {
       name: name,
       email: email,
       role: "buyer",
+      isVerified: true,
+      isProfileComplete: true,
     };
 
     logger.security("PROFILE_COMPLETED", phone, true, { userId, name, email });
