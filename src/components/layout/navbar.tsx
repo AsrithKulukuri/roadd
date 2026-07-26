@@ -256,10 +256,10 @@ export function Navbar() {
               ))}
             </nav>
 
-            <div className="mt-8 pt-6 border-t border-slate-800 space-y-3">
+            <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 space-y-3">
               <Link href="/list-with-us" className="block w-full">
-                <Button className="w-full gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-6 text-base shadow-md">
-                  <Plus className="h-5 w-5" />
+                <Button className="w-full gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-6 text-base shadow-md">
+                  <Plus className="h-5 w-5 stroke-[3]" />
                   List Property Free
                 </Button>
               </Link>
@@ -267,14 +267,14 @@ export function Navbar() {
               {user ? (
                 <div className="space-y-2 pt-2">
                   <Link href="/dashboard" className="block">
-                    <Button variant="outline" className="w-full border-slate-700 text-white justify-start">
+                    <Button variant="outline" className="w-full bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-extrabold justify-start shadow-xs">
                       <User className="w-4 h-4 mr-2" /> My Dashboard ({user.name})
                     </Button>
                   </Link>
                   <Button
                     onClick={handleSignOut}
                     variant="ghost"
-                    className="w-full text-red-400 hover:text-red-300 hover:bg-slate-900 justify-start"
+                    className="w-full text-red-600 dark:text-red-400 font-extrabold hover:bg-slate-100 dark:hover:bg-slate-800 justify-start"
                   >
                     <LogOut className="w-4 h-4 mr-2" /> Sign Out
                   </Button>
@@ -282,12 +282,12 @@ export function Navbar() {
               ) : (
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <Link href="/login" className="block">
-                    <Button variant="outline" className="w-full border-slate-700 text-white">
+                    <Button variant="outline" className="w-full bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-extrabold shadow-xs">
                       Log in
                     </Button>
                   </Link>
                   <Link href="/register" className="block">
-                    <Button variant="secondary" className="w-full bg-slate-800 text-white">
+                    <Button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-extrabold shadow-xs">
                       Sign up
                     </Button>
                   </Link>
