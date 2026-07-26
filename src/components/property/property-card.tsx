@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,7 +26,6 @@ import { Button } from "@/components/ui/button";
 import { cn, formatPriceCompact, formatArea, formatINR } from "@/lib/utils";
 import type { Property } from "@/types/property";
 import { useFavoritesStore } from "@/stores/favorites-store";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 interface PropertyCardProps {
   property: Property;
@@ -54,41 +53,12 @@ export function PropertyCard({
   const router = useRouter();
   const [currentImage, setCurrentImage] = useState(0);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const isSaved = isFavorite(property.id);
 
-  const images = property.images && property.images.length > 0 ? property.images : [
+  const images = useMemo(() => property.images && property.images.length > 0 ? property.images : [
     { id: "fallback", url: property.coverImage || "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80", alt: property.title, isPrimary: true, order: 0 }
-  ];
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      if (isSupabaseConfigured()) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            setIsLoggedIn(true);
-            return;
-          }
-        } catch (e) {}
-      }
-      
-      const stored = localStorage.getItem("road_user");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed.isLoggedIn) {
-            setIsLoggedIn(true);
-            return;
-          }
-        } catch (e) {}
-      }
-      setIsLoggedIn(true);
-    };
-
-    checkAuth();
-  }, []);
+  ], [property.images, property.coverImage, property.title]);
 
   const nextImage = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -156,6 +126,7 @@ export function PropertyCard({
                 src={images[currentImage]?.url || ""}
                 alt={images[currentImage]?.alt || property.title}
                 fill
+                loading={index < 3 ? "eager" : "lazy"}
                 className={cn(
                   "object-cover transition-all duration-700 group-hover:scale-105",
                   isImageLoaded ? "scale-100 blur-0" : "scale-110 blur-sm"

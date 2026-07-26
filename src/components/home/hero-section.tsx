@@ -157,7 +157,7 @@ export function HeroSection() {
     <section className="relative w-full overflow-hidden text-white pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-20">
       {/* Crystal Clear High-Definition Background Image with Subtle Scrim Overlay */}
       <div
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-transform duration-10000 scale-105"
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage:
             'url("https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=2400&q=95")',

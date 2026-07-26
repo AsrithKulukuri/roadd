@@ -93,7 +93,11 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-import { AiAssistantWidget } from "@/components/shared/ai-assistant-widget";
+import dynamic from "next/dynamic";
+const AiAssistantWidget = dynamic(
+  () => import("@/components/shared/ai-assistant-widget").then((m) => ({ default: m.AiAssistantWidget })),
+  { ssr: false }
+);
 
 export default function RootLayout({
   children,
