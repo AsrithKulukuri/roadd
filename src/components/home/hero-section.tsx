@@ -244,6 +244,7 @@ export function HeroSection() {
             onBlur={() => setIsFocused(false)}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={isFocused && !searchQuery ? "Search city, locality, builder or project..." : ""}
+            style={{ outline: "none", boxShadow: "none", border: "none" }}
             className="w-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-slate-400 pl-1 pr-36 sm:pr-40 font-bold border-none outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none shadow-none"
           />
 
