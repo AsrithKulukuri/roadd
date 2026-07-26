@@ -538,25 +538,6 @@ export default function AddPropertyPage() {
                 <label className="text-sm font-medium text-text-secondary">Price (₹) *</label>
                 <Input name="price" type="number" required value={formData.price} onChange={handleChange} placeholder="e.g. 15000000" className="h-12" />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Area (Sq.ft) *</label>
-                <Input name="area" type="number" value={formData.area} onChange={handleChange} placeholder="e.g. 1500" className="h-12" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Bedrooms</label>
-                <select name="bedrooms" value={formData.bedrooms} onChange={handleChange} className="w-full h-12 rounded-xl bg-bg-primary border border-border-default/50 px-4 text-text-primary">
-                  {[0,1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Bathrooms</label>
-                <select name="bathrooms" value={formData.bathrooms} onChange={handleChange} className="w-full h-12 rounded-xl bg-bg-primary border border-border-default/50 px-4 text-text-primary">
-                  {[0,1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
-              </div>
             </div>
           </div>
 
