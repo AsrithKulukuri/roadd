@@ -37,6 +37,7 @@ export class WasenderService {
         `${WASENDER_BASE_URL}/send-message`,
         {
           to: cleanPhone,
+          text: formattedMessage,
           message: formattedMessage,
         },
         {
