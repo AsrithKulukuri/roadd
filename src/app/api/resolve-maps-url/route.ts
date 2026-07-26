@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { parseGoogleMapsUrl } from "@/lib/utils";
 
-// Filter out generic Google bundle fallback coordinates (e.g. US default 39.0268, -77.8443)
 function isValidFetchedCoords(lat: number, lng: number): boolean {
   if (isNaN(lat) || isNaN(lng)) return false;
+  // Ignore US default center 39.0268, -77.8443
   if (Math.abs(lat - 39.0268) < 0.1 && Math.abs(lng - (-77.8443)) < 0.1) return false;
   return true;
 }
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
 
   const trimmed = targetUrl.trim();
 
-  // 1. Direct synchronous pattern check
+  // 1. Direct synchronous pattern check for raw coordinates or @lat,lng in URL
   const directMatch = parseGoogleMapsUrl(trimmed);
   if (directMatch && isValidFetchedCoords(directMatch.latitude, directMatch.longitude)) {
     return NextResponse.json({ success: true, ...directMatch, resolvedUrl: trimmed });
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
 
     let placeAddress = "";
 
-    // 3. Extract place name / address from URL path (e.g. /place/Madhurawada+Visakhapatnam...)
+    // 3. Extract place name / address from URL path (e.g. /place/Dr+no:.../ or /maps/search/...)
     if (finalUrl.includes("/place/")) {
       const placeMatch = finalUrl.match(/\/place\/([^\/]+)/);
       if (placeMatch && placeMatch[1]) {
@@ -56,12 +56,55 @@ export async function GET(request: Request) {
       }
     }
 
-    // 4. Geocode extracted placeAddress using Nominatim
+    // 4. Geocode extracted placeAddress using Photon API (fuzzy locality & street geocoder)
     if (placeAddress) {
       const parts = placeAddress.split(",").map((s) => s.trim()).filter(Boolean);
-      const cleanQuery = parts.length > 2 ? parts.slice(-3).join(", ") : placeAddress;
-      const searchQueries = [cleanQuery, placeAddress, parts.slice(-2).join(", ")];
+      
+      const searchQueries: string[] = [];
+      if (parts.length >= 3) {
+        searchQueries.push(parts.slice(2).join(" "));
+      }
+      if (parts.length >= 2) {
+        searchQueries.push(parts.slice(-3).join(" "));
+      }
+      searchQueries.push(placeAddress);
 
+      for (const q of searchQueries) {
+        try {
+          const photonRes = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}`);
+          if (photonRes.ok) {
+            const photonData = await photonRes.json();
+            if (photonData.features && photonData.features[0]) {
+              const feat = photonData.features[0];
+              const lng = feat.geometry.coordinates[0];
+              const lat = feat.geometry.coordinates[1];
+              const props = feat.properties || {};
+
+              if (isValidFetchedCoords(lat, lng)) {
+                const cityVal = props.city || props.county || props.district || props.state || "";
+                const localityVal = props.locality || props.name || props.street || props.suburb || cityVal;
+                const formattedAddr = [props.name, props.street, props.locality || props.city, props.state, props.postcode]
+                  .filter(Boolean)
+                  .join(", ");
+
+                return NextResponse.json({
+                  success: true,
+                  latitude: lat,
+                  longitude: lng,
+                  city: cityVal,
+                  locality: localityVal,
+                  state: props.state || "Andhra Pradesh",
+                  pincode: props.postcode || "",
+                  address: formattedAddr || placeAddress,
+                  resolvedUrl: finalUrl,
+                });
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Fallback to Nominatim if Photon yields no match
       for (const q of searchQueries) {
         try {
           const nomRes = await fetch(
@@ -151,7 +194,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(
-      { error: "Could not extract coordinates from Google Maps link" },
+      { error: "Could not extract location from link" },
       { status: 422 }
     );
   } catch (err: any) {
