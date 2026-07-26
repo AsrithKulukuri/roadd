@@ -24,8 +24,6 @@ const sidebarLinks = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/listings", label: "My Properties", icon: Building },
   { href: "/dashboard/saved", label: "Saved Properties", icon: Heart },
-  { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
-  { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
