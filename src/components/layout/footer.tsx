@@ -48,7 +48,7 @@ export function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-6 gap-8 sm:gap-10 py-10 sm:py-16">
           {/* Brand Column */}
           <div className="col-span-2 space-y-5">
-            <Logo size="lg" />
+            <Logo size="lg" isDarkBg={true} />
             <p className="text-text-secondary text-sm leading-relaxed max-w-sm">
               India&apos;s most premium real estate platform. Discover verified
               properties, connect with trusted agents, and find your dream home

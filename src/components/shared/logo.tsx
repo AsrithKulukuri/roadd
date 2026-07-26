@@ -23,10 +23,12 @@ export function Logo({
   size = "md",
   showText = true,
   href = "/",
-  isDarkBg = true,
+  isDarkBg = false,
   textColor,
 }: LogoProps) {
   const { width, height, textClass } = sizeMap[size];
+
+  const resolvedTextColor = textColor || (isDarkBg ? "text-white" : "text-slate-900");
 
   const content = (
     <div className={cn("flex items-center gap-2", className)}>
@@ -49,13 +51,16 @@ export function Logo({
             )}
           >
             <span className="text-amber-500 font-black">R</span>
-            <span className={cn("font-black tracking-tight ml-0.5 text-white", textColor)}>
+            <span className={cn("font-black tracking-tight ml-0.5", resolvedTextColor)}>
               OAD FACING
             </span>
           </span>
           {size !== "sm" && (
             <span
-              className="text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.18em] leading-none mt-1 font-bold hidden sm:block text-slate-400"
+              className={cn(
+                "text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.18em] leading-none mt-1 font-bold hidden sm:block",
+                isDarkBg ? "text-slate-400" : "text-slate-600"
+              )}
             >
               Real Owner Agent Developer
             </span>
