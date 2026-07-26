@@ -42,17 +42,29 @@ export function Logo({
         <div className="flex flex-col">
           <span
             className={cn(
-              "font-heading font-extrabold tracking-tight leading-none",
+              "font-heading font-extrabold tracking-tight leading-none flex items-center",
               textClass
             )}
           >
             <span className="text-amber-500 font-black">R</span>
-            <span className={isDarkBg ? "text-white font-black" : "text-slate-900 dark:text-white font-black"}>
+            <span
+              className={cn(
+                "font-black tracking-tight ml-0.5",
+                isDarkBg
+                  ? "text-white"
+                  : "text-slate-900 dark:text-slate-100"
+              )}
+            >
               OAD FACING
             </span>
           </span>
           {size !== "sm" && (
-            <span className="text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.18em] text-slate-600 dark:text-slate-400 leading-none mt-1 font-bold hidden sm:block">
+            <span
+              className={cn(
+                "text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.18em] leading-none mt-1 font-bold hidden sm:block",
+                isDarkBg ? "text-slate-400" : "text-slate-600 dark:text-slate-400"
+              )}
+            >
               Real Owner Agent Developer
             </span>
           )}

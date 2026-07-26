@@ -148,7 +148,7 @@ export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthMo
 
           {/* Header */}
           <div className="flex flex-col items-center text-center mb-6">
-            <Logo size="md" className="mb-4" />
+            <Logo size="md" isDarkBg={true} className="mb-4" />
             <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
               {activeStep === "profile" ? (
                 <>
