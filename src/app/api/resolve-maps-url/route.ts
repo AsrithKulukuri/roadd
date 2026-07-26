@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { parseGoogleMapsUrl } from "@/lib/utils";
 
+// Filter out generic Google bundle fallback coordinates (e.g. US default 39.0268, -77.8443)
+function isValidFetchedCoords(lat: number, lng: number): boolean {
+  if (isNaN(lat) || isNaN(lng)) return false;
+  if (Math.abs(lat - 39.0268) < 0.1 && Math.abs(lng - (-77.8443)) < 0.1) return false;
+  return true;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const targetUrl = searchParams.get("url");
@@ -13,7 +20,7 @@ export async function GET(request: Request) {
 
   // 1. Direct synchronous pattern check
   const directMatch = parseGoogleMapsUrl(trimmed);
-  if (directMatch) {
+  if (directMatch && isValidFetchedCoords(directMatch.latitude, directMatch.longitude)) {
     return NextResponse.json({ success: true, ...directMatch, resolvedUrl: trimmed });
   }
 
@@ -30,17 +37,35 @@ export async function GET(request: Request) {
 
     const finalUrl = response.url;
     let coords = parseGoogleMapsUrl(finalUrl);
+    if (coords && !isValidFetchedCoords(coords.latitude, coords.longitude)) {
+      coords = null;
+    }
 
-    // 3. Fallback: Extract place name from URL path (e.g. /place/Madhurawada+Visakhapatnam...)
-    if (!coords && finalUrl.includes("/place/")) {
+    let placeAddress = "";
+
+    // 3. Extract place name / address from URL path (e.g. /place/Madhurawada+Visakhapatnam...)
+    if (finalUrl.includes("/place/")) {
       const placeMatch = finalUrl.match(/\/place\/([^\/]+)/);
       if (placeMatch && placeMatch[1]) {
-        const rawPlaceName = decodeURIComponent(placeMatch[1].replace(/\+/g, " "));
-        // Clean address query for geocoding
-        const placeName = rawPlaceName.replace(/Dr\s*no:[^,]+,/i, "").trim();
+        placeAddress = decodeURIComponent(placeMatch[1].replace(/\+/g, " "));
+      }
+    } else if (finalUrl.includes("q=")) {
+      const qMatch = finalUrl.match(/q=([^&]+)/);
+      if (qMatch && qMatch[1]) {
+        placeAddress = decodeURIComponent(qMatch[1].replace(/\+/g, " "));
+      }
+    }
+
+    // 4. Geocode extracted placeAddress using Nominatim
+    if (placeAddress) {
+      const parts = placeAddress.split(",").map((s) => s.trim()).filter(Boolean);
+      const cleanQuery = parts.length > 2 ? parts.slice(-3).join(", ") : placeAddress;
+      const searchQueries = [cleanQuery, placeAddress, parts.slice(-2).join(", ")];
+
+      for (const q of searchQueries) {
         try {
           const nomRes = await fetch(
-            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(placeName)}&format=json`,
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1`,
             {
               headers: {
                 "User-Agent": "ROADFacingApp/1.0 (contact@road.in)",
@@ -51,48 +76,77 @@ export async function GET(request: Request) {
           if (nomRes.ok) {
             const nomData = await nomRes.json();
             if (nomData && nomData[0]) {
-              coords = {
-                latitude: parseFloat(nomData[0].lat),
-                longitude: parseFloat(nomData[0].lon),
-              };
+              const item = nomData[0];
+              const lat = parseFloat(item.lat);
+              const lng = parseFloat(item.lon);
+              if (isValidFetchedCoords(lat, lng)) {
+                const addr = item.address || {};
+                const cityVal = addr.city || addr.town || addr.village || addr.county || addr.suburb || "";
+                const localityVal = addr.suburb || addr.neighbourhood || addr.residential || addr.quarter || addr.town || addr.village || cityVal || "";
+                
+                return NextResponse.json({
+                  success: true,
+                  latitude: lat,
+                  longitude: lng,
+                  city: cityVal,
+                  locality: localityVal,
+                  state: addr.state || "",
+                  pincode: addr.postcode || "",
+                  address: item.display_name || placeAddress,
+                  resolvedUrl: finalUrl,
+                });
+              }
             }
           }
         } catch (e) {}
       }
     }
 
-    // 4. Fallback: Parse Google Maps HTML body for coordinates
+    // 5. Final Fallback: Parse Google Maps HTML body ONLY for explicit pin coordinates (!3dlat!4dlng)
     if (!coords) {
       const htmlText = await response.text();
-
-      // Search for @lat,lng in HTML or meta content
-      const atMatch = htmlText.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-      if (atMatch) {
-        coords = {
-          latitude: parseFloat(atMatch[1]),
-          longitude: parseFloat(atMatch[2]),
-        };
-      } else {
-        const dMatch = htmlText.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
-        if (dMatch) {
-          coords = {
-            latitude: parseFloat(dMatch[1]),
-            longitude: parseFloat(dMatch[2]),
-          };
-        } else {
-          const centerMatch = htmlText.match(/center=(-?\d+\.\d+)%2C(-?\d+\.\d+)/i) ||
-                              htmlText.match(/\[null,null,(-?\d+\.\d+),(-?\d+\.\d+)\]/);
-          if (centerMatch) {
-            coords = {
-              latitude: parseFloat(centerMatch[1]),
-              longitude: parseFloat(centerMatch[2]),
-            };
-          }
+      const dMatch = htmlText.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+      if (dMatch) {
+        const lat = parseFloat(dMatch[1]);
+        const lng = parseFloat(dMatch[2]);
+        if (isValidFetchedCoords(lat, lng)) {
+          coords = { latitude: lat, longitude: lng };
         }
       }
     }
 
     if (coords) {
+      // Reverse geocode extracted coords to populate city, state, pincode, locality
+      try {
+        const revRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.latitude}&lon=${coords.longitude}`,
+          {
+            headers: {
+              "Accept-Language": "en",
+              "User-Agent": "ROADFacingApp/1.0 (contact@road.in)",
+            },
+          }
+        );
+        if (revRes.ok) {
+          const revData = await revRes.json();
+          const addr = revData.address || {};
+          const cityVal = addr.city || addr.town || addr.village || addr.county || addr.suburb || "";
+          const localityVal = addr.suburb || addr.neighbourhood || addr.residential || addr.quarter || addr.town || addr.village || cityVal || "";
+
+          return NextResponse.json({
+            success: true,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            city: cityVal,
+            locality: localityVal,
+            state: addr.state || "",
+            pincode: addr.postcode || "",
+            address: revData.display_name || "",
+            resolvedUrl: finalUrl,
+          });
+        }
+      } catch (e) {}
+
       return NextResponse.json({ success: true, ...coords, resolvedUrl: finalUrl });
     }
 

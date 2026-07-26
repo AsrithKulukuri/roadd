@@ -630,21 +630,22 @@ export default function AddPropertyPage() {
                     const trimmed = val.trim();
                     if (!trimmed) return;
 
-                    // 1. Direct sync check
-                    const directMatch = parseGoogleMapsUrl(trimmed);
-                    if (directMatch) {
-                      handlePositionChange(directMatch.latitude, directMatch.longitude);
-                      toast.success(`📍 Automatically fetched location coordinates (${directMatch.latitude.toFixed(4)}, ${directMatch.longitude.toFixed(4)})!`);
-                      return;
-                    }
-
-                    // 2. Shortened link async resolution (maps.app.goo.gl)
+                    // Shortened link async resolution (maps.app.goo.gl)
                     try {
                       const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(trimmed)}`);
                       const data = await res.json();
                       if (data.success && data.latitude && data.longitude) {
-                        handlePositionChange(data.latitude, data.longitude);
-                        toast.success(`📍 Automatically fetched map location (${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)})!`);
+                        setFormData((prev) => ({
+                          ...prev,
+                          latitude: data.latitude,
+                          longitude: data.longitude,
+                          ...(data.city && { city: data.city }),
+                          ...(data.locality && { locality: data.locality }),
+                          ...(data.state && { state: data.state }),
+                          ...(data.pincode && { pincode: data.pincode }),
+                          ...(data.address && { address: data.address }),
+                        }));
+                        toast.success(`📍 Fetched location for ${data.locality || data.city || 'Property'} (${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)})!`);
                       }
                     } catch (err) {}
                   }}
@@ -658,13 +659,22 @@ export default function AddPropertyPage() {
                       toast.error("Please paste a Google Maps link first");
                       return;
                     }
-                    toast.loading("Resolving Google Maps location...", { id: "fetch-maps" });
+                    toast.loading("Resolving Google Maps location & details...", { id: "fetch-maps" });
                     try {
                       const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(trimmed)}`);
                       const data = await res.json();
                       if (data.success && data.latitude && data.longitude) {
-                        handlePositionChange(data.latitude, data.longitude);
-                        toast.success(`📍 Automatically fetched location coordinates (${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)})!`, { id: "fetch-maps" });
+                        setFormData((prev) => ({
+                          ...prev,
+                          latitude: data.latitude,
+                          longitude: data.longitude,
+                          ...(data.city && { city: data.city }),
+                          ...(data.locality && { locality: data.locality }),
+                          ...(data.state && { state: data.state }),
+                          ...(data.pincode && { pincode: data.pincode }),
+                          ...(data.address && { address: data.address }),
+                        }));
+                        toast.success(`📍 Fetched location for ${data.locality || data.city || 'Property'} (${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)})!`, { id: "fetch-maps" });
                       } else {
                         toast.error(data.error || "Could not extract location from link", { id: "fetch-maps" });
                       }
