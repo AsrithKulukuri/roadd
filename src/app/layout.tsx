@@ -93,12 +93,6 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-import dynamic from "next/dynamic";
-const AiAssistantWidget = dynamic(
-  () => import("@/components/shared/ai-assistant-widget").then((m) => ({ default: m.AiAssistantWidget })),
-  { ssr: false }
-);
-
 export default function RootLayout({
   children,
 }: {
@@ -120,7 +114,6 @@ export default function RootLayout({
           <div className="relative flex min-h-screen flex-col">
             <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
           </div>
-          <AiAssistantWidget />
           <Toaster
             position="bottom-right"
             toastOptions={{

@@ -7,6 +7,13 @@ import { Footer } from "@/components/layout/footer";
 import { usePropertiesStore } from "@/stores/properties-store";
 
 
+import dynamic from "next/dynamic";
+
+const AiAssistantWidget = dynamic(
+  () => import("@/components/shared/ai-assistant-widget").then((m) => ({ default: m.AiAssistantWidget })),
+  { ssr: false }
+);
+
 export function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
@@ -23,6 +30,7 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
       {!isAdmin && (
         <>
           <Footer />
+          <AiAssistantWidget />
         </>
       )}
     </>
