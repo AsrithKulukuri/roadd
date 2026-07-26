@@ -95,7 +95,7 @@ export async function verifyAdminSession(): Promise<UserRoleInfo> {
       if (stored) {
         const parsed = JSON.parse(stored);
         console.log("[AUTH DEBUG] Local storage session check:", parsed);
-        if (parsed.isLoggedIn || parsed.role === "admin" || parsed.email?.toLowerCase().includes("admin")) {
+        if (parsed.role === "admin" || (parsed.email && (parsed.email.toLowerCase() === "admin@road.com" || parsed.email.toLowerCase().startsWith("admin@")))) {
           console.log("[AUTH DEBUG] Admin verified via localStorage session");
           return {
             isAdmin: true,
@@ -105,29 +105,15 @@ export async function verifyAdminSession(): Promise<UserRoleInfo> {
           };
         }
       }
-
-      const defaultAdmin = {
-        isLoggedIn: true,
-        role: "admin",
-        email: "admin@road.com",
-        name: "Administrator",
-      };
-      
-      return {
-        isAdmin: true,
-        role: "admin",
-        user: defaultAdmin,
-        source: "default_admin_access",
-      };
     } catch (e) {
       console.error("[AUTH DEBUG] Local storage parse error:", e);
     }
   }
 
   return {
-    isAdmin: true,
-    role: "admin",
-    user: { email: "admin@road.com", role: "admin" },
-    source: "default_fallback",
+    isAdmin: false,
+    role: "guest",
+    user: null,
+    source: "unauthenticated",
   };
 }

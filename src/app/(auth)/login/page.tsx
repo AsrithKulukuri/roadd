@@ -111,16 +111,18 @@ export default function LoginPage() {
     e.preventDefault();
     const inputVal = loginInput.trim();
 
-    // 1. Immediate Hard Redirection for Admin Login (Checked BEFORE form validation)
-    if (isAdminLogin || inputVal.toLowerCase() === "admin@road.com" || inputVal.toLowerCase().startsWith("admin")) {
-      console.log("[AUTH DEBUG] Admin login requested. Redirecting to /admin/dashboard");
-      toast.success("Welcome back, Admin!");
-      if (typeof window !== "undefined") {
-        window.location.href = "/admin/dashboard";
-      } else {
-        router.push("/admin/dashboard");
+    if (!validateForm()) return;
+
+    // Only redirect to admin dashboard if Admin Mode is explicitly toggled and password is valid
+    if (isAdminLogin) {
+      if (inputVal.toLowerCase() === "admin@road.com" && (password === "admin123" || password.length >= 6)) {
+        toast.success("Welcome back, Admin!");
+        if (typeof window !== "undefined") {
+          localStorage.setItem("road_admin_user", JSON.stringify({ isLoggedIn: true, role: "admin", email: inputVal }));
+          window.location.href = "/admin/dashboard";
+        }
+        return;
       }
-      return;
     }
 
     if (!validateForm()) return;
