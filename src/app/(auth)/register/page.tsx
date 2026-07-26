@@ -21,6 +21,10 @@ const countryCodes = [
 
 export default function RegisterPage() {
   const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/login");
+  }, [router]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 

@@ -453,12 +453,6 @@ export default function LoginPage() {
           </div>
         )}
 
-        <div className="mt-8 text-center text-sm text-text-secondary">
-          Don't have an account?{" "}
-          <Link href="/register" className="text-amber-primary font-semibold hover:underline hover:text-amber-hover">
-            Sign Up
-          </Link>
-        </div>
       </motion.div>
 
       {/* WhatsApp OTP Authentication Modal */}

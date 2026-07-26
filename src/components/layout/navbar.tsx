@@ -197,13 +197,8 @@ export function Navbar() {
                 /* Auth Buttons for Desktop */
                 <div className="hidden sm:flex items-center gap-2">
                   <Link href="/login">
-                    <Button variant="ghost" size="sm" className="text-slate-900 dark:text-slate-100 font-extrabold hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <Button variant="default" size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-5">
                       Log in
-                    </Button>
-                  </Link>
-                  <Link href="/register">
-                    <Button variant="default" size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black">
-                      Sign up
                     </Button>
                   </Link>
                 </div>
@@ -280,15 +275,10 @@ export function Navbar() {
                   </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <Link href="/login" className="block">
+                <div className="pt-2">
+                  <Link href="/login" className="block w-full">
                     <Button variant="outline" className="w-full bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-extrabold shadow-xs">
                       Log in
-                    </Button>
-                  </Link>
-                  <Link href="/register" className="block">
-                    <Button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-extrabold shadow-xs">
-                      Sign up
                     </Button>
                   </Link>
                 </div>
