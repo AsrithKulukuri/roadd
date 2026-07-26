@@ -401,7 +401,7 @@ export function HeroSection() {
                   </div>
                 </div>
                 {spot.badge && (
-                  <div className="h-[18px] sm:h-[20px] px-2 py-[2px] rounded-full bg-[rgba(245,166,35,0.12)] text-[#F5A623] border border-[rgba(245,166,35,0.22)] text-[9px] sm:text-[10px] font-bold flex items-center justify-center shrink-0 whitespace-nowrap">
+                  <div className="h-[20px] sm:h-[22px] px-2.5 py-[2px] rounded-full bg-black text-[#F5A623] border border-black text-[10px] sm:text-[11px] font-black flex items-center justify-center shrink-0 whitespace-nowrap shadow-md">
                     {spot.badge}
                   </div>
                 )}
