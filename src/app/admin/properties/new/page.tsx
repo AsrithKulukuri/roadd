@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { Property, PropertyLocation } from "@/types/property";
 import { supabase } from "@/lib/supabase";
+import { parseGoogleMapsUrl } from "@/lib/utils";
 
 const CoordinatePickerMap = dynamic(
   () => import("@/components/admin/coordinate-picker-map"),
@@ -48,6 +49,7 @@ export default function AddPropertyPage() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [googleMapsUrl, setGoogleMapsUrl] = useState("");
 
   const [formData, setFormData] = useState({
     refId: `REF${Math.floor(100 + Math.random() * 900)}`,
@@ -607,9 +609,37 @@ export default function AddPropertyPage() {
 
           {/* SECTION 3: Location */}
           <div className="bg-bg-card border border-border-default rounded-3xl p-6 shadow-sm">
-            <h2 className="text-xl font-heading font-semibold text-text-primary mb-6 flex items-center">
+            <h2 className="text-xl font-heading font-semibold text-text-primary mb-4 flex items-center">
               <MapPin className="w-5 h-5 mr-2 text-amber-primary" /> Location
             </h2>
+
+            {/* Google Maps Location Link Auto-Fetcher */}
+            <div className="space-y-2 mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+              <label className="text-xs font-black uppercase text-amber-500 tracking-wider flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-amber-500" />
+                Paste Google Maps Location Link (Auto-Fetches Map Coordinates)
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="text"
+                  placeholder="Paste Google Maps URL e.g. https://maps.app.goo.gl/... or https://google.com/maps/@16.5062,80.6480..."
+                  value={googleMapsUrl}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setGoogleMapsUrl(val);
+                    const parsed = parseGoogleMapsUrl(val);
+                    if (parsed) {
+                      handlePositionChange(parsed.latitude, parsed.longitude);
+                      toast.success(`📍 Automatically fetched map location (${parsed.latitude.toFixed(4)}, ${parsed.longitude.toFixed(4)})!`);
+                    }
+                  }}
+                  className="h-11 text-xs bg-bg-primary font-bold border-amber-500/50"
+                />
+              </div>
+              <p className="text-[11px] text-text-tertiary">
+                Paste any Google Maps share link or coordinates (e.g. 16.5062, 80.6480). The map pin automatically updates!
+              </p>
+            </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="space-y-4">

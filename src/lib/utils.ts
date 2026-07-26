@@ -98,6 +98,43 @@ export function isYoutubeShort(url?: string): boolean {
   const trimmed = url.trim();
   return /(?:youtube\.com|youtu\.be)\/shorts\//i.test(trimmed) || /shorts/i.test(trimmed);
 }
+
+/**
+ * Extracts latitude and longitude from any Google Maps share URL, place URL, or raw coordinates.
+ * Supports: @lat,lng, ?q=lat,lng, ?ll=lat,lng, /place/lat,lng, or 16.5062, 80.6480.
+ */
+export function parseGoogleMapsUrl(url?: string): { latitude: number; longitude: number } | null {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  // 1. Pattern: @16.5062,80.6480
+  const atMatch = trimmed.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (atMatch) {
+    const lat = parseFloat(atMatch[1]);
+    const lng = parseFloat(atMatch[2]);
+    if (!isNaN(lat) && !isNaN(lng)) return { latitude: lat, longitude: lng };
+  }
+
+  // 2. Pattern: ?q=16.5062,80.6480 or ?ll=16.5062,80.6480 or /place/16.5062,80.6480 or center=16.5062,80.6480
+  const paramMatch = trimmed.match(/(?:q|ll|query|center|place)=(-?\d+\.\d+),(-?\d+\.\d+)/i) ||
+                     trimmed.match(/\/(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (paramMatch) {
+    const lat = parseFloat(paramMatch[1]);
+    const lng = parseFloat(paramMatch[2]);
+    if (!isNaN(lat) && !isNaN(lng)) return { latitude: lat, longitude: lng };
+  }
+
+  // 3. Pattern: 16.5062, 80.6480
+  const rawMatch = trimmed.match(/^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/);
+  if (rawMatch) {
+    const lat = parseFloat(rawMatch[1]);
+    const lng = parseFloat(rawMatch[2]);
+    if (!isNaN(lat) && !isNaN(lng)) return { latitude: lat, longitude: lng };
+  }
+
+  return null;
+}
 export function formatArea(sqft: number, unit: "sqft" | "sqm" = "sqft"): string {
   if (unit === "sqm") {
     const sqm = Math.round(sqft * 0.092903);
