@@ -17,28 +17,35 @@ export function ContactAgentBelowMap({ property }: ContactAgentBelowMapProps) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (isSupabaseConfigured()) {
-        const { data: { session } } = await supabase.auth.getSession();
-        setIsLoggedIn(!!session);
-      } else {
+      // 1. Check local storage session (WhatsApp OTP / Unified Login)
+      if (typeof window !== "undefined") {
         const stored = localStorage.getItem("road_user");
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
-            setIsLoggedIn(!!parsed.isLoggedIn);
+            if (parsed.isLoggedIn) {
+              setIsLoggedIn(true);
+              return;
+            }
           } catch (e) {}
         }
       }
-    };
-    
-    checkAuth();
 
-    if (isSupabaseConfigured()) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setIsLoggedIn(!!session);
-      });
-      return () => subscription.unsubscribe();
-    }
+      // 2. Fallback to Supabase auth session
+      if (isSupabaseConfigured()) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            setIsLoggedIn(true);
+            return;
+          }
+        } catch (e) {}
+      }
+
+      setIsLoggedIn(false);
+    };
+
+    checkAuth();
   }, []);
 
   if (isLoggedIn) {

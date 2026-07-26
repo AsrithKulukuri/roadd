@@ -32,30 +32,45 @@ export function PropertyContact({ property }: PropertyContactProps) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (isSupabaseConfigured()) {
-        const { data: { session } } = await supabase.auth.getSession();
-        setIsLoggedIn(!!session);
-        if (session?.user) {
-          setFormData((prev) => ({
-            ...prev,
-            fullName: session.user.user_metadata?.full_name || prev.fullName,
-            email: session.user.email || prev.email,
-          }));
-        }
-      } else {
+      // 1. Check local storage session (WhatsApp OTP / Unified Login)
+      if (typeof window !== "undefined") {
         const stored = localStorage.getItem("road_user");
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
-            setIsLoggedIn(!!parsed.isLoggedIn);
-            if (parsed.email) {
-              setFormData((prev) => ({ ...prev, email: parsed.email, fullName: parsed.name || prev.fullName }));
+            if (parsed.isLoggedIn) {
+              setIsLoggedIn(true);
+              setFormData((prev) => ({
+                ...prev,
+                fullName: parsed.name || prev.fullName,
+                email: parsed.email || prev.email,
+                phone: parsed.phone || prev.phone,
+              }));
+              return;
             }
           } catch (e) {}
         }
       }
+
+      // 2. Fallback to Supabase auth session
+      if (isSupabaseConfigured()) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            setIsLoggedIn(true);
+            setFormData((prev) => ({
+              ...prev,
+              fullName: session.user.user_metadata?.full_name || prev.fullName,
+              email: session.user.email || prev.email,
+            }));
+            return;
+          }
+        } catch (e) {}
+      }
+
+      setIsLoggedIn(false);
     };
-    
+
     checkAuth();
   }, []);
 
