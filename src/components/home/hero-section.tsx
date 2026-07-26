@@ -259,11 +259,11 @@ export function HeroSection() {
 
           <button
             type="submit"
-            className="h-[48px] px-6 sm:px-8 bg-[#d92228] hover:bg-[#b91c21] text-white font-black text-base rounded-full transition-all shadow-lg hover:scale-105 cursor-pointer flex items-center justify-center gap-2 shrink-0"
+            className="h-[48px] px-6 sm:px-8 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-base rounded-full transition-all shadow-md hover:scale-105 cursor-pointer flex items-center justify-center gap-2 shrink-0"
             aria-label="Search"
           >
             <span>Search</span>
-            <Search className="w-5 h-5 stroke-[3]" />
+            <Search className="w-5 h-5 stroke-[3] text-slate-950" />
           </button>
         </form>
 

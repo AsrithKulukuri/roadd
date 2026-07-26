@@ -159,9 +159,9 @@ export function PropertyContact({ property }: PropertyContactProps) {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full h-14 bg-[#d92228] hover:bg-[#b91c21] active:scale-95 text-white font-black text-base rounded-full shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
+          className="w-full h-14 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black text-base rounded-full shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
         >
-          <MessageSquare className="w-5 h-5 fill-white" />
+          <MessageSquare className="w-5 h-5 fill-slate-950 text-slate-950" />
           <span>{isLoggedIn ? "WhatsApp agent" : "WhatsApp agent (Sign in)"}</span>
         </Button>
 
