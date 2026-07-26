@@ -20,11 +20,13 @@ import {
   Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatINR } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useContentStore } from "@/stores/content-store";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { toast } from "sonner";
+import { Slider } from "@/components/ui/slider";
 
 // Search Tabs: Only Buy and Rent
 const tabs = [
@@ -85,6 +87,7 @@ export function HeroSection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
+  const [heroBudget, setHeroBudget] = useState<[number, number]>([0, 100000000]);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -267,6 +270,58 @@ export function HeroSection() {
             <Search className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3] text-slate-950" />
           </button>
         </form>
+
+        {/* ── Budget Slider (between search & Trending chips) ── */}
+        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-4 sm:mt-5">
+          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3.5">
+            <div className="flex justify-between items-center mb-2.5">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-white/60">Budget Range (INR)</span>
+              <span className="text-sm font-black text-amber-400">
+                {heroBudget[0] === 0 && heroBudget[1] === 100000000
+                  ? "Any Price"
+                  : `${formatINR(heroBudget[0])} – ${heroBudget[1] >= 100000000 ? "₹10+ Cr" : formatINR(heroBudget[1])}`}
+              </span>
+            </div>
+            <Slider
+              min={0}
+              max={100000000}
+              step={500000}
+              value={heroBudget}
+              onValueChange={(val) => setHeroBudget(val as [number, number])}
+              className="w-full mb-2"
+            />
+            <div className="flex justify-between text-[10px] font-bold text-white/40 mb-3">
+              <span>₹0</span><span>₹10+ Crores</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: "Any Price", min: 0, max: 100000000 },
+                { label: "Under 30L", min: 0, max: 3000000 },
+                { label: "30L–60L", min: 3000000, max: 6000000 },
+                { label: "60L–1 Cr", min: 6000000, max: 10000000 },
+                { label: "1–2 Cr", min: 10000000, max: 20000000 },
+                { label: "2 Cr+", min: 20000000, max: 100000000 },
+              ].map((p) => {
+                const isSelected = heroBudget[0] === p.min && heroBudget[1] === p.max;
+                return (
+                  <button
+                    key={p.label}
+                    type="button"
+                    onClick={() => setHeroBudget([p.min, p.max])}
+                    className={cn(
+                      "py-0.5 px-2.5 rounded-full text-[10px] font-extrabold border transition-all cursor-pointer",
+                      isSelected
+                        ? "bg-amber-500 text-slate-950 border-amber-500"
+                        : "border-white/20 text-white/70 hover:border-amber-400/60 hover:text-white"
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
 
         {/* Open Trending Locations Carousel Section */}
         <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-5 sm:mt-[24px] text-left">
