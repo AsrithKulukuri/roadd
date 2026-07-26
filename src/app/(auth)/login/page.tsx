@@ -233,36 +233,16 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* 1. WhatsApp & Google Sign In */}
+        {/* 1. WhatsApp Sign In */}
         <div className="space-y-3 mb-6">
           <Button
             type="button"
             className="w-full h-12 rounded-xl text-slate-950 bg-emerald-400 hover:bg-emerald-300 font-extrabold text-sm gap-2.5 shadow-md hover:shadow-emerald-500/20 transition-all active:scale-[0.98] cursor-pointer"
             onClick={() => setIsWhatsAppModalOpen(true)}
-            disabled={isLoading || isGoogleLoading}
+            disabled={isLoading}
           >
             <MessageSquare className="w-5 h-5 text-slate-950 fill-slate-950" />
             <span>Continue with WhatsApp OTP</span>
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full h-12 rounded-xl text-text-primary border-border-default/60 hover:bg-bg-hover/80 hover:border-amber-primary/50 gap-3 font-medium transition-all relative overflow-hidden active:scale-[0.98]"
-            onClick={handleGoogleSignIn}
-            disabled={isLoading || isGoogleLoading}
-          >
-            {isGoogleLoading ? (
-              <span className="w-5 h-5 rounded-full border-2 border-amber-primary border-t-transparent animate-spin" />
-            ) : (
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path
-                  fill="#EA4335"
-                  d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.48 0-6.3-2.82-6.3-6.3s2.82-6.3 6.3-6.3c1.602 0 3.06.602 4.178 1.693l3.12-3.12C19.123 2.115 15.93 1 12.24 1 6.033 1 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c5.897 0 10.864-4.148 10.864-11.24 0-.668-.073-1.295-.192-1.955H12.24z"
-                />
-              </svg>
-            )}
-            {isGoogleLoading ? "Connecting..." : "Continue with Google"}
           </Button>
 
           <div className="relative flex items-center justify-center my-6">
