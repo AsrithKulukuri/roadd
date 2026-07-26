@@ -189,10 +189,18 @@ function LoginForm() {
           />
         )}
 
-        {/* Footer Security Note */}
-        <div className="mt-8 pt-4 border-t border-border-default/40 flex items-center justify-center gap-1.5 text-xs text-text-tertiary">
-          <Lock className="w-3.5 h-3.5 text-amber-primary" />
-          <span>Encrypted & Secured by WasenderAPI</span>
+        {/* Footer Security Note & Admin Link */}
+        <div className="mt-8 pt-4 border-t border-border-default/40 flex flex-col items-center gap-2">
+          <div className="flex items-center justify-center gap-1.5 text-xs text-text-tertiary">
+            <Lock className="w-3.5 h-3.5 text-amber-primary" />
+            <span>Encrypted & Secured by WasenderAPI</span>
+          </div>
+          <a
+            href="/admin/login"
+            className="text-[11px] font-bold text-slate-400 hover:text-amber-400 transition-colors flex items-center gap-1 mt-1"
+          >
+            <span>Admin Portal Login (Email & Password) →</span>
+          </a>
         </div>
       </motion.div>
     </div>

@@ -201,10 +201,18 @@ export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthMo
             />
           )}
 
-          {/* Footer Security Badge */}
-          <div className="mt-6 pt-4 border-t border-slate-800/60 flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
-            <Lock className="w-3.5 h-3.5 text-amber-500" />
-            <span>End-to-End Encrypted & Secured by WasenderAPI</span>
+          {/* Footer Security Badge & Admin Link */}
+          <div className="mt-6 pt-4 border-t border-slate-800/60 flex flex-col items-center gap-1.5 text-[11px] text-slate-500">
+            <div className="flex items-center justify-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-amber-500" />
+              <span>End-to-End Encrypted & Secured by WasenderAPI</span>
+            </div>
+            <a
+              href="/admin/login"
+              className="text-[11px] font-bold text-slate-400 hover:text-amber-400 transition-colors mt-0.5"
+            >
+              Admin Portal Login (Email & Password) →
+            </a>
           </div>
         </motion.div>
       </div>
