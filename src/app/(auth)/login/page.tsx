@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/shared/logo";
@@ -8,9 +8,9 @@ import { PhoneInput } from "@/components/auth/phone-input";
 import { OTPInput } from "@/components/auth/otp-input";
 import { CompleteProfileStep } from "@/components/auth/complete-profile-step";
 import { useWhatsAppAuth } from "@/hooks/useWhatsAppAuth";
-import { MessageSquare, Shield, Lock, UserCheck } from "lucide-react";
+import { MessageSquare, Lock, UserCheck } from "lucide-react";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const {
     phone,
@@ -196,5 +196,23 @@ export default function LoginPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-bg-primary p-4 pt-28">
+          <div className="w-full max-w-md glass border border-glass-border rounded-3xl p-8 h-[400px] animate-pulse flex flex-col items-center justify-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-slate-800 animate-pulse" />
+            <div className="w-48 h-6 rounded-lg bg-slate-800 animate-pulse" />
+            <div className="w-full h-12 rounded-xl bg-slate-800/60 animate-pulse mt-4" />
+          </div>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
