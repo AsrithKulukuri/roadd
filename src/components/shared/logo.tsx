@@ -8,6 +8,7 @@ interface LogoProps {
   showText?: boolean;
   href?: string;
   isDarkBg?: boolean;
+  textColor?: string;
 }
 
 const sizeMap = {
@@ -23,8 +24,12 @@ export function Logo({
   showText = true,
   href = "/",
   isDarkBg = false,
+  textColor,
 }: LogoProps) {
   const { width, height, textClass } = sizeMap[size];
+
+  const defaultTextColor = isDarkBg ? "text-white" : "text-text-primary";
+  const resolvedTextColor = textColor || defaultTextColor;
 
   const content = (
     <div className={cn("flex items-center gap-2", className)}>
@@ -47,14 +52,7 @@ export function Logo({
             )}
           >
             <span className="text-amber-500 font-black">R</span>
-            <span
-              className={cn(
-                "font-black tracking-tight ml-0.5",
-                isDarkBg
-                  ? "text-white"
-                  : "text-slate-900 dark:text-slate-100"
-              )}
-            >
+            <span className={cn("font-black tracking-tight ml-0.5", resolvedTextColor)}>
               OAD FACING
             </span>
           </span>
@@ -62,7 +60,7 @@ export function Logo({
             <span
               className={cn(
                 "text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.18em] leading-none mt-1 font-bold hidden sm:block",
-                isDarkBg ? "text-slate-400" : "text-slate-600 dark:text-slate-400"
+                isDarkBg ? "text-slate-400" : "text-text-tertiary"
               )}
             >
               Real Owner Agent Developer
