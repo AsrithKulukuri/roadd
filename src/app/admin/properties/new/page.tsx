@@ -622,22 +622,63 @@ export default function AddPropertyPage() {
               <div className="flex items-center gap-2">
                 <Input
                   type="text"
-                  placeholder="Paste Google Maps URL e.g. https://maps.app.goo.gl/... or https://google.com/maps/@16.5062,80.6480..."
+                  placeholder="Paste Google Maps URL e.g. https://maps.app.goo.gl/J7Xw7ioj2hbu2XWf9..."
                   value={googleMapsUrl}
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const val = e.target.value;
                     setGoogleMapsUrl(val);
-                    const parsed = parseGoogleMapsUrl(val);
-                    if (parsed) {
-                      handlePositionChange(parsed.latitude, parsed.longitude);
-                      toast.success(`📍 Automatically fetched map location (${parsed.latitude.toFixed(4)}, ${parsed.longitude.toFixed(4)})!`);
+                    const trimmed = val.trim();
+                    if (!trimmed) return;
+
+                    // 1. Direct sync check
+                    const directMatch = parseGoogleMapsUrl(trimmed);
+                    if (directMatch) {
+                      handlePositionChange(directMatch.latitude, directMatch.longitude);
+                      toast.success(`📍 Automatically fetched location coordinates (${directMatch.latitude.toFixed(4)}, ${directMatch.longitude.toFixed(4)})!`);
+                      return;
                     }
+
+                    // 2. Shortened link async resolution (maps.app.goo.gl)
+                    try {
+                      const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(trimmed)}`);
+                      const data = await res.json();
+                      if (data.success && data.latitude && data.longitude) {
+                        handlePositionChange(data.latitude, data.longitude);
+                        toast.success(`📍 Automatically fetched map location (${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)})!`);
+                      }
+                    } catch (err) {}
                   }}
                   className="h-11 text-xs bg-bg-primary font-bold border-amber-500/50"
                 />
+                <Button
+                  type="button"
+                  onClick={async () => {
+                    const trimmed = googleMapsUrl.trim();
+                    if (!trimmed) {
+                      toast.error("Please paste a Google Maps link first");
+                      return;
+                    }
+                    toast.loading("Resolving Google Maps location...", { id: "fetch-maps" });
+                    try {
+                      const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(trimmed)}`);
+                      const data = await res.json();
+                      if (data.success && data.latitude && data.longitude) {
+                        handlePositionChange(data.latitude, data.longitude);
+                        toast.success(`📍 Automatically fetched location coordinates (${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)})!`, { id: "fetch-maps" });
+                      } else {
+                        toast.error(data.error || "Could not extract location from link", { id: "fetch-maps" });
+                      }
+                    } catch (err) {
+                      toast.error("Failed to resolve Google Maps link", { id: "fetch-maps" });
+                    }
+                  }}
+                  className="h-11 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shrink-0 rounded-xl cursor-pointer shadow-md"
+                >
+                  Fetch Location
+                </Button>
               </div>
               <p className="text-[11px] text-text-tertiary">
-                Paste any Google Maps share link or coordinates (e.g. 16.5062, 80.6480). The map pin automatically updates!
+                Paste any Google Maps link (e.g. https://maps.app.goo.gl/J7Xw7ioj2hbu2XWf9). The map pin automatically updates!
               </p>
             </div>
             

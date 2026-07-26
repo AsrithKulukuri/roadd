@@ -133,6 +133,14 @@ export function parseGoogleMapsUrl(url?: string): { latitude: number; longitude:
     if (!isNaN(lat) && !isNaN(lng)) return { latitude: lat, longitude: lng };
   }
 
+  // 4. Pattern: !3d16.5062451!4d80.6480123 (Google Maps Place Data Embeds)
+  const dMatch = trimmed.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+  if (dMatch) {
+    const lat = parseFloat(dMatch[1]);
+    const lng = parseFloat(dMatch[2]);
+    if (!isNaN(lat) && !isNaN(lng)) return { latitude: lat, longitude: lng };
+  }
+
   return null;
 }
 export function formatArea(sqft: number, unit: "sqft" | "sqm" = "sqft"): string {
