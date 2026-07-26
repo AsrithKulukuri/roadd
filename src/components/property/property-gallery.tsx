@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Grid2X2, Play, Camera, Tag } from "lucide-react";
 import type { PropertyImage } from "@/types/property";
 
-import { getYoutubeEmbedUrl } from "@/lib/utils";
+import { getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
 
 interface PropertyGalleryProps {
   images: PropertyImage[];
@@ -24,6 +24,7 @@ export function PropertyGallery({ images, title, videoUrl, isReadyToMove = true 
   const [isVideoOpen, setIsVideoOpen] = useState(false);
 
   const embedUrl = getYoutubeEmbedUrl(videoUrl);
+  const isShort = isYoutubeShort(videoUrl);
 
   if (!images || images.length === 0) return null;
 
@@ -159,14 +160,21 @@ export function PropertyGallery({ images, title, videoUrl, isReadyToMove = true 
       {/* Video Tour Dialog Modal */}
       {embedUrl && (
         <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>
-          <DialogContent className="max-w-4xl p-0 bg-slate-950 border-slate-800 text-white overflow-hidden rounded-3xl">
-            <DialogTitle className="p-4 bg-slate-900 border-b border-slate-800 font-extrabold text-sm text-white flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Play className="w-4 h-4 text-red-500 fill-red-500" /> Property Video Tour - {title}
+          <DialogContent className={cn(
+            "p-0 bg-slate-950 border-slate-800 text-white overflow-hidden rounded-3xl mx-auto shadow-2xl transition-all duration-300",
+            isShort ? "max-w-[360px] sm:max-w-[420px] w-[92vw]" : "max-w-4xl w-full"
+          )}>
+            <DialogTitle className="p-3.5 bg-slate-900 border-b border-slate-800 font-extrabold text-xs sm:text-sm text-white flex items-center justify-between">
+              <span className="flex items-center gap-2 truncate">
+                <Play className="w-4 h-4 text-red-500 fill-red-500 shrink-0" />
+                {isShort ? "YouTube Short Tour" : "Property Video Tour"} - {title}
               </span>
             </DialogTitle>
             <DialogDescription className="sr-only">Video tour for {title}</DialogDescription>
-            <div className="relative aspect-video w-full bg-black">
+            <div className={cn(
+              "relative w-full bg-black flex items-center justify-center overflow-hidden",
+              isShort ? "h-[70vh] sm:h-[75vh] max-h-[640px] aspect-[9/16]" : "aspect-video"
+            )}>
               <iframe
                 src={`${embedUrl}?autoplay=1`}
                 title={`${title} Video Tour`}

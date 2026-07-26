@@ -89,6 +89,15 @@ export function getYoutubeEmbedUrl(url?: string): string | null {
 
   return null;
 }
+
+/**
+ * Checks if a given video URL is a vertical YouTube Short.
+ */
+export function isYoutubeShort(url?: string): boolean {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  return /(?:youtube\.com|youtu\.be)\/shorts\//i.test(trimmed) || /shorts/i.test(trimmed);
+}
 export function formatArea(sqft: number, unit: "sqft" | "sqm" = "sqft"): string {
   if (unit === "sqm") {
     const sqm = Math.round(sqft * 0.092903);

@@ -13,7 +13,7 @@ import { PropertyLocationWrapper } from "@/components/property/property-location
 import { ContactAgentBelowMap } from "@/components/property/contact-agent-below-map";
 import { BackButton } from "@/components/ui/back-button";
 import { MortgageCalculator } from "@/components/property/mortgage-calculator";
-import { formatINR, formatPriceCompact, getYoutubeEmbedUrl } from "@/lib/utils";
+import { formatINR, formatPriceCompact, getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
 import Link from "next/link";
 import type { Property } from "@/types/property";
 import type { Metadata } from "next";
@@ -194,9 +194,13 @@ export default async function PropertyDetailPage({
             {property.videoUrl && getYoutubeEmbedUrl(property.videoUrl) && (
               <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
                 <h3 className="font-heading text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Play className="w-6 h-6 text-red-500 fill-red-500" /> Property Video Tour
+                  <Play className="w-6 h-6 text-red-500 fill-red-500" />
+                  {isYoutubeShort(property.videoUrl) ? "Property Short Tour" : "Property Video Tour"}
                 </h3>
-                <div className="relative aspect-video w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 bg-slate-950">
+                <div className={cn(
+                  "relative rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 bg-slate-950 mx-auto",
+                  isYoutubeShort(property.videoUrl) ? "max-w-[340px] sm:max-w-[380px] aspect-[9/16] h-[650px] max-h-[75vh]" : "w-full aspect-video"
+                )}>
                   <iframe
                     src={getYoutubeEmbedUrl(property.videoUrl)!}
                     title={`${property.title} Video Tour`}
