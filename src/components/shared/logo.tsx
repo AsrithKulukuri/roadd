@@ -28,7 +28,7 @@ export function Logo({
 }: LogoProps) {
   const { width, height, textClass } = sizeMap[size];
 
-  const resolvedTextColor = textColor || (isDarkBg ? "text-white" : "text-slate-900");
+  const resolvedTextColor = textColor || (isDarkBg ? "text-white" : "text-slate-900 dark:text-white");
 
   const content = (
     <div className={cn("flex items-center gap-2", className)}>
@@ -59,7 +59,7 @@ export function Logo({
             <span
               className={cn(
                 "text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.18em] leading-none mt-1 font-bold hidden sm:block",
-                isDarkBg ? "text-slate-400" : "text-slate-600"
+                isDarkBg ? "text-slate-400" : "text-slate-500 dark:text-slate-400"
               )}
             >
               Real Owner Agent Developer
