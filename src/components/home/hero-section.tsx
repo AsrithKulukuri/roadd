@@ -329,10 +329,7 @@ export function HeroSection() {
                     <button
                       key={p.label}
                       type="button"
-                      onClick={() => {
-                        setHeroBudget([p.min, p.max]);
-                        handleSearchSubmit(undefined, [p.min, p.max]);
-                      }}
+                      onClick={() => setHeroBudget([p.min, p.max])}
                       className={cn(
                         "py-1 px-3 rounded-full text-[11px] font-extrabold border transition-all cursor-pointer",
                         isSelected
