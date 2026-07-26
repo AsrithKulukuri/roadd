@@ -136,7 +136,7 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-3 sm:px-6">
           <div className="flex items-center justify-between">
             {/* Left: Brand Logo */}
-            <Logo size="md" />
+            <Logo size="md" isDarkBg={true} />
 
             {/* Center: Navigation Links for Desktop */}
             <nav className="hidden lg:flex items-center gap-1" role="navigation" aria-label="Main navigation">
