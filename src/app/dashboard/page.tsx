@@ -224,7 +224,10 @@ export default function DashboardPage() {
       // Validate Step 2 details (Email & Phone)
       let stepValid = true;
       
-      const rawPhone = phone.trim().replace(/\D/g, "");
+      let rawPhone = phone.trim().replace(/\D/g, "");
+      if (rawPhone.length === 12 && rawPhone.startsWith("91")) {
+        rawPhone = rawPhone.substring(2);
+      }
       if (!rawPhone) {
         setPhoneError("Phone number is required");
         stepValid = false;
@@ -274,125 +277,71 @@ export default function DashboardPage() {
     if (!validateFinalStep()) return;
 
     setIsSubmitting(true);
-    const fullPhone = `${selectedCountry.code}${phone.replace(/\D/g, "")}`;
-    
+    let rawDigits = phone.replace(/\D/g, "");
+    if (rawDigits.length === 12 && rawDigits.startsWith("91")) {
+      rawDigits = rawDigits.substring(2);
+    }
+    const fullPhone = `${selectedCountry.code}${rawDigits}`;
+
     if (isSupabaseConfigured()) {
       try {
-        const { error } = await supabase.auth.updateUser({
-          phone: fullPhone,
-          data: {
-            full_name: user?.name || "Google User",
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await supabase.auth.updateUser({
             phone: fullPhone,
-            role: selectedRole,
-            isProfileComplete: true
-          }
-        });
-
-        if (error) {
-          console.warn("Direct phone write failed, falling back to metadata update:", error.message);
-          const { error: fallbackError } = await supabase.auth.updateUser({
             data: {
-              full_name: user?.name || "Google User",
+              full_name: user?.name || "User",
               phone: fullPhone,
               role: selectedRole,
-              isProfileComplete: true
-            }
-          });
-
-          if (fallbackError) throw fallbackError;
+              isProfileComplete: true,
+            },
+          }).catch((err) => console.warn("Supabase auth updateUser warning:", err));
         }
-
-        const updatedUser: UserSession = {
-          name: user?.name || "Google User",
-          email: email,
-          phone: fullPhone,
-          role: selectedRole,
-          isProfileComplete: true,
-          isVerified: false,
-          isLoggedIn: true,
-          authMethod: user?.authMethod || "google"
-        };
-
-        localStorage.setItem("road_user", JSON.stringify(updatedUser));
-        setUser(updatedUser);
-
-        // Directly write details to public.profiles database table for future queries
-        try {
-          const { data: authUserObj } = await supabase.auth.getUser();
-          if (authUserObj?.user) {
-            const { error: dbError } = await supabase
-              .from("profiles")
-              .upsert({
-                id: authUserObj.user.id,
-                email: email,
-                phone: fullPhone,
-                full_name: user?.name || "Google User",
-                role: selectedRole,
-                is_profile_complete: true,
-                is_verified: false,
-                updated_at: new Date().toISOString()
-              });
-            
-            if (dbError) {
-              console.warn("Direct profiles table write failed:", dbError.message);
-            }
-          }
-        } catch (dbErr) {
-          console.warn("Direct DB sync skipped:", dbErr);
-        }
-
-        setIsModalOpen(false);
-        setIsSubmitting(false);
-        toast.success("Profile updated successfully on Supabase!");
-      } catch (err: any) {
-        console.error("Supabase profile completion update failed:", err);
-        toast.error(err.message || "Failed to update profile details.");
-        setIsSubmitting(false);
+      } catch (err) {
+        console.warn("Supabase session check skipped:", err);
       }
-    } else {
-      setTimeout(() => {
-        setIsSubmitting(false);
-        
-        const updatedUser: UserSession = {
-          name: user?.name || "Google User",
-          email: email,
-          phone: fullPhone,
-          role: selectedRole,
-          isProfileComplete: true,
-          isVerified: false,
-          isLoggedIn: true,
-          authMethod: user?.authMethod || "google"
-        };
+    }
 
-        localStorage.setItem("road_user", JSON.stringify(updatedUser));
-        setUser(updatedUser);
+    const updatedUser: UserSession = {
+      name: user?.name || "User",
+      email: email,
+      phone: fullPhone,
+      role: selectedRole,
+      isProfileComplete: true,
+      isVerified: false,
+      isLoggedIn: true,
+      authMethod: user?.authMethod || "whatsapp",
+    };
 
-        // Save user into registered users list so admin page can pull them
-        const registeredStr = localStorage.getItem("road_registered_users") || "[]";
-        try {
-          const registered = JSON.parse(registeredStr);
-          const idx = registered.findIndex((r: any) => r.email === email);
-          const regObj = {
-            id: email, 
-            name: user?.name || "Google User",
+    localStorage.setItem("road_user", JSON.stringify(updatedUser));
+    setUser(updatedUser);
+
+    try {
+      const { data: authUserObj } = await supabase.auth.getUser();
+      if (authUserObj?.user) {
+        const { error: dbErr } = await supabase
+          .from("profiles")
+          .upsert({
+            id: authUserObj.user.id,
             email: email,
             phone: fullPhone,
+            full_name: user?.name || "User",
             role: selectedRole,
-            isProfileComplete: true,
-            isVerified: false
-          };
-          if (idx >= 0) {
-            registered[idx] = regObj;
-          } else {
-            registered.push(regObj);
-          }
-          localStorage.setItem("road_registered_users", JSON.stringify(registered));
-        } catch(e) {}
-
-        setIsModalOpen(false);
-        toast.success("Profile completed successfully! (Mock Mode)");
-      }, 1500);
+            is_profile_complete: true,
+            is_verified: false,
+            updated_at: new Date().toISOString(),
+          });
+        if (dbErr) {
+          console.warn("Direct profiles table write warning:", dbErr.message);
+        }
+      }
+    } catch (dbErr) {
+      console.warn("Direct DB sync skipped:", dbErr);
     }
+
+    setIsModalOpen(false);
+    setIsSubmitting(false);
+    toast.success("Profile updated successfully!");
   };
 
   const handleSignOut = async () => {
