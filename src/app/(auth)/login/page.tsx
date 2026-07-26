@@ -224,7 +224,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center mb-8">
           <Logo size="lg" className="mb-6" />
           <h1 className="font-heading text-2xl font-bold text-text-primary tracking-tight">
-            {isAdminLogin ? "Admin Dashboard Login" : "Welcome Back"}
+            {isAdminLogin ? "Admin Dashboard Login" : "Welcome"}
           </h1>
           <p className="text-text-secondary text-sm text-center mt-2">
             {isAdminLogin 
