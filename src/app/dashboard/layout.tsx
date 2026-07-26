@@ -116,28 +116,19 @@ export default function DashboardLayout({
         <div className="p-6">
           <Button 
             variant="amber" 
-            className={cn("w-full justify-start shadow-amber-glow", isProfileIncomplete && "opacity-40 cursor-not-allowed")} 
+            className="w-full justify-between shadow-amber-glow opacity-85 cursor-not-allowed bg-amber-500/80 hover:bg-amber-500/80" 
             onClick={(e) => {
-              if (isProfileIncomplete) {
-                e.preventDefault();
-                toast.error("Complete your profile first!", {
-                  description: "You cannot post properties until setup is complete.",
-                });
-              }
+              e.preventDefault();
+              toast.error("Post Property is currently locked", {
+                description: "Property posting is locked by Admin at present.",
+              });
             }}
-            asChild={!isProfileIncomplete}
           >
-            {isProfileIncomplete ? (
-              <span className="flex items-center">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Post Property
-              </span>
-            ) : (
-              <Link href="/dashboard/listings/new">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Post Property
-              </Link>
-            )}
+            <span className="flex items-center gap-2 font-extrabold">
+              <PlusCircle className="h-4 w-4" />
+              Post Property
+            </span>
+            <Lock className="h-4 w-4 text-slate-950 font-black shrink-0" />
           </Button>
         </div>
 
@@ -145,14 +136,22 @@ export default function DashboardLayout({
           {displayedLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
-            const isLinkDisabled = isProfileIncomplete && link.href !== "/dashboard";
+            const isMyPropertiesLocked = link.href === "/dashboard/listings";
+            const isLinkDisabled = (isProfileIncomplete && link.href !== "/dashboard") || isMyPropertiesLocked;
             
             return (
               <Link
                 key={link.href}
                 href={isLinkDisabled ? "#" : link.href}
                 onClick={(e) => {
-                  if (isLinkDisabled) {
+                  if (isMyPropertiesLocked) {
+                    e.preventDefault();
+                    toast.error("My Properties is currently locked", {
+                      description: "My Properties section is locked by Admin at present.",
+                    });
+                    return;
+                  }
+                  if (isProfileIncomplete) {
                     e.preventDefault();
                     toast.error("Please complete your profile configuration first!", {
                       description: "Other sections of the dashboard are locked until profile setup is complete.",
@@ -164,15 +163,17 @@ export default function DashboardLayout({
                   isActive
                     ? "bg-amber-primary/10 text-amber-primary"
                     : isLinkDisabled
-                    ? "text-text-tertiary opacity-40 cursor-not-allowed"
+                    ? "text-text-tertiary opacity-60 cursor-not-allowed"
                     : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"
                 )}
               >
                 <Icon className={cn("h-5 w-5", isActive ? "text-amber-primary" : "text-text-tertiary")} />
-                {link.label}
-                {isLinkDisabled && (
+                <span className="flex-1">{link.label}</span>
+                {isMyPropertiesLocked ? (
+                  <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+                ) : isProfileIncomplete ? (
                   <Lock className="w-3.5 h-3.5 ml-auto text-text-tertiary opacity-60" />
-                )}
+                ) : null}
               </Link>
             );
           })}
