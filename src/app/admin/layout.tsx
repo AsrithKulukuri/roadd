@@ -12,7 +12,8 @@ import {
   LogOut,
   Menu,
   X,
-  MonitorPlay
+  MonitorPlay,
+  FolderOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -23,6 +24,7 @@ import { AdminGuard } from "@/components/shared/admin-guard";
 const sidebarLinks = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/properties", label: "Properties", icon: Building2 },
+  { href: "/admin/projects", label: "Projects", icon: FolderOpen },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/content", label: "Content", icon: MonitorPlay },
   { href: "/admin/settings", label: "Settings", icon: Settings },
