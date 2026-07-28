@@ -1,22 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useProjectsStore } from "@/stores/projects-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 import {
   ArrowLeft, ArrowRight, Building2, Home, Landmark,
-  Plus, Trash2, Check, ChevronDown, ChevronUp, X,
-  Image as ImageIcon, Video, FileText, Star, Eye,
-  MapPin, Save, CheckCircle2,
+  Plus, Trash2, Check, X, Upload, Link as LinkIcon,
+  Image as ImageIcon, FileText, Star, Eye, MapPin, Save,
+  CheckCircle2, Loader2, Map,
 } from "lucide-react";
 import Link from "next/link";
-import type { Project, ProjectType, ProjectConfig, ProjectPhase, ProjectImage, ConstructionStatus } from "@/types/project";
+import type {
+  Project, ProjectType, ProjectConfig,
+  ProjectPhase, ProjectImage, ConstructionStatus,
+} from "@/types/project";
+
+// ─── Lazy map import (SSR unsafe) ────────────────────────────────────────────
+const CoordinatePickerMap = dynamic(
+  () => import("@/components/admin/coordinate-picker-map"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[300px] flex items-center justify-center bg-bg-primary rounded-xl border border-border-default animate-pulse">
+        <Map className="w-6 h-6 text-text-tertiary animate-pulse" />
+      </div>
+    ),
+  }
+);
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
 const FACILITIES_LIST = [
   "Swimming Pool", "Clubhouse", "Gymnasium", "24/7 Security", "CCTV Surveillance",
   "Power Backup", "Intercom", "Lift", "Landscaped Gardens", "Jogging Track",
@@ -30,83 +47,84 @@ const FACILITIES_LIST = [
 const STEPS = ["Type & Basics", "Configurations", "Media & Highlights", "Review & Publish"];
 
 const STATUSES: { value: ConstructionStatus; label: string; desc: string }[] = [
-  { value: "new-launch",         label: "New Launch",           desc: "Freshly announced project" },
-  { value: "under-construction", label: "Under Construction",   desc: "Actively being built" },
-  { value: "ready-to-move",      label: "Ready to Move",        desc: "Fully completed & handed over" },
+  { value: "new-launch",         label: "New Launch",         desc: "Freshly announced" },
+  { value: "under-construction", label: "Under Construction", desc: "Actively being built" },
+  { value: "ready-to-move",      label: "Ready to Move",      desc: "Fully completed" },
 ];
 
-// ─── Helper: empty config ────────────────────────────────────────────────────
+// BHK options per type
+const BHK_OPTIONS: Record<ProjectType, string[]> = {
+  apartment: ["1 BHK", "2 BHK", "3 BHK", "4 BHK", "4+ BHK", "Penthouse", "Duplex", "Studio"],
+  villa:     ["2 BHK Villa", "3 BHK Villa", "4 BHK Villa", "5 BHK Villa", "Duplex Villa", "Row House"],
+  venture:   ["Residential Plot", "Commercial Plot", "Corner Plot", "Park-Facing Plot", "30×40 Plot", "40×60 Plot", "50×80 Plot"],
+};
 
-function emptyConfig(projectType: ProjectType): ProjectConfig {
+function emptyConfig(pt: ProjectType): ProjectConfig {
   return {
     id: `cfg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    label: projectType === "venture" ? "Residential Plot" : "2 BHK",
-    bedrooms: projectType === "venture" ? undefined : 2,
-    builtUpAreaMin: projectType === "venture" ? undefined : 1000,
-    builtUpAreaMax: projectType === "venture" ? undefined : 1500,
-    plotSizeMin: projectType === "venture" ? 150 : undefined,
-    plotSizeMax: projectType === "venture" ? 200 : undefined,
-    priceMin: 0,
-    priceMax: 0,
-    pricePerUnit: 0,
-    floorPlanUrl: "",
+    label: pt === "venture" ? "Residential Plot" : pt === "villa" ? "3 BHK Villa" : "2 BHK",
+    priceMin: 0, priceMax: 0,
+    ...(pt !== "venture" ? { builtUpAreaMin: 0, builtUpAreaMax: 0 } : {}),
+    ...(pt === "venture"   ? { plotSizeMin: 150, plotSizeMax: 200, pricePerUnit: 0 } : {}),
+    ...(pt === "villa"     ? { plotSizeMin: 120, plotSizeMax: 200 } : {}),
     constructionStatus: "under-construction",
     possessionDate: "",
+    floorPlanUrl: "",
   };
 }
-
 function emptyPhase(): ProjectPhase {
-  return {
-    id: `ph-${Date.now()}`,
-    name: "Phase 1",
-    status: "under-construction",
-    possessionDate: "Dec 2028",
-    totalUnits: undefined,
-  };
+  return { id: `ph-${Date.now()}`, name: "Phase 1", status: "under-construction", possessionDate: "", totalUnits: undefined };
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Upload helper ─────────────────────────────────────────────────────────────
+async function uploadFile(file: File, bucket: string, folder: string): Promise<string> {
+  const ext = file.name.split(".").pop();
+  const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+  try {
+    const { data, error } = await supabase.storage.from(bucket).upload(path, file);
+    if (!error && data?.path) {
+      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(data.path);
+      return pub.publicUrl;
+    }
+  } catch {}
+  return URL.createObjectURL(file);
+}
 
+// ─── UI Helpers ───────────────────────────────────────────────────────────────
 function StepIndicator({ current, total }: { current: number; total: number }) {
   return (
-    <div className="flex items-center gap-2 mb-8">
+    <div className="flex items-center gap-1.5 mb-8 overflow-x-auto pb-1">
       {STEPS.map((label, i) => (
-        <div key={i} className="flex items-center gap-2">
+        <div key={i} className="flex items-center gap-1.5 shrink-0">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-            i < current
-              ? "bg-amber-primary text-slate-950"
-              : i === current
-              ? "bg-amber-primary/20 border-2 border-amber-primary text-amber-primary"
-              : "bg-bg-primary border border-border-default text-text-tertiary"
+            i < current ? "bg-amber-primary text-slate-950" :
+            i === current ? "bg-amber-primary/20 border-2 border-amber-primary text-amber-primary" :
+            "bg-bg-primary border border-border-default text-text-tertiary"
           }`}>
             {i < current ? <Check className="w-4 h-4" /> : i + 1}
           </div>
-          <span className={`hidden sm:block text-sm font-medium ${i === current ? "text-text-primary" : "text-text-tertiary"}`}>
-            {label}
-          </span>
-          {i < total - 1 && (
-            <div className={`w-8 sm:w-12 h-0.5 rounded-full ${i < current ? "bg-amber-primary" : "bg-border-default"}`} />
-          )}
+          <span className={`hidden sm:block text-xs font-semibold ${i === current ? "text-text-primary" : "text-text-tertiary"}`}>{label}</span>
+          {i < total - 1 && <div className={`w-6 h-0.5 rounded-full ${i < current ? "bg-amber-primary" : "bg-border-default"}`} />}
         </div>
       ))}
     </div>
   );
 }
 
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-bg-card border border-border-default rounded-2xl p-6 space-y-5">
-      <h3 className="font-bold text-text-primary text-base">{title}</h3>
+    <div className="bg-bg-card border border-border-default rounded-2xl p-5 space-y-4">
+      <h3 className="font-bold text-text-primary text-sm uppercase tracking-wide">{title}</h3>
       {children}
     </div>
   );
 }
 
-function Field({ label, required, children, hint }: { label: string; required?: boolean; children: React.ReactNode; hint?: string }) {
+function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       <label className="text-sm font-medium text-text-primary">
-        {label} {required && <span className="text-red-500">*</span>}
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {children}
       {hint && <p className="text-xs text-text-tertiary">{hint}</p>}
@@ -114,12 +132,85 @@ function Field({ label, required, children, hint }: { label: string; required?: 
   );
 }
 
-function inputCls(extra = "") {
-  return `w-full px-4 py-2.5 rounded-xl border border-border-default bg-bg-primary text-text-primary text-sm placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-primary/40 focus:border-amber-primary transition ${extra}`;
+const ic = (extra = "") =>
+  `w-full px-3.5 py-2.5 rounded-xl border border-border-default bg-bg-primary text-text-primary text-sm placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-primary/40 focus:border-amber-primary transition ${extra}`;
+
+// ─── Upload Field ─────────────────────────────────────────────────────────────
+type UploadMode = "link" | "upload";
+
+function UploadField({
+  label, required, hint, accept, value, onChange, onFile, uploading,
+}: {
+  label: string; required?: boolean; hint?: string;
+  accept: string;
+  value: string;
+  onChange: (v: string) => void;
+  onFile: (f: File) => Promise<void>;
+  uploading?: boolean;
+}) {
+  const [mode, setMode] = useState<UploadMode>("link");
+  const ref = useRef<HTMLInputElement>(null);
+
+  return (
+    <Field label={label} required={required} hint={hint}>
+      {/* mode toggle */}
+      <div className="flex items-center gap-1 mb-2">
+        <button type="button" onClick={() => setMode("link")}
+          className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${mode === "link" ? "bg-amber-primary text-slate-950" : "bg-bg-primary border border-border-default text-text-secondary hover:border-amber-primary/40"}`}>
+          <LinkIcon className="w-3 h-3" /> Paste Link
+        </button>
+        <button type="button" onClick={() => { setMode("upload"); setTimeout(() => ref.current?.click(), 50); }}
+          className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${mode === "upload" ? "bg-amber-primary text-slate-950" : "bg-bg-primary border border-border-default text-text-secondary hover:border-amber-primary/40"}`}>
+          {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />} Upload
+        </button>
+      </div>
+
+      {mode === "link" ? (
+        <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="https://..." className={ic()} />
+      ) : (
+        <div
+          onClick={() => ref.current?.click()}
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed border-border-default bg-bg-primary cursor-pointer hover:border-amber-primary/50 transition-colors ${uploading ? "opacity-60 pointer-events-none" : ""}`}
+        >
+          {uploading ? <Loader2 className="w-5 h-5 text-amber-primary animate-spin" /> : <Upload className="w-5 h-5 text-text-tertiary" />}
+          <div>
+            <p className="text-sm font-medium text-text-primary">{uploading ? "Uploading…" : "Click to upload"}</p>
+            {value && <p className="text-xs text-green-500 truncate max-w-[260px] mt-0.5">✓ Uploaded</p>}
+          </div>
+        </div>
+      )}
+
+      {/* preview */}
+      {value && accept.startsWith("image") && (
+        <div className="relative w-24 h-16 rounded-xl overflow-hidden border border-border-default mt-2">
+          <img src={value} alt="preview" className="w-full h-full object-cover" />
+          <button type="button" onClick={() => onChange("")} className="absolute top-1 right-1 p-0.5 bg-red-500 rounded-full text-white">
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+      {value && accept === "application/pdf" && (
+        <div className="flex items-center gap-2 mt-2 p-2 rounded-xl border border-border-default bg-bg-primary text-xs text-green-600 font-semibold">
+          <FileText className="w-4 h-4" /> PDF linked ✓
+        </div>
+      )}
+
+      <input
+        ref={ref}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          if (f) { await onFile(f); setMode("upload"); }
+          e.target.value = "";
+        }}
+      />
+    </Field>
+  );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
+// ─── Main Form ────────────────────────────────────────────────────────────────
 interface ProjectFormProps {
   initialData?: Project;
   mode: "new" | "edit";
@@ -130,33 +221,35 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const { addProject, updateProject } = useProjectsStore();
 
   const [step, setStep] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
+  const [showMap, setShowMap] = useState(false);
 
-  // ── Step 1 state ──
-  const [projectType, setProjectType] = useState<ProjectType>(initialData?.projectType ?? "apartment");
-  const [name, setName] = useState(initialData?.name ?? "");
-  const [tagline, setTagline] = useState(initialData?.tagline ?? "");
-  const [description, setDescription] = useState(initialData?.description ?? "");
-  const [builderName, setBuilderName] = useState(initialData?.builderName ?? "");
-  const [builderLogoUrl, setBuilderLogoUrl] = useState(initialData?.builderLogoUrl ?? "");
-  const [builderPhone, setBuilderPhone] = useState(initialData?.builderPhone ?? "");
+  // ── Step 1 ──
+  const [projectType, setProjectType]         = useState<ProjectType>(initialData?.projectType ?? "apartment");
+  const [name, setName]                       = useState(initialData?.name ?? "");
+  const [tagline, setTagline]                 = useState(initialData?.tagline ?? "");
+  const [description, setDescription]         = useState(initialData?.description ?? "");
+  const [builderName, setBuilderName]         = useState(initialData?.builderName ?? "");
+  const [builderLogoUrl, setBuilderLogoUrl]   = useState(initialData?.builderLogoUrl ?? "");
+  const [builderPhone, setBuilderPhone]       = useState(initialData?.builderPhone ?? "");
   const [builderWhatsapp, setBuilderWhatsapp] = useState(initialData?.builderWhatsapp ?? "");
-  const [reraId, setReraId] = useState(initialData?.reraId ?? "");
-  const [reraApproved, setReraApproved] = useState(initialData?.reraApproved ?? false);
-  const [noBrokerage, setNoBrokerage] = useState(initialData?.noBrokerage ?? false);
+  const [reraId, setReraId]                   = useState(initialData?.reraId ?? "");
+  const [reraApproved, setReraApproved]       = useState(initialData?.reraApproved ?? false);
+  const [noBrokerage, setNoBrokerage]         = useState(initialData?.noBrokerage ?? false);
   const [constructionStatus, setConstructionStatus] = useState<ConstructionStatus>(initialData?.constructionStatus ?? "under-construction");
-  const [totalUnits, setTotalUnits] = useState(initialData?.totalUnits?.toString() ?? "");
-  const [totalArea, setTotalArea] = useState(initialData?.totalArea ?? "");
+  const [totalUnits, setTotalUnits]           = useState(initialData?.totalUnits?.toString() ?? "");
+  const [totalArea, setTotalArea]             = useState(initialData?.totalArea ?? "");
   // Location
-  const [address, setAddress] = useState(initialData?.location.address ?? "");
+  const [address, setAddress]   = useState(initialData?.location.address ?? "");
   const [locality, setLocality] = useState(initialData?.location.locality ?? "");
-  const [city, setCity] = useState(initialData?.location.city ?? "Vijayawada");
-  const [state, setState] = useState(initialData?.location.state ?? "Andhra Pradesh");
-  const [pincode, setPincode] = useState(initialData?.location.pincode ?? "");
-  const [lat, setLat] = useState(initialData?.location.latitude?.toString() ?? "16.5062");
-  const [lng, setLng] = useState(initialData?.location.longitude?.toString() ?? "80.6480");
+  const [city, setCity]         = useState(initialData?.location.city ?? "Vijayawada");
+  const [locState, setLocState] = useState(initialData?.location.state ?? "Andhra Pradesh");
+  const [pincode, setPincode]   = useState(initialData?.location.pincode ?? "");
+  const [lat, setLat]           = useState(initialData?.location.latitude ?? 16.5062);
+  const [lng, setLng]           = useState(initialData?.location.longitude ?? 80.6480);
 
-  // ── Step 2 state ──
+  // ── Step 2 ──
   const [configs, setConfigs] = useState<ProjectConfig[]>(
     initialData?.configurations?.length ? initialData.configurations : [emptyConfig(projectType)]
   );
@@ -164,35 +257,89 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     initialData?.phases?.length ? initialData.phases : [emptyPhase()]
   );
 
-  // ── Step 3 state ──
-  const [images, setImages] = useState<ProjectImage[]>(initialData?.images ?? []);
-  const [newImgUrl, setNewImgUrl] = useState("");
-  const [newImgCat, setNewImgCat] = useState<ProjectImage["category"]>("exterior");
+  // ── Step 3 ──
+  const [images, setImages]         = useState<ProjectImage[]>(initialData?.images ?? []);
+  const [newImgUrl, setNewImgUrl]   = useState("");
+  const [newImgCat, setNewImgCat]   = useState<ProjectImage["category"]>("exterior");
   const [coverImage, setCoverImage] = useState(initialData?.coverImage ?? "");
-  const [videoUrl, setVideoUrl] = useState(initialData?.videoUrl ?? "");
+  const [videoUrl, setVideoUrl]     = useState(initialData?.videoUrl ?? "");
   const [brochureUrl, setBrochureUrl] = useState(initialData?.brochureUrl ?? "");
   const [highlights, setHighlights] = useState<string[]>(initialData?.highlights?.length ? initialData.highlights : [""]);
   const [facilities, setFacilities] = useState<string[]>(initialData?.facilities ?? []);
 
-  // ── Step 4 state ──
-  const [isFeatured, setIsFeatured] = useState(initialData?.isFeatured ?? false);
+  // ── Step 4 ──
+  const [isFeatured, setIsFeatured]   = useState(initialData?.isFeatured ?? false);
   const [isPublished, setIsPublished] = useState(initialData?.isPublished ?? false);
 
-  // ─── Config helpers ─────────────────────────────────────────────────────────
+  // ─── Upload handlers ─────────────────────────────────────────────────────────
+  const setUpl = (key: string, val: boolean) =>
+    setUploading((p) => ({ ...p, [key]: val }));
 
-  const updateConfig = (id: string, field: keyof ProjectConfig, value: any) => {
-    setConfigs((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
+  const handleLogoFile = async (file: File) => {
+    setUpl("logo", true);
+    const url = await uploadFile(file, "projects", "logos");
+    setBuilderLogoUrl(url);
+    setUpl("logo", false);
+    toast.success("Logo uploaded!");
   };
-  const addConfig = () => setConfigs((prev) => [...prev, emptyConfig(projectType)]);
-  const removeConfig = (id: string) => setConfigs((prev) => prev.filter((c) => c.id !== id));
 
-  const updatePhase = (id: string, field: keyof ProjectPhase, value: any) => {
-    setPhases((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
+  const handleBrochureFile = async (file: File) => {
+    setUpl("brochure", true);
+    const url = await uploadFile(file, "projects", "brochures");
+    setBrochureUrl(url);
+    setUpl("brochure", false);
+    toast.success("Brochure uploaded!");
   };
-  const addPhase = () => setPhases((prev) => [...prev, emptyPhase()]);
-  const removePhase = (id: string) => setPhases((prev) => prev.filter((p) => p.id !== id));
 
-  const addImage = () => {
+  const handleImageFile = async (file: File) => {
+    setUpl("gallery", true);
+    const url = await uploadFile(file, "projects", "gallery");
+    const img: ProjectImage = {
+      id: `img-${Date.now()}`,
+      url,
+      alt: name || "Project image",
+      category: newImgCat,
+      isPrimary: images.length === 0,
+    };
+    setImages((p) => [...p, img]);
+    if (!coverImage) setCoverImage(url);
+    setUpl("gallery", false);
+    toast.success("Image added!");
+  };
+
+  const handleFloorPlanFile = async (file: File, cfgId: string) => {
+    setUpl(`fp-${cfgId}`, true);
+    const url = await uploadFile(file, "projects", "floorplans");
+    updateConfig(cfgId, "floorPlanUrl", url);
+    setUpl(`fp-${cfgId}`, false);
+    toast.success("Floor plan uploaded!");
+  };
+
+  // ─── Config helpers ────────────────────────────────────────────────────────
+  const updateConfig = (id: string, field: keyof ProjectConfig, value: any) =>
+    setConfigs((p) => p.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
+  const addConfig = () => setConfigs((p) => [...p, emptyConfig(projectType)]);
+  const removeConfig = (id: string) => setConfigs((p) => p.filter((c) => c.id !== id));
+
+  const updatePhase = (id: string, field: keyof ProjectPhase, value: any) =>
+    setPhases((p) => p.map((ph) => (ph.id === id ? { ...ph, [field]: value } : ph)));
+  const addPhase = () => setPhases((p) => [...p, emptyPhase()]);
+  const removePhase = (id: string) => setPhases((p) => p.filter((ph) => ph.id !== id));
+
+  // ─── Map position change ──────────────────────────────────────────────────
+  const handleMapPos = (newLat: number, newLng: number, details?: any) => {
+    setLat(newLat);
+    setLng(newLng);
+    if (details) {
+      if (details.city && !city)     setCity(details.city);
+      if (details.state && !locState) setLocState(details.state);
+      if (details.pincode && !pincode) setPincode(details.pincode);
+      if (details.address && !address) setAddress(details.address);
+    }
+  };
+
+  // ─── Gallery image URL add ────────────────────────────────────────────────
+  const addImageUrl = () => {
     if (!newImgUrl.trim()) return;
     const img: ProjectImage = {
       id: `img-${Date.now()}`,
@@ -201,42 +348,40 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       category: newImgCat,
       isPrimary: images.length === 0,
     };
-    setImages((prev) => [...prev, img]);
-    if (!coverImage && img.isPrimary) setCoverImage(img.url);
+    setImages((p) => [...p, img]);
+    if (!coverImage) setCoverImage(img.url);
     setNewImgUrl("");
   };
-  const removeImage = (id: string) => setImages((prev) => prev.filter((i) => i.id !== id));
 
-  const toggleFacility = (f: string) => {
-    setFacilities((prev) => prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]);
+  const removeImage = (id: string) => {
+    const img = images.find((i) => i.id === id);
+    if (img?.url === coverImage) setCoverImage(images.find((i) => i.id !== id)?.url ?? "");
+    setImages((p) => p.filter((i) => i.id !== id));
   };
 
-  // ─── Validation per step ────────────────────────────────────────────────────
+  const toggleFacility = (f: string) =>
+    setFacilities((p) => (p.includes(f) ? p.filter((x) => x !== f) : [...p, f]));
 
-  const validateStep = (s: number) => {
+  // ─── Validation ────────────────────────────────────────────────────────────
+  const validate = (s: number) => {
     if (s === 0) {
-      if (!name.trim()) { toast.error("Project name is required."); return false; }
-      if (!builderName.trim()) { toast.error("Builder name is required."); return false; }
-      if (!locality.trim() || !city.trim()) { toast.error("Location (locality & city) is required."); return false; }
+      if (!name.trim())       { toast.error("Project name required."); return false; }
+      if (!builderName.trim()) { toast.error("Builder name required."); return false; }
+      if (!locality.trim())   { toast.error("Locality required."); return false; }
     }
-    if (s === 1) {
-      if (!configs.length) { toast.error("Add at least one configuration."); return false; }
-    }
+    if (s === 1 && !configs.length) { toast.error("Add at least one configuration."); return false; }
     return true;
   };
 
-  const next = () => { if (validateStep(step)) setStep((s) => Math.min(s + 1, 3)); };
+  const next = () => { if (validate(step)) setStep((s) => Math.min(s + 1, 3)); };
   const prev = () => setStep((s) => Math.max(s - 1, 0));
-
-  // ─── Build slug ─────────────────────────────────────────────────────────────
 
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
-  // ─── Submit ─────────────────────────────────────────────────────────────────
-
+  // ─── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (publish: boolean) => {
-    if (!validateStep(0)) { setStep(0); return; }
-    setIsSubmitting(true);
+    if (!validate(0)) { setStep(0); return; }
+    setSubmitting(true);
 
     const project: Project = {
       id: initialData?.id ?? `proj-${Date.now()}`,
@@ -249,15 +394,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       builderLogoUrl: builderLogoUrl.trim() || undefined,
       builderPhone: builderPhone.trim() || undefined,
       builderWhatsapp: builderWhatsapp.trim() || undefined,
-      location: {
-        address: address.trim(),
-        locality: locality.trim(),
-        city: city.trim(),
-        state: state.trim(),
-        pincode: pincode.trim() || undefined,
-        latitude: parseFloat(lat) || 16.5062,
-        longitude: parseFloat(lng) || 80.6480,
-      },
+      location: { address: address.trim(), locality: locality.trim(), city: city.trim(), state: locState.trim(), pincode: pincode.trim() || undefined, latitude: lat, longitude: lng },
       reraId: reraId.trim() || undefined,
       reraApproved,
       noBrokerage,
@@ -282,32 +419,47 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     try {
       if (mode === "new") {
         await addProject(project);
-        toast.success(publish ? "Project published!" : "Project saved as draft.");
+        toast.success(publish ? "🎉 Project published!" : "Project saved as draft.");
       } else {
         await updateProject(project.id, project);
         toast.success("Project updated!");
       }
-      setTimeout(() => router.push("/admin/projects"), 1200);
-    } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong. Please try again.");
-      setIsSubmitting(false);
+      setTimeout(() => router.push("/admin/projects"), 1000);
+    } catch {
+      toast.error("Something went wrong.");
+      setSubmitting(false);
     }
   };
 
-  // ─── Render helpers ─────────────────────────────────────────────────────────
+  // ─── Type badge helper ─────────────────────────────────────────────────────
+  const typeInfo = {
+    apartment: { icon: Building2, desc: "Multi-storey flats with BHK configs", color: "border-blue-500 bg-blue-500/5 text-blue-600" },
+    villa:     { icon: Home,      desc: "Independent villas / row houses",       color: "border-emerald-500 bg-emerald-500/5 text-emerald-600" },
+    venture:   { icon: Landmark,  desc: "Gated layout plots – residential/commercial", color: "border-amber-500 bg-amber-500/5 text-amber-600" },
+  };
 
-  const bhkOptions = ["1 BHK", "2 BHK", "3 BHK", "4 BHK", "4+ BHK", "Penthouse", "Duplex"];
-  const plotTypes = ["Residential Plot", "Commercial Plot", "Corner Plot", "Park-Facing Plot"];
+  // ─── Toggle ────────────────────────────────────────────────────────────────
+  function Toggle({ on, onToggle, label, sub }: { on: boolean; onToggle: () => void; label: string; sub?: string }) {
+    return (
+      <label className="flex items-center gap-3 cursor-pointer select-none">
+        <div onClick={onToggle} className={`w-10 h-6 rounded-full relative transition-colors cursor-pointer shrink-0 ${on ? "bg-amber-primary" : "bg-border-default"}`}>
+          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${on ? "left-5" : "left-1"}`} />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-text-primary">{label}</p>
+          {sub && <p className="text-xs text-text-secondary">{sub}</p>}
+        </div>
+      </label>
+    );
+  }
 
-  // ─── Render ─────────────────────────────────────────────────────────────────
-
+  // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-bg-primary pb-32">
       <div className="max-w-4xl mx-auto px-4 md:px-6 pt-8">
-        {/* Page Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Link href="/admin/projects" className="p-2 rounded-xl border border-border-default hover:bg-bg-card text-text-secondary hover:text-text-primary transition-all">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <Link href="/admin/projects" className="p-2 rounded-xl border border-border-default hover:bg-bg-card text-text-secondary transition-all">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
@@ -315,117 +467,93 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
               {mode === "new" ? "Add New Project" : `Edit: ${name || "Project"}`}
             </h1>
             <p className="text-sm text-text-secondary mt-0.5">
-              {mode === "new" ? "Create a new builder project listing" : "Update project details"}
+              {mode === "new" ? "Create a new builder project" : "Update project details"}
             </p>
           </div>
         </div>
 
         <StepIndicator current={step} total={4} />
 
-        {/* ──────────────────────────── STEP 1: Type & Basics ──────────────────────────── */}
+        {/* ═══════════════ STEP 1 — TYPE & BASICS ═══════════════ */}
         {step === 0 && (
-          <div className="space-y-6">
-            {/* Project Type Selector */}
-            <SectionCard title="Project Type">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-5">
+            {/* Project Type */}
+            <Card title="Project Type">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {(["apartment", "villa", "venture"] as ProjectType[]).map((type) => {
-                  const icons = { apartment: Building2, villa: Home, venture: Landmark };
-                  const descs = {
-                    apartment: "Multi-storey residential apartments with BHK configs",
-                    villa:     "Independent villas / row houses on plots",
-                    venture:   "Gated layout plots — residential or commercial",
-                  };
-                  const colors = {
-                    apartment: "border-blue-500 bg-blue-500/5 text-blue-500",
-                    villa:     "border-emerald-500 bg-emerald-500/5 text-emerald-500",
-                    venture:   "border-amber-500 bg-amber-500/5 text-amber-500",
-                  };
-                  const Icon = icons[type];
-                  const isActive = projectType === type;
+                  const { icon: Icon, desc, color } = typeInfo[type];
+                  const active = projectType === type;
                   return (
-                    <button
-                      key={type}
-                      type="button"
+                    <button key={type} type="button"
                       onClick={() => { setProjectType(type); setConfigs([emptyConfig(type)]); }}
-                      className={`p-5 rounded-2xl border-2 text-left transition-all relative ${
-                        isActive ? colors[type] : "border-border-default bg-bg-card hover:border-border-default/60"
-                      }`}
+                      className={`p-4 rounded-2xl border-2 text-left transition-all relative ${active ? color : "border-border-default bg-bg-primary hover:border-border-default/60"}`}
                     >
-                      {isActive && <CheckCircle2 className="w-4 h-4 absolute top-3 right-3" />}
-                      <Icon className={`w-7 h-7 mb-3 ${isActive ? "" : "text-text-tertiary"}`} />
-                      <p className={`font-bold capitalize text-base ${isActive ? "" : "text-text-primary"}`}>{type}</p>
-                      <p className="text-xs mt-1 text-text-secondary leading-relaxed">{descs[type]}</p>
+                      {active && <CheckCircle2 className="w-4 h-4 absolute top-3 right-3" />}
+                      <Icon className={`w-6 h-6 mb-2 ${active ? "" : "text-text-tertiary"}`} />
+                      <p className={`font-bold capitalize ${active ? "" : "text-text-primary"}`}>{type}</p>
+                      <p className="text-xs text-text-secondary mt-0.5 leading-relaxed">{desc}</p>
                     </button>
                   );
                 })}
               </div>
-            </SectionCard>
+            </Card>
 
-            {/* Project Identity */}
-            <SectionCard title="Project Identity">
+            {/* Identity */}
+            <Card title="Project Identity">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Project Name" required>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Lansum Evana" className={inputCls()} />
+                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Lansum Evana" className={ic()} />
                 </Field>
                 <Field label="Tagline">
-                  <Input value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="e.g. Life elevated, above the rest" className={inputCls()} />
+                  <Input value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="e.g. Life elevated, above the rest" className={ic()} />
                 </Field>
               </div>
-              <Field label="Project Description">
+              <Field label="Description">
                 <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
-                  placeholder="Brief overview of the project..." className={inputCls("resize-none")} />
+                  placeholder="Brief overview of the project…" className={ic("resize-none")} />
               </Field>
-            </SectionCard>
+            </Card>
 
-            {/* Builder Info */}
-            <SectionCard title="Builder / Developer">
+            {/* Builder */}
+            <Card title="Builder / Developer">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Builder Name" required>
-                  <Input value={builderName} onChange={(e) => setBuilderName(e.target.value)} placeholder="e.g. Lansum Properties LLP" className={inputCls()} />
+                  <Input value={builderName} onChange={(e) => setBuilderName(e.target.value)} placeholder="e.g. Lansum Properties LLP" className={ic()} />
                 </Field>
-                <Field label="Builder Logo URL" hint="Paste a direct image link">
-                  <Input value={builderLogoUrl} onChange={(e) => setBuilderLogoUrl(e.target.value)} placeholder="https://..." className={inputCls()} />
-                </Field>
+                <UploadField
+                  label="Builder Logo" accept="image/*"
+                  value={builderLogoUrl} onChange={setBuilderLogoUrl}
+                  onFile={handleLogoFile} uploading={uploading.logo}
+                  hint="PNG/SVG logo of the builder"
+                />
                 <Field label="Builder Phone">
-                  <Input value={builderPhone} onChange={(e) => setBuilderPhone(e.target.value)} placeholder="+91 XXXXX XXXXX" className={inputCls()} />
+                  <Input value={builderPhone} onChange={(e) => setBuilderPhone(e.target.value)} placeholder="+91 XXXXX XXXXX" className={ic()} />
                 </Field>
                 <Field label="Builder WhatsApp">
-                  <Input value={builderWhatsapp} onChange={(e) => setBuilderWhatsapp(e.target.value)} placeholder="+91 XXXXX XXXXX" className={inputCls()} />
+                  <Input value={builderWhatsapp} onChange={(e) => setBuilderWhatsapp(e.target.value)} placeholder="+91 XXXXX XXXXX" className={ic()} />
                 </Field>
               </div>
-            </SectionCard>
+            </Card>
 
             {/* Compliance & Status */}
-            <SectionCard title="Compliance & Status">
+            <Card title="Compliance & Status">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="RERA ID">
-                  <Input value={reraId} onChange={(e) => setReraId(e.target.value)} placeholder="AP-RERA-XXXX-XXXX" className={inputCls()} />
+                  <Input value={reraId} onChange={(e) => setReraId(e.target.value)} placeholder="AP-RERA-XXXX-XXXX" className={ic()} />
                 </Field>
-                <div className="flex flex-col gap-3 pt-2">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <div onClick={() => setReraApproved((v) => !v)} className={`w-10 h-6 rounded-full relative transition-colors cursor-pointer ${reraApproved ? "bg-amber-primary" : "bg-border-default"}`}>
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${reraApproved ? "left-5" : "left-1"}`} />
-                    </div>
-                    <span className="text-sm text-text-primary">RERA Approved</span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <div onClick={() => setNoBrokerage((v) => !v)} className={`w-10 h-6 rounded-full relative transition-colors cursor-pointer ${noBrokerage ? "bg-amber-primary" : "bg-border-default"}`}>
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${noBrokerage ? "left-5" : "left-1"}`} />
-                    </div>
-                    <span className="text-sm text-text-primary">No Brokerage</span>
-                  </label>
+                <div className="flex flex-col gap-3 pt-1">
+                  <Toggle on={reraApproved} onToggle={() => setReraApproved((v) => !v)} label="RERA Approved" />
+                  <Toggle on={noBrokerage} onToggle={() => setNoBrokerage((v) => !v)} label="No Brokerage" />
                 </div>
               </div>
+
+              {/* Construction Status */}
               <div>
-                <p className="text-sm font-medium text-text-primary mb-3">Construction Status</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <p className="text-sm font-medium text-text-primary mb-2">Construction Status</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {STATUSES.map((s) => (
                     <button key={s.value} type="button" onClick={() => setConstructionStatus(s.value)}
-                      className={`p-3 rounded-xl border-2 text-left transition-all ${
-                        constructionStatus === s.value
-                          ? "border-amber-primary bg-amber-primary/10"
-                          : "border-border-default bg-bg-card"
-                      }`}
+                      className={`p-3 rounded-xl border-2 text-left transition-all ${constructionStatus === s.value ? "border-amber-primary bg-amber-primary/10" : "border-border-default bg-bg-card"}`}
                     >
                       <p className="text-sm font-semibold text-text-primary">{s.label}</p>
                       <p className="text-xs text-text-tertiary mt-0.5">{s.desc}</p>
@@ -433,72 +561,96 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                   ))}
                 </div>
               </div>
-              {(projectType === "villa" || projectType === "venture") && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field label="Total Units" hint="e.g. 251 villas">
-                    <Input value={totalUnits} onChange={(e) => setTotalUnits(e.target.value)} type="number" placeholder="251" className={inputCls()} />
-                  </Field>
+
+              {/* Type-adaptive extra fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label={projectType === "apartment" ? "Total Units / Flats" : projectType === "villa" ? "Total Villas" : "Total Plots"}
+                  hint="e.g. 251">
+                  <Input type="number" value={totalUnits} onChange={(e) => setTotalUnits(e.target.value)} placeholder="251" className={ic()} />
+                </Field>
+                {(projectType === "villa" || projectType === "venture") && (
                   <Field label="Total Area" hint='e.g. "34 acres"'>
-                    <Input value={totalArea} onChange={(e) => setTotalArea(e.target.value)} placeholder="34 acres" className={inputCls()} />
+                    <Input value={totalArea} onChange={(e) => setTotalArea(e.target.value)} placeholder="34 acres" className={ic()} />
                   </Field>
-                </div>
-              )}
-            </SectionCard>
+                )}
+              </div>
+            </Card>
 
             {/* Location */}
-            <SectionCard title="Location">
+            <Card title="Location">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Address">
-                  <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Full address" className={inputCls()} />
+                  <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Full address" className={ic()} />
                 </Field>
                 <Field label="Locality / Area" required>
-                  <Input value={locality} onChange={(e) => setLocality(e.target.value)} placeholder="e.g. Chevella" className={inputCls()} />
+                  <Input value={locality} onChange={(e) => setLocality(e.target.value)} placeholder="e.g. Chevella, Narsingi" className={ic()} />
                 </Field>
                 <Field label="City" required>
-                  <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Vijayawada" className={inputCls()} />
+                  <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Vijayawada" className={ic()} />
                 </Field>
                 <Field label="State">
-                  <Input value={state} onChange={(e) => setState(e.target.value)} placeholder="Andhra Pradesh" className={inputCls()} />
+                  <Input value={locState} onChange={(e) => setLocState(e.target.value)} placeholder="Andhra Pradesh" className={ic()} />
                 </Field>
                 <Field label="Pincode">
-                  <Input value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="500xxx" className={inputCls()} />
+                  <Input value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="500xxx" className={ic()} />
                 </Field>
               </div>
+
+              {/* Coordinate inputs */}
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Latitude" hint="Google Maps decimal">
-                  <Input value={lat} onChange={(e) => setLat(e.target.value)} placeholder="16.5062" className={inputCls()} />
+                <Field label="Latitude" hint="Decimal format">
+                  <Input value={lat.toString()} onChange={(e) => setLat(parseFloat(e.target.value) || 16.5062)} placeholder="16.5062" className={ic()} />
                 </Field>
                 <Field label="Longitude">
-                  <Input value={lng} onChange={(e) => setLng(e.target.value)} placeholder="80.6480" className={inputCls()} />
+                  <Input value={lng.toString()} onChange={(e) => setLng(parseFloat(e.target.value) || 80.6480)} placeholder="80.6480" className={ic()} />
                 </Field>
               </div>
-            </SectionCard>
+
+              {/* Map toggle */}
+              <button type="button" onClick={() => setShowMap((v) => !v)}
+                className="flex items-center gap-2 text-sm font-semibold text-amber-primary hover:text-amber-600 transition-colors">
+                <Map className="w-4 h-4" />
+                {showMap ? "Hide Map Picker" : "📍 Pick Location on Map"}
+              </button>
+
+              {showMap && (
+                <div className="rounded-2xl overflow-hidden" style={{ height: "300px" }}>
+                  <CoordinatePickerMap
+                    initialPosition={[lat, lng]}
+                    onPositionChange={handleMapPos}
+                  />
+                </div>
+              )}
+              <p className="text-xs text-text-tertiary">
+                💡 Click anywhere on the map to set the exact pin location. Drag the marker to fine-tune.
+              </p>
+            </Card>
           </div>
         )}
 
-        {/* ──────────────────────────── STEP 2: Configurations ─────────────────────── */}
+        {/* ═══════════════ STEP 2 — CONFIGURATIONS ═══════════════ */}
         {step === 1 && (
-          <div className="space-y-6">
-            {/* Configurations */}
-            <SectionCard title={
+          <div className="space-y-5">
+            <Card title={
               projectType === "apartment" ? "BHK Configurations"
               : projectType === "villa"   ? "Villa Configurations"
-              : "Plot Types"
+              : "Plot Types / Sizes"
             }>
-              <p className="text-sm text-text-secondary -mt-3">
-                {projectType === "apartment" && "Add each BHK variant with area range and price."}
-                {projectType === "villa"     && "Add each villa type with area and pricing details."}
-                {projectType === "venture"   && "Add plot types (Residential, Commercial, Corner, etc.) with sizes and prices."}
+              <p className="text-xs text-text-secondary -mt-2">
+                {projectType === "apartment" && "Add each BHK variant with area range and pricing."}
+                {projectType === "villa"     && "Add each villa size with plot + built-up area and pricing."}
+                {projectType === "venture"   && "Add plot types with sq.yd sizes and pricing. No BHK needed."}
               </p>
+
               <div className="space-y-4">
                 {configs.map((cfg, idx) => (
                   <div key={cfg.id} className="p-4 rounded-2xl border border-border-default bg-bg-primary space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-text-primary">
+                      <span className="text-sm font-bold text-text-primary">
                         {projectType === "venture" ? "Plot Type" : "Config"} #{idx + 1}
                       </span>
                       {configs.length > 1 && (
-                        <button onClick={() => removeConfig(cfg.id)} className="p-1 rounded-lg hover:bg-red-500/10 text-red-400 hover:text-red-500 transition-colors">
+                        <button onClick={() => removeConfig(cfg.id)} className="p-1 rounded-lg hover:bg-red-500/10 text-red-400">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
@@ -506,96 +658,114 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Label */}
-                      <Field label="Label">
-                        {projectType === "venture" ? (
-                          <select value={cfg.label} onChange={(e) => updateConfig(cfg.id, "label", e.target.value)} className={inputCls()}>
-                            {plotTypes.map((pt) => <option key={pt}>{pt}</option>)}
-                          </select>
-                        ) : (
-                          <select value={cfg.label} onChange={(e) => updateConfig(cfg.id, "label", e.target.value)} className={inputCls()}>
-                            {bhkOptions.map((o) => <option key={o}>{o}</option>)}
-                          </select>
-                        )}
+                      <Field label={projectType === "venture" ? "Plot Type" : "Configuration"}>
+                        <select value={cfg.label} onChange={(e) => updateConfig(cfg.id, "label", e.target.value)} className={ic()}>
+                          {BHK_OPTIONS[projectType].map((o) => <option key={o}>{o}</option>)}
+                        </select>
                       </Field>
 
-                      {/* Area fields */}
-                      {projectType !== "venture" ? (
+                      {/* Prices */}
+                      <Field label="Price Min (₹)">
+                        <Input type="number" value={cfg.priceMin || ""} onChange={(e) => updateConfig(cfg.id, "priceMin", parseInt(e.target.value) || 0)} placeholder="3500000" className={ic()} />
+                      </Field>
+                      <Field label="Price Max (₹)">
+                        <Input type="number" value={cfg.priceMax || ""} onChange={(e) => updateConfig(cfg.id, "priceMax", parseInt(e.target.value) || 0)} placeholder="5500000" className={ic()} />
+                      </Field>
+
+                      {/* TYPE-ADAPTIVE area fields */}
+                      {projectType === "venture" ? (
+                        <>
+                          <Field label="Plot Size Min (sq.yds)">
+                            <Input type="number" value={cfg.plotSizeMin ?? ""} onChange={(e) => updateConfig(cfg.id, "plotSizeMin", parseInt(e.target.value) || 0)} placeholder="150" className={ic()} />
+                          </Field>
+                          <Field label="Plot Size Max (sq.yds)">
+                            <Input type="number" value={cfg.plotSizeMax ?? ""} onChange={(e) => updateConfig(cfg.id, "plotSizeMax", parseInt(e.target.value) || 0)} placeholder="300" className={ic()} />
+                          </Field>
+                          <Field label="Price per sq.yd (₹)">
+                            <Input type="number" value={cfg.pricePerUnit ?? ""} onChange={(e) => updateConfig(cfg.id, "pricePerUnit", parseInt(e.target.value) || 0)} placeholder="15000" className={ic()} />
+                          </Field>
+                        </>
+                      ) : projectType === "villa" ? (
                         <>
                           <Field label="Built-up Area Min (sq.ft)">
-                            <Input type="number" value={cfg.builtUpAreaMin ?? ""} onChange={(e) => updateConfig(cfg.id, "builtUpAreaMin", parseInt(e.target.value) || 0)} placeholder="1000" className={inputCls()} />
+                            <Input type="number" value={cfg.builtUpAreaMin ?? ""} onChange={(e) => updateConfig(cfg.id, "builtUpAreaMin", parseInt(e.target.value) || 0)} placeholder="2000" className={ic()} />
                           </Field>
                           <Field label="Built-up Area Max (sq.ft)">
-                            <Input type="number" value={cfg.builtUpAreaMax ?? ""} onChange={(e) => updateConfig(cfg.id, "builtUpAreaMax", parseInt(e.target.value) || 0)} placeholder="1500" className={inputCls()} />
+                            <Input type="number" value={cfg.builtUpAreaMax ?? ""} onChange={(e) => updateConfig(cfg.id, "builtUpAreaMax", parseInt(e.target.value) || 0)} placeholder="3500" className={ic()} />
+                          </Field>
+                          <Field label="Plot Size (sq.yds)" hint="Plot area of the villa">
+                            <Input type="number" value={cfg.plotSizeMin ?? ""} onChange={(e) => updateConfig(cfg.id, "plotSizeMin", parseInt(e.target.value) || 0)} placeholder="150" className={ic()} />
                           </Field>
                         </>
                       ) : (
                         <>
-                          <Field label="Plot Size Min (sq.yds)">
-                            <Input type="number" value={cfg.plotSizeMin ?? ""} onChange={(e) => updateConfig(cfg.id, "plotSizeMin", parseInt(e.target.value) || 0)} placeholder="150" className={inputCls()} />
+                          <Field label="Built-up Area Min (sq.ft)">
+                            <Input type="number" value={cfg.builtUpAreaMin ?? ""} onChange={(e) => updateConfig(cfg.id, "builtUpAreaMin", parseInt(e.target.value) || 0)} placeholder="1000" className={ic()} />
                           </Field>
-                          <Field label="Plot Size Max (sq.yds)">
-                            <Input type="number" value={cfg.plotSizeMax ?? ""} onChange={(e) => updateConfig(cfg.id, "plotSizeMax", parseInt(e.target.value) || 0)} placeholder="300" className={inputCls()} />
+                          <Field label="Built-up Area Max (sq.ft)">
+                            <Input type="number" value={cfg.builtUpAreaMax ?? ""} onChange={(e) => updateConfig(cfg.id, "builtUpAreaMax", parseInt(e.target.value) || 0)} placeholder="1500" className={ic()} />
                           </Field>
-                          <Field label="Price per sq.yd (₹)">
-                            <Input type="number" value={cfg.pricePerUnit ?? ""} onChange={(e) => updateConfig(cfg.id, "pricePerUnit", parseInt(e.target.value) || 0)} placeholder="15000" className={inputCls()} />
+                          <Field label="Price per sq.ft (₹)">
+                            <Input type="number" value={cfg.pricePerUnit ?? ""} onChange={(e) => updateConfig(cfg.id, "pricePerUnit", parseInt(e.target.value) || 0)} placeholder="5500" className={ic()} />
                           </Field>
                         </>
                       )}
 
-                      {/* Prices */}
-                      <Field label="Price Min (₹)">
-                        <Input type="number" value={cfg.priceMin || ""} onChange={(e) => updateConfig(cfg.id, "priceMin", parseInt(e.target.value) || 0)} placeholder="3500000" className={inputCls()} />
-                      </Field>
-                      <Field label="Price Max (₹)">
-                        <Input type="number" value={cfg.priceMax || ""} onChange={(e) => updateConfig(cfg.id, "priceMax", parseInt(e.target.value) || 0)} placeholder="5500000" className={inputCls()} />
-                      </Field>
-
-                      {/* Floor plan / Layout URL */}
-                      <Field label={projectType === "venture" ? "Layout Map URL" : "Floor Plan Image URL"} hint="Paste a direct image link">
-                        <Input value={cfg.floorPlanUrl ?? ""} onChange={(e) => updateConfig(cfg.id, "floorPlanUrl", e.target.value)} placeholder="https://..." className={inputCls()} />
-                      </Field>
+                      {/* Floor plan / Layout upload */}
+                      <div className="sm:col-span-2">
+                        <UploadField
+                          label={projectType === "venture" ? "Layout Map / Plot Plan" : "Floor Plan Image"}
+                          accept="image/*"
+                          value={cfg.floorPlanUrl ?? ""}
+                          onChange={(v) => updateConfig(cfg.id, "floorPlanUrl", v)}
+                          onFile={(f) => handleFloorPlanFile(f, cfg.id)}
+                          uploading={uploading[`fp-${cfg.id}`]}
+                          hint="Shows on the detail page for this configuration"
+                        />
+                      </div>
 
                       {/* Possession date */}
                       <Field label="Possession Date" hint='e.g. "Dec 2028"'>
-                        <Input value={cfg.possessionDate ?? ""} onChange={(e) => updateConfig(cfg.id, "possessionDate", e.target.value)} placeholder="Dec 2028" className={inputCls()} />
+                        <Input value={cfg.possessionDate ?? ""} onChange={(e) => updateConfig(cfg.id, "possessionDate", e.target.value)} placeholder="Dec 2028" className={ic()} />
                       </Field>
                     </div>
                   </div>
                 ))}
               </div>
-              <Button type="button" variant="outline" onClick={addConfig} className="gap-2 w-full rounded-xl">
-                <Plus className="w-4 h-4" /> Add {projectType === "venture" ? "Plot Type" : "Configuration"}
-              </Button>
-            </SectionCard>
 
-            {/* Construction Phases */}
-            <SectionCard title="Construction Phases">
-              <p className="text-sm text-text-secondary -mt-3">Break down the project into construction phases.</p>
-              <div className="space-y-4">
-                {phases.map((phase, idx) => (
-                  <div key={phase.id} className="p-4 rounded-2xl border border-border-default bg-bg-primary space-y-3">
+              <Button type="button" variant="outline" onClick={addConfig} className="gap-2 w-full rounded-xl">
+                <Plus className="w-4 h-4" />
+                Add {projectType === "venture" ? "Plot Type" : "Configuration"}
+              </Button>
+            </Card>
+
+            {/* Phases */}
+            <Card title="Construction Phases">
+              <div className="space-y-3">
+                {phases.map((ph, idx) => (
+                  <div key={ph.id} className="p-4 rounded-2xl border border-border-default bg-bg-primary space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-text-primary">Phase #{idx + 1}</span>
+                      <span className="text-sm font-bold text-text-primary">Phase #{idx + 1}</span>
                       {phases.length > 1 && (
-                        <button onClick={() => removePhase(phase.id)} className="p-1 rounded-lg hover:bg-red-500/10 text-red-400 hover:text-red-500 transition-colors">
+                        <button onClick={() => removePhase(ph.id)} className="p-1 rounded-lg hover:bg-red-500/10 text-red-400">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <Field label="Phase Name">
-                        <Input value={phase.name} onChange={(e) => updatePhase(phase.id, "name", e.target.value)} placeholder="Phase 1 / Tower A" className={inputCls()} />
+                        <Input value={ph.name} onChange={(e) => updatePhase(ph.id, "name", e.target.value)} placeholder="Phase 1 / Tower A" className={ic()} />
                       </Field>
                       <Field label="Status">
-                        <select value={phase.status} onChange={(e) => updatePhase(phase.id, "status", e.target.value)} className={inputCls()}>
+                        <select value={ph.status} onChange={(e) => updatePhase(ph.id, "status", e.target.value)} className={ic()}>
                           {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                         </select>
                       </Field>
                       <Field label="Possession Date">
-                        <Input value={phase.possessionDate ?? ""} onChange={(e) => updatePhase(phase.id, "possessionDate", e.target.value)} placeholder="Dec 2028" className={inputCls()} />
+                        <Input value={ph.possessionDate ?? ""} onChange={(e) => updatePhase(ph.id, "possessionDate", e.target.value)} placeholder="Dec 2028" className={ic()} />
                       </Field>
-                      <Field label="Total Units in Phase">
-                        <Input type="number" value={phase.totalUnits ?? ""} onChange={(e) => updatePhase(phase.id, "totalUnits", parseInt(e.target.value) || undefined)} placeholder="100" className={inputCls()} />
+                      <Field label={projectType === "venture" ? "Total Plots in Phase" : "Total Units"}>
+                        <Input type="number" value={ph.totalUnits ?? ""} onChange={(e) => updatePhase(ph.id, "totalUnits", parseInt(e.target.value) || undefined)} placeholder="100" className={ic()} />
                       </Field>
                     </div>
                   </div>
@@ -604,24 +774,30 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
               <Button type="button" variant="outline" onClick={addPhase} className="gap-2 w-full rounded-xl">
                 <Plus className="w-4 h-4" /> Add Phase
               </Button>
-            </SectionCard>
+            </Card>
           </div>
         )}
 
-        {/* ──────────────────────────── STEP 3: Media & Highlights ─────────────────── */}
+        {/* ═══════════════ STEP 3 — MEDIA & HIGHLIGHTS ═══════════════ */}
         {step === 2 && (
-          <div className="space-y-6">
+          <div className="space-y-5">
             {/* Gallery */}
-            <SectionCard title="Project Gallery">
-              <p className="text-sm text-text-secondary -mt-3">Add photos categorized by type — these power the gallery tabs on the public page.</p>
+            <Card title="Project Gallery">
+              <p className="text-xs text-text-secondary -mt-2">
+                Add photos — paste a URL or upload from your device. These power the gallery tabs on the detail page.
+              </p>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="col-span-2">
-                  <Field label="Image URL">
-                    <Input value={newImgUrl} onChange={(e) => setNewImgUrl(e.target.value)} placeholder="https://..." className={inputCls()} />
+                <div className="sm:col-span-2">
+                  <Field label="Image URL or upload">
+                    <div className="flex gap-2">
+                      <Input value={newImgUrl} onChange={(e) => setNewImgUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addImageUrl()} placeholder="https://…" className={ic("flex-1")} />
+                      <Button type="button" variant="amber" onClick={addImageUrl} className="shrink-0 rounded-xl px-4">Add</Button>
+                    </div>
                   </Field>
                 </div>
                 <Field label="Category">
-                  <select value={newImgCat} onChange={(e) => setNewImgCat(e.target.value as ProjectImage["category"])} className={inputCls()}>
+                  <select value={newImgCat} onChange={(e) => setNewImgCat(e.target.value as ProjectImage["category"])} className={ic()}>
                     <option value="aerial">Aerial</option>
                     <option value="exterior">Exterior</option>
                     <option value="interior">Interior</option>
@@ -631,172 +807,150 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                   </select>
                 </Field>
               </div>
-              <Button type="button" variant="outline" onClick={addImage} className="gap-2 rounded-xl">
-                <Plus className="w-4 h-4" /> Add Image
-              </Button>
 
+              {/* Upload button */}
+              <label className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${uploading.gallery ? "border-amber-primary/40 bg-amber-primary/5 pointer-events-none" : "border-border-default hover:border-amber-primary/50"}`}>
+                {uploading.gallery ? <Loader2 className="w-5 h-5 text-amber-primary animate-spin" /> : <Upload className="w-5 h-5 text-text-tertiary" />}
+                <div>
+                  <p className="text-sm font-medium text-text-primary">{uploading.gallery ? "Uploading…" : "Upload image from device"}</p>
+                  <p className="text-xs text-text-tertiary">JPG, PNG, WebP</p>
+                </div>
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = ""; }} />
+              </label>
+
+              {/* Image grid */}
               {images.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {images.map((img) => (
                     <div key={img.id} className="relative group rounded-xl overflow-hidden border border-border-default aspect-video bg-bg-primary">
                       <img src={img.url} alt={img.alt} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
                         <button onClick={() => { setCoverImage(img.url); toast.success("Cover set!"); }}
                           className="p-1.5 rounded-full bg-amber-primary text-slate-950 hover:scale-110 transition" title="Set as cover">
                           <Star className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={() => removeImage(img.id)}
-                          className="p-1.5 rounded-full bg-red-500 text-white hover:scale-110 transition" title="Remove">
+                          className="p-1.5 rounded-full bg-red-500 text-white hover:scale-110 transition">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-black/70 text-white capitalize">{img.category}</span>
-                      {img.url === coverImage && (
-                        <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-primary text-slate-950">Cover</span>
-                      )}
+                      <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] bg-black/70 text-white capitalize">{img.category}</span>
+                      {img.url === coverImage && <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-primary text-slate-950">Cover</span>}
                     </div>
                   ))}
                 </div>
               )}
-            </SectionCard>
+            </Card>
 
             {/* Video & Brochure */}
-            <SectionCard title="Video & Brochure">
-              <Field label="Video URL (YouTube)" hint="Paste a YouTube link — it will be embedded on the project page">
-                <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." className={inputCls()} />
+            <Card title="Video & Brochure">
+              <Field label="YouTube Video URL">
+                <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://youtube.com/watch?v=…" className={ic()} />
               </Field>
-              <Field label="Brochure PDF URL" hint="Paste a direct link to the brochure PDF">
-                <Input value={brochureUrl} onChange={(e) => setBrochureUrl(e.target.value)} placeholder="https://..." className={inputCls()} />
-              </Field>
-            </SectionCard>
+              <UploadField
+                label="Brochure / PDF"
+                accept="application/pdf"
+                value={brochureUrl}
+                onChange={setBrochureUrl}
+                onFile={handleBrochureFile}
+                uploading={uploading.brochure}
+                hint="Upload a PDF or paste a direct link to the brochure"
+              />
+            </Card>
 
             {/* Highlights */}
-            <SectionCard title="Why Consider This Project?">
-              <p className="text-sm text-text-secondary -mt-3">These appear as bullet points on the project page to convince buyers.</p>
+            <Card title="Why Consider This Project?">
+              <p className="text-xs text-text-secondary -mt-2">Bullet points shown on the detail page to convince buyers.</p>
               <div className="space-y-2">
                 {highlights.map((h, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <Input
-                      value={h}
-                      onChange={(e) => setHighlights((prev) => prev.map((x, j) => j === i ? e.target.value : x))}
-                      placeholder={`Highlight ${i + 1}…`}
-                      className={inputCls("flex-1")}
-                    />
+                    <Input value={h}
+                      onChange={(e) => setHighlights((p) => p.map((x, j) => j === i ? e.target.value : x))}
+                      placeholder={`Highlight ${i + 1}…`} className={ic("flex-1")} />
                     {highlights.length > 1 && (
-                      <button onClick={() => setHighlights((prev) => prev.filter((_, j) => j !== i))}
-                        className="p-2 rounded-lg hover:bg-red-500/10 text-red-400 hover:text-red-500 transition-colors shrink-0">
+                      <button onClick={() => setHighlights((p) => p.filter((_, j) => j !== i))}
+                        className="p-2 rounded-lg hover:bg-red-500/10 text-red-400 shrink-0">
                         <X className="w-4 h-4" />
                       </button>
                     )}
                   </div>
                 ))}
               </div>
-              <Button type="button" variant="outline" onClick={() => setHighlights((prev) => [...prev, ""])} className="gap-2 rounded-xl">
+              <Button type="button" variant="outline" onClick={() => setHighlights((p) => [...p, ""])} className="gap-2 rounded-xl">
                 <Plus className="w-4 h-4" /> Add Highlight
               </Button>
-            </SectionCard>
+            </Card>
 
             {/* Facilities */}
-            <SectionCard title="Facilities & Amenities">
-              <p className="text-sm text-text-secondary -mt-3">Select all amenities available in this project.</p>
+            <Card title="Facilities & Amenities">
               <div className="flex flex-wrap gap-2">
                 {FACILITIES_LIST.map((f) => {
                   const active = facilities.includes(f);
                   return (
                     <button key={f} type="button" onClick={() => toggleFacility(f)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                        active
-                          ? "bg-amber-primary/10 border-amber-primary/50 text-amber-primary"
-                          : "bg-bg-primary border-border-default text-text-secondary hover:border-amber-primary/30"
-                      }`}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${active ? "bg-amber-primary/10 border-amber-primary/50 text-amber-primary" : "border-border-default text-text-secondary hover:border-amber-primary/30"}`}
                     >
-                      {active && <Check className="w-3 h-3 inline mr-1" />}
-                      {f}
+                      {active && <Check className="w-3 h-3 inline mr-1" />}{f}
                     </button>
                   );
                 })}
               </div>
-            </SectionCard>
+            </Card>
           </div>
         )}
 
-        {/* ──────────────────────────── STEP 4: Review & Publish ───────────────────── */}
+        {/* ═══════════════ STEP 4 — REVIEW & PUBLISH ═══════════════ */}
         {step === 3 && (
-          <div className="space-y-6">
-            <SectionCard title="Review Summary">
-              <div className="space-y-4">
-                {/* Project card preview */}
-                <div className="rounded-2xl border border-border-default overflow-hidden">
-                  {(coverImage || images[0]?.url) && (
-                    <img src={coverImage || images[0]?.url} alt={name} className="w-full h-48 object-cover" />
-                  )}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h2 className="font-bold text-lg text-text-primary">{name || "Project Name"}</h2>
-                      {builderLogoUrl && <img src={builderLogoUrl} alt={builderName} className="h-8 object-contain" />}
-                    </div>
-                    <p className="text-text-secondary text-sm mb-3">{tagline || description || "No description"}</p>
-                    <div className="flex flex-wrap gap-2 text-xs">
-                      {reraApproved && <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-600 font-semibold border border-green-500/20">✓ RERA</span>}
-                      {noBrokerage && <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 font-semibold border border-blue-500/20">No Brokerage</span>}
-                      <span className="px-2 py-0.5 rounded bg-bg-primary text-text-secondary border border-border-default capitalize">{projectType}</span>
-                      <span className="px-2 py-0.5 rounded bg-amber-primary/10 text-amber-primary border border-amber-primary/20">
-                        {constructionStatus.replace(/-/g, " ")}
-                      </span>
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-border-default text-sm text-text-secondary">
-                      <div className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {locality}, {city}</div>
-                    </div>
-                    <div className="mt-2 text-sm text-text-secondary">
-                      {configs.length} configuration{configs.length !== 1 ? "s" : ""} • {phases.length} phase{phases.length !== 1 ? "s" : ""} • {images.length} image{images.length !== 1 ? "s" : ""}
-                    </div>
+          <div className="space-y-5">
+            <Card title="Live Preview">
+              <div className="rounded-2xl border border-border-default overflow-hidden">
+                {(coverImage || images[0]?.url) && (
+                  <img src={coverImage || images[0]?.url} alt={name} className="w-full h-48 object-cover" />
+                )}
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <h2 className="font-bold text-lg text-text-primary">{name || "Project Name"}</h2>
+                    {builderLogoUrl && <img src={builderLogoUrl} alt={builderName} className="h-8 object-contain max-w-[80px]" />}
                   </div>
-                </div>
-
-                {/* Publish settings */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <label className="flex items-center gap-3 cursor-pointer p-4 rounded-2xl border border-border-default bg-bg-card">
-                    <div onClick={() => setIsFeatured((v) => !v)} className={`w-10 h-6 rounded-full relative transition-colors cursor-pointer ${isFeatured ? "bg-amber-primary" : "bg-border-default"}`}>
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${isFeatured ? "left-5" : "left-1"}`} />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-text-primary text-sm">Feature this project</p>
-                      <p className="text-xs text-text-secondary">Show on homepage Featured Projects</p>
-                    </div>
-                  </label>
+                  <p className="text-text-secondary text-sm mt-1">{tagline || description || "No description"}</p>
+                  <div className="flex items-center gap-1.5 mt-2 text-xs text-text-secondary">
+                    <MapPin className="w-3.5 h-3.5" /> {locality}, {city}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3 text-xs">
+                    {reraApproved && <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 border border-green-500/20 font-semibold">✓ RERA</span>}
+                    {noBrokerage && <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20 font-semibold">No Brokerage</span>}
+                    <span className="px-2 py-0.5 rounded-full bg-bg-primary border border-border-default text-text-secondary capitalize">{projectType}</span>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-primary/10 text-amber-primary border border-amber-primary/20">{constructionStatus.replace(/-/g, " ")}</span>
+                  </div>
+                  <p className="text-xs text-text-tertiary mt-3">
+                    {configs.length} config{configs.length !== 1 ? "s" : ""} • {phases.length} phase{phases.length !== 1 ? "s" : ""} • {images.length} image{images.length !== 1 ? "s" : ""}
+                  </p>
                 </div>
               </div>
-            </SectionCard>
+            </Card>
+
+            <Card title="Publish Settings">
+              <Toggle on={isFeatured} onToggle={() => setIsFeatured((v) => !v)}
+                label="Feature this project"
+                sub="Show in the Featured Projects section on the homepage" />
+            </Card>
 
             {/* Action buttons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={() => handleSubmit(false)}
-                className="flex items-center justify-center gap-2 h-14 rounded-2xl border-2 border-border-default bg-bg-card text-text-primary font-semibold text-base hover:border-amber-primary/50 transition-all disabled:opacity-50"
-              >
-                <Save className="w-5 h-5" />
-                Save as Draft
+              <button type="button" disabled={submitting} onClick={() => handleSubmit(false)}
+                className="flex items-center justify-center gap-2 h-14 rounded-2xl border-2 border-border-default bg-bg-card text-text-primary font-semibold hover:border-amber-primary/50 transition-all disabled:opacity-50">
+                <Save className="w-5 h-5" /> Save as Draft
               </button>
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={() => handleSubmit(true)}
-                className="flex items-center justify-center gap-2 h-14 rounded-2xl bg-amber-primary text-slate-950 font-bold text-base hover:bg-amber-500 transition-all disabled:opacity-50 shadow-lg"
-              >
-                {isSubmitting ? (
-                  <div className="w-5 h-5 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
+              <button type="button" disabled={submitting} onClick={() => handleSubmit(true)}
+                className="flex items-center justify-center gap-2 h-14 rounded-2xl bg-amber-primary text-slate-950 font-bold hover:bg-amber-500 transition-all disabled:opacity-50 shadow-lg">
+                {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Eye className="w-5 h-5" />}
                 Publish Project
               </button>
             </div>
           </div>
         )}
 
-        {/* Navigation Buttons */}
+        {/* ── Navigation ── */}
         <div className={`mt-8 flex items-center ${step === 0 ? "justify-end" : "justify-between"}`}>
           {step > 0 && (
             <Button variant="outline" onClick={prev} className="gap-2 rounded-xl">

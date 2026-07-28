@@ -1,14 +1,28 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useProjectsStore } from "@/stores/projects-store";
 import {
   MapPin, CheckCircle2, Phone, MessageCircle, Download,
   ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark,
-  Eye, X, ChevronLeft, ChevronRight, Play,
+  Eye, X, ChevronLeft, ChevronRight, Play, Map,
 } from "lucide-react";
 import Link from "next/link";
 import type { Project, ProjectConfig } from "@/types/project";
+
+// ─── Lazy map (SSR unsafe) ─────────────────────────────────────────────────────
+const ProjectMapView = dynamic(
+  () => import("@/components/project/project-map-view"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[320px] flex items-center justify-center bg-bg-primary rounded-2xl border border-border-default animate-pulse">
+        <Map className="w-8 h-8 text-text-tertiary/40" />
+      </div>
+    ),
+  }
+);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -81,7 +95,7 @@ function GalleryModal({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-const TABS = ["Floor Plans", "Facilities", "Brochure", "Builder"] as const;
+const TABS = ["Floor Plans", "Facilities", "Location", "Brochure", "Builder"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -398,6 +412,42 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     </div>
                   ) : (
                     <p className="text-text-tertiary text-sm">No facilities listed.</p>
+                  )}
+                </div>
+              )}
+
+              {activeTab === "Location" && (
+                <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6 space-y-4">
+                  <h2 className="text-xl font-bold text-text-primary">Location & Map</h2>
+                  <div className="flex items-center gap-2 text-text-secondary text-sm">
+                    <MapPin className="w-4 h-4 text-amber-primary shrink-0" />
+                    <span>{project.location.address || `${project.location.locality}, ${project.location.city}, ${project.location.state}`}</span>
+                  </div>
+
+                  {/* Map */}
+                  <div style={{ height: "380px" }}>
+                    <ProjectMapView
+                      latitude={project.location.latitude}
+                      longitude={project.location.longitude}
+                      projectName={project.name}
+                      locality={project.location.locality}
+                      city={project.location.city}
+                      projectType={project.projectType}
+                    />
+                  </div>
+
+                  {/* Google Maps link */}
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${project.location.latitude},${project.location.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-default text-sm font-semibold text-text-primary hover:border-amber-primary hover:text-amber-primary transition-colors"
+                  >
+                    <MapPin className="w-4 h-4" /> Open in Google Maps
+                  </a>
+
+                  {project.location.pincode && (
+                    <p className="text-xs text-text-tertiary">Pincode: {project.location.pincode}</p>
                   )}
                 </div>
               )}
