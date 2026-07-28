@@ -146,6 +146,9 @@ export function HeroSection() {
     }).length;
   }, [properties, heroBudget]);
 
+  /** true whenever the user has moved either slider handle away from the full range */
+  const budgetActive = heroBudget[0] > 0 || heroBudget[1] < 100000000;
+
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({ left: -310, behavior: "smooth" });
@@ -162,6 +165,35 @@ export function HeroSection() {
 
   const homeCategories = useContentStore((state) => state.homeCategories);
 
+  /** Map each category id → which PropertyType values it covers */
+  const CATEGORY_TYPE_MAP: Record<string, string[]> = {
+    "new-listings":       [], // all types — special case
+    "apartments":         ["apartment"],
+    "villas":             ["villa"],
+    "individual-houses":  ["independent-house"],
+    "open-lands":         ["residential-land"],
+    "agricultural":       ["farmhouse", "residential-land"],
+    "commercial":         ["shops", "buildings", "commercial-spaces", "commercial-lands", "industrial-lands"],
+    "gated-communities":  ["apartment", "villa", "independent-house"],
+  };
+
+  /** Live count of matching properties per category given current budget */
+  const categoryBudgetCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const cat of homeCategories) {
+      const types = CATEGORY_TYPE_MAP[cat.id];
+      counts[cat.id] = properties.filter((p) => {
+        if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
+        const inBudget = p.price >= heroBudget[0] && p.price <= heroBudget[1];
+        if (!inBudget) return false;
+        // "new-listings" shows all types
+        if (!types || types.length === 0) return true;
+        return types.includes(p.propertyType as string);
+      }).length;
+    }
+    return counts;
+  }, [properties, heroBudget, homeCategories]);
+
   const browseCategories = useMemo(() => {
     return homeCategories.map((cat) => ({
       id: cat.id,
@@ -170,9 +202,17 @@ export function HeroSection() {
       badge: cat.badge,
       badgeClass: cat.badgeClass,
       image: cat.image,
-      href: cat.href || `/properties?type=buy&propertyType=${cat.type}`,
+      baseHref: cat.href || `/properties?type=buy&propertyType=${cat.type}`,
     }));
   }, [homeCategories]);
+
+  /** Append budget params to any category href when budget is active */
+  const getCatHref = (baseHref: string) => {
+    if (!budgetActive) return baseHref;
+    const url = new URL(baseHref, "http://x");
+    url.searchParams.set("budget", `${heroBudget[0]},${heroBudget[1]}`);
+    return url.pathname + "?" + url.searchParams.toString();
+  };
 
   return (
     <section className="relative w-full overflow-hidden text-white pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-20">
@@ -434,76 +474,104 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* ── Compact Budget Slider ── */}
+        {/* ── Premium Budget Slider ── */}
         <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-3 sm:mt-4">
-          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3">
-            <div className="flex justify-between items-center mb-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white/60">Budget (INR)</span>
-              <span className="text-xs sm:text-sm font-black text-amber-400">
-                {heroBudget[0] === 0 && heroBudget[1] === 100000000
-                  ? "Any Price"
-                  : `${formatINR(heroBudget[0])} – ${heroBudget[1] >= 100000000 ? "₹10+ Cr" : formatINR(heroBudget[1])}`}
-              </span>
-            </div>
+          <div
+            className="relative rounded-2xl overflow-hidden border border-white/10 shadow-xl"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)",
+              backdropFilter: "blur(18px)",
+              WebkitBackdropFilter: "blur(18px)",
+            }}
+          >
+            {/* Top accent line */}
+            <div className="absolute inset-x-0 top-0 h-[2px] rounded-t-2xl bg-gradient-to-r from-amber-500/0 via-amber-400/70 to-amber-500/0" />
 
-            <Slider
-              min={0}
-              max={100000000}
-              step={500000}
-              value={heroBudget}
-              onValueChange={(val) => setHeroBudget(val as [number, number])}
-              className="w-full mb-1"
-            />
+            <div className="px-4 pt-3.5 pb-3 sm:px-5 sm:pt-4 sm:pb-3.5">
+              {/* Header row */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  {/* Coin icon */}
+                  <div className="w-7 h-7 rounded-full bg-amber-500/15 border border-amber-400/25 flex items-center justify-center shrink-0">
+                    <span className="text-amber-400 font-black text-[13px] leading-none">₹</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 leading-none">Budget Range</p>
+                    <p className="text-[11px] font-semibold text-white/55 leading-none mt-0.5">Slide to filter by price</p>
+                  </div>
+                </div>
 
-            <div className="flex justify-between text-[9px] font-bold text-white/40 mb-2">
-              <span>₹0</span><span>₹10+ Cr</span>
-            </div>
-
-            <div className="flex items-center justify-between gap-1.5">
-              <div className="flex flex-wrap gap-1 items-center">
-                {[
-                  { label: "Any", min: 0, max: 100000000 },
-                  { label: "<30L", min: 0, max: 3000000 },
-                  { label: "30L–60L", min: 3000000, max: 6000000 },
-                  { label: "60L–1Cr", min: 6000000, max: 10000000 },
-                  { label: "1–2Cr", min: 10000000, max: 20000000 },
-                  { label: "2Cr+", min: 20000000, max: 100000000 },
-                ].map((p) => {
-                  const isSelected = heroBudget[0] === p.min && heroBudget[1] === p.max;
-                  return (
-                    <button
-                      key={p.label}
-                      type="button"
-                      onClick={() => setHeroBudget([p.min, p.max])}
-                      className={cn(
-                        "py-0.5 px-2 rounded-full text-[10px] font-extrabold border transition-all cursor-pointer",
-                        isSelected
-                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
-                          : "border-white/20 text-white/70 hover:border-amber-400 hover:text-white"
-                      )}
-                    >
-                      {p.label}
-                    </button>
-                  );
-                })}
+                {/* Price display pill */}
+                <div className="flex items-center gap-1.5 bg-amber-500/12 border border-amber-400/30 rounded-xl px-3 py-1.5">
+                  <span className="text-sm sm:text-base font-black text-amber-400 tracking-tight">
+                    {heroBudget[0] === 0 && heroBudget[1] === 100000000
+                      ? "Any Price"
+                      : `${formatINR(heroBudget[0])} – ${heroBudget[1] >= 100000000 ? "₹10Cr+" : formatINR(heroBudget[1])}`}
+                  </span>
+                </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => handleSearchSubmit()}
-                className="py-0.5 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[11px] rounded-full shadow-sm transition-all hover:scale-105 cursor-pointer shrink-0 ml-auto"
-              >
-                Apply ({matchingCount})
-              </button>
+              {/* Slider */}
+              <div className="px-1">
+                <Slider
+                  min={0}
+                  max={100000000}
+                  step={500000}
+                  value={heroBudget}
+                  onValueChange={(val) => setHeroBudget(val as [number, number])}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Footer: tick labels + Apply button */}
+              <div className="flex items-center justify-between mt-2.5">
+                <div className="flex items-center gap-3 text-[10px] font-bold text-white/35">
+                  <span>₹0</span>
+                  <span>₹30L</span>
+                  <span>₹1Cr</span>
+                  <span>₹5Cr</span>
+                  <span>₹10Cr+</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleSearchSubmit()}
+                  className="relative flex items-center gap-1.5 h-8 pl-3.5 pr-1.5 bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-[11px] rounded-full shadow-lg shadow-amber-500/25 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                >
+                  <span>Apply</span>
+                  <span className="w-5 h-5 rounded-full bg-slate-950/20 flex items-center justify-center text-[10px] font-black text-slate-950 leading-none">
+                    {matchingCount}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="w-full mt-12 text-left space-y-4">
+          {/* Header row */}
           <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-              Browse homes
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                Browse homes
+              </h2>
+              {/* Budget-active pill */}
+              <AnimatePresence>
+                {budgetActive && (
+                  <motion.span
+                    key="budget-chip"
+                    initial={{ opacity: 0, scale: 0.75, y: 4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.75, y: 4 }}
+                    transition={{ type: "spring", stiffness: 380, damping: 26 }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-300 text-[11px] font-bold"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    Filtered by budget
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </div>
             <Link
               href="/properties"
               className="text-xs sm:text-sm font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1 hover:underline"
@@ -512,44 +580,111 @@ export function HeroSection() {
             </Link>
           </div>
 
+          {/* Category cards grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-            {browseCategories.map((cat) => (
-              <Link
-                key={cat.id}
-                href={cat.href}
-                className="group relative h-40 sm:h-52 rounded-2xl overflow-hidden shadow-lg border border-white/10 block bg-slate-800 transition-all hover:shadow-2xl hover:-translate-y-1"
-              >
-                <Image
-                  src={cat.image}
-                  alt={cat.title}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
-                
-                {cat.badge && (
-                  <div
-                    className={cn(
-                      "absolute top-3 right-3 text-xs px-2.5 py-1 rounded-full shadow-xs backdrop-blur-sm",
-                      cat.badgeClass
-                        ? cat.badgeClass
-                        : "bg-white/90 text-slate-900 font-bold"
-                    )}
-                  >
-                    {cat.badge}
-                  </div>
-                )}
+            {browseCategories.map((cat) => {
+              const catCount = categoryBudgetCounts[cat.id] ?? 0;
+              const hasBudgetResults = budgetActive && catCount > 0;
+              const noBudgetResults = budgetActive && catCount === 0;
 
-                <div className="absolute bottom-3 left-3 right-3">
-                  <span className="font-heading font-bold text-base sm:text-lg text-white group-hover:text-amber-400 transition-colors block leading-snug">
-                    {cat.title}
-                  </span>
-                  <span className="text-[11px] text-slate-300 block line-clamp-1">
-                    {cat.subtitle}
-                  </span>
-                </div>
-              </Link>
-            ))}
+              return (
+                <Link
+                  key={cat.id}
+                  href={getCatHref(cat.baseHref)}
+                  className={cn(
+                    "group relative h-40 sm:h-52 rounded-2xl overflow-hidden shadow-lg block bg-slate-800 transition-all duration-300",
+                    hasBudgetResults
+                      ? "border-2 border-amber-400/70 shadow-amber-500/20 hover:shadow-amber-500/40 hover:-translate-y-1.5 hover:shadow-2xl"
+                      : noBudgetResults
+                      ? "border border-white/5 opacity-50 hover:opacity-70"
+                      : "border border-white/10 hover:shadow-2xl hover:-translate-y-1"
+                  )}
+                >
+                  <Image
+                    src={cat.image}
+                    alt={cat.title}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  {/* Dark scrim */}
+                  <div className={cn(
+                    "absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent transition-opacity duration-300",
+                    hasBudgetResults ? "from-slate-950/90" : ""
+                  )} />
+
+                  {/* Amber glow frame when matches found */}
+                  {hasBudgetResults && (
+                    <div className="absolute inset-0 ring-2 ring-amber-400/40 rounded-2xl pointer-events-none" />
+                  )}
+
+                  {/* Category badge (top-right) — hidden when budget count shows */}
+                  {cat.badge && !budgetActive && (
+                    <div
+                      className={cn(
+                        "absolute top-3 right-3 text-xs px-2.5 py-1 rounded-full shadow-xs backdrop-blur-sm",
+                        cat.badgeClass ? cat.badgeClass : "bg-white/90 text-slate-900 font-bold"
+                      )}
+                    >
+                      {cat.badge}
+                    </div>
+                  )}
+
+                  {/* ── Budget count badge (top-right) ── */}
+                  <AnimatePresence>
+                    {budgetActive && (
+                      <motion.div
+                        key={`count-${cat.id}`}
+                        initial={{ opacity: 0, scale: 0.55, y: -6 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.55, y: -6 }}
+                        transition={{ type: "spring", stiffness: 420, damping: 24, delay: 0.04 }}
+                        className={cn(
+                          "absolute top-2.5 right-2.5 flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black shadow-lg backdrop-blur-sm border",
+                          catCount > 0
+                            ? "bg-amber-500 text-slate-950 border-amber-400 shadow-amber-500/40"
+                            : "bg-slate-800/90 text-white/40 border-white/10"
+                        )}
+                      >
+                        {catCount > 0 ? (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-950/40" />
+                            {catCount} found
+                          </>
+                        ) : (
+                          <span>0 found</span>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Bottom info */}
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <span className={cn(
+                      "font-heading font-bold text-base sm:text-lg block leading-snug transition-colors",
+                      hasBudgetResults ? "text-amber-300 group-hover:text-amber-200" : "text-white group-hover:text-amber-400"
+                    )}>
+                      {cat.title}
+                    </span>
+                    <span className="text-[11px] text-slate-300 block line-clamp-1 mt-0.5">
+                      {budgetActive && catCount > 0
+                        ? `${catCount} propert${catCount === 1 ? "y" : "ies"} in your range`
+                        : cat.subtitle}
+                    </span>
+                    {/* "Tap to view" CTA only when there are results */}
+                    {hasBudgetResults && (
+                      <motion.span
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.15 }}
+                        className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-amber-400/80 group-hover:text-amber-300"
+                      >
+                        View all <ChevronRight className="w-3 h-3" />
+                      </motion.span>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>
