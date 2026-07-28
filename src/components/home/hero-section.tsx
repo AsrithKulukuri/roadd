@@ -20,7 +20,7 @@ import {
   Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatINR } from "@/lib/utils";
+import { formatINR, formatINRWords } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useContentStore } from "@/stores/content-store";
@@ -506,7 +506,7 @@ export function HeroSection() {
                   <span className="text-sm sm:text-base font-black text-amber-400 tracking-tight">
                     {heroBudget[0] === 0 && heroBudget[1] === 100000000
                       ? "Any Price"
-                      : `${formatINR(heroBudget[0])} – ${heroBudget[1] >= 100000000 ? "₹10Cr+" : formatINR(heroBudget[1])}`}
+                      : `${formatINRWords(heroBudget[0])} – ${formatINRWords(heroBudget[1], true)}`}
                   </span>
                 </div>
               </div>
@@ -527,10 +527,10 @@ export function HeroSection() {
               <div className="flex items-center justify-between mt-2.5">
                 <div className="flex items-center gap-3 text-[10px] font-bold text-white/35">
                   <span>₹0</span>
-                  <span>₹30L</span>
-                  <span>₹1Cr</span>
-                  <span>₹5Cr</span>
-                  <span>₹10Cr+</span>
+                  <span>₹30 Lakhs</span>
+                  <span>₹1 Crore</span>
+                  <span>₹5 Crores</span>
+                  <span>₹10 Crores+</span>
                 </div>
 
                 <button

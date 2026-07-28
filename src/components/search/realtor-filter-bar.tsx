@@ -17,7 +17,7 @@ import {
   Trees,
   RotateCcw,
 } from "lucide-react";
-import { cn, formatINR } from "@/lib/utils";
+import { cn, formatINR, formatINRWords } from "@/lib/utils";
 import type { FilterState } from "./search-filters";
 import { Slider } from "@/components/ui/slider";
 
@@ -142,9 +142,9 @@ export function RealtorFilterBar({
     if (min === 0 && max === 100000000) return "Price";
     const preset = pricePresets.find((p) => p.min === min && p.max === max);
     if (preset && preset.min !== 0) return preset.label;
-    if (min > 0 && max < 100000000) return `${formatINR(min)} - ${formatINR(max)}`;
-    if (min > 0) return `> ${formatINR(min)}`;
-    if (max < 100000000) return `< ${formatINR(max)}`;
+    if (min > 0 && max < 100000000) return `${formatINRWords(min)} – ${formatINRWords(max)}`;
+    if (min > 0) return `> ${formatINRWords(min)}`;
+    if (max < 100000000) return `< ${formatINRWords(max)}`;
     return "Price";
   };
 
@@ -339,8 +339,8 @@ export function RealtorFilterBar({
                   <div className="flex justify-between items-center">
                     <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Set Budget</span>
                     <span className="text-sm font-black text-amber-500">
-                      {formatINR(filters.budget[0])} –{" "}
-                      {filters.budget[1] >= 100000000 ? "₹10+ Cr" : formatINR(filters.budget[1])}
+                      {formatINRWords(filters.budget[0])} –{" "}
+                      {formatINRWords(filters.budget[1], true)}
                     </span>
                   </div>
 
@@ -514,8 +514,8 @@ export function RealtorFilterBar({
               <div className="flex justify-between items-center">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Set Budget</span>
                 <span className="text-sm font-black text-amber-500">
-                  {formatINR(filters.budget[0])} –{" "}
-                  {filters.budget[1] >= 100000000 ? "₹10+ Cr" : formatINR(filters.budget[1])}
+                  {formatINRWords(filters.budget[0])} –{" "}
+                  {formatINRWords(filters.budget[1], true)}
                 </span>
               </div>
 

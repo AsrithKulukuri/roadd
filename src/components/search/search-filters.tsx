@@ -22,7 +22,7 @@ import {
   DoorOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatINR, cn } from "@/lib/utils";
+import { formatINR, formatINRWords, cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 
 export interface FilterState {
@@ -241,10 +241,8 @@ export function SearchFiltersModal({
                 Budget Range (INR)
               </label>
               <span className="font-black text-amber-500 text-sm">
-                {formatINR(localFilters.budget[0])} –{" "}
-                {localFilters.budget[1] >= 100000000
-                  ? "₹10+ Cr"
-                  : formatINR(localFilters.budget[1])}
+                {formatINRWords(localFilters.budget[0])} –{" "}
+                {formatINRWords(localFilters.budget[1], true)}
               </span>
             </div>
 

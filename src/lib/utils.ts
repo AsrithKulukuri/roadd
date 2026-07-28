@@ -23,24 +23,24 @@ export function formatINR(amount: number): string {
 }
 
 /**
- * Formats price in compact Indian notation (L for Lakh, Cr for Crore).
+ * Formats price in compact Indian notation using full words (Lakhs / Crore).
  * Examples:
- *   formatPriceCompact(8500000) => "₹85L"
- *   formatPriceCompact(15000000) => "₹1.5Cr"
- *   formatPriceCompact(250000000) => "₹25Cr"
+ *   formatPriceCompact(8500000)  => "₹85 Lakhs"
+ *   formatPriceCompact(15000000) => "₹1.5 Crore"
+ *   formatPriceCompact(250000000)=> "₹25 Crore"
  */
 export function formatPriceCompact(amount: number): string {
   if (amount >= 10000000) {
     const crore = amount / 10000000;
     const formatted =
       crore % 1 === 0 ? crore.toFixed(0) : crore.toFixed(1).replace(/\.0$/, "");
-    return `₹${formatted}Cr`;
+    return `₹${formatted} Crore`;
   }
   if (amount >= 100000) {
     const lakh = amount / 100000;
     const formatted =
       lakh % 1 === 0 ? lakh.toFixed(0) : lakh.toFixed(1).replace(/\.0$/, "");
-    return `₹${formatted}L`;
+    return `₹${formatted} Lakhs`;
   }
   if (amount >= 1000) {
     const thousands = amount / 1000;
@@ -52,6 +52,38 @@ export function formatPriceCompact(amount: number): string {
   }
   return `₹${amount}`;
 }
+
+/**
+ * Formats a price as human-readable Indian words for use in filter/slider displays.
+ * Examples:
+ *   formatINRWords(0)          => "₹0"
+ *   formatINRWords(3000000)    => "₹30 Lakhs"
+ *   formatINRWords(10000000)   => "₹1 Crore"
+ *   formatINRWords(15000000)   => "₹1.5 Crores"
+ *   formatINRWords(100000000)  => "₹10 Crores+"
+ */
+export function formatINRWords(amount: number, isMax = false): string {
+  if (isMax && amount >= 100000000) return "₹10 Crores+";
+  if (amount === 0) return "₹0";
+  if (amount >= 10000000) {
+    const crore = amount / 10000000;
+    const formatted =
+      crore % 1 === 0 ? crore.toFixed(0) : crore.toFixed(1).replace(/\.0$/, "");
+    const unit = crore === 1 ? "Crore" : "Crores";
+    return `₹${formatted} ${unit}`;
+  }
+  if (amount >= 100000) {
+    const lakh = amount / 100000;
+    const formatted =
+      lakh % 1 === 0 ? lakh.toFixed(0) : lakh.toFixed(1).replace(/\.0$/, "");
+    return `₹${formatted} Lakhs`;
+  }
+  if (amount >= 1000) {
+    return `₹${(amount / 1000).toFixed(0)}K`;
+  }
+  return `₹${amount}`;
+}
+
 
 /**
  * Formats area with unit label.
