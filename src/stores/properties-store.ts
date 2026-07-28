@@ -35,16 +35,8 @@ export const usePropertiesStore = create<PropertiesState>()(
 
           if (error) throw error;
           
-          if (data && data.length > 0) {
-            const dbProperties = data as Property[];
-            set((state) => {
-              const dbIds = new Set(dbProperties.map((p) => p.id));
-              const localOnlyProperties = state.properties.filter((p) => !dbIds.has(p.id));
-              return {
-                properties: [...localOnlyProperties, ...dbProperties],
-                isLoading: false,
-              };
-            });
+          if (data) {
+            set({ properties: data as Property[], isLoading: false });
           } else {
             set({ isLoading: false });
           }
