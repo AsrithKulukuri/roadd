@@ -25,20 +25,25 @@ export const useProjectsStore = create<ProjectsState>()(
       // ─── Fetch (Supabase is source of truth) ──────────────────────────────
       fetchProjects: async () => {
         set({ isLoading: true, error: null });
-        try {
-          const { data, error } = await supabase
-            .from('projects')
-            .select('*')
-            .order('createdAt', { ascending: false });
 
-          if (error) throw error;
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .order('createdAt', { ascending: false });
 
-          // Supabase is source of truth — fully replace local state
-          set({ projects: (data as Project[]) ?? [], isLoading: false });
-        } catch (err: any) {
-          console.error('Error fetching projects:', err);
-          set({ error: err.message, isLoading: false });
+        if (error) {
+          // Log full Supabase error details for debugging
+          console.warn(
+            'Projects fetch warning (keeping local state):',
+            error.message ?? error.details ?? error.code ?? JSON.stringify(error)
+          );
+          // Keep existing local state — table may not exist yet
+          set({ isLoading: false, error: error.message ?? 'Failed to fetch projects' });
+          return;
         }
+
+        // Supabase is source of truth — fully replace local state
+        set({ projects: (data as Project[]) ?? [], isLoading: false });
       },
 
       // ─── Add ──────────────────────────────────────────────────────────────
