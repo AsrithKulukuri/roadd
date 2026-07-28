@@ -219,7 +219,7 @@ export const navigationLinks = {
     { label: "Buy", href: "/properties?type=sale" },
     { label: "Rent", href: "/properties?type=rent" },
     { label: "Commercial", href: "/commercial" },
-    { label: "New Projects", href: "/new-projects" },
+    { label: "New Projects", href: "/projects" },
     { label: "Agents", href: "/agents" },
   ],
   footer: {
@@ -232,6 +232,7 @@ export const navigationLinks = {
     ],
     forBuyers: [
       { label: "Browse Properties", href: "/properties" },
+      { label: "New Projects", href: "/projects" },
       { label: "Home Loans", href: "/mortgage-calculator" },
       { label: "EMI Calculator", href: "/mortgage-calculator" },
       { label: "Property Guides", href: "/blog" },

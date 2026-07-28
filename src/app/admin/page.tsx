@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useContentStore, TrendingLocation, HomeCategory, ApRegion } from "@/stores/content-store";
+import { useProjectsStore } from "@/stores/projects-store";
 import { getPropertyRefId, findPropertyByRefId } from "@/lib/ref-id";
 import { formatPriceCompact, formatINR } from "@/lib/utils";
 import { toast } from "sonner";
@@ -34,6 +35,7 @@ import {
   Layers,
   Compass,
   Zap,
+  FolderOpen,
 } from "lucide-react";
 import { AnalyticsCharts } from "@/components/admin/analytics-charts";
 import { AiWriter } from "@/components/admin/ai-writer";
@@ -51,6 +53,8 @@ export default function AdminDashboardPage() {
     toggleRecommended,
     updateRefId,
   } = usePropertiesStore();
+
+  const { projects } = useProjectsStore();
 
   const {
     trendingLocations,
@@ -120,6 +124,8 @@ export default function AdminDashboardPage() {
   const totalValue = properties
     .filter((p) => p.listingType === "sale" && p.status !== "sold")
     .reduce((acc, curr) => acc + curr.price, 0);
+  const totalProjects = projects.length;
+  const publishedProjects = projects.filter((p) => p.isPublished).length;
 
   // Live Reference ID Search Tester
   const liveRefMatch = useMemo(() => {
@@ -350,6 +356,28 @@ export default function AdminDashboardPage() {
             {formatPriceCompact(totalValue)}
           </div>
         </div>
+
+        {/* Projects quick stat */}
+        <Link href="/admin/projects" className="col-span-2 lg:col-span-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-3.5 sm:p-5 shadow-sm flex items-center justify-between gap-4 hover:from-amber-500/20 hover:to-orange-500/20 transition-all">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Builder Projects</span>
+            <div className="flex items-center gap-3">
+              <div>
+                <span className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading">{totalProjects}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 ml-1.5">total</span>
+              </div>
+              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
+              <div>
+                <span className="text-xl sm:text-2xl font-black text-green-600 font-heading">{publishedProjects}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 ml-1.5">published</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <FolderOpen className="w-8 h-8 text-amber-500" />
+            <ArrowRight className="w-4 h-4 text-amber-500" />
+          </div>
+        </Link>
       </div>
 
       {/* MOBILE-FRIENDLY ADMIN POWER TABS CAPSULE NAVIGATION */}
