@@ -1,57 +1,117 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, Home, Landmark, MapPin, CheckCircle2 } from "lucide-react";
+import { Building2, Home, Landmark, MapPin, CheckCircle2, Ruler, SquareDashed, Trees } from "lucide-react";
 import type { Project, ProjectType } from "@/types/project";
 
-const TYPE_CONFIG: Record<ProjectType, { icon: React.ElementType; label: string; color: string }> = {
-  apartment: { icon: Building2, label: "Apartment", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
-  villa:     { icon: Home,      label: "Villa",     color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
-  venture:   { icon: Landmark,  label: "Venture",   color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+// ─── Constants ──────────────────────────────────────────────────────────────
+const TYPE_CONFIG: Record<ProjectType, { icon: React.ElementType; label: string; cardAccent: string; badgeClass: string }> = {
+  apartment: {
+    icon: Building2,
+    label: "Apartment",
+    cardAccent: "from-blue-500/5 to-transparent",
+    badgeClass: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  },
+  villa: {
+    icon: Home,
+    label: "Villa",
+    cardAccent: "from-emerald-500/5 to-transparent",
+    badgeClass: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+  },
+  venture: {
+    icon: Landmark,
+    label: "Venture",
+    cardAccent: "from-amber-500/5 to-transparent",
+    badgeClass: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  },
 };
 
-const STATUS_COLORS = {
+const STATUS_COLORS: Record<string, string> = {
   "under-construction": "bg-orange-500/10 text-orange-600",
   "ready-to-move":      "bg-green-500/10 text-green-600",
   "new-launch":         "bg-blue-500/10 text-blue-600",
 };
-
-const STATUS_LABELS = {
+const STATUS_LABELS: Record<string, string> = {
   "under-construction": "Under Construction",
   "ready-to-move":      "Ready to Move",
   "new-launch":         "New Launch",
 };
 
+// ─── Formatting ──────────────────────────────────────────────────────────────
 function formatINRCrore(amount: number): string {
+  if (!amount) return "";
   if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
-  if (amount >= 100000)   return `₹${(amount / 100000).toFixed(2)} L`;
+  if (amount >= 100000)   return `₹${(amount / 100000).toFixed(1)} L`;
   return `₹${amount.toLocaleString("en-IN")}`;
 }
 
+function getPriceLabel(project: Project): string {
+  const allPrices = project.configurations.flatMap((c) => [c.priceMin, c.priceMax]).filter(Boolean);
+  if (!allPrices.length) return "Price on request";
+  const min = Math.min(...allPrices);
+  const max = Math.max(...allPrices);
+  return min === max ? formatINRCrore(min) : `${formatINRCrore(min)} – ${formatINRCrore(max)}`;
+}
+
+function getVenturePricePerUnit(project: Project): string | null {
+  const prices = project.configurations.map((c) => c.pricePerUnit).filter(Boolean) as number[];
+  if (!prices.length) return null;
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  return min === max
+    ? `₹${min.toLocaleString("en-IN")}/sq.yd`
+    : `₹${min.toLocaleString("en-IN")} – ₹${max.toLocaleString("en-IN")}/sq.yd`;
+}
+
+function getPlotSizeRange(project: Project): string | null {
+  const sizes = project.configurations.flatMap((c) => [c.plotSizeMin, c.plotSizeMax]).filter(Boolean) as number[];
+  if (!sizes.length) return null;
+  const min = Math.min(...sizes);
+  const max = Math.max(...sizes);
+  return min === max ? `${min} sq.yds` : `${min}–${max} sq.yds`;
+}
+
+function getAreaRange(project: Project): string | null {
+  const sizes = project.configurations.flatMap((c) => [c.builtUpAreaMin, c.builtUpAreaMax]).filter(Boolean) as number[];
+  if (!sizes.length) return null;
+  const min = Math.min(...sizes);
+  const max = Math.max(...sizes);
+  return min === max ? `${min} sq.ft` : `${min}–${max} sq.ft`;
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 interface ProjectCardProps {
   project: Project;
   index?: number;
 }
 
 export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
-  const TC = TYPE_CONFIG[project.projectType];
+  const TC   = TYPE_CONFIG[project.projectType];
   const Icon = TC.icon;
+  const isVenture   = project.projectType === "venture";
+  const isVilla     = project.projectType === "villa";
+  const isApartment = project.projectType === "apartment";
 
-  const allPrices = project.configurations.flatMap((c) => [c.priceMin, c.priceMax]).filter(Boolean);
-  const minPrice = allPrices.length ? Math.min(...allPrices) : 0;
-  const maxPrice = allPrices.length ? Math.max(...allPrices) : 0;
-  const priceLabel = !allPrices.length
-    ? "Price on request"
-    : minPrice === maxPrice
-    ? formatINRCrore(minPrice)
-    : `${formatINRCrore(minPrice)} – ${formatINRCrore(maxPrice)}`;
-
-  // Unique BHK labels
+  // Config display labels (BHK / plot types)
   const configLabels = [...new Set(project.configurations.map((c) => c.label))];
+
+  // Price + unit info
+  const priceLabel      = getPriceLabel(project);
+  const pricePerUnit    = isVenture ? getVenturePricePerUnit(project) : null;
+  const plotSizeRange   = (isVenture || isVilla) ? getPlotSizeRange(project) : null;
+  const builtUpRange    = (isApartment || isVilla) ? getAreaRange(project) : null;
+
+  // Total info
+  const totalLabel = isVenture
+    ? project.totalUnits ? `${project.totalUnits} Plots` : project.totalArea
+    : project.totalUnits
+    ? `${project.totalUnits} ${isVilla ? "Villas" : "Units"}`
+    : null;
 
   return (
     <Link href={`/projects/${project.slug}`} className="group block">
-      <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl overflow-hidden shadow-sm hover:shadow-elevated hover:-translate-y-1 transition-all duration-300">
+      <div className="relative bg-white dark:bg-bg-card border border-border-default rounded-3xl overflow-hidden shadow-sm hover:shadow-elevated hover:-translate-y-1 transition-all duration-300">
+
         {/* Image */}
         <div className="relative aspect-[16/9] overflow-hidden bg-bg-primary">
           {project.coverImage ? (
@@ -61,25 +121,31 @@ export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-primary/10 to-amber-primary/5">
-              <Icon className="w-12 h-12 text-amber-primary/40" />
+            <div className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br ${TC.cardAccent} bg-bg-primary gap-3`}>
+              <Icon className="w-14 h-14 text-text-tertiary/30" />
+              <span className="text-xs text-text-tertiary font-medium">{TC.label} Project</span>
             </div>
           )}
 
-          {/* Top badges */}
-          <div className="absolute top-3 left-3 flex items-center gap-2">
-            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border backdrop-blur-sm ${TC.color}`}>
-              <Icon className="w-3 h-3 inline mr-1" />
+          {/* Type + RERA badges */}
+          <div className="absolute top-3 left-3 flex items-center gap-2 flex-wrap">
+            <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border backdrop-blur-sm ${TC.badgeClass}`}>
+              <Icon className="w-3 h-3" />
               {TC.label}
             </span>
             {project.reraApproved && (
-              <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-500/90 text-white backdrop-blur-sm flex items-center gap-1">
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-500/90 text-white backdrop-blur-sm">
                 <CheckCircle2 className="w-3 h-3" /> RERA
+              </span>
+            )}
+            {project.noBrokerage && (
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-900/80 text-white backdrop-blur-sm">
+                0% Brokerage
               </span>
             )}
           </div>
 
-          {/* Status pill */}
+          {/* Status */}
           <div className="absolute bottom-3 left-3">
             <span className={`px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${STATUS_COLORS[project.constructionStatus]}`}>
               {STATUS_LABELS[project.constructionStatus]}
@@ -88,50 +154,102 @@ export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
 
           {/* Builder logo */}
           {project.builderLogoUrl && (
-            <div className="absolute bottom-3 right-3 bg-white rounded-lg px-2 py-1 shadow">
-              <img src={project.builderLogoUrl} alt={project.builderName} className="h-5 object-contain max-w-[70px]" />
+            <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm rounded-lg px-2 py-1 shadow">
+              <img src={project.builderLogoUrl} alt={project.builderName} className="h-5 object-contain max-w-[72px]" />
             </div>
           )}
         </div>
 
-        {/* Card Body */}
+        {/* Body */}
         <div className="p-4 space-y-3">
+
           {/* Name + Location */}
           <div>
-            <h3 className="font-bold text-text-primary text-lg leading-tight group-hover:text-amber-primary transition-colors">
+            <h3 className="font-bold text-text-primary text-lg leading-tight group-hover:text-amber-primary transition-colors line-clamp-1">
               {project.name}
             </h3>
             <div className="flex items-center gap-1 text-text-secondary text-sm mt-0.5">
-              <MapPin className="w-3.5 h-3.5 shrink-0" />
-              {project.location.locality}, {project.location.city}
+              <MapPin className="w-3.5 h-3.5 shrink-0 text-amber-primary" />
+              <span className="truncate">{project.location.locality}, {project.location.city}</span>
             </div>
           </div>
 
-          {/* BHK config tags */}
-          {configLabels.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {configLabels.slice(0, 4).map((label) => (
-                <span key={label} className="px-2.5 py-1 rounded-full text-xs font-medium bg-bg-primary border border-border-default text-text-secondary">
-                  {label}
-                </span>
-              ))}
-              {configLabels.length > 4 && (
-                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-bg-primary border border-border-default text-text-secondary">
-                  +{configLabels.length - 4} more
-                </span>
+          {/* TYPE-ADAPTIVE config pills */}
+          {isVenture ? (
+            /* Venture: show plot types */
+            <div className="space-y-1.5">
+              {plotSizeRange && (
+                <div className="flex items-center gap-2 text-xs text-text-secondary">
+                  <SquareDashed className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>Plot sizes: <span className="font-semibold text-text-primary">{plotSizeRange}</span></span>
+                </div>
+              )}
+              {totalLabel && (
+                <div className="flex items-center gap-2 text-xs text-text-secondary">
+                  <Trees className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <span>{totalLabel}</span>
+                </div>
+              )}
+              {configLabels.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {configLabels.slice(0, 3).map((label) => (
+                    <span key={label} className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/5 border border-amber-500/20 text-amber-700 dark:text-amber-400">
+                      {label}
+                    </span>
+                  ))}
+                  {configLabels.length > 3 && (
+                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-bg-primary border border-border-default text-text-tertiary">
+                      +{configLabels.length - 3} more
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Apartment / Villa: show BHK tags + area */
+            <div className="space-y-2">
+              {configLabels.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {configLabels.slice(0, 4).map((label) => (
+                    <span key={label} className="px-2.5 py-1 rounded-full text-xs font-medium bg-bg-primary border border-border-default text-text-secondary">
+                      {label}
+                    </span>
+                  ))}
+                  {configLabels.length > 4 && (
+                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-bg-primary border border-border-default text-text-tertiary">
+                      +{configLabels.length - 4} more
+                    </span>
+                  )}
+                </div>
+              )}
+              {builtUpRange && (
+                <div className="flex items-center gap-2 text-xs text-text-secondary">
+                  <Ruler className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span>{builtUpRange}</span>
+                </div>
               )}
             </div>
           )}
 
-          {/* Price + Builder divider */}
-          <div className="pt-2 border-t border-border-default flex items-end justify-between">
-            <div>
-              <p className="text-xs text-text-tertiary uppercase tracking-wide">Price Range</p>
-              <p className="font-bold text-amber-primary text-base">{priceLabel}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-text-tertiary">By</p>
-              <p className="text-sm font-semibold text-text-primary truncate max-w-[120px]">{project.builderName}</p>
+          {/* Price row */}
+          <div className="pt-2 border-t border-border-default">
+            <div className="flex items-end justify-between gap-2">
+              <div>
+                <p className="text-[10px] text-text-tertiary uppercase tracking-wide font-medium">
+                  {isVenture ? "Starting Price" : "Price Range"}
+                </p>
+                <p className="font-bold text-amber-primary text-base leading-tight">{priceLabel}</p>
+                {pricePerUnit && (
+                  <p className="text-[11px] text-text-secondary font-medium mt-0.5">{pricePerUnit}</p>
+                )}
+              </div>
+              <div className="text-right shrink-0 max-w-[120px]">
+                <p className="text-[10px] text-text-tertiary uppercase tracking-wide">By</p>
+                <p className="text-sm font-semibold text-text-primary truncate">{project.builderName}</p>
+                {totalLabel && !isVenture && (
+                  <p className="text-[10px] text-text-tertiary">{totalLabel}</p>
+                )}
+              </div>
             </div>
           </div>
         </div>

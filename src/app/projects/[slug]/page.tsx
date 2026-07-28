@@ -226,7 +226,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     : "border-transparent text-text-secondary hover:text-text-primary"
                 }`}
               >
-                {tab}
+                {tab === "Floor Plans" && project.projectType === "venture" ? "Plot Layouts" : tab}
               </button>
             ))}
             <div className="ml-auto flex items-center gap-2 py-2 shrink-0">
@@ -309,7 +309,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                             <p className="text-xs text-text-tertiary">Possession: {phase.possessionDate}</p>
                           )}
                           {phase.totalUnits && (
-                            <p className="text-xs text-text-tertiary">{phase.totalUnits} units</p>
+                            <p className="text-xs text-text-tertiary">{phase.totalUnits} {project.projectType === "venture" ? "plots" : "units"}</p>
                           )}
                         </div>
                       </div>
@@ -342,7 +342,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               {/* Tab Content Area */}
               {activeTab === "Floor Plans" && (
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
-                  <h2 className="text-xl font-bold text-text-primary mb-4">Floor Plans &amp; Pricing</h2>
+                  <h2 className="text-xl font-bold text-text-primary mb-4">
+                    {project.projectType === "venture" ? "Plot Layouts & Pricing" : project.projectType === "villa" ? "Villa Configurations & Pricing" : "Floor Plans & Pricing"}
+                  </h2>
 
                   {/* Config tabs */}
                   <div className="flex gap-2 flex-wrap mb-5">
@@ -362,8 +364,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   {activeConfig && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="p-4 rounded-2xl border border-border-default bg-bg-primary space-y-2">
-                        <p className="text-xs font-semibold text-text-tertiary uppercase">Area</p>
-                        {activeConfig.builtUpAreaMin != null && (
+                        <p className="text-xs font-semibold text-text-tertiary uppercase">
+                          {project.projectType === "venture" ? "Plot Size" : "Area"}
+                        </p>
+                        {activeConfig.builtUpAreaMin != null && project.projectType !== "venture" && (
                           <p className="text-base font-bold text-text-primary">
                             {activeConfig.builtUpAreaMin} – {activeConfig.builtUpAreaMax} sq.ft
                             <span className="text-xs text-text-tertiary ml-1">(Built-up)</span>
@@ -371,12 +375,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                         )}
                         {activeConfig.plotSizeMin != null && (
                           <p className="text-base font-bold text-text-primary">
-                            {activeConfig.plotSizeMin} – {activeConfig.plotSizeMax} sq.yds
+                            {activeConfig.plotSizeMin}
+                            {activeConfig.plotSizeMax && activeConfig.plotSizeMax !== activeConfig.plotSizeMin ? ` – ${activeConfig.plotSizeMax}` : ""} sq.yds
                           </p>
                         )}
                         <p className="text-xl font-bold text-amber-primary">
-                          {formatINRCrore(activeConfig.priceMin)} – {formatINRCrore(activeConfig.priceMax)}
+                          {formatINRCrore(activeConfig.priceMin)}
+                          {activeConfig.priceMax && activeConfig.priceMax !== activeConfig.priceMin ? ` – ${formatINRCrore(activeConfig.priceMax)}` : ""}
                         </p>
+                        {activeConfig.pricePerUnit != null && (
+                          <p className="text-xs text-text-secondary font-medium">
+                            ₹{activeConfig.pricePerUnit.toLocaleString("en-IN")}/{project.projectType === "venture" ? "sq.yd" : "sq.ft"}
+                          </p>
+                        )}
                         {activeConfig.constructionStatus && (
                           <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[activeConfig.constructionStatus]}`}>
                             {STATUS_LABELS[activeConfig.constructionStatus]}
