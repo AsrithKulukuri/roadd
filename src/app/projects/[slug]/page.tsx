@@ -166,9 +166,37 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
         </div>
 
         {/* Hero Gallery */}
-        <div className="max-w-7xl mx-auto px-4 mb-4">
-          <div className="grid grid-cols-3 gap-2 rounded-2xl overflow-hidden" style={{ height: "320px" }}>
-            {/* Main image */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 mb-4">
+          {/* Mobile: single full image with photo count badge */}
+          <div className="sm:hidden relative aspect-[4/3] rounded-2xl overflow-hidden bg-bg-card cursor-pointer" onClick={() => heroImage && setGalleryIdx(0)}>
+            {heroImage ? (
+              <img src={heroImage} alt={project.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-amber-primary/20 to-amber-primary/5 flex items-center justify-center">
+                <TypeIcon className="w-16 h-16 text-amber-primary/30" />
+              </div>
+            )}
+            {galleryAll.length > 0 && (
+              <button onClick={(e) => { e.stopPropagation(); setGalleryIdx(0); }}
+                className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/70 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                <Eye className="w-3.5 h-3.5" /> {galleryAll.length} Photos
+              </button>
+            )}
+            {/* Thumbnail strip */}
+            {galleryAll.length > 1 && (
+              <div className="absolute bottom-0 left-0 right-0 px-3 pb-2 pt-6 bg-gradient-to-t from-black/60 flex gap-2 overflow-x-auto scrollbar-none">
+                {galleryAll.slice(0, 6).map((img, i) => (
+                  <div key={i} onClick={(e) => { e.stopPropagation(); setGalleryIdx(i); }}
+                    className="shrink-0 w-12 h-9 rounded-lg overflow-hidden border-2 border-white/60 cursor-pointer">
+                    <img src={img.url} alt={img.alt} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Desktop: 3-col grid */}
+          <div className="hidden sm:grid grid-cols-3 gap-2 rounded-2xl overflow-hidden" style={{ height: "320px" }}>
             <div className="col-span-2 relative cursor-pointer group" onClick={() => heroImage && setGalleryIdx(0)}>
               {heroImage ? (
                 <img src={heroImage} alt={project.name} className="w-full h-full object-cover" />
@@ -187,7 +215,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 </button>
               )}
             </div>
-            {/* Side images */}
             <div className="flex flex-col gap-2">
               {sideImages.length > 0 ? (
                 sideImages.map((img, i) => (
@@ -215,12 +242,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
         {/* Sticky Tabs */}
         <div className="sticky top-16 z-20 bg-white dark:bg-bg-card border-b border-border-default shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 flex items-center gap-1 overflow-x-auto">
+          <div className="max-w-7xl mx-auto px-2 sm:px-4 flex items-center gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none touch-pan-x">
             {TABS.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-3.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
+                className={`shrink-0 px-3 sm:px-4 py-3.5 text-xs sm:text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
                   activeTab === tab
                     ? "border-amber-primary text-amber-primary"
                     : "border-transparent text-text-secondary hover:text-text-primary"
@@ -229,15 +256,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 {tab === "Floor Plans" && project.projectType === "venture" ? "Plot Layouts" : tab}
               </button>
             ))}
-            <div className="ml-auto flex items-center gap-2 py-2 shrink-0">
+            <div className="ml-auto flex items-center gap-2 py-2 shrink-0 pl-2">
               {project.brochureUrl && (
                 <a href={project.brochureUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border-default text-xs font-semibold text-text-primary hover:border-amber-primary transition-colors">
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border-default text-xs font-semibold text-text-primary hover:border-amber-primary transition-colors">
                   <Download className="w-3.5 h-3.5" /> Brochure
                 </a>
               )}
               {phone && (
-                <a href={phone} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-primary text-slate-950 text-xs font-bold hover:bg-amber-500 transition-colors">
+                <a href={phone} className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-primary text-slate-950 text-xs font-bold hover:bg-amber-500 transition-colors">
                   <Phone className="w-3.5 h-3.5" /> View Number
                 </a>
               )}
@@ -246,10 +273,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
         </div>
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-28 sm:pb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-8">
             {/* Left / Main column */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               {/* Project Header */}
               <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
                 <div className="flex items-start gap-4">
@@ -527,7 +554,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             <div className="space-y-5">
               {/* Why consider */}
               {project.highlights.length > 0 && (
-                <div className="bg-white dark:bg-bg-card border border-amber-primary/20 rounded-2xl p-5 sticky top-32">
+                <div className="bg-white dark:bg-bg-card border border-amber-primary/20 rounded-2xl p-5 lg:sticky lg:top-32">
                   <h3 className="font-bold text-text-primary mb-4 flex items-center gap-2">
                     <Star className="w-4 h-4 text-amber-primary fill-amber-primary" />
                     Why {project.name}?
@@ -543,10 +570,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 </div>
               )}
 
-              {/* Quick contact */}
-              <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-5">
+              {/* Quick contact — desktop only (mobile has fixed bar) */}
+              <div className="hidden sm:block bg-white dark:bg-bg-card border border-border-default rounded-2xl p-5">
                 <h3 className="font-bold text-text-primary mb-1">Contact Builder</h3>
-                <p className="text-xs text-text-tertiary mb-4">Get exact pricing, payment plans & site visit</p>
+                <p className="text-xs text-text-tertiary mb-4">Get exact pricing, payment plans &amp; site visit</p>
                 <div className="space-y-3">
                   {phone && (
                     <a href={phone} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-amber-primary text-slate-950 font-bold hover:bg-amber-500 transition-colors">
@@ -590,6 +617,39 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
       </div>
+
+      {/* ── Mobile Fixed Bottom CTA ─────────────────────────────────────── */}
+      {(phone || whatsapp || project.brochureUrl) && (
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-bg-card border-t border-border-default px-4 py-3 flex items-center gap-2 shadow-elevated">
+          {project.builderLogoUrl && (
+            <img src={project.builderLogoUrl} alt={project.builderName} className="h-8 w-8 object-contain rounded-lg border border-border-default p-0.5 shrink-0" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-text-primary truncate">{project.name}</p>
+            <p className="text-[10px] text-text-tertiary truncate">{project.builderName}</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {project.brochureUrl && (
+              <a href={project.brochureUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 px-3 py-2 rounded-xl border border-border-default text-text-secondary text-xs font-semibold">
+                <Download className="w-3.5 h-3.5" />
+              </a>
+            )}
+            {whatsapp && (
+              <a href={whatsapp} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-green-500 text-white font-bold text-xs">
+                <MessageCircle className="w-4 h-4" /> Chat
+              </a>
+            )}
+            {phone && (
+              <a href={phone}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-primary text-slate-950 font-bold text-xs">
+                <Phone className="w-4 h-4" /> Call
+              </a>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
