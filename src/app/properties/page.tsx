@@ -363,7 +363,7 @@ function PropertiesPage() {
             </div>
 
             {/* Desktop View: Full height Map Container */}
-            <div className="hidden md:block w-full h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white">
+            <div className="hidden md:block w-full h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white relative z-0">
               <MapWrapper filteredItems={filteredProperties} />
             </div>
           </div>
