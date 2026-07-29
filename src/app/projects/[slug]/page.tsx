@@ -24,6 +24,16 @@ const ProjectMapView = dynamic(
   }
 );
 
+const CommuteRadiusMap = dynamic(
+  () => import("@/components/project/commute-radius-map"),
+  { ssr: false }
+);
+
+const LandUseSimulator = dynamic(
+  () => import("@/components/project/land-use-simulator"),
+  { ssr: false }
+);
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatINRCrore(amount: number): string {
@@ -434,6 +444,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                       )}
                     </div>
                   )}
+
+                  {/* Add Simulator for Ventures */}
+                  {project.projectType === "venture" && (
+                    <LandUseSimulator
+                      minSize={project.configurations[0]?.plotSizeMin || 150}
+                      maxSize={Math.max(...project.configurations.map(c => c.plotSizeMax || c.plotSizeMin || 0), 1000)}
+                      pricePerSqYd={project.configurations[0]?.pricePerUnit || 25000}
+                    />
+                  )}
                 </div>
               )}
 
@@ -483,6 +502,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   >
                     <MapPin className="w-4 h-4" /> Open in Google Maps
                   </a>
+
+                  {/* Commute Radius Map */}
+                  <div className="pt-6 mt-6 border-t border-border-default">
+                    <CommuteRadiusMap
+                      latitude={project.location.latitude}
+                      longitude={project.location.longitude}
+                      projectName={project.name}
+                      city={project.location.city}
+                    />
+                  </div>
 
                   {project.location.pincode && (
                     <p className="text-xs text-text-tertiary">Pincode: {project.location.pincode}</p>

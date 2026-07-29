@@ -7,11 +7,15 @@ import { TrendingLocations } from "@/components/home/trending-locations";
 import { WhyChooseUs } from "@/components/home/why-choose-us";
 import { Testimonials } from "@/components/home/testimonials";
 import { CTASection } from "@/components/home/cta-section";
+import { MatchmakerQuiz } from "@/components/home/matchmaker-quiz";
 
 export default function HomePage() {
   return (
     <div className="flex flex-col w-full min-h-screen">
       <HeroSection />
+      
+      {/* Interactive AI Quiz */}
+      <MatchmakerQuiz />
       
       {/* Recommended Properties (Carousel) */}
       <Suspense fallback={<div className="h-[400px] flex items-center justify-center">Loading recommendations...</div>}>
