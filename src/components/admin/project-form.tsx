@@ -224,6 +224,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [showMap, setShowMap] = useState(false);
+  const [googleMapsUrl, setGoogleMapsUrl] = useState("");
 
   // ── Step 1 ──
   const [projectType, setProjectType]         = useState<ProjectType>(initialData?.projectType ?? "apartment");
@@ -578,6 +579,79 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
 
             {/* Location */}
             <Card title="Location">
+              {/* Google Maps Location Link Auto-Fetcher */}
+              <div className="space-y-2 mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+                <label className="text-xs font-black uppercase text-amber-500 tracking-wider flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-amber-500" />
+                  Paste Google Maps Location Link (Auto-Fetches Map Coordinates)
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Paste Google Maps URL e.g. https://maps.app.goo.gl/J7Xw7ioj2hbu2XWf9..."
+                    value={googleMapsUrl}
+                    onChange={async (e) => {
+                      const val = e.target.value;
+                      setGoogleMapsUrl(val);
+                      const trimmed = val.trim();
+                      if (!trimmed) return;
+
+                      // Shortened link resolution
+                      try {
+                        const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(trimmed)}`);
+                        const data = await res.json();
+                        if (data.success && data.latitude && data.longitude) {
+                          setLat(data.latitude);
+                          setLng(data.longitude);
+                          if (data.city) setCity(data.city);
+                          if (data.locality) setLocality(data.locality);
+                          if (data.state) setLocState(data.state);
+                          if (data.pincode) setPincode(data.pincode);
+                          if (data.address) setAddress(data.address);
+                          toast.success(`📍 Fetched location for ${data.locality || data.city || 'Project'} (${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)})!`);
+                        }
+                      } catch (err) {}
+                    }}
+                    className="h-11 text-xs bg-bg-primary font-bold border-amber-500/50"
+                  />
+                  <Button
+                    type="button"
+                    onClick={async () => {
+                      const trimmed = googleMapsUrl.trim();
+                      if (!trimmed) {
+                        toast.error("Please paste a Google Maps link first");
+                        return;
+                      }
+                      toast.loading("Resolving Google Maps location & details...", { id: "fetch-maps" });
+                      try {
+                        const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(trimmed)}`);
+                        const data = await res.json();
+                        if (data.success && data.latitude && data.longitude) {
+                          setLat(data.latitude);
+                          setLng(data.longitude);
+                          if (data.city) setCity(data.city);
+                          if (data.locality) setLocality(data.locality);
+                          if (data.state) setLocState(data.state);
+                          if (data.pincode) setPincode(data.pincode);
+                          if (data.address) setAddress(data.address);
+                          toast.success(`📍 Fetched location for ${data.locality || data.city || 'Project'} (${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)})!`, { id: "fetch-maps" });
+                        } else {
+                          toast.error(data.error || "Could not extract location from link", { id: "fetch-maps" });
+                        }
+                      } catch (err) {
+                        toast.error("Failed to resolve Google Maps link", { id: "fetch-maps" });
+                      }
+                    }}
+                    className="h-11 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shrink-0 rounded-xl cursor-pointer shadow-md"
+                  >
+                    Fetch Location
+                  </Button>
+                </div>
+                <p className="text-[11px] text-text-tertiary">
+                  Paste any Google Maps link (e.g. https://maps.app.goo.gl/J7Xw7ioj2hbu2XWf9). The map pin automatically updates!
+                </p>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Address">
                   <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Full address" className={ic()} />
