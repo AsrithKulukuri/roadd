@@ -110,8 +110,8 @@ export function MatchmakerQuiz() {
       <div className="max-w-4xl mx-auto px-4 relative z-10">
         
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-bold mb-4">
-            <Sparkles className="w-4 h-4" /> AI Property Matchmaker
+          <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-sm font-black mb-4 shadow-lg shadow-amber-500/30">
+            <Sparkles className="w-4 h-4 text-slate-950" /> AI Property Matchmaker
           </div>
           <h2 className="text-3xl md:text-4xl font-black text-text-primary mb-3">
             Find Your Perfect Match in 60 Seconds
