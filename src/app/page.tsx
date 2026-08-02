@@ -5,7 +5,7 @@ import { FeaturedProjects } from "@/components/home/featured-projects";
 import { RecommendedCarousel } from "@/components/home/recommended-carousel";
 import { TrendingLocations } from "@/components/home/trending-locations";
 import { WhyChooseUs } from "@/components/home/why-choose-us";
-import { Testimonials } from "@/components/home/testimonials";
+
 import { CTASection } from "@/components/home/cta-section";
 import { MatchmakerQuiz } from "@/components/home/matchmaker-quiz";
 
@@ -38,8 +38,7 @@ export default function HomePage() {
       {/* Why Choose Us */}
       <WhyChooseUs />
 
-      {/* Testimonials */}
-      <Testimonials />
+
 
       {/* CTA Section */}
       <CTASection />
