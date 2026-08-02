@@ -37,7 +37,7 @@ export default function AdminUsersPage() {
     if (isSupabaseConfigured()) {
       try {
         const { data, error } = await supabase
-          .from("profiles")
+          .from("user_profiles")
           .select("*");
           
         if (error) throw error;
@@ -115,7 +115,7 @@ export default function AdminUsersPage() {
     if (isSupabaseConfigured()) {
       try {
         const { data, error } = await supabase
-          .from("profiles")
+          .from("user_profiles")
           .update({ is_verified: true })
           .eq("id", userId)
           .select();
@@ -186,7 +186,7 @@ export default function AdminUsersPage() {
     if (isSupabaseConfigured()) {
       try {
         const { data, error } = await supabase
-          .from("profiles")
+          .from("user_profiles")
           .update({ is_verified: false })
           .eq("id", userId)
           .select();

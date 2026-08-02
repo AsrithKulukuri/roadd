@@ -722,39 +722,46 @@ export default function AddPropertyPage() {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <Button
+                type="button"
+                onClick={() => {
+                  if ("geolocation" in navigator) {
+                    toast.loading("Fetching your location...", { id: "geo" });
+                    navigator.geolocation.getCurrentPosition(
+                      (position) => {
+                        const { latitude, longitude } = position.coords;
+                        // Just update lat/long, the Map component will auto-sync and reverse geocode
+                        setFormData(prev => ({
+                          ...prev,
+                          latitude,
+                          longitude
+                        }));
+                        toast.success("Location updated!", { id: "geo" });
+                      },
+                      (error) => {
+                        toast.error("Failed to get location: " + error.message, { id: "geo" });
+                      },
+                      { enableHighAccuracy: true }
+                    );
+                  } else {
+                    toast.error("Geolocation is not supported by your browser");
+                  }
+                }}
+                className="h-11 px-6 bg-blue-500 hover:bg-blue-600 text-white font-black text-sm rounded-xl cursor-pointer shadow-md w-full sm:w-auto flex items-center justify-center gap-2 transition-colors"
+              >
+                <MapPin className="w-4 h-4" /> Use My Current Location
+              </Button>
+            </div>
+            
+            <div className="w-full">
               <div className="space-y-4">
-                <div className="h-[400px] w-full rounded-2xl overflow-hidden relative border border-border-default/50">
+                <div className="h-[400px] w-full rounded-2xl overflow-hidden relative border border-border-default/50 shadow-inner">
                   <CoordinatePickerMap initialPosition={[formData.latitude || 16.5062, formData.longitude || 80.6480]} onPositionChange={handlePositionChange} />
                 </div>
-                <p className="text-xs text-text-tertiary text-center">Drag the marker or click on the map to set exact location. Address fields will auto-fill.</p>
+                <p className="text-xs text-text-tertiary text-center">Drag the marker or click on the map to set exact location. The address is automatically saved behind the scenes.</p>
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-text-secondary">Full Address</label>
-                  <textarea name="address" value={formData.address} onChange={handleChange} rows={3} className="w-full rounded-xl bg-bg-primary border border-border-default/50 px-4 py-3 text-text-primary" />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-text-secondary">City</label>
-                    <Input name="city" value={formData.city} onChange={handleChange} className="h-12" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-text-secondary">State</label>
-                    <Input name="state" value={formData.state} onChange={handleChange} className="h-12" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-text-secondary">Pincode</label>
-                    <Input name="pincode" value={formData.pincode} onChange={handleChange} className="h-12" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-text-secondary">Locality (e.g. Benz Circle)</label>
-                    <Input name="locality" value={formData.locality} onChange={handleChange} className="h-12" />
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 

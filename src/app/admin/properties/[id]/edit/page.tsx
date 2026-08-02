@@ -590,22 +590,36 @@ export default function EditPropertyPage() {
                 Paste any Google Maps link (e.g. https://maps.app.goo.gl/J7Xw7ioj2hbu2XWf9). The map pin automatically updates!
               </p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-medium text-text-secondary">Street Address</label>
-                <Input name="address" value={formData.address} onChange={handleChange} placeholder="Plot No 42, Road No 1" className="h-12" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Locality / Area *</label>
-                <Input name="locality" required value={formData.locality} onChange={handleChange} placeholder="Benz Circle" className="h-12" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">City *</label>
-                <Input name="city" required value={formData.city} onChange={handleChange} placeholder="Vijayawada" className="h-12" />
-              </div>
+            
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
+              <Button
+                type="button"
+                onClick={() => {
+                  if ("geolocation" in navigator) {
+                    toast.loading("Fetching your location...", { id: "geo" });
+                    navigator.geolocation.getCurrentPosition(
+                      (position) => {
+                        const { latitude, longitude } = position.coords;
+                        setFormData(prev => ({
+                          ...prev,
+                          latitude,
+                          longitude
+                        }));
+                        toast.success("Location updated!", { id: "geo" });
+                      },
+                      (error) => {
+                        toast.error("Failed to get location: " + error.message, { id: "geo" });
+                      },
+                      { enableHighAccuracy: true }
+                    );
+                  } else {
+                    toast.error("Geolocation is not supported by your browser");
+                  }
+                }}
+                className="h-11 px-6 bg-blue-500 hover:bg-blue-600 text-white font-black text-sm rounded-xl cursor-pointer shadow-md w-full sm:w-auto flex items-center justify-center gap-2 transition-colors"
+              >
+                <MapPin className="w-4 h-4" /> Use My Current Location
+              </Button>
             </div>
 
             {/* Interactive Coordinate Picker */}
@@ -620,6 +634,7 @@ export default function EditPropertyPage() {
                   onPositionChange={handlePositionChange}
                 />
               </div>
+              <p className="text-xs text-text-tertiary text-center">The address is automatically saved behind the scenes.</p>
             </div>
           </div>
 
