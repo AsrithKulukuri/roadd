@@ -18,6 +18,7 @@ import Link from "next/link";
 import { Property, PropertyLocation } from "@/types/property";
 import { supabase } from "@/lib/supabase";
 import { parseGoogleMapsUrl } from "@/lib/utils";
+import imageCompression from 'browser-image-compression';
 
 const CoordinatePickerMap = dynamic(
   () => import("@/components/admin/coordinate-picker-map"),
@@ -138,10 +139,19 @@ export default function AddPropertyPage() {
 
         let imgUrl = "";
         try {
+          let fileToUpload = file;
+          if (file.type.startsWith('image/')) {
+            try {
+              fileToUpload = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true });
+            } catch (cErr) {
+              console.warn("Compression failed, using original:", cErr);
+            }
+          }
+
           // Upload to Supabase Storage
           const { data, error } = await supabase.storage
             .from('properties')
-            .upload(filePath, file);
+            .upload(filePath, fileToUpload);
 
           if (!error && data?.path) {
             const { data: publicUrlData } = supabase.storage

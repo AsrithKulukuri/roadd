@@ -82,13 +82,45 @@ export const useProjectsStore = create<ProjectsState>()(
 
       // ─── Delete ───────────────────────────────────────────────────────────
       deleteProject: async (id: string) => {
+        const project = get().projects.find((p) => p.id === id);
+
         set((state) => ({
           projects: state.projects.filter((p) => p.id !== id),
         }));
 
         try {
           const { error } = await supabase.from('projects').delete().eq('id', id);
-          if (error) console.warn('Supabase project delete warning:', error.message);
+          if (error) {
+            console.warn('Supabase project delete warning:', error.message);
+          } else if (project) {
+            // Delete associated storage files
+            const bucket = 'projects';
+            const pathsToDelete: string[] = [];
+            const extract = (url?: string) => {
+              if (!url || typeof url !== 'string') return;
+              const token = `/public/${bucket}/`;
+              const idx = url.indexOf(token);
+              if (idx !== -1) {
+                pathsToDelete.push(decodeURIComponent(url.substring(idx + token.length)));
+              }
+            };
+
+            extract(project.coverImage);
+            extract(project.builderLogoUrl);
+            extract(project.videoUrl);
+            extract(project.brochureUrl);
+            project.images?.forEach((img) => extract(img.url));
+            project.configurations?.forEach((cfg) => {
+              extract(cfg.floorPlanUrl);
+              extract(cfg.videoUrl);
+              cfg.images?.forEach(extract);
+            });
+
+            if (pathsToDelete.length > 0) {
+              const { error: storageError } = await supabase.storage.from(bucket).remove(pathsToDelete);
+              if (storageError) console.warn('Supabase storage project delete warning:', storageError);
+            }
+          }
         } catch (err: any) {
           console.warn('Supabase project delete exception:', err?.message ?? err);
         }

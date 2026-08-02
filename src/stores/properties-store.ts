@@ -76,6 +76,8 @@ export const usePropertiesStore = create<PropertiesState>()(
       },
 
       deleteProperty: async (id: string) => {
+        const property = get().properties.find((p) => p.id === id);
+
         set((state) => ({
           properties: state.properties.filter((p) => p.id !== id),
         }));
@@ -86,7 +88,34 @@ export const usePropertiesStore = create<PropertiesState>()(
             .delete()
             .eq('id', id);
 
-          if (error) console.warn('Supabase delete warning:', error.message);
+          if (error) {
+            console.warn('Supabase delete warning:', error.message);
+          } else if (property) {
+            // Delete associated storage files
+            const bucket = 'properties';
+            const pathsToDelete: string[] = [];
+            const extract = (url?: string) => {
+              if (!url || typeof url !== 'string') return;
+              const token = `/public/${bucket}/`;
+              const idx = url.indexOf(token);
+              if (idx !== -1) {
+                pathsToDelete.push(decodeURIComponent(url.substring(idx + token.length)));
+              }
+            };
+
+            extract(property.coverImage);
+            extract(property.videoUrl);
+            extract(property.layoutMapUrl);
+            extract(property.floorPlanUrl);
+            extract(property.brochureUrl);
+            property.images?.forEach((img) => extract(img.url));
+            property.galleryImages?.forEach(extract);
+
+            if (pathsToDelete.length > 0) {
+              const { error: storageError } = await supabase.storage.from(bucket).remove(pathsToDelete);
+              if (storageError) console.warn('Supabase storage delete warning:', storageError);
+            }
+          }
         } catch (error: any) {
           console.warn('Supabase delete exception:', error);
         }

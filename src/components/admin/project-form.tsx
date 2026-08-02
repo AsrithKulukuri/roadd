@@ -19,6 +19,7 @@ import type {
   Project, ProjectType, ProjectConfig,
   ProjectPhase, ProjectImage, ConstructionStatus,
 } from "@/types/project";
+import imageCompression from 'browser-image-compression';
 
 // ─── Lazy map import (SSR unsafe) ────────────────────────────────────────────
 const CoordinatePickerMap = dynamic(
@@ -81,7 +82,15 @@ async function uploadFile(file: File, bucket: string, folder: string): Promise<s
   const ext = file.name.split(".").pop();
   const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
   try {
-    const { data, error } = await supabase.storage.from(bucket).upload(path, file);
+    let fileToUpload = file;
+    if (file.type.startsWith('image/')) {
+      try {
+        fileToUpload = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true });
+      } catch (cErr) {
+        console.warn("Compression failed, using original:", cErr);
+      }
+    }
+    const { data, error } = await supabase.storage.from(bucket).upload(path, fileToUpload);
     if (!error && data?.path) {
       const { data: pub } = supabase.storage.from(bucket).getPublicUrl(data.path);
       return pub.publicUrl;
