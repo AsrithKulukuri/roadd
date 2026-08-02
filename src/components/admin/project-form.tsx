@@ -237,9 +237,11 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const [builderWhatsapp, setBuilderWhatsapp] = useState(initialData?.builderWhatsapp ?? "");
   const [reraId, setReraId]                   = useState(initialData?.reraId ?? "");
   const [reraApproved, setReraApproved]       = useState(initialData?.reraApproved ?? false);
+  const [crdaApproved, setCrdaApproved]       = useState(initialData?.crdaApproved ?? false);
   const [noBrokerage, setNoBrokerage]         = useState(initialData?.noBrokerage ?? false);
   const [constructionStatus, setConstructionStatus] = useState<ConstructionStatus>(initialData?.constructionStatus ?? "under-construction");
   const [totalUnits, setTotalUnits]           = useState(initialData?.totalUnits?.toString() ?? "");
+  const [totalTowers, setTotalTowers]         = useState(initialData?.totalTowers?.toString() ?? "");
   const [totalArea, setTotalArea]             = useState(initialData?.totalArea ?? "");
   // Location
   const [address, setAddress]   = useState(initialData?.location.address ?? "");
@@ -398,9 +400,11 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       location: { address: address.trim(), locality: locality.trim(), city: city.trim(), state: locState.trim(), pincode: pincode.trim() || undefined, latitude: lat, longitude: lng },
       reraId: reraId.trim() || undefined,
       reraApproved,
+      crdaApproved,
       noBrokerage,
       constructionStatus,
       totalUnits: totalUnits ? parseInt(totalUnits) : undefined,
+      totalTowers: totalTowers ? parseInt(totalTowers) : undefined,
       totalArea: totalArea.trim() || undefined,
       phases,
       configurations: configs,
@@ -544,6 +548,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 </Field>
                 <div className="flex flex-col gap-3 pt-1">
                   <Toggle on={reraApproved} onToggle={() => setReraApproved((v) => !v)} label="RERA Approved" />
+                  <Toggle on={crdaApproved} onToggle={() => setCrdaApproved((v) => !v)} label="CRDA Approved" />
                   <Toggle on={noBrokerage} onToggle={() => setNoBrokerage((v) => !v)} label="No Brokerage" />
                 </div>
               </div>
@@ -565,6 +570,11 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
 
               {/* Type-adaptive extra fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {projectType === "apartment" && (
+                  <Field label="Total Towers" hint="e.g. 5">
+                    <Input type="number" value={totalTowers} onChange={(e) => setTotalTowers(e.target.value)} placeholder="5" className={ic()} />
+                  </Field>
+                )}
                 <Field label={projectType === "apartment" ? "Total Units / Flats" : projectType === "villa" ? "Total Villas" : "Total Plots"}
                   hint="e.g. 251">
                   <Input type="number" value={totalUnits} onChange={(e) => setTotalUnits(e.target.value)} placeholder="251" className={ic()} />
@@ -773,17 +783,38 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                         </>
                       ) : (
                         <>
+                          <Field label="Super Built-up Area Min (sq.ft)">
+                            <Input type="number" value={cfg.superBuiltUpAreaMin ?? ""} onChange={(e) => updateConfig(cfg.id, "superBuiltUpAreaMin", parseInt(e.target.value) || 0)} placeholder="1200" className={ic()} />
+                          </Field>
+                          <Field label="Super Built-up Area Max (sq.ft)">
+                            <Input type="number" value={cfg.superBuiltUpAreaMax ?? ""} onChange={(e) => updateConfig(cfg.id, "superBuiltUpAreaMax", parseInt(e.target.value) || 0)} placeholder="1600" className={ic()} />
+                          </Field>
+                          <Field label="Plinth Area Min (sq.ft)">
+                            <Input type="number" value={cfg.plinthAreaMin ?? ""} onChange={(e) => updateConfig(cfg.id, "plinthAreaMin", parseInt(e.target.value) || 0)} placeholder="900" className={ic()} />
+                          </Field>
+                          <Field label="Plinth Area Max (sq.ft)">
+                            <Input type="number" value={cfg.plinthAreaMax ?? ""} onChange={(e) => updateConfig(cfg.id, "plinthAreaMax", parseInt(e.target.value) || 0)} placeholder="1300" className={ic()} />
+                          </Field>
                           <Field label="Built-up Area Min (sq.ft)">
                             <Input type="number" value={cfg.builtUpAreaMin ?? ""} onChange={(e) => updateConfig(cfg.id, "builtUpAreaMin", parseInt(e.target.value) || 0)} placeholder="1000" className={ic()} />
                           </Field>
                           <Field label="Built-up Area Max (sq.ft)">
                             <Input type="number" value={cfg.builtUpAreaMax ?? ""} onChange={(e) => updateConfig(cfg.id, "builtUpAreaMax", parseInt(e.target.value) || 0)} placeholder="1500" className={ic()} />
                           </Field>
+                          <Field label="Undivided Share (sq.yds)">
+                            <Input type="number" value={cfg.uds ?? ""} onChange={(e) => updateConfig(cfg.id, "uds", parseInt(e.target.value) || 0)} placeholder="45" className={ic()} />
+                          </Field>
                           <Field label="Price per sq.ft (₹)">
                             <Input type="number" value={cfg.pricePerUnit ?? ""} onChange={(e) => updateConfig(cfg.id, "pricePerUnit", parseInt(e.target.value) || 0)} placeholder="5500" className={ic()} />
                           </Field>
                         </>
                       )}
+
+                      <div className="sm:col-span-2">
+                        <Field label="Facing Directions (comma separated)">
+                          <Input type="text" value={cfg.facing?.join(", ") ?? ""} onChange={(e) => updateConfig(cfg.id, "facing", e.target.value.split(",").map((s: string) => s.trim()).filter(Boolean))} placeholder="East, West, North" className={ic()} />
+                        </Field>
+                      </div>
 
                       {/* Floor plan / Layout upload */}
                       <div className="sm:col-span-2">
@@ -796,6 +827,18 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                           uploading={uploading[`fp-${cfg.id}`]}
                           hint="Shows on the detail page for this configuration"
                         />
+                      </div>
+
+                      <div className="sm:col-span-2 space-y-4 pt-2 border-t border-border-default/50 mt-4 mb-2">
+                        <p className="text-xs font-bold text-text-primary uppercase tracking-wider">Configuration Media</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <Field label="Video Walkthrough URL">
+                            <Input type="text" value={cfg.videoUrl ?? ""} onChange={(e) => updateConfig(cfg.id, "videoUrl", e.target.value)} placeholder="https://youtube.com/..." className={ic()} />
+                          </Field>
+                          <Field label="Gallery Images (comma separated URLs)">
+                            <Input type="text" value={cfg.images?.join(", ") ?? ""} onChange={(e) => updateConfig(cfg.id, "images", e.target.value.split(",").map((s: string) => s.trim()).filter(Boolean))} placeholder="https://..., https://..." className={ic()} />
+                          </Field>
+                        </div>
                       </div>
 
                       {/* Possession date */}

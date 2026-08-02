@@ -18,10 +18,22 @@ export interface ProjectConfig {
   builtUpAreaMin?: number;
   /** sq.ft – max built-up area (Apartment/Villa) */
   builtUpAreaMax?: number;
+  /** sq.ft - min super built-up area */
+  superBuiltUpAreaMin?: number;
+  /** sq.ft - max super built-up area */
+  superBuiltUpAreaMax?: number;
+  /** sq.ft - min plinth area */
+  plinthAreaMin?: number;
+  /** sq.ft - max plinth area */
+  plinthAreaMax?: number;
+  /** Undivided share (e.g. sq.yds) */
+  uds?: number;
   /** sq.yds – min plot size (Venture) */
   plotSizeMin?: number;
   /** sq.yds – max plot size (Venture) */
   plotSizeMax?: number;
+  /** Facing options available for this config (e.g. ["East", "West"]) */
+  facing?: string[];
   /** Rupees – minimum price for this config */
   priceMin: number;
   /** Rupees – maximum price for this config */
@@ -30,6 +42,10 @@ export interface ProjectConfig {
   pricePerUnit?: number;
   /** URL to a floor plan / layout image for this config */
   floorPlanUrl?: string;
+  /** Gallery images for this specific config */
+  images?: string[];
+  /** Video walkthrough URL for this config */
+  videoUrl?: string;
   /** Construction status for this specific config */
   constructionStatus?: ConstructionStatus;
   /** Possession date string e.g. "Dec 2028" */
@@ -86,11 +102,13 @@ export interface Project {
   // Compliance
   reraId?: string;
   reraApproved: boolean;
+  crdaApproved?: boolean;
   noBrokerage?: boolean;
 
   // Status
   constructionStatus: ConstructionStatus;
   totalUnits?: number;
+  totalTowers?: number;
   /** e.g. "34 acres" */
   totalArea?: string;
 

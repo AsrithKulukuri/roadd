@@ -62,6 +62,7 @@ export default function AddPropertyPage() {
     furnishing: "unfurnished", facing: "east", yearBuilt: "",
     
     coverImage: "", galleryImages: [] as string[], videoUrl: "",
+    layoutMapUrl: "", floorPlanUrl: "", brochureUrl: "",
     
     latitude: 16.5062, longitude: 80.6480, address: "", locality: "", city: "Vijayawada", state: "Andhra Pradesh", pincode: "", landmark: "",
     
@@ -243,6 +244,9 @@ export default function AddPropertyPage() {
       coverImage: formData.coverImage,
       galleryImages: formData.galleryImages,
       videoUrl: formData.videoUrl,
+      layoutMapUrl: formData.layoutMapUrl || undefined,
+      floorPlanUrl: formData.floorPlanUrl || undefined,
+      brochureUrl: formData.brochureUrl || undefined,
       
       amenities: propertyAmenities,
       features: [],
@@ -603,6 +607,22 @@ export default function AddPropertyPage() {
                     <iframe width="100%" height="100%" src={videoEmbedUrl} title="YouTube preview" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
                   </div>
                 )}
+              </div>
+
+              {/* Additional Document URLs */}
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-border-default/50">
+                <div className="space-y-4">
+                  <label className="text-sm font-medium text-text-secondary">Layout Map URL</label>
+                  <Input name="layoutMapUrl" value={formData.layoutMapUrl} onChange={handleChange} placeholder="https://... (Image or PDF)" className="h-12" />
+                </div>
+                <div className="space-y-4">
+                  <label className="text-sm font-medium text-text-secondary">Floor Plan URL</label>
+                  <Input name="floorPlanUrl" value={formData.floorPlanUrl} onChange={handleChange} placeholder="https://... (Image or PDF)" className="h-12" />
+                </div>
+                <div className="space-y-4">
+                  <label className="text-sm font-medium text-text-secondary">Brochure URL</label>
+                  <Input name="brochureUrl" value={formData.brochureUrl} onChange={handleChange} placeholder="https://... (PDF)" className="h-12" />
+                </div>
               </div>
             </div>
           </div>
