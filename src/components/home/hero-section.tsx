@@ -202,7 +202,7 @@ export function HeroSection() {
       badge: cat.badge,
       badgeClass: cat.badgeClass,
       image: cat.image,
-      baseHref: cat.href || `/properties?type=buy&propertyType=${cat.type}`,
+      baseHref: cat.href || `/search?type=buy&propertyType=${cat.type}`,
     }));
   }, [homeCategories]);
 
@@ -573,7 +573,7 @@ export function HeroSection() {
               </AnimatePresence>
             </div>
             <Link
-              href="/properties"
+              href="/search"
               className="text-xs sm:text-sm font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1 hover:underline"
             >
               View all categories <ChevronRight className="w-4 h-4" />
