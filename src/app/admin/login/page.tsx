@@ -21,7 +21,6 @@ export default function AdminLoginPage() {
 
   // Do not perform automatic redirect on mount to prevent reload loops
   useEffect(() => {
-    console.log("[AUTH DEBUG] AdminLoginPage mounted cleanly.");
   }, []);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
@@ -35,7 +34,6 @@ export default function AdminLoginPage() {
     }
 
     setIsLoading(true);
-    console.log("[AUTH DEBUG] Starting Admin Login for email:", inputEmail);
 
     try {
       let sessionUser: any = null;
@@ -48,10 +46,6 @@ export default function AdminLoginPage() {
           password: password,
         });
 
-        console.log("LOGIN RESPONSE", data);
-        console.log("LOGIN ERROR", error);
-        console.log("SESSION", data?.session);
-        console.log("CURRENT USER", data?.user);
 
         if (data?.session) {
           sessionData = data.session;
@@ -68,7 +62,6 @@ export default function AdminLoginPage() {
         timestamp: new Date().toISOString(),
       };
 
-      console.log("ADMIN ROLE", "admin");
 
       // Set cookie for middleware recognition
       document.cookie = "road_admin_user=true; path=/; max-age=86400; SameSite=Lax";
@@ -82,7 +75,6 @@ export default function AdminLoginPage() {
         description: "Redirecting to Admin Control Center...",
       });
 
-      console.log("REDIRECT DESTINATION", "/admin/dashboard");
       if (typeof window !== "undefined") {
         window.location.href = "/admin/dashboard";
       } else {

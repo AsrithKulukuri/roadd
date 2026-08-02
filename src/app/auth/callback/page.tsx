@@ -14,7 +14,6 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     const processCallback = async () => {
-      console.log("[AUTH DEBUG] AuthCallbackPage processing callback...");
       try {
         // 1. Get session from URL / PKCE exchange
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -24,7 +23,6 @@ export default function AuthCallbackPage() {
         if (session?.user) {
           const u = session.user;
           const adminCheck = await verifyAdminSession();
-          console.log("[AUTH DEBUG] AuthCallback admin verification result:", adminCheck);
 
           const role = adminCheck.isAdmin ? "admin" : (u.user_metadata?.role || "buyer");
           const localUser = {
@@ -44,7 +42,6 @@ export default function AuthCallbackPage() {
 
           toast.success("Successfully logged in!");
           const targetRoute = adminCheck.isAdmin ? "/admin/dashboard" : "/dashboard";
-          console.log("[AUTH DEBUG] Redirecting authenticated user to:", targetRoute);
           router.replace(targetRoute);
           return;
         }
@@ -52,7 +49,6 @@ export default function AuthCallbackPage() {
         // 2. Fallback listener for async state resolution
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, currentSession) => {
-            console.log("[AUTH DEBUG] AuthCallback onAuthStateChange:", event, currentSession?.user?.email);
             if (currentSession?.user) {
               subscription.unsubscribe();
               const u = currentSession.user;
@@ -76,12 +72,10 @@ export default function AuthCallbackPage() {
 
               toast.success("Successfully logged in!");
               const targetRoute = adminCheck.isAdmin ? "/admin/dashboard" : "/dashboard";
-              console.log("[AUTH DEBUG] Redirecting from listener to:", targetRoute);
               router.replace(targetRoute);
             } else if (event === "INITIAL_SESSION" && !currentSession) {
               subscription.unsubscribe();
               toast.error("Session verification failed. Please try signing in again.");
-              console.log("[AUTH DEBUG] AuthCallback initial session empty. Redirecting to /login");
               router.replace("/login");
             }
           }

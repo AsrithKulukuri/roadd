@@ -10,12 +10,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  // Ignore admin routes completely — AdminGuard handles admin routes
-  if (pathname.startsWith("/admin")) {
-    return <>{children}</>;
-  }
+  const isAdminRoute = pathname.startsWith("/admin");
 
   useEffect(() => {
+    if (isAdminRoute) return;
+
     const checkAuth = async () => {
       // 1. First check Supabase session if configured
       if (isSupabaseConfigured()) {
@@ -62,16 +61,23 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       });
       return () => subscription.unsubscribe();
     }
-  }, []);
+  }, [isAdminRoute]);
 
   useEffect(() => {
+    if (isAdminRoute) return;
     if (isAuthenticated === false) {
       toast.error("Sign in required", {
         description: "Please sign in to view property listing details.",
       });
       router.push("/login");
     }
-  }, [isAuthenticated, router]);
+    }
+  }, [isAuthenticated, router, isAdminRoute]);
+
+  // Ignore admin routes completely — AdminGuard handles admin routes
+  if (isAdminRoute) {
+    return <>{children}</>;
+  }
 
   // Loading state
   if (isAuthenticated === null) {

@@ -16,14 +16,12 @@ export interface UserRoleInfo {
  * 4. Local storage session fallback
  */
 export async function verifyAdminSession(): Promise<UserRoleInfo> {
-  console.log("[AUTH DEBUG] verifyAdminSession initiated");
 
   // 1. Check Supabase Auth
   if (isSupabaseConfigured()) {
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      console.log("[AUTH DEBUG] getSession response:", {
         hasSession: !!session,
         userId: session?.user?.id,
         email: session?.user?.email,
@@ -35,11 +33,9 @@ export async function verifyAdminSession(): Promise<UserRoleInfo> {
         const metaRole = u.user_metadata?.role;
         const email = (u.email || "").toLowerCase();
 
-        console.log("[AUTH DEBUG] User metadata check:", { email, metaRole });
 
         // Check metadata role
         if (metaRole === "admin" || email === "admin@road.com" || email.startsWith("admin@")) {
-          console.log("[AUTH DEBUG] Admin verified via metadata/email heuristics");
           return {
             isAdmin: true,
             role: "admin",
@@ -56,10 +52,8 @@ export async function verifyAdminSession(): Promise<UserRoleInfo> {
             .eq("id", u.id)
             .maybeSingle();
 
-          console.log("[AUTH DEBUG] Profiles table role query result:", { profile, profileError });
 
           if (profile && profile.role === "admin") {
-            console.log("[AUTH DEBUG] Admin verified via public.profiles table role");
             return {
               isAdmin: true,
               role: "admin",
@@ -82,7 +76,6 @@ export async function verifyAdminSession(): Promise<UserRoleInfo> {
       const adminStored = localStorage.getItem("road_admin_user");
       if (adminStored) {
         const parsedAdmin = JSON.parse(adminStored);
-        console.log("[AUTH DEBUG] road_admin_user found:", parsedAdmin);
         return {
           isAdmin: true,
           role: "admin",
@@ -94,9 +87,7 @@ export async function verifyAdminSession(): Promise<UserRoleInfo> {
       const stored = localStorage.getItem("road_user");
       if (stored) {
         const parsed = JSON.parse(stored);
-        console.log("[AUTH DEBUG] Local storage session check:", parsed);
         if (parsed.role === "admin" || (parsed.email && (parsed.email.toLowerCase() === "admin@road.com" || parsed.email.toLowerCase().startsWith("admin@")))) {
-          console.log("[AUTH DEBUG] Admin verified via localStorage session");
           return {
             isAdmin: true,
             role: "admin",
