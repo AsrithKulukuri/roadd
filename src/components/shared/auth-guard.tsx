@@ -71,7 +71,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       });
       router.push("/login");
     }
-    }
   }, [isAuthenticated, router, isAdminRoute]);
 
   // Ignore admin routes completely — AdminGuard handles admin routes
