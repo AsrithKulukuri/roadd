@@ -127,6 +127,48 @@ function UnifiedSearchPage() {
       // 8. RERA
       if (filters.reraApproved && !property.reraId) return false;
 
+      // 9. Posted By
+      if (filters.postedBy.length > 0 && property.postedBy) {
+        if (!filters.postedBy.includes(property.postedBy.toLowerCase())) return false;
+      }
+
+      // 10. Gated Community
+      if (filters.gatedCommunity) {
+        const isGated = property.gatedSecurity || property.attributes?.gatedCommunity === "Yes" || property.attributes?.gatedCommunity === true;
+        if (!isGated) return false;
+      }
+
+      // 11. Vastu Compliant
+      if (filters.vastuCompliant && !property.vastuCompliant) return false;
+
+      // 12. Furnished
+      if (filters.furnished.length > 0 && property.furnishing) {
+        if (!filters.furnished.includes(property.furnishing.toLowerCase())) return false;
+      }
+
+      // 13. Bathrooms
+      if (filters.bathrooms.length > 0) {
+        const propBaths = property.bathrooms ? property.bathrooms.toString() : "";
+        const matchesBaths = filters.bathrooms.some((b) => {
+          if (b === "4+") return (property.bathrooms || 0) >= 4;
+          return propBaths === b;
+        });
+        if (!matchesBaths) return false;
+      }
+
+      // 14. Age Range
+      if (filters.ageRange.length > 0 && property.ageOfProperty !== undefined) {
+        const age = property.ageOfProperty;
+        const matchesAge = filters.ageRange.some((range) => {
+          if (range === "0-1") return age <= 1;
+          if (range === "0-10" || range === "1-10") return age <= 10;
+          if (range === "10-30") return age > 10 && age <= 30;
+          if (range === "30+") return age > 30;
+          return false;
+        });
+        if (!matchesAge) return false;
+      }
+
       return true;
     });
   }, [properties, filters, activeTab]);
@@ -202,6 +244,45 @@ function UnifiedSearchPage() {
       // 8. RERA / CRDA
       if (filters.reraApproved) {
         if (!project.reraApproved && !project.crdaApproved) return false;
+      }
+
+      // 9. Posted By
+      if (filters.postedBy.length > 0) {
+        const wantsDeveloper = filters.postedBy.includes("developer") || filters.postedBy.includes("builder") || filters.postedBy.includes("owner");
+        if (!wantsDeveloper) return false; // Projects are always direct from developer/builder
+      }
+
+      // 10. Gated Community
+      if (filters.gatedCommunity) {
+         const hasGated = project.facilities?.some(f => f.toLowerCase().includes("gated")) || project.highlights?.some(h => h.toLowerCase().includes("gated"));
+         if (!hasGated && project.projectType !== "apartment") return false; 
+         // Apartments are mostly gated by default, but to be strictly safe we check facilities.
+      }
+
+      // 11. Vastu Compliant
+      if (filters.vastuCompliant) {
+         const hasVastu = project.facilities?.some(f => f.toLowerCase().includes("vastu")) || project.highlights?.some(h => h.toLowerCase().includes("vastu"));
+         if (!hasVastu) return false;
+      }
+
+      // 12. Age Range
+      if (filters.ageRange.length > 0) {
+        // Projects are new. They only fit in the new/0-10 brackets.
+        const allowsNew = filters.ageRange.includes("0-1") || filters.ageRange.includes("0-10") || filters.ageRange.includes("1-10");
+        if (!allowsNew) return false;
+      }
+
+      // 13. Bathrooms
+      if (filters.bathrooms.length > 0 && project.configurations) {
+        // We assume 2BHK has 2 baths, 3BHK has 3 baths, etc., since config doesn't explicitly have bathrooms.
+        const hasMatchingBaths = project.configurations.some(cfg => {
+          const expectedBaths = cfg.bedrooms || 0;
+          return filters.bathrooms.some(b => {
+             if (b === "4+") return expectedBaths >= 4;
+             return expectedBaths.toString() === b;
+          });
+        });
+        if (!hasMatchingBaths) return false;
       }
 
       return true;
