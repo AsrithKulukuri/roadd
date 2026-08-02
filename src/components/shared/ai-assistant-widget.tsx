@@ -78,7 +78,7 @@ export function AiAssistantWidget() {
           
           toast.success("Filters applied by AI!");
           setIsOpen(false);
-          router.push(`/properties?${queryParams.toString()}`);
+          router.push(`/search?${queryParams.toString()}`);
         }, 1500);
       }
 

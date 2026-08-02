@@ -136,7 +136,7 @@ export function HeroSection() {
       params.set("budget", `${b[0]},${b[1]}`);
     }
 
-    router.push(`/properties?${params.toString()}`);
+    router.push(`/search?${params.toString()}`);
   };
 
   const matchingCount = useMemo(() => {
@@ -447,7 +447,7 @@ export function HeroSection() {
             ).map((spot) => (
               <div
                 key={spot.name}
-                onClick={() => router.push(`/properties?type=${activeTab}&location=${encodeURIComponent(spot.name)}`)}
+                onClick={() => router.push(`/search?type=${activeTab}&location=${encodeURIComponent(spot.name)}`)}
                 className="w-[230px] sm:w-[275px] shrink-0 snap-start h-[72px] sm:h-[80px] rounded-[16px] sm:rounded-[20px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-3 sm:p-4 flex items-center justify-between gap-2.5 sm:gap-3 cursor-pointer transition-all duration-250 hover:-translate-y-[2px] hover:border-[#F5A623]/60 hover:bg-[rgba(255,255,255,0.06)] hover:shadow-lg group"
               >
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[rgba(20,22,30,0.85)] border border-[rgba(255,255,255,0.08)] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform group-hover:border-[#F5A623]/40">
