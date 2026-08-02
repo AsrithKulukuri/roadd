@@ -216,8 +216,8 @@ export const amenitiesList = [
 
 export const navigationLinks = {
   main: [
-    { label: "Buy", href: "/properties?type=sale" },
-    { label: "Rent", href: "/properties?type=rent" },
+    { label: "Buy", href: "/search?type=sale" },
+    { label: "Rent", href: "/search?type=rent" },
     { label: "Commercial", href: "/commercial" },
     { label: "New Projects", href: "/projects" },
     { label: "Agents", href: "/agents" },
@@ -231,7 +231,7 @@ export const navigationLinks = {
       { label: "Press", href: "/press" },
     ],
     forBuyers: [
-      { label: "Browse Properties", href: "/properties" },
+      { label: "Browse Properties", href: "/search" },
       { label: "New Projects", href: "/projects" },
       { label: "Home Loans", href: "/mortgage-calculator" },
       { label: "EMI Calculator", href: "/mortgage-calculator" },
@@ -253,12 +253,12 @@ export const navigationLinks = {
       { label: "Agent Resources", href: "/blog" },
     ],
     cities: [
-      { label: "Visakhapatnam", href: "/properties?city=visakhapatnam" },
-      { label: "Hyderabad", href: "/properties?city=hyderabad" },
-      { label: "Bengaluru", href: "/properties?city=bengaluru" },
-      { label: "Chennai", href: "/properties?city=chennai" },
-      { label: "Mumbai", href: "/properties?city=mumbai" },
-      { label: "Delhi NCR", href: "/properties?city=delhi-ncr" },
+      { label: "Visakhapatnam", href: "/search?city=visakhapatnam" },
+      { label: "Hyderabad", href: "/search?city=hyderabad" },
+      { label: "Bengaluru", href: "/search?city=bengaluru" },
+      { label: "Chennai", href: "/search?city=chennai" },
+      { label: "Mumbai", href: "/search?city=mumbai" },
+      { label: "Delhi NCR", href: "/search?city=delhi-ncr" },
     ],
     legal: [
       { label: "Privacy Policy", href: "/privacy" },

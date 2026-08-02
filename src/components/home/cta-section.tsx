@@ -26,7 +26,7 @@ export function CTASection() {
           
           <div className="flex flex-col sm:flex-row gap-4 w-full justify-center max-w-md mx-auto">
             <Button variant="amber" size="xl" className="w-full sm:w-auto" asChild>
-              <Link href="/properties">
+              <Link href="/search">
                 Explore Properties <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>

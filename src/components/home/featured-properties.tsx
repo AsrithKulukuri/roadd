@@ -139,7 +139,7 @@ export function FeaturedProperties() {
               </button>
             </div>
             <Button type="button" variant="outline" className="w-full sm:w-auto" asChild>
-              <Link href="/properties">
+              <Link href="/search">
                 View All <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>

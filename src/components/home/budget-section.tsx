@@ -33,9 +33,7 @@ export function BudgetSection() {
   }, [properties, budget]);
 
   const handleViewAll = () => {
-    router.push(
-      `/properties?minBudget=${budget[0]}&maxBudget=${budget[1]}`
-    );
+    router.push(`/search?budget=${budget[0]},${budget[1]}`);
   };
 
   const isDefault = budget[0] === 0 && budget[1] === 100000000;
