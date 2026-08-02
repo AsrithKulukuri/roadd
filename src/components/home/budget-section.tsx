@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { IndianRupee, ArrowRight, Home } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { PropertyCard } from "@/components/property/property-card";
+import { ProjectCard } from "@/components/project/project-card";
 import { usePropertiesStore } from "@/stores/properties-store";
+import { useProjectsStore } from "@/stores/projects-store";
 import { formatINR, cn } from "@/lib/utils";
 
 const PRESETS = [
@@ -19,18 +21,31 @@ const PRESETS = [
 export function BudgetSection() {
   const router = useRouter();
   const properties = usePropertiesStore((s) => s.properties);
+  const projects = useProjectsStore((s) => s.projects);
   const [budget, setBudget] = useState<[number, number]>([0, 100000000]);
 
   const filtered = useMemo(() => {
-    return properties
-      .filter(
-        (p) =>
-          p.status !== "sold" &&
-          p.price >= budget[0] &&
-          p.price <= budget[1]
-      )
-      .slice(0, 6);
-  }, [properties, budget]);
+    const validProps = properties.filter(
+      (p) =>
+        p.status !== "sold" &&
+        p.price >= budget[0] &&
+        p.price <= budget[1]
+    ).map(p => ({ type: 'property' as const, data: p, price: p.price, createdAt: p.createdAt }));
+
+    const validProjs = projects.filter(
+      (p) => {
+        if (!p.configurations || p.configurations.length === 0) return false;
+        return p.configurations.some(cfg => cfg.priceMin <= budget[1] && cfg.priceMax >= budget[0]);
+      }
+    ).map(p => ({ type: 'project' as const, data: p, price: p.configurations[0]?.priceMin || 0, createdAt: p.createdAt }));
+
+    const combined = [...validProps, ...validProjs];
+    
+    // Sort by newest first just to have a nice default mix
+    combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return combined.slice(0, 6);
+  }, [properties, projects, budget]);
 
   const handleViewAll = () => {
     router.push(`/search?budget=${budget[0]},${budget[1]}`);
@@ -153,8 +168,10 @@ export function BudgetSection() {
       {/* Property Grid */}
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((property) => (
-            <PropertyCard key={property.id} property={property} />
+          {filtered.map((item, idx) => (
+            item.type === "property" 
+              ? <PropertyCard key={`prop-${item.data.id}-${idx}`} property={item.data as any} />
+              : <ProjectCard key={`proj-${item.data.id}-${idx}`} project={item.data as any} />
           ))}
         </div>
       ) : (
@@ -184,7 +201,7 @@ export function BudgetSection() {
             onClick={handleViewAll}
             className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-950 font-bold text-sm rounded-full hover:bg-slate-700 dark:hover:bg-amber-600 transition-all shadow-md cursor-pointer"
           >
-            View all {isDefault ? "properties" : "properties in this budget"}{" "}
+            View all {isDefault ? "listings" : "listings in this budget"}{" "}
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
