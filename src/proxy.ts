@@ -34,12 +34,6 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Debug logging for middleware evaluation
-    path: pathname,
-    userEmail: user?.email || "unauthenticated",
-    metaRole: user?.user_metadata?.role,
-    cookies: request.cookies.getAll().map((c) => c.name),
-  });
 
   const isAdminLoginPage = pathname === "/admin/login";
 

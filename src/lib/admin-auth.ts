@@ -21,12 +21,7 @@ export async function verifyAdminSession(): Promise<UserRoleInfo> {
   if (isSupabaseConfigured()) {
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-        hasSession: !!session,
-        userId: session?.user?.id,
-        email: session?.user?.email,
-        sessionError: sessionError?.message,
-      });
+
 
       if (session?.user) {
         const u = session.user;
