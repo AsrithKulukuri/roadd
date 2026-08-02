@@ -9,6 +9,7 @@ import { PropertyCard } from "@/components/property/property-card";
 import { ProjectCard } from "@/components/project/project-card";
 import { SearchFiltersModal, initialFilterState, type FilterState } from "@/components/search/search-filters";
 import { RealtorSearchHeader } from "@/components/search/realtor-search-header";
+import { MapWrapper } from "@/components/map/map-wrapper";
 import { SlidersHorizontal, ArrowLeft, Search as SearchIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ function UnifiedSearchPage() {
   const router = useRouter();
   
   const [activeTab, setActiveTab] = useState<"all" | "properties" | "projects">("all");
+  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [sortBy, setSortBy] = useState<"relevant" | "price-asc" | "price-desc" | "newest">("relevant");
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -316,8 +318,8 @@ function UnifiedSearchPage() {
       <RealtorSearchHeader 
         filters={filters}
         onFilterChange={setFilters}
-        viewMode="grid"
-        onViewModeChange={() => {}}
+        viewMode={viewMode}
+        onViewModeChange={(mode) => setViewMode(mode as "grid" | "map")}
         onOpenAllFilters={() => setIsFilterModalOpen(true)}
         totalResults={combinedResults.length}
       />
@@ -326,7 +328,8 @@ function UnifiedSearchPage() {
         <div className="flex flex-col gap-6">
           
           {/* Controls Bar */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          {viewMode === "grid" && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             
             <div className="flex bg-slate-100 dark:bg-slate-900 rounded-xl p-1">
               <button onClick={() => setActiveTab("all")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "all" ? "bg-white dark:bg-slate-800 shadow-sm text-amber-500" : "text-text-secondary hover:text-text-primary")}>All ({filteredProperties.length + filteredProjects.length})</button>
@@ -334,22 +337,28 @@ function UnifiedSearchPage() {
               <button onClick={() => setActiveTab("projects")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "projects" ? "bg-white dark:bg-slate-800 shadow-sm text-amber-500" : "text-text-secondary hover:text-text-primary")}>Projects ({filteredProjects.length})</button>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button onClick={() => setIsFilterModalOpen(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border-default bg-white dark:bg-bg-card hover:border-amber-primary/50 text-sm font-semibold transition-all">
-                <SlidersHorizontal className="w-4 h-4" /> Filters
-              </button>
-              
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-border-default bg-white dark:bg-bg-card text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-primary/30">
-                <option value="relevant">Relevant</option>
-                <option value="newest">Newest First</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-              </select>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-border-default bg-white dark:bg-bg-card text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-primary/30">
+                  <option value="relevant">Relevant</option>
+                  <option value="newest">Newest First</option>
+                  <option value="price-asc">Price: Low to High</option>
+                  <option value="price-desc">Price: High to Low</option>
+                </select>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Results Grid */}
-          {combinedResults.length > 0 ? (
+          {/* Results Grid or Map */}
+          {viewMode === "map" ? (
+            <div>
+              <div className="md:hidden fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-white overflow-hidden flex flex-col">
+                <MapWrapper filteredItems={filteredProperties} />
+              </div>
+              <div className="hidden md:block w-full h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white relative z-0">
+                <MapWrapper filteredItems={filteredProperties} />
+              </div>
+            </div>
+          ) : combinedResults.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {combinedResults.map((item, idx) => {
                 if (item.type === "property") {
