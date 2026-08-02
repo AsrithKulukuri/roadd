@@ -331,10 +331,10 @@ function UnifiedSearchPage() {
           {viewMode === "grid" && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             
-            <div className="flex bg-slate-100 dark:bg-slate-900/50 rounded-xl p-1 border border-slate-200 dark:border-slate-800">
-              <button onClick={() => setActiveTab("all")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "all" ? "bg-white dark:bg-slate-800 shadow-sm text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>All ({filteredProperties.length + filteredProjects.length})</button>
-              <button onClick={() => setActiveTab("properties")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "properties" ? "bg-white dark:bg-slate-800 shadow-sm text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Properties ({filteredProperties.length})</button>
-              <button onClick={() => setActiveTab("projects")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "projects" ? "bg-white dark:bg-slate-800 shadow-sm text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Projects ({filteredProjects.length})</button>
+            <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
+              <button onClick={() => setActiveTab("all")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "all" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>All ({filteredProperties.length + filteredProjects.length})</button>
+              <button onClick={() => setActiveTab("properties")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "properties" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Properties ({filteredProperties.length})</button>
+              <button onClick={() => setActiveTab("projects")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "projects" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Projects ({filteredProjects.length})</button>
             </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
