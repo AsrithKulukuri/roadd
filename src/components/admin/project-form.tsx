@@ -260,6 +260,21 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     setConfigs(prev => prev.filter(c => c.id !== id));
   };
 
+  const updateConfigField = (id: string, field: keyof ProjectConfig, value: any) => {
+    setConfigs(prev => prev.map(c => {
+      if (c.id !== id) return c;
+      return { ...c, [field]: value };
+    }));
+  };
+
+  const handleConfigImageUpload = async (id: string, file: File) => {
+    setUpl(`config-${id}`, true);
+    const url = await uploadFile(file, "projects", "floor-plans");
+    updateConfigField(id, "floorPlanUrl", url);
+    setUpl(`config-${id}`, false);
+    toast.success("Floor plan uploaded!");
+  };
+
   const updateConfigCalculated = (id: string, field: "size" | "pricePerUnit", value: number) => {
     setConfigs(prev => prev.map(c => {
       if (c.id !== id) return c;
@@ -540,41 +555,59 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                                 <X className="w-3 h-3" />
                               </button>
                             )}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              {projectType === "venture" ? (
-                                <>
-                                  <Field label="Plot Size (sqyd)"><Input type="number" value={config.plotSizeMin || ""} onChange={e => updateConfigCalculated(config.id, "size", Number(e.target.value))} placeholder="150" className={ic()} /></Field>
-                                  <Field label="Price per Sqyd (₹)"><Input type="number" value={config.pricePerUnit || ""} onChange={e => updateConfigCalculated(config.id, "pricePerUnit", Number(e.target.value))} placeholder="15000" className={ic()} /></Field>
-                                  <div className="space-y-1">
-                                    <label className="text-sm font-medium text-text-secondary">Calculated Price</label>
-                                    <div className="h-11 px-3.5 flex items-center bg-amber-500/10 border border-amber-500/20 text-amber-600 font-black rounded-xl text-sm">
-                                      {formatCurrency(config.priceMin || 0)}
+                            <div className="flex flex-col gap-4">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {projectType === "venture" ? (
+                                  <>
+                                    <Field label="Plot Size (sqyd)"><Input type="number" value={config.plotSizeMin || ""} onChange={e => updateConfigCalculated(config.id, "size", Number(e.target.value))} placeholder="150" className={ic()} /></Field>
+                                    <Field label="Price per Sqyd (₹)"><Input type="number" value={config.pricePerUnit || ""} onChange={e => updateConfigCalculated(config.id, "pricePerUnit", Number(e.target.value))} placeholder="15000" className={ic()} /></Field>
+                                    <div className="space-y-1">
+                                      <label className="text-sm font-medium text-text-secondary">Calculated Price</label>
+                                      <div className="h-11 px-3.5 flex items-center bg-amber-500/10 border border-amber-500/20 text-amber-600 font-black rounded-xl text-sm">
+                                        {formatCurrency(config.priceMin || 0)}
+                                      </div>
                                     </div>
-                                  </div>
-                                </>
-                              ) : projectType === "villa" ? (
-                                <>
-                                  <Field label="Built-up Area (sqft)"><Input type="number" value={config.builtUpAreaMin || ""} onChange={e => updateConfigCalculated(config.id, "size", Number(e.target.value))} placeholder="2000" className={ic()} /></Field>
-                                  <Field label="Price per Sqft (₹)"><Input type="number" value={config.pricePerUnit || ""} onChange={e => updateConfigCalculated(config.id, "pricePerUnit", Number(e.target.value))} placeholder="6000" className={ic()} /></Field>
-                                  <div className="space-y-1">
-                                    <label className="text-sm font-medium text-text-secondary">Calculated Price</label>
-                                    <div className="h-11 px-3.5 flex items-center bg-amber-500/10 border border-amber-500/20 text-amber-600 font-black rounded-xl text-sm">
-                                      {formatCurrency(config.priceMin || 0)}
+                                  </>
+                                ) : projectType === "villa" ? (
+                                  <>
+                                    <Field label="Built-up Area (sqft)"><Input type="number" value={config.builtUpAreaMin || ""} onChange={e => updateConfigCalculated(config.id, "size", Number(e.target.value))} placeholder="2000" className={ic()} /></Field>
+                                    <Field label="Price per Sqft (₹)"><Input type="number" value={config.pricePerUnit || ""} onChange={e => updateConfigCalculated(config.id, "pricePerUnit", Number(e.target.value))} placeholder="6000" className={ic()} /></Field>
+                                    <div className="space-y-1">
+                                      <label className="text-sm font-medium text-text-secondary">Calculated Price</label>
+                                      <div className="h-11 px-3.5 flex items-center bg-amber-500/10 border border-amber-500/20 text-amber-600 font-black rounded-xl text-sm">
+                                        {formatCurrency(config.priceMin || 0)}
+                                      </div>
                                     </div>
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <Field label="Built-up Area (sqft)"><Input type="number" value={config.superBuiltUpAreaMin || ""} onChange={e => updateConfigCalculated(config.id, "size", Number(e.target.value))} placeholder="1200" className={ic()} /></Field>
-                                  <Field label="Price per Sqft (₹)"><Input type="number" value={config.pricePerUnit || ""} onChange={e => updateConfigCalculated(config.id, "pricePerUnit", Number(e.target.value))} placeholder="5000" className={ic()} /></Field>
-                                  <div className="space-y-1">
-                                    <label className="text-sm font-medium text-text-secondary">Calculated Price</label>
-                                    <div className="h-11 px-3.5 flex items-center bg-amber-500/10 border border-amber-500/20 text-amber-600 font-black rounded-xl text-sm">
-                                      {formatCurrency(config.priceMin || 0)}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Field label="Built-up Area (sqft)"><Input type="number" value={config.superBuiltUpAreaMin || ""} onChange={e => updateConfigCalculated(config.id, "size", Number(e.target.value))} placeholder="1200" className={ic()} /></Field>
+                                    <Field label="Price per Sqft (₹)"><Input type="number" value={config.pricePerUnit || ""} onChange={e => updateConfigCalculated(config.id, "pricePerUnit", Number(e.target.value))} placeholder="5000" className={ic()} /></Field>
+                                    <div className="space-y-1">
+                                      <label className="text-sm font-medium text-text-secondary">Calculated Price</label>
+                                      <div className="h-11 px-3.5 flex items-center bg-amber-500/10 border border-amber-500/20 text-amber-600 font-black rounded-xl text-sm">
+                                        {formatCurrency(config.priceMin || 0)}
+                                      </div>
                                     </div>
+                                  </>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Field label="Possession Date">
+                                  <Input value={config.possessionDate || ""} onChange={e => updateConfigField(config.id, "possessionDate", e.target.value)} placeholder="e.g., Apr, 2026" className={ic()} />
+                                </Field>
+                                <div className="space-y-1">
+                                  <label className="text-sm font-medium text-text-secondary">Floor Plan Image (3D/2D)</label>
+                                  <div className="flex items-center gap-3">
+                                    {config.floorPlanUrl && <img src={config.floorPlanUrl} alt="Plan" className="w-10 h-10 rounded object-cover border border-border-default bg-white" />}
+                                    <Input type="file" accept="image/*" onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) handleConfigImageUpload(config.id, file);
+                                    }} className="file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-primary/10 file:text-amber-700 dark:file:text-amber-400 hover:file:bg-amber-primary/20 text-xs w-full" disabled={uploading[`config-${config.id}`]} />
+                                    {uploading[`config-${config.id}`] && <Loader2 className="w-4 h-4 animate-spin text-amber-500 shrink-0" />}
                                   </div>
-                                </>
-                              )}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         ))}

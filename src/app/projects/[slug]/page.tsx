@@ -115,11 +115,35 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   const [activeTab, setActiveTab] = useState<Tab>("Floor Plans");
   const [statusOpen, setStatusOpen] = useState(true);
   const [galleryIdx, setGalleryIdx] = useState<number | null>(null);
-  const [activeConfigIdx, setActiveConfigIdx] = useState(0);
+  const [activeConfigLabel, setActiveConfigLabel] = useState<string>("All");
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
   const project = projects.find((p) => p.slug === slug && p.isPublished);
+
+  useEffect(() => {
+    if (!project) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleSections = entries.filter((entry) => entry.isIntersecting);
+        if (visibleSections.length > 0) {
+          const visible = visibleSections[0];
+          const tabName = TABS.find((t) => t.toLowerCase().replace(" ", "-") === visible.target.id);
+          if (tabName) setActiveTab(tabName as Tab);
+        }
+      },
+      { rootMargin: "-120px 0px -40% 0px" }
+    );
+
+    setTimeout(() => {
+      TABS.forEach((tab) => {
+        const el = document.getElementById(tab.toLowerCase().replace(" ", "-"));
+        if (el) observer.observe(el);
+      });
+    }, 100);
+
+    return () => observer.disconnect();
+  }, [project?.id]);
 
   if (!project) {
     return (
@@ -153,8 +177,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   };
   const videoEmbed = getEmbed(project.videoUrl);
 
-  // Active config
-  const activeConfig = project.configurations[activeConfigIdx];
+  // Group configurations by label
+  const groupedConfigs = project.configurations.reduce((acc, cfg) => {
+    const found = acc.find(g => g.label === cfg.label);
+    if (found) found.configs.push(cfg);
+    else acc.push({ label: cfg.label, configs: [cfg] });
+    return acc;
+  }, [] as { label: string; configs: ProjectConfig[] }[]);
+
+  const currentLabel = activeConfigLabel === "All" ? "All" : (activeConfigLabel || groupedConfigs[0]?.label || "All");
+  const activeGroupConfigs = groupedConfigs.find(g => g.label === currentLabel)?.configs || [];
 
   return (
     <>
@@ -206,7 +238,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
           </div>
 
           {/* Desktop: 3-col grid */}
-          <div className="hidden sm:grid grid-cols-3 gap-2 rounded-2xl overflow-hidden" style={{ height: "320px" }}>
+          <div className="hidden sm:grid grid-cols-3 gap-2 rounded-2xl overflow-hidden h-[400px] md:h-[450px] lg:h-[500px]">
             <div className="col-span-2 relative cursor-pointer group" onClick={() => heroImage && setGalleryIdx(0)}>
               {heroImage ? (
                 <img src={heroImage} alt={project.name} className="w-full h-full object-cover" />
@@ -256,7 +288,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             {TABS.map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  setActiveTab(tab);
+                  const el = document.getElementById(tab.toLowerCase().replace(" ", "-"));
+                  if (el) {
+                    const y = el.getBoundingClientRect().top + window.scrollY - 120;
+                    window.scrollTo({ top: y, behavior: "smooth" });
+                  }
+                }}
                 className={`shrink-0 px-3 sm:px-4 py-3.5 text-xs sm:text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
                   activeTab === tab
                     ? "border-amber-primary text-amber-primary"
@@ -377,73 +416,114 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               </div>
 
               {/* Tab Content Area */}
-              {activeTab === "Floor Plans" && (
-                <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
+              <div className="space-y-8">
+                <section id="floor-plans" className="scroll-mt-32">
+                  <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
                   <h2 className="text-xl font-bold text-text-primary mb-4">
                     {project.projectType === "venture" ? "Plot Layouts & Pricing" : project.projectType === "villa" ? "Villa Configurations & Pricing" : "Floor Plans & Pricing"}
                   </h2>
 
                   {/* Config tabs */}
-                  <div className="flex gap-2 flex-wrap mb-5">
-                    {project.configurations.map((cfg, i) => (
-                      <button key={cfg.id} onClick={() => setActiveConfigIdx(i)}
-                        className={`px-4 py-2 rounded-full text-sm font-semibold border transition-all ${
-                          activeConfigIdx === i
-                            ? "bg-amber-primary/10 border-amber-primary text-amber-primary"
-                            : "border-border-default text-text-secondary hover:border-amber-primary/40"
+                  <div className="flex gap-3 flex-wrap mb-6">
+                    <button
+                      onClick={() => setActiveConfigLabel("All")}
+                      className={`px-5 py-2.5 rounded-full text-sm flex items-center justify-center border transition-all ${
+                        currentLabel === "All"
+                          ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white"
+                          : "bg-white text-text-secondary border-border-default hover:border-amber-primary/40 dark:bg-bg-primary"
+                      }`}
+                    >
+                      <span className="font-bold">All</span>
+                    </button>
+                    {groupedConfigs.map((group) => (
+                      <button key={group.label} onClick={() => setActiveConfigLabel(group.label)}
+                        className={`px-5 py-1.5 rounded-full text-sm flex flex-col items-center justify-center border transition-all ${
+                          currentLabel === group.label
+                            ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white"
+                            : "bg-white text-text-secondary border-border-default hover:border-amber-primary/40 dark:bg-bg-primary"
                         }`}
                       >
-                        {cfg.label}
+                        <span className="font-bold">{group.label}</span>
+                        <span className="text-[10px] opacity-80">{group.configs.length} Size{group.configs.length !== 1 ? 's' : ''}</span>
                       </button>
                     ))}
                   </div>
 
-                  {activeConfig && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="p-4 rounded-2xl border border-border-default bg-bg-primary space-y-2">
-                        <p className="text-xs font-semibold text-text-tertiary uppercase">
-                          {project.projectType === "venture" ? "Plot Size" : "Area"}
-                        </p>
-                        {activeConfig.builtUpAreaMin != null && project.projectType !== "venture" && (
-                          <p className="text-base font-bold text-text-primary">
-                            {activeConfig.builtUpAreaMin} – {activeConfig.builtUpAreaMax} sq.ft
-                            <span className="text-xs text-text-tertiary ml-1">(Built-up)</span>
-                          </p>
+                  <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-6 px-6">
+                    {(currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => (
+                      <div key={cfg.id || idx} className="w-[85vw] sm:w-[320px] shrink-0 snap-center p-4 rounded-2xl border border-border-default bg-bg-primary flex flex-col gap-4">
+                        {cfg.floorPlanUrl && (
+                          <div className="rounded-xl overflow-hidden bg-white aspect-[4/3] cursor-pointer border border-border-default flex items-center justify-center relative group" onClick={() => {
+                            const imgIdx = project.images.findIndex((x) => x.url === cfg.floorPlanUrl);
+                            setGalleryIdx(imgIdx >= 0 ? imgIdx : 0);
+                          }}>
+                            <img src={cfg.floorPlanUrl} alt={`${cfg.label} floor plan`} className="max-w-full max-h-full object-contain p-2" />
+                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 opacity-90 transition-opacity">
+                              <Eye className="w-3 h-3" /> 3D
+                            </div>
+                          </div>
                         )}
-                        {activeConfig.plotSizeMin != null && (
-                          <p className="text-base font-bold text-text-primary">
-                            {activeConfig.plotSizeMin}
-                            {activeConfig.plotSizeMax && activeConfig.plotSizeMax !== activeConfig.plotSizeMin ? ` – ${activeConfig.plotSizeMax}` : ""} sq.yds
-                          </p>
-                        )}
-                        <p className="text-xl font-bold text-amber-primary">
-                          {formatINRCrore(activeConfig.priceMin)}
-                          {activeConfig.priceMax && activeConfig.priceMax !== activeConfig.priceMin ? ` – ${formatINRCrore(activeConfig.priceMax)}` : ""}
-                        </p>
-                        {activeConfig.pricePerUnit != null && (
-                          <p className="text-xs text-text-secondary font-medium">
-                            ₹{activeConfig.pricePerUnit.toLocaleString("en-IN")}/{project.projectType === "venture" ? "sq.yd" : "sq.ft"}
-                          </p>
-                        )}
-                        {activeConfig.constructionStatus && (
-                          <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[activeConfig.constructionStatus]}`}>
-                            {STATUS_LABELS[activeConfig.constructionStatus]}
-                          </span>
-                        )}
-                        {activeConfig.possessionDate && (
-                          <p className="text-xs text-text-tertiary">{activeConfig.possessionDate} possession</p>
-                        )}
-                      </div>
-                      {activeConfig.floorPlanUrl && (
-                        <div className="rounded-2xl overflow-hidden border border-border-default aspect-video cursor-pointer" onClick={() => {
-                          const imgIdx = project.images.findIndex((x) => x.url === activeConfig.floorPlanUrl);
-                          setGalleryIdx(imgIdx >= 0 ? imgIdx : 0);
-                        }}>
-                          <img src={activeConfig.floorPlanUrl} alt={`${activeConfig.label} floor plan`} className="w-full h-full object-contain bg-bg-primary" />
+                        
+                        <div className="space-y-1 flex-1">
+                          {cfg.possessionDate && (
+                            <p className="text-sm text-text-secondary font-medium mb-1">Possession by {cfg.possessionDate}</p>
+                          )}
+                          <p className="text-lg font-bold text-text-primary">{cfg.label}</p>
+                          
+                          <div className="flex justify-between items-end mt-2">
+                            <div>
+                              <p className="text-xs text-text-tertiary">
+                                {project.projectType === "venture" ? "Plot Area" : "Super built-up area"}
+                              </p>
+                              {cfg.builtUpAreaMin != null && project.projectType !== "venture" && (
+                                <div className="flex items-center gap-1">
+                                  <p className="text-sm font-semibold text-text-secondary">
+                                    {cfg.builtUpAreaMin} – {cfg.builtUpAreaMax} sq.ft
+                                  </p>
+                                </div>
+                              )}
+                              {cfg.superBuiltUpAreaMin != null && (
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  <p className="text-sm font-semibold text-text-secondary">
+                                    {cfg.superBuiltUpAreaMin}
+                                    {cfg.superBuiltUpAreaMax && cfg.superBuiltUpAreaMax !== cfg.superBuiltUpAreaMin ? ` – ${cfg.superBuiltUpAreaMax}` : ""} sq.ft
+                                  </p>
+                                  <ChevronDown className="w-3.5 h-3.5 text-text-tertiary" />
+                                </div>
+                              )}
+                              {cfg.plotSizeMin != null && (
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  <p className="text-sm font-semibold text-text-secondary">
+                                    {cfg.plotSizeMin}
+                                    {cfg.plotSizeMax && cfg.plotSizeMax !== cfg.plotSizeMin ? ` – ${cfg.plotSizeMax}` : ""} sq.yds
+                                  </p>
+                                  <ChevronDown className="w-3.5 h-3.5 text-text-tertiary" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="mt-3">
+                            <p className="text-xl font-bold text-text-primary">
+                              {formatINRCrore(cfg.priceMin)}
+                              {cfg.priceMax && cfg.priceMax !== cfg.priceMin ? ` – ${formatINRCrore(cfg.priceMax)}` : ""}
+                            </p>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  )}
+                        
+                        <div className="pt-2 flex gap-2 border-t border-border-default/50 mt-auto">
+                          {whatsapp && (
+                            <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="w-11 h-11 flex items-center justify-center rounded-xl border border-green-500 text-green-600 hover:bg-green-500/10 transition-colors shrink-0">
+                              <MessageCircle className="w-5 h-5" />
+                            </a>
+                          )}
+                          <a href={phone || "#"} className="flex-1 flex items-center justify-center rounded-xl border-2 border-amber-primary text-amber-primary font-bold text-sm hover:bg-amber-primary/5 transition-colors">
+                            Contact
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
 
                   {/* Add Simulator for Ventures */}
                   {project.projectType === "venture" && (
@@ -454,9 +534,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     />
                   )}
                 </div>
-              )}
+              </section>
 
-              {activeTab === "Facilities" && (
+              <section id="facilities" className="scroll-mt-32">
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
                   <h2 className="text-xl font-bold text-text-primary mb-4">Facilities &amp; Amenities</h2>
                   {project.facilities.length > 0 ? (
@@ -471,9 +551,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     <p className="text-text-tertiary text-sm">No facilities listed.</p>
                   )}
                 </div>
-              )}
+              </section>
 
-              {activeTab === "Location" && (
+              <section id="location" className="scroll-mt-32">
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6 space-y-4">
                   <h2 className="text-xl font-bold text-text-primary">Location & Map</h2>
                   <div className="flex items-center gap-2 text-text-secondary text-sm">
@@ -517,9 +597,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     <p className="text-xs text-text-tertiary">Pincode: {project.location.pincode}</p>
                   )}
                 </div>
-              )}
+              </section>
 
-              {activeTab === "Brochure" && (
+              <section id="brochure" className="scroll-mt-32">
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
                   <h2 className="text-xl font-bold text-text-primary mb-4">Brochure</h2>
                   {project.brochureUrl ? (
@@ -548,9 +628,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     </div>
                   )}
                 </div>
-              )}
+              </section>
 
-              {activeTab === "Builder" && (
+              <section id="builder" className="scroll-mt-32">
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
                   <h2 className="text-xl font-bold text-text-primary mb-4">About the Builder</h2>
                   <div className="flex items-center gap-4">
@@ -576,7 +656,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     )}
                   </div>
                 </div>
-              )}
+              </section>
+              </div>
             </div>
 
             {/* Right Sidebar */}
