@@ -29,7 +29,7 @@ export const useProjectsStore = create<ProjectsState>()(
         const { data, error } = await supabase
           .from('projects')
           .select('*')
-          .order('createdAt', { ascending: false });
+          .order('id', { ascending: false });
 
         if (error) {
           // Log full Supabase error details for debugging
@@ -55,7 +55,16 @@ export const useProjectsStore = create<ProjectsState>()(
 
         try {
           const { error } = await supabase.from('projects').insert([project]);
-          if (error) console.warn('Supabase project insert warning:', error.message);
+          if (error) {
+            console.warn('Supabase project insert warning:', error.message);
+          } else {
+            // Re-fetch so we get the server's canonical version (correct JSONB, location, etc.)
+            const { data } = await supabase
+              .from('projects')
+              .select('*')
+              .order('id', { ascending: false });
+            if (data) set({ projects: data as Project[] });
+          }
         } catch (err: any) {
           console.warn('Supabase project insert exception:', err?.message ?? err);
         }

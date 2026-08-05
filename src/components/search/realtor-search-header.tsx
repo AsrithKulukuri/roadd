@@ -6,6 +6,7 @@ import {
   Search,
   SlidersHorizontal,
   ChevronDown,
+  ChevronLeft,
   Heart,
   Map,
   List,
@@ -165,6 +166,14 @@ export function RealtorSearchHeader({
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2">
           {/* ROW 1: REALTOR SEARCH BOX & LIST/MAP VIEW TOGGLE */}
           <div className="flex items-center gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shrink-0 border border-slate-200 dark:border-slate-700"
+              title="Go Back"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
             {/* SEARCH INPUT BOX CONTAINER */}
             <form
               onSubmit={handleSearchSubmit}

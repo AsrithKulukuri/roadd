@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useProjectsStore } from "@/stores/projects-store";
 import { ProjectCard } from "@/components/project/project-card";
+import { BackButton } from "@/components/ui/back-button";
 import {
   Building2, Home, Landmark, Search, X, ChevronDown,
   SquareDashed, Trees, SlidersHorizontal,
@@ -119,8 +120,11 @@ export default function ProjectsPage() {
     <div className="min-h-screen bg-slate-50/50 dark:bg-bg-primary pt-20 pb-20">
 
       {/* ─── Hero ──────────────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white py-14 px-4">
-        <div className="max-w-5xl mx-auto text-center">
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white py-14 px-4 relative">
+        <div className="max-w-5xl mx-auto text-center relative">
+          <div className="absolute left-0 top-0 hidden sm:block">
+            <BackButton className="text-white hover:bg-white/10" />
+          </div>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-primary/20 border border-amber-primary/30 text-amber-primary text-sm font-semibold mb-5">
             <Building2 className="w-4 h-4" />
             Builder Projects

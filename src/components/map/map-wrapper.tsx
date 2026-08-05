@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
-import type { Property } from "@/types/property";
 
 // Dynamically import the map component with SSR disabled
 const PropertyMap = dynamic(
@@ -21,7 +20,7 @@ const PropertyMap = dynamic(
 );
 
 interface MapWrapperProps {
-  filteredItems?: Property[];
+  filteredItems?: any[];
 }
 
 export function MapWrapper({ filteredItems }: MapWrapperProps) {

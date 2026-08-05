@@ -311,6 +311,37 @@ function UnifiedSearchPage() {
     return items;
   }, [filteredProperties, filteredProjects, sortBy]);
 
+  // Map items: projects adapted to property-compatible shape so they appear as pins on the map
+  const mapItems = useMemo(() => {
+    const propItems = filteredProperties as any[];
+    const projItems = filteredProjects
+      .filter(p => p.isPublished && p.location?.latitude && p.location?.longitude)
+      .map(p => ({
+        id: p.id,
+        slug: p.slug,
+        title: p.name,
+        price: p.configurations?.[0]?.priceMin || 0,
+        propertyType: p.projectType,
+        listingType: "project",
+        status: "active",
+        location: {
+          address: p.location.address,
+          locality: p.location.locality,
+          city: p.location.city,
+          state: p.location.state,
+          latitude: p.location.latitude,
+          longitude: p.location.longitude,
+        },
+        coverImage: p.coverImage,
+        images: p.images?.map((img: any) => img.url || img) || [],
+        showOnMap: true,
+        builderName: p.builderName,
+        // signals it's a project for the popup
+        _isProject: true,
+      }));
+    return [...propItems, ...projItems];
+  }, [filteredProperties, filteredProjects]);
+
   if (!mounted) return null;
 
   return (
@@ -352,10 +383,10 @@ function UnifiedSearchPage() {
           {viewMode === "map" ? (
             <div>
               <div className="md:hidden fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-white overflow-hidden flex flex-col">
-                <MapWrapper filteredItems={filteredProperties} />
+                <MapWrapper filteredItems={mapItems} />
               </div>
               <div className="hidden md:block w-full h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white relative z-0">
-                <MapWrapper filteredItems={filteredProperties} />
+                <MapWrapper filteredItems={mapItems} />
               </div>
             </div>
           ) : combinedResults.length > 0 ? (

@@ -3,12 +3,14 @@
 import { use, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useProjectsStore } from "@/stores/projects-store";
+import { getYoutubeEmbedUrl, isYoutubeShort } from "@/lib/utils";
 import {
   MapPin, CheckCircle2, Phone, MessageCircle, Download,
   ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark,
   Eye, X, ChevronLeft, ChevronRight, Play, Map,
 } from "lucide-react";
 import Link from "next/link";
+import { BackButton } from "@/components/ui/back-button";
 import type { Project, ProjectConfig } from "@/types/project";
 
 // ─── Lazy map (SSR unsafe) ─────────────────────────────────────────────────────
@@ -87,16 +89,27 @@ function GalleryModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4">
-      <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors">
+    <div className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center p-4">
+      {/* Back button top-left */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-white border border-white/20 text-xs font-bold transition-all cursor-pointer shadow-lg"
+        title="Back to project"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span>Back to Project ({idx + 1}/{images.length})</span>
+      </button>
+
+      {/* Close X button top-right */}
+      <button onClick={onClose} className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-white border border-white/20 transition-all cursor-pointer shadow-lg" title="Close photo gallery">
         <X className="w-5 h-5" />
       </button>
-      <p className="absolute top-4 left-4 text-white/60 text-sm">{idx + 1} / {images.length}</p>
-      <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors">
-        <ChevronLeft className="w-5 h-5" />
+
+      <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-slate-900/80 hover:bg-amber-500 hover:text-slate-950 text-white transition-all cursor-pointer z-10">
+        <ChevronLeft className="w-6 h-6" />
       </button>
-      <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors">
-        <ChevronRight className="w-5 h-5" />
+      <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-slate-900/80 hover:bg-amber-500 hover:text-slate-950 text-white transition-all cursor-pointer z-10">
+        <ChevronRight className="w-6 h-6" />
       </button>
       <img src={images[idx].url} alt={images[idx].alt ?? "Project image"} className="max-h-[85vh] max-w-full object-contain rounded-xl" />
     </div>
@@ -116,6 +129,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   const [statusOpen, setStatusOpen] = useState(true);
   const [galleryIdx, setGalleryIdx] = useState<number | null>(null);
   const [activeConfigLabel, setActiveConfigLabel] = useState<string>("All");
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const [floorPlanLightbox, setFloorPlanLightbox] = useState<{ url: string; label: string } | null>(null);
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
@@ -169,13 +184,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
     : null;
   const phone = project.builderPhone ? `tel:${project.builderPhone.replace(/\s/g, "")}` : null;
 
-  // YouTube embed
-  const getEmbed = (url?: string) => {
-    if (!url) return null;
-    const m = url.match(/(?:youtu\.be\/|v=)([^#&?]+)/);
-    return m ? `https://www.youtube.com/embed/${m[1]}` : null;
-  };
-  const videoEmbed = getEmbed(project.videoUrl);
+  // YouTube embed — use the full utility that handles Shorts, Live, share links, etc.
+  const videoEmbed = getYoutubeEmbedUrl(project.videoUrl);
+  const isShort = isYoutubeShort(project.videoUrl);
 
   // Group configurations by label
   const groupedConfigs = project.configurations.reduce((acc, cfg) => {
@@ -195,15 +206,95 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
         <GalleryModal images={galleryAll} startIdx={galleryIdx} onClose={() => setGalleryIdx(null)} />
       )}
 
+      {/* Floor Plan Lightbox */}
+      {floorPlanLightbox && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center p-4"
+          onClick={() => setFloorPlanLightbox(null)}
+        >
+          {/* Back button top-left */}
+          <button
+            onClick={() => setFloorPlanLightbox(null)}
+            className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-white border border-white/20 text-xs font-bold transition-all cursor-pointer shadow-lg"
+            title="Back to project"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Project</span>
+          </button>
+          {/* Close button top-right */}
+          <button
+            onClick={() => setFloorPlanLightbox(null)}
+            className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-white border border-white/20 transition-all cursor-pointer shadow-lg"
+            title="Close floor plan"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <p className="absolute top-5 left-5 text-white/70 text-sm font-semibold">
+            {floorPlanLightbox.label} — Floor Plan
+          </p>
+          <div
+            className="w-full max-w-3xl max-h-[85vh] flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={floorPlanLightbox.url}
+              alt={`${floorPlanLightbox.label} floor plan`}
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+            />
+          </div>
+          <p className="mt-4 text-white/40 text-xs">Click anywhere outside to close</p>
+        </div>
+      )}
+
+      {/* Video Tour Modal */}
+      {isVideoOpen && videoEmbed && (
+        <div className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4" onClick={() => setIsVideoOpen(false)}>
+          <div
+            className={`relative w-full bg-black rounded-3xl overflow-hidden shadow-2xl ${isShort ? "max-w-[420px]" : "max-w-4xl"}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 bg-slate-900">
+              <button
+                onClick={() => setIsVideoOpen(false)}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-amber-500 hover:text-slate-950 text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+                title="Back to project"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back</span>
+              </button>
+              <div className="flex items-center gap-2 text-white font-bold text-sm truncate mx-2">
+                <Play className="w-4 h-4 text-red-500 fill-red-500 shrink-0" />
+                {isShort ? "Video Short Tour" : "Project Video Tour"} — {project.name}
+              </div>
+              <button onClick={() => setIsVideoOpen(false)} className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer shrink-0" title="Close video">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className={`relative w-full bg-black flex items-center justify-center ${isShort ? "aspect-[9/16] max-h-[75vh]" : "aspect-video"}`}>
+              <iframe
+                src={`${videoEmbed}?autoplay=1`}
+                title={`${project.name} Video Tour`}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="min-h-screen bg-slate-50 dark:bg-bg-primary pt-16">
-        {/* Breadcrumb */}
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-2 text-sm text-text-secondary">
-            <Link href="/" className="hover:text-amber-primary transition-colors">Home</Link>
-            <span>/</span>
-            <Link href="/projects" className="hover:text-amber-primary transition-colors">Projects</Link>
-            <span>/</span>
-            <span className="text-text-primary font-medium">{project.name}</span>
+        {/* Breadcrumb & Back Button */}
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <BackButton />
+            <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <Link href="/" className="hover:text-amber-primary transition-colors">Home</Link>
+              <span>/</span>
+              <Link href="/projects" className="hover:text-amber-primary transition-colors">Projects</Link>
+              <span>/</span>
+              <span className="text-text-primary font-medium">{project.name}</span>
+            </div>
           </div>
         </div>
 
@@ -220,8 +311,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             )}
             {galleryAll.length > 0 && (
               <button onClick={(e) => { e.stopPropagation(); setGalleryIdx(0); }}
-                className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/70 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/70 text-white text-xs font-semibold px-3 py-1.5 rounded-full z-10">
                 <Eye className="w-3.5 h-3.5" /> {galleryAll.length} Photos
+              </button>
+            )}
+            {videoEmbed && (
+              <button onClick={(e) => { e.stopPropagation(); setIsVideoOpen(true); }}
+                className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg z-10">
+                <Play className="w-3.5 h-3.5 fill-white text-white" /> Watch Tour
               </button>
             )}
             {/* Thumbnail strip */}
@@ -248,14 +345,25 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 </div>
               )}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-              {galleryAll.length > 0 && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setGalleryIdx(0); }}
-                  className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/70 text-white text-xs font-medium px-3 py-1.5 rounded-full hover:bg-black/90 transition-colors"
-                >
-                  <Eye className="w-3.5 h-3.5" /> All Photos &amp; Videos ({galleryAll.length})
-                </button>
-              )}
+              {/* Bottom action bar */}
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-none">
+                {galleryAll.length > 0 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setGalleryIdx(0); }}
+                    className="pointer-events-auto flex items-center gap-2 bg-black/70 text-white text-xs font-medium px-3 py-1.5 rounded-full hover:bg-black/90 transition-colors"
+                  >
+                    <Eye className="w-3.5 h-3.5" /> All Photos ({galleryAll.length})
+                  </button>
+                )}
+                {videoEmbed && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setIsVideoOpen(true); }}
+                    className="pointer-events-auto flex items-center gap-2 bg-white/90 hover:bg-white text-slate-950 text-xs font-black px-4 py-1.5 rounded-full shadow-xl transition-all hover:scale-105"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-red-600 text-red-600" /> Watch Tour
+                  </button>
+                )}
+              </div>
             </div>
             <div className="flex flex-col gap-2">
               {sideImages.length > 0 ? (
@@ -306,6 +414,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               </button>
             ))}
             <div className="ml-auto flex items-center gap-2 py-2 shrink-0 pl-2">
+              {videoEmbed && (
+                <button
+                  onClick={() => setIsVideoOpen(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer"
+                >
+                  <Play className="w-3.5 h-3.5 fill-white text-white" /> Watch Tour
+                </button>
+              )}
               {project.brochureUrl && (
                 <a href={project.brochureUrl} target="_blank" rel="noopener noreferrer"
                   className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border-default text-xs font-semibold text-text-primary hover:border-amber-primary transition-colors">
@@ -339,6 +455,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                       {project.location.locality}, {project.location.city}
                     </div>
                     <div className="flex flex-wrap gap-2 mt-3">
+                      {videoEmbed && (
+                        <button
+                          onClick={() => setIsVideoOpen(true)}
+                          className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-600 border border-red-500/30 hover:bg-red-500/20 transition-all cursor-pointer"
+                        >
+                          <Play className="w-3.5 h-3.5 fill-red-600 text-red-600" /> Watch Tour
+                        </button>
+                      )}
                       {project.reraApproved && (
                         <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-500/10 text-green-600 border border-green-500/20">
                           <CheckCircle2 className="w-3 h-3" /> RERA
@@ -453,13 +577,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     {(currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => (
                       <div key={cfg.id || idx} className="w-[85vw] sm:w-[320px] shrink-0 snap-center p-4 rounded-2xl border border-border-default bg-bg-primary flex flex-col gap-4">
                         {cfg.floorPlanUrl && (
-                          <div className="rounded-xl overflow-hidden bg-white aspect-[4/3] cursor-pointer border border-border-default flex items-center justify-center relative group" onClick={() => {
-                            const imgIdx = project.images.findIndex((x) => x.url === cfg.floorPlanUrl);
-                            setGalleryIdx(imgIdx >= 0 ? imgIdx : 0);
-                          }}>
+                          <div
+                            className="rounded-xl overflow-hidden bg-white aspect-[4/3] cursor-zoom-in border border-border-default flex items-center justify-center relative group"
+                            onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: cfg.label })}
+                          >
                             <img src={cfg.floorPlanUrl} alt={`${cfg.label} floor plan`} className="max-w-full max-h-full object-contain p-2" />
-                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 opacity-90 transition-opacity">
-                              <Eye className="w-3 h-3" /> 3D
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl" />
+                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                              <Eye className="w-3 h-3" /> View
                             </div>
                           </div>
                         )}
@@ -685,6 +810,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 <h3 className="font-bold text-text-primary mb-1">Contact Builder</h3>
                 <p className="text-xs text-text-tertiary mb-4">Get exact pricing, payment plans &amp; site visit</p>
                 <div className="space-y-3">
+                  {videoEmbed && (
+                    <button
+                      onClick={() => setIsVideoOpen(true)}
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-colors cursor-pointer shadow-md"
+                    >
+                      <Play className="w-4 h-4 fill-white text-white" /> Watch Tour Video
+                    </button>
+                  )}
                   {phone && (
                     <a href={phone} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-amber-primary text-slate-950 font-bold hover:bg-amber-500 transition-colors">
                       <Phone className="w-4 h-4" /> View Number
@@ -739,6 +872,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             <p className="text-[10px] text-text-tertiary truncate">{project.builderName}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {videoEmbed && (
+              <button
+                onClick={() => setIsVideoOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-red-600 text-white font-bold text-xs shrink-0 shadow-sm"
+              >
+                <Play className="w-3.5 h-3.5 fill-white text-white" /> Watch Tour
+              </button>
+            )}
             {project.brochureUrl && (
               <a href={project.brochureUrl} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1 px-3 py-2 rounded-xl border border-border-default text-text-secondary text-xs font-semibold">

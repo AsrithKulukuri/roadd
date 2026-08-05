@@ -82,14 +82,16 @@ export default async function PropertyDetailPage({
       <div className="sticky top-16 z-30 w-full bg-white backdrop-blur-md border-b border-slate-200 py-3 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
           
-          {/* Left: < Search Back Link */}
-          <Link
-            href="/properties"
-            className="flex items-center gap-1.5 text-xs font-black text-slate-900 hover:text-amber-500 transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4 text-amber-500 stroke-[3]" />
-            <span className="underline decoration-slate-400 underline-offset-4 font-extrabold">Search Properties</span>
-          </Link>
+          {/* Left: Back Button & Search Properties Link */}
+          <div className="flex items-center gap-2">
+            <BackButton />
+            <Link
+              href="/properties"
+              className="flex items-center gap-1.5 text-xs font-black text-slate-900 hover:text-amber-500 transition-colors"
+            >
+              <span className="underline decoration-slate-400 underline-offset-4 font-extrabold">Search Properties</span>
+            </Link>
+          </div>
 
           {/* Center: Realtor.com Style CENTERED ROAD FACING BRANDING */}
           <div className="flex items-center gap-2">

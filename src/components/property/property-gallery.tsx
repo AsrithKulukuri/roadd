@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Grid2X2, Play, Camera, Tag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Grid2X2, Play, Camera, Tag, X, ArrowLeft } from "lucide-react";
 import type { PropertyImage } from "@/types/property";
 
 import { getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
@@ -135,6 +135,23 @@ export function PropertyGallery({ images, title, videoUrl, isReadyToMove = true 
               fill
               className="object-contain"
             />
+
+            <button
+              onClick={() => setIsOpen(false)}
+              className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-white border border-white/20 text-xs font-bold transition-all cursor-pointer shadow-lg"
+              title="Back to property"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Property</span>
+            </button>
+
+            <button
+              onClick={() => setIsOpen(false)}
+              className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-white border border-white/20 transition-all cursor-pointer shadow-lg"
+              title="Close Image Gallery"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
             <button
               onClick={handlePrev}

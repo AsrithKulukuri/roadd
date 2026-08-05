@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import {
   Plus, Trash2, Edit3, Star, Eye, EyeOff,
   Building2, Home, Landmark, MoreHorizontal,
-  MapPin, CheckCircle2, AlertCircle,
+  MapPin, CheckCircle2, AlertCircle, Play,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -239,6 +239,11 @@ export default function AdminProjectsPage() {
                             >
                               {project.isPublished ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                             </button>
+                            {project.videoUrl && (
+                              <span title="Has Watch Tour video" className="p-1.5 rounded-full text-red-500 bg-red-500/10">
+                                <Play className="w-4 h-4 fill-red-500" />
+                              </span>
+                            )}
                           </div>
                         </td>
                         {/* Actions */}

@@ -14,9 +14,10 @@ import {
   Check, X, Upload, Link as LinkIcon,
   Image as ImageIcon, FileText, MapPin, Save,
   CheckCircle2, Loader2, Map, Info, Video, CheckSquare, Square,
-  Settings
+  Settings, AlertCircle
 } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import type {
   Project, ProjectType, ProjectConfig,
   ProjectPhase, ProjectImage, ConstructionStatus,
@@ -122,6 +123,21 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [showMap, setShowMap] = useState(false);
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Field change handlers clearing errors
+  const handleNameChange = (val: string) => {
+    setName(val);
+    if (errors.name) setErrors(prev => ({ ...prev, name: "" }));
+  };
+  const handleBuilderNameChange = (val: string) => {
+    setBuilderName(val);
+    if (errors.builderName) setErrors(prev => ({ ...prev, builderName: "" }));
+  };
+  const handleLocalityChange = (val: string) => {
+    setLocality(val);
+    if (errors.locality) setErrors(prev => ({ ...prev, locality: "" }));
+  };
 
   // ── Step 1 ──
   const [projectType, setProjectType]         = useState<ProjectType>(initialData?.projectType ?? "apartment");
@@ -238,6 +254,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
 
   // ─── Config helpers ────────────────────────────────────────────────────────
   const toggleConfig = (label: string) => {
+    if (errors.configs) setErrors(prev => ({ ...prev, configs: "" }));
     setConfigs(prev => {
       if (prev.some(c => c.label === label)) {
         return prev.filter(c => c.label !== label);
@@ -250,6 +267,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   };
 
   const addConfigVariant = (label: string) => {
+    if (errors.configs) setErrors(prev => ({ ...prev, configs: "" }));
     setConfigs(prev => [...prev, {
       id: `cfg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       label, priceMin: 0, priceMax: 0,
@@ -318,15 +336,36 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   // ─── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent, publish: boolean) => {
     e.preventDefault();
-    
-    if (!name.trim() || !builderName.trim() || !locality.trim()) {
-      toast.error("Please fill Name, Builder Name, and Locality.");
+
+    const newErrors: Record<string, string> = {};
+    if (!name.trim()) newErrors.name = "Project Name is required";
+    if (!builderName.trim()) newErrors.builderName = "Builder Name is required";
+    if (!locality.trim()) newErrors.locality = "Locality / Landmark is required";
+    if (configs.length === 0) newErrors.configs = "At least one configuration type is required";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+
+      const missingLabels: string[] = [];
+      if (newErrors.name) missingLabels.push("Project Name");
+      if (newErrors.builderName) missingLabels.push("Builder Name");
+      if (newErrors.locality) missingLabels.push("Locality");
+      if (newErrors.configs) missingLabels.push("Configuration Types");
+
+      toast.error(`⚠️ Unfilled required fields: ${missingLabels.join(", ")}`);
+
+      // Scroll to the first missing field element
+      const firstErrorKey = Object.keys(newErrors)[0];
+      const el = document.getElementById(`field-${firstErrorKey}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        const input = el.querySelector("input, select, button") as HTMLElement;
+        if (input) input.focus();
+      }
       return;
     }
-    if (configs.length === 0) {
-      toast.error("Please select at least one Configuration type.");
-      return;
-    }
+
+    setErrors({});
 
     setSubmitting(true);
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -408,6 +447,16 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
 
         <form className="space-y-8">
           
+          {/* Top Error Alert Banner */}
+          {Object.keys(errors).length > 0 && (
+            <div className="p-4 rounded-2xl bg-red-500/10 border-2 border-red-500 text-red-600 dark:text-red-400 font-bold text-sm flex items-center justify-between shadow-md animate-in fade-in duration-200">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
+                <span>Please fill in the required highlighted fields: <strong className="underline">{Object.values(errors).join(", ")}</strong></span>
+              </div>
+            </div>
+          )}
+
           {/* SECTION 1: Basic Information */}
           <div className="bg-bg-card border border-border-default rounded-3xl p-6 shadow-sm">
             <h2 className="text-xl font-heading font-semibold text-text-primary mb-6 flex items-center">
@@ -441,9 +490,25 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
               </div>
 
               {/* Basic Fields */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Project Name *</label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Lansum Evana" className={ic()} />
+              <div id="field-name" className="space-y-2">
+                <label className="text-sm font-medium text-text-secondary flex items-center justify-between">
+                  <span>Project Name <span className="text-red-500 font-bold">*</span></span>
+                  {errors.name && <span className="text-xs text-red-500 font-bold">Required</span>}
+                </label>
+                <Input
+                  value={name}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  placeholder="e.g. Lansum Evana"
+                  className={cn(
+                    ic(),
+                    errors.name && "border-2 border-red-500 ring-2 ring-red-500/30 bg-red-50 dark:bg-red-950/20"
+                  )}
+                />
+                {errors.name && (
+                  <p className="text-xs font-bold text-red-500 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> {errors.name}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-secondary">Tagline</label>
@@ -463,9 +528,26 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Field label="Builder Name" required>
-                    <Input value={builderName} onChange={(e) => setBuilderName(e.target.value)} placeholder="e.g. Lansum Properties LLP" className={ic()} />
-                  </Field>
+                  <div id="field-builderName" className="space-y-1">
+                    <label className="text-sm font-medium text-text-primary flex items-center justify-between">
+                      <span>Builder / Developer Name <span className="text-red-500 font-bold">*</span></span>
+                      {errors.builderName && <span className="text-xs text-red-500 font-bold">Required</span>}
+                    </label>
+                    <Input
+                      value={builderName}
+                      onChange={(e) => handleBuilderNameChange(e.target.value)}
+                      placeholder="e.g. Lansum Properties LLP"
+                      className={cn(
+                        ic(),
+                        errors.builderName && "border-2 border-red-500 ring-2 ring-red-500/30 bg-red-50 dark:bg-red-950/20"
+                      )}
+                    />
+                    {errors.builderName && (
+                      <p className="text-xs font-bold text-red-500 flex items-center gap-1 mt-1">
+                        <AlertCircle className="w-3.5 h-3.5" /> {errors.builderName}
+                      </p>
+                    )}
+                  </div>
                   <Field label="Builder Phone">
                     <Input value={builderPhone} onChange={(e) => setBuilderPhone(e.target.value)} placeholder="+91 XXXXX XXXXX" className={ic()} />
                   </Field>
@@ -516,12 +598,23 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
             </div>
           </div>
 
-          {/* SECTION 2: Configurations (Simplified) */}
-          <div className="bg-bg-card border border-border-default rounded-3xl p-6 shadow-sm">
-            <h2 className="text-xl font-heading font-semibold text-text-primary mb-2 flex items-center">
-              <Settings className="w-5 h-5 mr-2 text-amber-primary" /> Configurations
+          {/* SECTION 2: Configurations */}
+          <div id="field-configs" className={cn(
+            "bg-bg-card border rounded-3xl p-6 shadow-sm transition-all",
+            errors.configs ? "border-2 border-red-500 bg-red-500/5 ring-2 ring-red-500/20" : "border-border-default"
+          )}>
+            <h2 className="text-xl font-heading font-semibold text-text-primary mb-2 flex items-center justify-between">
+              <span className="flex items-center">
+                <Settings className="w-5 h-5 mr-2 text-amber-primary" /> Configurations <span className="text-red-500 ml-1">*</span>
+              </span>
+              {errors.configs && <span className="text-xs text-red-500 font-bold">Required</span>}
             </h2>
-            <p className="text-sm text-text-secondary mb-6">Select the types available in this project and enter their size & price ranges.</p>
+            <p className="text-sm text-text-secondary mb-4">Select the types available in this project and enter their size &amp; price ranges.</p>
+            {errors.configs && (
+              <p className="text-xs font-bold text-red-500 flex items-center gap-1 mb-4">
+                <AlertCircle className="w-3.5 h-3.5" /> {errors.configs}
+              </p>
+            )}
             
             <div className="space-y-4">
               {configOptions.map((label) => {
@@ -631,8 +724,73 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
           {/* SECTION 3: Location */}
           <div className="bg-bg-card border border-border-default rounded-3xl p-6 shadow-sm">
             <h2 className="text-xl font-heading font-semibold text-text-primary mb-4 flex items-center">
-              <MapPin className="w-5 h-5 mr-2 text-amber-primary" /> Location
+              <MapPin className="w-5 h-5 mr-2 text-amber-primary" /> Location Details
             </h2>
+
+            {/* Explicit Location Inputs: Locality, Address, City, State, Pincode */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div id="field-locality" className="space-y-1">
+                <label className="text-sm font-medium text-text-primary flex items-center justify-between">
+                  <span>Locality / Area / Landmark <span className="text-red-500 font-bold">*</span></span>
+                  {errors.locality && <span className="text-xs text-red-500 font-bold">Required</span>}
+                </label>
+                <Input
+                  value={locality}
+                  onChange={(e) => handleLocalityChange(e.target.value)}
+                  placeholder="e.g. Benz Circle, Poranki, Kanuru, Tadepalli"
+                  className={cn(
+                    ic(),
+                    errors.locality && "border-2 border-red-500 ring-2 ring-red-500/30 bg-red-50 dark:bg-red-950/20"
+                  )}
+                />
+                {errors.locality && (
+                  <p className="text-xs font-bold text-red-500 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> {errors.locality}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-text-primary">Address / Door No.</label>
+                <Input
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="e.g. Near Vijayawada Highway, Plot No. 45"
+                  className={ic()}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-text-primary">City</label>
+                <Input
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="e.g. Vijayawada, Guntur"
+                  className={ic()}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-text-primary">State</label>
+                  <Input
+                    value={locState}
+                    onChange={(e) => setLocState(e.target.value)}
+                    placeholder="Andhra Pradesh"
+                    className={ic()}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-text-primary">Pincode</label>
+                  <Input
+                    value={pincode}
+                    onChange={(e) => setPincode(e.target.value)}
+                    placeholder="520007"
+                    className={ic()}
+                  />
+                </div>
+              </div>
+            </div>
 
             {/* Google Maps Location Link Auto-Fetcher */}
             <div className="space-y-2 mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
@@ -793,9 +951,17 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
               </div>
 
               {/* Video URL */}
-              <div className="md:col-span-2 space-y-4">
-                <label className="text-sm font-medium text-text-secondary">YouTube Walkthrough Video URL</label>
-                <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." className="h-12" />
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-sm font-medium text-text-secondary flex items-center gap-2">
+                  <Video className="w-4 h-4 text-red-500" />
+                  Watch Tour Video URL <span className="text-xs text-text-tertiary font-normal">(Shows as "Watch Tour" button on the project page)</span>
+                </label>
+                <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://youtube.com/watch?v=... or youtu.be/... or Shorts URL" className={ic()} />
+                {videoUrl.trim() && (
+                  <p className="text-xs text-green-500 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Video URL saved — Watch Tour button will appear on the project page.
+                  </p>
+                )}
               </div>
 
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border-default/50">
