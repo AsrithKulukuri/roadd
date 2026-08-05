@@ -1485,7 +1485,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                             <div className="absolute top-1 left-1 bg-slate-950/80 text-amber-400 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md backdrop-blur-xs">
-                              {prop._isProject ? "Project" : (prop.bedrooms ? `${prop.bedrooms} BHK` : prop.propertyType)}
+                              {(prop as any)._isProject ? "Project" : (prop.bedrooms ? `${prop.bedrooms} BHK` : prop.propertyType)}
                             </div>
                           </div>
 
@@ -1513,7 +1513,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                               )}
 
                               <Link
-                                href={prop._isProject ? `/projects/${prop.slug}` : `/properties/${prop.slug || prop.id}`}
+                                href={(prop as any)._isProject ? `/projects/${prop.slug}` : `/properties/${prop.slug || prop.id}`}
                                 onClick={(e) => e.stopPropagation()}
                                 className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shrink-0 shadow-xs"
                               >
