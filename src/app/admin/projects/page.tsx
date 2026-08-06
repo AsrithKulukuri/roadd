@@ -254,7 +254,7 @@ export default function AdminProjectsPage() {
                                 <MoreHorizontal className="w-4 h-4" />
                               </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuContent align="end" className="w-40 bg-white dark:bg-bg-card border border-border-default">
                               <DropdownMenuItem asChild>
                                 <Link href={`/projects/${project.slug}`} target="_blank" className="flex items-center gap-2">
                                   <Eye className="w-4 h-4" /> View
