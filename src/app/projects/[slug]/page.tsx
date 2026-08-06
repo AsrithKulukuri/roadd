@@ -468,41 +468,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 </div>
               </div>
 
-              {/* Construction Status */}
-              <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl overflow-hidden">
-                <button
-                  onClick={() => setStatusOpen((v) => !v)}
-                  className="w-full flex items-center justify-between px-6 py-4 hover:bg-bg-primary/50 transition-colors"
-                >
-                  <div>
-                    <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wide mb-1">Construction Status</p>
-                    <p className={`text-lg font-bold ${STATUS_COLORS[project.constructionStatus].split(" ")[0]}`}>
-                      {STATUS_LABELS[project.constructionStatus]}
-                    </p>
-                  </div>
-                  {statusOpen ? <ChevronUp className="w-5 h-5 text-text-tertiary" /> : <ChevronDown className="w-5 h-5 text-text-tertiary" />}
-                </button>
-                {statusOpen && project.phases.length > 0 && (
-                  <div className="px-6 pb-5 space-y-3 border-t border-border-default pt-4">
-                    {project.phases.map((phase, i) => (
-                      <div key={phase.id} className="flex items-center gap-3 p-3 rounded-xl bg-bg-primary border border-border-default">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${STATUS_COLORS[phase.status]}`}>
-                          {i + 1}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-text-primary">{phase.name} <span className={`ml-2 text-xs font-medium ${STATUS_COLORS[phase.status]}`}>is {STATUS_LABELS[phase.status]}</span></p>
-                          {phase.possessionDate && (
-                            <p className="text-xs text-text-tertiary">Possession: {phase.possessionDate}</p>
-                          )}
-                          {phase.totalUnits && (
-                            <p className="text-xs text-text-tertiary">{phase.totalUnits} {project.projectType === "venture" ? "plots" : "units"}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
               {/* Construction Updates Timeline */}
               {project.constructionUpdates && project.constructionUpdates.length > 0 && (
