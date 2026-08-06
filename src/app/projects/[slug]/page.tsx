@@ -190,8 +190,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   // YouTube embed — use the full utility that handles Shorts, Live, share links, etc.
   const videoEmbed = getYoutubeEmbedUrl(project.videoUrl);
   const isShort = isYoutubeShort(project.videoUrl);
-  const activeVideoEmbed = getYoutubeEmbedUrl(activeVideoUrl);
-  const activeIsShort = isYoutubeShort(activeVideoUrl);
+  const activeVideoEmbed = getYoutubeEmbedUrl(activeVideoUrl ?? undefined);
+  const activeIsShort = isYoutubeShort(activeVideoUrl ?? undefined);
 
   // Group configurations by label
   const groupedConfigs = project.configurations.reduce((acc, cfg) => {
@@ -506,7 +506,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                         
                         {update.videoUrl && (
                           <button
-                            onClick={() => setActiveVideoUrl(update.videoUrl)}
+                            onClick={() => setActiveVideoUrl(update.videoUrl ?? null)}
                             className="flex items-center gap-2 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 border border-red-200 dark:border-red-500/30 transition-colors px-4 py-2.5 rounded-xl text-sm font-bold w-fit"
                           >
                             <Play className="w-4 h-4 fill-red-600 text-red-600" /> Watch Update Video
