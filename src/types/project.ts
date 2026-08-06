@@ -63,6 +63,15 @@ export interface ProjectPhase {
   totalUnits?: number;
 }
 
+export interface ConstructionUpdate {
+  id: string;
+  date: string;
+  title: string;
+  description?: string;
+  videoUrl?: string;
+  imageUrl?: string;
+}
+
 export interface ProjectImage {
   id: string;
   url: string;
@@ -114,6 +123,7 @@ export interface Project {
 
   // Phases
   phases: ProjectPhase[];
+  constructionUpdates?: ConstructionUpdate[];
 
   // Configurations (BHK variants / plot types)
   configurations: ProjectConfig[];

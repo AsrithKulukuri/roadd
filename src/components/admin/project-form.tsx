@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import type {
   Project, ProjectType, ProjectConfig,
   ProjectPhase, ProjectImage, ConstructionStatus,
+  ConstructionUpdate
 } from "@/types/project";
 import imageCompression from 'browser-image-compression';
 
@@ -183,6 +184,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const [highlights, setHighlights] = useState<string[]>(initialData?.highlights?.length ? initialData.highlights : [""]);
   const [facilities, setFacilities] = useState<string[]>(initialData?.facilities ?? []);
   const [isFeatured, setIsFeatured] = useState<boolean>(initialData?.isFeatured ?? false);
+  const [constructionUpdates, setConstructionUpdates] = useState<ConstructionUpdate[]>(initialData?.constructionUpdates ?? []);
 
   // ─── Upload handlers ─────────────────────────────────────────────────────────
   const setUpl = (key: string, val: boolean) =>
@@ -389,6 +391,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       totalTowers: totalTowers ? parseInt(totalTowers) : undefined,
       totalArea: totalArea.trim() || undefined,
       phases: initialData?.phases?.length ? initialData.phases : [emptyPhase()],
+      constructionUpdates,
       configurations: configs,
       images,
       coverImage: coverImage || images[0]?.url,
@@ -595,6 +598,66 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 )}
               </div>
 
+            </div>
+          </div>
+
+          {/* SECTION 1.5: Construction Updates */}
+          <div className="bg-bg-card border border-border-default rounded-3xl p-6 shadow-sm">
+            <h2 className="text-xl font-heading font-semibold text-text-primary mb-2 flex items-center">
+              <Video className="w-5 h-5 mr-2 text-amber-primary" /> Construction Updates (Timeline)
+            </h2>
+            <p className="text-sm text-text-secondary mb-4">Add dated updates, progress text, and YouTube video links.</p>
+            
+            <div className="space-y-4">
+              {constructionUpdates.map((update) => (
+                <div key={update.id} className="relative p-4 rounded-2xl border border-border-default bg-bg-primary group">
+                  <button
+                    type="button"
+                    onClick={() => setConstructionUpdates(prev => prev.filter(u => u.id !== update.id))}
+                    className="absolute -right-2 -top-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-full p-1 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="Date (e.g. Aug 2026)">
+                      <Input value={update.date} onChange={e => {
+                        const val = e.target.value;
+                        setConstructionUpdates(prev => prev.map(u => u.id === update.id ? { ...u, date: val } : u));
+                      }} placeholder="Aug 2026" className={ic()} />
+                    </Field>
+                    <Field label="Title">
+                      <Input value={update.title} onChange={e => {
+                        const val = e.target.value;
+                        setConstructionUpdates(prev => prev.map(u => u.id === update.id ? { ...u, title: val } : u));
+                      }} placeholder="Foundation completed" className={ic()} />
+                    </Field>
+                    <div className="md:col-span-2">
+                      <Field label="Description (Optional)">
+                        <textarea value={update.description || ""} onChange={e => {
+                          const val = e.target.value;
+                          setConstructionUpdates(prev => prev.map(u => u.id === update.id ? { ...u, description: val } : u));
+                        }} placeholder="Details about this update..." rows={2} className={ic("resize-none")} />
+                      </Field>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Field label="YouTube Video URL (Optional)">
+                        <Input value={update.videoUrl || ""} onChange={e => {
+                          const val = e.target.value;
+                          setConstructionUpdates(prev => prev.map(u => u.id === update.id ? { ...u, videoUrl: val } : u));
+                        }} placeholder="https://youtube.com/watch?v=..." className={ic()} />
+                      </Field>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConstructionUpdates(prev => [...prev, { id: `upd-${Date.now()}`, date: "", title: "" }])}
+                className="w-full border-dashed border-2 hover:bg-bg-card hover:text-amber-500 transition-colors py-2"
+              >
+                + Add Update
+              </Button>
             </div>
           </div>
 

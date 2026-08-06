@@ -7,7 +7,7 @@ import { getYoutubeEmbedUrl, isYoutubeShort } from "@/lib/utils";
 import {
   MapPin, CheckCircle2, Phone, MessageCircle, Download,
   ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark,
-  Eye, X, ChevronLeft, ChevronRight, Play, Map,
+  Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar
 } from "lucide-react";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/back-button";
@@ -504,6 +504,51 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 )}
               </div>
 
+              {/* Construction Updates Timeline */}
+              {project.constructionUpdates && project.constructionUpdates.length > 0 && (
+                <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
+                  <h3 className="font-bold text-text-primary mb-6 flex items-center gap-2">
+                    <Video className="w-5 h-5 text-amber-primary" /> Construction Updates
+                  </h3>
+                  <div className="relative border-l-2 border-border-default ml-3 space-y-8 pb-4">
+                    {project.constructionUpdates.map((update, i) => (
+                      <div key={update.id} className="relative pl-6">
+                        {/* Timeline dot */}
+                        <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-amber-primary border-4 border-white dark:border-bg-card shadow-sm" />
+                        
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                          <h4 className="font-bold text-text-primary text-lg">{update.title}</h4>
+                          <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-500/10 px-2.5 py-1 rounded-full w-fit">
+                            <Calendar className="w-3.5 h-3.5" /> {update.date}
+                          </span>
+                        </div>
+                        
+                        {update.description && (
+                          <p className="text-sm text-text-secondary leading-relaxed mb-4">
+                            {update.description}
+                          </p>
+                        )}
+                        
+                        {update.videoUrl && (
+                          <button
+                            onClick={() => {
+                              // We use the existing video modal logic, just temporarily overriding the project videoUrl
+                              // In a real app we'd probably have a specific state for which video to show
+                              // But for now, since it opens the project video, we can just open it if it's the only one, 
+                              // or better yet, let's open it in a new tab if we don't want to refactor the modal.
+                              window.open(update.videoUrl, "_blank");
+                            }}
+                            className="flex items-center gap-2 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 border border-red-200 dark:border-red-500/30 transition-colors px-4 py-2.5 rounded-xl text-sm font-bold w-fit"
+                          >
+                            <Play className="w-4 h-4 fill-red-600 text-red-600" /> Watch Update Video
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Price Range */}
               <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -534,10 +579,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   </h2>
 
                   {/* Config tabs */}
-                  <div className="flex gap-3 flex-wrap mb-6">
+                  <div className="flex gap-3 overflow-x-auto scrollbar-none touch-pan-x mb-6 pb-1">
                     <button
                       onClick={() => setActiveConfigLabel("All")}
-                      className={`px-5 py-2.5 rounded-full text-sm flex items-center justify-center border transition-all ${
+                      className={`px-5 py-2.5 rounded-full text-sm flex items-center justify-center border transition-all shrink-0 ${
                         currentLabel === "All"
                           ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white"
                           : "bg-white text-text-secondary border-border-default hover:border-amber-primary/40 dark:bg-bg-primary"
@@ -547,7 +592,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     </button>
                     {groupedConfigs.map((group) => (
                       <button key={group.label} onClick={() => setActiveConfigLabel(group.label)}
-                        className={`px-5 py-1.5 rounded-full text-sm flex flex-col items-center justify-center border transition-all ${
+                        className={`px-5 py-1.5 rounded-full text-sm flex flex-col items-center justify-center border transition-all shrink-0 ${
                           currentLabel === group.label
                             ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white"
                             : "bg-white text-text-secondary border-border-default hover:border-amber-primary/40 dark:bg-bg-primary"

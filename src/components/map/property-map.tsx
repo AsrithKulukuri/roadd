@@ -13,7 +13,7 @@ import {
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer } from "lucide-react";
+import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart } from "lucide-react";
 import L from "leaflet";
 import Link from "next/link";
 import { PropertyCard } from "@/components/property/property-card";
@@ -21,6 +21,18 @@ import { usePropertiesStore } from "@/stores/properties-store";
 import { formatPriceCompact, formatINR, cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
+
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 // Safe setup for default marker icons in Leaflet with Next.js
 if (typeof window !== "undefined") {
@@ -675,6 +687,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawShapeType, setDrawShapeType] = useState<"freehand" | "circle" | "box">("freehand");
   const [drawPolygonPoints, setDrawPolygonPoints] = useState<L.LatLng[]>([]);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [showPropertiesTray, setShowPropertiesTray] = useState(true);
 
   // Realtor.com Map Controls State
@@ -885,6 +898,22 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
         }
         .realtor-price-pill-marker {
           z-index: 9999 !important;
+        }
+
+        .property-map-popup-realtor .leaflet-popup-content-wrapper {
+          padding: 0 !important;
+          border-radius: 16px !important;
+          overflow: hidden !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+        .property-map-popup-realtor .leaflet-popup-content {
+          margin: 0 !important;
+          width: 260px !important;
+          line-height: normal !important;
+        }
+        .property-map-popup-realtor .leaflet-popup-tip-container {
+          display: none !important;
         }
 
         @media (max-width: 767px) {
@@ -1718,64 +1747,55 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                       if (mapRef.current) {
                         mapRef.current.panTo([coords.lat, coords.lng]);
                       }
+                      if (!userLocation && "geolocation" in navigator) {
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                          () => console.warn("Geolocation denied or failed")
+                        );
+                      }
                     },
                   }}
                 >
-                  <Popup className="property-map-popup">
-                    <div className="p-1.5 max-w-[260px]">
-                      {/* Property Image Preview */}
-                      <div className="relative w-full h-28 rounded-xl overflow-hidden bg-slate-100 mb-2">
+                  <Popup className="property-map-popup-realtor">
+                    <div className="relative w-[260px] h-[190px] rounded-2xl overflow-hidden shadow-2xl group cursor-pointer bg-slate-900">
+                      <Link href={(property as any)._isProject ? `/projects/${property.slug}` : `/properties/${property.slug || property.id}`} className="absolute inset-0 z-0">
                         <img
                           src={coverImg}
                           alt={property.title}
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute top-1.5 left-1.5 bg-slate-950/85 text-white font-black text-[11px] px-2 py-0.5 rounded-md backdrop-blur-xs">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                      </Link>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                        }}
+                        className="absolute bottom-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform z-10"
+                      >
+                        <Heart className="w-5 h-5 text-slate-900" />
+                      </button>
+
+                      <Link href={(property as any)._isProject ? `/projects/${property.slug}` : `/properties/${property.slug || property.id}`} className="absolute bottom-3 left-3 right-14 text-white z-0 flex flex-col items-start">
+                        <div className="text-[28px] font-black drop-shadow-md leading-none mb-1 text-white tracking-tight">
                           {formatPriceCompact(property.price)}
                         </div>
-                        {property.bedrooms > 0 && (
-                          <div className="absolute top-1.5 right-1.5 bg-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-md backdrop-blur-xs">
-                            {property.bedrooms} BHK
+                        <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center gap-1.5 flex-wrap">
+                          {property.bedrooms ? <span>{property.bedrooms} bed</span> : null}
+                          {property.bathrooms ? <span>• {property.bathrooms} ba</span> : null}
+                          {property.area ? <span>• {property.area.toLocaleString()} sqft</span> : null}
+                        </div>
+                        <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center mt-0.5">
+                          <span>{property.plotArea ? `${(property.plotArea / 43560).toFixed(2)} acres lot` : "0.34 acres lot"}</span>
+                        </div>
+                        {userLocation && (
+                          <div className="text-xs font-extrabold text-amber-400 mt-1 flex items-center gap-1 bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                            <Navigation className="w-3 h-3" />
+                            {getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, coords.lat, coords.lng).toFixed(1)} km away from you
                           </div>
                         )}
-                      </div>
-
-                      <div className="text-[10px] font-extrabold uppercase text-amber-600 tracking-wider mb-0.5">
-                        Brokered by ROAD FACING
-                      </div>
-                      <div className="font-extrabold text-sm text-slate-900 truncate leading-snug">
-                        {property.title}
-                      </div>
-
-                      {/* Distance Badge */}
-                      {position && (
-                        <div className="bg-amber-500/15 border border-amber-500/40 text-slate-950 px-2 py-1 rounded-md text-[11px] font-extrabold flex items-center gap-1.5 my-1.5">
-                          <Navigation className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                          <span>{calculateDistanceStr(position, property.location.latitude, property.location.longitude)} from you</span>
-                        </div>
-                      )}
-
-                      <div className="text-[11px] text-slate-600 font-medium truncate mb-2">
-                        {property.bedrooms ? `${property.bedrooms} BHK • ` : ""}{property.location.locality}, {property.location.city}
-                      </div>
-
-                      {/* 1-Tap Action Row: View Details & WhatsApp Inquiry */}
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <Link
-                          href={`/properties/${property.slug || property.id}`}
-                          className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-600 py-1.5 px-2 rounded-lg justify-center shadow-xs transition-colors"
-                        >
-                          View Details <ArrowRight className="w-3 h-3" />
-                        </Link>
-                        <a
-                          href={`https://wa.me/919999999999?text=${encodeURIComponent(`Hi ROAD FACING, I am interested in ${property.title} listed at ${formatPriceCompact(property.price)}.`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-1.5 px-2 rounded-lg justify-center shadow-xs transition-colors"
-                        >
-                          <MessageSquare className="w-3 h-3" /> WhatsApp
-                        </a>
-                      </div>
+                      </Link>
                     </div>
                   </Popup>
                 </Marker>
