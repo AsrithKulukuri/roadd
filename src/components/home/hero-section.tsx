@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { formatINR, formatINRWords } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePropertiesStore } from "@/stores/properties-store";
+import { useProjectsStore } from "@/stores/projects-store";
 import { useContentStore } from "@/stores/content-store";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { toast } from "sonner";
@@ -100,6 +101,7 @@ export function HeroSection() {
   }, []);
 
   const properties = usePropertiesStore((state) => state.properties);
+  const projects = useProjectsStore((state) => state.projects);
 
   const handleSearchSubmit = (e?: React.FormEvent, customBudget?: [number, number]) => {
     if (e) e.preventDefault();
@@ -140,11 +142,24 @@ export function HeroSection() {
   };
 
   const matchingCount = useMemo(() => {
-    return properties.filter((p) => {
-      if (p.status === "sold") return false;
+    let count = properties.filter((p) => {
+      if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
       return p.price >= heroBudget[0] && p.price <= heroBudget[1];
     }).length;
-  }, [properties, heroBudget]);
+
+    if (activeTab !== "rent") {
+      count += projects.filter((p) => {
+        if (!p.configurations || p.configurations.length === 0) return false;
+        return p.configurations.some((cfg) => {
+          const pMin = cfg.priceMin || 0;
+          const pMax = cfg.priceMax || pMin;
+          return pMin <= heroBudget[1] && pMax >= heroBudget[0];
+        });
+      }).length;
+    }
+
+    return count;
+  }, [properties, projects, heroBudget, activeTab]);
 
   /** true whenever the user has moved either slider handle away from the full range */
   const budgetActive = heroBudget[0] > 0 || heroBudget[1] < 100000000;
@@ -182,7 +197,7 @@ export function HeroSection() {
     const counts: Record<string, number> = {};
     for (const cat of homeCategories) {
       const types = CATEGORY_TYPE_MAP[cat.id];
-      counts[cat.id] = properties.filter((p) => {
+      let propCount = properties.filter((p) => {
         if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
         const inBudget = p.price >= heroBudget[0] && p.price <= heroBudget[1];
         if (!inBudget) return false;
@@ -190,9 +205,29 @@ export function HeroSection() {
         if (!types || types.length === 0) return true;
         return types.includes(p.propertyType as string);
       }).length;
+
+      let projCount = 0;
+      if (activeTab !== "rent") {
+        projCount = projects.filter((p) => {
+          const hasBudgetOverlap = p.configurations?.some((cfg) => {
+            const pMin = cfg.priceMin || 0;
+            const pMax = cfg.priceMax || pMin;
+            return pMin <= heroBudget[1] && pMax >= heroBudget[0];
+          });
+          if (!hasBudgetOverlap) return false;
+
+          if (!types || types.length === 0) return true;
+          if (p.projectType === "apartment" && types.includes("apartment")) return true;
+          if (p.projectType === "villa" && types.includes("villa")) return true;
+          if (p.projectType === "venture" && types.includes("residential-land")) return true;
+          return false;
+        }).length;
+      }
+
+      counts[cat.id] = propCount + projCount;
     }
     return counts;
-  }, [properties, heroBudget, homeCategories]);
+  }, [properties, projects, heroBudget, homeCategories, activeTab]);
 
   const browseCategories = useMemo(() => {
     return homeCategories.map((cat) => ({

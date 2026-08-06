@@ -44,19 +44,48 @@ function UnifiedSearchPage() {
 
   const parseInitialParams = (): FilterState => {
     const loc = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
+    
+    // Parse budget
+    const budgetStr = searchParams.get("budget");
+    let budget: [number, number] = [0, 100000000];
+    if (budgetStr) {
+      const parts = budgetStr.split(",");
+      if (parts.length === 2) {
+        const min = parseInt(parts[0], 10);
+        const max = parseInt(parts[1], 10);
+        if (!isNaN(min) && !isNaN(max)) {
+          budget = [min, max];
+        }
+      }
+    }
+
+    // Parse listing type (buy -> sale, rent -> rent)
+    const typeStr = searchParams.get("type");
+    let listingType: string[] = [];
+    if (typeStr === "rent") listingType = ["rent"];
+    else if (typeStr === "buy") listingType = ["sale"];
+
+    // Parse propertyType
+    const propTypeStr = searchParams.get("propertyType");
+    let propertyType: string[] = [];
+    if (propTypeStr) {
+      propertyType = propTypeStr.split(",");
+    }
+
     return {
       ...initialFilterState,
       query: loc,
+      budget,
+      listingType,
+      propertyType,
     };
   };
 
   const [filters, setFilters] = useState<FilterState>(parseInitialParams());
 
+  // Keep filters in sync with URL searchParams if they change
   useEffect(() => {
-    const loc = searchParams.get("location") || searchParams.get("q") || searchParams.get("search");
-    if (loc) {
-      setFilters(prev => ({ ...prev, query: loc }));
-    }
+    setFilters(parseInitialParams());
   }, [searchParams]);
 
   // Unified filtering logic
