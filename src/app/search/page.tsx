@@ -202,7 +202,8 @@ function UnifiedSearchPage() {
       }
 
       // 4. BHK
-      if (filters.bhk.length > 0 && project.configurations) {
+      if (filters.bhk.length > 0) {
+        if (!project.configurations) return false;
         const hasMatchingBhk = project.configurations.some(cfg => {
           const cfgBedrooms = cfg.bedrooms || 0;
           return filters.bhk.some(b => {
@@ -216,7 +217,9 @@ function UnifiedSearchPage() {
       // 5. Budget Range (INR)
       if (project.configurations && project.configurations.length > 0) {
         const hasBudgetOverlap = project.configurations.some(cfg => {
-           return cfg.priceMin <= filters.budget[1] && cfg.priceMax >= filters.budget[0];
+           const pMin = cfg.priceMin || 0;
+           const pMax = cfg.priceMax || pMin;
+           return pMin <= filters.budget[1] && pMax >= filters.budget[0];
         });
         if (!hasBudgetOverlap) return false;
       } else {
@@ -235,7 +238,8 @@ function UnifiedSearchPage() {
       }
 
       // 7. Facing
-      if (filters.facing.length > 0 && project.configurations) {
+      if (filters.facing.length > 0) {
+        if (!project.configurations) return false;
         const hasMatchingFacing = project.configurations.some(cfg => {
            if (!cfg.facing) return false;
            return cfg.facing.some(f => filters.facing.includes(f.toLowerCase()));
@@ -275,8 +279,8 @@ function UnifiedSearchPage() {
       }
 
       // 13. Bathrooms
-      if (filters.bathrooms.length > 0 && project.configurations) {
-        // We assume 2BHK has 2 baths, 3BHK has 3 baths, etc., since config doesn't explicitly have bathrooms.
+      if (filters.bathrooms.length > 0) {
+        if (!project.configurations) return false;
         const hasMatchingBaths = project.configurations.some(cfg => {
           const expectedBaths = cfg.bedrooms || 0;
           return filters.bathrooms.some(b => {
