@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useProjectsStore } from "@/stores/projects-store";
 import { getYoutubeEmbedUrl, isYoutubeShort } from "@/lib/utils";
@@ -124,8 +124,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   const [statusOpen, setStatusOpen] = useState(true);
   const [galleryIdx, setGalleryIdx] = useState<number | null>(null);
   const [activeConfigLabel, setActiveConfigLabel] = useState<string>("All");
-  const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [floorPlanLightbox, setFloorPlanLightbox] = useState<{ url: string; label: string } | null>(null);
+
+  const tabsScrollRef = useRef<HTMLDivElement>(null);
+  const cardsScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
@@ -182,6 +185,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   // YouTube embed — use the full utility that handles Shorts, Live, share links, etc.
   const videoEmbed = getYoutubeEmbedUrl(project.videoUrl);
   const isShort = isYoutubeShort(project.videoUrl);
+  const activeVideoEmbed = getYoutubeEmbedUrl(activeVideoUrl);
+  const activeIsShort = isYoutubeShort(activeVideoUrl);
 
   // Group configurations by label
   const groupedConfigs = project.configurations.reduce((acc, cfg) => {
@@ -233,15 +238,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
       )}
 
       {/* Video Tour Modal */}
-      {isVideoOpen && videoEmbed && (
-        <div className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4" onClick={() => setIsVideoOpen(false)}>
+      {activeVideoUrl && activeVideoEmbed && (
+        <div className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4" onClick={() => setActiveVideoUrl(null)}>
           <div
-            className={`relative w-full bg-black rounded-3xl overflow-hidden shadow-2xl ${isShort ? "max-w-[420px]" : "max-w-4xl"}`}
+            className={`relative w-full bg-black rounded-3xl overflow-hidden shadow-2xl ${activeIsShort ? "max-w-[420px]" : "max-w-4xl"}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 bg-slate-900">
               <button
-                onClick={() => setIsVideoOpen(false)}
+                onClick={() => setActiveVideoUrl(null)}
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-amber-500 hover:text-slate-950 text-white text-xs font-bold transition-all cursor-pointer shrink-0"
                 title="Back to project"
               >
@@ -250,16 +255,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               </button>
               <div className="flex items-center gap-2 text-white font-bold text-sm truncate mx-2">
                 <Play className="w-4 h-4 text-red-500 fill-red-500 shrink-0" />
-                {isShort ? "Video Short Tour" : "Project Video Tour"} — {project.name}
+                {activeIsShort ? "Video Short Tour" : "Video Tour"}
               </div>
-              <button onClick={() => setIsVideoOpen(false)} className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer shrink-0" title="Close video">
+              <button onClick={() => setActiveVideoUrl(null)} className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer shrink-0" title="Close video">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className={`relative w-full bg-black flex items-center justify-center ${isShort ? "aspect-[9/16] max-h-[75vh]" : "aspect-video"}`}>
+            <div className={`relative w-full bg-black flex items-center justify-center ${activeIsShort ? "aspect-[9/16] max-h-[75vh]" : "aspect-video"}`}>
               <iframe
-                src={`${videoEmbed}?autoplay=1`}
-                title={`${project.name} Video Tour`}
+                src={`${activeVideoEmbed}?autoplay=1`}
+                title={`Video Tour`}
                 className="w-full h-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -302,7 +307,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               </button>
             )}
             {videoEmbed && (
-              <button onClick={(e) => { e.stopPropagation(); setIsVideoOpen(true); }}
+              <button onClick={(e) => { e.stopPropagation(); setActiveVideoUrl(project.videoUrl || null); }}
                 className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg z-10 whitespace-nowrap">
                 <Play className="w-3.5 h-3.5 fill-white text-white shrink-0" /> Watch Tour
               </button>
@@ -343,7 +348,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 )}
                 {videoEmbed && (
                   <button
-                    onClick={(e) => { e.stopPropagation(); setIsVideoOpen(true); }}
+                    onClick={(e) => { e.stopPropagation(); setActiveVideoUrl(project.videoUrl || null); }}
                     className="pointer-events-auto flex items-center gap-2 bg-white/90 hover:bg-white text-slate-950 text-xs font-black px-4 py-1.5 rounded-full shadow-xl transition-all hover:scale-105 whitespace-nowrap"
                   >
                     <Play className="w-3.5 h-3.5 fill-red-600 text-red-600 shrink-0" /> Watch Tour
@@ -402,7 +407,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             <div className="ml-auto flex items-center gap-2 py-2 shrink-0 pl-2">
               {videoEmbed && (
                 <button
-                  onClick={() => setIsVideoOpen(true)}
+                  onClick={() => setActiveVideoUrl(project.videoUrl || null)}
                   className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
                 >
                   <Play className="w-3.5 h-3.5 fill-white text-white shrink-0" /> Watch Tour
@@ -443,7 +448,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     <div className="flex flex-wrap gap-2 mt-3">
                       {videoEmbed && (
                         <button
-                          onClick={() => setIsVideoOpen(true)}
+                          onClick={() => setActiveVideoUrl(project.videoUrl || null)}
                           className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-600 border border-red-500/30 hover:bg-red-500/20 transition-all cursor-pointer whitespace-nowrap"
                         >
                           <Play className="w-3.5 h-3.5 fill-red-600 text-red-600 shrink-0" /> Watch Tour
@@ -496,13 +501,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                         
                         {update.videoUrl && (
                           <button
-                            onClick={() => {
-                              // We use the existing video modal logic, just temporarily overriding the project videoUrl
-                              // In a real app we'd probably have a specific state for which video to show
-                              // But for now, since it opens the project video, we can just open it if it's the only one, 
-                              // or better yet, let's open it in a new tab if we don't want to refactor the modal.
-                              window.open(update.videoUrl, "_blank");
-                            }}
+                            onClick={() => setActiveVideoUrl(update.videoUrl)}
                             className="flex items-center gap-2 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 border border-red-200 dark:border-red-500/30 transition-colors px-4 py-2.5 rounded-xl text-sm font-bold w-fit"
                           >
                             <Play className="w-4 h-4 fill-red-600 text-red-600" /> Watch Update Video
@@ -539,12 +538,25 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               <div className="space-y-8">
                 <section id="floor-plans" className="scroll-mt-32">
                   <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
-                  <h2 className="text-xl font-bold text-text-primary mb-4">
-                    {project.projectType === "venture" ? "Plot Layouts & Pricing" : project.projectType === "villa" ? "Villa Configurations & Pricing" : "Floor Plans & Pricing"}
-                  </h2>
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <h2 className="text-xl font-bold text-text-primary">
+                      {project.projectType === "venture" ? "Plot Layouts & Pricing" : project.projectType === "villa" ? "Villa Configurations & Pricing" : "Floor Plans & Pricing"}
+                    </h2>
+                    <div className="flex sm:hidden items-center gap-1 text-[10px] text-text-tertiary font-bold uppercase tracking-wide bg-bg-primary px-2.5 py-1 rounded-full border border-border-default shrink-0">
+                      <span>Swipe</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
 
                   {/* Config tabs */}
-                  <div className="flex gap-3 overflow-x-auto scrollbar-none touch-pan-x mb-6 pb-1">
+                  <div className="relative">
+                    <button 
+                      onClick={() => tabsScrollRef.current?.scrollBy({ left: -200, behavior: "smooth" })}
+                      className="absolute left-0 top-0 bottom-7 w-12 bg-gradient-to-r from-white dark:from-bg-card to-transparent flex items-center justify-start cursor-pointer group z-10"
+                    >
+                      <ChevronLeft className="w-4 h-4 text-text-tertiary opacity-70 group-hover:text-text-primary" />
+                    </button>
+                    <div ref={tabsScrollRef} className="flex gap-3 overflow-x-auto scrollbar-none touch-pan-x mb-6 pb-1 pr-8 pl-6">
                     <button
                       onClick={() => setActiveConfigLabel("All")}
                       className={`px-5 py-2.5 rounded-full text-sm flex items-center justify-center border transition-all shrink-0 ${
@@ -567,9 +579,23 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                         <span className="text-[10px] opacity-80">{group.configs.length} Size{group.configs.length !== 1 ? 's' : ''}</span>
                       </button>
                     ))}
+                    </div>
+                    <button 
+                      onClick={() => tabsScrollRef.current?.scrollBy({ left: 200, behavior: "smooth" })}
+                      className="absolute right-0 top-0 bottom-7 w-16 bg-gradient-to-l from-white dark:from-bg-card to-transparent flex items-center justify-end cursor-pointer group"
+                    >
+                      <ChevronRight className="w-4 h-4 text-text-tertiary animate-pulse opacity-70 group-hover:text-text-primary" />
+                    </button>
                   </div>
 
-                  <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-6 px-6">
+                  <div className="relative">
+                    <button 
+                      onClick={() => cardsScrollRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
+                      className="absolute left-0 top-0 bottom-4 w-12 bg-gradient-to-r from-white dark:from-bg-card to-transparent flex items-center justify-start cursor-pointer group z-10"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-text-tertiary opacity-50 group-hover:text-text-primary" />
+                    </button>
+                    <div ref={cardsScrollRef} className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-6 px-6 sm:px-12">
                     {(currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => (
                       <div key={cfg.id || idx} className="w-[85vw] sm:w-[320px] shrink-0 snap-center p-4 rounded-2xl border border-border-default bg-bg-primary flex flex-col gap-4">
                         {cfg.floorPlanUrl && (
@@ -644,6 +670,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                         </div>
                       </div>
                     ))}
+                    </div>
+                    <button 
+                      onClick={() => cardsScrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
+                      className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-white dark:from-bg-card to-transparent flex items-center justify-end cursor-pointer group"
+                    >
+                      <ChevronRight className="w-5 h-5 text-text-tertiary animate-pulse opacity-50 group-hover:text-text-primary" />
+                    </button>
                   </div>
 
                   {/* Add Simulator for Ventures */}
@@ -808,7 +841,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 <div className="space-y-3">
                   {videoEmbed && (
                     <button
-                      onClick={() => setIsVideoOpen(true)}
+                      onClick={() => setActiveVideoUrl(project.videoUrl || null)}
                       className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-colors cursor-pointer shadow-md"
                     >
                       <Play className="w-4 h-4 fill-white text-white" /> Watch Tour Video
@@ -870,7 +903,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
           <div className="flex items-center gap-2 shrink-0">
             {videoEmbed && (
               <button
-                onClick={() => setIsVideoOpen(true)}
+                onClick={() => setActiveVideoUrl(project.videoUrl || null)}
                 className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-red-600 text-white font-bold text-xs shrink-0 shadow-sm"
               >
                 <Play className="w-3.5 h-3.5 fill-white text-white" /> Watch Tour
