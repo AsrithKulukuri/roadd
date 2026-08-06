@@ -110,7 +110,7 @@ export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
 
   return (
     <Link href={`/projects/${project.slug}`} className="group block">
-      <div className="relative bg-white dark:bg-bg-card border border-border-default rounded-3xl overflow-hidden shadow-sm hover:shadow-elevated hover:-translate-y-1 transition-all duration-300">
+      <div className="relative bg-white dark:bg-bg-card border border-border-default rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300">
 
         {/* Image */}
         <div className="relative aspect-[16/9] overflow-hidden bg-bg-primary">

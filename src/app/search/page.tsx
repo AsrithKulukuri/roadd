@@ -7,6 +7,7 @@ import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { PropertyCard } from "@/components/property/property-card";
 import { ProjectCard } from "@/components/project/project-card";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { SearchFiltersModal, initialFilterState, type FilterState } from "@/components/search/search-filters";
 import { RealtorSearchHeader } from "@/components/search/realtor-search-header";
 import { MapWrapper } from "@/components/map/map-wrapper";
@@ -33,6 +34,8 @@ function UnifiedSearchPage() {
   
   const properties = usePropertiesStore((state) => state.properties);
   const projects = useProjectsStore((state) => state.projects);
+  const isLoadingProperties = usePropertiesStore((state) => state.isLoading);
+  const isLoadingProjects = useProjectsStore((state) => state.isLoading);
   const fetchProperties = usePropertiesStore((state) => state.fetchProperties);
   const fetchProjects = useProjectsStore((state) => state.fetchProjects);
 
@@ -413,7 +416,13 @@ function UnifiedSearchPage() {
           )}
 
           {/* Results Grid or Map */}
-          {viewMode === "map" ? (
+          {(isLoadingProperties || isLoadingProjects) ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <SkeletonCard key={`skeleton-${i}`} />
+              ))}
+            </div>
+          ) : viewMode === "map" ? (
             <div>
               <div className="md:hidden fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-white overflow-hidden flex flex-col">
                 <MapWrapper filteredItems={mapItems} />

@@ -131,7 +131,12 @@ export function Navbar() {
     <>
       {/* Realtor.com Style Clean Navbar */}
       <header
-        className="fixed top-0 left-0 right-0 z-[100] bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs py-2.5 sm:py-3 transition-all duration-300"
+        className={cn(
+          "fixed top-0 left-0 right-0 z-[100] transition-all duration-300",
+          isScrolled
+            ? "bg-white/85 dark:bg-slate-950/85 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 shadow-sm py-2 sm:py-2.5"
+            : "bg-white dark:bg-slate-950 border-b border-transparent py-2.5 sm:py-3"
+        )}
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-6">
           <div className="flex items-center justify-between">

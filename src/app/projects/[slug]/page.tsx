@@ -2,6 +2,8 @@
 
 import { use, useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useProjectsStore } from "@/stores/projects-store";
 import { getYoutubeEmbedUrl, isYoutubeShort } from "@/lib/utils";
 import {
@@ -129,6 +131,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
   const tabsScrollRef = useRef<HTMLDivElement>(null);
   const cardsScrollRef = useRef<HTMLDivElement>(null);
+  
+  const { scrollY } = useScroll();
+  const yHero = useTransform(scrollY, [0, 800], [0, 200]);
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
@@ -327,9 +332,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
           {/* Desktop: 3-col grid */}
           <div className="hidden sm:grid grid-cols-3 gap-2 rounded-2xl overflow-hidden h-[400px] md:h-[450px] lg:h-[500px]">
-            <div className="col-span-2 relative cursor-pointer group" onClick={() => heroImage && setGalleryIdx(0)}>
+            <div className="col-span-2 relative overflow-hidden cursor-pointer group" onClick={() => heroImage && setGalleryIdx(0)}>
               {heroImage ? (
-                <img src={heroImage} alt={project.name} className="w-full h-full object-cover" />
+                <motion.img style={{ y: yHero }} src={heroImage} alt={project.name} className="absolute inset-0 w-full h-[130%] -top-[15%] object-cover" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-amber-primary/20 to-amber-primary/5 flex items-center justify-center">
                   <TypeIcon className="w-16 h-16 text-amber-primary/30" />
@@ -536,7 +541,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
               {/* Tab Content Area */}
               <div className="space-y-8">
-                <section id="floor-plans" className="scroll-mt-32">
+                <ScrollReveal id="floor-plans" className="scroll-mt-32">
                   <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
                   <div className="flex items-center justify-between gap-4 mb-4">
                     <h2 className="text-xl font-bold text-text-primary">
@@ -552,9 +557,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   <div className="relative">
                     <button 
                       onClick={() => tabsScrollRef.current?.scrollBy({ left: -200, behavior: "smooth" })}
-                      className="absolute left-0 top-0 bottom-7 w-12 bg-gradient-to-r from-white dark:from-bg-card to-transparent flex items-center justify-start cursor-pointer group z-10"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center cursor-pointer group z-10"
                     >
-                      <ChevronLeft className="w-4 h-4 text-text-tertiary opacity-70 group-hover:text-text-primary" />
+                      <ChevronLeft className="w-5 h-5 text-text-tertiary drop-shadow-md group-hover:text-text-primary" />
                     </button>
                     <div ref={tabsScrollRef} className="flex gap-3 overflow-x-auto scrollbar-none touch-pan-x mb-6 pb-1 pr-8 pl-6">
                     <button
@@ -582,28 +587,28 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     </div>
                     <button 
                       onClick={() => tabsScrollRef.current?.scrollBy({ left: 200, behavior: "smooth" })}
-                      className="absolute right-0 top-0 bottom-7 w-16 bg-gradient-to-l from-white dark:from-bg-card to-transparent flex items-center justify-end cursor-pointer group"
+                      className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center cursor-pointer group z-10"
                     >
-                      <ChevronRight className="w-4 h-4 text-text-tertiary animate-pulse opacity-70 group-hover:text-text-primary" />
+                      <ChevronRight className="w-5 h-5 text-text-tertiary drop-shadow-md animate-pulse group-hover:text-text-primary" />
                     </button>
                   </div>
 
                   <div className="relative">
                     <button 
                       onClick={() => cardsScrollRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
-                      className="absolute left-0 top-0 bottom-4 w-12 bg-gradient-to-r from-white dark:from-bg-card to-transparent flex items-center justify-start cursor-pointer group z-10"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center cursor-pointer group z-10"
                     >
-                      <ChevronLeft className="w-5 h-5 text-text-tertiary opacity-50 group-hover:text-text-primary" />
+                      <ChevronLeft className="w-6 h-6 text-text-tertiary drop-shadow-md group-hover:text-text-primary" />
                     </button>
                     <div ref={cardsScrollRef} className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-6 px-6 sm:px-12">
                     {(currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => (
-                      <div key={cfg.id || idx} className="w-[85vw] sm:w-[320px] shrink-0 snap-center p-4 rounded-2xl border border-border-default bg-bg-primary flex flex-col gap-4">
+                      <div key={cfg.id || idx} className="w-[85vw] sm:w-[320px] shrink-0 snap-center p-4 rounded-2xl border border-border-default bg-bg-primary flex flex-col gap-4 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
                         {cfg.floorPlanUrl && (
                           <div
                             className="rounded-xl overflow-hidden bg-white aspect-[4/3] cursor-zoom-in border border-border-default flex items-center justify-center relative group"
                             onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: cfg.label })}
                           >
-                            <img src={cfg.floorPlanUrl} alt={`${cfg.label} floor plan`} className="max-w-full max-h-full object-contain p-2" />
+                            <img src={cfg.floorPlanUrl} alt={`${cfg.label} floor plan`} className="max-w-full max-h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl" />
                             <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
                               <Eye className="w-3 h-3" /> View
@@ -673,9 +678,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     </div>
                     <button 
                       onClick={() => cardsScrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
-                      className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-white dark:from-bg-card to-transparent flex items-center justify-end cursor-pointer group"
+                      className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center cursor-pointer group z-10"
                     >
-                      <ChevronRight className="w-5 h-5 text-text-tertiary animate-pulse opacity-50 group-hover:text-text-primary" />
+                      <ChevronRight className="w-6 h-6 text-text-tertiary drop-shadow-md animate-pulse group-hover:text-text-primary" />
                     </button>
                   </div>
 
@@ -688,9 +693,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     />
                   )}
                 </div>
-              </section>
+              </ScrollReveal>
 
-              <section id="facilities" className="scroll-mt-32">
+              <ScrollReveal id="facilities" className="scroll-mt-32">
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
                   <h2 className="text-xl font-bold text-text-primary mb-4">Facilities &amp; Amenities</h2>
                   {project.facilities.length > 0 ? (
@@ -705,9 +710,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     <p className="text-text-tertiary text-sm">No facilities listed.</p>
                   )}
                 </div>
-              </section>
+              </ScrollReveal>
 
-              <section id="location" className="scroll-mt-32">
+              <ScrollReveal id="location" className="scroll-mt-32">
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6 space-y-4">
                   <h2 className="text-xl font-bold text-text-primary">Location & Map</h2>
                   <div className="flex items-center gap-2 text-text-secondary text-sm">
@@ -751,9 +756,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     <p className="text-xs text-text-tertiary">Pincode: {project.location.pincode}</p>
                   )}
                 </div>
-              </section>
+              </ScrollReveal>
 
-              <section id="brochure" className="scroll-mt-32">
+              <ScrollReveal id="brochure" className="scroll-mt-32">
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
                   <h2 className="text-xl font-bold text-text-primary mb-4">Brochure</h2>
                   {project.brochureUrl ? (
@@ -782,9 +787,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     </div>
                   )}
                 </div>
-              </section>
+              </ScrollReveal>
 
-              <section id="builder" className="scroll-mt-32">
+              <ScrollReveal id="builder" className="scroll-mt-32">
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
                   <h2 className="text-xl font-bold text-text-primary mb-4">About the Builder</h2>
                   <div className="flex items-center gap-4">
@@ -810,7 +815,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     )}
                   </div>
                 </div>
-              </section>
+              </ScrollReveal>
               </div>
             </div>
 
@@ -892,7 +897,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
       {/* ── Mobile Fixed Bottom CTA ─────────────────────────────────────── */}
       {(phone || whatsapp || project.brochureUrl) && (
-        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-bg-card border-t border-border-default px-4 py-3 flex items-center gap-2 shadow-elevated">
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-800/50 px-4 py-3 flex items-center gap-2 shadow-[0_-4px_24px_rgba(0,0,0,0.04)]">
           {project.builderLogoUrl && (
             <img src={project.builderLogoUrl} alt={project.builderName} className="h-8 w-8 object-contain rounded-lg border border-border-default p-0.5 shrink-0" />
           )}
