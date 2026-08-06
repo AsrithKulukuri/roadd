@@ -138,11 +138,11 @@ export default function ProjectsPage() {
 
           {/* Per-type stat pills */}
           <div className="flex items-center justify-center gap-3 flex-wrap mt-6">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm">
               <Building2 className="w-3.5 h-3.5" />
               <span className="font-bold">{counts.apartment}</span> Apartments
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-sm">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm">
               <Home className="w-3.5 h-3.5" />
               <span className="font-bold">{counts.villa}</span> Villas
             </div>

@@ -320,7 +320,7 @@ export default function AdminDashboardPage() {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Total Listings</span>
-            <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 shrink-0" />
+            <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0" />
           </div>
           <div className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading truncate">
             {totalProperties}
@@ -330,7 +330,7 @@ export default function AdminDashboardPage() {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Active Homes</span>
-            <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0" />
+            <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0" />
           </div>
           <div className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading truncate">
             {activeProperties}
@@ -368,7 +368,7 @@ export default function AdminDashboardPage() {
               </div>
               <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
               <div>
-                <span className="text-xl sm:text-2xl font-black text-green-600 font-heading">{publishedProjects}</span>
+                <span className="text-xl sm:text-2xl font-black text-amber-600 font-heading">{publishedProjects}</span>
                 <span className="text-xs text-slate-500 dark:text-slate-400 ml-1.5">published</span>
               </div>
             </div>
@@ -598,7 +598,7 @@ export default function AdminDashboardPage() {
                         <button
                           onClick={() => toggleShowOnMap(p.id)}
                           className={`p-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 ${
-                            p.showOnMap ? "bg-blue-600 text-white border-blue-600" : "bg-slate-800 text-slate-400 border-slate-700"
+                            p.showOnMap ? "bg-amber-600 text-white border-amber-600" : "bg-slate-800 text-slate-400 border-slate-700"
                           }`}
                         >
                           <MapPin className="w-3.5 h-3.5" />
@@ -617,7 +617,7 @@ export default function AdminDashboardPage() {
                         <button
                           onClick={() => toggleSoldOut(p.id)}
                           className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold ${
-                            p.status === "sold" ? "bg-red-500/20 text-red-400" : "bg-emerald-500/20 text-emerald-400"
+                            p.status === "sold" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"
                           }`}
                         >
                           {p.status === "sold" ? "Mark Active" : "Mark Sold"}
@@ -716,7 +716,7 @@ export default function AdminDashboardPage() {
                           <button
                             onClick={() => toggleSoldOut(p.id)}
                             className={`px-3 py-1 rounded-full text-xs font-extrabold transition-colors cursor-pointer ${
-                              p.status === "sold" ? "bg-red-500/15 text-red-500" : "bg-emerald-500/15 text-emerald-500"
+                              p.status === "sold" ? "bg-red-500/15 text-red-500" : "bg-amber-500/15 text-amber-500"
                             }`}
                           >
                             {p.status === "sold" ? "Sold Out" : "Active"}
@@ -727,7 +727,7 @@ export default function AdminDashboardPage() {
                           <button
                             onClick={() => toggleShowOnMap(p.id)}
                             className={`px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 border transition-colors cursor-pointer ${
-                              p.showOnMap ? "bg-blue-600 text-white border-blue-600" : "bg-slate-800 text-slate-400 border-slate-700"
+                              p.showOnMap ? "bg-amber-600 text-white border-amber-600" : "bg-slate-800 text-slate-400 border-slate-700"
                             }`}
                           >
                             <MapPin className="w-3.5 h-3.5" />

@@ -162,7 +162,7 @@ export default function ListWithUsPage() {
                   <div className="h-12 border-b border-border-default flex items-center px-6 gap-2">
                     <div className="w-3 h-3 rounded-full bg-red-500/80" />
                     <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-                    <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-amber-500/80" />
                   </div>
                   <div className="p-6 flex-1 space-y-6">
                     <div className="flex gap-4 items-center mb-8">

@@ -55,8 +55,8 @@ function getPriceRange(configs: ProjectConfig[]): string {
 
 const STATUS_COLORS = {
   "under-construction": "text-orange-500 bg-orange-500/10",
-  "ready-to-move":      "text-green-600 bg-green-500/10",
-  "new-launch":         "text-blue-500 bg-blue-500/10",
+  "ready-to-move":      "text-amber-600 bg-amber-500/10",
+  "new-launch":         "text-amber-500 bg-amber-500/10",
 };
 const STATUS_LABELS = {
   "under-construction": "Under Construction",
@@ -450,12 +450,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                         </button>
                       )}
                       {project.reraApproved && (
-                        <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-500/10 text-green-600 border border-green-500/20 whitespace-nowrap">
+                        <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 whitespace-nowrap">
                           <CheckCircle2 className="w-3 h-3" /> RERA
                         </span>
                       )}
                       {project.noBrokerage && (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20 whitespace-nowrap">No Brokerage</span>
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 whitespace-nowrap">No Brokerage</span>
                       )}
                       {project.totalUnits && (
                         <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-bg-primary border border-border-default text-text-secondary">
@@ -669,7 +669,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                         
                         <div className="pt-2 flex gap-2 border-t border-border-default/50 mt-auto">
                           {whatsapp && (
-                            <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="w-11 h-11 flex items-center justify-center rounded-xl border border-green-500 text-green-600 hover:bg-green-500/10 transition-colors shrink-0">
+                            <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="w-11 h-11 flex items-center justify-center rounded-xl border border-amber-500 text-amber-600 hover:bg-amber-500/10 transition-colors shrink-0">
                               <MessageCircle className="w-5 h-5 shrink-0" />
                             </a>
                           )}
@@ -699,7 +699,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     <div className="flex flex-wrap gap-2">
                       {project.facilities.map((f) => (
                         <span key={f} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-bg-primary border border-border-default text-text-secondary">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> {f}
+                          <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" /> {f}
                         </span>
                       ))}
                     </div>
@@ -806,7 +806,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     )}
                     {whatsapp && (
                       <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-5 py-3 rounded-xl bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors whitespace-nowrap">
+                        className="flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors whitespace-nowrap">
                         <MessageCircle className="w-4 h-4 shrink-0" /> WhatsApp
                       </a>
                     )}
@@ -856,7 +856,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   )}
                   {whatsapp && (
                     <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-green-500 text-green-600 font-bold hover:bg-green-500/10 transition-colors whitespace-nowrap">
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-amber-500 text-amber-600 font-bold hover:bg-amber-500/10 transition-colors whitespace-nowrap">
                       <MessageCircle className="w-4 h-4 shrink-0" /> WhatsApp
                     </a>
                   )}
@@ -880,8 +880,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
               {/* RERA info */}
               {project.reraId && (
-                <div className="bg-green-500/5 border border-green-500/20 rounded-2xl p-4 text-sm">
-                  <p className="font-semibold text-green-700 dark:text-green-500 mb-1 flex items-center gap-1.5">
+                <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 text-sm">
+                  <p className="font-semibold text-amber-700 dark:text-amber-500 mb-1 flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4" /> RERA Registered
                   </p>
                   <p className="text-text-secondary">RERA ID: <span className="font-mono font-semibold text-text-primary">{project.reraId}</span></p>
@@ -919,7 +919,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             )}
             {whatsapp && (
               <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-green-500 text-white font-bold text-xs">
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 text-white font-bold text-xs">
                 <MessageCircle className="w-4 h-4" /> Chat
               </a>
             )}

@@ -141,7 +141,7 @@ export function AiWriter() {
                 onClick={copyToClipboard}
                 className="absolute top-4 right-4 p-2 bg-bg-card hover:bg-white/10 rounded-lg text-text-secondary transition-colors border border-border-default"
               >
-                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                {copied ? <Check className="w-4 h-4 text-amber-500" /> : <Copy className="w-4 h-4" />}
               </button>
               <div className="text-sm text-text-primary whitespace-pre-line leading-relaxed pr-8">
                 {description}

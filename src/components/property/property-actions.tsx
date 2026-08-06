@@ -82,7 +82,7 @@ export function PropertyActions({ propertyId }: PropertyActionsProps) {
         title="Share Property"
       >
         {copied ? (
-          <Check className="w-4 h-4 text-emerald-500 stroke-[3]" />
+          <Check className="w-4 h-4 text-amber-500 stroke-[3]" />
         ) : (
           <Share2 className="w-4 h-4 text-slate-900 dark:text-white stroke-[2.5]" />
         )}

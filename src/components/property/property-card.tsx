@@ -89,15 +89,15 @@ export function PropertyCard({
   // Determine Realtor.com-style Status dot and text
   const getStatusBadge = () => {
     if (property.listingType === "rent" || property.listingType === "pg") {
-      return { dot: "bg-purple-500", text: "Property for Rent" };
+      return { dot: "bg-amber-500", text: "Property for Rent" };
     }
     if (property.isReadyToMove) {
-      return { dot: "bg-emerald-500", text: property.propertyType === "villa" ? "Villa for Sale" : property.propertyType === "residential-land" ? "Plot for Sale" : "House for Sale" };
+      return { dot: "bg-amber-500", text: property.propertyType === "villa" ? "Villa for Sale" : property.propertyType === "residential-land" ? "Plot for Sale" : "House for Sale" };
     }
     if (property.saleType === "resale") {
       return { dot: "bg-amber-500", text: "Resale Property" };
     }
-    return { dot: "bg-blue-500", text: "New Construction" };
+    return { dot: "bg-amber-500", text: "New Construction" };
   };
 
   const status = getStatusBadge();
@@ -139,7 +139,7 @@ export function PropertyCard({
               {/* Badges */}
               <div className="absolute top-3 left-3 flex gap-1.5 z-10">
                 {property.isFeatured && <Badge variant="default" className="bg-amber-500 text-white font-semibold">Featured</Badge>}
-                {property.reraId && <Badge variant="rera" className="bg-emerald-600 text-white font-semibold">RERA</Badge>}
+                {property.reraId && <Badge variant="rera" className="bg-amber-600 text-white font-semibold">RERA</Badge>}
               </div>
 
               {/* Heart Button Overlay */}
@@ -192,7 +192,7 @@ export function PropertyCard({
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
                 <span className="text-xs text-slate-500 font-medium">{property.isReadyToMove ? "Ready to Move" : "Under Construction"}</span>
                 {property.isOwnerVerified && (
-                  <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                  <span className="text-xs text-amber-600 font-semibold flex items-center gap-1">
                     <BadgeCheck className="w-3.5 h-3.5" /> Verified Listing
                   </span>
                 )}
@@ -278,7 +278,7 @@ export function PropertyCard({
             {/* Top Badges */}
             <div className={cn("absolute left-3 flex gap-1.5 flex-wrap z-10", selectable ? "top-11" : "top-3")}>
               {property.saleType === "new" && (
-                <span className="bg-blue-600 text-white font-bold text-[10px] uppercase px-2 py-0.5 rounded-full shadow-xs">
+                <span className="bg-amber-600 text-white font-bold text-[10px] uppercase px-2 py-0.5 rounded-full shadow-xs">
                   New
                 </span>
               )}
@@ -288,7 +288,7 @@ export function PropertyCard({
                 </span>
               )}
               {property.reraId && (
-                <span className="bg-emerald-600 text-white font-bold text-[10px] uppercase px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
+                <span className="bg-amber-600 text-white font-bold text-[10px] uppercase px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
                   <Shield className="w-2.5 h-2.5" /> RERA
                 </span>
               )}
@@ -328,7 +328,7 @@ export function PropertyCard({
                   : formatPriceCompact(property.price)}
               </span>
               {property.isFeatured && (
-                <span className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5">
+                <span className="text-xs font-semibold text-amber-600 flex items-center gap-0.5">
                   <ArrowDownRight className="w-3 h-3" /> ↓ ₹50k
                 </span>
               )}
@@ -367,7 +367,7 @@ export function PropertyCard({
                 {property.isReadyToMove ? "Ready to Move" : "Under Construction"}
               </span>
               {property.isOwnerVerified && (
-                <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                <span className="text-amber-600 font-semibold flex items-center gap-1">
                   <BadgeCheck className="w-3.5 h-3.5" /> Verified
                 </span>
               )}

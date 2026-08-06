@@ -200,7 +200,7 @@ export default function LandUseSimulator({
         <div className="lg:col-span-7 flex flex-col gap-6 z-0">
           
           {/* Top-Down 2D Visualization using simple divs (abstract CSS art) */}
-          <div className="flex-1 bg-green-50 dark:bg-green-950/20 border-2 border-green-200 dark:border-green-900 rounded-3xl relative overflow-hidden flex items-center justify-center min-h-[300px]">
+          <div className="flex-1 bg-amber-50 dark:bg-amber-950/20 border-2 border-amber-200 dark:border-amber-900 rounded-3xl relative overflow-hidden flex items-center justify-center min-h-[300px]">
             {/* The Plot Container */}
             <div 
               className={`bg-stone-100 dark:bg-stone-900 border-4 border-stone-300 dark:border-stone-700 shadow-xl relative transition-all duration-700 ease-in-out`}
@@ -237,9 +237,9 @@ export default function LandUseSimulator({
 
               {/* Garden / Open Space */}
               <div className="absolute flex gap-1 sm:gap-2 m-2">
-                <TreePine className="w-4 h-4 sm:w-6 sm:h-6 text-green-500/60" />
-                <TreePine className="w-4 h-4 sm:w-6 sm:h-6 text-green-600/60" />
-                {useType === "farmhouse" && <TreePine className="w-4 h-4 sm:w-6 sm:h-6 text-green-400/60" />}
+                <TreePine className="w-4 h-4 sm:w-6 sm:h-6 text-amber-500/60" />
+                <TreePine className="w-4 h-4 sm:w-6 sm:h-6 text-amber-600/60" />
+                {useType === "farmhouse" && <TreePine className="w-4 h-4 sm:w-6 sm:h-6 text-amber-400/60" />}
               </div>
 
               {/* Parking */}
@@ -271,7 +271,7 @@ export default function LandUseSimulator({
             </div>
             <div>
               <p className="text-[10px] font-bold text-text-tertiary uppercase mb-1">Open Space</p>
-              <p className="text-lg font-black text-green-600 dark:text-green-500">{Math.round(metrics.openSpace)} <span className="text-[10px] font-normal text-text-secondary">sq.ft</span></p>
+              <p className="text-lg font-black text-amber-600 dark:text-amber-500">{Math.round(metrics.openSpace)} <span className="text-[10px] font-normal text-text-secondary">sq.ft</span></p>
             </div>
             <div>
               <p className="text-[10px] font-bold text-text-tertiary uppercase mb-1">Est. Build Cost</p>

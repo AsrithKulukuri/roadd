@@ -20,15 +20,15 @@ import {
 import type { Project, ProjectType } from "@/types/project";
 
 const TYPE_CONFIG: Record<ProjectType, { label: string; icon: React.ElementType; color: string }> = {
-  apartment: { label: "Apartment", icon: Building2, color: "text-blue-500 bg-blue-500/10 border-blue-500/30" },
-  villa:     { label: "Villa",     icon: Home,      color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/30" },
+  apartment: { label: "Apartment", icon: Building2, color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
+  villa:     { label: "Villa",     icon: Home,      color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
   venture:   { label: "Venture",   icon: Landmark,  color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
 };
 
 const STATUS_CONFIG = {
   "under-construction": { label: "Under Construction", color: "text-orange-500 bg-orange-500/10" },
-  "ready-to-move":      { label: "Ready to Move",      color: "text-green-500 bg-green-500/10" },
-  "new-launch":         { label: "New Launch",          color: "text-blue-500 bg-blue-500/10" },
+  "ready-to-move":      { label: "Ready to Move",      color: "text-amber-500 bg-amber-500/10" },
+  "new-launch":         { label: "New Launch",          color: "text-amber-500 bg-amber-500/10" },
 };
 
 function ConfirmDeleteModal({
@@ -235,7 +235,7 @@ export default function AdminProjectsPage() {
                             <button
                               onClick={async () => { await togglePublished(project.id); toast.success("Updated!"); }}
                               title={project.isPublished ? "Unpublish" : "Publish"}
-                              className={`p-1.5 rounded-full transition-colors ${project.isPublished ? "text-green-500 bg-green-500/10" : "text-text-tertiary hover:text-green-500"}`}
+                              className={`p-1.5 rounded-full transition-colors ${project.isPublished ? "text-amber-500 bg-amber-500/10" : "text-text-tertiary hover:text-amber-500"}`}
                             >
                               {project.isPublished ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                             </button>
@@ -328,7 +328,7 @@ export default function AdminProjectsPage() {
                         <button onClick={() => toggleFeatured(project.id)} className={`p-1.5 rounded-full ${project.isFeatured ? "text-amber-primary bg-amber-primary/10" : "text-text-tertiary"}`}>
                           <Star className={`w-4 h-4 ${project.isFeatured ? "fill-amber-primary" : ""}`} />
                         </button>
-                        <button onClick={() => togglePublished(project.id)} className={`p-1.5 rounded-full ${project.isPublished ? "text-green-500 bg-green-500/10" : "text-text-tertiary"}`}>
+                        <button onClick={() => togglePublished(project.id)} className={`p-1.5 rounded-full ${project.isPublished ? "text-amber-500 bg-amber-500/10" : "text-text-tertiary"}`}>
                           {project.isPublished ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                         </button>
                         <Link href={`/admin/projects/${project.id}/edit`} className="p-1.5 rounded-full text-text-tertiary hover:text-text-primary">

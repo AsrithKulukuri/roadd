@@ -748,7 +748,7 @@ export default function AddPropertyPage() {
                     toast.error("Geolocation is not supported by your browser");
                   }
                 }}
-                className="h-11 px-6 bg-blue-500 hover:bg-blue-600 text-white font-black text-sm rounded-xl cursor-pointer shadow-md w-full sm:w-auto flex items-center justify-center gap-2 transition-colors"
+                className="h-11 px-6 bg-amber-500 hover:bg-amber-600 text-white font-black text-sm rounded-xl cursor-pointer shadow-md w-full sm:w-auto flex items-center justify-center gap-2 transition-colors"
               >
                 <MapPin className="w-4 h-4" /> Use My Current Location
               </Button>

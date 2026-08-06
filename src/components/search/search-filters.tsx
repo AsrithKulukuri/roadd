@@ -415,8 +415,8 @@ export function SearchFiltersModal({
           </div>
 
           {/* 9. WATER SOURCE & CULTIVATION CROP (AGRICULTURAL & FARM LAND EXCEL REQUIREMENT) */}
-          <div className="space-y-3 bg-emerald-500/5 dark:bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/30">
-            <label className="font-extrabold uppercase text-emerald-600 dark:text-emerald-400 text-[10px] tracking-wider flex items-center gap-1.5">
+          <div className="space-y-3 bg-amber-500/5 dark:bg-amber-500/10 p-4 rounded-2xl border border-amber-500/30">
+            <label className="font-extrabold uppercase text-amber-600 dark:text-amber-400 text-[10px] tracking-wider flex items-center gap-1.5">
               <Sprout className="w-3.5 h-3.5" /> Agricultural & Farm House Options (Excel Specs)
             </label>
             
@@ -433,7 +433,7 @@ export function SearchFiltersModal({
                       className={cn(
                         "py-1.5 px-2 rounded-lg border text-[11px] font-bold text-center transition-all cursor-pointer",
                         isSelected
-                          ? "bg-emerald-600 text-white border-emerald-600"
+                          ? "bg-amber-600 text-white border-amber-600"
                           : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800"
                       )}
                     >
@@ -457,7 +457,7 @@ export function SearchFiltersModal({
                       className={cn(
                         "py-1.5 px-2 rounded-lg border text-[10px] font-extrabold text-center transition-all cursor-pointer",
                         isSelected
-                          ? "bg-emerald-600 text-white border-emerald-600"
+                          ? "bg-amber-600 text-white border-amber-600"
                           : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800"
                       )}
                     >

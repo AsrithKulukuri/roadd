@@ -85,10 +85,10 @@ export default function AdminPropertiesPage() {
                       }
                     }}
                     className={`p-1.5 rounded-full ${
-                      property.isRecommended ? 'text-blue-500 bg-blue-500/10' : 'text-text-tertiary'
+                      property.isRecommended ? 'text-amber-500 bg-amber-500/10' : 'text-text-tertiary'
                     }`}
                   >
-                    <ThumbsUp className={`w-4 h-4 ${property.isRecommended ? 'fill-blue-500' : ''}`} />
+                    <ThumbsUp className={`w-4 h-4 ${property.isRecommended ? 'fill-amber-500' : ''}`} />
                   </button>
                 </div>
 
@@ -104,7 +104,7 @@ export default function AdminPropertiesPage() {
                   <button
                     onClick={() => toggleSoldOut(property.id)}
                     className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                      property.status === 'sold' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'
+                      property.status === 'sold' ? 'bg-red-500/10 text-red-500' : 'bg-amber-500/10 text-amber-500'
                     }`}
                   >
                     {property.status === 'sold' ? 'Sold Out' : 'Active'}
@@ -159,7 +159,7 @@ export default function AdminPropertiesPage() {
                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                       property.status === 'sold' 
                         ? 'bg-red-500/10 text-red-500' 
-                        : 'bg-green-500/10 text-green-500'
+                        : 'bg-amber-500/10 text-amber-500'
                     }`}>
                       {property.status === 'sold' ? 'Sold Out' : 'Active'}
                     </span>
@@ -200,11 +200,11 @@ export default function AdminPropertiesPage() {
                       title="Recommend Property (Max 10)"
                       className={`p-1.5 rounded-full transition-colors ${
                         property.isRecommended 
-                          ? 'text-blue-500 bg-blue-500/10' 
+                          ? 'text-amber-500 bg-amber-500/10' 
                           : 'text-text-tertiary hover:text-text-primary hover:bg-bg-primary'
                       }`}
                     >
-                      <ThumbsUp className={`w-4 h-4 ${property.isRecommended ? 'fill-blue-500' : ''}`} />
+                      <ThumbsUp className={`w-4 h-4 ${property.isRecommended ? 'fill-amber-500' : ''}`} />
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap font-medium text-text-primary">

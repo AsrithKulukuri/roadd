@@ -109,7 +109,7 @@ export function CompareModal({ properties, onClose }: CompareModalProps) {
                   {properties.map((p) => (
                     <td key={p.id} className="p-4 border-b border-border-default text-sm">
                       {p.isReadyToMove ? (
-                        <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                        <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
                           <Check className="w-4 h-4" /> Ready to Move
                         </span>
                       ) : (

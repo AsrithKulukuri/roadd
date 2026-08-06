@@ -288,7 +288,7 @@ export default function AdminUsersPage() {
                         <div className="font-bold text-text-primary text-sm flex items-center gap-1.5 truncate">
                           <span className="truncate">{profile.name}</span>
                           {profile.role === "admin" && (
-                            <span className="text-[0.625rem] bg-purple-500/15 text-purple-400 font-bold uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0">
+                            <span className="text-[0.625rem] bg-amber-500/15 text-amber-400 font-bold uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0">
                               Staff
                             </span>
                           )}
@@ -302,7 +302,7 @@ export default function AdminUsersPage() {
                     <div className="flex items-center justify-between text-xs pt-2 border-t border-border-subtle">
                       <div className="flex items-center gap-1.5">
                         {profile.role === "admin" ? (
-                          <ShieldAlert className="w-4 h-4 text-purple-400 shrink-0" />
+                          <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
                         ) : profile.role === "agent" ? (
                           <ShieldCheck className="w-4 h-4 text-amber-primary shrink-0" />
                         ) : (
@@ -382,7 +382,7 @@ export default function AdminUsersPage() {
                               <div className="font-bold text-text-primary text-sm flex items-center gap-1.5">
                                 {profile.name}
                                 {profile.role === "admin" && (
-                                  <span className="text-[0.625rem] bg-purple-500/15 text-purple-400 font-bold uppercase tracking-wider px-1.5 py-0.5 rounded">
+                                  <span className="text-[0.625rem] bg-amber-500/15 text-amber-400 font-bold uppercase tracking-wider px-1.5 py-0.5 rounded">
                                     Staff
                                   </span>
                                 )}
@@ -399,7 +399,7 @@ export default function AdminUsersPage() {
                           <div className="space-y-1">
                             <div className="flex items-center gap-1.5">
                               {profile.role === "admin" ? (
-                                <ShieldAlert className="w-4 h-4 text-purple-400" />
+                                <ShieldAlert className="w-4 h-4 text-amber-400" />
                               ) : profile.role === "agent" ? (
                                 <ShieldCheck className="w-4 h-4 text-amber-primary" />
                               ) : (

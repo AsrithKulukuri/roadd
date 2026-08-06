@@ -121,7 +121,7 @@ function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-bg-primary p-4 pt-28 pb-12 relative overflow-hidden">
       {/* Background Ambient Accents */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-primary/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-[150px] pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -140,7 +140,7 @@ function LoginForm() {
               </>
             ) : (
               <>
-                <MessageSquare className="w-6 h-6 text-emerald-400 fill-emerald-400/20" />
+                <MessageSquare className="w-6 h-6 text-amber-400 fill-amber-400/20" />
                 <span>Welcome</span>
               </>
             )}

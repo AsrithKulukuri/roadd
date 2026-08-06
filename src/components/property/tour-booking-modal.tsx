@@ -155,8 +155,8 @@ export function TourBookingModal({ isOpen, onClose, propertyName, propertyLocati
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-center">
-                <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mb-6">
-                  <CheckCircle2 className="w-10 h-10 text-green-500" />
+                <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mb-6">
+                  <CheckCircle2 className="w-10 h-10 text-amber-500" />
                 </div>
                 <h2 className="font-heading text-3xl font-bold text-text-primary mb-3">Tour Confirmed!</h2>
                 <p className="text-text-secondary mb-8 leading-relaxed">

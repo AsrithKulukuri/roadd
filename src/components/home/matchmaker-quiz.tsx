@@ -151,7 +151,7 @@ export function MatchmakerQuiz() {
                 {results.map(({ project, matchScore }) => (
                   <div key={project.id} className="relative">
                     {/* Match Score Badge */}
-                    <div className="absolute -top-4 -right-4 z-20 bg-gradient-to-br from-green-400 to-green-600 text-white w-16 h-16 rounded-full flex items-center justify-center flex-col shadow-lg transform rotate-12 border-4 border-white dark:border-bg-card">
+                    <div className="absolute -top-4 -right-4 z-20 bg-gradient-to-br from-amber-400 to-amber-600 text-white w-16 h-16 rounded-full flex items-center justify-center flex-col shadow-lg transform rotate-12 border-4 border-white dark:border-bg-card">
                       <span className="text-xl font-black leading-none">{matchScore}%</span>
                       <span className="text-[9px] font-bold uppercase tracking-wider">Match</span>
                     </div>

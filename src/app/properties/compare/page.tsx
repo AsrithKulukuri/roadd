@@ -141,7 +141,7 @@ export default function ComparePage() {
                     return (
                       <div key={p.id} className="flex items-center">
                         {hasAmenity ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                          <CheckCircle2 className="w-5 h-5 text-amber-500" />
                         ) : (
                           <Minus className="w-4 h-4 text-slate-400" />
                         )}

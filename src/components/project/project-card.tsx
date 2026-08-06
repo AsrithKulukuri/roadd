@@ -9,14 +9,14 @@ const TYPE_CONFIG: Record<ProjectType, { icon: React.ElementType; label: string;
   apartment: {
     icon: Building2,
     label: "Apartment",
-    cardAccent: "from-blue-500/5 to-transparent",
-    badgeClass: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+    cardAccent: "from-amber-500/5 to-transparent",
+    badgeClass: "bg-amber-500/10 text-amber-600 border-amber-500/20",
   },
   villa: {
     icon: Home,
     label: "Villa",
-    cardAccent: "from-emerald-500/5 to-transparent",
-    badgeClass: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+    cardAccent: "from-amber-500/5 to-transparent",
+    badgeClass: "bg-amber-500/10 text-amber-600 border-amber-500/20",
   },
   venture: {
     icon: Landmark,
@@ -28,8 +28,8 @@ const TYPE_CONFIG: Record<ProjectType, { icon: React.ElementType; label: string;
 
 const STATUS_COLORS: Record<string, string> = {
   "under-construction": "bg-orange-500/10 text-orange-600",
-  "ready-to-move":      "bg-green-500/10 text-green-600",
-  "new-launch":         "bg-blue-500/10 text-blue-600",
+  "ready-to-move":      "bg-amber-500/10 text-amber-600",
+  "new-launch":         "bg-amber-500/10 text-amber-600",
 };
 const STATUS_LABELS: Record<string, string> = {
   "under-construction": "Under Construction",
@@ -134,7 +134,7 @@ export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
               {TC.label}
             </span>
             {project.reraApproved && (
-              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-500/90 text-white backdrop-blur-sm">
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/90 text-white backdrop-blur-sm">
                 <CheckCircle2 className="w-3 h-3" /> RERA
               </span>
             )}
@@ -186,7 +186,7 @@ export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
               )}
               {totalLabel && (
                 <div className="flex items-center gap-2 text-xs text-text-secondary">
-                  <Trees className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <Trees className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   <span>{totalLabel}</span>
                 </div>
               )}
@@ -224,7 +224,7 @@ export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
               )}
               {builtUpRange && (
                 <div className="flex items-center gap-2 text-xs text-text-secondary">
-                  <Ruler className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <Ruler className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span>{builtUpRange}</span>
                 </div>
               )}

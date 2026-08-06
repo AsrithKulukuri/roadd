@@ -221,7 +221,7 @@ export default function CommuteRadiusMap({ latitude, longitude, projectName, cit
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <span className={`text-base font-extrabold ${calc.time <= 15 ? "text-green-500" : calc.time <= 25 ? "text-amber-500" : "text-text-secondary"}`}>
+                      <span className={`text-base font-extrabold ${calc.time <= 15 ? "text-amber-500" : calc.time <= 25 ? "text-amber-500" : "text-text-secondary"}`}>
                         {calc.time} mins
                       </span>
                     </div>
@@ -282,7 +282,7 @@ export default function CommuteRadiusMap({ latitude, longitude, projectName, cit
           <div className="absolute top-3 right-3 bg-slate-900/90 border border-slate-700/80 text-white p-2.5 rounded-2xl text-[10px] space-y-1.5 backdrop-blur-sm z-[1000] shadow-lg">
             <p className="font-extrabold uppercase text-slate-400 tracking-wider mb-1">Travel Time Radius</p>
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
               <span>Green: &lt;10 mins ({Math.round(radii[0]/1000)}km)</span>
             </div>
             <div className="flex items-center gap-1.5">

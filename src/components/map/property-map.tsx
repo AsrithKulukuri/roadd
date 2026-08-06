@@ -1020,7 +1020,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   onClick={() => toggleLandmarkFilter("school")}
                   className={`py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer ${
                     activeLandmarkTypes.includes("school")
-                      ? "bg-blue-600 text-white shadow-md"
+                      ? "bg-amber-600 text-white shadow-md"
                       : "bg-slate-700 text-slate-300 hover:bg-slate-600"
                   }`}
                 >
@@ -1040,7 +1040,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   onClick={() => toggleLandmarkFilter("transit")}
                   className={`py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer ${
                     activeLandmarkTypes.includes("transit")
-                      ? "bg-emerald-600 text-white shadow-md"
+                      ? "bg-amber-600 text-white shadow-md"
                       : "bg-slate-700 text-slate-300 hover:bg-slate-600"
                   }`}
                 >
@@ -1199,7 +1199,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
           <div className="pt-3 border-t border-slate-800 space-y-2 text-xs text-slate-300">
             <div className="flex items-center justify-between bg-slate-800/60 px-3 py-2 rounded-xl border border-slate-700/50">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
                 <span className="font-extrabold text-white">Found Listings</span>
               </div>
               <span className="font-extrabold text-amber-400 text-sm">{displayedProperties.length}</span>
@@ -1382,7 +1382,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                     onClick={() => toggleLandmarkFilter("school")}
                     className={cn(
                       "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
-                      activeLandmarkTypes.includes("school") ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300"
+                      activeLandmarkTypes.includes("school") ? "bg-amber-600 text-white" : "bg-slate-800 text-slate-300"
                     )}
                   >
                     Schools
@@ -1400,7 +1400,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                     onClick={() => toggleLandmarkFilter("transit")}
                     className={cn(
                       "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
-                      activeLandmarkTypes.includes("transit") ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300"
+                      activeLandmarkTypes.includes("transit") ? "bg-amber-600 text-white" : "bg-slate-800 text-slate-300"
                     )}
                   >
                     Transit
@@ -1422,7 +1422,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   : "bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-white"
               )}
             >
-              <div className={cn("w-2 h-2 rounded-full", searchAsMove ? "bg-emerald-400 animate-pulse" : "bg-slate-400")} />
+              <div className={cn("w-2 h-2 rounded-full", searchAsMove ? "bg-amber-400 animate-pulse" : "bg-slate-400")} />
               <span>Search as I move map</span>
             </button>
           </div>
@@ -1430,7 +1430,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
           {/* REALTOR.COM AUTHENTIC FLOATING COUNT BADGE (TOP-LEFT) */}
           {drawPolygonPoints.length >= 3 && !isDrawing && (
             <div className="absolute top-4 left-4 z-[550] bg-slate-950/95 text-white border border-slate-800 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
               <div>
                 <div className="font-extrabold text-xs text-white">
                   Showing {displayedProperties.length} of {mapProperties.length} properties
@@ -1458,7 +1458,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 onClick={() => setShowPropertiesTray(!showPropertiesTray)}
                 className="px-4 py-2 rounded-full bg-slate-950/95 text-white border-2 border-amber-500 shadow-2xl backdrop-blur-xl font-extrabold text-xs flex items-center gap-2 transition-all active:scale-95 cursor-pointer hover:bg-slate-900"
               >
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
                 <span>{displayedProperties.length} {displayedProperties.length === 1 ? "Property" : "Properties"} Found</span>
                 {drawPolygonPoints.length >= 3 && (
                   <span className="bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded text-[10px] font-black">In Drawn Area</span>

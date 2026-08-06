@@ -423,8 +423,8 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
 
   // ─── Type badge helper ─────────────────────────────────────────────────────
   const typeInfo = {
-    apartment: { icon: Building2, desc: "Multi-storey flats with BHK configs", color: "border-blue-500 bg-blue-500/5 text-blue-600" },
-    villa:     { icon: Home,      desc: "Independent villas / row houses",       color: "border-emerald-500 bg-emerald-500/5 text-emerald-600" },
+    apartment: { icon: Building2, desc: "Multi-storey flats with BHK configs", color: "border-amber-500 bg-amber-500/5 text-amber-600" },
+    villa:     { icon: Home,      desc: "Independent villas / row houses",       color: "border-amber-500 bg-amber-500/5 text-amber-600" },
     venture:   { icon: Landmark,  desc: "Gated layout plots – residential/commercial", color: "border-amber-500 bg-amber-500/5 text-amber-600" },
   };
 
@@ -946,7 +946,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                     toast.error("Geolocation is not supported by your browser");
                   }
                 }}
-                className="h-11 px-6 bg-blue-500 hover:bg-blue-600 text-white font-black text-sm rounded-xl cursor-pointer shadow-md w-full sm:w-auto flex items-center justify-center gap-2 transition-colors"
+                className="h-11 px-6 bg-amber-500 hover:bg-amber-600 text-white font-black text-sm rounded-xl cursor-pointer shadow-md w-full sm:w-auto flex items-center justify-center gap-2 transition-colors"
               >
                 <MapPin className="w-4 h-4" /> Use My Current Location
               </Button>
@@ -1021,7 +1021,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 </label>
                 <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://youtube.com/watch?v=... or youtu.be/... or Shorts URL" className={ic()} />
                 {videoUrl.trim() && (
-                  <p className="text-xs text-green-500 font-semibold flex items-center gap-1">
+                  <p className="text-xs text-amber-500 font-semibold flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Video URL saved — Watch Tour button will appear on the project page.
                   </p>
                 )}
@@ -1032,7 +1032,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                   <label className="text-sm font-medium text-text-secondary block mb-2">Brochure (PDF/Image)</label>
                   <div className="flex items-center gap-3">
                     <Input type="file" onChange={handleBrochureFile} className="file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700" />
-                    {brochureUrl && <span className="text-xs text-green-500 font-bold">Uploaded ✓</span>}
+                    {brochureUrl && <span className="text-xs text-amber-500 font-bold">Uploaded ✓</span>}
                   </div>
                 </div>
               </div>

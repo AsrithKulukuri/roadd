@@ -167,9 +167,9 @@ export function PropertyContact({ property }: PropertyContactProps) {
 
         {/* Direct Call Info when Logged In */}
         {isLoggedIn && (
-          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-400 font-bold">
+          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs text-amber-400 font-bold">
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-amber-400" />
               <span>Owner Direct:</span>
             </span>
             <a href="tel:+918977311418" className="hover:underline text-sm font-extrabold text-white">
