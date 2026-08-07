@@ -194,8 +194,8 @@ export function RealtorFilterBar({
           className={cn(
             "h-9 px-3.5 rounded-full text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-xs active:scale-95",
             activeFilterCount > 0
-              ? "bg-slate-900 text-white border-slate-900 dark:bg-[#f1a010] dark:text-slate-950 dark:border-[#f1a010]"
-              : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-800 hover:border-slate-900 dark:hover:border-slate-600"
+              ? "bg-[#f1a010] text-slate-950 border-[#f1a010]"
+              : "bg-white text-slate-800 border-slate-300 hover:border-slate-400"
           )}
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -216,8 +216,8 @@ export function RealtorFilterBar({
           className={cn(
             "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
             filters.propertyType.length > 0 || openDropdown === "propertyType"
-              ? "bg-slate-900 text-white border-slate-900 dark:bg-[#f1a010] dark:text-slate-950 font-bold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-900 dark:hover:border-slate-600"
+              ? "bg-[#f1a010] text-slate-950 font-bold border-[#f1a010] shadow-xs"
+              : "bg-white text-slate-800 border-slate-300 hover:border-slate-400"
           )}
         >
           <span>{getPropertyTypeLabel()}</span>
@@ -236,8 +236,8 @@ export function RealtorFilterBar({
           className={cn(
             "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
             filters.budget[0] > 0 || filters.budget[1] < 100000000 || openDropdown === "price"
-              ? "bg-slate-900 text-white border-slate-900 dark:bg-[#f1a010] dark:text-slate-950 font-bold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-900 dark:hover:border-slate-600"
+              ? "bg-[#f1a010] text-slate-950 font-bold border-[#f1a010] shadow-xs"
+              : "bg-white text-slate-800 border-slate-300 hover:border-slate-400"
           )}
         >
           <IndianRupee className="w-3.5 h-3.5 shrink-0" />
@@ -259,8 +259,8 @@ export function RealtorFilterBar({
           className={cn(
             "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
             filters.postedBy.length > 0 || openDropdown === "postedBy"
-              ? "bg-slate-900 text-white border-slate-900 dark:bg-[#f1a010] dark:text-slate-950 font-bold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-900 dark:hover:border-slate-600"
+              ? "bg-[#f1a010] text-slate-950 font-bold border-[#f1a010] shadow-xs"
+              : "bg-white text-slate-800 border-slate-300 hover:border-slate-400"
           )}
         >
           <span>{getPostedByLabel()}</span>
@@ -279,8 +279,8 @@ export function RealtorFilterBar({
           className={cn(
             "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
             filters.availability.includes("ready")
-              ? "bg-slate-900 text-white border-slate-900 dark:bg-amber-500 dark:text-slate-950 font-bold shadow-xs"
-              : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-800 hover:border-slate-900 dark:hover:border-slate-600"
+              ? "bg-[#f1a010] text-slate-950 font-bold border-[#f1a010] shadow-xs"
+              : "bg-white text-slate-800 border-slate-300 hover:border-slate-400"
           )}
         >
           <Clock className="w-3.5 h-3.5" />

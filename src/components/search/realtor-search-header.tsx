@@ -162,7 +162,7 @@ export function RealtorSearchHeader({
 
   return (
     <>
-      <header className="sticky top-16 z-30 w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
+      <header className="sticky top-16 z-30 w-full bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2">
           {/* ROW 1: REALTOR SEARCH BOX & LIST/MAP VIEW TOGGLE */}
           <div className="flex items-center gap-2 w-full">
@@ -170,10 +170,10 @@ export function RealtorSearchHeader({
               <form
                 onSubmit={handleSearchSubmit}
                 className={cn(
-                  "relative flex-1 min-w-0 flex items-center h-10 sm:h-11 rounded-full border bg-white dark:bg-slate-900 transition-all duration-200 shadow-xs",
+                  "relative flex-1 min-w-0 flex items-center h-10 sm:h-11 rounded-full border bg-white transition-all duration-200 shadow-xs",
                   isFocused
                     ? "border-[#f1a010] ring-2 ring-[#f1a010]/20 shadow-md"
-                    : "border-slate-300 dark:border-slate-700 hover:border-[#f1a010] dark:hover:border-[#f1a010]"
+                    : "border-slate-300 hover:border-[#f1a010]"
                 )}
               >
                 {/* Input & Animated Carousel Placeholder Overlay */}
@@ -185,7 +185,7 @@ export function RealtorSearchHeader({
                     onChange={(e) => setSearchInput(e.target.value)}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
-                    className="w-full h-full bg-transparent text-sm text-slate-900 dark:text-white font-medium focus:outline-none z-10"
+                    className="w-full h-full bg-transparent text-sm text-slate-900 font-medium focus:outline-none z-10"
                     spellCheck={false}
                   autoComplete="off"
                 />
@@ -284,17 +284,17 @@ export function RealtorSearchHeader({
             <button
               type="button"
               onClick={() => onViewModeChange(viewMode === "grid" ? "map" : "grid")}
-              className="h-10 sm:h-11 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-900 dark:border-slate-700 shadow-md font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
+              className="h-10 sm:h-11 px-4 rounded-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 shadow-sm font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
             >
               {viewMode === "grid" ? (
                 <>
-                  <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#f1a010] fill-[#f1a010]/30 shrink-0" />
-                  <span className="text-[#f1a010]">Map View</span>
+                  <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#f1a010] shrink-0" />
+                  <span className="text-slate-800">Map View</span>
                 </>
               ) : (
                 <>
-                  <List className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />
-                  <span>List View</span>
+                  <List className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 shrink-0" />
+                  <span className="text-slate-800">List View</span>
                 </>
               )}
             </button>
@@ -305,7 +305,7 @@ export function RealtorSearchHeader({
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shrink-0 border border-slate-200 dark:border-slate-700"
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-white hover:bg-slate-50 text-slate-700 transition-colors shrink-0 border border-slate-300 shadow-sm"
               title="Go Back"
             >
               <ChevronLeft className="w-5 h-5" />
