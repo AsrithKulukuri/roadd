@@ -34,9 +34,9 @@ function PropertiesPage() {
     setMounted(true);
   }, []);
 
-  // Lock body scroll on mobile when map view is active so ONLY the map moves
+  // Lock body scroll when map view is active so ONLY the map moves
   useEffect(() => {
-    if (viewMode === "map" && typeof window !== "undefined" && window.innerWidth < 768) {
+    if (viewMode === "map" && typeof window !== "undefined") {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";

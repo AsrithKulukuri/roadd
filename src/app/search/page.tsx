@@ -47,6 +47,18 @@ function UnifiedSearchPage() {
     fetchProjects();
   }, []);
 
+  // Lock body scroll when map view is active so ONLY the map moves
+  useEffect(() => {
+    if (viewMode === "map" && typeof window !== "undefined") {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [viewMode]);
+
   const parseInitialParams = (): FilterState => {
     const loc = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
     
