@@ -703,8 +703,8 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   // Map Data Layer (Realtor-style color overlays)
   const [mapDataLayer, setMapDataLayer] = useState<"none" | "hotness" | "dom" | "sqft" | "yearbuilt" | "neighborhood">("none");
 
-  // Listing type pill filter on map
-  const [listingTypeFilter, setListingTypeFilter] = useState<"all" | "sale" | "rent" | "commercial">("all");
+  // Entity type pill filter on map (All / Properties / Projects)
+  const [listingTypeFilter, setListingTypeFilter] = useState<"all" | "properties" | "projects">("all");
 
   // Active Locality Highlight Boundary (Dynamic for ANY searched location!)
   const activeLocalityBoundary = useMemo(() => {
@@ -764,28 +764,12 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
     );
   };
 
-  // Listing type filter applied on top of displayedProperties
+  // Entity type filter applied on top of displayedProperties
   const displayedPropertiesFiltered = useMemo(() => {
     if (listingTypeFilter === "all") return displayedProperties;
-    return displayedProperties.filter((p: any) => {
-      const lt = (p.listingType || "").toLowerCase();
-      const pt = (p.propertyType || "").toLowerCase();
-      const isProject = Boolean(p._isProject);
-
-      if (listingTypeFilter === "sale") {
-        // For sale = buy / sale / resale listing types; projects are always "for sale"
-        return isProject || lt.includes("sale") || lt.includes("buy") || lt.includes("resale") || lt === "for sale";
-      }
-      if (listingTypeFilter === "rent") {
-        // Rent = rent / lease / pg
-        return lt.includes("rent") || lt.includes("lease") || lt.includes("pg") || lt.includes("letting");
-      }
-      if (listingTypeFilter === "commercial") {
-        // Commercial = commercial property type OR commercial listing type
-        return pt.includes("commercial") || pt.includes("office") || pt.includes("shop") || lt.includes("commercial");
-      }
-      return true;
-    });
+    if (listingTypeFilter === "properties") return displayedProperties.filter((p: any) => !p._isProject);
+    if (listingTypeFilter === "projects") return displayedProperties.filter((p: any) => Boolean(p._isProject));
+    return displayedProperties;
   }, [displayedProperties, listingTypeFilter]);
 
   // Color for data layer price pills
@@ -1331,9 +1315,9 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
         {/* The Leaflet Map Canvas Container */}
         <div className="flex-1 w-full h-full relative bg-slate-950 touch-none" style={{ touchAction: "none" }}>
           
-          {/* TOP: Listing Type Pills (Realtor.com style) */}
+          {/* TOP: Entity Type Pills (All / Properties / Projects) */}
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[550] flex items-center gap-1.5 pointer-events-auto">
-            {(["all", "sale", "rent", "commercial"] as const).map((lt) => (
+            {(["all", "properties", "projects"] as const).map((lt) => (
               <button
                 key={lt}
                 onClick={() => setListingTypeFilter(lt)}
@@ -1344,7 +1328,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                     : "bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-[#f1a010]"
                 )}
               >
-                {lt === "all" ? "All" : lt === "sale" ? "For Sale" : lt === "rent" ? "For Rent" : "Commercial"}
+                {lt === "all" ? "All" : lt === "properties" ? "Properties" : "Projects"}
               </button>
             ))}
           </div>
