@@ -1288,7 +1288,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                     onClick={() => {
                       setSelectedPropertyId(p.id);
                       if (mapRef.current) {
-                        mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 0.4 });
+                        mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
                       }
                     }}
                     className={cn(
@@ -1685,7 +1685,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                           onClick={() => {
                             setSelectedPropertyId(prop.id);
                             if (mapRef.current) {
-                              mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 0.4 });
+                              mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
                             }
                           }}
                           className={cn(
@@ -1735,7 +1735,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                                     e.stopPropagation();
                                     setSelectedPropertyId(prop.id);
                                     if (mapRef.current) {
-                                      mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 0.4 });
+                                      mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
                                     }
                                     setBlinkingPropertyId(prop.id);
                                     setTimeout(() => setBlinkingPropertyId(null), 4000);
@@ -1969,7 +1969,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                     click: () => {
                       setSelectedPropertyId(property.id);
                       if (mapRef.current) {
-                        mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 0.4 });
+                        mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
                       }
                       if (!userLocation && "geolocation" in navigator) {
                         navigator.geolocation.getCurrentPosition(
