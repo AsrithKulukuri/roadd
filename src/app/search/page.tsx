@@ -26,7 +26,9 @@ function UnifiedSearchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
-  const [activeTab, setActiveTab] = useState<"all" | "properties" | "projects">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "properties" | "projects">(
+    searchParams.get("type") === "projects" ? "projects" : "all"
+  );
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [sortBy, setSortBy] = useState<"relevant" | "price-asc" | "price-desc" | "newest">("relevant");
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -89,6 +91,12 @@ function UnifiedSearchPage() {
   // Keep filters in sync with URL searchParams if they change
   useEffect(() => {
     setFilters(parseInitialParams());
+    const typeStr = searchParams.get("type");
+    if (typeStr === "projects") {
+      setActiveTab("projects");
+    } else {
+      setActiveTab("all");
+    }
   }, [searchParams]);
 
   // Unified filtering logic
@@ -225,11 +233,12 @@ function UnifiedSearchPage() {
 
       // 3. Property Category / Type
       if (filters.propertyType.length > 0) {
-        const pType = project.projectType;
+        const pType = project.projectType?.toLowerCase() || "";
         let matches = false;
         if (pType === "apartment" && filters.propertyType.includes("apartment")) matches = true;
         if (pType === "villa" && filters.propertyType.includes("villa")) matches = true;
-        if (pType === "venture" && filters.propertyType.includes("residential-land")) matches = true;
+        if ((pType === "venture" || pType === "residential-land") && (filters.propertyType.includes("residential-land") || filters.propertyType.includes("plot"))) matches = true;
+        if (pType === "commercial" && filters.propertyType.includes("commercial-spaces")) matches = true;
         if (!matches) return false;
       }
 
@@ -374,6 +383,7 @@ function UnifiedSearchPage() {
         builderName: p.builderName,
         // signals it's a project for the popup
         _isProject: true,
+        _originalProjectData: p,
       }));
     return [...propItems, ...projItems];
   }, [filteredProperties, filteredProjects]);

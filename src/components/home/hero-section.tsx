@@ -29,10 +29,11 @@ import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 
-// Search Tabs: Only Buy and Rent
+// Search Tabs: Buy, Rent and Projects
 const tabs = [
   { id: "buy", label: "Buy" },
   { id: "rent", label: "Rent" },
+  { id: "projects", label: "Projects" },
 ];
 
 const CAROUSEL_SUGGESTIONS = [
@@ -128,9 +129,12 @@ export function HeroSection() {
     const params = new URLSearchParams();
     if (activeTab === "rent") {
       params.set("type", "rent");
+    } else if (activeTab === "projects") {
+      params.set("type", "projects");
     } else {
       params.set("type", "buy");
     }
+
     if (searchQuery.trim()) {
       params.set("location", searchQuery.trim());
     }
@@ -142,10 +146,13 @@ export function HeroSection() {
   };
 
   const matchingCount = useMemo(() => {
-    let count = properties.filter((p) => {
-      if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
-      return p.price >= heroBudget[0] && p.price <= heroBudget[1];
-    }).length;
+    let count = 0;
+    if (activeTab !== "projects") {
+      count = properties.filter((p) => {
+        if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
+        return p.price >= heroBudget[0] && p.price <= heroBudget[1];
+      }).length;
+    }
 
     if (activeTab !== "rent") {
       count += projects.filter((p) => {
@@ -197,7 +204,7 @@ export function HeroSection() {
     const counts: Record<string, number> = {};
     for (const cat of homeCategories) {
       const types = CATEGORY_TYPE_MAP[cat.id];
-      let propCount = properties.filter((p) => {
+      let propCount = activeTab === "projects" ? 0 : properties.filter((p) => {
         if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
         const inBudget = p.price >= heroBudget[0] && p.price <= heroBudget[1];
         if (!inBudget) return false;
@@ -286,6 +293,9 @@ export function HeroSection() {
                   setActiveTab(tab.id);
                   if (tab.id === "pre-approval") {
                     router.push("/mortgage-calculator");
+                  }
+                  if (tab.id === "projects") {
+                    router.push("/search?type=projects");
                   }
                 }}
                 className={cn(

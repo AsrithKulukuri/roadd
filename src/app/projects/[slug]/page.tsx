@@ -177,9 +177,28 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   const priceRange = getPriceRange(project.configurations);
 
   // Gallery images including all
-  const galleryAll = project.images;
-  const heroImage  = project.coverImage ?? galleryAll[0]?.url;
-  const sideImages = galleryAll.filter((i) => i.url !== heroImage).slice(0, 2);
+  const galleryAll = project.images || [];
+  
+  const [currentHeroIdx, setCurrentHeroIdx] = useState(0);
+
+  // Auto-slide hero image
+  useEffect(() => {
+    if (!galleryAll || galleryAll.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentHeroIdx((prev) => (prev + 1) % galleryAll.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [galleryAll.length]);
+
+  const heroImage  = galleryAll[currentHeroIdx]?.url ?? project.coverImage ?? galleryAll[0]?.url;
+  
+  // The side images will be the next two images in the gallery sequence
+  const sideImages = galleryAll.length > 2 
+    ? [
+        galleryAll[(currentHeroIdx + 1) % galleryAll.length],
+        galleryAll[(currentHeroIdx + 2) % galleryAll.length]
+      ].filter(Boolean)
+    : galleryAll.filter((i) => i.url !== heroImage).slice(0, 2);
 
   // WhatsApp URL
   const whatsapp = project.builderWhatsapp

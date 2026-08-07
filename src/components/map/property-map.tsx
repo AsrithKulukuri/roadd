@@ -21,6 +21,8 @@ import { usePropertiesStore } from "@/stores/properties-store";
 import { formatPriceCompact, formatINR, cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
+import { useFavoritesStore } from "@/stores/favorites-store";
+import { toast } from "sonner";
 
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -688,7 +690,8 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const [drawShapeType, setDrawShapeType] = useState<"freehand" | "circle" | "box">("freehand");
   const [drawPolygonPoints, setDrawPolygonPoints] = useState<L.LatLng[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [showPropertiesTray, setShowPropertiesTray] = useState(true);
+  const [showPropertiesTray, setShowPropertiesTray] = useState(false);
+  const { toggleFavorite, isFavorite } = useFavoritesStore();
 
   // Realtor.com Map Controls State
   const [showMapOptionsMenu, setShowMapOptionsMenu] = useState(false);
@@ -1459,9 +1462,12 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 className="px-4 py-2 rounded-full bg-slate-950/95 text-white border-2 border-amber-500 shadow-2xl backdrop-blur-xl font-extrabold text-xs flex items-center gap-2 transition-all active:scale-95 cursor-pointer hover:bg-slate-900"
               >
                 <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-                <span>{displayedProperties.length} {displayedProperties.length === 1 ? "Property" : "Properties"} Found</span>
+                <span>{displayedProperties.length} {displayedProperties.length === 1 ? ((displayedProperties[0] as any)?._isProject ? "Project" : "Property") : ((displayedProperties[0] as any)?._isProject ? "Projects" : "Properties")} Found</span>
                 {drawPolygonPoints.length >= 3 && (
                   <span className="bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded text-[10px] font-black">In Drawn Area</span>
+                )}
+                {!showPropertiesTray && (
+                  <span className="animate-pulse text-amber-400 border-l border-slate-700 pl-2 ml-1 whitespace-nowrap">Tap to open</span>
                 )}
                 {showPropertiesTray ? <ChevronDown className="w-4 h-4 text-amber-400" /> : <ChevronUp className="w-4 h-4 text-amber-400" />}
               </button>
@@ -1472,7 +1478,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   <div className="flex items-center justify-between px-2 pb-2 border-b border-slate-800/80 mb-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
                       <Sparkles className="w-4 h-4 text-amber-400" />
-                      <span>Found Properties ({displayedProperties.length})</span>
+                      <span>Found {displayedProperties.length > 0 && (displayedProperties[0] as any)?._isProject ? "Projects" : "Properties"} ({displayedProperties.length})</span>
                     </div>
                     <button
                       onClick={() => setShowPropertiesTray(false)}
@@ -1757,46 +1763,71 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   }}
                 >
                   <Popup className="property-map-popup-realtor">
-                    <div className="relative w-[260px] h-[190px] rounded-2xl overflow-hidden shadow-2xl group cursor-pointer bg-slate-900">
-                      <Link href={(property as any)._isProject ? `/projects/${property.slug}` : `/properties/${property.slug || property.id}`} className="absolute inset-0 z-0">
-                        <img
-                          src={coverImg}
-                          alt={property.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                      </Link>
+                    {(() => {
+                      const isProj = (property as any)._isProject;
+                      const linkUrl = isProj ? `/projects/${property.slug || property.id}` : `/properties/${property.slug || property.id}`;
+                      const orig = (property as any)._originalProjectData;
+                      
+                      return (
+                        <div className="relative w-[260px] h-[190px] rounded-2xl overflow-hidden shadow-2xl group cursor-pointer bg-slate-900">
+                          <Link href={linkUrl} className="absolute inset-0 z-0">
+                            <img
+                              src={coverImg}
+                              alt={property.title}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                          </Link>
 
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                        }}
-                        className="absolute bottom-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform z-10"
-                      >
-                        <Heart className="w-5 h-5 text-slate-900" />
-                      </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              toggleFavorite(property.id);
+                              toast.success(isFavorite(property.id) ? "Removed from saved properties" : "Saved to your favorites!");
+                            }}
+                            className="absolute bottom-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform z-10"
+                          >
+                            <Heart className={cn("w-5 h-5 transition-colors", isFavorite(property.id) ? "fill-amber-500 text-amber-500" : "text-slate-900")} />
+                          </button>
 
-                      <Link href={(property as any)._isProject ? `/projects/${property.slug}` : `/properties/${property.slug || property.id}`} className="absolute bottom-3 left-3 right-14 text-white z-0 flex flex-col items-start">
-                        <div className="text-[28px] font-black drop-shadow-md leading-none mb-1 text-white tracking-tight">
-                          {formatPriceCompact(property.price)}
+                          <Link href={linkUrl} className="absolute bottom-3 left-3 right-14 text-white z-0 flex flex-col items-start">
+                            <div className="text-[28px] font-black drop-shadow-md leading-none mb-1 text-white tracking-tight">
+                              {formatPriceCompact(property.price)}
+                            </div>
+                            
+                            {isProj ? (
+                              <>
+                                <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center gap-1.5 flex-wrap">
+                                  <span>{property.title}</span>
+                                </div>
+                                <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center mt-0.5">
+                                  <span>By {(property as any).builderName || "Builder"}</span>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center gap-1.5 flex-wrap">
+                                  {property.bedrooms ? <span>{property.bedrooms} bed</span> : null}
+                                  {property.bathrooms ? <span>• {property.bathrooms} ba</span> : null}
+                                  {property.area ? <span>• {property.area.toLocaleString()} sqft</span> : null}
+                                </div>
+                                <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center mt-0.5">
+                                  <span>{property.plotArea ? `${(property.plotArea / 43560).toFixed(2)} acres lot` : "0.34 acres lot"}</span>
+                                </div>
+                              </>
+                            )}
+
+                            {userLocation && (
+                              <div className="text-xs font-extrabold text-amber-400 mt-1 flex items-center gap-1 bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                                <Navigation className="w-3 h-3" />
+                                {getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, coords.lat, coords.lng).toFixed(1)} km away from you
+                              </div>
+                            )}
+                          </Link>
                         </div>
-                        <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center gap-1.5 flex-wrap">
-                          {property.bedrooms ? <span>{property.bedrooms} bed</span> : null}
-                          {property.bathrooms ? <span>• {property.bathrooms} ba</span> : null}
-                          {property.area ? <span>• {property.area.toLocaleString()} sqft</span> : null}
-                        </div>
-                        <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center mt-0.5">
-                          <span>{property.plotArea ? `${(property.plotArea / 43560).toFixed(2)} acres lot` : "0.34 acres lot"}</span>
-                        </div>
-                        {userLocation && (
-                          <div className="text-xs font-extrabold text-amber-400 mt-1 flex items-center gap-1 bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-sm">
-                            <Navigation className="w-3 h-3" />
-                            {getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, coords.lat, coords.lng).toFixed(1)} km away from you
-                          </div>
-                        )}
-                      </Link>
-                    </div>
+                      );
+                    })()}
                   </Popup>
                 </Marker>
               );
