@@ -242,7 +242,7 @@ function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean
     ? '0 0 18px rgba(245, 166, 37, 0.9)'
     : '0 4px 12px rgba(0, 0, 0, 0.4)';
 
-  const blinkClass = isBlinking ? 'animate-bounce ring-4 ring-amber-500 shadow-2xl' : '';
+  const blinkClass = isBlinking ? 'animate-pulse ring-4 ring-amber-500 shadow-2xl' : '';
 
   return L.divIcon({
     className: `realtor-price-pill-marker ${blinkClass}`,
@@ -1288,7 +1288,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                     onClick={() => {
                       setSelectedPropertyId(p.id);
                       if (mapRef.current) {
-                        mapRef.current.flyTo([coords.lat, coords.lng], 17, { duration: 0.4 });
+                        mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 0.4 });
                       }
                     }}
                     className={cn(
@@ -1685,7 +1685,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                           onClick={() => {
                             setSelectedPropertyId(prop.id);
                             if (mapRef.current) {
-                              mapRef.current.flyTo([coords.lat, coords.lng], 17, { duration: 0.4 });
+                              mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 0.4 });
                             }
                           }}
                           className={cn(
@@ -1735,7 +1735,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                                     e.stopPropagation();
                                     setSelectedPropertyId(prop.id);
                                     if (mapRef.current) {
-                                      mapRef.current.flyTo([coords.lat, coords.lng], 17, { duration: 0.4 });
+                                      mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 0.4 });
                                     }
                                     setBlinkingPropertyId(prop.id);
                                     setTimeout(() => setBlinkingPropertyId(null), 4000);
@@ -1969,7 +1969,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                     click: () => {
                       setSelectedPropertyId(property.id);
                       if (mapRef.current) {
-                        mapRef.current.flyTo([coords.lat, coords.lng], 17, { duration: 0.4 });
+                        mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 0.4 });
                       }
                       if (!userLocation && "geolocation" in navigator) {
                         navigator.geolocation.getCurrentPosition(
