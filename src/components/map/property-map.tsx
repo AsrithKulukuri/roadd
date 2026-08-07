@@ -13,7 +13,7 @@ import {
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart } from "lucide-react";
+import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import L from "leaflet";
 import Link from "next/link";
 import { PropertyCard } from "@/components/property/property-card";
@@ -652,6 +652,70 @@ interface PropertyMapProps {
   filteredItems?: any[];
 }
 
+function MapCardImageCarousel({ images, title, propertyType }: { images: string[]; title: string; propertyType: string }) {
+  const [idx, setIdx] = useState(0);
+  const handlePrev = (e: React.MouseEvent) => { e.stopPropagation(); setIdx(i => Math.max(0, i - 1)); }
+  const handleNext = (e: React.MouseEvent) => { e.stopPropagation(); setIdx(i => Math.min(images.length - 1, i + 1)); }
+  
+  return (
+    <div className="relative w-24 sm:w-28 h-24 rounded-xl overflow-hidden shrink-0 bg-slate-800 group/carousel">
+      <img src={images[idx]} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+      <div className="absolute top-1 left-1 bg-slate-950/80 text-[#f1a010] text-[9px] font-extrabold px-1.5 py-0.5 rounded-md backdrop-blur-xs z-10 shadow-xs border border-[#f1a010]/20">
+        {propertyType}
+      </div>
+      {images.length > 1 && idx > 0 && (
+         <button onClick={handlePrev} className="absolute left-1 top-1/2 -translate-y-1/2 bg-slate-950/60 hover:bg-slate-950 p-1 rounded-full text-white opacity-0 group-hover/carousel:opacity-100 transition-all z-10 backdrop-blur-sm">
+            <ChevronLeft className="w-3 h-3" />
+         </button>
+      )}
+      {images.length > 1 && idx < images.length - 1 && (
+         <button onClick={handleNext} className="absolute right-1 top-1/2 -translate-y-1/2 bg-slate-950/60 hover:bg-slate-950 p-1 rounded-full text-white opacity-0 group-hover/carousel:opacity-100 transition-all z-10 backdrop-blur-sm">
+            <ChevronRight className="w-3 h-3" />
+         </button>
+      )}
+      {images.length > 1 && (
+         <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-0.5 z-10">
+            {images.slice(0, 5).map((_, i) => (
+               <div key={i} className={cn("h-1 rounded-full transition-all", i === idx ? 'w-2.5 bg-white' : 'w-1 bg-white/50')} />
+            ))}
+            {images.length > 5 && <div className="w-1 h-1 rounded-full bg-white/50" />}
+         </div>
+      )}
+    </div>
+  )
+}
+
+function MapCardSkeleton() {
+  return (
+    <div className="w-72 sm:w-80 shrink-0 bg-slate-900 border border-slate-800 rounded-2xl p-2.5 flex gap-3 animate-pulse">
+      <div className="w-24 sm:w-28 h-24 rounded-xl bg-slate-800 shrink-0"></div>
+      <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+        <div className="space-y-2.5">
+          <div className="h-3.5 bg-slate-800 rounded w-1/3"></div>
+          <div className="h-3 bg-slate-800 rounded w-3/4"></div>
+          <div className="h-2.5 bg-slate-800 rounded w-1/2 mt-1"></div>
+        </div>
+        <div className="flex justify-between items-end">
+          <div className="h-2.5 bg-slate-800 rounded w-16"></div>
+          <div className="h-2.5 bg-slate-800 rounded w-12"></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SidebarCardSkeleton() {
+  return (
+    <div className="p-2 rounded-xl bg-slate-800/50 border border-slate-700/50 flex items-center justify-between gap-2 animate-pulse">
+      <div className="flex-1 space-y-2">
+        <div className="h-3 bg-slate-700 rounded w-3/4"></div>
+        <div className="h-2 bg-slate-700 rounded w-1/2"></div>
+      </div>
+      <div className="h-3 bg-slate-700 rounded w-16"></div>
+    </div>
+  )
+}
+
 export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
@@ -659,6 +723,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const initialBhk = searchParams.get("bhk") || null;
   
   const properties = usePropertiesStore((state) => state.properties);
+  const isLoading = usePropertiesStore((state) => state.isLoading);
   const mapProperties = useMemo(() => properties.filter((p) => p.showOnMap !== false && p.status !== 'sold'), [properties]);
 
   const [position, setPosition] = useState<L.LatLng | null>(
@@ -1279,39 +1344,47 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
             {/* Sidebar Mini Property Listings List */}
             <div className="max-h-48 overflow-y-auto space-y-1.5 no-scrollbar pr-1">
-              {displayedPropertiesFiltered.map((p) => {
-                const isSel = selectedPropertyId === p.id;
-                const coords = resolvePropertyMapCoords(p);
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => {
-                      setSelectedPropertyId(p.id);
-                      if (mapRef.current) {
-                        mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
-                      }
-                    }}
-                    className={cn(
-                      "p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 group",
-                      isSel
-                        ? "bg-amber-500/15 border-amber-500 text-white"
-                        : "bg-slate-800/80 border-slate-700/80 text-slate-300 hover:bg-slate-700 hover:border-slate-600"
-                    )}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="font-bold text-xs text-white truncate group-hover:text-amber-400">
-                        {p.title}
+              {isLoading ? (
+                <>
+                  <SidebarCardSkeleton />
+                  <SidebarCardSkeleton />
+                  <SidebarCardSkeleton />
+                </>
+              ) : (
+                displayedPropertiesFiltered.map((p) => {
+                  const isSel = selectedPropertyId === p.id;
+                  const coords = resolvePropertyMapCoords(p);
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => {
+                        setSelectedPropertyId(p.id);
+                        if (mapRef.current) {
+                          mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
+                        }
+                      }}
+                      className={cn(
+                        "p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 group",
+                        isSel
+                          ? "bg-amber-500/15 border-amber-500 text-white"
+                          : "bg-slate-800/80 border-slate-700/80 text-slate-300 hover:bg-slate-700 hover:border-slate-600"
+                      )}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-xs text-white truncate group-hover:text-amber-400">
+                          {p.title}
+                        </div>
+                        <div className="text-[10px] text-slate-400 truncate">
+                          📍 {p.location.locality} • {p.bedrooms ? `${p.bedrooms} BHK` : p.propertyType}
+                        </div>
                       </div>
-                      <div className="text-[10px] text-slate-400 truncate">
-                        📍 {p.location.locality} • {p.bedrooms ? `${p.bedrooms} BHK` : p.propertyType}
+                      <div className="text-amber-400 font-extrabold text-xs shrink-0">
+                        {formatPriceCompact(p.price)}
                       </div>
                     </div>
-                    <div className="text-amber-400 font-extrabold text-xs shrink-0">
-                      {formatPriceCompact(p.price)}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -1672,93 +1745,103 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   </div>
 
                   <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1 touch-pan-x">
-                  {displayedPropertiesFiltered.map((prop) => {
-                      const isSelected = selectedPropertyId === prop.id;
-                      const coords = resolvePropertyMapCoords(prop);
-                      const distStr = position ? calculateDistanceStr(position, prop.location.latitude, prop.location.longitude) : "";
-                      const firstImg = prop.images && prop.images[0];
-                      const mainImg: string = typeof firstImg === "string" ? firstImg : (firstImg as any)?.url || (prop as any).coverImage || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80";
+                  {isLoading ? (
+                    <>
+                      <MapCardSkeleton />
+                      <MapCardSkeleton />
+                      <MapCardSkeleton />
+                    </>
+                  ) : (
+                    displayedPropertiesFiltered.map((prop) => {
+                        const isSelected = selectedPropertyId === prop.id;
+                        const coords = resolvePropertyMapCoords(prop);
+                        const distStr = position ? calculateDistanceStr(position, prop.location.latitude, prop.location.longitude) : "";
+                        
+                        let allImages: string[] = [];
+                        if (prop.images && Array.isArray(prop.images)) {
+                           allImages = prop.images.map(img => typeof img === 'string' ? img : (img as any).url).filter(Boolean);
+                        }
+                        if (allImages.length === 0 && (prop as any).coverImage) {
+                           allImages = [(prop as any).coverImage];
+                        }
+                        if (allImages.length === 0) {
+                           allImages = ["https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80"];
+                        }
+                        
+                        const propTypeLabel = (prop as any)._isProject ? "Project" : (prop.bedrooms ? `${prop.bedrooms} BHK` : prop.propertyType);
 
-                      return (
-                        <div
-                          key={prop.id}
-                          onClick={() => {
-                            setSelectedPropertyId(prop.id);
-                            if (mapRef.current) {
-                              mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
-                            }
-                          }}
-                          className={cn(
-                            "w-72 sm:w-80 shrink-0 bg-slate-900 border rounded-2xl p-2.5 transition-all duration-200 cursor-pointer flex gap-3 group hover:border-amber-500",
-                            isSelected ? "border-amber-500 ring-2 ring-amber-500/30 bg-slate-850 shadow-lg" : "border-slate-800"
-                          )}
-                        >
-                          {/* Thumbnail Image */}
-                          <div className="relative w-24 sm:w-28 h-24 rounded-xl overflow-hidden shrink-0 bg-slate-800">
-                            <img
-                              src={mainImg}
-                              alt={prop.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                            <div className="absolute top-1 left-1 bg-slate-950/80 text-amber-400 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md backdrop-blur-xs">
-                              {(prop as any)._isProject ? "Project" : (prop.bedrooms ? `${prop.bedrooms} BHK` : prop.propertyType)}
+                        return (
+                          <div
+                            key={prop.id}
+                            onClick={() => {
+                              setSelectedPropertyId(prop.id);
+                              if (mapRef.current) {
+                                mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
+                              }
+                            }}
+                            className={cn(
+                              "w-72 sm:w-80 shrink-0 bg-slate-900 border rounded-2xl p-2.5 transition-all duration-200 cursor-pointer flex gap-3 group hover:border-[#f1a010]",
+                              isSelected ? "border-[#f1a010] ring-2 ring-[#f1a010]/30 bg-slate-850 shadow-lg" : "border-slate-800"
+                            )}
+                          >
+                            {/* Thumbnail Image Carousel */}
+                            <MapCardImageCarousel images={allImages} title={prop.title} propertyType={propTypeLabel} />
+
+                            {/* Card Details */}
+                            <div className="flex-1 min-w-0 flex flex-col justify-between">
+                              <div>
+                                <div className="text-[#f1a010] font-black text-sm tracking-tight leading-tight">
+                                  {formatPriceCompact(prop.price)}
+                                </div>
+                                <h4 className="text-white font-bold text-xs truncate group-hover:text-[#f1a010] transition-colors mt-0.5">
+                                  {prop.title}
+                                </h4>
+                                <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                                  📍 {prop.location.locality}, {prop.location.city}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[10px]">
+                                {distStr ? (
+                                  <span className="text-[#f1a010] font-extrabold flex items-center gap-1 truncate max-w-[90px]">
+                                    <Navigation className="w-3 h-3 text-[#f1a010] shrink-0" /> {distStr}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 font-medium capitalize">{prop.listingType}</span>
+                                )}
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedPropertyId(prop.id);
+                                      if (mapRef.current) {
+                                        mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
+                                      }
+                                      setBlinkingPropertyId(prop.id);
+                                      setTimeout(() => setBlinkingPropertyId(null), 4000);
+                                    }}
+                                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[10px] rounded-lg flex items-center gap-1 transition-all border border-slate-700 hover:border-[#f1a010]/50"
+                                  >
+                                    <MapPin className="w-3 h-3 text-[#f1a010]" />
+                                    <span>View on Map</span>
+                                  </button>
+                                  <Link
+                                    href={(prop as any)._isProject ? `/projects/${prop.slug}` : `/properties/${prop.slug || prop.id}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="px-2.5 py-1 bg-[#f1a010] hover:bg-[#d88c0a] text-slate-950 font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shadow-xs"
+                                  >
+                                    <span>View</span>
+                                    <ArrowRight className="w-3 h-3" />
+                                  </Link>
+                                </div>
+                              </div>
                             </div>
                           </div>
-
-                          {/* Card Details */}
-                          <div className="flex-1 min-w-0 flex flex-col justify-between">
-                            <div>
-                              <div className="text-amber-400 font-black text-sm tracking-tight leading-tight">
-                                {formatPriceCompact(prop.price)}
-                              </div>
-                              <h4 className="text-white font-bold text-xs truncate group-hover:text-amber-300 transition-colors mt-0.5">
-                                {prop.title}
-                              </h4>
-                              <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                                📍 {prop.location.locality}, {prop.location.city}
-                              </p>
-                            </div>
-
-                            <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[10px]">
-                              {distStr ? (
-                                <span className="text-amber-400 font-extrabold flex items-center gap-1 truncate max-w-[90px]">
-                                  <Navigation className="w-3 h-3 text-amber-400 shrink-0" /> {distStr}
-                                </span>
-                              ) : (
-                                <span className="text-slate-400 font-medium capitalize">{prop.listingType}</span>
-                              )}
-
-                              <div className="flex items-center gap-2 shrink-0">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedPropertyId(prop.id);
-                                    if (mapRef.current) {
-                                      mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
-                                    }
-                                    setBlinkingPropertyId(prop.id);
-                                    setTimeout(() => setBlinkingPropertyId(null), 4000);
-                                  }}
-                                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[10px] rounded-lg flex items-center gap-1 transition-all border border-slate-700 hover:border-amber-500/50"
-                                >
-                                  <MapPin className="w-3 h-3 text-amber-400" />
-                                  <span>View on Map</span>
-                                </button>
-                                <Link
-                                  href={(prop as any)._isProject ? `/projects/${prop.slug}` : `/properties/${prop.slug || prop.id}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shadow-xs"
-                                >
-                                  <span>View</span>
-                                  <ArrowRight className="w-3 h-3" />
-                                </Link>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                  )}
                   </div>
                 </div>
               )}
