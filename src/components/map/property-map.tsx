@@ -227,7 +227,7 @@ function getLandmarkIcon(type: string) {
   });
 }
 
-function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean) {
+function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean, isBlinking: boolean = false) {
   if (typeof window === "undefined" || !L || !L.divIcon) return undefined;
   
   const priceText = formatPriceCompact(price);
@@ -242,8 +242,10 @@ function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean
     ? '0 0 18px rgba(245, 166, 37, 0.9)'
     : '0 4px 12px rgba(0, 0, 0, 0.4)';
 
+  const blinkClass = isBlinking ? 'animate-bounce ring-4 ring-amber-500 shadow-2xl' : '';
+
   return L.divIcon({
-    className: "realtor-price-pill-marker",
+    className: `realtor-price-pill-marker ${blinkClass}`,
     html: `
       <div class="${hasSearch ? 'pulse-inner-pill' : ''}" style="
         background: ${bg};
@@ -258,9 +260,10 @@ function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 3px;
+        justify-content: center;
         transform: ${scale};
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: ${isSelected || isBlinking ? 9999 : 1};
       ">
         ${hasSearch ? '<span style="font-size: 11px;">⭐</span>' : `<span style="color: ${isSelected || hasSearch ? '#020617' : '#F5A623'}; font-weight: 900;">₹</span>`}
         <span>${priceText.replace('₹', '')}</span>
@@ -665,6 +668,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   );
   
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const [blinkingPropertyId, setBlinkingPropertyId] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
   const [mapLayerType, setMapLayerType] = useState<"streets" | "hybrid" | "terrain">("streets");
@@ -1717,21 +1721,39 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
                             <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[10px]">
                               {distStr ? (
-                                <span className="text-amber-400 font-extrabold flex items-center gap-1 truncate max-w-[110px]">
+                                <span className="text-amber-400 font-extrabold flex items-center gap-1 truncate max-w-[90px]">
                                   <Navigation className="w-3 h-3 text-amber-400 shrink-0" /> {distStr}
                                 </span>
                               ) : (
                                 <span className="text-slate-400 font-medium capitalize">{prop.listingType}</span>
                               )}
 
-                              <Link
-                                href={(prop as any)._isProject ? `/projects/${prop.slug}` : `/properties/${prop.slug || prop.id}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shrink-0 shadow-xs"
-                              >
-                                <span>View</span>
-                                <ArrowRight className="w-3 h-3" />
-                              </Link>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedPropertyId(prop.id);
+                                    if (mapRef.current) {
+                                      mapRef.current.flyTo([coords.lat, coords.lng], 17, { duration: 1.2 });
+                                    }
+                                    setBlinkingPropertyId(prop.id);
+                                    setTimeout(() => setBlinkingPropertyId(null), 4000);
+                                  }}
+                                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[10px] rounded-lg flex items-center gap-1 transition-all border border-slate-700 hover:border-amber-500/50"
+                                >
+                                  <MapPin className="w-3 h-3 text-amber-400" />
+                                  <span>View on Map</span>
+                                </button>
+                                <Link
+                                  href={(prop as any)._isProject ? `/projects/${prop.slug}` : `/properties/${prop.slug || prop.id}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shadow-xs"
+                                >
+                                  <span>View</span>
+                                  <ArrowRight className="w-3 h-3" />
+                                </Link>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1928,8 +1950,9 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
             {/* Realtor.com Style Price Pill Markers */}
             {displayedPropertiesFiltered.map((property) => {
               const isSelected = selectedPropertyId === property.id;
+              const isBlinking = blinkingPropertyId === property.id;
               const hasSearch = Boolean(mapSearchInput.trim());
-              const pricePillIcon = getPricePillIcon(property.price, isSelected, hasSearch);
+              const pricePillIcon = getPricePillIcon(property.price, isSelected, hasSearch, isBlinking);
               const coords = resolvePropertyMapCoords(property);
 
               const firstImg = property.images && property.images[0];
