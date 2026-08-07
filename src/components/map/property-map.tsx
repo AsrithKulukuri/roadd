@@ -1645,15 +1645,6 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                     ))}
                   </div>
                 </div>
-
-                {/* AP Stamp Duty Calculator */}
-                <button
-                  onClick={() => { setShowCalculatorModal(true); setShowMapOptionsMenu(false); }}
-                  className="w-full py-2 px-3 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50 border border-[#f1a010]/40 text-[#f1a010] font-bold text-xs rounded-xl flex items-center gap-2 cursor-pointer transition-all"
-                >
-                  <Calculator className="w-4 h-4" />
-                  AP Stamp Duty &amp; Fee Calculator
-                </button>
               </div>
             </div>
           )}
