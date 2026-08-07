@@ -162,31 +162,31 @@ export function RealtorSearchHeader({
 
   return (
     <>
-      <header className="sticky top-16 z-30 w-full bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+      <header className="sticky top-16 z-30 w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2">
           {/* ROW 1: REALTOR SEARCH BOX & LIST/MAP VIEW TOGGLE */}
           <div className="flex items-center gap-2 w-full">
             {/* SEARCH INPUT BOX CONTAINER */}
-            <form
-              onSubmit={handleSearchSubmit}
-              className={cn(
-                "relative flex-1 min-w-0 flex items-center h-10 sm:h-11 rounded-full border bg-white transition-all duration-200 shadow-xs",
-                isFocused
-                  ? "border-amber-500 ring-2 ring-amber-500/20 shadow-md"
-                  : "border-slate-300 hover:border-slate-400"
-              )}
-            >
-              {/* Input & Animated Carousel Placeholder Overlay */}
-              <div className="relative flex-1 flex items-center h-full pl-5 sm:pl-6 pr-2 min-w-0">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  className="w-full h-full bg-transparent text-sm text-slate-900 font-medium focus:outline-none z-10"
-                  spellCheck={false}
+              <form
+                onSubmit={handleSearchSubmit}
+                className={cn(
+                  "relative flex-1 min-w-0 flex items-center h-10 sm:h-11 rounded-full border bg-white dark:bg-slate-900 transition-all duration-200 shadow-xs",
+                  isFocused
+                    ? "border-[#f1a010] ring-2 ring-[#f1a010]/20 shadow-md"
+                    : "border-slate-300 dark:border-slate-700 hover:border-[#f1a010] dark:hover:border-[#f1a010]"
+                )}
+              >
+                {/* Input & Animated Carousel Placeholder Overlay */}
+                <div className="relative flex-1 flex items-center h-full pl-5 sm:pl-6 pr-2 min-w-0">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    className="w-full h-full bg-transparent text-sm text-slate-900 dark:text-white font-medium focus:outline-none z-10"
+                    spellCheck={false}
                   autoComplete="off"
                 />
 
@@ -274,9 +274,9 @@ export function RealtorSearchHeader({
             <button
               type="button"
               onClick={() => toast.success("❤️ Search saved to your saved searches!")}
-              className="hidden lg:flex h-10 sm:h-11 px-4 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-850 dark:hover:bg-slate-800 text-white text-xs font-extrabold items-center gap-1.5 transition-all cursor-pointer shrink-0 shadow-xs border border-slate-800 active:scale-95"
+              className="hidden lg:flex h-10 sm:h-11 px-4 rounded-full bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs font-bold items-center gap-1.5 transition-all cursor-pointer shrink-0 shadow-xs border border-slate-300 dark:border-slate-700 active:scale-95"
             >
-              <Heart className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+              <Heart className="w-4 h-4 text-amber-500 fill-amber-500/20" />
               <span>Save search</span>
             </button>
 
@@ -284,17 +284,17 @@ export function RealtorSearchHeader({
             <button
               type="button"
               onClick={() => onViewModeChange(viewMode === "grid" ? "map" : "grid")}
-              className="h-10 sm:h-11 px-3 sm:px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-900 border border-slate-900 dark:border-amber-500/80 shadow-sm font-extrabold text-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
+              className="h-10 sm:h-11 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-900 dark:border-slate-700 shadow-md font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
             >
               {viewMode === "grid" ? (
                 <>
-                  <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 fill-amber-400/30 shrink-0" />
-                  <span className="text-amber-400">Map View 🗺️</span>
+                  <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#f1a010] fill-[#f1a010]/30 shrink-0" />
+                  <span className="text-[#f1a010]">Map View</span>
                 </>
               ) : (
                 <>
-                  <List className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-300 dark:text-amber-400 shrink-0" />
-                  <span>List View 📋</span>
+                  <List className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />
+                  <span>List View</span>
                 </>
               )}
             </button>
