@@ -6,11 +6,16 @@
 
 @theme {
   /* Brand Colors */
-  --color-amber-primary: #F5A623;
-  --color-amber-hover: #D98C0F;
-  --color-amber-glow: #FFC661;
-  --color-amber-muted: #F5A62326;
-  --color-amber-subtle: #F5A62312;
+  --color-amber-primary: #f1a010;
+  --color-amber-hover: #d28a0e;
+  --color-amber-glow: #f8cd6f;
+  --color-amber-muted: #f1a01026;
+  --color-amber-subtle: #f1a01012;
+  
+  /* Override Tailwind's default amber to match the logo color */
+  --color-amber-400: #f3b131;
+  --color-amber-500: #f1a010;
+  --color-amber-600: #d28a0e;
 
   /* Backgrounds */
   --color-bg-primary: var(--bg-primary);
@@ -21,7 +26,7 @@
   /* Borders */
   --color-border-default: var(--border-default);
   --color-border-subtle: var(--border-subtle);
-  --color-border-amber: #F5A62340;
+  --color-border-amber: #f1a01040;
 
   /* Text */
   --color-text-primary: var(--text-primary);
@@ -31,8 +36,8 @@
   /* Semantic */
   --color-success: #3BB273;
   --color-success-muted: #3BB27320;
-  --color-warning: #F5A623;
-  --color-warning-muted: #F5A62320;
+  --color-warning: #f1a010;
+  --color-warning-muted: #f1a01020;
   --color-error: #E5484D;
   --color-error-muted: #E5484D20;
   --color-info: #3B82F6;
@@ -104,12 +109,12 @@
 
   /* Shadows */
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-card-hover: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(245, 166, 35, 0.15);
+  --shadow-card-hover: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(241, 160, 16, 0.15);
   --shadow-elevated: 0 20px 60px rgba(0, 0, 0, 0.5);
-  --shadow-amber-glow: 0 0 20px rgba(245, 166, 35, 0.3), 0 0 60px rgba(245, 166, 35, 0.1);
-  --shadow-amber-subtle: 0 0 12px rgba(245, 166, 35, 0.15);
+  --shadow-amber-glow: 0 0 20px rgba(241, 160, 16, 0.3), 0 0 60px rgba(241, 160, 16, 0.1);
+  --shadow-amber-subtle: 0 0 12px rgba(241, 160, 16, 0.15);
   --shadow-light-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-light-card-hover: 0 10px 40px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(245, 166, 35, 0.2);
+  --shadow-light-card-hover: 0 10px 40px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(241, 160, 16, 0.2);
 
   /* Transitions */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);

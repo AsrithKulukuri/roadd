@@ -236,8 +236,10 @@ export default function CommuteRadiusMap({ latitude, longitude, projectName, cit
         <div className="lg:col-span-7 h-[360px] md:h-[440px] rounded-3xl overflow-hidden border border-border-default/50 relative z-0">
           <MapContainer center={center} zoom={12} scrollWheelZoom={false} style={{ height: "100%", width: "100%", zIndex: 0 }}>
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://carto.com/">CartoDB</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              maxNativeZoom={19}
+              maxZoom={20}
             />
             <ChangeView center={center} />
 

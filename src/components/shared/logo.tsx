@@ -51,7 +51,7 @@ export function Logo({
               textClass
             )}
           >
-            <span className="text-amber-500 font-black">R</span>
+            <span className="text-[#f1a010] font-black">R</span>
             <span className={cn("font-black tracking-tight ml-0.5", resolvedTextColor)}>
               OAD FACING
             </span>

@@ -71,8 +71,10 @@ export default function ProjectMapView({
         style={{ height: "100%", width: "100%", zIndex: 0 }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://carto.com/">CartoDB</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          maxNativeZoom={19}
+          maxZoom={20}
         />
         <FlyTo center={center} />
         <AutoOpenMarker center={center}>

@@ -149,8 +149,10 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
           style={{ height: "100%", width: "100%" }}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://carto.com/">CartoDB</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            maxNativeZoom={19}
+            maxZoom={20}
           />
           {/* Approximate circle rather than pinpoint for privacy */}
           <Circle

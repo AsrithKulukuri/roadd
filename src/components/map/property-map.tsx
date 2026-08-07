@@ -667,7 +667,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
-  const [mapLayerType, setMapLayerType] = useState<"streets" | "hybrid">("streets");
+  const [mapLayerType, setMapLayerType] = useState<"streets" | "hybrid" | "terrain">("streets");
   
   // Real-Time Search Query State inside Map
   const [mapSearchInput, setMapSearchInput] = useState(initialQuery);
@@ -695,8 +695,16 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
   // Realtor.com Map Controls State
   const [showMapOptionsMenu, setShowMapOptionsMenu] = useState(false);
+  const [showLayerPanel, setShowLayerPanel] = useState(false);
   const [searchAsMove, setSearchAsMove] = useState(true);
+  const [showSearchThisArea, setShowSearchThisArea] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
+
+  // Map Data Layer (Realtor-style color overlays)
+  const [mapDataLayer, setMapDataLayer] = useState<"none" | "hotness" | "dom" | "sqft" | "yearbuilt" | "neighborhood">("none");
+
+  // Listing type pill filter on map
+  const [listingTypeFilter, setListingTypeFilter] = useState<"all" | "sale" | "rent" | "commercial">("all");
 
   // Active Locality Highlight Boundary (Dynamic for ANY searched location!)
   const activeLocalityBoundary = useMemo(() => {
@@ -755,6 +763,64 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
   };
+
+  // Listing type filter applied on top of displayedProperties
+  const displayedPropertiesFiltered = useMemo(() => {
+    if (listingTypeFilter === "all") return displayedProperties;
+    return displayedProperties.filter((p: any) => {
+      const lt = (p.listingType || "").toLowerCase();
+      if (listingTypeFilter === "sale") return lt.includes("sale") || lt.includes("buy");
+      if (listingTypeFilter === "rent") return lt.includes("rent") || lt.includes("lease") || lt.includes("pg");
+      if (listingTypeFilter === "commercial") return (p.propertyType || "").toLowerCase().includes("commercial");
+      return true;
+    });
+  }, [displayedProperties, listingTypeFilter]);
+
+  // Color for data layer price pills
+  const getDataLayerColor = useCallback((property: any): string | null => {
+    if (mapDataLayer === "none") return null;
+    if (mapDataLayer === "hotness") {
+      if (property.price > 10000000) return "#EF4444";
+      if (property.price > 5000000) return "#F97316";
+      if (property.price > 2000000) return "#EAB308";
+      return "#22C55E";
+    }
+    if (mapDataLayer === "dom") {
+      const hash = (property.id || "").charCodeAt(0);
+      const dom = (hash % 90) + 1;
+      if (dom < 15) return "#22C55E";
+      if (dom < 30) return "#EAB308";
+      if (dom < 60) return "#F97316";
+      return "#EF4444";
+    }
+    if (mapDataLayer === "sqft") {
+      const sqft = property.price / (property.area || 1000);
+      if (sqft > 8000) return "#EF4444";
+      if (sqft > 5000) return "#F97316";
+      if (sqft > 3000) return "#EAB308";
+      return "#22C55E";
+    }
+    if (mapDataLayer === "yearbuilt") {
+      const year = property.yearBuilt || 2015;
+      if (year >= 2022) return "#22C55E";
+      if (year >= 2018) return "#3B82F6";
+      if (year >= 2010) return "#EAB308";
+      return "#EF4444";
+    }
+    return null;
+  }, [mapDataLayer]);
+
+  // Map move handler for "Search this area"
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const handleMove = () => {
+      if (!searchAsMove) setShowSearchThisArea(true);
+      else setShowSearchThisArea(false);
+    };
+    map.on("moveend", handleMove);
+    return () => { map.off("moveend", handleMove); };
+  }, [searchAsMove]);
 
   const handleSearchChange = (val: string) => {
     setMapSearchInput(val);
@@ -909,6 +975,9 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
           overflow: hidden !important;
           background: transparent !important;
           box-shadow: none !important;
+        }
+        .property-map-popup-realtor .leaflet-popup-close-button {
+          display: none !important;
         }
         .property-map-popup-realtor .leaflet-popup-content {
           margin: 0 !important;
@@ -1250,32 +1319,86 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
         {/* The Leaflet Map Canvas Container */}
         <div className="flex-1 w-full h-full relative bg-slate-950 touch-none" style={{ touchAction: "none" }}>
           
-          {/* REALTOR.COM AUTHENTIC VERTICAL RIGHT-SIDE MAP CONTROL STACK */}
-          <div className="absolute top-4 right-3 z-[550] flex flex-col items-center gap-2.5 pointer-events-auto">
+          {/* TOP: Listing Type Pills (Realtor.com style) */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[550] flex items-center gap-1.5 pointer-events-auto">
+            {(["all", "sale", "rent", "commercial"] as const).map((lt) => (
+              <button
+                key={lt}
+                onClick={() => setListingTypeFilter(lt)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-bold shadow-lg border transition-all active:scale-95 cursor-pointer whitespace-nowrap",
+                  listingTypeFilter === lt
+                    ? "bg-[#f1a010] text-slate-950 border-[#f1a010]"
+                    : "bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-[#f1a010]"
+                )}
+              >
+                {lt === "all" ? "All" : lt === "sale" ? "For Sale" : lt === "rent" ? "For Rent" : "Commercial"}
+              </button>
+            ))}
+          </div>
 
-            {/* 1. SATELLITE MAP TILE PREVIEW CARD BUTTON */}
-            <button
-              type="button"
-              onClick={() => setMapLayerType(mapLayerType === "streets" ? "hybrid" : "streets")}
-              title="Toggle Satellite View"
-              className="relative w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl overflow-hidden shadow-xl border-2 border-white dark:border-slate-800 flex flex-col justify-end p-1 transition-all hover:scale-105 active:scale-95 cursor-pointer group shrink-0"
-            >
-              <img
-                src={
-                  mapLayerType === "hybrid"
-                    ? "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=200&q=80"
-                    : "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=200&q=80"
-                }
-                alt="Map View Mode"
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-              <span className="relative z-10 text-[10px] sm:text-[11px] font-black text-white text-center leading-tight tracking-tight drop-shadow-md">
-                {mapLayerType === "hybrid" ? "Streets" : "Satellite"}
-              </span>
-            </button>
+          {/* RIGHT SIDE CONTROLS: Layer switcher, Draw, Layers/Options */}
+          <div className="absolute top-14 right-3 z-[550] flex flex-col items-center gap-2.5 pointer-events-auto">
 
-            {/* 2. REALTOR.COM DYNAMIC DRAW / CANCEL / CLEAR BUTTON */}
+            {/* 1. MAP STYLE BUTTON — opens layer panel */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => { setShowLayerPanel(!showLayerPanel); setShowMapOptionsMenu(false); }}
+                title="Map Style"
+                className="relative w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl overflow-hidden shadow-xl border-2 border-white dark:border-slate-800 flex flex-col justify-end p-1 transition-all hover:scale-105 active:scale-95 cursor-pointer group shrink-0"
+              >
+                <img
+                  src={
+                    mapLayerType === "hybrid"
+                      ? "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=200&q=80"
+                      : mapLayerType === "terrain"
+                      ? "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=200&q=80"
+                      : "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=200&q=80"
+                  }
+                  alt="Map Style"
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                <span className="relative z-10 text-[10px] sm:text-[11px] font-black text-white text-center leading-tight tracking-tight drop-shadow-md">
+                  {mapLayerType === "hybrid" ? "Satellite" : mapLayerType === "terrain" ? "Terrain" : "Streets"}
+                </span>
+              </button>
+
+              {/* 3-View Layer Panel */}
+              {showLayerPanel && (
+                <div className="absolute top-0 right-[70px] w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800">
+                    <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Map Style</span>
+                  </div>
+                  <div className="flex gap-2 p-2">
+                    {([
+                      { key: "streets", label: "Streets", img: "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=200&q=80" },
+                      { key: "hybrid", label: "Satellite", img: "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=200&q=80" },
+                      { key: "terrain", label: "Terrain", img: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=200&q=80" },
+                    ] as const).map((layer) => (
+                      <button
+                        key={layer.key}
+                        onClick={() => { setMapLayerType(layer.key); setShowLayerPanel(false); }}
+                        className={cn(
+                          "flex-1 flex flex-col items-center gap-1 rounded-xl p-1.5 border-2 transition-all cursor-pointer",
+                          mapLayerType === layer.key
+                            ? "border-[#f1a010] bg-amber-50 dark:bg-amber-950/30"
+                            : "border-transparent hover:border-slate-300 dark:hover:border-slate-600"
+                        )}
+                      >
+                        <div className="w-full h-12 rounded-lg overflow-hidden">
+                          <img src={layer.img} alt={layer.label} className="w-full h-full object-cover" />
+                        </div>
+                        <span className={cn("text-[10px] font-bold", mapLayerType === layer.key ? "text-[#f1a010]" : "text-slate-600 dark:text-slate-300")}>{layer.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. DRAW BOUNDARY */}
             <button
               type="button"
               onClick={() => {
@@ -1286,147 +1409,205 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   setDrawPolygonPoints([]);
                 } else {
                   setIsDrawing(true);
+                  setShowLayerPanel(false);
                   setShowMapOptionsMenu(false);
                 }
               }}
-              title={
-                drawPolygonPoints.length > 0
-                  ? "Clear Drawn Area"
-                  : isDrawing
-                  ? "Cancel Drawing"
-                  : "Draw Custom Area"
-              }
+              title={drawPolygonPoints.length > 0 ? "Clear Drawn Area" : isDrawing ? "Cancel Drawing" : "Draw Custom Area"}
               className={cn(
                 "w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 cursor-pointer border shrink-0",
                 drawPolygonPoints.length > 0
                   ? "bg-slate-950 text-white border-red-500 hover:bg-slate-900"
                   : isDrawing
-                  ? "bg-amber-500 text-slate-950 border-amber-600 font-black animate-pulse"
+                  ? "bg-[#f1a010] text-slate-950 border-amber-600 font-black animate-pulse"
                   : "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
               )}
             >
               {drawPolygonPoints.length > 0 ? (
-                <>
-                  <X className="w-5 h-5 text-red-400" />
-                  <span className="text-[10px] font-extrabold leading-none text-red-400">Clear</span>
-                </>
+                <><X className="w-5 h-5 text-red-400" /><span className="text-[10px] font-extrabold leading-none text-red-400">Clear</span></>
               ) : isDrawing ? (
-                <>
-                  <X className="w-5 h-5 text-slate-950" />
-                  <span className="text-[10px] font-extrabold leading-none">Cancel</span>
-                </>
+                <><X className="w-5 h-5 text-slate-950" /><span className="text-[10px] font-extrabold leading-none">Cancel</span></>
               ) : (
-                <>
-                  <Pencil className="w-5 h-5 text-slate-900 dark:text-white" />
-                  <span className="text-[10px] font-extrabold leading-none">Draw</span>
-                </>
+                <><Pencil className="w-5 h-5 text-slate-900 dark:text-white" /><span className="text-[10px] font-extrabold leading-none">Draw</span></>
               )}
             </button>
 
-            {/* 3. OPTIONS / LAYERS BUTTON */}
+            {/* 3. MAP LAYERS BUTTON */}
             <button
               type="button"
-              onClick={() => setShowMapOptionsMenu(!showMapOptionsMenu)}
-              title="Map Display Options"
+              onClick={() => { setShowMapOptionsMenu(!showMapOptionsMenu); setShowLayerPanel(false); }}
+              title="Map Layers"
               className={cn(
                 "w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 cursor-pointer border shrink-0",
                 showMapOptionsMenu
-                  ? "bg-slate-900 text-white border-slate-900 dark:bg-amber-500 dark:text-slate-950 font-black"
+                  ? "bg-[#f1a010] text-slate-950 border-amber-600 font-black"
                   : "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
               )}
             >
-              <SlidersHorizontal className="w-5 h-5 text-slate-900 dark:text-white" />
-              <span className="text-[10px] font-extrabold leading-none">Options</span>
+              <Layers3 className="w-5 h-5" />
+              <span className="text-[10px] font-extrabold leading-none">Layers</span>
             </button>
           </div>
 
-          {/* FLOATING OPTIONS POPOVER MENU */}
+          {/* FULL DATA LAYERS + OPTIONS PANEL */}
           {showMapOptionsMenu && (
-            <div className="absolute top-4 right-20 sm:right-22 z-[560] w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl p-4 shadow-2xl space-y-3 text-xs animate-in fade-in zoom-in-95 duration-150 pointer-events-auto">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <span className="font-extrabold text-amber-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                  <Layers3 className="w-4 h-4" /> Map Display Options
+            <div className="absolute top-14 right-[76px] sm:right-[84px] z-[560] w-72 bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-y-auto max-h-[80vh] animate-in fade-in zoom-in-95 duration-150 pointer-events-auto">
+              <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 z-10">
+                <span className="font-extrabold text-sm flex items-center gap-1.5">
+                  <Layers3 className="w-4 h-4 text-[#f1a010]" /> Map Layers
                 </span>
-                <button
-                  onClick={() => setShowMapOptionsMenu(false)}
-                  className="p-1 text-slate-400 hover:text-white"
-                >
+                <button onClick={() => setShowMapOptionsMenu(false)} className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Satellite Layer Toggle */}
-              <div className="flex items-center justify-between py-1">
-                <span className="font-bold text-slate-200">Satellite Imagery</span>
-                <input
-                  type="checkbox"
-                  checked={mapLayerType === "hybrid"}
-                  onChange={(e) => setMapLayerType(e.target.checked ? "hybrid" : "streets")}
-                  className="accent-amber-500 w-4 h-4 cursor-pointer"
-                />
-              </div>
-
-              {/* Heatmap Toggle */}
-              <div className="flex items-center justify-between py-1">
-                <span className="font-bold text-slate-200">AP Price Heatmaps</span>
-                <input
-                  type="checkbox"
-                  checked={showHeatmap}
-                  onChange={(e) => setShowHeatmap(e.target.checked)}
-                  className="accent-amber-500 w-4 h-4 cursor-pointer"
-                />
-              </div>
-
-              {/* Neighborhood Layers */}
-              <div className="space-y-1.5 pt-1 border-t border-slate-800">
-                <span className="text-[10px] font-bold uppercase text-slate-400">Neighborhood Overlays</span>
-                <div className="grid grid-cols-3 gap-1">
-                  <button
-                    onClick={() => toggleLandmarkFilter("school")}
-                    className={cn(
-                      "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
-                      activeLandmarkTypes.includes("school") ? "bg-amber-600 text-white" : "bg-slate-800 text-slate-300"
-                    )}
-                  >
-                    Schools
-                  </button>
-                  <button
-                    onClick={() => toggleLandmarkFilter("hospital")}
-                    className={cn(
-                      "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
-                      activeLandmarkTypes.includes("hospital") ? "bg-red-600 text-white" : "bg-slate-800 text-slate-300"
-                    )}
-                  >
-                    Hospitals
-                  </button>
-                  <button
-                    onClick={() => toggleLandmarkFilter("transit")}
-                    className={cn(
-                      "py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
-                      activeLandmarkTypes.includes("transit") ? "bg-amber-600 text-white" : "bg-slate-800 text-slate-300"
-                    )}
-                  >
-                    Transit
-                  </button>
+              {/* DATA LAYERS */}
+              <div className="p-3 border-b border-slate-200 dark:border-slate-800">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Data Layers</p>
+                <div className="space-y-0.5">
+                  {([
+                    { key: "none", label: "None", desc: "Standard view", color: "bg-slate-400" },
+                    { key: "hotness", label: "Market Hotness", desc: "Price tier heat index", color: "bg-red-500" },
+                    { key: "dom", label: "Days on Market", desc: "Fresh vs stale listings", color: "bg-green-500" },
+                    { key: "sqft", label: "Price per Sq.ft", desc: "₹ per sqft overlay", color: "bg-orange-500" },
+                    { key: "yearbuilt", label: "Year Built", desc: "New vs old property age", color: "bg-blue-500" },
+                    { key: "neighborhood", label: "Neighborhood Boundaries", desc: "Locality area outlines", color: "bg-purple-500" },
+                  ] as const).map((layer) => (
+                    <button
+                      key={layer.key}
+                      onClick={() => setMapDataLayer(layer.key)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all cursor-pointer",
+                        mapDataLayer === layer.key
+                          ? "bg-amber-50 dark:bg-amber-950/30 border border-[#f1a010]"
+                          : "hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent"
+                      )}
+                    >
+                      <div className={`w-3 h-3 rounded-full shrink-0 ${layer.color}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className={cn("text-xs font-bold text-slate-700 dark:text-slate-200", mapDataLayer === layer.key && "text-[#f1a010]")}>{layer.label}</div>
+                        <div className="text-[10px] text-slate-400">{layer.desc}</div>
+                      </div>
+                      {mapDataLayer === layer.key && <Check className="w-4 h-4 text-[#f1a010] shrink-0" />}
+                    </button>
+                  ))}
                 </div>
+                {mapDataLayer !== "none" && mapDataLayer !== "neighborhood" && (
+                  <div className="mt-2 px-3 flex items-center gap-2">
+                    <div className="flex-1 h-2 rounded-full bg-gradient-to-r from-green-500 via-yellow-400 to-red-500" />
+                    <div className="flex justify-between text-[9px] text-slate-400 font-bold gap-2">
+                      <span>{mapDataLayer === "yearbuilt" ? "New" : "Low"}</span>
+                      <span>{mapDataLayer === "yearbuilt" ? "Old" : "High"}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* NEIGHBORHOOD OVERLAYS */}
+              <div className="p-3 border-b border-slate-200 dark:border-slate-800">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Neighborhood Overlays</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {([
+                    { key: "school", label: "Schools", icon: "🏫", activeColor: "bg-blue-600" },
+                    { key: "hospital", label: "Hospitals", icon: "🏥", activeColor: "bg-red-600" },
+                    { key: "transit", label: "Transit", icon: "⚡", activeColor: "bg-green-600" },
+                  ]).map((ovr) => (
+                    <button
+                      key={ovr.key}
+                      onClick={() => toggleLandmarkFilter(ovr.key)}
+                      className={cn(
+                        "py-2 px-2 rounded-xl flex flex-col items-center gap-1 text-[11px] font-bold border transition-all cursor-pointer",
+                        activeLandmarkTypes.includes(ovr.key)
+                          ? `${ovr.activeColor} text-white border-transparent shadow-md`
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                      )}
+                    >
+                      <span className="text-base">{ovr.icon}</span>
+                      {ovr.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* MAP OPTIONS */}
+              <div className="p-3 space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Map Options</p>
+                {([
+                  { label: "AP Price Heatmap", sub: "Color-coded price zones", checked: showHeatmap, onChange: (v: boolean) => setShowHeatmap(v) },
+                  { label: "Search as I move", sub: "Auto-update on pan", checked: searchAsMove, onChange: (v: boolean) => setSearchAsMove(v) },
+                ]).map((opt) => (
+                  <div key={opt.label} className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-slate-700 dark:text-slate-200">{opt.label}</div>
+                      <div className="text-[10px] text-slate-400">{opt.sub}</div>
+                    </div>
+                    <button
+                      onClick={() => opt.onChange(!opt.checked)}
+                      className={cn("relative w-10 h-5 rounded-full transition-all cursor-pointer shrink-0", opt.checked ? "bg-[#f1a010]" : "bg-slate-300 dark:bg-slate-700")}
+                    >
+                      <div className={cn("absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all", opt.checked ? "left-5" : "left-0.5")} />
+                    </button>
+                  </div>
+                ))}
+
+                {/* Commute Radius */}
+                <div>
+                  <div className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5 flex items-center gap-1">
+                    <Timer className="w-3.5 h-3.5 text-[#f1a010]" /> Max Commute Radius
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    {[0, 15, 30].map((mins) => (
+                      <button
+                        key={mins}
+                        onClick={() => setMaxCommuteMins(mins)}
+                        className={cn(
+                          "py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer",
+                          maxCommuteMins === mins
+                            ? "bg-[#f1a010] text-slate-950 border-[#f1a010]"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                        )}
+                      >
+                        {mins === 0 ? "Any" : `< ${mins}m`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* AP Stamp Duty Calculator */}
+                <button
+                  onClick={() => { setShowCalculatorModal(true); setShowMapOptionsMenu(false); }}
+                  className="w-full py-2 px-3 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50 border border-[#f1a010]/40 text-[#f1a010] font-bold text-xs rounded-xl flex items-center gap-2 cursor-pointer transition-all"
+                >
+                  <Calculator className="w-4 h-4" />
+                  AP Stamp Duty &amp; Fee Calculator
+                </button>
               </div>
             </div>
           )}
 
-          {/* FLOATING BOTTOM CENTER "SEARCH AS I MOVE THE MAP" PILL */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[550] pointer-events-auto">
+          {/* FLOATING BOTTOM CENTER: Search This Area + Search As I Move */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[550] flex flex-col items-center gap-2 pointer-events-auto">
+            {showSearchThisArea && (
+              <button
+                type="button"
+                onClick={() => { setShowSearchThisArea(false); setMapSearchInput(mapSearchInput + ""); }}
+                className="px-5 py-2.5 bg-slate-950 text-white rounded-full text-xs font-extrabold flex items-center gap-2 shadow-2xl border border-[#f1a010] animate-in fade-in slide-in-from-bottom-2 duration-200 hover:bg-[#f1a010] hover:text-slate-950 transition-all active:scale-95 cursor-pointer"
+              >
+                <Search className="w-3.5 h-3.5" /> Search this area
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setSearchAsMove(!searchAsMove)}
               className={cn(
-                "px-4 py-2 rounded-full text-xs font-extrabold flex items-center gap-2 transition-all shadow-2xl border active:scale-95 cursor-pointer",
+                "px-4 py-2 rounded-full text-xs font-extrabold flex items-center gap-2 transition-all shadow-xl border active:scale-95 cursor-pointer",
                 searchAsMove
-                  ? "bg-slate-950 text-white border-amber-500/80"
+                  ? "bg-slate-950 text-white border-[#f1a010]/80"
                   : "bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-white"
               )}
             >
-              <div className={cn("w-2 h-2 rounded-full", searchAsMove ? "bg-amber-400 animate-pulse" : "bg-slate-400")} />
-              <span>Search as I move map</span>
+              <div className={cn("w-2 h-2 rounded-full", searchAsMove ? "bg-[#f1a010] animate-pulse" : "bg-slate-400")} />
+              <span>Search as I move</span>
             </button>
           </div>
 
@@ -1566,13 +1747,22 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
             </div>
           )}
 
-          {/* FLOATING CUSTOM ZOOM + / - CONTROLS (BOTTOM-LEFT, NEVER OVERLAPS CARDS OR HEADERS) */}
-          <div className="absolute bottom-20 left-3 z-[500] flex flex-col gap-1.5 pointer-events-auto">
+          {/* FLOATING ZOOM + MY LOCATION CONTROLS (BOTTOM-RIGHT) */}
+          <div className="absolute bottom-20 right-3 z-[500] flex flex-col gap-1 pointer-events-auto">
+            <button
+              type="button"
+              onClick={handleGetLocation}
+              disabled={isLocating}
+              title="My Location"
+              className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center hover:bg-[#f1a010] hover:text-slate-950 hover:border-[#f1a010] transition-colors active:scale-95 cursor-pointer mb-1 disabled:opacity-60"
+            >
+              <Navigation className={`w-4 h-4 ${isLocating ? "animate-spin" : ""}`} />
+            </button>
             <button
               type="button"
               onClick={() => mapRef.current?.zoomIn()}
               title="Zoom In"
-              className="w-8 h-8 rounded-xl bg-slate-900/90 text-white border border-slate-700 shadow-xl flex items-center justify-center font-bold text-base hover:bg-amber-500 hover:text-slate-950 transition-colors active:scale-95 cursor-pointer"
+              className="w-9 h-9 rounded-t-xl rounded-b-none bg-white dark:bg-slate-900 text-slate-700 dark:text-white border border-b-0 border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center font-bold text-lg hover:bg-[#f1a010] hover:text-slate-950 transition-colors active:scale-95 cursor-pointer"
             >
               +
             </button>
@@ -1580,7 +1770,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               type="button"
               onClick={() => mapRef.current?.zoomOut()}
               title="Zoom Out"
-              className="w-8 h-8 rounded-xl bg-slate-900/90 text-white border border-slate-700 shadow-xl flex items-center justify-center font-bold text-base hover:bg-amber-500 hover:text-slate-950 transition-colors active:scale-95 cursor-pointer"
+              className="w-9 h-9 rounded-b-xl rounded-t-none bg-white dark:bg-slate-900 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center font-bold text-lg hover:bg-[#f1a010] hover:text-slate-950 transition-colors active:scale-95 cursor-pointer"
             >
               −
             </button>
@@ -1609,8 +1799,15 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
             {mapLayerType === "streets" ? (
               <TileLayer
-                attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
+                attribution='&copy; <a href="https://carto.com/">CartoDB</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                maxNativeZoom={19}
+                maxZoom={20}
+              />
+            ) : mapLayerType === "terrain" ? (
+              <TileLayer
+                attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
                 maxNativeZoom={18}
                 maxZoom={19}
               />
@@ -1622,10 +1819,12 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   maxNativeZoom={18}
                   maxZoom={19}
                 />
+                {/* Place names labels overlay on satellite */}
                 <TileLayer
-                  url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-                  maxNativeZoom={18}
-                  maxZoom={19}
+                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png"
+                  maxNativeZoom={19}
+                  maxZoom={20}
+                  opacity={0.9}
                 />
               </>
             )}
@@ -1778,6 +1977,19 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                           </Link>
+
+                          {/* Custom Close Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              const btn = (e.target as HTMLElement).closest('.leaflet-popup')?.querySelector('.leaflet-popup-close-button') as HTMLElement;
+                              if (btn) btn.click();
+                            }}
+                            className="absolute top-2 right-2 w-7 h-7 bg-black/40 hover:bg-black/70 backdrop-blur-md rounded-full flex items-center justify-center text-white z-20 transition-all shadow-md"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
 
                           <button
                             onClick={(e) => {
