@@ -769,9 +769,21 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
     if (listingTypeFilter === "all") return displayedProperties;
     return displayedProperties.filter((p: any) => {
       const lt = (p.listingType || "").toLowerCase();
-      if (listingTypeFilter === "sale") return lt.includes("sale") || lt.includes("buy");
-      if (listingTypeFilter === "rent") return lt.includes("rent") || lt.includes("lease") || lt.includes("pg");
-      if (listingTypeFilter === "commercial") return (p.propertyType || "").toLowerCase().includes("commercial");
+      const pt = (p.propertyType || "").toLowerCase();
+      const isProject = Boolean(p._isProject);
+
+      if (listingTypeFilter === "sale") {
+        // For sale = buy / sale / resale listing types; projects are always "for sale"
+        return isProject || lt.includes("sale") || lt.includes("buy") || lt.includes("resale") || lt === "for sale";
+      }
+      if (listingTypeFilter === "rent") {
+        // Rent = rent / lease / pg
+        return lt.includes("rent") || lt.includes("lease") || lt.includes("pg") || lt.includes("letting");
+      }
+      if (listingTypeFilter === "commercial") {
+        // Commercial = commercial property type OR commercial listing type
+        return pt.includes("commercial") || pt.includes("office") || pt.includes("shop") || lt.includes("commercial");
+      }
       return true;
     });
   }, [displayedProperties, listingTypeFilter]);
@@ -1274,12 +1286,12 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
                 <span className="font-extrabold text-white">Found Listings</span>
               </div>
-              <span className="font-extrabold text-amber-400 text-sm">{displayedProperties.length}</span>
+              <span className="font-extrabold text-amber-400 text-sm">{displayedPropertiesFiltered.length}</span>
             </div>
 
             {/* Sidebar Mini Property Listings List */}
             <div className="max-h-48 overflow-y-auto space-y-1.5 no-scrollbar pr-1">
-              {displayedProperties.map((p) => {
+              {displayedPropertiesFiltered.map((p) => {
                 const isSel = selectedPropertyId === p.id;
                 const coords = resolvePropertyMapCoords(p);
                 return (
@@ -1617,7 +1629,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
               <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
               <div>
                 <div className="font-extrabold text-xs text-white">
-                  Showing {displayedProperties.length} of {mapProperties.length} properties
+                  Showing {displayedPropertiesFiltered.length} of {mapProperties.length} properties
                 </div>
                 <div className="text-[10px] text-slate-400 font-medium">
                   Filtered by custom drawn boundary
@@ -1634,7 +1646,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
           )}
 
           {/* FLOATING BOTTOM FOUND PROPERTIES TRAY (REALTOR / ZILLOW / REDFIN SENIOR DEVELOPER STYLE) */}
-          {displayedProperties.length > 0 && !isDrawing && (
+          {displayedPropertiesFiltered.length > 0 && !isDrawing && (
             <div className="absolute bottom-3 left-2 right-2 sm:left-4 sm:right-4 z-[550] pointer-events-auto flex flex-col items-center gap-2">
               {/* TRAY TOGGLE CAPSULE BUTTON */}
               <button
@@ -1643,7 +1655,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                 className="px-4 py-2 rounded-full bg-slate-950/95 text-white border-2 border-amber-500 shadow-2xl backdrop-blur-xl font-extrabold text-xs flex items-center gap-2 transition-all active:scale-95 cursor-pointer hover:bg-slate-900"
               >
                 <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-                <span>{displayedProperties.length} {displayedProperties.length === 1 ? ((displayedProperties[0] as any)?._isProject ? "Project" : "Property") : ((displayedProperties[0] as any)?._isProject ? "Projects" : "Properties")} Found</span>
+                <span>{displayedPropertiesFiltered.length} {displayedPropertiesFiltered.length === 1 ? ((displayedPropertiesFiltered[0] as any)?._isProject ? "Project" : "Property") : ((displayedPropertiesFiltered[0] as any)?._isProject ? "Projects" : "Properties")} Found</span>
                 {drawPolygonPoints.length >= 3 && (
                   <span className="bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded text-[10px] font-black">In Drawn Area</span>
                 )}
@@ -1659,7 +1671,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   <div className="flex items-center justify-between px-2 pb-2 border-b border-slate-800/80 mb-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
                       <Sparkles className="w-4 h-4 text-amber-400" />
-                      <span>Found {displayedProperties.length > 0 && (displayedProperties[0] as any)?._isProject ? "Projects" : "Properties"} ({displayedProperties.length})</span>
+                    <span>Found {displayedPropertiesFiltered.length > 0 && (displayedPropertiesFiltered[0] as any)?._isProject ? "Projects" : "Properties"} ({displayedPropertiesFiltered.length})</span>
                     </div>
                     <button
                       onClick={() => setShowPropertiesTray(false)}
@@ -1672,7 +1684,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                   </div>
 
                   <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1 touch-pan-x">
-                    {displayedProperties.map((prop) => {
+                  {displayedPropertiesFiltered.map((prop) => {
                       const isSelected = selectedPropertyId === prop.id;
                       const coords = resolvePropertyMapCoords(prop);
                       const distStr = position ? calculateDistanceStr(position, prop.location.latitude, prop.location.longitude) : "";
@@ -1930,7 +1942,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
             )}
 
             {/* Realtor.com Style Price Pill Markers */}
-            {displayedProperties.map((property) => {
+            {displayedPropertiesFiltered.map((property) => {
               const isSelected = selectedPropertyId === property.id;
               const hasSearch = Boolean(mapSearchInput.trim());
               const pricePillIcon = getPricePillIcon(property.price, isSelected, hasSearch);
