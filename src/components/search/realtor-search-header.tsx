@@ -166,14 +166,6 @@ export function RealtorSearchHeader({
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2">
           {/* ROW 1: REALTOR SEARCH BOX & LIST/MAP VIEW TOGGLE */}
           <div className="flex items-center gap-2 w-full">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shrink-0 border border-slate-200 dark:border-slate-700"
-              title="Go Back"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
             {/* SEARCH INPUT BOX CONTAINER */}
             <form
               onSubmit={handleSearchSubmit}
@@ -185,7 +177,7 @@ export function RealtorSearchHeader({
               )}
             >
               {/* Input & Animated Carousel Placeholder Overlay */}
-              <div className="relative flex-1 flex items-center h-full pl-3 sm:pl-4 pr-1 min-w-0">
+              <div className="relative flex-1 flex items-center h-full pl-5 sm:pl-6 pr-2 min-w-0">
                 <input
                   ref={inputRef}
                   type="text"
@@ -193,12 +185,14 @@ export function RealtorSearchHeader({
                   onChange={(e) => setSearchInput(e.target.value)}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
-                  className="w-full h-full bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white font-medium focus:outline-none z-10"
+                  className="w-full h-full bg-transparent text-sm text-slate-900 font-medium focus:outline-none z-10"
+                  spellCheck={false}
+                  autoComplete="off"
                 />
 
                 {/* Animated Placeholder Text starting with "Try..." */}
                 {!searchInput && !isFocused && (
-                  <div className="absolute inset-0 flex items-center px-3 sm:px-4 pointer-events-none overflow-hidden text-slate-400 dark:text-slate-500 text-xs sm:text-sm">
+                  <div className="absolute inset-0 flex items-center pl-5 sm:pl-6 pr-2 pointer-events-none overflow-hidden text-slate-400 dark:text-slate-500 text-xs sm:text-sm">
                     <AnimatePresence mode="wait">
                       <motion.span
                         key={suggestionIndex}
@@ -216,7 +210,7 @@ export function RealtorSearchHeader({
               </div>
 
               {/* ACTION ICONS INSIDE SEARCH BOX: CLEAR (X), MIC (🎙️), SEARCH (🔍) */}
-              <div className="flex items-center gap-0.5 sm:gap-1 pr-1.5 shrink-0 z-20">
+              <div className="flex items-center gap-1 sm:gap-1.5 pr-2 shrink-0 z-20">
                 {/* Clear button if typed */}
                 {searchInput && (
                   <button
@@ -306,14 +300,24 @@ export function RealtorSearchHeader({
             </button>
           </div>
 
-          {/* ROW 2: REALTOR-STYLE HORIZONTAL INDIAN FILTERS BAR */}
-          <div className="pt-0.5">
-            <RealtorFilterBar
-              filters={filters}
-              onFilterChange={onFilterChange}
-              onOpenAllFilters={onOpenAllFilters}
-              totalResults={totalResults}
-            />
+          {/* ROW 2: FILTERS */}
+          <div className="mt-2.5 flex items-center gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shrink-0 border border-slate-200 dark:border-slate-700"
+              title="Go Back"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <RealtorFilterBar
+                filters={filters}
+                onFilterChange={onFilterChange}
+                onOpenAllFilters={onOpenAllFilters}
+                totalResults={totalResults}
+              />
+            </div>
           </div>
         </div>
       </header>

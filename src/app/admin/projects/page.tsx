@@ -228,19 +228,19 @@ export default function AdminProjectsPage() {
                             <button
                               onClick={async () => { await toggleFeatured(project.id); toast.success("Updated!"); }}
                               title={project.isFeatured ? "Unfeature" : "Feature"}
-                              className={`p-1.5 rounded-full transition-colors ${project.isFeatured ? "text-amber-primary bg-amber-primary/10" : "text-text-tertiary hover:text-amber-primary"}`}
+                              className={`p-2 rounded-full transition-colors ${project.isFeatured ? "text-amber-500 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-500 hover:bg-bg-primary"}`}
                             >
-                              <Star className={`w-4 h-4 ${project.isFeatured ? "fill-amber-primary" : ""}`} />
+                              <Star className={`w-4 h-4 ${project.isFeatured ? "fill-amber-500" : ""}`} />
                             </button>
                             <button
                               onClick={async () => { await togglePublished(project.id); toast.success("Updated!"); }}
                               title={project.isPublished ? "Unpublish" : "Publish"}
-                              className={`p-1.5 rounded-full transition-colors ${project.isPublished ? "text-amber-500 bg-amber-500/10" : "text-text-tertiary hover:text-amber-500"}`}
+                              className={`p-2 rounded-full transition-colors ${project.isPublished ? "text-amber-600 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-600 hover:bg-bg-primary"}`}
                             >
                               {project.isPublished ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                             </button>
                             {project.videoUrl && (
-                              <span title="Has Watch Tour video" className="p-1.5 rounded-full text-red-500 bg-red-500/10">
+                              <span title="Has Watch Tour video" className="p-2 rounded-full text-red-500 hover:bg-red-50 cursor-help transition-colors">
                                 <Play className="w-4 h-4 fill-red-500" />
                               </span>
                             )}
@@ -325,16 +325,16 @@ export default function AdminProjectsPage() {
                     <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
                       <span className="text-amber-primary font-bold text-sm">{getPriceRange(project)}</span>
                       <div className="flex items-center gap-1">
-                        <button onClick={() => toggleFeatured(project.id)} className={`p-1.5 rounded-full ${project.isFeatured ? "text-amber-primary bg-amber-primary/10" : "text-text-tertiary"}`}>
-                          <Star className={`w-4 h-4 ${project.isFeatured ? "fill-amber-primary" : ""}`} />
+                        <button onClick={async () => { await toggleFeatured(project.id); toast.success("Updated!"); }} className={`p-2 rounded-full transition-colors ${project.isFeatured ? "text-amber-500 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-500 hover:bg-bg-primary"}`}>
+                          <Star className={`w-4 h-4 ${project.isFeatured ? "fill-amber-500" : ""}`} />
                         </button>
-                        <button onClick={() => togglePublished(project.id)} className={`p-1.5 rounded-full ${project.isPublished ? "text-amber-500 bg-amber-500/10" : "text-text-tertiary"}`}>
+                        <button onClick={async () => { await togglePublished(project.id); toast.success("Updated!"); }} className={`p-2 rounded-full transition-colors ${project.isPublished ? "text-amber-600 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-600 hover:bg-bg-primary"}`}>
                           {project.isPublished ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                         </button>
-                        <Link href={`/admin/projects/${project.id}/edit`} className="p-1.5 rounded-full text-text-tertiary hover:text-text-primary">
+                        <Link href={`/admin/projects/${project.id}/edit`} className="p-2 rounded-full text-text-tertiary hover:text-text-primary hover:bg-bg-primary transition-colors">
                           <Edit3 className="w-4 h-4" />
                         </Link>
-                        <button onClick={() => setDeleteTarget(project)} className="p-1.5 rounded-full text-red-400 hover:text-red-500">
+                        <button onClick={() => setDeleteTarget(project)} className="p-2 rounded-full text-red-400 hover:text-red-500 hover:bg-red-50 transition-colors">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>

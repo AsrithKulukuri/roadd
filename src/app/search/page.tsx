@@ -88,7 +88,9 @@ function UnifiedSearchPage() {
 
   const [filters, setFilters] = useState<FilterState>(parseInitialParams());
 
-  // Keep filters in sync with URL searchParams if they change
+  const searchParamsString = searchParams.toString();
+
+  // Keep filters in sync with URL searchParams if they actually change
   useEffect(() => {
     setFilters(parseInitialParams());
     const typeStr = searchParams.get("type");
@@ -97,7 +99,7 @@ function UnifiedSearchPage() {
     } else {
       setActiveTab("all");
     }
-  }, [searchParams]);
+  }, [searchParamsString]);
 
   // Unified filtering logic
   const filteredProperties = useMemo(() => {

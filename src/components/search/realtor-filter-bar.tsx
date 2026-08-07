@@ -40,6 +40,7 @@ export function RealtorFilterBar({
   >(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
 
   const handlePresetClick = (min: number, max: number, e?: React.SyntheticEvent) => {
     if (e) {
@@ -71,16 +72,22 @@ export function RealtorFilterBar({
 
   // Close dropdown on click outside on desktop
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
+      const target = event.target as Node;
       if (
         containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
+        !containerRef.current.contains(target) &&
+        (!portalRef.current || !portalRef.current.contains(target))
       ) {
         setOpenDropdown(null);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   // Prevent background scroll when mobile sheet is open
@@ -303,7 +310,7 @@ export function RealtorFilterBar({
       {/* DROPDOWN POPOVERS & MOBILE BOTTOM SHEETS */}
       {openDropdown !== null && mounted && typeof document !== "undefined" &&
         createPortal(
-          <div className="md:hidden">
+          <div className="md:hidden" ref={portalRef}>
             {/* BACKDROP FOR MOBILE BOTTOM SHEET */}
             <div
               onClick={() => setOpenDropdown(null)}
