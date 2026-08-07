@@ -1524,7 +1524,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
 
           {/* FULL DATA LAYERS + OPTIONS PANEL */}
           {showMapOptionsMenu && (
-            <div className="absolute top-14 right-[76px] sm:right-[84px] z-[560] w-72 bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-y-auto max-h-[80vh] animate-in fade-in zoom-in-95 duration-150 pointer-events-auto">
+            <div className="absolute top-14 right-[76px] sm:right-[84px] z-[560] w-72 bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-y-auto max-h-[calc(100dvh-130px)] animate-in fade-in zoom-in-95 duration-150 pointer-events-auto">
               <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 z-10">
                 <span className="font-extrabold text-sm flex items-center gap-1.5">
                   <Layers3 className="w-4 h-4 text-[#f1a010]" /> Map Layers
