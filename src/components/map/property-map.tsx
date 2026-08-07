@@ -1288,7 +1288,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                     onClick={() => {
                       setSelectedPropertyId(p.id);
                       if (mapRef.current) {
-                        mapRef.current.panTo([coords.lat, coords.lng]);
+                        mapRef.current.flyTo([coords.lat, coords.lng], 17, { duration: 0.4 });
                       }
                     }}
                     className={cn(
@@ -1685,7 +1685,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                           onClick={() => {
                             setSelectedPropertyId(prop.id);
                             if (mapRef.current) {
-                              mapRef.current.panTo([coords.lat, coords.lng]);
+                              mapRef.current.flyTo([coords.lat, coords.lng], 17, { duration: 0.4 });
                             }
                           }}
                           className={cn(
@@ -1735,7 +1735,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                                     e.stopPropagation();
                                     setSelectedPropertyId(prop.id);
                                     if (mapRef.current) {
-                                      mapRef.current.flyTo([coords.lat, coords.lng], 17, { duration: 1.2 });
+                                      mapRef.current.flyTo([coords.lat, coords.lng], 17, { duration: 0.4 });
                                     }
                                     setBlinkingPropertyId(prop.id);
                                     setTimeout(() => setBlinkingPropertyId(null), 4000);
@@ -1969,7 +1969,7 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
                     click: () => {
                       setSelectedPropertyId(property.id);
                       if (mapRef.current) {
-                        mapRef.current.panTo([coords.lat, coords.lng]);
+                        mapRef.current.flyTo([coords.lat, coords.lng], 17, { duration: 0.4 });
                       }
                       if (!userLocation && "geolocation" in navigator) {
                         navigator.geolocation.getCurrentPosition(
