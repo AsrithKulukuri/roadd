@@ -288,6 +288,9 @@ export function HeroSection() {
                   if (tab.id === "projects") {
                     router.push("/search?type=projects");
                   }
+                  if (tab.id === "nearme") {
+                    router.push("/search?nearMe=true&view=map");
+                  }
                 }}
                 className={cn(
                   "relative py-1.5 text-base sm:text-lg font-extrabold transition-all cursor-pointer",
