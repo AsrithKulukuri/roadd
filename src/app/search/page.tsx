@@ -479,7 +479,7 @@ function UnifiedSearchPage() {
         totalResults={combinedResults.length}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">
         {/* Near Me Loading Overlay */}
         {isLocating && (
           <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-center gap-3 text-amber-700 animate-pulse">
