@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -33,6 +33,7 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -44,7 +45,7 @@ export function Navbar() {
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -124,7 +125,29 @@ export function Navbar() {
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
-    return pathname.startsWith(href.split("?")[0]);
+    
+    const [path, query] = href.split("?");
+    if (pathname !== path) return false;
+
+    if (query) {
+      const urlParams = new URLSearchParams(query);
+      
+      // Check if all link parameters exist in the current URL
+      for (const [key, value] of urlParams.entries()) {
+        if (searchParams.get(key) !== value) {
+          return false;
+        }
+      }
+      
+      // Prevent general links (like Buy) from being active when a more specific category is selected
+      if (path === "/search" && !urlParams.has("propertyType") && searchParams.has("propertyType")) {
+        return false;
+      }
+      
+      return true;
+    }
+    
+    return pathname.startsWith(path);
   };
 
   return (

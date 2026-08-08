@@ -272,15 +272,7 @@ export function HeroSection() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center">
-        {/* R.O.A.D Branding Headline */}
-        <div className="space-y-2 mb-6 sm:mb-8 max-w-4xl">
-          <h1 className="font-heading text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-md leading-tight">
-            <span className="text-amber-400 font-extrabold">R</span>eal{" "}
-            <span className="text-amber-400 font-extrabold">O</span>wner{" "}
-            <span className="text-amber-400 font-extrabold">A</span>gent{" "}
-            <span className="text-amber-400 font-extrabold">D</span>eveloper
-          </h1>
-        </div>
+        {/* Headline removed by user request */}
 
         {/* Realtor.com Search Options Bar */}
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-5 px-2">

@@ -216,11 +216,11 @@ export const amenitiesList = [
 
 export const navigationLinks = {
   main: [
-    { label: "Buy", href: "/search?type=sale" },
-    { label: "Rent", href: "/search?type=rent" },
-    { label: "Commercial", href: "/commercial" },
-    { label: "New Projects", href: "/projects" },
-    { label: "Agents", href: "/agents" },
+    { label: "Buy", href: "/search?type=buy" },
+    { label: "New projects", href: "/search?type=projects" },
+    { label: "Gated Communities", href: "/search?type=buy&propertyType=gated-community" },
+    { label: "Commercial", href: "/search?type=buy&propertyType=commercial" },
+    { label: "Agriculture", href: "/search?type=buy&propertyType=agricultural-land" },
   ],
   footer: {
     company: [

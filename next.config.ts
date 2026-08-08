@@ -21,6 +21,11 @@ const nextConfig: NextConfig = {
         pathname: "/**",
       },
       {
+        protocol: "https",
+        hostname: "picsum.photos",
+        pathname: "/**",
+      },
+      {
         // Supabase Storage (all projects)
         protocol: "https",
         hostname: "*.supabase.co",
