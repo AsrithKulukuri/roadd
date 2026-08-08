@@ -143,7 +143,7 @@ function UnifiedSearchPage() {
         if (pType === "villa" && filters.propertyType.includes("villa")) matches = true;
         if (pType === "independent-house" && filters.propertyType.includes("independent-house")) matches = true;
         if ((pType === "residential-land" || pType === "commercial-lands" || pType === "industrial-lands") && (filters.propertyType.includes("residential-land") || filters.propertyType.includes("agricultural-lands") || filters.propertyType.includes("agricultural-land") || filters.propertyType.includes("agricultural"))) matches = true;
-        if ((pType === "shops" || pType === "buildings" || pType === "commercial-spaces" || pType === "commercial") && (filters.propertyType.includes("commercial-spaces") || filters.propertyType.includes("commercial") || filters.propertyType.includes("shops"))) matches = true;
+        if ((pType === "shops" || pType === "buildings" || pType === "commercial-spaces") && (filters.propertyType.includes("commercial-spaces") || filters.propertyType.includes("commercial") || filters.propertyType.includes("shops"))) matches = true;
         if (pType === "pg-coliving" && filters.propertyType.includes("pg")) matches = true;
         if (pType === "farmhouse" && (filters.propertyType.includes("farmhouse") || filters.propertyType.includes("agricultural-land") || filters.propertyType.includes("agricultural"))) matches = true;
         if (filters.propertyType.includes("gated-community") && ["apartment", "villa", "independent-house"].includes(pType)) matches = true;

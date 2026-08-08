@@ -29,11 +29,11 @@ import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 
-// Search Tabs: Buy, Rent and Projects
+// Search Tabs: Buy, Projects and Near me
 const tabs = [
   { id: "buy", label: "Buy" },
-  { id: "rent", label: "Rent" },
   { id: "projects", label: "Projects" },
+  { id: "nearme", label: "Near me" },
 ];
 
 const CAROUSEL_SUGGESTIONS = [
@@ -127,10 +127,11 @@ export function HeroSection() {
     }
 
     const params = new URLSearchParams();
-    if (activeTab === "rent") {
-      params.set("type", "rent");
-    } else if (activeTab === "projects") {
+    if (activeTab === "projects") {
       params.set("type", "projects");
+    } else if (activeTab === "nearme") {
+      params.set("type", "buy");
+      params.set("nearMe", "true");
     } else {
       params.set("type", "buy");
     }
@@ -154,16 +155,15 @@ export function HeroSection() {
       }).length;
     }
 
-    if (activeTab !== "rent") {
-      count += projects.filter((p) => {
-        if (!p.configurations || p.configurations.length === 0) return false;
-        return p.configurations.some((cfg) => {
-          const pMin = cfg.priceMin || 0;
-          const pMax = cfg.priceMax || pMin;
-          return pMin <= heroBudget[1] && pMax >= heroBudget[0];
-        });
-      }).length;
-    }
+    // Always count projects since all tabs (buy, nearme, projects) involve buying
+    count += projects.filter((p) => {
+      if (!p.configurations || p.configurations.length === 0) return false;
+      return p.configurations.some((cfg) => {
+        const pMin = cfg.priceMin || 0;
+        const pMax = cfg.priceMax || pMin;
+        return pMin <= heroBudget[1] && pMax >= heroBudget[0];
+      });
+    }).length;
 
     return count;
   }, [properties, projects, heroBudget, activeTab]);
@@ -214,8 +214,8 @@ export function HeroSection() {
       }).length;
 
       let projCount = 0;
-      if (activeTab !== "rent") {
-        projCount = projects.filter((p) => {
+      // Always count projects since all tabs involve buying
+      projCount = projects.filter((p) => {
           const hasBudgetOverlap = p.configurations?.some((cfg) => {
             const pMin = cfg.priceMin || 0;
             const pMax = cfg.priceMax || pMin;
@@ -228,8 +228,7 @@ export function HeroSection() {
           if (p.projectType === "villa" && types.includes("villa")) return true;
           if (p.projectType === "venture" && types.includes("residential-land")) return true;
           return false;
-        }).length;
-      }
+      }).length;
 
       counts[cat.id] = propCount + projCount;
     }
