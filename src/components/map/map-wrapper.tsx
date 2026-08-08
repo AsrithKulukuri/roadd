@@ -21,8 +21,9 @@ const PropertyMap = dynamic(
 
 interface MapWrapperProps {
   filteredItems?: any[];
+  userLocation?: { lat: number, lng: number } | null;
 }
 
-export function MapWrapper({ filteredItems }: MapWrapperProps) {
-  return <PropertyMap filteredItems={filteredItems} />;
+export function MapWrapper({ filteredItems, userLocation }: MapWrapperProps) {
+  return <PropertyMap filteredItems={filteredItems} userLocation={userLocation} />;
 }

@@ -11,8 +11,21 @@ import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { SearchFiltersModal, initialFilterState, type FilterState } from "@/components/search/search-filters";
 import { RealtorSearchHeader } from "@/components/search/realtor-search-header";
 import { MapWrapper } from "@/components/map/map-wrapper";
-import { SlidersHorizontal, ArrowLeft, Search as SearchIcon } from "lucide-react";
+import { SlidersHorizontal, ArrowLeft, Search as SearchIcon, MapPin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 export default function UnifiedSearchPageWrapper() {
   return (
@@ -29,10 +42,15 @@ function UnifiedSearchPage() {
   const [activeTab, setActiveTab] = useState<"all" | "properties" | "projects">(
     searchParams.get("type") === "projects" ? "projects" : "all"
   );
-  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "map">(
+    searchParams.get("nearMe") === "true" ? "map" : "grid"
+  );
   const [sortBy, setSortBy] = useState<"relevant" | "price-asc" | "price-desc" | "newest">("relevant");
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
   
   const properties = usePropertiesStore((state) => state.properties);
   const projects = useProjectsStore((state) => state.projects);
@@ -45,7 +63,24 @@ function UnifiedSearchPage() {
     setMounted(true);
     fetchProperties();
     fetchProjects();
-  }, []);
+
+    // Check for nearMe parameter and trigger geolocation
+    if (searchParams.get("nearMe") === "true" && !userLocation && !isLocating) {
+      setIsLocating(true);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setViewMode("map");
+          setIsLocating(false);
+          toast.success("Location found! Showing properties near you.");
+        },
+        (err) => {
+          setIsLocating(false);
+          toast.error("Location access denied or unavailable. Showing all properties.");
+        }
+      );
+    }
+  }, [searchParams]);
 
   // Lock body scroll when map view is active so ONLY the map moves
   useEffect(() => {
@@ -227,9 +262,21 @@ function UnifiedSearchPage() {
         if (!matchesAge) return false;
       }
 
+      // 15. Near Me Distance
+      if (searchParams.get("nearMe") === "true" && userLocation) {
+        if (!property.location?.latitude || !property.location?.longitude) return false;
+        const distance = getDistanceFromLatLonInKm(
+          userLocation.lat,
+          userLocation.lng,
+          property.location.latitude,
+          property.location.longitude
+        );
+        if (distance > 20) return false; // 20km radius
+      }
+
       return true;
     });
-  }, [properties, filters, activeTab]);
+  }, [properties, filters, activeTab, searchParamsString, userLocation]);
 
   const filteredProjects = useMemo(() => {
     if (activeTab === "properties") return [];
@@ -351,9 +398,21 @@ function UnifiedSearchPage() {
         if (!hasMatchingBaths) return false;
       }
 
+      // 14. Near Me Distance
+      if (searchParams.get("nearMe") === "true" && userLocation) {
+        if (!project.location?.latitude || !project.location?.longitude) return false;
+        const distance = getDistanceFromLatLonInKm(
+          userLocation.lat,
+          userLocation.lng,
+          project.location.latitude,
+          project.location.longitude
+        );
+        if (distance > 20) return false; // 20km radius
+      }
+
       return true;
     });
-  }, [projects, filters, activeTab]);
+  }, [projects, filters, activeTab, searchParamsString, userLocation]);
 
   // Combine and Sort
   const combinedResults = useMemo(() => {
@@ -420,7 +479,15 @@ function UnifiedSearchPage() {
         totalResults={combinedResults.length}
       />
 
-      <div className="flex-1 max-w-[1600px] w-full mx-auto px-4 md:px-6 py-6 pb-24">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">
+        {/* Near Me Loading Overlay */}
+        {isLocating && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-center gap-3 text-amber-700 animate-pulse">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="font-medium">Detecting your location...</span>
+          </div>
+        )}
+
         <div className="flex flex-col gap-6">
           
           {/* Controls Bar */}
@@ -454,10 +521,10 @@ function UnifiedSearchPage() {
           ) : viewMode === "map" ? (
             <div>
               <div className="md:hidden fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-white overflow-hidden flex flex-col">
-                <MapWrapper filteredItems={mapItems} />
+                <MapWrapper filteredItems={mapItems} userLocation={userLocation} />
               </div>
               <div className="hidden md:block w-full h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white relative z-0">
-                <MapWrapper filteredItems={mapItems} />
+                <MapWrapper filteredItems={mapItems} userLocation={userLocation} />
               </div>
             </div>
           ) : combinedResults.length > 0 ? (
@@ -483,7 +550,7 @@ function UnifiedSearchPage() {
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       <SearchFiltersModal
         isOpen={isFilterModalOpen}

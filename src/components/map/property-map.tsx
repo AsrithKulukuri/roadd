@@ -650,6 +650,7 @@ function getDynamicLocalityBoundary(query: string, properties: any[]): { name: s
 
 interface PropertyMapProps {
   filteredItems?: any[];
+  userLocation?: { lat: number, lng: number } | null;
 }
 
 function MapCardImageCarousel({ images, title, propertyType }: { images: string[]; title: string; propertyType: string }) {
@@ -716,7 +717,7 @@ function SidebarCardSkeleton() {
   )
 }
 
-export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
+export default function PropertyMap({ filteredItems, userLocation: externalUserLocation }: PropertyMapProps = {}) {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
   const initialType = searchParams.get("type") || searchParams.get("category") || null;
@@ -727,10 +728,21 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const mapProperties = useMemo(() => properties.filter((p) => p.showOnMap !== false && p.status !== 'sold'), [properties]);
 
   const [position, setPosition] = useState<L.LatLng | null>(
-    mapProperties.length > 0 && mapProperties[0].location?.latitude && mapProperties[0].location?.longitude
+    externalUserLocation
+      ? new L.LatLng(externalUserLocation.lat, externalUserLocation.lng)
+      : mapProperties.length > 0 && mapProperties[0].location?.latitude && mapProperties[0].location?.longitude
       ? new L.LatLng(mapProperties[0].location.latitude, mapProperties[0].location.longitude)
       : new L.LatLng(16.5062, 80.6480)
   );
+  
+  // Keep position in sync if externalUserLocation changes
+  useEffect(() => {
+    if (externalUserLocation && mapRef.current) {
+      const pos = new L.LatLng(externalUserLocation.lat, externalUserLocation.lng);
+      setPosition(pos);
+      mapRef.current.flyTo(pos, 13);
+    }
+  }, [externalUserLocation]);
   
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [blinkingPropertyId, setBlinkingPropertyId] = useState<string | null>(null);
@@ -758,7 +770,10 @@ export default function PropertyMap({ filteredItems }: PropertyMapProps = {}) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawShapeType, setDrawShapeType] = useState<"freehand" | "circle" | "box">("freehand");
   const [drawPolygonPoints, setDrawPolygonPoints] = useState<L.LatLng[]>([]);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [internalUserLoc, setInternalUserLoc] = useState<{lat: number, lng: number} | null>(null);
+  
+  const activeUserLocation = externalUserLocation || internalUserLoc;
+
   const [showPropertiesTray, setShowPropertiesTray] = useState(false);
   const { toggleFavorite, isFavorite } = useFavoritesStore();
 
