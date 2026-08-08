@@ -2060,9 +2060,9 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                       if (mapRef.current) {
                         mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
                       }
-                      if (!userLocation && "geolocation" in navigator) {
+                      if (!activeUserLocation && "geolocation" in navigator) {
                         navigator.geolocation.getCurrentPosition(
-                          (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                          (pos) => setInternalUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
                           () => console.warn("Geolocation denied or failed")
                         );
                       }
