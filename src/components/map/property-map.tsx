@@ -2138,10 +2138,10 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                               </>
                             )}
 
-                            {userLocation && (
+                            {activeUserLocation && (
                               <div className="text-xs font-extrabold text-amber-400 mt-1 flex items-center gap-1 bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-sm">
                                 <Navigation className="w-3 h-3" />
-                                {getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, coords.lat, coords.lng).toFixed(1)} km away from you
+                                {getDistanceFromLatLonInKm(activeUserLocation.lat, activeUserLocation.lng, coords.lat, coords.lng).toFixed(1)} km away from you
                               </div>
                             )}
                           </Link>
