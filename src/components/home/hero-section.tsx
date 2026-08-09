@@ -561,7 +561,7 @@ export function HeroSection() {
           </div>
         </div>
 
-        <div className="w-full mt-12 text-left space-y-4">
+        <div className="w-full max-w-[760px] mx-auto mt-8 sm:mt-10 text-left space-y-3 sm:space-y-4">
           {/* Header row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -594,7 +594,7 @@ export function HeroSection() {
           </div>
 
           {/* Category cards grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {browseCategories.map((cat) => {
               const catCount = categoryBudgetCounts[cat.id] ?? 0;
               const hasBudgetResults = budgetActive && catCount > 0;
@@ -605,7 +605,7 @@ export function HeroSection() {
                   key={cat.id}
                   href={getCatHref(cat.baseHref)}
                   className={cn(
-                    "group relative h-40 sm:h-52 rounded-2xl overflow-hidden shadow-lg block bg-slate-800 transition-all duration-300",
+                    "group relative h-28 sm:h-36 rounded-xl overflow-hidden shadow-lg block bg-slate-800 transition-all duration-300",
                     hasBudgetResults
                       ? "border-2 border-amber-400/70 shadow-amber-500/20 hover:shadow-amber-500/40 hover:-translate-y-1.5 hover:shadow-2xl"
                       : noBudgetResults
