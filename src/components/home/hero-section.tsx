@@ -515,7 +515,7 @@ export function HeroSection() {
                 </div>
 
                 {/* Price display pill */}
-                <div className="flex items-center gap-1.5 bg-amber-500/12 border border-amber-400/30 rounded-lg px-2 py-1">
+                <div className="flex items-center gap-1.5 bg-black border border-amber-400/30 rounded-lg px-2 py-1">
                   <span className="text-xs sm:text-sm font-black text-amber-400 tracking-tight">
                     {heroBudget[0] === 0 && heroBudget[1] === 100000000
                       ? "Any Price"
