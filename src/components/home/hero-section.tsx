@@ -500,23 +500,23 @@ export function HeroSection() {
             {/* Top accent line */}
             <div className="absolute inset-x-0 top-0 h-[2px] rounded-t-2xl bg-gradient-to-r from-amber-500/0 via-amber-400/70 to-amber-500/0" />
 
-            <div className="px-4 pt-3 pb-2.5 sm:px-5 sm:pt-3.5 sm:pb-3">
+            <div className="px-3 py-2 sm:px-4 sm:py-2.5">
               {/* Header row */}
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1.5">
                   {/* Coin icon */}
-                  <div className="w-7 h-7 rounded-full bg-amber-500/15 border border-amber-400/25 flex items-center justify-center shrink-0">
-                    <span className="text-amber-400 font-black text-[13px] leading-none">₹</span>
+                  <div className="w-5 h-5 rounded-full bg-amber-500/15 border border-amber-400/25 flex items-center justify-center shrink-0">
+                    <span className="text-amber-400 font-black text-[10px] leading-none">₹</span>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 leading-none">Budget Range</p>
-                    <p className="text-[11px] font-semibold text-white/55 leading-none mt-0.5">Slide to filter by price</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/40 leading-none">Budget</p>
+                    <p className="text-[10px] font-semibold text-white/55 leading-none mt-0.5">Filter by price</p>
                   </div>
                 </div>
 
                 {/* Price display pill */}
-                <div className="flex items-center gap-1.5 bg-amber-500/12 border border-amber-400/30 rounded-xl px-3 py-1.5">
-                  <span className="text-sm sm:text-base font-black text-amber-400 tracking-tight">
+                <div className="flex items-center gap-1.5 bg-amber-500/12 border border-amber-400/30 rounded-lg px-2 py-1">
+                  <span className="text-xs sm:text-sm font-black text-amber-400 tracking-tight">
                     {heroBudget[0] === 0 && heroBudget[1] === 100000000
                       ? "Any Price"
                       : `${formatINRWords(heroBudget[0])} – ${formatINRWords(heroBudget[1], true)}`}
@@ -537,22 +537,22 @@ export function HeroSection() {
               </div>
 
               {/* Footer: tick labels + Apply button */}
-              <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center gap-3 text-[10px] font-bold text-white/35">
+              <div className="flex items-center justify-between mt-1.5">
+                <div className="flex items-center gap-2 text-[9px] font-bold text-white/35">
                   <span>₹0</span>
-                  <span>₹30 Lakhs</span>
-                  <span>₹1 Crore</span>
-                  <span>₹5 Crores</span>
-                  <span>₹10 Crores+</span>
+                  <span>₹30L</span>
+                  <span>₹1Cr</span>
+                  <span>₹5Cr</span>
+                  <span>₹10Cr+</span>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => handleSearchSubmit()}
-                  className="relative flex items-center gap-1.5 h-8 pl-3.5 pr-1.5 bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-[11px] rounded-full shadow-lg shadow-amber-500/25 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                  className="relative flex items-center gap-1 h-6 pl-2.5 pr-1 bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-[10px] rounded-full shadow-lg shadow-amber-500/25 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
                 >
                   <span>Apply</span>
-                  <span className="w-5 h-5 rounded-full bg-slate-950/20 flex items-center justify-center text-[10px] font-black text-slate-950 leading-none">
+                  <span className="w-4 h-4 rounded-full bg-slate-950/20 flex items-center justify-center text-[9px] font-black text-slate-950 leading-none">
                     {matchingCount}
                   </span>
                 </button>
