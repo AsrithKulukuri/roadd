@@ -605,7 +605,7 @@ export function HeroSection() {
                   key={cat.id}
                   href={getCatHref(cat.baseHref)}
                   className={cn(
-                    "group relative h-28 sm:h-36 rounded-xl overflow-hidden shadow-lg block bg-slate-800 transition-all duration-300",
+                    "group relative h-32 sm:h-44 rounded-xl overflow-hidden shadow-lg block bg-slate-800 transition-all duration-300",
                     hasBudgetResults
                       ? "border-2 border-amber-400/70 shadow-amber-500/20 hover:shadow-amber-500/40 hover:-translate-y-1.5 hover:shadow-2xl"
                       : noBudgetResults
