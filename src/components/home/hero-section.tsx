@@ -539,11 +539,11 @@ export function HeroSection() {
               {/* Footer: tick labels + Apply button */}
               <div className="flex items-center justify-between mt-1.5">
                 <div className="flex items-center gap-2 text-[9px] font-bold text-white/70">
-                  <span>₹0</span>
-                  <span>₹30L</span>
-                  <span>₹1Cr</span>
-                  <span>₹5Cr</span>
-                  <span>₹10Cr+</span>
+                  <button type="button" onClick={() => setHeroBudget([0, 100000000])} className="hover:text-white transition-colors">₹0</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 3000000])} className="hover:text-white transition-colors">₹30L</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 10000000])} className="hover:text-white transition-colors">₹1Cr</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 50000000])} className="hover:text-white transition-colors">₹5Cr</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 100000000])} className="hover:text-white transition-colors">₹10Cr+</button>
                 </div>
 
                 <button
