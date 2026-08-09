@@ -216,7 +216,17 @@ export const amenitiesList = [
 
 export const navigationLinks = {
   main: [
-    { label: "Buy", href: "/search?type=buy" },
+    {
+      label: "Buy",
+      href: "/search?type=buy",
+      subItems: [
+        { label: "Flats", href: "/search?type=buy&propertyType=apartment" },
+        { label: "Houses", href: "/search?type=buy&propertyType=independent-house" },
+        { label: "Villas", href: "/search?type=buy&propertyType=villa" },
+        { label: "Plots", href: "/search?type=buy&propertyType=residential-plot" },
+        { label: "Agriculture", href: "/search?type=buy&propertyType=agricultural-land" },
+      ],
+    },
     { label: "New projects", href: "/search?type=projects" },
     { label: "Gated Communities", href: "/search?type=buy&propertyType=gated-community" },
     { label: "Commercial", href: "/search?type=buy&propertyType=commercial" },

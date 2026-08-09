@@ -31,7 +31,12 @@ import { toast } from "sonner";
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [openMobileSubmenus, setOpenMobileSubmenus] = useState<Record<string, boolean>>({});
   const [user, setUser] = useState<any>(null);
+
+  const toggleMobileSubmenu = (label: string) => {
+    setOpenMobileSubmenus(prev => ({ ...prev, [label]: !prev[label] }));
+  };
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -164,25 +169,46 @@ export function Navbar() {
             {/* Center: Navigation Links for Desktop */}
             <nav className="hidden lg:flex items-center gap-1" role="navigation" aria-label="Main navigation">
               {navigationLinks.main.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "relative px-4 py-2 text-sm font-bold rounded-xl transition-all duration-200",
-                    isActive(link.href)
-                      ? "text-amber-500 font-black"
-                      : "text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                <div key={link.href} className="relative group">
+                  <Link
+                    href={link.href}
+                    className={cn(
+                      "relative px-4 py-2 text-sm font-bold rounded-xl transition-all duration-200 block",
+                      isActive(link.href)
+                        ? "text-amber-500 font-black"
+                        : "text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    )}
+                  >
+                    <span className="flex items-center gap-1">
+                      {link.label}
+                      {(link as any).subItems && <ChevronDown className="w-3.5 h-3.5 opacity-50 transition-transform group-hover:rotate-180" />}
+                    </span>
+                    {isActive(link.href) && (
+                      <motion.div
+                        layoutId="navbarIndicator"
+                        className="absolute bottom-0 left-3 right-3 h-0.5 bg-amber-500 rounded-full"
+                        transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                      />
+                    )}
+                  </Link>
+
+                  {/* Desktop Dropdown */}
+                  {(link as any).subItems && (
+                    <div className="absolute top-full left-0 pt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2">
+                        {(link as any).subItems.map((subItem: any) => (
+                          <Link
+                            key={subItem.href}
+                            href={subItem.href}
+                            className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400"
+                          >
+                            {subItem.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
                   )}
-                >
-                  {link.label}
-                  {isActive(link.href) && (
-                    <motion.div
-                      layoutId="navbarIndicator"
-                      className="absolute bottom-0 left-3 right-3 h-0.5 bg-amber-500 rounded-full"
-                      transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                    />
-                  )}
-                </Link>
+                </div>
               ))}
             </nav>
 
@@ -259,18 +285,49 @@ export function Navbar() {
           >
             <nav className="flex flex-col gap-2">
               {navigationLinks.main.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "px-4 py-3 rounded-xl font-semibold text-base transition-colors",
-                    isActive(link.href)
-                      ? "bg-amber-500/10 text-amber-600 font-bold"
-                      : "text-slate-700 hover:bg-slate-100"
+                <div key={link.href} className="flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <Link
+                      href={link.href}
+                      className={cn(
+                        "flex-1 px-4 py-3 rounded-xl font-semibold text-base transition-colors",
+                        isActive(link.href)
+                          ? "bg-amber-500/10 text-amber-600 font-bold"
+                          : "text-slate-700 hover:bg-slate-100"
+                      )}
+                      onClick={(e) => {
+                        // If it has subItems and is clicked, we just navigate. The toggle handles expanding.
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      {link.label}
+                    </Link>
+                    {(link as any).subItems && (
+                      <button
+                        onClick={() => toggleMobileSubmenu(link.label)}
+                        className="p-3 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
+                      >
+                        <ChevronDown className={cn("w-5 h-5 transition-transform", openMobileSubmenus[link.label] && "rotate-180")} />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Mobile Submenu */}
+                  {(link as any).subItems && openMobileSubmenus[link.label] && (
+                    <div className="flex flex-col ml-6 border-l-2 border-slate-200 dark:border-slate-800 pl-4 mt-1 space-y-1">
+                      {(link as any).subItems.map((subItem: any) => (
+                        <Link
+                          key={subItem.href}
+                          href={subItem.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-amber-500 rounded-lg"
+                        >
+                          {subItem.label}
+                        </Link>
+                      ))}
+                    </div>
                   )}
-                >
-                  {link.label}
-                </Link>
+                </div>
               ))}
             </nav>
 
