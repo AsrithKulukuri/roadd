@@ -509,8 +509,8 @@ export function HeroSection() {
                     <span className="text-amber-400 font-black text-[10px] leading-none">₹</span>
                   </div>
                   <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/40 leading-none">Budget</p>
-                    <p className="text-[10px] font-semibold text-white/55 leading-none mt-0.5">Filter by price</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/70 leading-none">Budget</p>
+                    <p className="text-[10px] font-semibold text-white/90 leading-none mt-0.5">Filter by price</p>
                   </div>
                 </div>
 
@@ -538,7 +538,7 @@ export function HeroSection() {
 
               {/* Footer: tick labels + Apply button */}
               <div className="flex items-center justify-between mt-1.5">
-                <div className="flex items-center gap-2 text-[9px] font-bold text-white/35">
+                <div className="flex items-center gap-2 text-[9px] font-bold text-white/70">
                   <span>₹0</span>
                   <span>₹30L</span>
                   <span>₹1Cr</span>
