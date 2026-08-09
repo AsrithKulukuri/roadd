@@ -419,33 +419,7 @@ export function HeroSection() {
                 <span>Guntur</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setLocationTab("popular")}
-                className={cn(
-                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
-                  locationTab === "popular"
-                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
-                    : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
-                )}
-              >
-                <Sparkles className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", locationTab === "popular" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
-                <span>Premium</span>
-              </button>
 
-              <button
-                type="button"
-                onClick={() => setLocationTab("nearyou")}
-                className={cn(
-                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
-                  locationTab === "nearyou"
-                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
-                    : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
-                )}
-              >
-                <MapPin className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", locationTab === "nearyou" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
-                <span>Near You</span>
-              </button>
             </div>
 
             {/* Carousel Nav Arrows - HIDDEN ON MOBILE UI */}
