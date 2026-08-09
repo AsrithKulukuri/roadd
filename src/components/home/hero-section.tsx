@@ -502,21 +502,20 @@ export function HeroSection() {
 
             <div className="px-3 py-2 sm:px-4 sm:py-2.5">
               {/* Header row */}
-              <div className="flex items-center justify-between mb-1.5 relative h-[30px]">
-                {/* Centered block (Icon + Wording) */}
-                <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1.5">
                   {/* Coin icon */}
-                  <div className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-400/30 flex items-center justify-center shrink-0">
-                    <span className="text-amber-400 font-black text-[12px] leading-none">₹</span>
+                  <div className="w-5 h-5 rounded-full bg-amber-500/15 border border-amber-400/25 flex items-center justify-center shrink-0">
+                    <span className="text-amber-400 font-black text-[10px] leading-none">₹</span>
                   </div>
-                  <div className="flex flex-col justify-center">
-                    <p className="text-[11px] font-black uppercase tracking-widest text-white leading-none">Budget</p>
-                    <p className="text-[12px] font-bold text-white leading-none mt-0.5">Filter by price</p>
+                  <div>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-black leading-none">Budget</p>
+                    <p className="text-[10px] font-semibold text-black leading-none mt-0.5">Filter by price</p>
                   </div>
                 </div>
 
                 {/* Price display pill (Right aligned) */}
-                <div className="ml-auto flex items-center gap-1.5 bg-black border border-amber-400/30 rounded-lg px-2 py-1 z-10">
+                <div className="flex items-center gap-1.5 bg-black border border-amber-400/30 rounded-lg px-2 py-1">
                   <span className="text-xs sm:text-sm font-black text-amber-400 tracking-tight">
                     {heroBudget[0] === 0 && heroBudget[1] === 100000000
                       ? "Any Price"
