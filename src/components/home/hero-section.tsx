@@ -372,7 +372,7 @@ export function HeroSection() {
         </form>
 
         {/* Open Trending Locations Carousel Section */}
-        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-5 sm:mt-[24px] text-left">
+        <div className="w-full max-w-[760px] mx-auto mt-4 sm:mt-5 text-left">
           {/* Category Chips Bar + Carousel Navigation Buttons (Buttons Hidden on Mobile) */}
           <div className="flex items-center justify-between gap-3 mb-3 sm:mb-[16px]">
             {/* Category Filter Chips */}
@@ -488,7 +488,7 @@ export function HeroSection() {
         </div>
 
         {/* ── Premium Budget Slider ── */}
-        <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl mt-3 sm:mt-4">
+        <div className="w-full max-w-[760px] mx-auto mt-3 sm:mt-4">
           <div
             className="relative rounded-2xl overflow-hidden border border-white/10 shadow-xl"
             style={{
@@ -500,9 +500,9 @@ export function HeroSection() {
             {/* Top accent line */}
             <div className="absolute inset-x-0 top-0 h-[2px] rounded-t-2xl bg-gradient-to-r from-amber-500/0 via-amber-400/70 to-amber-500/0" />
 
-            <div className="px-4 pt-3.5 pb-3 sm:px-5 sm:pt-4 sm:pb-3.5">
+            <div className="px-4 pt-3 pb-2.5 sm:px-5 sm:pt-3.5 sm:pb-3">
               {/* Header row */}
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   {/* Coin icon */}
                   <div className="w-7 h-7 rounded-full bg-amber-500/15 border border-amber-400/25 flex items-center justify-center shrink-0">
@@ -537,7 +537,7 @@ export function HeroSection() {
               </div>
 
               {/* Footer: tick labels + Apply button */}
-              <div className="flex items-center justify-between mt-2.5">
+              <div className="flex items-center justify-between mt-2">
                 <div className="flex items-center gap-3 text-[10px] font-bold text-white/35">
                   <span>₹0</span>
                   <span>₹30 Lakhs</span>
