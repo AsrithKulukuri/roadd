@@ -189,14 +189,14 @@ export function HeroSection() {
 
   /** Map each category id → which PropertyType values it covers */
   const CATEGORY_TYPE_MAP: Record<string, string[]> = {
-    "new-listings":       [], // all types — special case
-    "apartments":         ["apartment"],
-    "villas":             ["villa"],
-    "individual-houses":  ["independent-house"],
-    "open-lands":         ["residential-land"],
-    "agricultural":       ["farmhouse", "residential-land"],
-    "commercial":         ["shops", "buildings", "commercial-spaces", "commercial-lands", "industrial-lands"],
-    "gated-communities":  ["apartment", "villa", "independent-house"],
+    "new-listings": [], // all types — special case
+    "apartments": ["apartment"],
+    "villas": ["villa"],
+    "individual-houses": ["independent-house"],
+    "open-lands": ["residential-land"],
+    "agricultural": ["farmhouse", "residential-land"],
+    "commercial": ["shops", "buildings", "commercial-spaces", "commercial-lands", "industrial-lands"],
+    "gated-communities": ["apartment", "villa", "independent-house"],
   };
 
   /** Live count of matching properties per category given current budget */
@@ -216,18 +216,18 @@ export function HeroSection() {
       let projCount = 0;
       // Always count projects since all tabs involve buying
       projCount = projects.filter((p) => {
-          const hasBudgetOverlap = p.configurations?.some((cfg) => {
-            const pMin = cfg.priceMin || 0;
-            const pMax = cfg.priceMax || pMin;
-            return pMin <= heroBudget[1] && pMax >= heroBudget[0];
-          });
-          if (!hasBudgetOverlap) return false;
+        const hasBudgetOverlap = p.configurations?.some((cfg) => {
+          const pMin = cfg.priceMin || 0;
+          const pMax = cfg.priceMax || pMin;
+          return pMin <= heroBudget[1] && pMax >= heroBudget[0];
+        });
+        if (!hasBudgetOverlap) return false;
 
-          if (!types || types.length === 0) return true;
-          if (p.projectType === "apartment" && types.includes("apartment")) return true;
-          if (p.projectType === "villa" && types.includes("villa")) return true;
-          if (p.projectType === "venture" && types.includes("residential-land")) return true;
-          return false;
+        if (!types || types.length === 0) return true;
+        if (p.projectType === "apartment" && types.includes("apartment")) return true;
+        if (p.projectType === "villa" && types.includes("villa")) return true;
+        if (p.projectType === "venture" && types.includes("residential-land")) return true;
+        return false;
       }).length;
 
       counts[cat.id] = propCount + projCount;
@@ -451,12 +451,12 @@ export function HeroSection() {
             {(locationTab === "trending"
               ? trendingHotspots
               : locationTab === "vijayawada"
-              ? vijayawadaHotspots
-              : locationTab === "guntur"
-              ? gunturHotspots
-              : locationTab === "popular"
-              ? trendingHotspots.filter((h) => h.badge === "Demand ↑18%" || h.badge === "Top Pick" || h.badge === "Hot")
-              : trendingHotspots
+                ? vijayawadaHotspots
+                : locationTab === "guntur"
+                  ? gunturHotspots
+                  : locationTab === "popular"
+                    ? trendingHotspots.filter((h) => h.badge === "Demand ↑18%" || h.badge === "Top Pick" || h.badge === "Hot")
+                    : trendingHotspots
             ).map((spot) => (
               <div
                 key={spot.name}
@@ -509,12 +509,12 @@ export function HeroSection() {
                     <span className="text-amber-400 font-black text-[10px] leading-none">₹</span>
                   </div>
                   <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-black leading-none">Budget</p>
-                    <p className="text-[10px] font-semibold text-black leading-none mt-0.5">Filter by price</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/70 leading-none">Budget</p>
+                    <p className="text-[10px] font-semibold text-white/90 leading-none mt-0.5">Filter by price</p>
                   </div>
                 </div>
 
-                {/* Price display pill (Right aligned) */}
+                {/* Price display pill */}
                 <div className="flex items-center gap-1.5 bg-black border border-amber-400/30 rounded-lg px-2 py-1">
                   <span className="text-xs sm:text-sm font-black text-amber-400 tracking-tight">
                     {heroBudget[0] === 0 && heroBudget[1] === 100000000
@@ -609,8 +609,8 @@ export function HeroSection() {
                     hasBudgetResults
                       ? "border-2 border-amber-400/70 shadow-amber-500/20 hover:shadow-amber-500/40 hover:-translate-y-1.5 hover:shadow-2xl"
                       : noBudgetResults
-                      ? "border border-white/5 opacity-50 hover:opacity-70"
-                      : "border border-white/10 hover:shadow-2xl hover:-translate-y-1"
+                        ? "border border-white/5 opacity-50 hover:opacity-70"
+                        : "border border-white/10 hover:shadow-2xl hover:-translate-y-1"
                   )}
                 >
                   <Image
