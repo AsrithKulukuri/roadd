@@ -28,7 +28,6 @@ const QUESTIONS = [
       { label: "₹1 Cr - ₹3 Crores", value: "10000000-30000000" },
       { label: "Above ₹3 Crores", value: "30000000-999999999" },
     ]
-    ]
   }
 ];
 
