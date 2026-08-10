@@ -311,67 +311,92 @@ export function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/40" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center mt-2">
-        {/* Dynamic Banners Block */}
-        {banners.length > 0 && (
-          <div className="w-full max-w-4xl mx-auto mb-8 relative rounded-2xl overflow-hidden shadow-2xl h-[180px] sm:h-[220px] md:h-[280px]">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentBanner?.id || 'banner-fallback'}
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -50 }}
-                transition={{ duration: 0.5 }}
-                className="absolute inset-0"
-              >
-                {currentBanner?.image_url && (
-                  <Image 
-                    src={currentBanner.image_url} 
-                    alt={currentBanner.title || 'Banner'}
-                    fill
-                    className="object-cover"
-                  />
-                )}
-                {/* Overlay for readability */}
-                <div className="absolute inset-0 bg-black/30 bg-gradient-to-r from-black/60 to-transparent" />
-                
-                {/* Banner Content */}
-                <div className="absolute inset-0 flex flex-col justify-center items-start p-6 sm:p-10 text-left">
+      {/* Full-Width Dynamic Banners Block */}
+      {banners.length > 0 && (
+        <div className="relative z-10 w-full mb-10 shadow-2xl h-[250px] sm:h-[300px] md:h-[380px] overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentBanner?.id || 'banner-fallback'}
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              transition={{ duration: 0.5 }}
+              className="absolute inset-0"
+            >
+              {currentBanner?.image_url && (
+                <Image 
+                  src={currentBanner.image_url} 
+                  alt={currentBanner.title || 'Banner'}
+                  fill
+                  className="object-cover"
+                />
+              )}
+              {/* Overlay for readability */}
+              <div className="absolute inset-0 bg-black/30 bg-gradient-to-r from-black/60 to-transparent" />
+              
+              {/* Banner Content (Centered in the max-w-7xl area so it aligns with content) */}
+              <div className="absolute inset-0 flex flex-col justify-center items-start text-left">
+                <div className="w-full max-w-7xl mx-auto px-10 sm:px-14">
                   {currentBanner?.title && (
-                    <h2 className="text-xl sm:text-3xl font-bold text-white mb-4 drop-shadow-md max-w-[70%]">
+                    <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 sm:mb-6 drop-shadow-md max-w-[70%] leading-tight">
                       {currentBanner.title}
                     </h2>
                   )}
                   {currentBanner?.link_url && (
                     <Link
                       href={currentBanner.link_url}
-                      className="inline-flex items-center gap-2 px-5 py-2 bg-amber-primary hover:bg-amber-secondary text-white font-semibold rounded-lg transition-all"
+                      className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-amber-primary hover:bg-amber-secondary text-white font-bold text-sm sm:text-lg rounded-lg shadow-lg transition-all hover:scale-105 active:scale-95"
                     >
-                      Explore Now <ChevronRight className="w-4 h-4" />
+                      Explore Now <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                     </Link>
                   )}
                 </div>
-              </motion.div>
-            </AnimatePresence>
-            
-            {/* Dots indicator */}
-            {banners.length > 1 && (
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+              </div>
+            </motion.div>
+          </AnimatePresence>
+          
+          {/* Arrow Controls */}
+          {banners.length > 1 && (
+            <div className="absolute inset-0 z-20 pointer-events-none">
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length);
+                }}
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/30 backdrop-blur-md text-white shadow-lg border border-white/20 transition-all pointer-events-auto"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
+                }}
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/30 backdrop-blur-md text-white shadow-lg border border-white/20 transition-all pointer-events-auto"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+              
+              {/* Dots indicator */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto z-20">
                 {banners.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentBannerIndex(idx)}
                     className={cn(
-                      "w-2 h-2 rounded-full transition-all",
-                      idx === currentBannerIndex ? "bg-amber-primary w-6" : "bg-white/50"
+                      "w-2.5 h-2.5 rounded-full transition-all shadow-md",
+                      idx === currentBannerIndex ? "bg-amber-primary w-8" : "bg-white/60 hover:bg-white"
                     )}
                   />
                 ))}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+      )}
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center">
         {/* Realtor.com Search Options Bar */}
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-5 px-2">
           {tabs.map((tab) => {
