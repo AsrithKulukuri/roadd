@@ -85,10 +85,24 @@ async function uploadFile(file: File, bucket: string, folder: string): Promise<s
         console.warn("Compression failed, using original:", cErr);
       }
     }
-    const { data, error } = await supabase.storage.from(bucket).upload(path, fileToUpload);
-    if (!error && data?.path) {
-      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(data.path);
-      return pub.publicUrl;
+    const res = await fetch('/api/storage/upload-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filename: file.name,
+        contentType: file.type,
+        folder: bucket === 'projects' ? 'projects' : bucket === 'properties' ? 'properties' : 'brochures',
+        size: fileToUpload.size
+      })
+    });
+    const { uploadUrl, fileUrl } = await res.json();
+    if (uploadUrl) {
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: fileToUpload
+      });
+      if (uploadRes.ok) return fileUrl;
     }
   } catch {}
   return URL.createObjectURL(file);

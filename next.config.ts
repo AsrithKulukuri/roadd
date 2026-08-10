@@ -32,6 +32,12 @@ const nextConfig: NextConfig = {
         pathname: "/storage/v1/object/public/**",
       },
       {
+        // Amazon S3
+        protocol: "https",
+        hostname: "*.amazonaws.com",
+        pathname: "/**",
+      },
+      {
         // Google OAuth profile pictures
         protocol: "https",
         hostname: "lh3.googleusercontent.com",

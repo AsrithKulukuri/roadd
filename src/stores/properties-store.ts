@@ -94,12 +94,12 @@ export const usePropertiesStore = create<PropertiesState>()(
             // Delete associated storage files
             const bucket = 'properties';
             const pathsToDelete: string[] = [];
-            const extract = (url?: string) => {
-              if (!url || typeof url !== 'string') return;
-              const token = `/public/${bucket}/`;
-              const idx = url.indexOf(token);
+            const extract = (url?: string | null) => {
+              if (!url) return;
+              const s3Domain = '.amazonaws.com/';
+              const idx = url.indexOf(s3Domain);
               if (idx !== -1) {
-                pathsToDelete.push(decodeURIComponent(url.substring(idx + token.length)));
+                pathsToDelete.push(decodeURIComponent(url.substring(idx + s3Domain.length)));
               }
             };
 
@@ -112,8 +112,14 @@ export const usePropertiesStore = create<PropertiesState>()(
             property.galleryImages?.forEach(extract);
 
             if (pathsToDelete.length > 0) {
-              const { error: storageError } = await supabase.storage.from(bucket).remove(pathsToDelete);
-              if (storageError) console.warn('Supabase storage delete warning:', storageError);
+              const res = await fetch('/api/storage/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keys: pathsToDelete })
+              });
+              if (!res.ok) {
+                console.warn('S3 storage delete warning:', await res.text());
+              }
             }
           }
         } catch (error: any) {

@@ -148,16 +148,24 @@ export default function AddPropertyPage() {
             }
           }
 
-          // Upload to Supabase Storage
-          const { data, error } = await supabase.storage
-            .from('properties')
-            .upload(filePath, fileToUpload);
-
-          if (!error && data?.path) {
-            const { data: publicUrlData } = supabase.storage
-              .from('properties')
-              .getPublicUrl(data.path);
-            imgUrl = publicUrlData.publicUrl;
+          const res = await fetch('/api/storage/upload-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              filename: file.name,
+              contentType: file.type,
+              folder: 'properties',
+              size: fileToUpload.size
+            })
+          });
+          const { uploadUrl, fileUrl } = await res.json();
+          if (uploadUrl) {
+            const uploadRes = await fetch(uploadUrl, {
+              method: 'PUT',
+              headers: { 'Content-Type': file.type },
+              body: fileToUpload
+            });
+            if (uploadRes.ok) imgUrl = fileUrl;
           }
         } catch (storageErr) {
           console.warn("Storage upload warning, fallback to object URL:", storageErr);
