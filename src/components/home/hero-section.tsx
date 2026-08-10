@@ -456,22 +456,22 @@ export function HeroSection() {
             </div>
 
             {/* Carousel Nav Arrows - HIDDEN ON MOBILE UI */}
-            <div className="hidden md:flex items-center gap-1.5 shrink-0 pl-2 border-l border-white/10">
+            <div className="hidden md:flex items-center gap-1 shrink-0 pl-3 border-l border-white/10">
               <button
                 type="button"
                 onClick={scrollLeft}
                 aria-label="Previous Slide"
-                className="w-9 h-9 rounded-full bg-slate-800/80 hover:bg-[#F5A623] hover:text-slate-950 text-slate-300 border border-white/10 flex items-center justify-center transition-all cursor-pointer shadow-md active:scale-95"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all cursor-pointer active:scale-95"
               >
-                <ChevronLeft className="w-4.5 h-4.5" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
               <button
                 type="button"
                 onClick={scrollRight}
                 aria-label="Next Slide"
-                className="w-9 h-9 rounded-full bg-slate-800/80 hover:bg-[#F5A623] hover:text-slate-950 text-slate-300 border border-white/10 flex items-center justify-center transition-all cursor-pointer shadow-md active:scale-95"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all cursor-pointer active:scale-95"
               >
-                <ChevronRight className="w-4.5 h-4.5" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
