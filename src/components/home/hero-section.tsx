@@ -300,8 +300,6 @@ export function HeroSection() {
 
   return (
     <section className="relative w-full overflow-hidden text-slate-900 pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-20 min-h-[500px]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center mt-2">
-
       {/* Full-Width Dynamic Banners Block */}
       {banners.length > 0 && (
         <div className="relative z-10 w-full -mt-24 sm:-mt-28 md:-mt-32 mb-10 shadow-2xl h-[250px] sm:h-[300px] md:h-[380px] overflow-hidden">
