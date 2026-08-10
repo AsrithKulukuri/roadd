@@ -14,8 +14,8 @@ const QUESTIONS = [
     options: [
       { label: "Dream Home", value: "home", icon: Home },
       { label: "High ROI Investment", value: "investment", icon: TrendingUp },
-      { label: "Weekend Getaway", value: "weekend", icon: Trees },
-      { label: "Commercial Setup", value: "commercial", icon: Briefcase },
+      { label: "Organic Farming", value: "organic", icon: Trees },
+      { label: "Smart Investment Fields", value: "commercial", icon: Briefcase },
     ]
   },
   {
@@ -70,8 +70,8 @@ export function MatchmakerQuiz() {
       // 1. Goal matching
       if (finalAnswers.goal === "investment" && project.projectType === "venture") score += 20;
       if (finalAnswers.goal === "home" && (project.projectType === "apartment" || project.projectType === "villa")) score += 20;
-      if (finalAnswers.goal === "weekend" && project.projectType === "venture") score += 10;
-      
+      if (finalAnswers.goal === "organic" && project.projectType === "venture") score += 10;
+      if (finalAnswers.goal === "commercial") score += 10;
       // 2. Budget matching
       const [minB, maxB] = finalAnswers.budget.split("-").map(Number);
       const projMinPrice = Math.min(...project.configurations.map(c => c.priceMin));
