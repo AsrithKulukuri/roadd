@@ -155,16 +155,23 @@ export function Navbar() {
     return pathname.startsWith(path);
   };
 
+  const isTransparent = pathname === "/" && !isScrolled;
+
   return (
     <>
       {/* Realtor.com Style Clean Navbar */}
       <header
-        className="fixed top-0 left-0 right-0 z-[100] h-16 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 shadow-sm flex items-center"
+        className={cn(
+          "fixed top-0 left-0 right-0 z-[100] h-16 flex items-center transition-all duration-300",
+          isTransparent
+            ? "bg-transparent border-transparent"
+            : "bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 shadow-sm"
+        )}
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-6 w-full">
           <div className="flex items-center justify-between">
             {/* Left: Brand Logo */}
-            <Logo size="md" isDarkBg={false} />
+            <Logo size="md" isDarkBg={isTransparent} />
 
             {/* Center: Navigation Links for Desktop */}
             <nav className="hidden lg:flex items-center gap-1" role="navigation" aria-label="Main navigation">
@@ -176,7 +183,9 @@ export function Navbar() {
                       "relative px-4 py-2 text-sm font-bold rounded-xl transition-all duration-200 block",
                       isActive(link.href)
                         ? "text-amber-500 font-black"
-                        : "text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        : isTransparent
+                          ? "text-white hover:text-amber-400 hover:bg-white/10"
+                          : "text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                     )}
                   >
                     <span className="flex items-center gap-1">
@@ -219,7 +228,12 @@ export function Navbar() {
               {/* Saved Items Heart Button */}
               <Link
                 href="/dashboard/saved"
-                className="p-2 text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className={cn(
+                  "p-2 rounded-xl transition-colors",
+                  isTransparent
+                    ? "text-white hover:bg-white/10"
+                    : "text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                )}
                 aria-label="Saved properties"
               >
                 <Heart className="h-5 w-5 stroke-[2.5]" />
@@ -264,7 +278,12 @@ export function Navbar() {
               {/* Mobile Menu Toggle Hamburger */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                className={cn(
+                  "lg:hidden p-2 rounded-xl transition-colors cursor-pointer",
+                  isTransparent
+                    ? "text-white hover:bg-white/10"
+                    : "text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                )}
                 aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
