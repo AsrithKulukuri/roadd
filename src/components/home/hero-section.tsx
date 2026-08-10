@@ -299,17 +299,8 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative w-full overflow-hidden text-white pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-20 min-h-[500px]">
-      {/* Static Background */}
-      <div
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: 'url("https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=2400&q=95")',
-        }}
-      >
-        <div className="absolute inset-0 bg-black/35" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/40" />
-      </div>
+    <section className="relative w-full overflow-hidden text-slate-900 pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-20 min-h-[500px]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center mt-2">
 
       {/* Full-Width Dynamic Banners Block */}
       {banners.length > 0 && (
@@ -419,15 +410,15 @@ export function HeroSection() {
                 className={cn(
                   "relative py-1.5 text-base sm:text-lg font-extrabold transition-all cursor-pointer",
                   isActive
-                    ? "text-white"
-                    : "text-white/80 hover:text-white"
+                    ? "text-slate-900"
+                    : "text-slate-500 hover:text-slate-900"
                 )}
               >
                 {tab.label}
                 {isActive && (
                   <motion.div
                     layoutId="realtorTabLine"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-white rounded-full shadow-md"
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full shadow-md"
                     transition={{ type: "spring", stiffness: 350, damping: 30 }}
                   />
                 )}
@@ -439,7 +430,7 @@ export function HeroSection() {
         {/* Realtor.com Search Input Bar */}
         <form
           onSubmit={handleSearchSubmit}
-          className="relative w-full max-w-[760px] h-[64px] mx-auto flex items-center bg-white rounded-full px-3 shadow-2xl transition-all duration-300"
+          className="relative w-full max-w-[760px] h-[64px] mx-auto flex items-center bg-white border border-slate-200 rounded-full px-3 shadow-xl transition-all duration-300"
         >
           <Search className="w-5 h-5 text-slate-400 ml-3 mr-2 shrink-0 pointer-events-none" />
 
@@ -505,13 +496,13 @@ export function HeroSection() {
                 type="button"
                 onClick={() => setLocationTab("trending")}
                 className={cn(
-                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start shadow-sm border",
                   locationTab === "trending"
-                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
-                    : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
+                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] border-transparent text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
+                    : "bg-white border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900"
                 )}
               >
-                <Flame className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", locationTab === "trending" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
+                <Flame className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", locationTab === "trending" ? "text-[#16161A]" : "text-amber-500")} />
                 <span>Trending</span>
               </button>
 
@@ -519,13 +510,13 @@ export function HeroSection() {
                 type="button"
                 onClick={() => setLocationTab("vijayawada")}
                 className={cn(
-                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start shadow-sm border",
                   locationTab === "vijayawada"
-                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
-                    : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
+                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] border-transparent text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
+                    : "bg-white border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900"
                 )}
               >
-                <MapPin className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", locationTab === "vijayawada" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
+                <MapPin className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", locationTab === "vijayawada" ? "text-[#16161A]" : "text-amber-500")} />
                 <span>Vijayawada</span>
               </button>
 
@@ -533,44 +524,42 @@ export function HeroSection() {
                 type="button"
                 onClick={() => setLocationTab("guntur")}
                 className={cn(
-                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start",
+                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start shadow-sm border",
                   locationTab === "guntur"
-                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
-                    : "bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
+                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] border-transparent text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
+                    : "bg-white border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900"
                 )}
               >
-                <Building2 className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", locationTab === "guntur" ? "text-[#16161A]" : "text-[#F5A623]/70")} />
+                <Building2 className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", locationTab === "guntur" ? "text-[#16161A]" : "text-amber-500")} />
                 <span>Guntur</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => router.push(`/search?type=${activeTab}&location=Amaravati`)}
-                className="h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
+                className="h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start bg-white border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900 shadow-sm"
               >
-                <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F5A623]/70" />
+                <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
                 <span>Amaravati</span>
               </button>
-
-
             </div>
 
             {/* Carousel Nav Arrows - HIDDEN ON MOBILE UI */}
-            <div className="hidden md:flex items-center ml-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-md p-1 shadow-xl">
+            <div className="hidden md:flex items-center ml-2 bg-white border border-slate-200 rounded-full p-1 shadow-sm">
               <button
                 type="button"
                 onClick={scrollLeft}
                 aria-label="Previous Slide"
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-slate-950 hover:bg-[#F5A623] transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 <ChevronLeft className="w-4.5 h-4.5" />
               </button>
-              <div className="w-[1px] h-4 bg-white/20 mx-1"></div>
+              <div className="w-[1px] h-4 bg-slate-200 mx-1"></div>
               <button
                 type="button"
                 onClick={scrollRight}
                 aria-label="Next Slide"
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-slate-950 hover:bg-[#F5A623] transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 <ChevronRight className="w-4.5 h-4.5" />
               </button>
@@ -595,24 +584,24 @@ export function HeroSection() {
               <div
                 key={spot.name}
                 onClick={() => router.push(`/search?type=${activeTab}&location=${encodeURIComponent(spot.name)}`)}
-                className="w-[230px] sm:w-[275px] shrink-0 snap-start h-[72px] sm:h-[80px] rounded-[16px] sm:rounded-[20px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-3 sm:p-4 flex items-center justify-between gap-2.5 sm:gap-3 cursor-pointer transition-all duration-250 hover:-translate-y-[2px] hover:border-[#F5A623]/60 hover:bg-[rgba(255,255,255,0.06)] hover:shadow-lg group"
+                className="w-[230px] sm:w-[275px] shrink-0 snap-start h-[72px] sm:h-[80px] rounded-[16px] sm:rounded-[20px] border border-slate-200 bg-white p-3 sm:p-4 flex items-center justify-between gap-2.5 sm:gap-3 cursor-pointer transition-all duration-250 hover:-translate-y-[2px] hover:border-amber-400 hover:shadow-md group shadow-sm"
               >
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[rgba(20,22,30,0.85)] border border-[rgba(255,255,255,0.08)] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform group-hover:border-[#F5A623]/40">
-                  <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F5A623]" />
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform group-hover:bg-amber-50 group-hover:border-amber-200">
+                  <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
                 </div>
                 <div className="flex-1 min-w-0 text-left">
-                  <div className="text-[14px] sm:text-[16px] font-bold text-white leading-tight truncate group-hover:text-[#FFC661] transition-colors">
+                  <div className="text-[14px] sm:text-[16px] font-bold text-slate-900 leading-tight truncate group-hover:text-amber-600 transition-colors">
                     {spot.name}
                   </div>
-                  <div className="text-[11px] sm:text-[13px] font-medium text-white/60 leading-tight truncate mt-0.5">
+                  <div className="text-[11px] sm:text-[13px] font-medium text-slate-500 leading-tight truncate mt-0.5">
                     {spot.tag}
                   </div>
-                  <div className="text-[10px] sm:text-[12px] font-semibold text-[#F5A623] leading-tight truncate mt-0.5">
+                  <div className="text-[10px] sm:text-[12px] font-semibold text-amber-600 leading-tight truncate mt-0.5">
                     {spot.count || "45+ Homes"}
                   </div>
                 </div>
                 {spot.badge && (
-                  <div className="h-[20px] sm:h-[22px] px-2.5 py-[2px] rounded-full bg-black text-[#F5A623] border border-black text-[10px] sm:text-[11px] font-black flex items-center justify-center shrink-0 whitespace-nowrap shadow-md">
+                  <div className="h-[20px] sm:h-[22px] px-2.5 py-[2px] rounded-full bg-slate-900 text-amber-400 border border-slate-800 text-[10px] sm:text-[11px] font-black flex items-center justify-center shrink-0 whitespace-nowrap shadow-sm">
                     {spot.badge}
                   </div>
                 )}
@@ -624,33 +613,28 @@ export function HeroSection() {
         {/* ── Premium Budget Slider ── */}
         <div className="w-full max-w-[760px] mx-auto mt-3 sm:mt-4">
           <div
-            className="relative rounded-2xl overflow-hidden border border-white/10 shadow-xl"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)",
-              backdropFilter: "blur(18px)",
-              WebkitBackdropFilter: "blur(18px)",
-            }}
+            className="relative rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-md"
           >
             {/* Top accent line */}
-            <div className="absolute inset-x-0 top-0 h-[2px] rounded-t-2xl bg-gradient-to-r from-amber-500/0 via-amber-400/70 to-amber-500/0" />
+            <div className="absolute inset-x-0 top-0 h-[3px] rounded-t-2xl bg-gradient-to-r from-amber-500/0 via-amber-400 to-amber-500/0" />
 
-            <div className="px-3 py-2 sm:px-4 sm:py-2.5">
+            <div className="px-3 py-2 sm:px-4 sm:py-3">
               {/* Header row */}
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1.5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
                   {/* Coin icon */}
-                  <div className="w-5 h-5 rounded-full bg-amber-500/15 border border-amber-400/25 flex items-center justify-center shrink-0">
-                    <span className="text-amber-400 font-black text-[10px] leading-none">₹</span>
+                  <div className="w-6 h-6 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                    <span className="text-amber-500 font-black text-[11px] leading-none">₹</span>
                   </div>
                   <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/70 leading-none">Budget</p>
-                    <p className="text-[10px] font-semibold text-white/90 leading-none mt-0.5">Filter by price</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 leading-none">Budget</p>
+                    <p className="text-[11px] font-semibold text-slate-900 leading-none mt-1">Filter by price</p>
                   </div>
                 </div>
 
                 {/* Price display pill */}
-                <div className="flex items-center gap-1.5 bg-black border border-amber-400/30 rounded-lg px-2 py-1">
-                  <span className="text-xs sm:text-sm font-black text-amber-400 tracking-tight">
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+                  <span className="text-xs sm:text-sm font-black text-slate-700 tracking-tight">
                     {heroBudget[0] === 0 && heroBudget[1] === 100000000
                       ? "Any Price"
                       : `${formatINRWords(heroBudget[0])} – ${formatINRWords(heroBudget[1], true)}`}
@@ -659,7 +643,7 @@ export function HeroSection() {
               </div>
 
               {/* Slider */}
-              <div className="px-1">
+              <div className="px-1 mt-1">
                 <Slider
                   min={0}
                   max={100000000}
@@ -671,13 +655,13 @@ export function HeroSection() {
               </div>
 
               {/* Footer: tick labels + Apply button */}
-              <div className="flex items-center justify-between mt-1.5">
-                <div className="flex items-center gap-2 text-[9px] font-bold text-white/70">
-                  <button type="button" onClick={() => setHeroBudget([0, 100000000])} className="hover:text-white transition-colors">₹0</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 3000000])} className="hover:text-white transition-colors">₹30L</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 10000000])} className="hover:text-white transition-colors">₹1Cr</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 50000000])} className="hover:text-white transition-colors">₹5Cr</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 100000000])} className="hover:text-white transition-colors">₹10Cr+</button>
+              <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                  <button type="button" onClick={() => setHeroBudget([0, 100000000])} className="hover:text-slate-900 transition-colors">₹0</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 3000000])} className="hover:text-slate-900 transition-colors">₹30L</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 10000000])} className="hover:text-slate-900 transition-colors">₹1Cr</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 50000000])} className="hover:text-slate-900 transition-colors">₹5Cr</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 100000000])} className="hover:text-slate-900 transition-colors">₹10Cr+</button>
                 </div>
 
                 <button
@@ -699,7 +683,7 @@ export function HeroSection() {
           {/* Header row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                 Browse homes
               </h2>
               {/* Budget-active pill */}
