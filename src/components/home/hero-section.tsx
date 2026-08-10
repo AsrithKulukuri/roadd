@@ -313,7 +313,7 @@ export function HeroSection() {
 
       {/* Full-Width Dynamic Banners Block */}
       {banners.length > 0 && (
-        <div className="relative z-10 w-full mb-10 shadow-2xl h-[250px] sm:h-[300px] md:h-[380px] overflow-hidden">
+        <div className="relative z-10 w-full -mt-24 sm:-mt-28 md:-mt-32 mb-10 shadow-2xl h-[350px] sm:h-[450px] md:h-[550px] overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentBanner?.id || 'banner-fallback'}
@@ -335,7 +335,7 @@ export function HeroSection() {
               <div className="absolute inset-0 bg-black/30 bg-gradient-to-r from-black/60 to-transparent" />
               
               {/* Banner Content (Centered in the max-w-7xl area so it aligns with content) */}
-              <div className="absolute inset-0 flex flex-col justify-center items-start text-left">
+              <div className="absolute inset-0 flex flex-col justify-center items-start text-left pt-24 sm:pt-28 md:pt-32">
                 <div className="w-full max-w-7xl mx-auto px-10 sm:px-14">
                   {currentBanner?.title && (
                     <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 sm:mb-6 drop-shadow-md max-w-[70%] leading-tight">
