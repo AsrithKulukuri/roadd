@@ -367,10 +367,14 @@ export function HeroSection() {
         )}
       </div>
 
-      {/* Content Container (Pulled up to overlap the banner) */}
-      <div className="relative z-30 w-full pt-[380px] md:pt-[460px] max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-center">
-        {/* Realtor.com Search Options Bar */}
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-5 px-2">
+      {/* Content Container (Pulled up to overlap the banner cleanly) */}
+      <div className="relative z-30 w-full pt-[360px] md:pt-[420px] max-w-6xl mx-auto px-4 sm:px-6 flex flex-col items-center">
+        
+        {/* 99acres Style Unified Search Card */}
+        <div className="w-full bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 md:p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] flex flex-col items-center">
+          
+          {/* Search Tabs */}
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-6 px-2">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -665,6 +669,9 @@ export function HeroSection() {
               </div>
             </div>
           </div>
+        </div>
+        
+        {/* Close 99acres Style Unified Search Card */}
         </div>
 
         <div className="w-full mt-12 text-left space-y-4">
