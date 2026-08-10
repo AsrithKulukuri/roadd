@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { useContentStore } from "@/stores/content-store";
+import { useBannersStore } from "@/stores/banners-store";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
@@ -100,6 +101,24 @@ export function HeroSection() {
     }, 3200);
     return () => clearInterval(interval);
   }, []);
+
+  // Dynamic Background Banners
+  const { banners, fetchBanners } = useBannersStore();
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+
+  useEffect(() => {
+    fetchBanners();
+  }, [fetchBanners]);
+
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
+    }, 6000); // Rotate every 6 seconds
+    return () => clearInterval(interval);
+  }, [banners.length]);
+
+  const currentBanner = banners[currentBannerIndex];
 
   const properties = usePropertiesStore((state) => state.properties);
   const projects = useProjectsStore((state) => state.projects);
@@ -280,22 +299,47 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative w-full overflow-hidden text-white pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-20">
+    <section className="relative w-full overflow-hidden text-white pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-20 min-h-[500px]">
       {/* Crystal Clear High-Definition Background Image with Subtle Scrim Overlay */}
-      <div
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage:
-            'url("https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=2400&q=95")',
-        }}
-      >
-        {/* Subtle Scrim Gradient Overlay for Maximum Background Clarity */}
-        <div className="absolute inset-0 bg-black/35" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/40" />
-      </div>
+      <AnimatePresence mode="popLayout">
+        <motion.div
+          key={currentBanner?.id || 'default-bg'}
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 1.2, ease: "easeInOut" }}
+          className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url("${currentBanner?.image_url || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=2400&q=95'}")`,
+          }}
+        >
+          {/* Subtle Scrim Gradient Overlay for Maximum Background Clarity */}
+          <div className="absolute inset-0 bg-black/35" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/40" />
+        </motion.div>
+      </AnimatePresence>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center">
-        {/* Headline removed by user request */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center mt-2">
+        {/* Explore Button for Current Banner */}
+        <AnimatePresence mode="wait">
+          {currentBanner?.link_url && (
+            <motion.div
+              key={`btn-${currentBanner.id}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.5 }}
+              className="mb-8"
+            >
+              <Link
+                href={currentBanner.link_url}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-primary/90 hover:bg-amber-secondary text-white font-bold rounded-full backdrop-blur-sm shadow-lg shadow-black/20 transition-all hover:scale-105"
+              >
+                Explore Now <ChevronRight className="w-4 h-4" />
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Realtor.com Search Options Bar */}
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-5 px-2">
