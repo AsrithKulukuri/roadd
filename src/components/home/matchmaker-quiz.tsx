@@ -28,15 +28,6 @@ const QUESTIONS = [
       { label: "₹1 Cr - ₹3 Crores", value: "10000000-30000000" },
       { label: "Above ₹3 Crores", value: "30000000-999999999" },
     ]
-  },
-  {
-    id: "vibe",
-    title: "What's your preferred vibe?",
-    subtitle: "Location & lifestyle matter.",
-    options: [
-      { label: "Heart of the City", value: "city", icon: Building2 },
-      { label: "Quiet Suburbs", value: "suburbs", icon: Home },
-      { label: "Nature & Greenery", value: "nature", icon: Trees },
     ]
   }
 ];
@@ -80,12 +71,6 @@ export function MatchmakerQuiz() {
       } else if (projMinPrice < minB) {
         score += 10; // Under budget is okay, but maybe not premium enough
       }
-
-      // 3. Vibe matching (heuristic based on location)
-      const locStr = (project.location.address + project.location.locality).toLowerCase();
-      if (finalAnswers.vibe === "city" && (locStr.includes("center") || locStr.includes("circle") || project.projectType === "apartment")) score += 15;
-      if (finalAnswers.vibe === "suburbs" && project.projectType === "villa") score += 15;
-      if (finalAnswers.vibe === "nature" && project.projectType === "venture") score += 15;
 
       return { project, matchScore: Math.min(score, 99) };
     });
