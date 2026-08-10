@@ -366,20 +366,6 @@ export function HeroSection() {
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
-              
-              {/* Dots indicator */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 pointer-events-auto z-20">
-                {banners.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentBannerIndex(idx)}
-                    className={cn(
-                      "h-2 rounded-full transition-all shadow-md",
-                      idx === currentBannerIndex ? "bg-amber-primary w-6" : "bg-white/50 hover:bg-white w-2"
-                    )}
-                  />
-                ))}
-              </div>
             </div>
           )}
         </div>
