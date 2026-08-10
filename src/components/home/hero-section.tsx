@@ -443,6 +443,15 @@ export function HeroSection() {
                 <span>Guntur</span>
               </button>
 
+              <button
+                type="button"
+                onClick={() => router.push(`/search?type=${activeTab}&location=Amaravati`)}
+                className="h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-200 cursor-pointer snap-start bg-transparent border border-[rgba(255,255,255,0.08)] text-[#D6D8DE] font-semibold hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.2)] hover:text-white"
+              >
+                <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F5A623]/70" />
+                <span>Amaravati</span>
+              </button>
+
 
             </div>
 
