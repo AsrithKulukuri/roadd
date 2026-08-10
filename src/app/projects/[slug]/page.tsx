@@ -303,13 +303,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <BackButton />
-            <div className="flex items-center gap-2 text-sm text-text-secondary">
-              <Link href="/" className="hover:text-amber-primary transition-colors">Home</Link>
-              <span>/</span>
-              <Link href="/projects" className="hover:text-amber-primary transition-colors">Projects</Link>
-              <span>/</span>
-              <span className="text-text-primary font-medium">{project.name}</span>
-            </div>
           </div>
         </div>
 
