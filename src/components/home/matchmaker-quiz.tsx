@@ -86,26 +86,13 @@ export function MatchmakerQuiz() {
   };
 
   return (
-    <section className="py-16 relative overflow-hidden">
+    <section className="py-8 sm:py-10 relative overflow-hidden">
       {/* Background Decor */}
       <div className="absolute inset-0 bg-amber-50/50 dark:bg-amber-950/10 z-0"></div>
       <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[40rem] h-[40rem] bg-amber-200/30 dark:bg-amber-900/10 rounded-full blur-3xl opacity-50 z-0"></div>
 
-      <div className="max-w-4xl mx-auto px-4 relative z-10">
-        
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-sm font-black mb-4 shadow-lg shadow-amber-500/30">
-            <Sparkles className="w-4 h-4 text-slate-950" /> AI Property Matchmaker
-          </div>
-          <h2 className="text-3xl md:text-4xl font-black text-text-primary mb-3">
-            Find Your Perfect Match in 60 Seconds
-          </h2>
-          <p className="text-text-secondary max-w-xl mx-auto">
-            Take our quick quiz. We'll analyze your lifestyle, budget, and goals to find the properties that fit you best.
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-bg-card rounded-3xl p-6 sm:p-10 shadow-xl border border-amber-primary/20 relative overflow-hidden min-h-[400px] flex flex-col justify-center">
+      <div className="max-w-3xl mx-auto px-4 relative z-10">
+        <div className="bg-white dark:bg-bg-card rounded-3xl p-6 sm:p-8 shadow-xl border border-amber-primary/20 relative overflow-hidden flex flex-col justify-center">
           
           {isAnalyzing ? (
             <div className="text-center space-y-6">
