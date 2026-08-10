@@ -40,7 +40,7 @@ const initialCategories: HomeCategory[] = [
     id: "new-listings",
     name: "New Listings",
     subtitle: "Freshly added properties",
-    badge: "New",
+    badge: "Last 30 days",
     badgeClass: "bg-amber-500 text-white font-extrabold",
     href: "/search?type=buy&saleType=new",
     type: "apartment",

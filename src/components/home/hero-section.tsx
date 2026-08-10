@@ -189,26 +189,41 @@ export function HeroSection() {
 
   /** Map each category id → which PropertyType values it covers */
   const CATEGORY_TYPE_MAP: Record<string, string[]> = {
-    "new-listings": [], // all types — special case
-    "apartments": ["apartment"],
-    "villas": ["villa"],
-    "individual-houses": ["independent-house"],
-    "open-lands": ["residential-land"],
-    "agricultural": ["farmhouse", "residential-land"],
-    "commercial": ["shops", "buildings", "commercial-spaces", "commercial-lands", "industrial-lands"],
-    "gated-communities": ["apartment", "villa", "independent-house"],
+    "new-listings": [], // all types — special case for 30 days
+    "new-apartments": ["apartment"],
+    "new-villas": ["villa"],
+    "individual": ["independent-house"],
+    "build-floors": ["builder-floor"],
+    "resale": [], // all types with saleType === "resale"
+    "plots": ["residential-plot", "residential-land"],
+    "farm-lands": ["agricultural-land", "farmhouse"],
   };
 
   /** Live count of matching properties per category given current budget */
   const categoryBudgetCounts = useMemo(() => {
     const counts: Record<string, number> = {};
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
     for (const cat of homeCategories) {
       const types = CATEGORY_TYPE_MAP[cat.id];
       let propCount = activeTab === "projects" ? 0 : properties.filter((p) => {
         if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
         const inBudget = p.price >= heroBudget[0] && p.price <= heroBudget[1];
         if (!inBudget) return false;
-        // "new-listings" shows all types
+        
+        if (cat.id === "new-listings") {
+          // Only show properties created in the last 30 days
+          const createdDate = new Date(p.createdAt);
+          return createdDate >= thirtyDaysAgo;
+        }
+
+        if (cat.id === "resale") {
+           // Resale filter
+           if (p.saleType !== "resale") return false;
+           return true; // since it covers all types
+        }
+
         if (!types || types.length === 0) return true;
         return types.includes(p.propertyType as string);
       }).length;
@@ -222,6 +237,15 @@ export function HeroSection() {
           return pMin <= heroBudget[1] && pMax >= heroBudget[0];
         });
         if (!hasBudgetOverlap) return false;
+
+        if (cat.id === "new-listings") {
+          const createdDate = new Date(p.createdAt);
+          return createdDate >= thirtyDaysAgo;
+        }
+
+        if (cat.id === "resale") {
+           return false; // Projects usually don't have resale
+        }
 
         if (!types || types.length === 0) return true;
         if (p.projectType === "apartment" && types.includes("apartment")) return true;
