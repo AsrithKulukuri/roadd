@@ -139,6 +139,20 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
   const project = projects.find((p) => p.slug === slug && p.isPublished);
 
+  // Gallery images including all
+  const galleryAll = project?.images || [];
+  
+  const [currentHeroIdx, setCurrentHeroIdx] = useState(0);
+
+  // Auto-slide hero image
+  useEffect(() => {
+    if (!galleryAll || galleryAll.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentHeroIdx((prev) => (prev + 1) % galleryAll.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [galleryAll.length]);
+
   useEffect(() => {
     if (!project) return;
     const observer = new IntersectionObserver(
@@ -175,20 +189,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
   const TypeIcon = TYPE_ICONS[project.projectType];
   const priceRange = getPriceRange(project.configurations);
-
-  // Gallery images including all
-  const galleryAll = project.images || [];
-  
-  const [currentHeroIdx, setCurrentHeroIdx] = useState(0);
-
-  // Auto-slide hero image
-  useEffect(() => {
-    if (!galleryAll || galleryAll.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentHeroIdx((prev) => (prev + 1) % galleryAll.length);
-    }, 3500);
-    return () => clearInterval(interval);
-  }, [galleryAll.length]);
 
   const heroImage  = galleryAll[currentHeroIdx]?.url ?? project.coverImage ?? galleryAll[0]?.url;
   
