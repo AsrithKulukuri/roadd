@@ -313,7 +313,7 @@ export function HeroSection() {
 
       {/* Full-Width Dynamic Banners Block */}
       {banners.length > 0 && (
-        <div className="relative z-10 w-full -mt-24 sm:-mt-28 md:-mt-32 mb-10 shadow-2xl h-[350px] sm:h-[450px] md:h-[550px] overflow-hidden">
+        <div className="relative z-10 w-full -mt-24 sm:-mt-28 md:-mt-32 mb-10 shadow-2xl h-[250px] sm:h-[300px] md:h-[380px] overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentBanner?.id || 'banner-fallback'}
