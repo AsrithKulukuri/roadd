@@ -299,74 +299,76 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative w-full overflow-hidden text-white flex flex-col justify-end pt-32 pb-8 min-h-[450px] md:min-h-[550px]">
-      {/* Dynamic Background Carousel */}
-      <AnimatePresence mode="popLayout">
-        <motion.div
-          key={currentBanner?.id || 'default-bg'}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8, ease: "easeInOut" }}
-          className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url("${currentBanner?.image_url || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=2400&q=95'}")`,
-          }}
-        >
-          {/* Subtle Scrim Gradient Overlay for Text Readability */}
-          <div className="absolute inset-0 bg-black/20" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-          
-          {/* Make the entire banner clickable if it has a link */}
-          {currentBanner?.link_url && (
-            <Link href={currentBanner.link_url} className="absolute inset-0 z-10">
-              <span className="sr-only">Explore {currentBanner.title}</span>
-            </Link>
-          )}
-        </motion.div>
-      </AnimatePresence>
+    <section className="relative w-full min-h-screen pb-16">
+      {/* 99acres Style Fixed-Height Banner Container */}
+      <div className="absolute top-0 left-0 right-0 h-[450px] md:h-[550px] z-0 overflow-hidden">
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key={currentBanner?.id || 'default-bg'}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url("${currentBanner?.image_url || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=2400&q=95'}")`,
+            }}
+          >
+            {/* Scrim Overlay */}
+            <div className="absolute inset-0 bg-black/10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-transparent to-black/40" />
+            
+            {/* Clickable Area */}
+            {currentBanner?.link_url && (
+              <Link href={currentBanner.link_url} className="absolute inset-0 z-10">
+                <span className="sr-only">Explore {currentBanner.title}</span>
+              </Link>
+            )}
+          </motion.div>
+        </AnimatePresence>
 
-      {/* Carousel Controls (Left/Right Extreme Edges) */}
-      {banners.length > 1 && (
-        <div className="absolute inset-0 z-20 pointer-events-none">
-          <button 
-            onClick={(e) => {
-              e.preventDefault();
-              setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length);
-            }}
-            className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 text-black shadow-lg transition-all pointer-events-auto z-20"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          
-          <button 
-            onClick={(e) => {
-              e.preventDefault();
-              setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
-            }}
-            className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 text-black shadow-lg transition-all pointer-events-auto z-20"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-          
-          {/* Dots Indicator at the bottom of the banner area */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto z-20">
-            {banners.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentBannerIndex(idx)}
-                className={cn(
-                  "w-2.5 h-2.5 rounded-full transition-all shadow-sm",
-                  idx === currentBannerIndex ? "bg-white w-8" : "bg-white/50 hover:bg-white/80"
-                )}
-              />
-            ))}
+        {/* Carousel Controls (Vertically centered within the banner) */}
+        {banners.length > 1 && (
+          <div className="absolute inset-0 z-20 pointer-events-none">
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length);
+              }}
+              className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 text-black shadow-lg transition-all pointer-events-auto"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
+              }}
+              className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 text-black shadow-lg transition-all pointer-events-auto"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+            
+            {/* Dots Indicator */}
+            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto">
+              {banners.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentBannerIndex(idx)}
+                  className={cn(
+                    "w-2.5 h-2.5 rounded-full transition-all shadow-sm",
+                    idx === currentBannerIndex ? "bg-white w-8" : "bg-white/50 hover:bg-white/80"
+                  )}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Search Bar Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-30 w-full flex flex-col items-center mt-auto">
+      {/* Content Container (Pulled up to overlap the banner) */}
+      <div className="relative z-30 w-full pt-[380px] md:pt-[460px] max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-center">
         {/* Realtor.com Search Options Bar */}
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-5 px-2">
           {tabs.map((tab) => {
