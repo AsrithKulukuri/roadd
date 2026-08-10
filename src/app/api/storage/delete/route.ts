@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
-import { s3Client, BUCKET_NAME } from "@/lib/aws/s3";
+import { getClient, getBucketName } from "@/lib/aws/s3";
 
 export async function POST(request: Request) {
   try {
@@ -12,14 +12,14 @@ export async function POST(request: Request) {
     }
 
     const command = new DeleteObjectsCommand({
-      Bucket: BUCKET_NAME,
+      Bucket: getBucketName(),
       Delete: {
         Objects: keys.map((key: string) => ({ Key: key })),
         Quiet: false,
       },
     });
 
-    const response = await s3Client.send(command);
+    const response = await getClient().send(command);
 
     return NextResponse.json({ 
       success: true, 
