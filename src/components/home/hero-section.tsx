@@ -363,9 +363,9 @@ export function HeroSection() {
                   e.preventDefault();
                   setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length);
                 }}
-                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/30 backdrop-blur-md text-white shadow-lg border border-white/20 transition-all pointer-events-auto"
+                className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/30 backdrop-blur-md text-white shadow-lg border border-white/20 transition-all pointer-events-auto"
               >
-                <ChevronLeft className="w-6 h-6" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
               
               <button 
@@ -373,20 +373,20 @@ export function HeroSection() {
                   e.preventDefault();
                   setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
                 }}
-                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/30 backdrop-blur-md text-white shadow-lg border border-white/20 transition-all pointer-events-auto"
+                className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/30 backdrop-blur-md text-white shadow-lg border border-white/20 transition-all pointer-events-auto"
               >
-                <ChevronRight className="w-6 h-6" />
+                <ChevronRight className="w-5 h-5" />
               </button>
               
               {/* Dots indicator */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto z-20">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 pointer-events-auto z-20">
                 {banners.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentBannerIndex(idx)}
                     className={cn(
-                      "w-2.5 h-2.5 rounded-full transition-all shadow-md",
-                      idx === currentBannerIndex ? "bg-amber-primary w-8" : "bg-white/60 hover:bg-white"
+                      "h-2 rounded-full transition-all shadow-md",
+                      idx === currentBannerIndex ? "bg-amber-primary w-6" : "bg-white/50 hover:bg-white w-2"
                     )}
                   />
                 ))}
