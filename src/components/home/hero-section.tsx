@@ -299,82 +299,81 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative w-full min-h-screen pb-16">
-      {/* 99acres Style Fixed-Height Banner Container */}
-      <div className="absolute top-0 left-0 right-0 h-[450px] md:h-[550px] z-0 overflow-hidden">
-        <AnimatePresence mode="popLayout">
-          <motion.div
-            key={currentBanner?.id || 'default-bg'}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: `url("${currentBanner?.image_url || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=2400&q=95'}")`,
-            }}
-          >
-            {/* Scrim Overlay */}
-            <div className="absolute inset-0 bg-black/10" />
-            <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-transparent to-black/40" />
-            
-            {/* Clickable Area */}
-            {currentBanner?.link_url && (
-              <Link href={currentBanner.link_url} className="absolute inset-0 z-10">
-                <span className="sr-only">Explore {currentBanner.title}</span>
-              </Link>
-            )}
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Carousel Controls (Vertically centered within the banner) */}
-        {banners.length > 1 && (
-          <div className="absolute inset-0 z-20 pointer-events-none">
-            <button 
-              onClick={(e) => {
-                e.preventDefault();
-                setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length);
-              }}
-              className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 text-black shadow-lg transition-all pointer-events-auto"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            
-            <button 
-              onClick={(e) => {
-                e.preventDefault();
-                setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
-              }}
-              className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 text-black shadow-lg transition-all pointer-events-auto"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-            
-            {/* Dots Indicator */}
-            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto">
-              {banners.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentBannerIndex(idx)}
-                  className={cn(
-                    "w-2.5 h-2.5 rounded-full transition-all shadow-sm",
-                    idx === currentBannerIndex ? "bg-white w-8" : "bg-white/50 hover:bg-white/80"
-                  )}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+    <section className="relative w-full overflow-hidden text-white pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-20 min-h-[500px]">
+      {/* Static Background */}
+      <div
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'url("https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=2400&q=95")',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/35" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/40" />
       </div>
 
-      {/* Content Container (Pulled up to overlap the banner cleanly) */}
-      <div className="relative z-30 w-full pt-[360px] md:pt-[420px] max-w-6xl mx-auto px-4 sm:px-6 flex flex-col items-center">
-        
-        {/* 99acres Style Unified Search Card */}
-        <div className="w-full bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 md:p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] flex flex-col items-center">
-          
-          {/* Search Tabs */}
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-6 px-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center mt-2">
+        {/* Dynamic Banners Block */}
+        {banners.length > 0 && (
+          <div className="w-full max-w-4xl mx-auto mb-8 relative rounded-2xl overflow-hidden shadow-2xl h-[180px] sm:h-[220px] md:h-[280px]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentBanner?.id || 'banner-fallback'}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                transition={{ duration: 0.5 }}
+                className="absolute inset-0"
+              >
+                {currentBanner?.image_url && (
+                  <Image 
+                    src={currentBanner.image_url} 
+                    alt={currentBanner.title || 'Banner'}
+                    fill
+                    className="object-cover"
+                  />
+                )}
+                {/* Overlay for readability */}
+                <div className="absolute inset-0 bg-black/30 bg-gradient-to-r from-black/60 to-transparent" />
+                
+                {/* Banner Content */}
+                <div className="absolute inset-0 flex flex-col justify-center items-start p-6 sm:p-10 text-left">
+                  {currentBanner?.title && (
+                    <h2 className="text-xl sm:text-3xl font-bold text-white mb-4 drop-shadow-md max-w-[70%]">
+                      {currentBanner.title}
+                    </h2>
+                  )}
+                  {currentBanner?.link_url && (
+                    <Link
+                      href={currentBanner.link_url}
+                      className="inline-flex items-center gap-2 px-5 py-2 bg-amber-primary hover:bg-amber-secondary text-white font-semibold rounded-lg transition-all"
+                    >
+                      Explore Now <ChevronRight className="w-4 h-4" />
+                    </Link>
+                  )}
+                </div>
+              </motion.div>
+            </AnimatePresence>
+            
+            {/* Dots indicator */}
+            {banners.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                {banners.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentBannerIndex(idx)}
+                    className={cn(
+                      "w-2 h-2 rounded-full transition-all",
+                      idx === currentBannerIndex ? "bg-amber-primary w-6" : "bg-white/50"
+                    )}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Realtor.com Search Options Bar */}
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-5 px-2">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -669,9 +668,6 @@ export function HeroSection() {
               </div>
             </div>
           </div>
-        </div>
-        
-        {/* Close 99acres Style Unified Search Card */}
         </div>
 
         <div className="w-full mt-12 text-left space-y-4">
