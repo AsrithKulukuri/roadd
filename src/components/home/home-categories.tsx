@@ -41,87 +41,84 @@ export function HomeCategories() {
   return (
     <section className="py-8">
       <div className="container-road">
-        {/* Modern Tabs UI */}
-        <div className="flex flex-col items-center mb-6">
-          <h2 className="text-3xl font-heading font-bold text-text-primary mb-6">
-            Explore Categories
+        {/* Compact Title and Tabs */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+          <h2 className="text-xl sm:text-2xl font-heading font-bold text-text-primary">
+            Explore Properties
           </h2>
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 p-1.5 bg-bg-card border border-border-default rounded-2xl shadow-sm">
+          <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 p-1 bg-bg-card border border-border-default rounded-xl shadow-sm">
             <button
               onClick={() => setActiveTab("recommended")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === "recommended"
-                  ? "bg-amber-primary text-bg-primary shadow-md"
+                  ? "bg-amber-primary text-bg-primary shadow-sm"
                   : "text-text-secondary hover:text-text-primary hover:bg-bg-primary"
               }`}
             >
-              <ThumbsUp className="w-4 h-4" />
+              <ThumbsUp className="w-3.5 h-3.5" />
               Recommended
             </button>
             <button
               onClick={() => setActiveTab("featured")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === "featured"
-                  ? "bg-amber-primary text-bg-primary shadow-md"
+                  ? "bg-amber-primary text-bg-primary shadow-sm"
                   : "text-text-secondary hover:text-text-primary hover:bg-bg-primary"
               }`}
             >
-              <Star className="w-4 h-4" />
+              <Star className="w-3.5 h-3.5" />
               Featured
             </button>
             <button
               onClick={() => setActiveTab("budget_friendly")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === "budget_friendly"
-                  ? "bg-amber-primary text-bg-primary shadow-md"
+                  ? "bg-amber-primary text-bg-primary shadow-sm"
                   : "text-text-secondary hover:text-text-primary hover:bg-bg-primary"
               }`}
             >
-              <IndianRupee className="w-4 h-4" />
+              <IndianRupee className="w-3.5 h-3.5" />
               Budget Friendly
             </button>
           </div>
         </div>
 
         {/* Dynamic Content Area */}
-        <div className="mt-4">
+        <div className="mt-2">
           {activeTab === "recommended" && recommended.length > 0 && (
             <PropertyCarouselRow
               title="Recommended Properties"
-              subtitle="Handpicked premium listings closest to your location."
-              icon={ThumbsUp}
               properties={recommended}
+              hideHeader={true}
               autoSlide={false}
             />
           )}
           {activeTab === "recommended" && recommended.length === 0 && (
-            <div className="py-20 text-center text-text-tertiary">No recommended properties found.</div>
+            <div className="py-12 text-center text-text-tertiary text-sm">No recommended properties found.</div>
           )}
 
           {activeTab === "featured" && featured.length > 0 && (
             <PropertyCarouselRow
               title="Featured Properties"
-              subtitle="Explore our curated selection of premium properties."
-              icon={Star}
               properties={featured}
+              hideHeader={true}
               autoSlide={true}
             />
           )}
           {activeTab === "featured" && featured.length === 0 && (
-            <div className="py-20 text-center text-text-tertiary">No featured properties found.</div>
+            <div className="py-12 text-center text-text-tertiary text-sm">No featured properties found.</div>
           )}
 
           {activeTab === "budget_friendly" && budgetFriendly.length > 0 && (
             <PropertyCarouselRow
               title="Budget Friendly Properties"
-              subtitle="Affordable options without compromising on quality."
-              icon={IndianRupee}
               properties={budgetFriendly}
+              hideHeader={true}
               autoSlide={false}
             />
           )}
           {activeTab === "budget_friendly" && budgetFriendly.length === 0 && (
-            <div className="py-20 text-center text-text-tertiary">No budget friendly properties found.</div>
+            <div className="py-12 text-center text-text-tertiary text-sm">No budget friendly properties found.</div>
           )}
         </div>
       </div>

@@ -13,6 +13,7 @@ interface PropertyCarouselRowProps {
   icon?: any;
   properties: Property[];
   autoSlide?: boolean;
+  hideHeader?: boolean;
 }
 
 export function PropertyCarouselRow({
@@ -21,6 +22,7 @@ export function PropertyCarouselRow({
   icon: Icon = Sparkles,
   properties,
   autoSlide = false,
+  hideHeader = false,
 }: PropertyCarouselRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -71,49 +73,78 @@ export function PropertyCarouselRow({
   if (properties.length === 0) return null;
 
   return (
-    <section className="py-12 sm:py-16 relative">
+    <section className="py-2 sm:py-4 relative">
       <div className="container-road">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-8">
-          <div className="max-w-2xl space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-primary/10 border border-amber-primary/20 text-amber-primary text-xs sm:text-sm font-semibold">
-              <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              {title}
+        {!hideHeader && (
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-8">
+            <div className="max-w-2xl space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-primary/10 border border-amber-primary/20 text-amber-primary text-xs sm:text-sm font-semibold">
+                <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {title}
+              </div>
+              <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary">
+                {title}
+              </h2>
+              {subtitle && (
+                <p className="text-text-secondary text-sm sm:text-lg">
+                  {subtitle}
+                </p>
+              )}
             </div>
-            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary">
-              {title}
-            </h2>
-            {subtitle && (
-              <p className="text-text-secondary text-sm sm:text-lg">
-                {subtitle}
-              </p>
-            )}
-          </div>
 
-          <div className="flex items-center gap-2 hidden md:flex">
+            <div className="flex items-center gap-2 hidden md:flex">
+              <button
+                onClick={() => scroll("left")}
+                disabled={!canScrollLeft}
+                className={`p-2 rounded-full border border-border-default transition-all ${
+                  canScrollLeft 
+                    ? "bg-bg-card hover:bg-bg-hover text-text-primary" 
+                    : "bg-bg-primary text-border-default cursor-not-allowed"
+                }`}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => scroll("right")}
+                disabled={!canScrollRight}
+                className={`p-2 rounded-full border border-border-default transition-all ${
+                  canScrollRight 
+                    ? "bg-bg-card hover:bg-bg-hover text-text-primary" 
+                    : "bg-bg-primary text-border-default cursor-not-allowed"
+                }`}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {hideHeader && (
+          <div className="flex justify-end gap-2 mb-4 hidden md:flex">
             <button
               onClick={() => scroll("left")}
               disabled={!canScrollLeft}
-              className={`p-2 rounded-full border border-border-default transition-all ${
+              className={`p-2 rounded-full border border-border-default transition-all shadow-sm ${
                 canScrollLeft 
                   ? "bg-bg-card hover:bg-bg-hover text-text-primary" 
                   : "bg-bg-primary text-border-default cursor-not-allowed"
               }`}
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => scroll("right")}
               disabled={!canScrollRight}
-              className={`p-2 rounded-full border border-border-default transition-all ${
+              className={`p-2 rounded-full border border-border-default transition-all shadow-sm ${
                 canScrollRight 
                   ? "bg-bg-card hover:bg-bg-hover text-text-primary" 
                   : "bg-bg-primary text-border-default cursor-not-allowed"
               }`}
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-        </div>
+        )}
 
         <div className="relative group">
           <div 
