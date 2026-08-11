@@ -1,7 +1,9 @@
 "use client";
 
+import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight, Ruler, SquareDashed, Trees } from "lucide-react";
+import { useState } from "react";
+import { motion } from "framer-motion";
 import Link from "next/link";
-import { Building2, Home, Landmark, MapPin, CheckCircle2, Ruler, SquareDashed, Trees } from "lucide-react";
 import type { Project, ProjectType } from "@/types/project";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -83,9 +85,10 @@ function getAreaRange(project: Project): string | null {
 interface ProjectCardProps {
   project: Project;
   index?: number;
+  variant?: "default" | "compact" | "horizontal" | "category-style";
 }
 
-export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
+export function ProjectCard({ project, index = 0, variant = "default" }: ProjectCardProps) {
   const TC   = TYPE_CONFIG[project.projectType];
   const Icon = TC.icon;
   const isVenture   = project.projectType === "venture";
@@ -107,6 +110,43 @@ export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
     : project.totalUnits
     ? `${project.totalUnits} ${isVilla ? "Villas" : "Units"}`
     : null;
+
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (variant === "category-style" && !isExpanded) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, delay: index * 0.05 }}
+        onClick={(e) => {
+          e.preventDefault();
+          setIsExpanded(true);
+        }}
+        className="w-[220px] h-[220px] rounded-2xl relative overflow-hidden group cursor-pointer border border-border-default shadow-sm shrink-0"
+      >
+        {project.coverImage ? (
+          <img src={project.coverImage} alt={project.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+        ) : (
+          <div className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br ${TC.cardAccent} bg-bg-primary gap-3`}>
+            <Icon className="w-14 h-14 text-text-tertiary/30" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        <div className="absolute top-3 right-3 z-10">
+          <span className="bg-slate-900/80 backdrop-blur-md border border-white/20 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-sm">
+            {priceLabel}
+          </span>
+        </div>
+        <div className="absolute bottom-4 left-4 right-4 text-white">
+          <h3 className="font-bold text-lg leading-tight line-clamp-1 group-hover:text-amber-primary transition-colors">{project.name}</h3>
+          <p className="text-xs text-white/80 flex items-center gap-1 mt-1 truncate">
+            <MapPin className="w-3 h-3 shrink-0" /> {project.location.locality}
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <Link href={`/projects/${project.slug}`} className="group block">

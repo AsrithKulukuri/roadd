@@ -55,6 +55,7 @@ export function PropertyCard({
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const isSaved = isFavorite(property.id);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const images = useMemo(
     () =>
@@ -126,6 +127,37 @@ export function PropertyCard({
 
   const status = getStatusBadge();
   const brokerName = property.ownerName || "Premier AP Properties";
+
+  if (variant === "category-style" && !isExpanded) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, delay: index * 0.05 }}
+        onClick={(e) => {
+          e.preventDefault();
+          setIsExpanded(true);
+        }}
+        className="w-[220px] h-[220px] rounded-2xl relative overflow-hidden group cursor-pointer border border-border-default shadow-sm shrink-0"
+      >
+        <img src={images[0].url} alt={property.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        <div className="absolute top-3 right-3 z-10">
+          <span className="bg-slate-900/80 backdrop-blur-md border border-white/20 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-sm">
+            {property.listingType === "rent" || property.listingType === "pg"
+              ? `${formatINR(property.price)}/mo`
+              : formatPriceCompact(property.price)}
+          </span>
+        </div>
+        <div className="absolute bottom-4 left-4 right-4 text-white">
+          <h3 className="font-bold text-lg leading-tight line-clamp-1 group-hover:text-amber-primary transition-colors">{property.title}</h3>
+          <p className="text-xs text-white/80 flex items-center gap-1 mt-1 truncate">
+            <MapPin className="w-3 h-3 shrink-0" /> {property.location.locality}
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
 
   if (variant === "horizontal") {
     return (

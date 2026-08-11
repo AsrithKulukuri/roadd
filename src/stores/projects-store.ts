@@ -43,8 +43,14 @@ export const useProjectsStore = create<ProjectsState>()(
           return;
         }
 
+        // Normalize data to ensure displayCategory is set
+        const normalizedData = (data as Project[]).map((p) => ({
+          ...p,
+          displayCategory: p.displayCategory || (p.isFeatured ? "featured" : "none")
+        }));
+
         // Supabase is source of truth — fully replace local state
-        set({ projects: (data as Project[]) ?? [], isLoading: false });
+        set({ projects: normalizedData, isLoading: false });
       },
 
       // ─── Add ──────────────────────────────────────────────────────────────

@@ -1,7 +1,9 @@
 "use client";
 
 import { usePropertiesStore } from "@/stores/properties-store";
+import { useProjectsStore } from "@/stores/projects-store";
 import { PropertyCarouselRow } from "./property-carousel-row";
+import { ProjectCarouselRow } from "./project-carousel-row";
 import { ThumbsUp, Star, IndianRupee } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -10,13 +12,15 @@ type CategoryTab = "recommended" | "featured" | "budget_friendly";
 
 export function HomeCategories() {
   const { properties, fetchProperties } = usePropertiesStore();
+  const { projects, fetchProjects } = useProjectsStore();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<CategoryTab | null>(null);
 
   useEffect(() => {
     fetchProperties();
+    fetchProjects();
     setMounted(true);
-  }, [fetchProperties]);
+  }, [fetchProperties, fetchProjects]);
 
   if (!mounted) {
     return <div className="h-[400px] flex items-center justify-center">Loading properties...</div>;
@@ -34,9 +38,22 @@ export function HomeCategories() {
 
   const activeProperties = normalizedProperties.filter((p) => p.status !== 'sold' && p.status !== 'hidden');
 
-  const recommended = activeProperties.filter((p) => p.displayCategory === 'recommended');
-  const featured = activeProperties.filter((p) => p.displayCategory === 'featured');
-  const budgetFriendly = activeProperties.filter((p) => p.displayCategory === 'budget_friendly');
+  const recommendedProps = activeProperties.filter((p) => p.displayCategory === 'recommended');
+  const featuredProps = activeProperties.filter((p) => p.displayCategory === 'featured');
+  const budgetProps = activeProperties.filter((p) => p.displayCategory === 'budget_friendly');
+
+  const normalizedProjects = projects.map((p) => {
+    if (!p.displayCategory) {
+      return { ...p, displayCategory: (p.isFeatured ? 'featured' : 'none') as "none" | "featured" | "recommended" | "budget_friendly" };
+    }
+    return p;
+  });
+
+  const activeProjects = normalizedProjects.filter((p) => p.isPublished);
+
+  const recommendedProjs = activeProjects.filter((p) => p.displayCategory === 'recommended');
+  const featuredProjs = activeProjects.filter((p) => p.displayCategory === 'featured');
+  const budgetProjs = activeProjects.filter((p) => p.displayCategory === 'budget_friendly');
 
   return (
     <section className="py-8">
@@ -81,44 +98,71 @@ export function HomeCategories() {
         </div>
 
         {/* Dynamic Content Area */}
-        <div className="mt-2">
-          {activeTab === "recommended" && recommended.length > 0 && (
+        <div className="mt-2 space-y-8">
+          {activeTab === "recommended" && recommendedProps.length > 0 && (
             <PropertyCarouselRow
               title="Recommended Properties"
-              properties={recommended}
+              properties={recommendedProps}
               hideHeader={true}
               autoSlide={false}
               cardVariant="category-style"
             />
           )}
-          {activeTab === "recommended" && recommended.length === 0 && (
-            <div className="py-12 text-center text-text-tertiary text-sm">No recommended properties found.</div>
+          {activeTab === "recommended" && recommendedProjs.length > 0 && (
+            <ProjectCarouselRow
+              title="Recommended Projects"
+              projects={recommendedProjs}
+              hideHeader={true}
+              autoSlide={false}
+              cardVariant="category-style"
+            />
+          )}
+          {activeTab === "recommended" && recommendedProps.length === 0 && recommendedProjs.length === 0 && (
+            <div className="py-12 text-center text-text-tertiary text-sm">No recommended properties or projects found.</div>
           )}
 
-          {activeTab === "featured" && featured.length > 0 && (
+          {activeTab === "featured" && featuredProps.length > 0 && (
             <PropertyCarouselRow
               title="Featured Properties"
-              properties={featured}
+              properties={featuredProps}
               hideHeader={true}
               autoSlide={true}
               cardVariant="category-style"
             />
           )}
-          {activeTab === "featured" && featured.length === 0 && (
-            <div className="py-12 text-center text-text-tertiary text-sm">No featured properties found.</div>
+          {activeTab === "featured" && featuredProjs.length > 0 && (
+            <ProjectCarouselRow
+              title="Featured Projects"
+              projects={featuredProjs}
+              hideHeader={true}
+              autoSlide={true}
+              cardVariant="category-style"
+            />
+          )}
+          {activeTab === "featured" && featuredProps.length === 0 && featuredProjs.length === 0 && (
+            <div className="py-12 text-center text-text-tertiary text-sm">No featured properties or projects found.</div>
           )}
 
-          {activeTab === "budget_friendly" && budgetFriendly.length > 0 && (
+          {activeTab === "budget_friendly" && budgetProps.length > 0 && (
             <PropertyCarouselRow
               title="Budget Friendly Properties"
-              properties={budgetFriendly}
+              properties={budgetProps}
               hideHeader={true}
               autoSlide={false}
               cardVariant="category-style"
             />
           )}
-          {activeTab === "budget_friendly" && budgetFriendly.length === 0 && (
-            <div className="py-12 text-center text-text-tertiary text-sm">No budget friendly properties found.</div>
+          {activeTab === "budget_friendly" && budgetProjs.length > 0 && (
+            <ProjectCarouselRow
+              title="Budget Friendly Projects"
+              projects={budgetProjs}
+              hideHeader={true}
+              autoSlide={false}
+              cardVariant="category-style"
+            />
+          )}
+          {activeTab === "budget_friendly" && budgetProps.length === 0 && budgetProjs.length === 0 && (
+            <div className="py-12 text-center text-text-tertiary text-sm">No budget friendly properties or projects found.</div>
           )}
         </div>
       </div>
