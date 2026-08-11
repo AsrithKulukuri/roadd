@@ -267,11 +267,15 @@ export function SearchFiltersModal({
             {/* Quick-select preset chips */}
             <div className="flex flex-wrap gap-1.5 pt-1">
               {[
+                { label: "Any Price", min: 0, max: 100000000 },
                 { label: "Under 30L", min: 0, max: 3000000 },
-                { label: "30L–60L", min: 3000000, max: 6000000 },
-                { label: "60L–1 Cr", min: 6000000, max: 10000000 },
-                { label: "1–2 Cr", min: 10000000, max: 20000000 },
-                { label: "2 Cr+", min: 20000000, max: 100000000 },
+                { label: "30L–50L", min: 3000000, max: 5000000 },
+                { label: "50L–70L", min: 5000000, max: 7000000 },
+                { label: "70L–90L", min: 7000000, max: 9000000 },
+                { label: "90L–1 Cr", min: 9000000, max: 10000000 },
+                { label: "1 Cr–1.2 Cr", min: 10000000, max: 12000000 },
+                { label: "1.2 Cr–1.5 Cr", min: 12000000, max: 15000000 },
+                { label: "Above 1.5 Cr", min: 15000000, max: 100000000 },
               ].map((p) => {
                 const isSelected =
                   localFilters.budget[0] === p.min &&

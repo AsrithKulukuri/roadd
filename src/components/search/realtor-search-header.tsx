@@ -147,10 +147,13 @@ export function RealtorSearchHeader({
   const pricePresets = [
     { label: "Any Price", min: 0, max: 100000000 },
     { label: "Under ₹30 Lakhs", min: 0, max: 3000000 },
-    { label: "₹30L - ₹60 Lakhs", min: 3000000, max: 6000000 },
-    { label: "₹60L - ₹1 Crore", min: 6000000, max: 10000000 },
-    { label: "₹1 Cr - ₹2 Crores", min: 10000000, max: 20000000 },
-    { label: "Above ₹2 Crores", min: 20000000, max: 100000000 },
+    { label: "₹30L - ₹50 Lakhs", min: 3000000, max: 5000000 },
+    { label: "₹50L - ₹70 Lakhs", min: 5000000, max: 7000000 },
+    { label: "₹70L - ₹90 Lakhs", min: 7000000, max: 9000000 },
+    { label: "₹90L - ₹1 Crore", min: 9000000, max: 10000000 },
+    { label: "₹1 Cr - ₹1.2 Crores", min: 10000000, max: 12000000 },
+    { label: "₹1.2 Cr - ₹1.5 Crores", min: 12000000, max: 15000000 },
+    { label: "Above ₹1.5 Crores", min: 15000000, max: 100000000 },
   ];
 
   const bhkOptions = [

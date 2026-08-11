@@ -119,10 +119,13 @@ export function RealtorFilterBar({
   const pricePresets = [
     { label: "Any Price", min: 0, max: 100000000 },
     { label: "Under ₹30 Lakhs", min: 0, max: 3000000 },
-    { label: "₹30 Lakhs - ₹60 Lakhs", min: 3000000, max: 6000000 },
-    { label: "₹60 Lakhs - ₹1 Crore", min: 6000000, max: 10000000 },
-    { label: "₹1 Crore - ₹2 Crores", min: 10000000, max: 20000000 },
-    { label: "Above ₹2 Crores", min: 20000000, max: 100000000 },
+    { label: "₹30 Lakhs - ₹50 Lakhs", min: 3000000, max: 5000000 },
+    { label: "₹50 Lakhs - ₹70 Lakhs", min: 5000000, max: 7000000 },
+    { label: "₹70 Lakhs - ₹90 Lakhs", min: 7000000, max: 9000000 },
+    { label: "₹90 Lakhs - ₹1 Crore", min: 9000000, max: 10000000 },
+    { label: "₹1 Crore - ₹1.2 Crores", min: 10000000, max: 12000000 },
+    { label: "₹1.2 Crores - ₹1.5 Crores", min: 12000000, max: 15000000 },
+    { label: "Above ₹1.5 Crores", min: 15000000, max: 100000000 },
   ];
 
   // Property Type options
