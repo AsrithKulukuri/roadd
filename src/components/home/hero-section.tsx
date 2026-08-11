@@ -667,15 +667,15 @@ export function HeroSection() {
 
               {/* Footer: tick labels + Apply button */}
               <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center flex-wrap gap-2 text-[10px] font-bold text-slate-400">
-                  <button type="button" onClick={() => setHeroBudget([0, 100000000])} className="hover:text-slate-900 transition-colors">₹0</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 3000000])} className="hover:text-slate-900 transition-colors">₹30L</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 5000000])} className="hover:text-slate-900 transition-colors">₹50L</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 7000000])} className="hover:text-slate-900 transition-colors">₹70L</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 9000000])} className="hover:text-slate-900 transition-colors">₹90L</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 10000000])} className="hover:text-slate-900 transition-colors">₹1Cr</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 12000000])} className="hover:text-slate-900 transition-colors">₹1.2Cr</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 100000000])} className="hover:text-slate-900 transition-colors">₹1.5Cr+</button>
+                <div className="flex items-center flex-nowrap overflow-x-auto hide-scrollbar gap-3 text-[10px] font-bold text-slate-400 flex-1 min-w-0 pr-2 relative z-10">
+                  <button type="button" onClick={() => setHeroBudget([0, 100000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹0</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 3000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹30L</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 5000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹50L</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 7000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹70L</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 9000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹90L</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 10000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹1Cr</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 12000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹1.2Cr</button>
+                  <button type="button" onClick={() => setHeroBudget([0, 100000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹1.5Cr+</button>
                 </div>
 
                 <button
