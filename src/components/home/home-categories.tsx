@@ -42,10 +42,7 @@ export function HomeCategories() {
     <section className="py-8">
       <div className="container-road">
         {/* Compact Title and Tabs */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
-          <h2 className="text-xl sm:text-2xl font-heading font-bold text-text-primary">
-            Explore Properties
-          </h2>
+        <div className="flex justify-center mb-8 sm:mb-12">
           <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 p-1 bg-bg-card border border-border-default rounded-xl shadow-sm">
             <button
               onClick={() => setActiveTab(activeTab === "recommended" ? null : "recommended")}
