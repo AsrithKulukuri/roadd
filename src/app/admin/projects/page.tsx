@@ -63,7 +63,7 @@ function ConfirmDeleteModal({
 }
 
 export default function AdminProjectsPage() {
-  const { projects, fetchProjects, deleteProject, toggleFeatured, togglePublished } = useProjectsStore();
+  const { projects, fetchProjects, deleteProject, toggleFeatured, togglePublished, updateDisplayCategory } = useProjectsStore();
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [filterType, setFilterType] = useState<ProjectType | "all">("all");
 
@@ -156,6 +156,7 @@ export default function AdminProjectsPage() {
                   <th className="text-left px-4 py-4 font-semibold text-text-secondary">Price Range</th>
                   <th className="text-left px-4 py-4 font-semibold text-text-secondary">Status</th>
                   <th className="text-left px-4 py-4 font-semibold text-text-secondary">Flags</th>
+                  <th className="text-left px-4 py-4 font-semibold text-text-secondary">Display Category</th>
                   <th className="px-4 py-4" />
                 </tr>
               </thead>
@@ -245,6 +246,22 @@ export default function AdminProjectsPage() {
                               </span>
                             )}
                           </div>
+                        </td>
+                        {/* Display Category */}
+                        <td className="px-4 py-4">
+                          <select
+                            value={project.displayCategory || "none"}
+                            onChange={(e) => {
+                              updateDisplayCategory(project.id, e.target.value as any);
+                              toast.success("Category updated!");
+                            }}
+                            className="appearance-none bg-bg-primary border border-border-default text-text-secondary text-xs rounded-full px-3 py-1.5 pr-7 focus:outline-none focus:ring-1 focus:ring-amber-primary transition-colors hover:bg-bg-card"
+                          >
+                            <option value="none">None</option>
+                            <option value="featured">Featured</option>
+                            <option value="recommended">Recommended</option>
+                            <option value="budget_friendly">Budget Friendly</option>
+                          </select>
                         </td>
                         {/* Actions */}
                         <td className="px-4 py-4">

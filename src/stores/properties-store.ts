@@ -14,6 +14,7 @@ interface PropertiesState {
   toggleSoldOut: (id: string) => Promise<void>;
   toggleShowOnMap: (id: string) => Promise<void>;
   toggleRecommended: (id: string) => Promise<boolean>;
+  updateDisplayCategory: (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => Promise<void>;
   updateRefId: (id: string, refId: string) => Promise<void>;
   updateProperty: (id: string, updatedProperty: Property) => Promise<void>;
 }
@@ -223,11 +224,49 @@ export const usePropertiesStore = create<PropertiesState>()(
             .update({ isRecommended: targetValue })
             .eq('id', id);
 
-          if (error) console.warn('Supabase recommendation update warning:', error.message);
-        } catch (error) {
-          console.warn('Supabase recommendation update exception:', error);
+          if (error) console.warn('Supabase toggleRecommended warning:', error.message);
+        } catch (error: any) {
+          console.warn('Supabase toggleRecommended exception:', error);
         }
         return true;
+      },
+
+      updateDisplayCategory: async (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => {
+        const property = get().properties.find((p) => p.id === id);
+        if (!property) return;
+
+        const isFeatured = category === "featured";
+        const isRecommended = category === "recommended";
+        const isBudgetFriendly = category === "budget_friendly";
+
+        set((state) => ({
+          properties: state.properties.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  isFeatured,
+                  isRecommended,
+                  displayCategory: category,
+                  // Optionally you could map isBudgetFriendly to a boolean on Property if needed
+                }
+              : p
+          ),
+        }));
+
+        try {
+          const { error } = await supabase
+            .from('properties')
+            .update({
+              isFeatured,
+              isRecommended,
+              displayCategory: category,
+            })
+            .eq('id', id);
+
+          if (error) console.warn('Supabase updateDisplayCategory warning:', error.message);
+        } catch (error: any) {
+          console.warn('Supabase updateDisplayCategory exception:', error);
+        }
       },
 
       updateRefId: async (id: string, refId: string) => {

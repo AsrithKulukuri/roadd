@@ -133,6 +133,7 @@ export interface Property {
   isVerified: boolean;
   isFeatured?: boolean;
   isRecommended?: boolean;
+  displayCategory?: "featured" | "recommended" | "budget_friendly" | "none";
   isPremium?: boolean;
   vastuCompliant?: boolean;
   petFriendly?: boolean;

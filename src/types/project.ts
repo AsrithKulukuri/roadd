@@ -142,6 +142,7 @@ export interface Project {
 
   // Admin flags
   isFeatured: boolean;
+  displayCategory?: "featured" | "recommended" | "budget_friendly" | "none";
   isPublished: boolean;
   viewCount?: number;
 

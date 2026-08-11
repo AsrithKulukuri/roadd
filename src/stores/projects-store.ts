@@ -12,6 +12,7 @@ interface ProjectsState {
   updateProject: (id: string, data: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   toggleFeatured: (id: string) => Promise<void>;
+  updateDisplayCategory: (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => Promise<void>;
   togglePublished: (id: string) => Promise<void>;
 }
 
@@ -161,6 +162,39 @@ export const useProjectsStore = create<ProjectsState>()(
           if (error) console.warn('Supabase toggleFeatured warning:', error.message);
         } catch (err: any) {
           console.warn('Supabase toggleFeatured exception:', err?.message ?? err);
+        }
+      },
+
+      updateDisplayCategory: async (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => {
+        const project = get().projects.find((p) => p.id === id);
+        if (!project) return;
+
+        const isFeatured = category === "featured";
+
+        set((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  isFeatured,
+                  displayCategory: category,
+                }
+              : p
+          ),
+        }));
+
+        try {
+          const { error } = await supabase
+            .from('projects')
+            .update({
+              isFeatured,
+              displayCategory: category,
+            })
+            .eq('id', id);
+
+          if (error) console.warn('Supabase updateDisplayCategory warning:', error.message);
+        } catch (error: any) {
+          console.warn('Supabase updateDisplayCategory exception:', error);
         }
       },
 

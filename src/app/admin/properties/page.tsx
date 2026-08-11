@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function AdminPropertiesPage() {
-  const { properties, toggleFeatured, toggleSoldOut, deleteProperty, toggleShowOnMap, toggleRecommended } = usePropertiesStore();
+  const { properties, toggleSoldOut, deleteProperty, toggleShowOnMap, updateDisplayCategory } = usePropertiesStore();
 
   return (
     <div className="p-6 lg:p-10 max-w-7xl mx-auto">
@@ -68,28 +68,18 @@ export default function AdminPropertiesPage() {
                     {property.showOnMap ? 'On Map' : 'Hidden'}
                   </button>
 
-                  <button 
-                    onClick={() => toggleFeatured(property.id)}
-                    className={`p-1.5 rounded-full ${
-                      property.isFeatured ? 'text-amber-primary bg-amber-primary/10' : 'text-text-tertiary'
-                    }`}
-                  >
-                    <Star className={`w-4 h-4 ${property.isFeatured ? 'fill-amber-primary' : ''}`} />
-                  </button>
-
-                  <button 
-                    onClick={() => {
-                      const success = toggleRecommended(property.id);
-                      if (!success && !property.isRecommended) {
-                        alert("You can only have up to 10 recommended properties at a time.");
-                      }
-                    }}
-                    className={`p-1.5 rounded-full ${
-                      property.isRecommended ? 'text-amber-500 bg-amber-500/10' : 'text-text-tertiary'
-                    }`}
-                  >
-                    <ThumbsUp className={`w-4 h-4 ${property.isRecommended ? 'fill-amber-500' : ''}`} />
-                  </button>
+                  <div className="relative">
+                    <select
+                      value={property.displayCategory || "none"}
+                      onChange={(e) => updateDisplayCategory(property.id, e.target.value as any)}
+                      className="appearance-none bg-bg-primary border border-border-default text-text-secondary text-xs rounded-full px-3 py-1 pr-7 focus:outline-none focus:ring-1 focus:ring-amber-primary"
+                    >
+                      <option value="none">None</option>
+                      <option value="featured">Featured</option>
+                      <option value="recommended">Recommended</option>
+                      <option value="budget_friendly">Budget Friendly</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -130,8 +120,7 @@ export default function AdminPropertiesPage() {
                 <th className="px-6 py-4">Property</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Map Visibility</th>
-                <th className="px-6 py-4">Featured</th>
-                <th className="px-6 py-4 text-center">Recommended</th>
+                <th className="px-6 py-4">Display Category</th>
                 <th className="px-6 py-4">Price</th>
                 <th className="px-6 py-4">Location</th>
                 <th className="px-6 py-4 text-right">Actions</th>
@@ -178,34 +167,16 @@ export default function AdminPropertiesPage() {
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <button 
-                      onClick={() => toggleFeatured(property.id)}
-                      className={`p-1.5 rounded-full transition-colors ${
-                        property.isFeatured 
-                          ? 'text-amber-primary bg-amber-primary/10' 
-                          : 'text-text-tertiary hover:text-text-primary hover:bg-bg-primary'
-                      }`}
+                    <select
+                      value={property.displayCategory || "none"}
+                      onChange={(e) => updateDisplayCategory(property.id, e.target.value as any)}
+                      className="appearance-none bg-bg-primary border border-border-default text-text-secondary text-xs rounded-full px-3 py-1.5 pr-7 focus:outline-none focus:ring-1 focus:ring-amber-primary transition-colors hover:bg-bg-card"
                     >
-                      <Star className={`w-4 h-4 ${property.isFeatured ? 'fill-amber-primary' : ''}`} />
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <button 
-                      onClick={() => {
-                        const success = toggleRecommended(property.id);
-                        if (!success && !property.isRecommended) {
-                          alert("You can only have up to 10 recommended properties at a time.");
-                        }
-                      }}
-                      title="Recommend Property (Max 10)"
-                      className={`p-1.5 rounded-full transition-colors ${
-                        property.isRecommended 
-                          ? 'text-amber-500 bg-amber-500/10' 
-                          : 'text-text-tertiary hover:text-text-primary hover:bg-bg-primary'
-                      }`}
-                    >
-                      <ThumbsUp className={`w-4 h-4 ${property.isRecommended ? 'fill-amber-500' : ''}`} />
-                    </button>
+                      <option value="none">None</option>
+                      <option value="featured">Featured</option>
+                      <option value="recommended">Recommended</option>
+                      <option value="budget_friendly">Budget Friendly</option>
+                    </select>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap font-medium text-text-primary">
                     {formatPriceCompact(property.price)}

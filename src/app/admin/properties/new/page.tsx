@@ -73,7 +73,7 @@ export default function AddPropertyPage() {
     
     slug: "", metaTitle: "", metaDescription: "", ogImage: "",
     
-    featured: true, status: "draft"
+    displayCategory: "none" as "featured" | "recommended" | "budget_friendly" | "none", status: "draft"
   });
 
   // Derived video embed
@@ -228,8 +228,9 @@ export default function AddPropertyPage() {
       propertyType: formData.propertyType as any,
       listingType: formData.listingType as any,
       status: finalStatus as any,
-      isFeatured: formData.featured,
-      isRecommended: true,
+      isFeatured: formData.displayCategory === "featured",
+      isRecommended: formData.displayCategory === "recommended",
+      displayCategory: formData.displayCategory,
       isReadyToMove: true,
       isOwnerVerified: true,
       bedrooms: parseInt(formData.bedrooms) || 0,
@@ -828,12 +829,13 @@ export default function AddPropertyPage() {
           
           <div className="flex items-center justify-between sm:justify-start gap-4">
             <div className="flex items-center gap-2">
-              <Checkbox 
-                id="featured" name="featured"
-                checked={formData.featured}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: checked as boolean }))} 
-              />
-              <label htmlFor="featured" className="text-xs sm:text-sm font-medium text-text-primary cursor-pointer select-none">Mark as Featured</label>
+              <span className="text-xs sm:text-sm font-medium text-text-secondary">Category:</span>
+              <select name="displayCategory" value={formData.displayCategory} onChange={handleChange} className="h-8 sm:h-9 rounded-lg bg-bg-primary border border-border-default/50 px-2 sm:px-3 text-xs sm:text-sm text-text-primary font-medium">
+                <option value="none">None</option>
+                <option value="featured">Featured</option>
+                <option value="recommended">Recommended</option>
+                <option value="budget_friendly">Budget Friendly</option>
+              </select>
             </div>
             
             <div className="flex items-center gap-2">
