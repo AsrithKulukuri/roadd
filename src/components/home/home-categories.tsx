@@ -59,11 +59,11 @@ export function HomeCategories() {
     <section className="py-8">
       <div className="container-road">
         {/* Compact Title and Tabs */}
-        <div className="flex justify-center mb-8 sm:mb-12">
-          <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 p-1 bg-bg-card border border-border-default rounded-xl shadow-sm">
+        <div className="flex justify-center mb-8 sm:mb-12 w-full px-2">
+          <div className="flex flex-nowrap items-center justify-start sm:justify-center gap-1 sm:gap-2 p-1 bg-bg-card border border-border-default rounded-xl shadow-sm overflow-x-auto hide-scrollbar w-full sm:w-auto max-w-full">
             <button
               onClick={() => setActiveTab(activeTab === "recommended" ? null : "recommended")}
-              className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+              className={`flex-shrink-0 whitespace-nowrap flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === "recommended"
                   ? "bg-amber-primary text-bg-primary shadow-sm"
                   : "text-text-secondary hover:text-text-primary hover:bg-bg-primary"
@@ -74,7 +74,7 @@ export function HomeCategories() {
             </button>
             <button
               onClick={() => setActiveTab(activeTab === "featured" ? null : "featured")}
-              className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+              className={`flex-shrink-0 whitespace-nowrap flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === "featured"
                   ? "bg-amber-primary text-bg-primary shadow-sm"
                   : "text-text-secondary hover:text-text-primary hover:bg-bg-primary"
@@ -85,7 +85,7 @@ export function HomeCategories() {
             </button>
             <button
               onClick={() => setActiveTab(activeTab === "budget_friendly" ? null : "budget_friendly")}
-              className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+              className={`flex-shrink-0 whitespace-nowrap flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === "budget_friendly"
                   ? "bg-amber-primary text-bg-primary shadow-sm"
                   : "text-text-secondary hover:text-text-primary hover:bg-bg-primary"
