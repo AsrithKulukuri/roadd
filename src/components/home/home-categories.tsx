@@ -104,7 +104,7 @@ export function HomeCategories() {
               title="Recommended Properties"
               properties={recommendedProps}
               hideHeader={true}
-              autoSlide={false}
+              autoSlide={true}
               cardVariant="category-style"
             />
           )}
@@ -113,7 +113,7 @@ export function HomeCategories() {
               title="Recommended Projects"
               projects={recommendedProjs}
               hideHeader={true}
-              autoSlide={false}
+              autoSlide={true}
               cardVariant="category-style"
             />
           )}
@@ -148,7 +148,7 @@ export function HomeCategories() {
               title="Budget Friendly Properties"
               properties={budgetProps}
               hideHeader={true}
-              autoSlide={false}
+              autoSlide={true}
               cardVariant="category-style"
             />
           )}
@@ -157,7 +157,7 @@ export function HomeCategories() {
               title="Budget Friendly Projects"
               projects={budgetProjs}
               hideHeader={true}
-              autoSlide={false}
+              autoSlide={true}
               cardVariant="category-style"
             />
           )}
