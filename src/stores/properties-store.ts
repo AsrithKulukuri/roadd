@@ -35,9 +35,16 @@ export const usePropertiesStore = create<PropertiesState>()(
             .order('createdAt', { ascending: false });
 
           if (error) throw error;
-          
           if (data) {
-            set({ properties: data as Property[], isLoading: false });
+            const mappedData = data.map((p: any) => {
+              if (!p.displayCategory) {
+                if (p.isFeatured) p.displayCategory = "featured";
+                else if (p.isRecommended) p.displayCategory = "recommended";
+                else p.displayCategory = "none";
+              }
+              return p;
+            });
+            set({ properties: mappedData as Property[], isLoading: false });
           } else {
             set({ isLoading: false });
           }

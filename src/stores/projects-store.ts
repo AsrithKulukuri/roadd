@@ -64,7 +64,15 @@ export const useProjectsStore = create<ProjectsState>()(
               .from('projects')
               .select('*')
               .order('id', { ascending: false });
-            if (data) set({ projects: data as Project[] });
+            if (data) {
+              const mappedData = data.map((p: any) => {
+                if (!p.displayCategory) {
+                  p.displayCategory = p.isFeatured ? "featured" : "none";
+                }
+                return p;
+              });
+              set({ projects: mappedData as Project[] });
+            }
           }
         } catch (err: any) {
           console.warn('Supabase project insert exception:', err?.message ?? err);
