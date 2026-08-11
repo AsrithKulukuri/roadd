@@ -15,6 +15,7 @@ import {
   Building,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   MapPin,
   Tag,
   Flame,
@@ -377,36 +378,62 @@ export function HeroSection() {
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  if (tab.id === "pre-approval") {
-                    router.push("/mortgage-calculator");
-                  }
-                  if (tab.id === "projects") {
-                    router.push("/search?type=projects");
-                  }
-                  if (tab.id === "nearme") {
-                    router.push("/search?nearMe=true&view=map");
-                  }
-                }}
-                className={cn(
-                  "relative py-1.5 text-base sm:text-lg font-extrabold transition-all cursor-pointer",
-                  isActive
-                    ? "text-slate-900"
-                    : "text-slate-500 hover:text-slate-900"
+              <div key={tab.id} className="relative group">
+                <button
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if (tab.id === "pre-approval") {
+                      router.push("/mortgage-calculator");
+                    }
+                    if (tab.id === "projects") {
+                      router.push("/search?type=projects");
+                    }
+                    if (tab.id === "nearme") {
+                      router.push("/search?nearMe=true&view=map");
+                    }
+                  }}
+                  className={cn(
+                    "relative py-1.5 text-base sm:text-lg font-extrabold transition-all cursor-pointer flex items-center gap-1.5",
+                    isActive
+                      ? "text-slate-900"
+                      : "text-slate-500 hover:text-slate-900"
+                  )}
+                >
+                  {tab.label}
+                  {tab.id === "buy" && (
+                    <ChevronDown className="w-4 h-4 opacity-50 group-hover:rotate-180 transition-transform duration-200" />
+                  )}
+                  {isActive && (
+                    <motion.div
+                      layoutId="realtorTabLine"
+                      className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full shadow-md"
+                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                </button>
+
+                {tab.id === "buy" && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2 text-left">
+                      <Link href="/search?type=buy&propertyType=apartment" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
+                        Flats
+                      </Link>
+                      <Link href="/search?type=buy&propertyType=independent-house" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
+                        Houses
+                      </Link>
+                      <Link href="/search?type=buy&propertyType=villa" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
+                        Villas
+                      </Link>
+                      <Link href="/search?type=buy&propertyType=residential-plot" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
+                        Plots
+                      </Link>
+                      <Link href="/search?type=buy&propertyType=agricultural-land" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
+                        Agriculture
+                      </Link>
+                    </div>
+                  </div>
                 )}
-              >
-                {tab.label}
-                {isActive && (
-                  <motion.div
-                    layoutId="realtorTabLine"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full shadow-md"
-                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                  />
-                )}
-              </button>
+              </div>
             );
           })}
         </div>
