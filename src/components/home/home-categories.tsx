@@ -11,7 +11,7 @@ type CategoryTab = "recommended" | "featured" | "budget_friendly";
 export function HomeCategories() {
   const { properties, fetchProperties } = usePropertiesStore();
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<CategoryTab>("recommended");
+  const [activeTab, setActiveTab] = useState<CategoryTab | null>(null);
 
   useEffect(() => {
     fetchProperties();
@@ -48,7 +48,7 @@ export function HomeCategories() {
           </h2>
           <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 p-1 bg-bg-card border border-border-default rounded-xl shadow-sm">
             <button
-              onClick={() => setActiveTab("recommended")}
+              onClick={() => setActiveTab(activeTab === "recommended" ? null : "recommended")}
               className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === "recommended"
                   ? "bg-amber-primary text-bg-primary shadow-sm"
@@ -59,7 +59,7 @@ export function HomeCategories() {
               Recommended
             </button>
             <button
-              onClick={() => setActiveTab("featured")}
+              onClick={() => setActiveTab(activeTab === "featured" ? null : "featured")}
               className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === "featured"
                   ? "bg-amber-primary text-bg-primary shadow-sm"
@@ -70,7 +70,7 @@ export function HomeCategories() {
               Featured
             </button>
             <button
-              onClick={() => setActiveTab("budget_friendly")}
+              onClick={() => setActiveTab(activeTab === "budget_friendly" ? null : "budget_friendly")}
               className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === "budget_friendly"
                   ? "bg-amber-primary text-bg-primary shadow-sm"
@@ -91,6 +91,7 @@ export function HomeCategories() {
               properties={recommended}
               hideHeader={true}
               autoSlide={false}
+              cardVariant="category-style"
             />
           )}
           {activeTab === "recommended" && recommended.length === 0 && (
@@ -103,6 +104,7 @@ export function HomeCategories() {
               properties={featured}
               hideHeader={true}
               autoSlide={true}
+              cardVariant="category-style"
             />
           )}
           {activeTab === "featured" && featured.length === 0 && (
@@ -115,6 +117,7 @@ export function HomeCategories() {
               properties={budgetFriendly}
               hideHeader={true}
               autoSlide={false}
+              cardVariant="category-style"
             />
           )}
           {activeTab === "budget_friendly" && budgetFriendly.length === 0 && (

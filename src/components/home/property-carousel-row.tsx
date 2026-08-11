@@ -6,6 +6,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { PropertyCard } from "@/components/property/property-card";
 import { Button } from "@/components/ui/button";
 import type { Property } from "@/types/property";
+import { cn } from "@/lib/utils";
 
 interface PropertyCarouselRowProps {
   title: string;
@@ -14,6 +15,7 @@ interface PropertyCarouselRowProps {
   properties: Property[];
   autoSlide?: boolean;
   hideHeader?: boolean;
+  cardVariant?: "default" | "compact" | "horizontal" | "category-style";
 }
 
 export function PropertyCarouselRow({
@@ -23,6 +25,7 @@ export function PropertyCarouselRow({
   properties,
   autoSlide = false,
   hideHeader = false,
+  cardVariant = "default",
 }: PropertyCarouselRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -153,10 +156,19 @@ export function PropertyCarouselRow({
             className="flex gap-6 overflow-x-auto snap-x snap-mandatory hide-scrollbar pb-6"
           >
             {properties.map((property, index) => (
-              <div key={property.id} className="min-w-[280px] sm:min-w-[320px] md:min-w-[350px] shrink-0 snap-start">
+              <div 
+                key={property.id} 
+                className={cn(
+                  "shrink-0 snap-start",
+                  cardVariant === "category-style" 
+                    ? "min-w-[220px] sm:min-w-[260px]" 
+                    : "min-w-[280px] sm:min-w-[320px] md:min-w-[350px]"
+                )}
+              >
                 <PropertyCard
                   property={property}
                   index={index}
+                  variant={cardVariant}
                 />
               </div>
             ))}
