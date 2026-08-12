@@ -514,128 +514,93 @@ export function HeroSection() {
         </form>
 
         {/* Open Trending Locations Dropdowns */}
-        <div className="w-full max-w-[760px] mx-auto mt-4 sm:mt-5 text-left">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-[16px] relative z-20">
-            {/* Trending Dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setOpenLocationTab(openLocationTab === "trending" ? null : "trending")}
-                className={cn(
-                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border",
-                  openLocationTab === "trending"
-                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] border-transparent text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
-                    : "bg-white border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900"
-                )}
-              >
-                <Flame className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", openLocationTab === "trending" ? "text-[#16161A]" : "text-amber-500")} />
-                <span>Trending</span>
-                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openLocationTab === "trending" && "rotate-180")} />
-              </button>
-              
-              {openLocationTab === "trending" && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2 z-50">
-                  {trendingHotspots.map(spot => (
-                    <div 
-                      key={spot.name}
-                      onClick={() => {
-                        setOpenLocationTab(null);
-                        router.push(`/search?type=${activeTab}&location=${encodeURIComponent(spot.name)}`);
-                      }}
-                      className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer flex flex-col"
-                    >
-                      <span className="font-semibold text-sm text-slate-700 dark:text-slate-300">{spot.name}</span>
-                      <span className="text-xs text-slate-500">{spot.tag}</span>
-                    </div>
-                  ))}
-                </div>
+        <div className="w-full max-w-[760px] mx-auto mt-4 sm:mt-5 text-left relative z-20">
+          {/* Scrollable Tabs */}
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x pb-1 mb-3 sm:mb-[16px]">
+            <button
+              type="button"
+              onClick={() => setOpenLocationTab(openLocationTab === "trending" ? null : "trending")}
+              className={cn(
+                "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border shrink-0 snap-start",
+                openLocationTab === "trending"
+                  ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] border-transparent text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
+                  : "bg-white border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900"
               )}
-            </div>
+            >
+              <Flame className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", openLocationTab === "trending" ? "text-[#16161A]" : "text-amber-500")} />
+              <span>Trending</span>
+              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openLocationTab === "trending" && "rotate-180")} />
+            </button>
 
-            {/* Vijayawada Dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setOpenLocationTab(openLocationTab === "vijayawada" ? null : "vijayawada")}
-                className={cn(
-                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border",
-                  openLocationTab === "vijayawada"
-                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] border-transparent text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
-                    : "bg-white border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900"
-                )}
-              >
-                <MapPin className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", openLocationTab === "vijayawada" ? "text-[#16161A]" : "text-amber-500")} />
-                <span>Vijayawada</span>
-                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openLocationTab === "vijayawada" && "rotate-180")} />
-              </button>
-              
-              {openLocationTab === "vijayawada" && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2 z-50">
-                  {vijayawadaHotspots.map(spot => (
-                    <div 
-                      key={spot.name}
-                      onClick={() => {
-                        setOpenLocationTab(null);
-                        router.push(`/search?type=${activeTab}&location=${encodeURIComponent(spot.name)}`);
-                      }}
-                      className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer flex flex-col"
-                    >
-                      <span className="font-semibold text-sm text-slate-700 dark:text-slate-300">{spot.name}</span>
-                      <span className="text-xs text-slate-500">{spot.tag}</span>
-                    </div>
-                  ))}
-                </div>
+            <button
+              type="button"
+              onClick={() => setOpenLocationTab(openLocationTab === "vijayawada" ? null : "vijayawada")}
+              className={cn(
+                "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border shrink-0 snap-start",
+                openLocationTab === "vijayawada"
+                  ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] border-transparent text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
+                  : "bg-white border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900"
               )}
-            </div>
+            >
+              <MapPin className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", openLocationTab === "vijayawada" ? "text-[#16161A]" : "text-amber-500")} />
+              <span>Vijayawada</span>
+              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openLocationTab === "vijayawada" && "rotate-180")} />
+            </button>
 
-            {/* Guntur Dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setOpenLocationTab(openLocationTab === "guntur" ? null : "guntur")}
-                className={cn(
-                  "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border",
-                  openLocationTab === "guntur"
-                    ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] border-transparent text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
-                    : "bg-white border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900"
-                )}
-              >
-                <Building2 className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", openLocationTab === "guntur" ? "text-[#16161A]" : "text-amber-500")} />
-                <span>Guntur</span>
-                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openLocationTab === "guntur" && "rotate-180")} />
-              </button>
-              
-              {openLocationTab === "guntur" && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2 z-50">
-                  {gunturHotspots.map(spot => (
-                    <div 
-                      key={spot.name}
-                      onClick={() => {
-                        setOpenLocationTab(null);
-                        router.push(`/search?type=${activeTab}&location=${encodeURIComponent(spot.name)}`);
-                      }}
-                      className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer flex flex-col"
-                    >
-                      <span className="font-semibold text-sm text-slate-700 dark:text-slate-300">{spot.name}</span>
-                      <span className="text-xs text-slate-500">{spot.tag}</span>
-                    </div>
-                  ))}
-                </div>
+            <button
+              type="button"
+              onClick={() => setOpenLocationTab(openLocationTab === "guntur" ? null : "guntur")}
+              className={cn(
+                "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border shrink-0 snap-start",
+                openLocationTab === "guntur"
+                  ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] border-transparent text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
+                  : "bg-white border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900"
               )}
-            </div>
+            >
+              <Building2 className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", openLocationTab === "guntur" ? "text-[#16161A]" : "text-amber-500")} />
+              <span>Guntur</span>
+              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openLocationTab === "guntur" && "rotate-180")} />
+            </button>
 
             {/* Amaravati - Direct link (no sublocations) */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => router.push(`/search?type=${activeTab}&location=Amaravati`)}
-                className="h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer bg-white border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900 shadow-sm"
-              >
-                <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
-                <span>Amaravati</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => router.push(`/search?type=${activeTab}&location=Amaravati`)}
+              className="h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer bg-white border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900 shadow-sm shrink-0 snap-start"
+            >
+              <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
+              <span>Amaravati</span>
+            </button>
           </div>
+
+          {/* Shared Dropdown Menu (Renders outside the scroll view to avoid clipping) */}
+          <AnimatePresence>
+            {openLocationTab && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute top-full left-0 mt-2 w-full max-w-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2 z-50 max-h-[300px] overflow-y-auto"
+              >
+                {(openLocationTab === "trending" ? trendingHotspots :
+                  openLocationTab === "vijayawada" ? vijayawadaHotspots :
+                  openLocationTab === "guntur" ? gunturHotspots :
+                  []).map(spot => (
+                  <div 
+                    key={spot.name}
+                    onClick={() => {
+                      setOpenLocationTab(null);
+                      router.push(`/search?type=${activeTab}&location=${encodeURIComponent(spot.name)}`);
+                    }}
+                    className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer flex flex-col"
+                  >
+                    <span className="font-semibold text-sm text-slate-700 dark:text-slate-300">{spot.name}</span>
+                    <span className="text-xs text-slate-500">{spot.tag}</span>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* ── Premium Budget Slider ── */}
