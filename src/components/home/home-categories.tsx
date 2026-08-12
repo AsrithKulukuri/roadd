@@ -80,7 +80,6 @@ export function HomeCategories() {
             items={recommendedMixed}
             hideHeader={false}
             autoSlide={true}
-            cardVariant="category-style"
           />
         )}
 
@@ -92,7 +91,6 @@ export function HomeCategories() {
             items={featuredMixed}
             hideHeader={false}
             autoSlide={true}
-            cardVariant="category-style"
           />
         )}
 
@@ -104,7 +102,6 @@ export function HomeCategories() {
             items={budgetMixed}
             hideHeader={false}
             autoSlide={true}
-            cardVariant="category-style"
           />
         )}
 
