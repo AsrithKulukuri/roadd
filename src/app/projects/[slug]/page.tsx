@@ -620,7 +620,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     </button>
                     <div ref={cardsScrollRef} className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-6 px-6 sm:px-12">
                     {(currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => (
-                      <div key={cfg.id || idx} className="w-[85vw] sm:w-[320px] shrink-0 snap-center p-5 rounded-2xl border border-border-default bg-bg-primary flex flex-col gap-4 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+                      <div key={cfg.id || idx} className="w-[85vw] sm:w-[320px] shrink-0 snap-center p-5 rounded-2xl border border-border-default bg-bg-primary flex flex-col gap-4 sm:hover:-translate-y-1 hover:shadow-xl transition-all duration-300 relative z-0">
                         {/* Top Section */}
                         <div className="flex justify-between items-start gap-2">
                           <div className="flex flex-col gap-1">
@@ -675,10 +675,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
                         {/* Image/Video Section */}
                         {(activeMedia[cfg.id] === 'video' && cfg.videoUrl) ? (
-                          <div className="rounded-xl overflow-hidden bg-black aspect-[4/3] flex items-center justify-center my-2 relative z-20">
+                          <div className="rounded-xl overflow-hidden bg-black aspect-[4/3] flex items-center justify-center my-2 relative z-50 touch-pan-y">
                             <iframe
                               src={getYoutubeEmbedUrl(cfg.videoUrl!)!}
-                              className="w-full h-full"
+                              className="w-full h-full pointer-events-auto"
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                               allowFullScreen
                             />
