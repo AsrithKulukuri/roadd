@@ -95,7 +95,7 @@ export function HeroSection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
-  const [heroBudget, setHeroBudget] = useState<[number, number]>([0, 100000000]);
+  const [heroBudget, setHeroBudget] = useState<[number, number]>([1000000, 100000000]);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -193,7 +193,7 @@ export function HeroSection() {
   }, [properties, projects, heroBudget, activeTab]);
 
   /** true whenever the user has moved either slider handle away from the full range */
-  const budgetActive = heroBudget[0] > 0 || heroBudget[1] < 100000000;
+  const budgetActive = heroBudget[0] > 1000000 || heroBudget[1] < 100000000;
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -649,7 +649,7 @@ export function HeroSection() {
                 onChange={(e) => setHeroBudget([Number(e.target.value), heroBudget[1]])}
                 className="flex-1 h-11 px-3 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-700 outline-none focus:border-emerald-600 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px_12px] bg-[right_12px_center]"
               >
-                <option value={0}>Min</option>
+
                 <option value={1000000}>₹ 10 L</option>
                 <option value={2000000}>₹ 20 L</option>
                 <option value={3000000}>₹ 30 L</option>
@@ -702,7 +702,7 @@ export function HeroSection() {
                 }
               `}</style>
               <Slider
-                min={0}
+                min={1000000}
                 max={100000000}
                 step={500000}
                 value={heroBudget}
