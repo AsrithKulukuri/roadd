@@ -83,9 +83,9 @@ function UnifiedSearchPage() {
     }
   }, [searchParams]);
 
-  // Lock body scroll when map view is active so ONLY the map moves, but only on mobile
+  // Lock body scroll when map view is active so ONLY the list pane scrolls
   useEffect(() => {
-    if (viewMode === "map" && typeof window !== "undefined" && window.innerWidth < 768) {
+    if (viewMode === "map" && typeof window !== "undefined") {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -484,21 +484,27 @@ function UnifiedSearchPage() {
         totalResults={combinedResults.length}
       />
 
-      <main className={cn("flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 pb-24", viewMode === "grid" && "max-w-7xl mx-auto")}>
+      <main className={cn(
+        "flex-1 w-full",
+        viewMode === "grid" ? "px-4 sm:px-6 lg:px-8 py-6 pb-24 max-w-7xl mx-auto" : "h-[calc(100vh-175px)]"
+      )}>
         {/* Near Me Loading Overlay */}
         {isLocating && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-center gap-3 text-amber-700 animate-pulse">
+          <div className="mb-6 mx-4 sm:mx-6 lg:mx-8 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-center gap-3 text-amber-700 animate-pulse">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span className="font-medium">Detecting your location...</span>
           </div>
         )}
 
-        <div className={cn("flex flex-col md:flex-row gap-6", viewMode === "map" ? "md:items-start" : "")}>
+        <div className={cn(
+          "flex flex-col md:flex-row h-full",
+          viewMode === "map" ? "gap-0" : "gap-6"
+        )}>
           
           {/* List Pane */}
           <div className={cn(
             "flex flex-col gap-6 w-full",
-            viewMode === "map" ? "md:w-[50%] lg:w-[45%] xl:w-[40%]" : "md:w-full"
+            viewMode === "map" ? "md:w-[50%] lg:w-[45%] xl:w-[45%] overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 pb-24" : "md:w-full"
           )}>
             
             {/* Controls Bar */}
@@ -557,8 +563,8 @@ function UnifiedSearchPage() {
               <div className="md:hidden fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-white overflow-hidden flex flex-col">
                 <MapWrapper filteredItems={mapItems} userLocation={userLocation} onVisibleItemsChange={setVisibleMapIds} />
               </div>
-              {/* Desktop Sticky Map */}
-              <div className="hidden md:block w-[50%] lg:w-[55%] xl:w-[60%] sticky top-[170px] h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white z-0">
+              {/* Desktop Sticky Map -> Full Bleed Map */}
+              <div className="hidden md:block flex-1 h-full z-0 overflow-hidden relative border-l border-slate-200 dark:border-slate-800 bg-slate-100">
                 <MapWrapper filteredItems={mapItems} userLocation={userLocation} onVisibleItemsChange={setVisibleMapIds} />
               </div>
             </>
