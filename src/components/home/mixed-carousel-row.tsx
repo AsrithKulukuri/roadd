@@ -57,11 +57,11 @@ export function MixedCarouselRow({
   if (items.length === 0) return null;
 
   return (
-    <section className="py-2 sm:py-4 relative">
+    <section className="py-1 relative">
       <div className="container-road">
         {!hideHeader && (
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-8">
-            <div className="max-w-2xl space-y-3">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 mb-3">
+            <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-primary/10 border border-amber-primary/20 text-amber-primary text-xs sm:text-sm font-semibold">
                 <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {title}

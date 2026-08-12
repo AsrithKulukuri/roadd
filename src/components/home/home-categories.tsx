@@ -69,49 +69,43 @@ export function HomeCategories() {
   ];
 
   return (
-    <section className="py-8">
-      <div className="container-road space-y-12">
+    <section className="py-4">
+      <div className="container-road space-y-4">
         
         {/* Recommended Section */}
         {recommendedMixed.length > 0 && (
-          <div className="space-y-8">
-            <MixedCarouselRow
-              title="Recommended"
-              icon={ThumbsUp}
-              items={recommendedMixed}
-              hideHeader={false}
-              autoSlide={true}
-              cardVariant="category-style"
-            />
-          </div>
+          <MixedCarouselRow
+            title="Recommended"
+            icon={ThumbsUp}
+            items={recommendedMixed}
+            hideHeader={false}
+            autoSlide={true}
+            cardVariant="category-style"
+          />
         )}
 
         {/* Featured Section */}
         {featuredMixed.length > 0 && (
-          <div className="space-y-8">
-            <MixedCarouselRow
-              title="Featured"
-              icon={Star}
-              items={featuredMixed}
-              hideHeader={false}
-              autoSlide={true}
-              cardVariant="category-style"
-            />
-          </div>
+          <MixedCarouselRow
+            title="Featured"
+            icon={Star}
+            items={featuredMixed}
+            hideHeader={false}
+            autoSlide={true}
+            cardVariant="category-style"
+          />
         )}
 
         {/* Budget Friendly Section */}
         {budgetMixed.length > 0 && (
-          <div className="space-y-8">
-            <MixedCarouselRow
-              title="Budget Friendly"
-              icon={IndianRupee}
-              items={budgetMixed}
-              hideHeader={false}
-              autoSlide={true}
-              cardVariant="category-style"
-            />
-          </div>
+          <MixedCarouselRow
+            title="Budget Friendly"
+            icon={IndianRupee}
+            items={budgetMixed}
+            hideHeader={false}
+            autoSlide={true}
+            cardVariant="category-style"
+          />
         )}
 
       </div>
