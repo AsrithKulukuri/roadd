@@ -847,7 +847,10 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
         if (validBounds.length > 0) {
           const bounds = L.latLngBounds(validBounds);
           if (bounds.isValid()) {
-            mapRef.current.flyToBounds(bounds, { padding: [40, 40], duration: 1.2 });
+            const size = mapRef.current.getSize();
+            if (size.x > 0 && size.y > 0) {
+              mapRef.current.flyToBounds(bounds, { padding: [40, 40], duration: 1.2 });
+            }
           }
         }
       } catch (e) {
