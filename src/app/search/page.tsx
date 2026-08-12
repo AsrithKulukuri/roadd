@@ -556,18 +556,14 @@ function UnifiedSearchPage() {
             )}
           </div>
 
-          {/* Map Pane */}
+          {/* Map Pane - Single Instance for both Mobile and Desktop */}
           {viewMode === "map" && (
-            <>
-              {/* Mobile map overlay */}
-              <div className="md:hidden fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-white overflow-hidden flex flex-col">
-                <MapWrapper filteredItems={mapItems} userLocation={userLocation} onVisibleItemsChange={setVisibleMapIds} />
-              </div>
-              {/* Desktop Sticky Map -> Full Bleed Map */}
-              <div className="hidden md:block flex-1 h-full z-0 overflow-hidden relative border-l border-slate-200 dark:border-slate-800 bg-slate-100">
-                <MapWrapper filteredItems={mapItems} userLocation={userLocation} onVisibleItemsChange={setVisibleMapIds} />
-              </div>
-            </>
+            <div className="
+              fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-white overflow-hidden flex flex-col
+              md:relative md:top-auto md:left-auto md:right-auto md:bottom-auto md:flex-1 md:h-full md:z-0 md:border-l md:border-slate-200 md:dark:border-slate-800 md:bg-slate-100
+            ">
+              <MapWrapper filteredItems={mapItems} userLocation={userLocation} onVisibleItemsChange={setVisibleMapIds} />
+            </div>
           )}
         </div>
       </main>

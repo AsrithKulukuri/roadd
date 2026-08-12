@@ -848,8 +848,12 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
           const bounds = L.latLngBounds(validBounds);
           if (bounds.isValid()) {
             const size = mapRef.current.getSize();
-            if (size.x > 0 && size.y > 0) {
-              mapRef.current.flyToBounds(bounds, { padding: [40, 40], duration: 1.2 });
+            // Ensure map container is large enough to handle padding without yielding negative scales (which cause NaN)
+            if (size.x > 100 && size.y > 100) {
+              mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: true, duration: 1.2 });
+            } else if (size.x > 0 && size.y > 0) {
+              // Fallback to no padding if map container is very small during layout shifts
+              mapRef.current.fitBounds(bounds, { padding: [0, 0], maxZoom: 15, animate: false });
             }
           }
         }
