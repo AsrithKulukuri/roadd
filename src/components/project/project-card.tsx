@@ -123,24 +123,24 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
           e.preventDefault();
           setIsExpanded(true);
         }}
-        className="w-[220px] h-[220px] rounded-2xl relative overflow-hidden group cursor-pointer border border-border-default shadow-sm shrink-0"
+        className="w-[160px] h-[160px] sm:w-[220px] sm:h-[220px] rounded-2xl relative overflow-hidden group cursor-pointer border border-border-default shadow-sm shrink-0"
       >
         {project.coverImage ? (
           <img src={project.coverImage} alt={project.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
         ) : (
           <div className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br ${TC.cardAccent} bg-bg-primary gap-3`}>
-            <Icon className="w-14 h-14 text-text-tertiary/30" />
+            <Icon className="w-10 h-10 sm:w-14 sm:h-14 text-text-tertiary/30" />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-        <div className="absolute top-3 right-3 z-10">
-          <span className="bg-slate-900/80 backdrop-blur-md border border-white/20 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-sm">
+        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
+          <span className="bg-slate-900/80 backdrop-blur-md border border-white/20 text-white font-bold text-[10px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-sm">
             {priceLabel}
           </span>
         </div>
-        <div className="absolute bottom-4 left-4 right-4 text-white">
-          <h3 className="font-bold text-lg leading-tight line-clamp-1 group-hover:text-amber-primary transition-colors">{project.name}</h3>
-          <p className="text-xs text-white/80 flex items-center gap-1 mt-1 truncate">
+        <div className="absolute bottom-2 left-2 right-2 sm:bottom-4 sm:left-4 sm:right-4 text-white">
+          <h3 className="font-bold text-sm sm:text-lg leading-tight line-clamp-1 group-hover:text-amber-primary transition-colors">{project.name}</h3>
+          <p className="text-[10px] sm:text-xs text-white/80 flex items-center gap-1 mt-0.5 sm:mt-1 truncate">
             <MapPin className="w-3 h-3 shrink-0" /> {project.location.locality}
           </p>
         </div>

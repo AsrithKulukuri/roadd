@@ -156,7 +156,7 @@ export function MixedCarouselRow({
                 className={cn(
                   "shrink-0 snap-start",
                   cardVariant === "category-style" 
-                    ? "min-w-[220px] sm:min-w-[260px]" 
+                    ? "min-w-[160px] sm:min-w-[220px]" 
                     : "min-w-[280px] sm:min-w-[320px] md:min-w-[350px]"
                 )}
               >
