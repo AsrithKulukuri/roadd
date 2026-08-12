@@ -532,7 +532,8 @@ function resolvePropertyMapCoords(p: any): { lat: number; lng: number } {
         Math.abs(currentLat - centerLat) > 0.015 ||
         Math.abs(currentLng - centerLng) > 0.015
       ) {
-        const hash = (p.id || "1").split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+        const idStr = String(p.id || "1");
+        const hash = idStr.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
         const latOffset = ((hash % 7) - 3) * 0.0018; // ±0.0054 deg (~600m)
         const lngOffset = (((hash * 13) % 7) - 3) * 0.0018;
         return {
@@ -804,8 +805,20 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   // Fly map to locality boundary when detected
   useEffect(() => {
     if (activeLocalityBoundary && mapRef.current) {
-      const bounds = L.latLngBounds(activeLocalityBoundary.bounds);
-      mapRef.current.flyToBounds(bounds, { padding: [40, 40], duration: 1.2 });
+      try {
+        const validBounds = activeLocalityBoundary.bounds.filter(
+          (b) => b && Array.isArray(b) && b.length >= 2 && !isNaN(b[0]) && !isNaN(b[1]) && isFinite(b[0]) && isFinite(b[1])
+        ) as L.LatLngExpression[];
+        
+        if (validBounds.length > 0) {
+          const bounds = L.latLngBounds(validBounds);
+          if (bounds.isValid()) {
+            mapRef.current.flyToBounds(bounds, { padding: [40, 40], duration: 1.2 });
+          }
+        }
+      } catch (e) {
+        console.error("Invalid map bounds:", e, activeLocalityBoundary.bounds);
+      }
     }
   }, [activeLocalityBoundary]);
 
