@@ -1084,17 +1084,6 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
       {/* Main Container */}
       <div className="relative w-full flex-1 flex flex-col md:flex-row gap-0 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden bg-slate-900 shadow-xl h-full touch-none" style={{ touchAction: "none" }}>
         
-        {/* Open Map Explorer Button (When Closed) */}
-        {!showMapExplorer && (
-          <button
-            onClick={() => setShowMapExplorer(true)}
-            className="absolute top-4 left-4 z-[400] bg-slate-900 text-white p-3 rounded-xl shadow-lg border border-slate-800 flex items-center gap-2 hover:bg-slate-800 transition-colors"
-          >
-            <Compass className="w-5 h-5 text-amber-400" />
-            <span className="font-bold text-sm hidden sm:block">Map Explorer</span>
-          </button>
-        )}
-
         {/* Sidebar Control Panel / Collapsible Drawer */}
         <div
           className={`w-full md:w-80 flex-shrink-0 p-5 md:p-6 flex-col justify-between bg-slate-900 text-white z-[500] border-b md:border-b-0 md:border-r border-slate-800 shadow-2xl space-y-5 ${
@@ -1420,6 +1409,17 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
 
         {/* The Leaflet Map Canvas Container */}
         <div className="flex-1 w-full h-full relative bg-slate-950 touch-none" style={{ touchAction: "none" }}>
+          
+          {/* Open Map Explorer Button (When Closed) */}
+          {!showMapExplorer && (
+            <button
+              onClick={() => setShowMapExplorer(true)}
+              className="absolute top-4 left-4 z-[500] bg-slate-900 text-white px-3 py-2 sm:p-3 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.3)] border border-slate-700 flex items-center gap-2 hover:bg-slate-800 transition-colors pointer-events-auto cursor-pointer"
+            >
+              <Compass className="w-5 h-5 text-[#f1a010]" />
+              <span className="font-bold text-sm hidden sm:block shadow-sm">Map Explorer</span>
+            </button>
+          )}
           
           {/* TOP: Entity Type Pills (All / Properties / Projects) */}
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[550] flex items-center gap-1.5 pointer-events-auto">
