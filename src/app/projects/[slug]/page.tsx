@@ -682,16 +682,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                             )}
                           </div>
                           
-                          <div className="pt-2 flex gap-2 border-t border-border-default/50">
-                            {whatsapp && (
-                              <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="w-11 h-11 flex items-center justify-center rounded-xl border border-amber-500 text-amber-600 hover:bg-amber-500/10 transition-colors shrink-0">
-                                <MessageCircle className="w-5 h-5 shrink-0" />
-                              </a>
-                            )}
-                            <a href={phone || "#"} className="flex-1 flex items-center justify-center rounded-xl border-2 border-amber-primary text-amber-primary font-bold text-sm hover:bg-amber-primary/5 transition-colors whitespace-nowrap">
-                              Contact
-                            </a>
-                          </div>
+
                         </div>
                       </div>
                     ))}
