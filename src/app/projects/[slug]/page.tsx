@@ -620,19 +620,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     <div ref={cardsScrollRef} className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-6 px-6 sm:px-12">
                     {(currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => (
                       <div key={cfg.id || idx} className="w-[85vw] sm:w-[320px] shrink-0 snap-center p-4 rounded-2xl border border-border-default bg-bg-primary flex flex-col gap-4 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
-                        {cfg.floorPlanUrl && (
-                          <div
-                            className="rounded-xl overflow-hidden bg-white aspect-[4/3] cursor-zoom-in border border-border-default flex items-center justify-center relative group"
-                            onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: cfg.label })}
-                          >
-                            <img src={cfg.floorPlanUrl} alt={`${cfg.label} floor plan`} className="max-w-full max-h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl" />
-                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
-                              <Eye className="w-3 h-3" /> View
-                            </div>
-                          </div>
-                        )}
-                        
                         <div className="space-y-1 flex-1">
                           {cfg.possessionDate && (
                             <p className="text-sm text-text-secondary font-medium mb-1">Possession by {cfg.possessionDate}</p>
@@ -679,6 +666,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                             </p>
                           </div>
                         </div>
+
+                        {cfg.floorPlanUrl && (
+                          <div
+                            className="rounded-xl overflow-hidden bg-white aspect-[4/3] cursor-zoom-in border border-border-default flex items-center justify-center relative group"
+                            onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: cfg.label })}
+                          >
+                            <img src={cfg.floorPlanUrl} alt={`${cfg.label} floor plan`} className="max-w-full max-h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl" />
+                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                              <Eye className="w-3 h-3" /> View
+                            </div>
+                          </div>
+                        )}
                         
                         <div className="pt-2 flex gap-2 border-t border-border-default/50 mt-auto">
                           {whatsapp && (
