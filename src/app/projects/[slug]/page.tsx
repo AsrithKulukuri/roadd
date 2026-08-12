@@ -9,7 +9,7 @@ import { getYoutubeEmbedUrl, isYoutubeShort } from "@/lib/utils";
 import {
   MapPin, CheckCircle2, Phone, MessageCircle, Download,
   ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark,
-  Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity
+  Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate
 } from "lucide-react";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/back-button";
@@ -619,76 +619,73 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     </button>
                     <div ref={cardsScrollRef} className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-6 px-6 sm:px-12">
                     {(currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => (
-                      <div key={cfg.id || idx} className="w-[85vw] sm:w-[320px] shrink-0 snap-center p-4 rounded-2xl border border-border-default bg-bg-primary flex flex-col gap-4 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
-                        <div className="space-y-1 flex-1">
-                          {cfg.possessionDate && (
-                            <p className="text-sm text-text-secondary font-medium mb-1">Possession by {cfg.possessionDate}</p>
-                          )}
-                          <p className="text-lg font-bold text-text-primary">{cfg.label}</p>
-                          
-                          <div className="flex justify-between items-end mt-2">
-                            <div>
-                              <p className="text-xs text-text-tertiary">
-                                {project.projectType === "venture" ? "Plot Area" : "Super built-up area"}
-                              </p>
-                              {cfg.builtUpAreaMin != null && project.projectType !== "venture" && (
-                                <div className="flex items-center gap-1">
-                                  <p className="text-sm font-semibold text-text-secondary">
-                                    {cfg.builtUpAreaMin} – {cfg.builtUpAreaMax} sq.ft
-                                  </p>
-                                </div>
-                              )}
-                              {cfg.superBuiltUpAreaMin != null && (
-                                <div className="flex items-center gap-1 mt-0.5">
-                                  <p className="text-sm font-semibold text-text-secondary">
-                                    {cfg.superBuiltUpAreaMin}
-                                    {cfg.superBuiltUpAreaMax && cfg.superBuiltUpAreaMax !== cfg.superBuiltUpAreaMin ? ` – ${cfg.superBuiltUpAreaMax}` : ""} sq.ft
-                                  </p>
-                                  <ChevronDown className="w-3.5 h-3.5 text-text-tertiary" />
-                                </div>
-                              )}
-                              {cfg.plotSizeMin != null && (
-                                <div className="flex items-center gap-1 mt-0.5">
-                                  <p className="text-sm font-semibold text-text-secondary">
-                                    {cfg.plotSizeMin}
-                                    {cfg.plotSizeMax && cfg.plotSizeMax !== cfg.plotSizeMin ? ` – ${cfg.plotSizeMax}` : ""} sq.yds
-                                  </p>
-                                  <ChevronDown className="w-3.5 h-3.5 text-text-tertiary" />
-                                </div>
-                              )}
+                      <div key={cfg.id || idx} className="w-[85vw] sm:w-[320px] shrink-0 snap-center p-5 rounded-2xl border border-border-default bg-bg-primary flex flex-col gap-4 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+                        {/* Top Section */}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-md bg-amber-500/10 flex items-center justify-center shrink-0">
+                              <LayoutTemplate className="w-4 h-4 text-amber-600" />
+                            </div>
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-xl font-bold text-slate-800">
+                                {cfg.superBuiltUpAreaMin ?? cfg.builtUpAreaMin ?? cfg.plotSizeMin}
+                                {project.projectType === "venture" ? " sq.yds" : " sq.ft"}
+                              </span>
+                              {/* If we have max area, show it */}
+                              {(cfg.superBuiltUpAreaMax && cfg.superBuiltUpAreaMax !== cfg.superBuiltUpAreaMin) || (cfg.builtUpAreaMax && cfg.builtUpAreaMax !== cfg.builtUpAreaMin) || (cfg.plotSizeMax && cfg.plotSizeMax !== cfg.plotSizeMin) ? (
+                                <span className="text-sm text-slate-400 font-medium">
+                                  – {cfg.superBuiltUpAreaMax ?? cfg.builtUpAreaMax ?? cfg.plotSizeMax} {project.projectType === "venture" ? "sq.yds" : "sq.ft"}
+                                </span>
+                              ) : null}
                             </div>
                           </div>
-
-                          <div className="mt-3">
-                            <p className="text-xl font-bold text-text-primary">
-                              {formatINRCrore(cfg.priceMin)}
-                              {cfg.priceMax && cfg.priceMax !== cfg.priceMin ? ` – ${formatINRCrore(cfg.priceMax)}` : ""}
-                            </p>
+                          <div className="text-sm text-slate-500 ml-8">
+                            {project.projectType === "venture" ? "Plot Area" : "Super Built-up Area"} | <span className="font-medium text-slate-600">{cfg.label}</span>
                           </div>
                         </div>
 
+                        {/* Image Section */}
                         {cfg.floorPlanUrl && (
                           <div
-                            className="rounded-xl overflow-hidden bg-white aspect-[4/3] cursor-zoom-in border border-border-default flex items-center justify-center relative group"
+                            className="rounded-xl overflow-hidden bg-white aspect-[4/3] cursor-zoom-in flex items-center justify-center relative group my-2"
                             onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: cfg.label })}
                           >
-                            <img src={cfg.floorPlanUrl} alt={`${cfg.label} floor plan`} className="max-w-full max-h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />
+                            <img src={cfg.floorPlanUrl} alt={`${cfg.label} floor plan`} className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500" />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl" />
-                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Eye className="w-3 h-3" /> View
                             </div>
                           </div>
                         )}
-                        
-                        <div className="pt-2 flex gap-2 border-t border-border-default/50 mt-auto">
-                          {whatsapp && (
-                            <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="w-11 h-11 flex items-center justify-center rounded-xl border border-amber-500 text-amber-600 hover:bg-amber-500/10 transition-colors shrink-0">
-                              <MessageCircle className="w-5 h-5 shrink-0" />
+
+                        {/* Bottom Section */}
+                        <div className="mt-auto flex flex-col gap-3">
+                          <div className="text-2xl font-black text-slate-900">
+                            {formatINRCrore(cfg.priceMin)}
+                            {cfg.priceMax && cfg.priceMax !== cfg.priceMin ? ` – ${formatINRCrore(cfg.priceMax)}` : ""}
+                          </div>
+                          
+                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex flex-col gap-1 text-sm">
+                            <span className="text-slate-500">
+                              New Launch
+                            </span>
+                            {cfg.possessionDate && (
+                              <span className="font-semibold text-slate-700">
+                                {cfg.possessionDate} possession
+                              </span>
+                            )}
+                          </div>
+                          
+                          <div className="pt-2 flex gap-2 border-t border-border-default/50">
+                            {whatsapp && (
+                              <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="w-11 h-11 flex items-center justify-center rounded-xl border border-amber-500 text-amber-600 hover:bg-amber-500/10 transition-colors shrink-0">
+                                <MessageCircle className="w-5 h-5 shrink-0" />
+                              </a>
+                            )}
+                            <a href={phone || "#"} className="flex-1 flex items-center justify-center rounded-xl border-2 border-amber-primary text-amber-primary font-bold text-sm hover:bg-amber-primary/5 transition-colors whitespace-nowrap">
+                              Contact
                             </a>
-                          )}
-                          <a href={phone || "#"} className="flex-1 flex items-center justify-center rounded-xl border-2 border-amber-primary text-amber-primary font-bold text-sm hover:bg-amber-primary/5 transition-colors whitespace-nowrap">
-                            Contact
-                          </a>
+                          </div>
                         </div>
                       </div>
                     ))}
