@@ -479,7 +479,7 @@ function UnifiedSearchPage() {
         totalResults={combinedResults.length}
       />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">
+      <main className={cn("flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 pb-24", viewMode === "grid" && "max-w-7xl mx-auto")}>
         {/* Near Me Loading Overlay */}
         {isLocating && (
           <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-center gap-3 text-amber-700 animate-pulse">
@@ -488,17 +488,21 @@ function UnifiedSearchPage() {
           </div>
         )}
 
-        <div className="flex flex-col gap-6">
+        <div className={cn("flex flex-col md:flex-row gap-6", viewMode === "map" ? "md:items-start" : "")}>
           
-          {/* Controls Bar */}
-          {viewMode === "grid" && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          {/* List Pane */}
+          <div className={cn(
+            "flex flex-col gap-6 w-full",
+            viewMode === "map" ? "md:w-[50%] lg:w-[45%] xl:w-[40%]" : "md:w-full"
+          )}>
             
-            <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
-              <button onClick={() => setActiveTab("all")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "all" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>All ({filteredProperties.length + filteredProjects.length})</button>
-              <button onClick={() => setActiveTab("properties")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "properties" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Properties ({filteredProperties.length})</button>
-              <button onClick={() => setActiveTab("projects")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "projects" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Projects ({filteredProjects.length})</button>
-            </div>
+            {/* Controls Bar */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
+                <button onClick={() => setActiveTab("all")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "all" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>All ({filteredProperties.length + filteredProjects.length})</button>
+                <button onClick={() => setActiveTab("properties")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "properties" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Properties ({filteredProperties.length})</button>
+                <button onClick={() => setActiveTab("projects")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "projects" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Projects ({filteredProjects.length})</button>
+              </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-border-default bg-white dark:bg-bg-card text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-primary/30">
@@ -509,45 +513,50 @@ function UnifiedSearchPage() {
                 </select>
               </div>
             </div>
-          )}
 
-          {/* Results Grid or Map */}
-          {(isLoadingProperties || isLoadingProjects) ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, i) => (
-                <SkeletonCard key={`skeleton-${i}`} />
-              ))}
-            </div>
-          ) : viewMode === "map" ? (
-            <div>
+            {/* Results Grid */}
+            {(isLoadingProperties || isLoadingProjects) ? (
+              <div className={cn("grid gap-6", viewMode === "map" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4")}>
+                {[...Array(8)].map((_, i) => (
+                  <SkeletonCard key={`skeleton-${i}`} />
+                ))}
+              </div>
+            ) : combinedResults.length > 0 ? (
+              <div className={cn("grid gap-6", viewMode === "map" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4")}>
+                {combinedResults.map((item, idx) => {
+                  if (item.type === "property") {
+                    return <PropertyCard key={`prop-${item.data.id}-${idx}`} property={item.data as any} />;
+                  } else {
+                    return <ProjectCard key={`proj-${item.data.id}-${idx}`} project={item.data as any} />;
+                  }
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-20 h-20 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center mb-4">
+                  <SearchIcon className="w-8 h-8 text-slate-400" />
+                </div>
+                <h3 className="text-xl font-heading font-bold text-text-primary mb-2">No matches found</h3>
+                <p className="text-text-secondary mb-6 max-w-md">Try adjusting your filters or search terms to find what you're looking for.</p>
+                <button onClick={() => { setFilters(initialFilterState); setActiveTab("all"); }} className="px-6 py-2.5 bg-amber-primary hover:bg-amber-600 text-slate-950 font-bold rounded-xl transition-colors">
+                  Clear all filters
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Map Pane */}
+          {viewMode === "map" && (
+            <>
+              {/* Mobile map overlay */}
               <div className="md:hidden fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-white overflow-hidden flex flex-col">
                 <MapWrapper filteredItems={mapItems} userLocation={userLocation} />
               </div>
-              <div className="hidden md:block w-full h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white relative z-0">
+              {/* Desktop Sticky Map */}
+              <div className="hidden md:block w-[50%] lg:w-[55%] xl:w-[60%] sticky top-[170px] h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white z-0">
                 <MapWrapper filteredItems={mapItems} userLocation={userLocation} />
               </div>
-            </div>
-          ) : combinedResults.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {combinedResults.map((item, idx) => {
-                if (item.type === "property") {
-                  return <PropertyCard key={`prop-${item.data.id}-${idx}`} property={item.data as any} />;
-                } else {
-                  return <ProjectCard key={`proj-${item.data.id}-${idx}`} project={item.data as any} />;
-                }
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-20 h-20 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center mb-4">
-                <SearchIcon className="w-8 h-8 text-slate-400" />
-              </div>
-              <h3 className="text-xl font-heading font-bold text-text-primary mb-2">No matches found</h3>
-              <p className="text-text-secondary mb-6 max-w-md">Try adjusting your filters or search terms to find what you're looking for.</p>
-              <button onClick={() => { setFilters(initialFilterState); setActiveTab("all"); }} className="px-6 py-2.5 bg-amber-primary hover:bg-amber-600 text-slate-950 font-bold rounded-xl transition-colors">
-                Clear all filters
-              </button>
-            </div>
+            </>
           )}
         </div>
       </main>

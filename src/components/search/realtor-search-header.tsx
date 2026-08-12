@@ -297,7 +297,8 @@ export function RealtorSearchHeader({
               ) : (
                 <>
                   <List className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 shrink-0" />
-                  <span className="text-slate-800">List View</span>
+                  <span className="text-slate-800 hidden sm:inline">Close Map</span>
+                  <span className="text-slate-800 sm:hidden">List View</span>
                 </>
               )}
             </button>
