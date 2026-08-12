@@ -66,9 +66,6 @@ export function MixedCarouselRow({
                 <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {title}
               </div>
-              <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary">
-                {title}
-              </h2>
             </div>
 
             {/* Desktop Navigation */}
