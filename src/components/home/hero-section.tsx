@@ -637,74 +637,91 @@ export function HeroSection() {
           </AnimatePresence>
         </div>
 
-        {/* ── Premium Budget Slider ── */}
+        {/* ── Clean Budget Filter ── */}
         <div className="w-full max-w-[760px] mx-auto mt-3 sm:mt-4">
-          <div
-            className="relative rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-md"
-          >
-            {/* Top accent line */}
-            <div className="absolute inset-x-0 top-0 h-[3px] rounded-t-2xl bg-gradient-to-r from-amber-500/0 via-amber-400 to-amber-500/0" />
+          <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-100">
+            <h3 className="text-sm font-bold text-slate-800 mb-3">Budget</h3>
+            
+            {/* Dropdowns */}
+            <div className="flex items-center gap-3 mb-6">
+              <select
+                value={heroBudget[0]}
+                onChange={(e) => setHeroBudget([Number(e.target.value), heroBudget[1]])}
+                className="flex-1 h-11 px-3 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-700 outline-none focus:border-emerald-600 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px_12px] bg-[right_12px_center]"
+              >
+                <option value={0}>Min</option>
+                <option value={1000000}>₹ 10 L</option>
+                <option value={2000000}>₹ 20 L</option>
+                <option value={3000000}>₹ 30 L</option>
+                <option value={5000000}>₹ 50 L</option>
+                <option value={7500000}>₹ 75 L</option>
+                <option value={10000000}>₹ 1 Cr</option>
+                <option value={20000000}>₹ 2 Cr</option>
+                <option value={50000000}>₹ 5 Cr</option>
+              </select>
 
-            <div className="px-3 py-2 sm:px-4 sm:py-3">
-              {/* Header row */}
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  {/* Coin icon */}
-                  <div className="w-6 h-6 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
-                    <span className="text-amber-500 font-black text-[11px] leading-none">₹</span>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 leading-none">Budget</p>
-                    <p className="text-[11px] font-semibold text-slate-900 leading-none mt-1">Filter by price</p>
-                  </div>
-                </div>
+              <span className="text-slate-500 font-medium text-sm">to</span>
 
-                {/* Price display pill */}
-                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
-                  <span className="text-xs sm:text-sm font-black text-slate-700 tracking-tight">
-                    {heroBudget[0] === 0 && heroBudget[1] === 100000000
-                      ? "Any Price"
-                      : `${formatINRWords(heroBudget[0])} – ${formatINRWords(heroBudget[1], true)}`}
-                  </span>
-                </div>
-              </div>
+              <select
+                value={heroBudget[1]}
+                onChange={(e) => setHeroBudget([heroBudget[0], Number(e.target.value)])}
+                className="flex-1 h-11 px-3 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-700 outline-none focus:border-emerald-600 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px_12px] bg-[right_12px_center]"
+              >
+                <option value={100000000}>Max</option>
+                <option value={1000000}>₹ 10 L</option>
+                <option value={2000000}>₹ 20 L</option>
+                <option value={3000000}>₹ 30 L</option>
+                <option value={5000000}>₹ 50 L</option>
+                <option value={7500000}>₹ 75 L</option>
+                <option value={10000000}>₹ 1 Cr</option>
+                <option value={15000000}>₹ 1.5 Cr</option>
+                <option value={20000000}>₹ 2 Cr</option>
+                <option value={30000000}>₹ 3 Cr</option>
+                <option value={50000000}>₹ 5 Cr</option>
+              </select>
+            </div>
 
-              {/* Slider */}
-              <div className="px-1 mt-1">
-                <Slider
-                  min={0}
-                  max={100000000}
-                  step={500000}
-                  value={heroBudget}
-                  onValueChange={(val) => setHeroBudget(val as [number, number])}
-                  className="w-full"
-                />
-              </div>
-
-              {/* Footer: tick labels + Apply button */}
-              <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center flex-nowrap overflow-x-auto hide-scrollbar gap-3 text-[10px] font-bold text-slate-400 flex-1 min-w-0 pr-2 relative z-10">
-                  <button type="button" onClick={() => setHeroBudget([0, 100000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹0</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 3000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹30L</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 5000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹50L</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 7000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹70L</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 9000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹90L</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 10000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹1Cr</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 12000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹1.2Cr</button>
-                  <button type="button" onClick={() => setHeroBudget([0, 100000000])} className="shrink-0 hover:text-slate-900 transition-colors">₹1.5Cr+</button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleSearchSubmit()}
-                  className="relative flex items-center gap-1 h-6 pl-2.5 pr-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-amber-400 font-black text-[10px] rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
-                >
-                  <span>Apply</span>
-                  <span className="w-4 h-4 rounded-full bg-amber-400/20 flex items-center justify-center text-[9px] font-black text-amber-400 leading-none">
-                    {matchingCount}
-                  </span>
-                </button>
-              </div>
+            {/* Slider */}
+            <div className="px-2">
+              <style>{`
+                .budget-slider .slider-thumb {
+                  border: 2px solid #059669 !important;
+                  background: white !important;
+                  box-shadow: none !important;
+                  width: 24px !important;
+                  height: 24px !important;
+                  margin-top: -10px !important;
+                }
+                .budget-slider .slider-track-active {
+                  background: #059669 !important;
+                  height: 4px !important;
+                }
+                .budget-slider .slider-track-inactive {
+                  background: #e2e8f0 !important;
+                  height: 4px !important;
+                }
+              `}</style>
+              <Slider
+                min={0}
+                max={100000000}
+                step={500000}
+                value={heroBudget}
+                onValueChange={(val) => setHeroBudget(val as [number, number])}
+                className="w-full budget-slider cursor-pointer"
+              />
+            </div>
+            
+            <div className="flex justify-end mt-4">
+              <button
+                type="button"
+                onClick={() => handleSearchSubmit()}
+                className="flex items-center gap-2 h-9 px-6 bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-sm rounded-lg shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <span>Apply</span>
+                <span className="w-5 h-5 rounded-full bg-amber-400/20 flex items-center justify-center text-xs font-black text-amber-400 leading-none">
+                  {matchingCount}
+                </span>
+              </button>
             </div>
           </div>
         </div>
