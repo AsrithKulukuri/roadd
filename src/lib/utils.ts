@@ -102,26 +102,26 @@ export function getYoutubeEmbedUrl(url?: string): string | null {
 
   // 1. Extract 11-character video ID from any v= query param
   const vParamMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{11})/i);
-  if (vParamMatch && vParamMatch[1]) return `https://www.youtube.com/embed/${vParamMatch[1]}`;
+  if (vParamMatch && vParamMatch[1]) return `https://www.youtube.com/embed/${vParamMatch[1]}?rel=0&playsinline=1`;
 
   // 2. YouTube Shorts: /shorts/VIDEO_ID
   const shortsMatch = trimmed.match(/\/shorts\/([a-zA-Z0-9_-]{11})/i);
-  if (shortsMatch && shortsMatch[1]) return `https://www.youtube.com/embed/${shortsMatch[1]}`;
+  if (shortsMatch && shortsMatch[1]) return `https://www.youtube.com/embed/${shortsMatch[1]}?rel=0&playsinline=1`;
 
   // 3. YouTube Live: /live/VIDEO_ID
   const liveMatch = trimmed.match(/\/live\/([a-zA-Z0-9_-]{11})/i);
-  if (liveMatch && liveMatch[1]) return `https://www.youtube.com/embed/${liveMatch[1]}`;
+  if (liveMatch && liveMatch[1]) return `https://www.youtube.com/embed/${liveMatch[1]}?rel=0&playsinline=1`;
 
   // 4. YouTube Embed: /embed/VIDEO_ID
   const embedMatch = trimmed.match(/\/embed\/([a-zA-Z0-9_-]{11})/i);
-  if (embedMatch && embedMatch[1]) return `https://www.youtube.com/embed/${embedMatch[1]}`;
+  if (embedMatch && embedMatch[1]) return `https://www.youtube.com/embed/${embedMatch[1]}?rel=0&playsinline=1`;
 
   // 5. Shortened share URLs: youtu.be/VIDEO_ID
   const shareMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/i);
-  if (shareMatch && shareMatch[1]) return `https://www.youtube.com/embed/${shareMatch[1]}`;
+  if (shareMatch && shareMatch[1]) return `https://www.youtube.com/embed/${shareMatch[1]}?rel=0&playsinline=1`;
 
   // 6. Raw 11-char Video ID
-  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return `https://www.youtube.com/embed/${trimmed}`;
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return `https://www.youtube.com/embed/${trimmed}?rel=0&playsinline=1`;
 
   // 7. Generic http/https iframe fallback
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {

@@ -675,7 +675,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
                         {/* Image/Video Section */}
                         {(activeMedia[cfg.id] === 'video' && cfg.videoUrl) ? (
-                          <div className="rounded-xl overflow-hidden bg-black aspect-[4/3] flex items-center justify-center my-2 relative">
+                          <div className="rounded-xl overflow-hidden bg-black aspect-[4/3] flex items-center justify-center my-2 relative z-20">
                             <iframe
                               src={getYoutubeEmbedUrl(cfg.videoUrl!)!}
                               className="w-full h-full"
