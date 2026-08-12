@@ -654,20 +654,20 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
                           {/* Toggle Switch */}
                           {cfg.videoUrl && (
-                            <div className="flex items-center bg-slate-100 rounded-lg p-1 shrink-0 h-fit">
+                            <div className="flex items-center bg-slate-100 rounded-md p-0.5 shrink-0 h-fit">
                               <button
                                 onClick={() => setActiveMedia(prev => ({ ...prev, [cfg.id]: 'image' }))}
                                 title="View Plan"
-                                className={`p-1.5 rounded-md transition-all ${(!activeMedia[cfg.id] || activeMedia[cfg.id] === 'image') ? 'bg-white shadow-sm text-amber-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`p-1 rounded-[4px] transition-all ${(!activeMedia[cfg.id] || activeMedia[cfg.id] === 'image') ? 'bg-white shadow-sm text-amber-600' : 'text-slate-400 hover:text-slate-600'}`}
                               >
-                                <LayoutTemplate className="w-4 h-4" />
+                                <LayoutTemplate className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => setActiveMedia(prev => ({ ...prev, [cfg.id]: 'video' }))}
                                 title="View Video"
-                                className={`p-1.5 rounded-md transition-all ${(activeMedia[cfg.id] === 'video') ? 'bg-white shadow-sm text-red-500' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`p-1 rounded-[4px] transition-all ${(activeMedia[cfg.id] === 'video') ? 'bg-white shadow-sm text-red-500' : 'text-slate-400 hover:text-slate-600'}`}
                               >
-                                <Play className="w-4 h-4 fill-current" />
+                                <Play className="w-3.5 h-3.5 fill-current" />
                               </button>
                             </div>
                           )}
