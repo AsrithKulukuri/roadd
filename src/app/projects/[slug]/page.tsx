@@ -641,31 +641,33 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                                 ) : null}
                               </div>
                             </div>
-                            <div className="text-sm text-slate-500 ml-8">
-                              {project.projectType === "venture" ? "Plot Area" : "Super Built-up Area"} | <span className="font-medium text-slate-600">{cfg.label}</span>
+                            <div className="text-sm text-slate-500 ml-8 flex flex-wrap items-center gap-x-0 gap-y-1">
+                              <span>{project.projectType === "venture" ? "Plot Area" : "Super Built-up Area"} <span className="mx-1.5 text-slate-300">|</span> <span className="font-medium text-slate-600">{cfg.label}</span></span>
                               {cfg.uds && (
-                                <>
+                                <span className="flex items-center">
                                   <span className="mx-1.5 text-slate-300">|</span>
                                   <span className="font-medium text-slate-600">UDS: {cfg.uds} sq.yds</span>
-                                </>
+                                </span>
                               )}
                             </div>
                           </div>
 
                           {/* Toggle Switch */}
                           {cfg.videoUrl && (
-                            <div className="flex items-center bg-slate-100 rounded-lg p-1 shrink-0">
+                            <div className="flex items-center bg-slate-100 rounded-lg p-1 shrink-0 h-fit">
                               <button
                                 onClick={() => setActiveMedia(prev => ({ ...prev, [cfg.id]: 'image' }))}
-                                className={`px-2 py-1 text-xs font-bold rounded-md transition-all ${(!activeMedia[cfg.id] || activeMedia[cfg.id] === 'image') ? 'bg-white shadow-sm text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}
+                                title="View Plan"
+                                className={`p-1.5 rounded-md transition-all ${(!activeMedia[cfg.id] || activeMedia[cfg.id] === 'image') ? 'bg-white shadow-sm text-amber-600' : 'text-slate-400 hover:text-slate-600'}`}
                               >
-                                Plan
+                                <LayoutTemplate className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => setActiveMedia(prev => ({ ...prev, [cfg.id]: 'video' }))}
-                                className={`px-2 py-1 text-xs font-bold rounded-md transition-all ${(activeMedia[cfg.id] === 'video') ? 'bg-white shadow-sm text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}
+                                title="View Video"
+                                className={`p-1.5 rounded-md transition-all ${(activeMedia[cfg.id] === 'video') ? 'bg-white shadow-sm text-red-500' : 'text-slate-400 hover:text-slate-600'}`}
                               >
-                                Video
+                                <Play className="w-4 h-4 fill-current" />
                               </button>
                             </div>
                           )}
@@ -674,21 +676,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                         {/* Image/Video Section */}
                         {(activeMedia[cfg.id] === 'video' && cfg.videoUrl) ? (
                           <div className="rounded-xl overflow-hidden bg-black aspect-[4/3] flex items-center justify-center my-2 relative">
-                            {isYoutubeShort(cfg.videoUrl!) ? (
-                              <iframe
-                                src={getYoutubeEmbedUrl(cfg.videoUrl!)!}
-                                className="h-[200%] aspect-[9/16] -translate-y-1/4 scale-75"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                              />
-                            ) : (
-                              <iframe
-                                src={getYoutubeEmbedUrl(cfg.videoUrl!)!}
-                                className="w-full h-full"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                              />
-                            )}
+                            <iframe
+                              src={getYoutubeEmbedUrl(cfg.videoUrl!)!}
+                              className="w-full h-full"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            />
                           </div>
                         ) : (
                           cfg.floorPlanUrl && (
