@@ -524,27 +524,7 @@ export function PropertyCard({
               </div>
             </div>
 
-            {/* Specs Pills */}
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {property.bedrooms > 0 && (
-                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-bg-primary border border-border-default text-text-secondary flex items-center gap-1">
-                  <Bed className="w-3 h-3 text-amber-500" />
-                  {property.bedrooms} Bed
-                </span>
-              )}
-              {property.bathrooms > 0 && (
-                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-bg-primary border border-border-default text-text-secondary flex items-center gap-1">
-                  <Bath className="w-3 h-3 text-amber-500" />
-                  {property.bathrooms} Bath
-                </span>
-              )}
-              {property.area > 0 && (
-                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-bg-primary border border-border-default text-text-secondary flex items-center gap-1">
-                  <Maximize2 className="w-3 h-3 text-amber-500" />
-                  {formatArea(property.area)}
-                </span>
-              )}
-            </div>
+
 
             {/* Bottom Row / Footer */}
             <div className="pt-3 mt-1 border-t border-border-default">
