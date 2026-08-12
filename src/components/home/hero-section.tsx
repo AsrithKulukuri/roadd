@@ -638,19 +638,19 @@ export function HeroSection() {
         </div>
 
         {/* ── Sexy Budget Filter ── */}
-        <div className="w-full max-w-[760px] mx-auto mt-6 sm:mt-8 group perspective">
-          <div className="bg-white/90 backdrop-blur-2xl rounded-3xl p-5 sm:p-7 shadow-[0_8px_40px_rgb(0,0,0,0.08)] border border-white/60 transition-all duration-500 hover:shadow-[0_16px_60px_rgb(0,0,0,0.12)]">
-            <div className="flex items-center justify-center gap-2 mb-5">
-              <h3 className="text-sm sm:text-base font-extrabold text-slate-800 tracking-wide uppercase">Select Your Budget</h3>
+        <div className="w-full max-w-[760px] mx-auto mt-4 sm:mt-5 group perspective">
+          <div className="bg-white/90 backdrop-blur-2xl rounded-2xl p-4 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/60 transition-all duration-500 hover:shadow-[0_12px_40px_rgb(0,0,0,0.12)]">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 tracking-wider uppercase">Select Your Budget</h3>
             </div>
             
             {/* Dropdowns */}
-            <div className="flex items-center gap-4 mb-8">
+            <div className="flex items-center gap-3 mb-6">
               <div className="relative flex-1">
                 <select
                   value={heroBudget[0]}
                   onChange={(e) => setHeroBudget([Number(e.target.value), heroBudget[1]])}
-                  className="w-full h-12 sm:h-14 px-4 border-2 border-slate-100 hover:border-amber-400 focus:border-amber-500 rounded-2xl bg-slate-50/50 hover:bg-white focus:bg-white text-sm sm:text-base font-bold text-slate-700 outline-none transition-all cursor-pointer appearance-none shadow-sm focus:shadow-[0_0_0_4px_rgba(245,158,11,0.1)] bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px_12px] bg-[right_16px_center]"
+                  className="w-full h-10 sm:h-11 px-3 border border-slate-200 hover:border-amber-400 focus:border-amber-500 rounded-xl bg-slate-50/50 hover:bg-white focus:bg-white text-sm font-bold text-slate-700 outline-none transition-all cursor-pointer appearance-none shadow-sm focus:shadow-[0_0_0_3px_rgba(245,158,11,0.1)] bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:10px_10px] bg-[right_12px_center]"
                 >
                 {![1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 20000000, 50000000].includes(heroBudget[0]) && (
                   <option value={heroBudget[0]}>{formatINRWords(heroBudget[0])}</option>
@@ -666,15 +666,15 @@ export function HeroSection() {
                 </select>
               </div>
 
-              <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
-                <span className="text-slate-400 font-bold text-xs sm:text-sm">TO</span>
+              <div className="flex-shrink-0 px-2 flex items-center justify-center">
+                <span className="text-slate-400 font-bold text-xs">TO</span>
               </div>
 
               <div className="relative flex-1">
                 <select
                   value={heroBudget[1]}
                   onChange={(e) => setHeroBudget([heroBudget[0], Number(e.target.value)])}
-                  className="w-full h-12 sm:h-14 px-4 border-2 border-slate-100 hover:border-amber-400 focus:border-amber-500 rounded-2xl bg-slate-50/50 hover:bg-white focus:bg-white text-sm sm:text-base font-bold text-slate-700 outline-none transition-all cursor-pointer appearance-none shadow-sm focus:shadow-[0_0_0_4px_rgba(245,158,11,0.1)] bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px_12px] bg-[right_16px_center]"
+                  className="w-full h-10 sm:h-11 px-3 border border-slate-200 hover:border-amber-400 focus:border-amber-500 rounded-xl bg-slate-50/50 hover:bg-white focus:bg-white text-sm font-bold text-slate-700 outline-none transition-all cursor-pointer appearance-none shadow-sm focus:shadow-[0_0_0_3px_rgba(245,158,11,0.1)] bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:10px_10px] bg-[right_12px_center]"
                 >
                 {![100000000, 1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000, 30000000, 50000000].includes(heroBudget[1]) && (
                   <option value={heroBudget[1]}>{formatINRWords(heroBudget[1], true)}</option>
@@ -695,14 +695,14 @@ export function HeroSection() {
             </div>
 
             {/* Slider */}
-            <div className="px-3 sm:px-5 mb-4">
+            <div className="px-3 sm:px-4 mb-2">
               <style>{`
                 .budget-slider [role="slider"] {
                   background: #0f172a !important; /* dark slate */
                   border: 2px solid white !important;
-                  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.4);
-                  width: 24px !important;
-                  height: 24px !important;
+                  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.4);
+                  width: 20px !important;
+                  height: 20px !important;
                   transition: transform 0.2s;
                 }
                 .budget-slider [role="slider"]:hover, .budget-slider [role="slider"]:focus {
@@ -710,7 +710,7 @@ export function HeroSection() {
                   background: #f59e0b !important; /* amber on hover */
                 }
                 .budget-slider [data-orientation="horizontal"] .radix-slider-track {
-                  height: 6px !important;
+                  height: 5px !important;
                   border-radius: 999px;
                   background: #e2e8f0;
                 }
@@ -728,14 +728,14 @@ export function HeroSection() {
               />
             </div>
             
-            <div className="flex justify-end mt-8">
+            <div className="flex justify-end mt-5">
               <button
                 type="button"
                 onClick={() => handleSearchSubmit()}
-                className="flex items-center gap-3 h-12 sm:h-14 px-8 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-[0_8px_20px_rgb(15,23,42,0.3)] hover:shadow-[0_12px_25px_rgb(15,23,42,0.4)] transition-all hover:-translate-y-1 active:scale-95 cursor-pointer border border-slate-700"
+                className="flex items-center gap-2 h-10 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl shadow-[0_4px_12px_rgb(15,23,42,0.3)] hover:shadow-[0_6px_16px_rgb(15,23,42,0.4)] transition-all hover:-translate-y-0.5 active:scale-95 cursor-pointer border border-slate-700"
               >
                 <span>Apply Budget</span>
-                <span className="min-w-[28px] h-7 px-2 rounded-full bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-xs font-black text-amber-400 leading-none shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+                <span className="min-w-[24px] h-6 px-1.5 rounded-full bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-[11px] font-black text-amber-400 leading-none shadow-[0_0_8px_rgba(245,158,11,0.2)]">
                   {matchingCount}
                 </span>
               </button>
