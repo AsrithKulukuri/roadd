@@ -485,8 +485,8 @@ function UnifiedSearchPage() {
       />
 
       <main className={cn(
-        "flex-1 w-full",
-        viewMode === "grid" ? "px-4 sm:px-6 lg:px-8 py-6 pb-24 max-w-7xl mx-auto" : "h-[calc(100vh-175px)]"
+        "flex-1 w-full flex flex-col",
+        viewMode === "grid" ? "px-4 sm:px-6 lg:px-8 py-6 pb-24 max-w-7xl mx-auto" : "h-[calc(100vh-175px)] overflow-hidden"
       )}>
         {/* Near Me Loading Overlay */}
         {isLocating && (
@@ -497,7 +497,7 @@ function UnifiedSearchPage() {
         )}
 
         <div className={cn(
-          "flex flex-col md:flex-row h-full",
+          "flex-1 flex flex-col md:flex-row w-full",
           viewMode === "map" ? "gap-0" : "gap-6"
         )}>
           
