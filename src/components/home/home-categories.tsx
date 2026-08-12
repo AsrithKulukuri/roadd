@@ -2,8 +2,7 @@
 
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
-import { PropertyCarouselRow } from "./property-carousel-row";
-import { ProjectCarouselRow } from "./project-carousel-row";
+import { MixedCarouselRow, type MixedItem } from "./mixed-carousel-row";
 import { ThumbsUp, Star, IndianRupee } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -54,85 +53,64 @@ export function HomeCategories() {
   const featuredProjs = activeProjects.filter((p) => p.displayCategory === 'featured');
   const budgetProjs = activeProjects.filter((p) => p.displayCategory === 'budget_friendly');
 
+  const recommendedMixed: MixedItem[] = [
+    ...recommendedProps.map(p => ({ ...p, itemType: 'property' as const })),
+    ...recommendedProjs.map(p => ({ ...p, itemType: 'project' as const }))
+  ];
+
+  const featuredMixed: MixedItem[] = [
+    ...featuredProps.map(p => ({ ...p, itemType: 'property' as const })),
+    ...featuredProjs.map(p => ({ ...p, itemType: 'project' as const }))
+  ];
+
+  const budgetMixed: MixedItem[] = [
+    ...budgetProps.map(p => ({ ...p, itemType: 'property' as const })),
+    ...budgetProjs.map(p => ({ ...p, itemType: 'project' as const }))
+  ];
+
   return (
     <section className="py-8">
       <div className="container-road space-y-12">
         
         {/* Recommended Section */}
-        {(recommendedProps.length > 0 || recommendedProjs.length > 0) && (
+        {recommendedMixed.length > 0 && (
           <div className="space-y-8">
-            {recommendedProps.length > 0 && (
-              <PropertyCarouselRow
-                title="Recommended Properties"
-                icon={ThumbsUp}
-                properties={recommendedProps}
-                hideHeader={false}
-                autoSlide={true}
-                cardVariant="category-style"
-              />
-            )}
-            {recommendedProjs.length > 0 && (
-              <ProjectCarouselRow
-                title="Recommended Projects"
-                icon={ThumbsUp}
-                projects={recommendedProjs}
-                hideHeader={false}
-                autoSlide={true}
-                cardVariant="category-style"
-              />
-            )}
+            <MixedCarouselRow
+              title="Recommended"
+              icon={ThumbsUp}
+              items={recommendedMixed}
+              hideHeader={false}
+              autoSlide={true}
+              cardVariant="category-style"
+            />
           </div>
         )}
 
         {/* Featured Section */}
-        {(featuredProps.length > 0 || featuredProjs.length > 0) && (
+        {featuredMixed.length > 0 && (
           <div className="space-y-8">
-            {featuredProps.length > 0 && (
-              <PropertyCarouselRow
-                title="Featured Properties"
-                icon={Star}
-                properties={featuredProps}
-                hideHeader={false}
-                autoSlide={true}
-                cardVariant="category-style"
-              />
-            )}
-            {featuredProjs.length > 0 && (
-              <ProjectCarouselRow
-                title="Featured Projects"
-                icon={Star}
-                projects={featuredProjs}
-                hideHeader={false}
-                autoSlide={true}
-                cardVariant="category-style"
-              />
-            )}
+            <MixedCarouselRow
+              title="Featured"
+              icon={Star}
+              items={featuredMixed}
+              hideHeader={false}
+              autoSlide={true}
+              cardVariant="category-style"
+            />
           </div>
         )}
 
         {/* Budget Friendly Section */}
-        {(budgetProps.length > 0 || budgetProjs.length > 0) && (
+        {budgetMixed.length > 0 && (
           <div className="space-y-8">
-            {budgetProps.length > 0 && (
-              <PropertyCarouselRow
-                title="Budget Friendly Properties"
-                icon={IndianRupee}
-                properties={budgetProps}
-                hideHeader={false}
-                autoSlide={true}
-                cardVariant="category-style"
-              />
-            )}
-            {budgetProjs.length > 0 && (
-              <ProjectCarouselRow
-                title="Budget Friendly Projects"
-                icon={IndianRupee}
-                projects={budgetProjs}
-                hideHeader={false}
-                autoSlide={true}
-                cardVariant="category-style"
-              />
-            )}
+            <MixedCarouselRow
+              title="Budget Friendly"
+              icon={IndianRupee}
+              items={budgetMixed}
+              hideHeader={false}
+              autoSlide={true}
+              cardVariant="category-style"
+            />
           </div>
         )}
 
