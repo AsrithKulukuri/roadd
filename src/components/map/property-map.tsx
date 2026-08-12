@@ -522,13 +522,13 @@ function resolvePropertyMapCoords(p: any): { lat: number; lng: number } {
     if (combined.includes(key)) {
       const centerLat = b.center[0];
       const centerLng = b.center[1];
-      const currentLat = p.location?.latitude;
-      const currentLng = p.location?.longitude;
+      const currentLat = Number(p.location?.latitude);
+      const currentLng = Number(p.location?.longitude);
 
       // If missing or further than ~0.015 deg (~1.5km) away from locality center, snap to locality center with deterministic offset
       if (
-        !currentLat ||
-        !currentLng ||
+        isNaN(currentLat) ||
+        isNaN(currentLng) ||
         Math.abs(currentLat - centerLat) > 0.015 ||
         Math.abs(currentLng - centerLng) > 0.015
       ) {
@@ -543,10 +543,15 @@ function resolvePropertyMapCoords(p: any): { lat: number; lng: number } {
     }
   }
 
+  let lat = Number(p.location?.latitude);
+  let lng = Number(p.location?.longitude);
+  if (isNaN(lat)) lat = 16.5062;
+  if (isNaN(lng)) lng = 80.6480;
+
   // Fallback to existing coords or default Vijayawada
   return {
-    lat: p.location?.latitude || 16.5062,
-    lng: p.location?.longitude || 80.6480,
+    lat,
+    lng,
   };
 }
 
