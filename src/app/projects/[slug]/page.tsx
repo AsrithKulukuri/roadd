@@ -642,7 +642,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                               </div>
                             </div>
                             <div className="text-sm text-slate-500 ml-8 flex flex-wrap items-center gap-x-0 gap-y-1">
-                              <span>{project.projectType === "venture" ? "Plot Area" : "Super Built-up Area"} <span className="mx-1.5 text-slate-300">|</span> <span className="font-medium text-slate-600">{cfg.label}</span></span>
+                              <span className="font-medium text-slate-600">{cfg.label}</span>
                               {cfg.uds && (
                                 <span className="flex items-center">
                                   <span className="mx-1.5 text-slate-300">|</span>
