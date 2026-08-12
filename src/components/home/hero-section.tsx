@@ -647,9 +647,11 @@ export function HeroSection() {
               <select
                 value={heroBudget[0]}
                 onChange={(e) => setHeroBudget([Number(e.target.value), heroBudget[1]])}
-                className="flex-1 h-11 px-3 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-700 outline-none focus:border-emerald-600 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px_12px] bg-[right_12px_center]"
+                className="flex-1 h-11 px-3 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-700 outline-none focus:border-amber-500 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px_12px] bg-[right_12px_center]"
               >
-
+                {![1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 20000000, 50000000].includes(heroBudget[0]) && (
+                  <option value={heroBudget[0]}>{formatINRWords(heroBudget[0])}</option>
+                )}
                 <option value={1000000}>₹ 10 L</option>
                 <option value={2000000}>₹ 20 L</option>
                 <option value={3000000}>₹ 30 L</option>
@@ -665,8 +667,11 @@ export function HeroSection() {
               <select
                 value={heroBudget[1]}
                 onChange={(e) => setHeroBudget([heroBudget[0], Number(e.target.value)])}
-                className="flex-1 h-11 px-3 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-700 outline-none focus:border-emerald-600 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px_12px] bg-[right_12px_center]"
+                className="flex-1 h-11 px-3 border border-slate-300 rounded-xl bg-white text-sm font-semibold text-slate-700 outline-none focus:border-amber-500 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:12px_12px] bg-[right_12px_center]"
               >
+                {![100000000, 1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000, 30000000, 50000000].includes(heroBudget[1]) && (
+                  <option value={heroBudget[1]}>{formatINRWords(heroBudget[1], true)}</option>
+                )}
                 <option value={100000000}>Max</option>
                 <option value={1000000}>₹ 10 L</option>
                 <option value={2000000}>₹ 20 L</option>
@@ -684,21 +689,11 @@ export function HeroSection() {
             {/* Slider */}
             <div className="px-2">
               <style>{`
-                .budget-slider .slider-thumb {
-                  border: 2px solid #059669 !important;
-                  background: white !important;
-                  box-shadow: none !important;
-                  width: 24px !important;
-                  height: 24px !important;
-                  margin-top: -10px !important;
-                }
-                .budget-slider .slider-track-active {
-                  background: #059669 !important;
-                  height: 4px !important;
-                }
-                .budget-slider .slider-track-inactive {
-                  background: #e2e8f0 !important;
-                  height: 4px !important;
+                .budget-slider [role="slider"] {
+                  background: #0f172a !important; /* dark slate */
+                  border-color: #0f172a !important;
+                  width: 20px !important;
+                  height: 20px !important;
                 }
               `}</style>
               <Slider
