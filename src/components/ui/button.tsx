@@ -11,7 +11,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-amber-primary text-bg-primary hover:bg-amber-hover active:scale-[0.98] shadow-sm hover:shadow-amber-subtle",
+          "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.98] shadow-sm [&_svg]:text-amber-400",
         secondary:
           "bg-bg-card text-text-primary border border-border-default hover:bg-bg-hover hover:border-amber-primary/30 active:scale-[0.98]",
         outline:
@@ -22,7 +22,7 @@ const buttonVariants = cva(
         destructive:
           "bg-error text-white hover:bg-error/90 active:scale-[0.98]",
         amber:
-          "bg-gradient-to-r from-amber-primary to-amber-hover text-bg-primary hover:shadow-amber-glow active:scale-[0.98] font-semibold",
+          "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.98] shadow-sm [&_svg]:text-amber-400",
         glass:
           "glass text-text-primary hover:bg-bg-hover/50 active:scale-[0.98]",
       },
