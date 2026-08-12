@@ -89,6 +89,7 @@ export function HeroSection() {
   const [activeTab, setActiveTab] = useState("buy");
   const [locationTab, setLocationTab] = useState<"trending" | "vijayawada" | "guntur" | "popular" | "nearyou">("trending");
   const [showBuyMenu, setShowBuyMenu] = useState(false);
+  const [showProjectsMenu, setShowProjectsMenu] = useState(false);
   const [openLocationTab, setOpenLocationTab] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -384,22 +385,30 @@ export function HeroSection() {
               <div 
                 key={tab.id} 
                 className="relative group"
-                onMouseEnter={() => tab.id === "buy" && setShowBuyMenu(true)}
-                onMouseLeave={() => tab.id === "buy" && setShowBuyMenu(false)}
+                onMouseEnter={() => {
+                  if (tab.id === "buy") setShowBuyMenu(true);
+                  if (tab.id === "projects") setShowProjectsMenu(true);
+                }}
+                onMouseLeave={() => {
+                  if (tab.id === "buy") setShowBuyMenu(false);
+                  if (tab.id === "projects") setShowProjectsMenu(false);
+                }}
               >
                 <button
                   onClick={() => {
                     if (tab.id === "buy") {
                       setShowBuyMenu(!showBuyMenu);
+                      setShowProjectsMenu(false);
+                    } else if (tab.id === "projects") {
+                      setShowProjectsMenu(!showProjectsMenu);
+                      setShowBuyMenu(false);
                     } else {
                       setShowBuyMenu(false);
+                      setShowProjectsMenu(false);
                     }
                     setActiveTab(tab.id);
                     if (tab.id === "pre-approval") {
                       router.push("/mortgage-calculator");
-                    }
-                    if (tab.id === "projects") {
-                      router.push("/search?type=projects");
                     }
                     if (tab.id === "nearme") {
                       router.push("/search?nearMe=true&view=map");
@@ -415,6 +424,9 @@ export function HeroSection() {
                   {tab.label}
                   {tab.id === "buy" && (
                     <ChevronDown className={cn("w-4 h-4 opacity-50 transition-transform duration-200", showBuyMenu && "rotate-180")} />
+                  )}
+                  {tab.id === "projects" && (
+                    <ChevronDown className={cn("w-4 h-4 opacity-50 transition-transform duration-200", showProjectsMenu && "rotate-180")} />
                   )}
                   {isActive && (
                     <motion.div
@@ -445,6 +457,28 @@ export function HeroSection() {
                       </Link>
                       <Link href="/search?type=buy&propertyType=agricultural-land" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
                         Agriculture
+                      </Link>
+                    </div>
+                  </div>
+                )}
+                
+                {tab.id === "projects" && (
+                  <div className={cn(
+                    "absolute top-full left-1/2 -translate-x-1/2 pt-2 w-48 transition-all duration-200 z-50",
+                    showProjectsMenu ? "opacity-100 visible" : "opacity-0 invisible"
+                  )}>
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2 text-left">
+                      <Link href="/search?type=projects&propertyType=apartment" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
+                        Apartments
+                      </Link>
+                      <Link href="/search?type=projects&propertyType=villa" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
+                        Villas
+                      </Link>
+                      <Link href="/search?type=projects&propertyType=residential-plot" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
+                        Plots
+                      </Link>
+                      <Link href="/search?type=projects" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400 border-t border-slate-100 dark:border-slate-800 mt-1 pt-3">
+                        View All Projects
                       </Link>
                     </div>
                   </div>
