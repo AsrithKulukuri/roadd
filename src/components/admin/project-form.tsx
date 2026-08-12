@@ -769,16 +769,19 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                                 <Field label="Possession Date">
                                   <Input value={config.possessionDate || ""} onChange={e => updateConfigField(config.id, "possessionDate", e.target.value)} placeholder="e.g., Apr, 2026" className={ic()} />
                                 </Field>
-                                <div className="space-y-1">
-                                  <label className="text-sm font-medium text-text-secondary">Floor Plan Image (3D/2D)</label>
-                                  <div className="flex items-center gap-3">
-                                    {config.floorPlanUrl && <img src={config.floorPlanUrl} alt="Plan" className="w-10 h-10 rounded object-cover border border-border-default bg-white" />}
-                                    <Input type="file" accept="image/*" onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) handleConfigImageUpload(config.id, file);
-                                    }} className="file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-primary/10 file:text-amber-700 dark:file:text-amber-400 hover:file:bg-amber-primary/20 text-xs w-full" disabled={uploading[`config-${config.id}`]} />
-                                    {uploading[`config-${config.id}`] && <Loader2 className="w-4 h-4 animate-spin text-amber-500 shrink-0" />}
-                                  </div>
+                                <Field label="YouTube Video URL">
+                                  <Input value={config.videoUrl || ""} onChange={e => updateConfigField(config.id, "videoUrl", e.target.value)} placeholder="https://youtube.com/..." className={ic()} />
+                                </Field>
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-sm font-medium text-text-secondary">Floor Plan Image (3D/2D)</label>
+                                <div className="flex items-center gap-3">
+                                  {config.floorPlanUrl && <img src={config.floorPlanUrl} alt="Plan" className="w-10 h-10 rounded object-cover border border-border-default bg-white" />}
+                                  <Input type="file" accept="image/*" onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleConfigImageUpload(config.id, file);
+                                  }} className="file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-primary/10 file:text-amber-700 dark:file:text-amber-400 hover:file:bg-amber-primary/20 text-xs w-full" disabled={uploading[`config-${config.id}`]} />
+                                  {uploading[`config-${config.id}`] && <Loader2 className="w-4 h-4 animate-spin text-amber-500 shrink-0" />}
                                 </div>
                               </div>
                             </div>

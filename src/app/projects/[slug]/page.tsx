@@ -128,6 +128,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   const [activeConfigLabel, setActiveConfigLabel] = useState<string>("All");
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [floorPlanLightbox, setFloorPlanLightbox] = useState<{ url: string; label: string } | null>(null);
+  const [activeMedia, setActiveMedia] = useState<Record<string, 'image' | 'video'>>({});
 
   const tabsScrollRef = useRef<HTMLDivElement>(null);
   const cardsScrollRef = useRef<HTMLDivElement>(null);
@@ -621,47 +622,87 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     {(currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => (
                       <div key={cfg.id || idx} className="w-[85vw] sm:w-[320px] shrink-0 snap-center p-5 rounded-2xl border border-border-default bg-bg-primary flex flex-col gap-4 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
                         {/* Top Section */}
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-md bg-amber-500/10 flex items-center justify-center shrink-0">
-                              <LayoutTemplate className="w-4 h-4 text-amber-600" />
-                            </div>
-                            <div className="flex items-baseline gap-1.5">
-                              <span className="text-xl font-bold text-slate-800">
-                                {cfg.superBuiltUpAreaMin ?? cfg.builtUpAreaMin ?? cfg.plotSizeMin}
-                                {project.projectType === "venture" ? " sq.yds" : " sq.ft"}
-                              </span>
-                              {/* If we have max area, show it */}
-                              {(cfg.superBuiltUpAreaMax && cfg.superBuiltUpAreaMax !== cfg.superBuiltUpAreaMin) || (cfg.builtUpAreaMax && cfg.builtUpAreaMax !== cfg.builtUpAreaMin) || (cfg.plotSizeMax && cfg.plotSizeMax !== cfg.plotSizeMin) ? (
-                                <span className="text-sm text-slate-400 font-medium">
-                                  – {cfg.superBuiltUpAreaMax ?? cfg.builtUpAreaMax ?? cfg.plotSizeMax} {project.projectType === "venture" ? "sq.yds" : "sq.ft"}
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-md bg-amber-500/10 flex items-center justify-center shrink-0">
+                                <LayoutTemplate className="w-4 h-4 text-amber-600" />
+                              </div>
+                              <div className="flex items-baseline gap-1.5">
+                                <span className="text-xl font-bold text-slate-800">
+                                  {cfg.superBuiltUpAreaMin ?? cfg.builtUpAreaMin ?? cfg.plotSizeMin}
+                                  {project.projectType === "venture" ? " sq.yds" : " sq.ft"}
                                 </span>
-                              ) : null}
+                                {/* If we have max area, show it */}
+                                {((cfg.superBuiltUpAreaMax && cfg.superBuiltUpAreaMax !== cfg.superBuiltUpAreaMin) || (cfg.builtUpAreaMax && cfg.builtUpAreaMax !== cfg.builtUpAreaMin) || (cfg.plotSizeMax && cfg.plotSizeMax !== cfg.plotSizeMin)) ? (
+                                  <span className="text-sm text-slate-400 font-medium">
+                                    – {cfg.superBuiltUpAreaMax ?? cfg.builtUpAreaMax ?? cfg.plotSizeMax} {project.projectType === "venture" ? "sq.yds" : "sq.ft"}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                            <div className="text-sm text-slate-500 ml-8">
+                              {project.projectType === "venture" ? "Plot Area" : "Super Built-up Area"} | <span className="font-medium text-slate-600">{cfg.label}</span>
+                              {cfg.uds && (
+                                <>
+                                  <span className="mx-1.5 text-slate-300">|</span>
+                                  <span className="font-medium text-slate-600">UDS: {cfg.uds} sq.yds</span>
+                                </>
+                              )}
                             </div>
                           </div>
-                          <div className="text-sm text-slate-500 ml-8">
-                            {project.projectType === "venture" ? "Plot Area" : "Super Built-up Area"} | <span className="font-medium text-slate-600">{cfg.label}</span>
-                            {cfg.uds && (
-                              <>
-                                <span className="mx-1.5 text-slate-300">|</span>
-                                <span className="font-medium text-slate-600">UDS: {cfg.uds} sq.yds</span>
-                              </>
-                            )}
-                          </div>
+
+                          {/* Toggle Switch */}
+                          {cfg.videoUrl && (
+                            <div className="flex items-center bg-slate-100 rounded-lg p-1 shrink-0">
+                              <button
+                                onClick={() => setActiveMedia(prev => ({ ...prev, [cfg.id]: 'image' }))}
+                                className={`px-2 py-1 text-xs font-bold rounded-md transition-all ${(!activeMedia[cfg.id] || activeMedia[cfg.id] === 'image') ? 'bg-white shadow-sm text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}
+                              >
+                                Plan
+                              </button>
+                              <button
+                                onClick={() => setActiveMedia(prev => ({ ...prev, [cfg.id]: 'video' }))}
+                                className={`px-2 py-1 text-xs font-bold rounded-md transition-all ${(activeMedia[cfg.id] === 'video') ? 'bg-white shadow-sm text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}
+                              >
+                                Video
+                              </button>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Image Section */}
-                        {cfg.floorPlanUrl && (
-                          <div
-                            className="rounded-xl overflow-hidden bg-white aspect-[4/3] cursor-zoom-in flex items-center justify-center relative group my-2"
-                            onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: cfg.label })}
-                          >
-                            <img src={cfg.floorPlanUrl} alt={`${cfg.label} floor plan`} className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500" />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl" />
-                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Eye className="w-3 h-3" /> View
-                            </div>
+                        {/* Image/Video Section */}
+                        {(activeMedia[cfg.id] === 'video' && cfg.videoUrl) ? (
+                          <div className="rounded-xl overflow-hidden bg-black aspect-[4/3] flex items-center justify-center my-2 relative">
+                            {isYoutubeShort(cfg.videoUrl!) ? (
+                              <iframe
+                                src={getYoutubeEmbedUrl(cfg.videoUrl!)!}
+                                className="h-[200%] aspect-[9/16] -translate-y-1/4 scale-75"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                              />
+                            ) : (
+                              <iframe
+                                src={getYoutubeEmbedUrl(cfg.videoUrl!)!}
+                                className="w-full h-full"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                              />
+                            )}
                           </div>
+                        ) : (
+                          cfg.floorPlanUrl && (
+                            <div
+                              className="rounded-xl overflow-hidden bg-white aspect-[4/3] cursor-zoom-in flex items-center justify-center relative group my-2"
+                              onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: cfg.label })}
+                            >
+                              <img src={cfg.floorPlanUrl} alt={`${cfg.label} floor plan`} className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500" />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl" />
+                              <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Eye className="w-3 h-3" /> View
+                              </div>
+                            </div>
+                          )
                         )}
 
                         {/* Bottom Section */}
