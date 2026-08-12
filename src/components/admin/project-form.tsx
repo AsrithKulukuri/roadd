@@ -762,7 +762,10 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                                   </>
                                 )}
                               </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <Field label="Undivided Share (UDS sq.yds)">
+                                  <Input type="number" value={config.uds || ""} onChange={e => updateConfigField(config.id, "uds", Number(e.target.value))} placeholder="e.g. 40" className={ic()} />
+                                </Field>
                                 <Field label="Possession Date">
                                   <Input value={config.possessionDate || ""} onChange={e => updateConfigField(config.id, "possessionDate", e.target.value)} placeholder="e.g., Apr, 2026" className={ic()} />
                                 </Field>

@@ -641,6 +641,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                           </div>
                           <div className="text-sm text-slate-500 ml-8">
                             {project.projectType === "venture" ? "Plot Area" : "Super Built-up Area"} | <span className="font-medium text-slate-600">{cfg.label}</span>
+                            {cfg.uds && (
+                              <>
+                                <span className="mx-1.5 text-slate-300">|</span>
+                                <span className="font-medium text-slate-600">UDS: {cfg.uds} sq.yds</span>
+                              </>
+                            )}
                           </div>
                         </div>
 
