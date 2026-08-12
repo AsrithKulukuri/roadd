@@ -45,7 +45,28 @@ export function MixedCarouselRow({
     checkScroll();
     window.addEventListener("resize", checkScroll);
     return () => window.removeEventListener("resize", checkScroll);
-  }, []);
+  }, [items]);
+
+  useEffect(() => {
+    if (!autoSlide || items.length === 0) return;
+
+    const interval = setInterval(() => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        const maxScroll = scrollWidth - clientWidth;
+        
+        // If reached the end, snap back to start
+        if (Math.ceil(scrollLeft) >= maxScroll) {
+          scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
+        } else {
+          // Scroll by one card width (assuming ~350px card + 24px gap = 374px)
+          scrollRef.current.scrollBy({ left: 374, behavior: "smooth" });
+        }
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [autoSlide, items.length]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
