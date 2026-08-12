@@ -82,9 +82,9 @@ function UnifiedSearchPage() {
     }
   }, [searchParams]);
 
-  // Lock body scroll when map view is active so ONLY the map moves
+  // Lock body scroll when map view is active so ONLY the map moves, but only on mobile
   useEffect(() => {
-    if (viewMode === "map" && typeof window !== "undefined") {
+    if (viewMode === "map" && typeof window !== "undefined" && window.innerWidth < 768) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";

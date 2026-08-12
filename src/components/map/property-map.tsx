@@ -752,7 +752,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [blinkingPropertyId, setBlinkingPropertyId] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
-  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+  const [showMapExplorer, setShowMapExplorer] = useState(false);
   const [mapLayerType, setMapLayerType] = useState<"streets" | "hybrid" | "terrain">("streets");
   
   // Real-Time Search Query State inside Map
@@ -1084,10 +1084,21 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
       {/* Main Container */}
       <div className="relative w-full flex-1 flex flex-col md:flex-row gap-0 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden bg-slate-900 shadow-xl h-full touch-none" style={{ touchAction: "none" }}>
         
-        {/* Desktop Sidebar Control Panel / Mobile Collapsible Drawer */}
+        {/* Open Map Explorer Button (When Closed) */}
+        {!showMapExplorer && (
+          <button
+            onClick={() => setShowMapExplorer(true)}
+            className="absolute top-4 left-4 z-[400] bg-slate-900 text-white p-3 rounded-xl shadow-lg border border-slate-800 flex items-center gap-2 hover:bg-slate-800 transition-colors"
+          >
+            <Compass className="w-5 h-5 text-amber-400" />
+            <span className="font-bold text-sm hidden sm:block">Map Explorer</span>
+          </button>
+        )}
+
+        {/* Sidebar Control Panel / Collapsible Drawer */}
         <div
-          className={`w-full md:w-80 flex-shrink-0 p-5 md:p-6 flex-col justify-between bg-slate-900 text-white z-10 border-b md:border-b-0 md:border-r border-slate-800 shadow-2xl space-y-5 ${
-            showMobileDrawer ? "flex absolute inset-x-0 top-0 bottom-0 z-[600]" : "hidden md:flex"
+          className={`w-full md:w-80 flex-shrink-0 p-5 md:p-6 flex-col justify-between bg-slate-900 text-white z-[500] border-b md:border-b-0 md:border-r border-slate-800 shadow-2xl space-y-5 ${
+            showMapExplorer ? "flex absolute inset-x-0 top-0 bottom-0 md:relative" : "hidden"
           }`}
         >
           <div className="space-y-4">
@@ -1098,14 +1109,12 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                   Map Explorer
                 </h2>
               </div>
-              {showMobileDrawer && (
-                <button
-                  onClick={() => setShowMobileDrawer(false)}
-                  className="p-1.5 bg-slate-800 text-slate-300 rounded-xl hover:text-white"
-                >
-                  <ChevronUp className="w-5 h-5" />
-                </button>
-              )}
+              <button
+                onClick={() => setShowMapExplorer(false)}
+                className="p-1.5 bg-slate-800 text-slate-300 rounded-xl hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             {/* Smart Search Input Box */}
@@ -1220,7 +1229,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
               type="button"
               onClick={() => {
                 handleGetLocation();
-                setShowMobileDrawer(false);
+                setShowMapExplorer(false);
               }}
               disabled={isLocating}
               className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-extrabold text-sm rounded-2xl shadow-lg hover:shadow-amber-500/25 flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer disabled:opacity-75"
@@ -1250,7 +1259,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                   type="button"
                   onClick={() => {
                     setIsDrawing(!isDrawing);
-                    setShowMobileDrawer(false);
+                    setShowMapExplorer(false);
                   }}
                   className={`py-2 px-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     isDrawing
@@ -1342,7 +1351,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                     key={loc.name}
                     onClick={() => {
                       handleFlyToLocality(loc.lat, loc.lng);
-                      setShowMobileDrawer(false);
+                      setShowMapExplorer(false);
                     }}
                     className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-300 text-xs font-semibold border border-slate-700 hover:border-amber-500 transition-all text-left truncate cursor-pointer"
                   >
