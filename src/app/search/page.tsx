@@ -497,7 +497,7 @@ function UnifiedSearchPage() {
         )}
 
         <div className={cn(
-          "flex-1 flex flex-col md:flex-row w-full",
+          "flex-1 flex flex-col md:flex-row w-full h-full",
           viewMode === "map" ? "gap-0" : "gap-6"
         )}>
           
