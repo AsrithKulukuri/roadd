@@ -614,7 +614,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   <div className="relative">
                     <button 
                       onClick={() => cardsScrollRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center cursor-pointer group z-10"
+                      className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center cursor-pointer group z-10"
                     >
                       <ChevronLeft className="w-6 h-6 text-text-tertiary drop-shadow-md group-hover:text-text-primary" />
                     </button>
@@ -675,10 +675,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
                         {/* Image/Video Section */}
                         {(activeMedia[cfg.id] === 'video' && cfg.videoUrl) ? (
-                          <div className="rounded-xl overflow-hidden bg-black aspect-[4/3] flex items-center justify-center my-2 relative z-50 touch-pan-y">
+                          <div className={`rounded-xl overflow-hidden bg-black flex items-center justify-center my-2 relative isolate transform-gpu ${isYoutubeShort(cfg.videoUrl) ? 'aspect-[9/16]' : 'aspect-[4/3]'}`}>
                             <iframe
                               src={getYoutubeEmbedUrl(cfg.videoUrl!)!}
-                              className="w-full h-full pointer-events-auto"
+                              className="w-full h-full"
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                               allowFullScreen
                             />
@@ -723,7 +723,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     </div>
                     <button 
                       onClick={() => cardsScrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center cursor-pointer group z-10"
+                      className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center cursor-pointer group z-10"
                     >
                       <ChevronRight className="w-6 h-6 text-text-tertiary drop-shadow-md animate-pulse group-hover:text-text-primary" />
                     </button>
