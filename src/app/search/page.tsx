@@ -51,6 +51,7 @@ function UnifiedSearchPage() {
   
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [visibleMapIds, setVisibleMapIds] = useState<string[] | null>(null);
   
   const properties = usePropertiesStore((state) => state.properties);
   const projects = useProjectsStore((state) => state.projects);
@@ -416,7 +417,7 @@ function UnifiedSearchPage() {
 
   // Combine and Sort
   const combinedResults = useMemo(() => {
-    const items = [
+    let items = [
       ...filteredProperties.map(p => ({ type: 'property' as const, data: p, price: p.price, createdAt: p.createdAt })),
       ...filteredProjects.map(p => {
          const minPrice = p.configurations?.[0]?.priceMin || 0;
@@ -431,8 +432,12 @@ function UnifiedSearchPage() {
       return 0; // default relevant
     });
 
+    if (viewMode === "map" && visibleMapIds !== null) {
+      items = items.filter(item => visibleMapIds.includes(item.data.id));
+    }
+
     return items;
-  }, [filteredProperties, filteredProjects, sortBy]);
+  }, [filteredProperties, filteredProjects, sortBy, viewMode, visibleMapIds]);
 
   // Map items: projects adapted to property-compatible shape so they appear as pins on the map
   const mapItems = useMemo(() => {
@@ -550,11 +555,11 @@ function UnifiedSearchPage() {
             <>
               {/* Mobile map overlay */}
               <div className="md:hidden fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-white overflow-hidden flex flex-col">
-                <MapWrapper filteredItems={mapItems} userLocation={userLocation} />
+                <MapWrapper filteredItems={mapItems} userLocation={userLocation} onVisibleItemsChange={setVisibleMapIds} />
               </div>
               {/* Desktop Sticky Map */}
               <div className="hidden md:block w-[50%] lg:w-[55%] xl:w-[60%] sticky top-[170px] h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white z-0">
-                <MapWrapper filteredItems={mapItems} userLocation={userLocation} />
+                <MapWrapper filteredItems={mapItems} userLocation={userLocation} onVisibleItemsChange={setVisibleMapIds} />
               </div>
             </>
           )}

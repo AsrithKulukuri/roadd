@@ -657,6 +657,7 @@ function getDynamicLocalityBoundary(query: string, properties: any[]): { name: s
 interface PropertyMapProps {
   filteredItems?: any[];
   userLocation?: { lat: number, lng: number } | null;
+  onVisibleItemsChange?: (visibleIds: string[]) => void;
 }
 
 function MapCardImageCarousel({ images, title, propertyType }: { images: string[]; title: string; propertyType: string }) {
@@ -723,7 +724,40 @@ function SidebarCardSkeleton() {
   )
 }
 
-export default function PropertyMap({ filteredItems, userLocation: externalUserLocation }: PropertyMapProps = {}) {
+function MapViewportListener({
+  mapProperties,
+  onVisibleItemsChange,
+}: {
+  mapProperties: any[];
+  onVisibleItemsChange?: (visibleIds: string[]) => void;
+}) {
+  const map = useMapEvents({
+    moveend: () => updateVisibleItems(),
+    zoomend: () => updateVisibleItems(),
+  });
+
+  const updateVisibleItems = useCallback(() => {
+    if (!onVisibleItemsChange) return;
+    const bounds = map.getBounds();
+    const visibleIds = mapProperties
+      .filter((p) => {
+        const coords = resolvePropertyMapCoords(p);
+        const latLng = L.latLng(coords.lat, coords.lng);
+        return bounds.contains(latLng);
+      })
+      .map((p) => p.id);
+    onVisibleItemsChange(visibleIds);
+  }, [map, mapProperties, onVisibleItemsChange]);
+
+  // Initial trigger when map loads or properties change
+  useEffect(() => {
+    updateVisibleItems();
+  }, [updateVisibleItems]);
+
+  return null;
+}
+
+export default function PropertyMap({ filteredItems, userLocation: externalUserLocation, onVisibleItemsChange }: PropertyMapProps = {}) {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
   const initialType = searchParams.get("type") || searchParams.get("category") || null;
