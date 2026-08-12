@@ -338,7 +338,7 @@ export function HeroSection() {
                   {currentBanner?.link_url && (
                     <Link
                       href={currentBanner.link_url}
-                      className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-amber-primary hover:bg-amber-secondary text-white font-bold text-sm sm:text-lg rounded-lg shadow-lg transition-all hover:scale-105 active:scale-95"
+                      className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-sm sm:text-lg rounded-lg shadow-lg transition-all hover:scale-105 active:scale-95"
                     >
                       Explore Now <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                     </Link>
@@ -505,11 +505,11 @@ export function HeroSection() {
 
           <button
             type="submit"
-            className="h-[44px] px-4 sm:px-6 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm sm:text-base rounded-full transition-all shadow-md hover:scale-105 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+            className="h-[44px] px-4 sm:px-6 bg-slate-900 hover:bg-slate-800 text-amber-400 font-black text-sm sm:text-base rounded-full transition-all shadow-md hover:scale-105 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
             aria-label="Search"
           >
             <span>Search</span>
-            <Search className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3] text-slate-950" />
+            <Search className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3] text-amber-400" />
           </button>
         </form>
 
@@ -523,11 +523,11 @@ export function HeroSection() {
               className={cn(
                 "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border shrink-0 snap-start",
                 openLocationTab === "trending"
-                  ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] border-transparent text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
-                  : "bg-white border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-slate-950 border-amber-400 text-amber-400 font-bold"
+                  : "bg-slate-900 border-slate-800 text-amber-400 font-semibold hover:bg-slate-800"
               )}
             >
-              <Flame className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", openLocationTab === "trending" ? "text-[#16161A]" : "text-amber-500")} />
+              <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
               <span>Trending</span>
               <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openLocationTab === "trending" && "rotate-180")} />
             </button>
@@ -538,11 +538,11 @@ export function HeroSection() {
               className={cn(
                 "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border shrink-0 snap-start",
                 openLocationTab === "vijayawada"
-                  ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] border-transparent text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
-                  : "bg-white border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-slate-950 border-amber-400 text-amber-400 font-bold"
+                  : "bg-slate-900 border-slate-800 text-amber-400 font-semibold hover:bg-slate-800"
               )}
             >
-              <MapPin className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", openLocationTab === "vijayawada" ? "text-[#16161A]" : "text-amber-500")} />
+              <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
               <span>Vijayawada</span>
               <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openLocationTab === "vijayawada" && "rotate-180")} />
             </button>
@@ -553,11 +553,11 @@ export function HeroSection() {
               className={cn(
                 "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border shrink-0 snap-start",
                 openLocationTab === "guntur"
-                  ? "bg-gradient-to-b from-[#FFC661] to-[#F5A623] border-transparent text-[#16161A] font-bold shadow-[0_6px_18px_rgba(245,166,35,0.18)]"
-                  : "bg-white border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-slate-950 border-amber-400 text-amber-400 font-bold"
+                  : "bg-slate-900 border-slate-800 text-amber-400 font-semibold hover:bg-slate-800"
               )}
             >
-              <Building2 className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", openLocationTab === "guntur" ? "text-[#16161A]" : "text-amber-500")} />
+              <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
               <span>Guntur</span>
               <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openLocationTab === "guntur" && "rotate-180")} />
             </button>
@@ -566,9 +566,9 @@ export function HeroSection() {
             <button
               type="button"
               onClick={() => router.push(`/search?type=${activeTab}&location=Amaravati`)}
-              className="h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer bg-white border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900 shadow-sm shrink-0 snap-start"
+              className="h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer bg-slate-900 border border-slate-800 text-amber-400 font-semibold hover:bg-slate-800 shadow-sm shrink-0 snap-start"
             >
-              <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
+              <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
               <span>Amaravati</span>
             </button>
           </div>
@@ -663,10 +663,10 @@ export function HeroSection() {
                 <button
                   type="button"
                   onClick={() => handleSearchSubmit()}
-                  className="relative flex items-center gap-1 h-6 pl-2.5 pr-1 bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-[10px] rounded-full shadow-lg shadow-amber-500/25 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                  className="relative flex items-center gap-1 h-6 pl-2.5 pr-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-amber-400 font-black text-[10px] rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
                 >
                   <span>Apply</span>
-                  <span className="w-4 h-4 rounded-full bg-slate-950/20 flex items-center justify-center text-[9px] font-black text-slate-950 leading-none">
+                  <span className="w-4 h-4 rounded-full bg-amber-400/20 flex items-center justify-center text-[9px] font-black text-amber-400 leading-none">
                     {matchingCount}
                   </span>
                 </button>
