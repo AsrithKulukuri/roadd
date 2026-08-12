@@ -339,7 +339,7 @@ export function HeroSection() {
                   {currentBanner?.link_url && (
                     <Link
                       href={currentBanner.link_url}
-                      className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-sm sm:text-lg rounded-lg shadow-lg transition-all hover:scale-105 active:scale-95"
+                      className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm sm:text-lg rounded-lg shadow-lg transition-all hover:scale-105 active:scale-95"
                     >
                       Explore Now <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                     </Link>
@@ -539,7 +539,7 @@ export function HeroSection() {
 
           <button
             type="submit"
-            className="h-[44px] px-4 sm:px-6 bg-slate-900 hover:bg-slate-800 text-amber-400 font-black text-sm sm:text-base rounded-full transition-all shadow-md hover:scale-105 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+            className="h-[44px] px-4 sm:px-6 bg-slate-900 hover:bg-slate-800 text-white font-black text-sm sm:text-base rounded-full transition-all shadow-md hover:scale-105 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
             aria-label="Search"
           >
             <span>Search</span>
@@ -557,8 +557,8 @@ export function HeroSection() {
               className={cn(
                 "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border shrink-0 snap-start",
                 openLocationTab === "trending"
-                  ? "bg-slate-950 border-amber-400 text-amber-400 font-bold"
-                  : "bg-slate-900 border-slate-800 text-amber-400 font-semibold hover:bg-slate-800"
+                  ? "bg-slate-950 border-amber-400 text-white font-bold"
+                  : "bg-slate-900 border-slate-800 text-white font-semibold hover:bg-slate-800"
               )}
             >
               <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
@@ -572,8 +572,8 @@ export function HeroSection() {
               className={cn(
                 "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border shrink-0 snap-start",
                 openLocationTab === "vijayawada"
-                  ? "bg-slate-950 border-amber-400 text-amber-400 font-bold"
-                  : "bg-slate-900 border-slate-800 text-amber-400 font-semibold hover:bg-slate-800"
+                  ? "bg-slate-950 border-amber-400 text-white font-bold"
+                  : "bg-slate-900 border-slate-800 text-white font-semibold hover:bg-slate-800"
               )}
             >
               <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
@@ -587,8 +587,8 @@ export function HeroSection() {
               className={cn(
                 "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border shrink-0 snap-start",
                 openLocationTab === "guntur"
-                  ? "bg-slate-950 border-amber-400 text-amber-400 font-bold"
-                  : "bg-slate-900 border-slate-800 text-amber-400 font-semibold hover:bg-slate-800"
+                  ? "bg-slate-950 border-amber-400 text-white font-bold"
+                  : "bg-slate-900 border-slate-800 text-white font-semibold hover:bg-slate-800"
               )}
             >
               <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
@@ -600,7 +600,7 @@ export function HeroSection() {
             <button
               type="button"
               onClick={() => router.push(`/search?type=${activeTab}&location=Amaravati`)}
-              className="h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer bg-slate-900 border border-slate-800 text-amber-400 font-semibold hover:bg-slate-800 shadow-sm shrink-0 snap-start"
+              className="h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer bg-slate-900 border border-slate-800 text-white font-semibold hover:bg-slate-800 shadow-sm shrink-0 snap-start"
             >
               <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
               <span>Amaravati</span>
@@ -710,7 +710,7 @@ export function HeroSection() {
               <button
                 type="button"
                 onClick={() => handleSearchSubmit()}
-                className="flex items-center gap-2 h-9 px-6 bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-sm rounded-lg shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                className="flex items-center gap-2 h-9 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-lg shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <span>Apply</span>
                 <span className="w-5 h-5 rounded-full bg-amber-400/20 flex items-center justify-center text-xs font-black text-amber-400 leading-none">

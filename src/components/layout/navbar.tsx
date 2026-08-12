@@ -243,7 +243,7 @@ export function Navbar() {
                 /* User Menu for Desktop */
                 <div className="hidden sm:flex items-center gap-2">
                   <Link href="/dashboard">
-                    <Button variant="outline" size="sm" className="bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-extrabold hover:bg-slate-100 dark:hover:bg-slate-800 shadow-xs">
+                    <Button variant="outline" size="sm" className="bg-slate-900 border-slate-800 text-white font-extrabold hover:bg-slate-800 shadow-xs">
                       Dashboard
                     </Button>
                   </Link>
@@ -251,7 +251,7 @@ export function Navbar() {
                     onClick={handleSignOut}
                     variant="ghost"
                     size="sm"
-                    className="text-xs text-slate-900 dark:text-slate-100 font-extrabold hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="text-xs text-white font-extrabold hover:bg-slate-800"
                   >
                     Sign Out
                   </Button>
@@ -269,8 +269,8 @@ export function Navbar() {
 
               {/* List Property CTA Button */}
               <Link href="/list-with-us" className="hidden md:block">
-                <Button size="sm" className="gap-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-100 font-bold shadow-xs">
-                  <Plus className="h-4 w-4" />
+                <Button size="sm" className="gap-1.5 bg-slate-900 text-white hover:bg-slate-800 font-bold shadow-xs border border-slate-800">
+                  <Plus className="h-4 w-4 text-amber-400" />
                   List Property
                 </Button>
               </Link>
@@ -352,8 +352,8 @@ export function Navbar() {
 
             <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 space-y-3">
               <Link href="/list-with-us" className="block w-full">
-                <Button className="w-full gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-6 text-base shadow-md">
-                  <Plus className="h-5 w-5 stroke-[3]" />
+                <Button className="w-full gap-2 bg-slate-900 hover:bg-slate-800 text-white font-black py-6 text-base shadow-md">
+                  <Plus className="h-5 w-5 stroke-[3] text-amber-400" />
                   List Property Free
                 </Button>
               </Link>
