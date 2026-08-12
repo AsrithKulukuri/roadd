@@ -129,6 +129,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [floorPlanLightbox, setFloorPlanLightbox] = useState<{ url: string; label: string } | null>(null);
   const [activeMedia, setActiveMedia] = useState<Record<string, 'image' | 'video'>>({});
+  const [playingVideos, setPlayingVideos] = useState<Record<string, boolean>>({});
 
   const tabsScrollRef = useRef<HTMLDivElement>(null);
   const cardsScrollRef = useRef<HTMLDivElement>(null);
@@ -677,11 +678,20 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                         {(activeMedia[cfg.id] === 'video' && cfg.videoUrl) ? (
                           <div className={`rounded-xl overflow-hidden bg-black flex items-center justify-center my-2 relative isolate transform-gpu ${isYoutubeShort(cfg.videoUrl) ? 'aspect-[9/16]' : 'aspect-[4/3]'}`}>
                             <iframe
-                              src={getYoutubeEmbedUrl(cfg.videoUrl!)!}
+                              src={`${getYoutubeEmbedUrl(cfg.videoUrl!)!}${playingVideos[cfg.id] ? '&autoplay=1' : ''}`}
                               className="w-full h-full"
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                               allowFullScreen
                             />
+                            {!playingVideos[cfg.id] && (
+                              <div 
+                                className="absolute inset-0 z-10 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPlayingVideos(prev => ({ ...prev, [cfg.id]: true }));
+                                }}
+                              />
+                            )}
                           </div>
                         ) : (
                           cfg.floorPlanUrl && (
