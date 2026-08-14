@@ -16,15 +16,18 @@ import {
   FolderOpen,
   Image as ImageIcon,
   LayoutGrid,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useInquiriesStore } from "@/stores/inquiries-store";
 
 import { AdminGuard } from "@/components/shared/admin-guard";
 
 const sidebarLinks = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/inquiries", label: "Requirements", icon: MessageSquare, isBadge: true },
   { href: "/admin/properties", label: "Properties", icon: Building2 },
   { href: "/admin/projects", label: "Projects", icon: FolderOpen },
   { href: "/admin/banners", label: "Banners", icon: ImageIcon },
@@ -40,6 +43,12 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const unreadCount = useInquiriesStore((s) => s.getUnreadCount());
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (pathname === "/admin/login") {
     return <AdminGuard>{children}</AdminGuard>;
@@ -79,14 +88,21 @@ export default function AdminLayout({
                   href={link.href}
                   onClick={() => setIsMobileOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium",
+                    "flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all font-medium",
                     isActive
                       ? "bg-amber-primary/10 text-amber-primary"
                       : "text-text-secondary hover:bg-bg-primary hover:text-text-primary"
                   )}
                 >
-                  <Icon className="w-5 h-5" />
-                  {link.label}
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-5 h-5" />
+                    <span>{link.label}</span>
+                  </div>
+                  {link.isBadge && mounted && unreadCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-slate-950 shadow-xs">
+                      {unreadCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}

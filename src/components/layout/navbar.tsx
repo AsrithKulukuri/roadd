@@ -19,6 +19,7 @@ import {
   LogIn,
   LogOut,
   Megaphone,
+  Sparkles,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -27,10 +28,12 @@ import { cn } from "@/lib/utils";
 import { navigationLinks } from "@/config/site";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
+import { PostRequirementModal } from "@/components/shared/post-requirement-modal";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
   const [openMobileSubmenus, setOpenMobileSubmenus] = useState<Record<string, boolean>>({});
   const [user, setUser] = useState<any>(null);
 
@@ -267,6 +270,16 @@ export function Navbar() {
                 </div>
               )}
 
+              {/* Post Requirement CTA Button */}
+              <button
+                onClick={() => setIsRequirementModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border border-amber-300"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">Post Requirement</span>
+                <span className="xs:hidden">Post</span>
+              </button>
+
               {/* List Property CTA Button */}
               <Link href="/list-with-us" className="hidden md:block">
                 <Button size="sm" className="gap-1.5 bg-slate-900 text-white hover:bg-slate-800 font-bold shadow-xs border border-slate-800">
@@ -302,6 +315,18 @@ export function Navbar() {
             exit={{ opacity: 0, y: -10 }}
             className="fixed inset-0 top-[60px] z-50 bg-white/98 backdrop-blur-md lg:hidden flex flex-col p-6 overflow-y-auto"
           >
+            {/* Quick Post Requirement Button in Mobile Menu */}
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setIsRequirementModalOpen(true);
+              }}
+              className="w-full py-3.5 px-4 mb-4 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg active:scale-98 transition-all cursor-pointer border border-amber-300"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Post Your Requirement</span>
+            </button>
+
             <nav className="flex flex-col gap-2">
               {navigationLinks.main.map((link) => (
                 <div key={link.href} className="flex flex-col">
@@ -386,6 +411,12 @@ export function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Post Your Requirement Modal */}
+      <PostRequirementModal
+        isOpen={isRequirementModalOpen}
+        onClose={() => setIsRequirementModalOpen(false)}
+      />
     </>
   );
 }
