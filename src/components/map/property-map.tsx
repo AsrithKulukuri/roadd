@@ -338,6 +338,32 @@ function LocationMarker({
   );
 }
 
+// Forces Leaflet to recalculate map container size and load tiles.
+// This is required when MapContainer is inside a flex/dynamic layout.
+function MapInvalidator({ mapRef }: { mapRef: React.RefObject<L.Map | null> }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map) return;
+    // Store ref for external use
+    (mapRef as React.MutableRefObject<L.Map | null>).current = map;
+
+    // Call invalidateSize immediately, then again after layout settles
+    map.invalidateSize({ animate: false });
+    const t1 = setTimeout(() => map.invalidateSize({ animate: false }), 100);
+    const t2 = setTimeout(() => map.invalidateSize({ animate: false }), 500);
+    const t3 = setTimeout(() => map.invalidateSize({ animate: false }), 1000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [map, mapRef]);
+
+  return null;
+}
+
 function FreehandDrawListener({
   isDrawing,
   onDrawStart,
@@ -658,6 +684,7 @@ interface PropertyMapProps {
   filteredItems?: any[];
   userLocation?: { lat: number, lng: number } | null;
   onVisibleItemsChange?: (visibleIds: string[]) => void;
+  containerHeight?: number;
 }
 
 function MapCardImageCarousel({ images, title, propertyType }: { images: string[]; title: string; propertyType: string }) {
@@ -757,7 +784,7 @@ function MapViewportListener({
   return null;
 }
 
-export default function PropertyMap({ filteredItems, userLocation: externalUserLocation, onVisibleItemsChange }: PropertyMapProps = {}) {
+export default function PropertyMap({ filteredItems, userLocation: externalUserLocation, onVisibleItemsChange, containerHeight }: PropertyMapProps = {}) {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
   const initialType = searchParams.get("type") || searchParams.get("category") || null;
@@ -1083,60 +1110,20 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   const totalLegalFee = stampDutyAmt + registrationAmt + transferDutyAmt;
   const totalOnRoadPrice = calcPropertyPrice + totalLegalFee;
 
+  const mapHeight = containerHeight || 600;
+
   return (
-    <div className="w-full h-full flex flex-col touch-none relative" style={{ touchAction: "none" }}>
-      {/* Keyframe Animations */}
-      <style jsx global>{`
-        @keyframes radarLinePulse {
-          0% { stroke-dashoffset: 40; }
-          100% { stroke-dashoffset: 0; }
-        }
-        .animated-radar-line {
-          animation: radarLinePulse 1.2s linear infinite;
-          filter: drop-shadow(0 0 8px rgba(245, 166, 35, 0.9));
-        }
-
-        @keyframes innerPillPulse {
-          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.9); }
-          50% { transform: scale(1.15); box-shadow: 0 0 22px 8px rgba(245, 166, 37, 0.8); }
-          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 166, 35, 0); }
-        }
-        .pulse-inner-pill {
-          animation: innerPillPulse 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-        .realtor-price-pill-marker {
-          z-index: 9999 !important;
-        }
-
-        .property-map-popup-realtor .leaflet-popup-content-wrapper {
-          padding: 0 !important;
-          border-radius: 16px !important;
-          overflow: hidden !important;
-          background: transparent !important;
-          box-shadow: none !important;
-        }
-        .property-map-popup-realtor .leaflet-popup-close-button {
-          display: none !important;
-        }
-        .property-map-popup-realtor .leaflet-popup-content {
-          margin: 0 !important;
-          width: 260px !important;
-          line-height: normal !important;
-        }
-        .property-map-popup-realtor .leaflet-popup-tip-container {
-          display: none !important;
-        }
-
-        @media (max-width: 767px) {
-          .leaflet-top.leaflet-left {
-            top: 105px !important;
-            left: 12px !important;
-          }
-        }
-      `}</style>
+    <div
+      className="w-full flex flex-col touch-none relative"
+      style={{ touchAction: "none", height: mapHeight, minHeight: 400 }}
+    >
+      {/* Styles for Leaflet map are in globals.css */}
 
       {/* Main Container */}
-      <div className="relative w-full flex-1 flex flex-col md:flex-row gap-0 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden bg-slate-900 shadow-xl h-full touch-none" style={{ touchAction: "none" }}>
+      <div
+        className="relative w-full flex-1 flex flex-col md:flex-row gap-0 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden bg-slate-900 shadow-xl touch-none"
+        style={{ touchAction: "none", height: mapHeight, minHeight: 400 }}
+      >
         
         {/* Sidebar Control Panel / Collapsible Drawer */}
         <div
@@ -1462,7 +1449,10 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
         </div>
 
         {/* The Leaflet Map Canvas Container */}
-        <div className="flex-1 w-full h-full relative bg-slate-950 touch-none" style={{ touchAction: "none" }}>
+        <div
+          className="flex-1 relative bg-slate-950 touch-none"
+          style={{ touchAction: "none", position: "relative", minHeight: 300 }}
+        >
           
           {/* Open Map Explorer Button (When Closed) */}
           {!showMapExplorer && (
@@ -1962,15 +1952,22 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
             touchZoom={true}
             doubleClickZoom={true}
             bounceAtZoomLimits={true}
-            className="w-full h-full min-h-full touch-none"
-            style={{ touchAction: "none" }}
+            className="w-full touch-none"
+            style={{ touchAction: "none", position: "absolute", inset: 0, height: "100%", width: "100%" }}
+            whenReady={() => {
+              setTimeout(() => mapRef.current?.invalidateSize({ animate: false }), 50);
+            }}
           >
+            {/* Must be first child — forces Leaflet to re-measure container & load tiles */}
+            <MapInvalidator mapRef={mapRef} />
+
             <FreehandDrawListener
               isDrawing={isDrawing}
               onDrawStart={handleDrawStart}
               onDrawMove={handleDrawMove}
               onDrawEnd={handleDrawEnd}
             />
+
 
             {mapLayerType === "streets" ? (
               <TileLayer

@@ -486,7 +486,7 @@ function UnifiedSearchPage() {
 
       <main className={cn(
         "flex-1 w-full flex flex-col",
-        viewMode === "grid" ? "px-4 sm:px-6 lg:px-8 py-6 pb-24 max-w-7xl mx-auto" : "h-[calc(100vh-175px)] overflow-hidden"
+        viewMode === "grid" ? "px-4 sm:px-6 lg:px-8 py-6 pb-24 max-w-7xl mx-auto" : "h-[calc(100vh-175px)]"
       )}>
         {/* Near Me Loading Overlay */}
         {isLocating && (
@@ -497,14 +497,14 @@ function UnifiedSearchPage() {
         )}
 
         <div className={cn(
-          "flex-1 flex flex-col md:flex-row w-full h-full",
-          viewMode === "map" ? "gap-0" : "gap-6"
+          "flex-1 flex w-full",
+          viewMode === "map" ? "flex-col md:flex-row h-full overflow-hidden" : "flex-col gap-6"
         )}>
           
           {/* List Pane */}
           <div className={cn(
             "flex flex-col gap-6 w-full",
-            viewMode === "map" ? "md:w-[50%] lg:w-[45%] xl:w-[45%] overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 pb-24" : "md:w-full"
+            viewMode === "map" ? "md:w-[50%] lg:w-[45%] xl:w-[45%] overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 max-h-[45vh] md:max-h-full" : "md:w-full"
           )}>
             
             {/* Controls Bar */}
@@ -556,12 +556,9 @@ function UnifiedSearchPage() {
             )}
           </div>
 
-          {/* Map Pane - Single Instance for both Mobile and Desktop */}
+          {/* Map Pane */}
           {viewMode === "map" && (
-            <div className="
-              fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-white overflow-hidden flex flex-col
-              md:relative md:top-auto md:left-auto md:right-auto md:bottom-auto md:flex-1 md:h-full md:z-0 md:border-l md:border-slate-200 md:dark:border-slate-800 md:bg-slate-100
-            ">
+            <div className="flex-1 h-full overflow-hidden md:border-l md:border-slate-200 md:dark:border-slate-800">
               <MapWrapper filteredItems={mapItems} userLocation={userLocation} onVisibleItemsChange={setVisibleMapIds} />
             </div>
           )}

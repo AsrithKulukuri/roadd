@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
+import { useRef, useEffect, useState } from "react";
 
 // Dynamically import the map component with SSR disabled
 const PropertyMap = dynamic(
@@ -9,10 +10,10 @@ const PropertyMap = dynamic(
   { 
     ssr: false,
     loading: () => (
-      <div className="w-full h-[600px] rounded-3xl border border-border-default/50 bg-bg-card flex items-center justify-center shadow-sm">
-        <div className="flex flex-col items-center gap-4 text-text-tertiary">
+      <div className="w-full h-full min-h-[400px] bg-slate-900 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
           <MapPin className="h-10 w-10 animate-pulse text-amber-primary" />
-          <p className="font-medium text-text-secondary">Loading map interface...</p>
+          <p className="font-medium text-slate-300">Loading map interface...</p>
         </div>
       </div>
     )
@@ -26,5 +27,38 @@ interface MapWrapperProps {
 }
 
 export function MapWrapper({ filteredItems, userLocation, onVisibleItemsChange }: MapWrapperProps) {
-  return <PropertyMap filteredItems={filteredItems} userLocation={userLocation} onVisibleItemsChange={onVisibleItemsChange} />;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number>(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    // Set initial height
+    setHeight(el.getBoundingClientRect().height || window.innerHeight - 200);
+
+    // Watch for size changes
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const h = entry.contentRect.height;
+        if (h > 0) setHeight(h);
+      }
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={containerRef} style={{ width: "100%", height: "100%", minHeight: "400px" }}>
+      {height > 0 && (
+        <PropertyMap
+          filteredItems={filteredItems}
+          userLocation={userLocation}
+          onVisibleItemsChange={onVisibleItemsChange}
+          containerHeight={height}
+        />
+      )}
+    </div>
+  );
 }
