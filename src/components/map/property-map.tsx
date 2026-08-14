@@ -13,11 +13,12 @@ import {
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import L from "leaflet";
 import Link from "next/link";
 import { PropertyCard } from "@/components/property/property-card";
 import { usePropertiesStore } from "@/stores/properties-store";
+import { useProjectsStore } from "@/stores/projects-store";
 import { formatPriceCompact, formatINR, cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
@@ -538,9 +539,17 @@ function calculateDistanceStr(userPos: L.LatLng, propLat: number, propLng: numbe
 function resolvePropertyMapCoords(p: any): { lat: number; lng: number } {
   if (!p) return { lat: 16.5062, lng: 80.6480 };
 
+  const currentLat = Number(p.location?.latitude);
+  const currentLng = Number(p.location?.longitude);
+
+  // If valid coordinates already exist on the property or project, always use them directly!
+  if (!isNaN(currentLat) && !isNaN(currentLng) && currentLat !== 0 && currentLng !== 0) {
+    return { lat: currentLat, lng: currentLng };
+  }
+
   const pLocality = (p.location?.locality || "").toLowerCase();
   const pAddress = (p.location?.address || "").toLowerCase();
-  const pTitle = (p.title || "").toLowerCase();
+  const pTitle = (p.title || p.name || "").toLowerCase();
   const combined = `${pTitle} ${pLocality} ${pAddress}`;
 
   // Check if property matches any known locality preset
@@ -548,37 +557,20 @@ function resolvePropertyMapCoords(p: any): { lat: number; lng: number } {
     if (combined.includes(key)) {
       const centerLat = b.center[0];
       const centerLng = b.center[1];
-      const currentLat = Number(p.location?.latitude);
-      const currentLng = Number(p.location?.longitude);
-
-      // If missing or further than ~0.015 deg (~1.5km) away from locality center, snap to locality center with deterministic offset
-      if (
-        isNaN(currentLat) ||
-        isNaN(currentLng) ||
-        Math.abs(currentLat - centerLat) > 0.015 ||
-        Math.abs(currentLng - centerLng) > 0.015
-      ) {
-        const idStr = String(p.id || "1");
-        const hash = idStr.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-        const latOffset = ((hash % 7) - 3) * 0.0018; // ±0.0054 deg (~600m)
-        const lngOffset = (((hash * 13) % 7) - 3) * 0.0018;
-        return {
-          lat: centerLat + latOffset,
-          lng: centerLng + lngOffset,
-        };
-      }
+      const idStr = String(p.id || "1");
+      const hash = idStr.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+      const latOffset = ((hash % 7) - 3) * 0.0018;
+      const lngOffset = (((hash * 13) % 7) - 3) * 0.0018;
+      return {
+        lat: centerLat + latOffset,
+        lng: centerLng + lngOffset,
+      };
     }
   }
 
-  let lat = Number(p.location?.latitude);
-  let lng = Number(p.location?.longitude);
-  if (isNaN(lat)) lat = 16.5062;
-  if (isNaN(lng)) lng = 80.6480;
-
-  // Fallback to existing coords or default Vijayawada
   return {
-    lat,
-    lng,
+    lat: 16.5062,
+    lng: 80.6480,
   };
 }
 
@@ -784,6 +776,46 @@ function MapViewportListener({
   return null;
 }
 
+// Debounced version of the viewport listener
+function MapViewportListenerDebounced({
+  mapProperties,
+  onVisibleItemsChange,
+}: {
+  mapProperties: any[];
+  onVisibleItemsChange?: (visibleIds: string[]) => void;
+}) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const map = useMapEvents({
+    moveend: () => scheduleUpdate(),
+    zoomend: () => scheduleUpdate(),
+    zoom: () => scheduleUpdate(),
+  });
+
+  const scheduleUpdate = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      if (!onVisibleItemsChange) return;
+      const bounds = map.getBounds();
+      const visibleIds = mapProperties
+        .filter((p) => {
+          const coords = resolvePropertyMapCoords(p);
+          const latLng = L.latLng(coords.lat, coords.lng);
+          return bounds.contains(latLng);
+        })
+        .map((p) => p.id);
+      onVisibleItemsChange(visibleIds);
+    }, 300);
+  }, [map, mapProperties, onVisibleItemsChange]);
+
+  // Initial trigger
+  useEffect(() => {
+    scheduleUpdate();
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [scheduleUpdate]);
+
+  return null;
+}
+
 export default function PropertyMap({ filteredItems, userLocation: externalUserLocation, onVisibleItemsChange, containerHeight }: PropertyMapProps = {}) {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
@@ -791,26 +823,85 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   const initialBhk = searchParams.get("bhk") || null;
   
   const properties = usePropertiesStore((state) => state.properties);
+  const projects = useProjectsStore((state) => state.projects);
   const isLoading = usePropertiesStore((state) => state.isLoading);
-  const mapProperties = useMemo(() => properties.filter((p) => p.showOnMap !== false && p.status !== 'sold'), [properties]);
 
-  const [position, setPosition] = useState<L.LatLng | null>(
-    externalUserLocation
-      ? new L.LatLng(externalUserLocation.lat, externalUserLocation.lng)
-      : mapProperties.length > 0 && mapProperties[0].location?.latitude && mapProperties[0].location?.longitude
-      ? new L.LatLng(mapProperties[0].location.latitude, mapProperties[0].location.longitude)
-      : new L.LatLng(16.5062, 80.6480)
-  );
-  
-  // Keep position in sync if externalUserLocation changes
-  useEffect(() => {
-    if (externalUserLocation && mapRef.current) {
-      const pos = new L.LatLng(externalUserLocation.lat, externalUserLocation.lng);
-      setPosition(pos);
-      mapRef.current.flyTo(pos, 13);
+  const defaultAllItems = useMemo(() => {
+    const propItems = properties.filter((p: any) => p.showOnMap !== false && p.status !== 'sold');
+    const projItems = projects
+      .filter((p: any) => p.isPublished !== false && p.location?.latitude && p.location?.longitude)
+      .map((p: any) => ({
+        id: p.id,
+        slug: p.slug,
+        title: p.name,
+        price: p.configurations?.[0]?.priceMin || 0,
+        propertyType: p.projectType || "Project",
+        listingType: "project",
+        status: "active",
+        location: {
+          address: p.location.address,
+          locality: p.location.locality,
+          city: p.location.city,
+          state: p.location.state,
+          latitude: p.location.latitude,
+          longitude: p.location.longitude,
+        },
+        coverImage: p.coverImage,
+        images: p.images?.map((img: any) => img.url || img) || [],
+        showOnMap: true,
+        builderName: p.builderName,
+        _isProject: true,
+        _originalProjectData: p,
+      }));
+    return [...propItems, ...projItems];
+  }, [properties, projects]);
+
+  const mapProperties = useMemo(() => {
+    if (filteredItems && Array.isArray(filteredItems) && filteredItems.length > 0) {
+      return filteredItems;
     }
-  }, [externalUserLocation]);
+    return defaultAllItems;
+  }, [filteredItems, defaultAllItems]);
+
+  const initialCenter = useMemo(() => {
+    if (externalUserLocation) {
+      return new L.LatLng(externalUserLocation.lat, externalUserLocation.lng);
+    }
+    if (initialQuery.trim()) {
+      const qLower = initialQuery.toLowerCase().trim();
+      for (const [key, b] of Object.entries(LOCALITY_BOUNDARIES)) {
+        if (qLower.includes(key) || key.includes(qLower)) {
+          return new L.LatLng(b.center[0], b.center[1]);
+        }
+      }
+    }
+    if (filteredItems && filteredItems.length > 0) {
+      const firstWithCoords = filteredItems.find((p) => p.location?.latitude && p.location?.longitude);
+      if (firstWithCoords) {
+        return new L.LatLng(Number(firstWithCoords.location.latitude), Number(firstWithCoords.location.longitude));
+      }
+    }
+    if (mapProperties.length > 0 && mapProperties[0].location?.latitude && mapProperties[0].location?.longitude) {
+      return new L.LatLng(Number(mapProperties[0].location.latitude), Number(mapProperties[0].location.longitude));
+    }
+    return new L.LatLng(16.5062, 80.6480);
+  }, [externalUserLocation, initialQuery, filteredItems, mapProperties]);
+
+  const [position, setPosition] = useState<L.LatLng | null>(initialCenter);
   
+  // Keep position and map in sync if initialCenter or initialQuery changes
+  useEffect(() => {
+    setPosition(initialCenter);
+    if (mapRef.current) {
+      mapRef.current.flyTo(initialCenter, 13, { duration: 1 });
+    }
+  }, [initialCenter]);
+
+  // Keep internal search input in sync with external query params
+  useEffect(() => {
+    setMapSearchInput(initialQuery);
+  }, [initialQuery]);
+
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [blinkingPropertyId, setBlinkingPropertyId] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
@@ -842,6 +933,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   const activeUserLocation = externalUserLocation || internalUserLoc;
 
   const [showPropertiesTray, setShowPropertiesTray] = useState(false);
+  const [mobileTrayCount, setMobileTrayCount] = useState<number>(12);
   const { toggleFavorite, isFavorite } = useFavoritesStore();
 
   // Realtor.com Map Controls State
@@ -863,9 +955,10 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
     return getDynamicLocalityBoundary(mapSearchInput, mapProperties);
   }, [mapSearchInput, mapProperties]);
 
-  // Fly map to locality boundary when detected
+  // Fly map to locality boundary when detected or fit bounds to displayed properties
   useEffect(() => {
-    if (activeLocalityBoundary && mapRef.current) {
+    if (!mapRef.current) return;
+    if (activeLocalityBoundary) {
       try {
         const validBounds = activeLocalityBoundary.bounds.filter(
           (b) => b && Array.isArray(b) && b.length >= 2 && !isNaN(b[0]) && !isNaN(b[1]) && isFinite(b[0]) && isFinite(b[1])
@@ -875,11 +968,9 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
           const bounds = L.latLngBounds(validBounds);
           if (bounds.isValid()) {
             const size = mapRef.current.getSize();
-            // Ensure map container is large enough to handle padding without yielding negative scales (which cause NaN)
             if (size.x > 100 && size.y > 100) {
               mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: true, duration: 1.2 });
             } else if (size.x > 0 && size.y > 0) {
-              // Fallback to no padding if map container is very small during layout shifts
               mapRef.current.fitBounds(bounds, { padding: [0, 0], maxZoom: 15, animate: false });
             }
           }
@@ -1096,11 +1187,30 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
 
   const handleDrawEnd = () => {
     setIsDrawing(false);
+    if (drawPolygonPoints.length >= 3 && onVisibleItemsChange) {
+      const filtered = mapProperties.filter((p: any) => {
+        if (listingTypeFilter === "properties" && p._isProject) return false;
+        if (listingTypeFilter === "projects" && !p._isProject) return false;
+        const coords = resolvePropertyMapCoords(p);
+        return isPointInPolygon({ lat: coords.lat, lng: coords.lng }, drawPolygonPoints);
+      });
+      onVisibleItemsChange(filtered.map((p: any) => p.id));
+    }
   };
 
   const handleClearDraw = () => {
     setDrawPolygonPoints([]);
     setIsDrawing(false);
+    if (mapRef.current && onVisibleItemsChange) {
+      const bounds = mapRef.current.getBounds();
+      const visible = mapProperties.filter((p: any) => {
+        if (listingTypeFilter === "properties" && p._isProject) return false;
+        if (listingTypeFilter === "projects" && !p._isProject) return false;
+        const coords = resolvePropertyMapCoords(p);
+        return bounds.contains(L.latLng(coords.lat, coords.lng));
+      });
+      onVisibleItemsChange(visible.map((p: any) => p.id));
+    }
   };
 
   // AP Registration & Stamp Duty Calculations
@@ -1114,14 +1224,14 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
 
   return (
     <div
-      className="w-full flex flex-col touch-none relative"
+      className="w-full flex flex-col touch-none relative isolate"
       style={{ touchAction: "none", height: mapHeight, minHeight: 400 }}
     >
       {/* Styles for Leaflet map are in globals.css */}
 
       {/* Main Container */}
       <div
-        className="relative w-full flex-1 flex flex-col md:flex-row gap-0 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden bg-slate-900 shadow-xl touch-none"
+        className="relative w-full flex-1 flex flex-col md:flex-row gap-0 overflow-hidden bg-slate-900 shadow-xl touch-none isolate"
         style={{ touchAction: "none", height: mapHeight, minHeight: 400 }}
       >
         
@@ -1454,25 +1564,25 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
           style={{ touchAction: "none", position: "relative", minHeight: 300 }}
         >
           
-          {/* Open Map Explorer Button (When Closed) */}
+          {/* Open Map Explorer Button (When Closed) - top-left on mobile, bottom-left above zoom on desktop */}
           {!showMapExplorer && (
             <button
               onClick={() => setShowMapExplorer(true)}
-              className="absolute top-4 left-4 z-[500] bg-slate-900 text-white px-3 py-2 sm:p-3 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.3)] border border-slate-700 flex items-center gap-2 hover:bg-slate-800 transition-colors pointer-events-auto cursor-pointer"
+              className="absolute top-3 left-3 md:bottom-[140px] md:top-auto md:left-3 z-[500] bg-slate-900/90 backdrop-blur-sm text-white p-2 sm:px-3 sm:py-2 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.3)] border border-slate-700 flex items-center gap-1.5 hover:bg-slate-800 transition-colors pointer-events-auto cursor-pointer"
             >
-              <Compass className="w-5 h-5 text-[#f1a010]" />
-              <span className="font-bold text-sm hidden sm:block shadow-sm">Map Explorer</span>
+              <Compass className="w-4 h-4 sm:w-5 sm:h-5 text-[#f1a010]" />
+              <span className="font-bold text-xs sm:text-sm hidden sm:block shadow-sm">Map Explorer</span>
             </button>
           )}
           
-          {/* TOP: Entity Type Pills (All / Properties / Projects) */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[550] flex items-center gap-1.5 pointer-events-auto">
+          {/* TOP: Entity Type Pills (All / Properties / Projects) - Centered on mobile, right-aligned on desktop */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 md:left-auto md:right-3 md:translate-x-0 z-[550] flex items-center gap-1 sm:gap-1.5 pointer-events-auto">
             {(["all", "properties", "projects"] as const).map((lt) => (
               <button
                 key={lt}
                 onClick={() => setListingTypeFilter(lt)}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-bold shadow-lg border transition-all active:scale-95 cursor-pointer whitespace-nowrap",
+                  "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold shadow-lg border transition-all active:scale-95 cursor-pointer whitespace-nowrap",
                   listingTypeFilter === lt
                     ? "bg-[#f1a010] text-slate-950 border-[#f1a010]"
                     : "bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-[#f1a010]"
@@ -1754,7 +1864,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
               <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
               <div>
                 <div className="font-extrabold text-xs text-white">
-                  Showing {displayedPropertiesFiltered.length} of {mapProperties.length} properties
+                  Showing {displayedPropertiesFiltered.length} of {mapProperties.length} listings (Properties & Projects)
                 </div>
                 <div className="text-[10px] text-slate-400 font-medium">
                   Filtered by custom drawn boundary
@@ -1770,9 +1880,9 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
             </div>
           )}
 
-          {/* FLOATING BOTTOM FOUND PROPERTIES TRAY (REALTOR / ZILLOW / REDFIN SENIOR DEVELOPER STYLE) */}
+          {/* FLOATING BOTTOM FOUND PROPERTIES TRAY — mobile only, desktop has left list pane */}
           {displayedPropertiesFiltered.length > 0 && !isDrawing && (
-            <div className="absolute bottom-3 left-2 right-2 sm:left-4 sm:right-4 z-[550] pointer-events-auto flex flex-col items-center gap-2">
+            <div className="md:hidden absolute bottom-3 left-2 right-2 sm:left-4 sm:right-4 z-[550] pointer-events-auto flex flex-col items-center gap-2">
               {/* TRAY TOGGLE CAPSULE BUTTON */}
               <button
                 type="button"
@@ -1816,14 +1926,15 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                       <MapCardSkeleton />
                     </>
                   ) : (
-                    displayedPropertiesFiltered.map((prop) => {
+                    <>
+                      {displayedPropertiesFiltered.slice(0, mobileTrayCount).map((prop) => {
                         const isSelected = selectedPropertyId === prop.id;
                         const coords = resolvePropertyMapCoords(prop);
                         const distStr = position ? calculateDistanceStr(position, prop.location.latitude, prop.location.longitude) : "";
                         
                         let allImages: string[] = [];
                         if (prop.images && Array.isArray(prop.images)) {
-                           allImages = prop.images.map(img => typeof img === 'string' ? img : (img as any).url).filter(Boolean);
+                           allImages = (prop.images as any[]).map((img: any) => typeof img === 'string' ? img : (img as any)?.url).filter(Boolean);
                         }
                         if (allImages.length === 0 && (prop as any).coverImage) {
                            allImages = [(prop as any).coverImage];
@@ -1904,7 +2015,25 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                             </div>
                           </div>
                         );
-                      })
+                      })}
+
+                      {/* Load More Tile in Mobile Tray */}
+                      {displayedPropertiesFiltered.length > mobileTrayCount && (
+                        <button
+                          type="button"
+                          onClick={() => setMobileTrayCount((prev) => prev + 12)}
+                          className="w-44 shrink-0 bg-slate-900 border-2 border-dashed border-[#f1a010]/50 hover:border-[#f1a010] rounded-2xl p-4 flex flex-col items-center justify-center gap-2 text-center group cursor-pointer transition-all active:scale-95"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-amber-500/10 text-[#f1a010] flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Plus className="w-5 h-5" />
+                          </div>
+                          <span className="font-extrabold text-xs text-white">Load More</span>
+                          <span className="text-[10px] text-slate-400 font-semibold">
+                            +{Math.min(12, displayedPropertiesFiltered.length - mobileTrayCount)} more
+                          </span>
+                        </button>
+                      )}
+                    </>
                   )}
                   </div>
                 </div>
@@ -1966,6 +2095,12 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
               onDrawStart={handleDrawStart}
               onDrawMove={handleDrawMove}
               onDrawEnd={handleDrawEnd}
+            />
+
+            {/* Realtor-style: update list panel whenever map viewport changes */}
+            <MapViewportListenerDebounced
+              mapProperties={displayedPropertiesFiltered}
+              onVisibleItemsChange={onVisibleItemsChange}
             />
 
 

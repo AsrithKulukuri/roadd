@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: false,
+  devIndicators: false,
   allowedDevOrigins: [
     "interpretive-imaginatively-melida.ngrok-free.dev",
     "lazy-shrimps-prove.loca.lt",

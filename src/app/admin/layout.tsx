@@ -14,7 +14,8 @@ import {
   X,
   MonitorPlay,
   FolderOpen,
-  Image as ImageIcon
+  Image as ImageIcon,
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -28,7 +29,7 @@ const sidebarLinks = [
   { href: "/admin/projects", label: "Projects", icon: FolderOpen },
   { href: "/admin/banners", label: "Banners", icon: ImageIcon },
   { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/content", label: "Content", icon: MonitorPlay },
+  { href: "/admin/content", label: "Categories & Content", icon: LayoutGrid },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

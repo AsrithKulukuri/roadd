@@ -19,9 +19,10 @@ import {
   MapPin,
   Tag,
   Flame,
+  IndianRupee,
+  X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatINR, formatINRWords } from "@/lib/utils";
+import { cn, formatINR, formatINRWords, formatPriceCompact } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -91,21 +92,46 @@ export function HeroSection() {
   const [showBuyMenu, setShowBuyMenu] = useState(false);
   const [showProjectsMenu, setShowProjectsMenu] = useState(false);
   const [openLocationTab, setOpenLocationTab] = useState<string | null>(null);
+  const [showBudgetDropdown, setShowBudgetDropdown] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  const [suggestionIndex, setSuggestionIndex] = useState(0);
-  const [heroBudget, setHeroBudget] = useState<[number, number]>([1000000, 100000000]);
+  const [heroBudget, setHeroBudget] = useState<[number, number]>([1000000, 30000000]);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Rotating text carousel interval
+  // ── Typewriter / Typing Effect State & Logic ──
+  const [typedText, setTypedText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [loopNum, setLoopNum] = useState(0);
+  const [typingSpeed, setTypingSpeed] = useState(60);
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSuggestionIndex((prev) => (prev + 1) % CAROUSEL_SUGGESTIONS.length);
-    }, 3200);
-    return () => clearInterval(interval);
-  }, []);
+    const currentFullText = CAROUSEL_SUGGESTIONS[loopNum % CAROUSEL_SUGGESTIONS.length];
+
+    const handleType = () => {
+      if (isDeleting) {
+        setTypedText(currentFullText.substring(0, typedText.length - 1));
+        setTypingSpeed(25);
+      } else {
+        setTypedText(currentFullText.substring(0, typedText.length + 1));
+        setTypingSpeed(55);
+      }
+
+      if (!isDeleting && typedText === currentFullText) {
+        // Pauses when word is fully typed
+        setTimeout(() => setIsDeleting(true), 2200);
+      } else if (isDeleting && typedText === "") {
+        // Finished deleting - move to next suggestion
+        setIsDeleting(false);
+        setLoopNum((prev) => prev + 1);
+        setTypingSpeed(350);
+      }
+    };
+
+    const timer = setTimeout(handleType, typingSpeed);
+    return () => clearTimeout(timer);
+  }, [typedText, isDeleting, loopNum, typingSpeed]);
 
   // Dynamic Background Banners
   const { banners, fetchBanners } = useBannersStore();
@@ -163,7 +189,7 @@ export function HeroSection() {
     if (searchQuery.trim()) {
       params.set("location", searchQuery.trim());
     }
-    if (b[0] > 0 || b[1] < 100000000) {
+    if (b[0] > 0 || b[1] < 30000000) {
       params.set("budget", `${b[0]},${b[1]}`);
     }
 
@@ -193,7 +219,7 @@ export function HeroSection() {
   }, [properties, projects, heroBudget, activeTab]);
 
   /** true whenever the user has moved either slider handle away from the full range */
-  const budgetActive = heroBudget[0] > 1000000 || heroBudget[1] < 100000000;
+  const budgetActive = heroBudget[0] > 1000000 || heroBudget[1] < 30000000;
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -206,8 +232,6 @@ export function HeroSection() {
       scrollContainerRef.current.scrollBy({ left: 310, behavior: "smooth" });
     }
   };
-
-  const currentSuggestion = CAROUSEL_SUGGESTIONS[suggestionIndex];
 
   const homeCategories = useContentStore((state) => state.homeCategories);
 
@@ -307,7 +331,7 @@ export function HeroSection() {
     <section className="relative w-full overflow-hidden text-slate-900 pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-20 min-h-[500px]">
       {/* Full-Width Dynamic Banners Block */}
       {banners.length > 0 && (
-        <div className="relative z-10 w-full -mt-24 sm:-mt-28 md:-mt-32 mb-10 shadow-2xl h-[250px] sm:h-[300px] md:h-[380px] overflow-hidden">
+        <div className="relative z-10 w-full -mt-24 sm:-mt-28 md:-mt-32 mb-3 sm:mb-6 shadow-2xl h-[195px] sm:h-[290px] md:h-[390px] overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentBanner?.id || 'banner-fallback'}
@@ -317,31 +341,61 @@ export function HeroSection() {
               transition={{ duration: 0.5 }}
               className="absolute inset-0"
             >
-              {currentBanner?.image_url && (
+              {/* Responsive Banner Images: Mobile image on mobile, Desktop image on desktop */}
+              {currentBanner?.mobile_image_url ? (
+                <>
+                  <div className="md:hidden absolute inset-0">
+                    <Image 
+                      src={currentBanner.mobile_image_url} 
+                      alt={currentBanner.title || 'Banner Mobile'}
+                      fill
+                      priority
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="hidden md:block absolute inset-0">
+                    <Image 
+                      src={currentBanner.image_url} 
+                      alt={currentBanner.title || 'Banner Desktop'}
+                      fill
+                      priority
+                      className="object-cover"
+                    />
+                  </div>
+                </>
+              ) : currentBanner?.image_url ? (
                 <Image 
                   src={currentBanner.image_url} 
                   alt={currentBanner.title || 'Banner'}
                   fill
+                  priority
                   className="object-cover"
                 />
-              )}
-              {/* Overlay for readability */}
-              <div className="absolute inset-0 bg-black/30 bg-gradient-to-r from-black/60 to-transparent" />
+              ) : null}
+
+              {/* Gradient overlay for contrast */}
+              <div className="absolute inset-0 bg-black/40 bg-gradient-to-r from-black/80 via-black/45 to-transparent" />
               
-              {/* Banner Content (Centered in the max-w-7xl area so it aligns with content) */}
-              <div className="absolute inset-0 flex flex-col justify-center items-start text-left pt-24 sm:pt-28 md:pt-32">
-                <div className="w-full max-w-7xl mx-auto px-10 sm:px-14">
+              {/* Banner Content (SAFE IN BETWEEN ARROWS WITH GENEROUS HORIZONTAL PADDING) */}
+              <div className="absolute inset-0 flex flex-col justify-center items-start text-left pt-20 sm:pt-24 md:pt-28">
+                <div className="w-full max-w-7xl mx-auto px-14 sm:px-20 md:px-24">
                   {currentBanner?.title && (
-                    <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 sm:mb-6 drop-shadow-md max-w-[70%] leading-tight">
+                    <h2 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-2 sm:mb-3 drop-shadow-xl max-w-[85%] sm:max-w-[70%] leading-tight tracking-tight">
                       {currentBanner.title}
                     </h2>
+                  )}
+                  {currentBanner?.subtitle && (
+                    <p className="text-xs sm:text-base md:text-lg text-slate-200 font-medium mb-3 sm:mb-5 max-w-[85%] sm:max-w-[65%] line-clamp-2 drop-shadow-md">
+                      {currentBanner.subtitle}
+                    </p>
                   )}
                   {currentBanner?.link_url && (
                     <Link
                       href={currentBanner.link_url}
-                      className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm sm:text-lg rounded-lg shadow-lg transition-all hover:scale-105 active:scale-95"
+                      className="inline-flex items-center gap-2 px-5 sm:px-8 py-2 sm:py-3 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs sm:text-base rounded-xl shadow-2xl transition-all hover:scale-105 active:scale-95 border border-white/20 hover:border-amber-400 cursor-pointer"
                     >
-                      Explore Now <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span>{currentBanner.button_text || "Explore Now"}</span>
+                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
                     </Link>
                   )}
                 </div>
@@ -349,27 +403,31 @@ export function HeroSection() {
             </motion.div>
           </AnimatePresence>
           
-          {/* Arrow Controls */}
+          {/* Arrow Controls - positioned cleanly on outer margins */}
           {banners.length > 1 && (
-            <div className="absolute inset-0 z-20 pointer-events-none">
+            <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-between px-2 sm:px-5 md:px-6">
               <button 
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length);
                 }}
-                className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/30 backdrop-blur-md text-white shadow-lg border border-white/20 transition-all pointer-events-auto"
+                aria-label="Previous Banner"
+                className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full bg-black/45 hover:bg-black/75 backdrop-blur-md text-white shadow-2xl border border-white/25 transition-all hover:scale-110 active:scale-95 pointer-events-auto cursor-pointer"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
               
               <button 
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
                 }}
-                className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/30 backdrop-blur-md text-white shadow-lg border border-white/20 transition-all pointer-events-auto"
+                aria-label="Next Banner"
+                className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full bg-black/45 hover:bg-black/75 backdrop-blur-md text-white shadow-2xl border border-white/25 transition-all hover:scale-110 active:scale-95 pointer-events-auto cursor-pointer"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
           )}
@@ -491,133 +549,113 @@ export function HeroSection() {
         {/* Realtor.com Search Input Bar */}
         <form
           onSubmit={handleSearchSubmit}
-          className="relative w-full max-w-[760px] h-[64px] mx-auto flex items-center bg-white border border-slate-200 rounded-full px-3 shadow-xl transition-all duration-300"
+          className="relative w-full max-w-[760px] h-[54px] sm:h-[64px] mx-auto flex items-center bg-white border border-slate-200 rounded-full pl-3.5 sm:pl-4 pr-1.5 sm:pr-2 shadow-xl transition-all duration-300"
         >
-          <Search className="w-5 h-5 text-slate-400 ml-3 mr-2 shrink-0 pointer-events-none" />
+          <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-2 sm:mr-3 shrink-0 pointer-events-none" />
 
-          {!searchQuery && !isFocused && (
-            <div
-              onClick={() => inputRef.current?.focus()}
-              className="absolute left-12 right-[145px] sm:right-[165px] inset-y-0 flex items-center pointer-events-none overflow-hidden text-left"
-            >
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={suggestionIndex}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.35, ease: "easeOut" }}
-                  className="text-sm sm:text-base text-slate-500 font-semibold truncate select-none block"
-                >
-                  {currentSuggestion}
-                </motion.span>
-              </AnimatePresence>
-            </div>
-          )}
+          {/* Input text wrapper occupying available width */}
+          <div className="relative flex-1 min-w-0 h-full flex items-center">
+            {!searchQuery && !isFocused && (
+              <div
+                onClick={() => inputRef.current?.focus()}
+                className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left"
+              >
+                <span className="text-xs sm:text-base text-slate-500 font-semibold truncate select-none flex items-center w-full">
+                  <span>{typedText}</span>
+                  <span className="inline-block w-[2px] h-[14px] sm:h-[18px] bg-amber-500 ml-0.5 animate-pulse" />
+                </span>
+              </div>
+            )}
 
-          <input
-            ref={inputRef}
-            type="text"
-            value={searchQuery}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={isFocused && !searchQuery ? "Search city, locality, builder or project..." : ""}
-            style={{ outline: "none", boxShadow: "none", border: "none" }}
-            className="w-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-slate-400 pl-1 pr-36 sm:pr-40 font-bold border-none outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none shadow-none"
-          />
+            <input
+              ref={inputRef}
+              type="text"
+              value={searchQuery}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={isFocused && !searchQuery ? "Search city, locality, builder or project..." : ""}
+              style={{ outline: "none", boxShadow: "none", border: "none" }}
+              className="w-full h-full bg-transparent text-xs sm:text-base text-slate-900 placeholder-slate-400 font-bold border-none outline-none focus:outline-none focus:ring-0 shadow-none px-0"
+            />
+          </div>
 
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="p-1 mr-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+              className="p-1 sm:p-1.5 mx-1 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+              aria-label="Clear search"
             >
-              ✕
+              <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           )}
 
           <button
             type="submit"
-            className="h-[44px] px-4 sm:px-6 bg-slate-900 hover:bg-slate-800 text-white font-black text-sm sm:text-base rounded-full transition-all shadow-md hover:scale-105 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+            className="h-[40px] sm:h-[48px] px-4 sm:px-6 bg-slate-950 hover:bg-slate-900 text-white font-black text-xs sm:text-sm rounded-full transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ml-1"
             aria-label="Search"
           >
             <span>Search</span>
-            <Search className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3] text-amber-400" />
+            <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3] text-amber-400" />
           </button>
         </form>
 
-        {/* Open Trending Locations Dropdowns */}
-        <div className="w-full max-w-[760px] mx-auto mt-4 sm:mt-5 text-left relative z-20">
-          {/* Scrollable Tabs */}
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x pb-1 mb-3 sm:mb-[16px]">
-            <button
-              type="button"
-              onClick={() => setOpenLocationTab(openLocationTab === "trending" ? null : "trending")}
-              className={cn(
-                "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border shrink-0 snap-start",
-                openLocationTab === "trending"
-                  ? "bg-slate-950 border-amber-400 text-white font-bold"
-                  : "bg-slate-900 border-slate-800 text-white font-semibold hover:bg-slate-800"
-              )}
-            >
-              <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-              <span>Trending</span>
-              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openLocationTab === "trending" && "rotate-180")} />
-            </button>
-
+        {/* Open Locations Pills */}
+        <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-4 text-left relative z-20">
+          {/* Scrollable Location Tabs */}
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x pb-1 mb-1.5 sm:mb-2.5">
             <button
               type="button"
               onClick={() => setOpenLocationTab(openLocationTab === "vijayawada" ? null : "vijayawada")}
               className={cn(
-                "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border shrink-0 snap-start",
+                "h-[32px] sm:h-[36px] px-3 sm:px-[16px] rounded-full text-[11px] sm:text-[13px] flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-xs border shrink-0 snap-start",
                 openLocationTab === "vijayawada"
                   ? "bg-slate-950 border-amber-400 text-white font-bold"
                   : "bg-slate-900 border-slate-800 text-white font-semibold hover:bg-slate-800"
               )}
             >
-              <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+              <MapPin className="w-3.5 h-3.5 text-amber-400" />
               <span>Vijayawada</span>
-              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openLocationTab === "vijayawada" && "rotate-180")} />
+              <ChevronDown className={cn("w-3 h-3 transition-transform", openLocationTab === "vijayawada" && "rotate-180")} />
             </button>
 
             <button
               type="button"
               onClick={() => setOpenLocationTab(openLocationTab === "guntur" ? null : "guntur")}
               className={cn(
-                "h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border shrink-0 snap-start",
+                "h-[32px] sm:h-[36px] px-3 sm:px-[16px] rounded-full text-[11px] sm:text-[13px] flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-xs border shrink-0 snap-start",
                 openLocationTab === "guntur"
                   ? "bg-slate-950 border-amber-400 text-white font-bold"
                   : "bg-slate-900 border-slate-800 text-white font-semibold hover:bg-slate-800"
               )}
             >
-              <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+              <Building2 className="w-3.5 h-3.5 text-amber-400" />
               <span>Guntur</span>
-              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openLocationTab === "guntur" && "rotate-180")} />
+              <ChevronDown className={cn("w-3 h-3 transition-transform", openLocationTab === "guntur" && "rotate-180")} />
             </button>
 
-            {/* Amaravati - Direct link (no sublocations) */}
+            {/* Amaravati - Direct link */}
             <button
               type="button"
               onClick={() => router.push(`/search?type=${activeTab}&location=Amaravati`)}
-              className="h-[36px] sm:h-[40px] px-3.5 sm:px-[20px] rounded-full text-[13px] sm:text-[14px] flex items-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer bg-slate-900 border border-slate-800 text-white font-semibold hover:bg-slate-800 shadow-sm shrink-0 snap-start"
+              className="h-[32px] sm:h-[36px] px-3 sm:px-[16px] rounded-full text-[11px] sm:text-[13px] flex items-center gap-1.5 transition-all duration-200 cursor-pointer bg-slate-900 border border-slate-800 text-white font-semibold hover:bg-slate-800 shadow-xs shrink-0 snap-start"
             >
-              <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+              <MapPin className="w-3.5 h-3.5 text-amber-400" />
               <span>Amaravati</span>
             </button>
           </div>
 
-          {/* Shared Dropdown Menu (Renders outside the scroll view to avoid clipping) */}
+          {/* Shared Location Dropdown */}
           <AnimatePresence>
             {openLocationTab && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 mt-2 w-full max-w-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2 z-50 max-h-[300px] overflow-y-auto"
+                className="absolute top-full left-0 mt-1.5 w-full max-w-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2 z-50 max-h-[280px] overflow-y-auto"
               >
-                {(openLocationTab === "trending" ? trendingHotspots :
-                  openLocationTab === "vijayawada" ? vijayawadaHotspots :
+                {(openLocationTab === "vijayawada" ? vijayawadaHotspots :
                   openLocationTab === "guntur" ? gunturHotspots :
                   []).map(spot => (
                   <div 
@@ -637,49 +675,23 @@ export function HeroSection() {
           </AnimatePresence>
         </div>
 
-        {/* ── Sexy Budget Filter ── */}
-        <div className="w-full max-w-[760px] mx-auto mt-4 sm:mt-5 group perspective">
-          <div className="bg-white/90 backdrop-blur-2xl rounded-2xl p-4 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/60 transition-all duration-500 hover:shadow-[0_12px_40px_rgb(0,0,0,0.12)]">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 tracking-wider uppercase">Select Your Budget</h3>
-            </div>
+        {/* ── Option 2: Compact 1-Line Budget Bar (Clean White) ── */}
+        <div className="w-full max-w-[760px] mx-auto mt-1 sm:mt-2">
+          <div className="bg-white rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-2.5 shadow-lg border border-slate-200 flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
             
-            {/* Dropdowns */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="relative flex-1">
-                <select
-                  value={heroBudget[0]}
-                  onChange={(e) => setHeroBudget([Number(e.target.value), heroBudget[1]])}
-                  className="w-full h-10 sm:h-11 px-3 border border-slate-200 hover:border-amber-400 focus:border-amber-500 rounded-xl bg-slate-50/50 hover:bg-white focus:bg-white text-sm font-bold text-slate-700 outline-none transition-all cursor-pointer appearance-none shadow-sm focus:shadow-[0_0_0_3px_rgba(245,158,11,0.1)] bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:10px_10px] bg-[right_12px_center]"
-                >
-                {![1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 20000000, 50000000].includes(heroBudget[0]) && (
+            {/* Min & Max Selects */}
+            <div className="flex items-center gap-1.5 w-full sm:w-auto shrink-0">
+              <span className="text-[11px] sm:text-xs font-black text-slate-700 uppercase tracking-wider shrink-0 mr-0.5">
+                Budget:
+              </span>
+              <select
+                value={heroBudget[0]}
+                onChange={(e) => setHeroBudget([Number(e.target.value), Math.max(Number(e.target.value), heroBudget[1])])}
+                className="h-8 px-2.5 border border-slate-300 hover:border-amber-400 focus:border-amber-500 rounded-xl bg-slate-50 text-[11px] sm:text-xs font-black text-slate-900 outline-none cursor-pointer shadow-2xs transition-colors"
+              >
+                {![1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000, 30000000].includes(heroBudget[0]) && (
                   <option value={heroBudget[0]}>{formatINRWords(heroBudget[0])}</option>
                 )}
-                <option value={1000000}>₹ 10 L</option>
-                <option value={2000000}>₹ 20 L</option>
-                <option value={3000000}>₹ 30 L</option>
-                <option value={5000000}>₹ 50 L</option>
-                <option value={7500000}>₹ 75 L</option>
-                <option value={10000000}>₹ 1 Cr</option>
-                <option value={20000000}>₹ 2 Cr</option>
-                <option value={50000000}>₹ 5 Cr</option>
-                </select>
-              </div>
-
-              <div className="flex-shrink-0 px-2 flex items-center justify-center">
-                <span className="text-slate-400 font-bold text-xs">TO</span>
-              </div>
-
-              <div className="relative flex-1">
-                <select
-                  value={heroBudget[1]}
-                  onChange={(e) => setHeroBudget([heroBudget[0], Number(e.target.value)])}
-                  className="w-full h-10 sm:h-11 px-3 border border-slate-200 hover:border-amber-400 focus:border-amber-500 rounded-xl bg-slate-50/50 hover:bg-white focus:bg-white text-sm font-bold text-slate-700 outline-none transition-all cursor-pointer appearance-none shadow-sm focus:shadow-[0_0_0_3px_rgba(245,158,11,0.1)] bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:10px_10px] bg-[right_12px_center]"
-                >
-                {![100000000, 1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000, 30000000, 50000000].includes(heroBudget[1]) && (
-                  <option value={heroBudget[1]}>{formatINRWords(heroBudget[1], true)}</option>
-                )}
-                <option value={100000000}>Max</option>
                 <option value={1000000}>₹ 10 L</option>
                 <option value={2000000}>₹ 20 L</option>
                 <option value={3000000}>₹ 30 L</option>
@@ -689,25 +701,45 @@ export function HeroSection() {
                 <option value={15000000}>₹ 1.5 Cr</option>
                 <option value={20000000}>₹ 2 Cr</option>
                 <option value={30000000}>₹ 3 Cr</option>
-                <option value={50000000}>₹ 5 Cr</option>
               </select>
-              </div>
+
+              <span className="text-slate-400 font-black text-[10px]">TO</span>
+
+              <select
+                value={heroBudget[1]}
+                onChange={(e) => setHeroBudget([Math.min(heroBudget[0], Number(e.target.value)), Number(e.target.value)])}
+                className="h-8 px-2.5 border border-slate-300 hover:border-amber-400 focus:border-amber-500 rounded-xl bg-slate-50 text-[11px] sm:text-xs font-black text-slate-900 outline-none cursor-pointer shadow-2xs transition-colors"
+              >
+                {![30000000, 1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000].includes(heroBudget[1]) && (
+                  <option value={heroBudget[1]}>{heroBudget[1] >= 30000000 ? "Any Price" : formatINRWords(heroBudget[1], true)}</option>
+                )}
+                <option value={30000000}>Any Price</option>
+                <option value={1000000}>₹ 10 L</option>
+                <option value={2000000}>₹ 20 L</option>
+                <option value={3000000}>₹ 30 L</option>
+                <option value={5000000}>₹ 50 L</option>
+                <option value={7500000}>₹ 75 L</option>
+                <option value={10000000}>₹ 1 Cr</option>
+                <option value={15000000}>₹ 1.5 Cr</option>
+                <option value={20000000}>₹ 2 Cr</option>
+                <option value={30000000}>₹ 3 Cr</option>
+              </select>
             </div>
 
-            {/* Slider */}
-            <div className="px-3 sm:px-4 mb-2">
+            {/* Inline Slider */}
+            <div className="flex-1 w-full px-1.5">
               <style>{`
                 .budget-slider [role="slider"] {
-                  background: #0f172a !important; /* dark slate */
-                  border: 2px solid white !important;
-                  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.4);
-                  width: 20px !important;
-                  height: 20px !important;
+                  background: #0f172a !important;
+                  border: 2px solid #ffffff !important;
+                  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.3);
+                  width: 18px !important;
+                  height: 18px !important;
                   transition: transform 0.2s;
                 }
-                .budget-slider [role="slider"]:hover, .budget-slider [role="slider"]:focus {
-                  transform: scale(1.15);
-                  background: #f59e0b !important; /* amber on hover */
+                .budget-slider [role="slider"]:hover {
+                  transform: scale(1.2);
+                  background: #f59e0b !important;
                 }
                 .budget-slider [data-orientation="horizontal"] .radix-slider-track {
                   height: 5px !important;
@@ -720,56 +752,38 @@ export function HeroSection() {
               `}</style>
               <Slider
                 min={1000000}
-                max={100000000}
-                step={500000}
+                max={30000000}
+                step={250000}
                 value={heroBudget}
                 onValueChange={(val) => setHeroBudget(val as [number, number])}
                 className="w-full budget-slider cursor-pointer"
               />
             </div>
-            
-            <div className="flex justify-end mt-5">
-              <button
-                type="button"
-                onClick={() => handleSearchSubmit()}
-                className="flex items-center gap-2 h-10 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl shadow-[0_4px_12px_rgb(15,23,42,0.3)] hover:shadow-[0_6px_16px_rgb(15,23,42,0.4)] transition-all hover:-translate-y-0.5 active:scale-95 cursor-pointer border border-slate-700"
-              >
-                <span>Apply Budget</span>
-                <span className="min-w-[24px] h-6 px-1.5 rounded-full bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-[11px] font-black text-amber-400 leading-none shadow-[0_0_8px_rgba(245,158,11,0.2)]">
-                  {matchingCount}
-                </span>
-              </button>
-            </div>
+
+            {/* Apply Button */}
+            <button
+              type="button"
+              onClick={() => handleSearchSubmit()}
+              className="h-8 px-4 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 w-full sm:w-auto"
+            >
+              <span>Apply</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black">
+                {matchingCount}
+              </span>
+            </button>
+
           </div>
         </div>
 
-        <div className="w-full mt-12 text-left space-y-4">
+        <div className="w-full mt-3 sm:mt-6 text-left space-y-3">
           {/* Header row */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                Browse homes
-              </h2>
-              {/* Budget-active pill */}
-              <AnimatePresence>
-                {budgetActive && (
-                  <motion.span
-                    key="budget-chip"
-                    initial={{ opacity: 0, scale: 0.75, y: 4 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.75, y: 4 }}
-                    transition={{ type: "spring", stiffness: 380, damping: 26 }}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-300 text-[11px] font-bold"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                    Filtered by budget
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </div>
+            <h2 className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight">
+              Browse homes
+            </h2>
             <Link
               href="/search"
-              className="text-xs sm:text-sm font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1 hover:underline"
+              className="text-xs sm:text-sm font-semibold text-amber-600 hover:text-amber-500 flex items-center gap-1 hover:underline"
             >
               View all categories <ChevronRight className="w-4 h-4" />
             </Link>

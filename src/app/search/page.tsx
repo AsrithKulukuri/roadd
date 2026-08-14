@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense, useEffect } from "react";
+import { useState, useMemo, Suspense, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePropertiesStore } from "@/stores/properties-store";
@@ -11,7 +11,7 @@ import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { SearchFiltersModal, initialFilterState, type FilterState } from "@/components/search/search-filters";
 import { RealtorSearchHeader } from "@/components/search/realtor-search-header";
 import { MapWrapper } from "@/components/map/map-wrapper";
-import { SlidersHorizontal, ArrowLeft, Search as SearchIcon, MapPin, Loader2 } from "lucide-react";
+import { SlidersHorizontal, ArrowLeft, Search as SearchIcon, MapPin, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -52,6 +52,19 @@ function UnifiedSearchPage() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [visibleMapIds, setVisibleMapIds] = useState<string[] | null>(null);
+  const [listUpdating, setListUpdating] = useState(false);
+  const listPaneRef = useRef<HTMLDivElement>(null);
+
+  const handleVisibleItemsChange = useCallback((ids: string[]) => {
+    setVisibleMapIds(ids);
+    setListUpdating(true);
+    // Scroll list to top
+    if (listPaneRef.current) {
+      listPaneRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    // Clear updating indicator after a short delay
+    setTimeout(() => setListUpdating(false), 800);
+  }, []);
   
   const properties = usePropertiesStore((state) => state.properties);
   const projects = useProjectsStore((state) => state.projects);
@@ -417,32 +430,61 @@ function UnifiedSearchPage() {
 
   // Combine and Sort
   const combinedResults = useMemo(() => {
-    let items = [
-      ...filteredProperties.map(p => ({ type: 'property' as const, data: p, price: p.price, createdAt: p.createdAt })),
-      ...filteredProjects.map(p => {
-         const minPrice = p.configurations?.[0]?.priceMin || 0;
-         return { type: 'project' as const, data: p, price: minPrice, createdAt: p.createdAt };
-      })
-    ];
+    let items: { type: 'property' | 'project'; data: any; price: number; createdAt: string }[];
+
+    // In map mode with a visible-ids set, drive the list from the MAP's viewport
+    // (which uses fuzzy matching on ALL store items) rather than the strict search-page filter.
+    if (viewMode === "map" && visibleMapIds !== null) {
+      const propById = new Map(properties.map(p => [p.id, p]));
+      const projById = new Map(projects.map(p => [p.id, p]));
+      items = visibleMapIds.flatMap((id): { type: 'property' | 'project'; data: any; price: number; createdAt: string }[] => {
+        const prop = propById.get(id);
+        if (prop) return [{ type: 'property', data: prop, price: prop.price, createdAt: prop.createdAt }];
+        const proj = projById.get(id);
+        if (proj) {
+          const minPrice = proj.configurations?.[0]?.priceMin || 0;
+          return [{ type: 'project', data: proj, price: minPrice, createdAt: proj.createdAt }];
+        }
+        return [];
+      });
+    } else {
+      items = [
+        ...filteredProperties.map(p => ({ type: 'property' as const, data: p, price: p.price, createdAt: p.createdAt })),
+        ...filteredProjects.map(p => {
+          const minPrice = p.configurations?.[0]?.priceMin || 0;
+          return { type: 'project' as const, data: p, price: minPrice, createdAt: p.createdAt };
+        })
+      ];
+    }
 
     items.sort((a, b) => {
       if (sortBy === "price-asc") return a.price - b.price;
       if (sortBy === "price-desc") return b.price - a.price;
       if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      return 0; // default relevant
+      return 0;
     });
 
-    if (viewMode === "map" && visibleMapIds !== null) {
-      items = items.filter(item => visibleMapIds.includes(item.data.id));
-    }
-
     return items;
-  }, [filteredProperties, filteredProjects, sortBy, viewMode, visibleMapIds]);
+  }, [filteredProperties, filteredProjects, properties, projects, sortBy, viewMode, visibleMapIds]);
 
-  // Map items: projects adapted to property-compatible shape so they appear as pins on the map
+  // 12 properties / projects initial load with Load More
+  const pageSize = 12;
+  const [visibleCount, setVisibleCount] = useState<number>(12);
+
+  // Reset pagination when filters, sort, view mode, or viewport change
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [filters, sortBy, activeTab, viewMode, visibleMapIds]);
+
+  const displayedResults = useMemo(() => {
+    return combinedResults.slice(0, visibleCount);
+  }, [combinedResults, visibleCount]);
+
+  // Map items: pass ALL store properties/projects to the map so it can fuzzy-filter internally.
+  // The list syncs back via visibleMapIds from the map viewport listener.
   const mapItems = useMemo(() => {
-    const propItems = filteredProperties as any[];
-    const projItems = filteredProjects
+    const propItems = properties as any[];
+    const projItems = projects
       .filter(p => p.isPublished && p.location?.latitude && p.location?.longitude)
       .map(p => ({
         id: p.id,
@@ -464,17 +506,16 @@ function UnifiedSearchPage() {
         images: p.images?.map((img: any) => img.url || img) || [],
         showOnMap: true,
         builderName: p.builderName,
-        // signals it's a project for the popup
         _isProject: true,
         _originalProjectData: p,
       }));
     return [...propItems, ...projItems];
-  }, [filteredProperties, filteredProjects]);
+  }, [properties, projects]);
 
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-bg-primary pt-20 flex flex-col">
+    <div className={cn("bg-bg-primary pt-16 flex flex-col", viewMode === "map" ? "h-screen overflow-hidden" : "min-h-screen")}>
       <RealtorSearchHeader 
         filters={filters}
         onFilterChange={setFilters}
@@ -485,8 +526,8 @@ function UnifiedSearchPage() {
       />
 
       <main className={cn(
-        "flex-1 w-full flex flex-col",
-        viewMode === "grid" ? "px-4 sm:px-6 lg:px-8 py-6 pb-24 max-w-7xl mx-auto" : "h-[calc(100vh-175px)]"
+        "flex-1 min-h-0 w-full flex flex-col",
+        viewMode === "grid" ? "px-4 sm:px-6 lg:px-8 py-6 pb-24 max-w-7xl mx-auto overflow-y-auto" : "overflow-hidden"
       )}>
         {/* Near Me Loading Overlay */}
         {isLocating && (
@@ -497,16 +538,44 @@ function UnifiedSearchPage() {
         )}
 
         <div className={cn(
-          "flex-1 flex w-full",
-          viewMode === "map" ? "flex-col md:flex-row h-full overflow-hidden" : "flex-col gap-6"
+          "flex w-full h-full",
+          viewMode === "map" ? "flex-col md:flex-row flex-1 min-h-0 overflow-hidden" : "flex-col gap-6"
         )}>
           
-          {/* List Pane */}
-          <div className={cn(
-            "flex flex-col gap-6 w-full",
-            viewMode === "map" ? "md:w-[50%] lg:w-[45%] xl:w-[45%] overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 max-h-[45vh] md:max-h-full" : "md:w-full"
-          )}>
+          {/* List Pane: Hidden on mobile in Map Mode to keep original full-screen mobile map UI */}
+          <div
+            ref={listPaneRef}
+            className={cn(
+              "flex flex-col gap-6 w-full",
+              viewMode === "map"
+                ? "hidden md:flex md:w-[50%] lg:w-[45%] xl:w-[45%] overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:h-full min-h-0"
+                : "w-full"
+            )}
+          >
             
+            {/* Live map-sync banner — Realtor style (Desktop) */}
+            {viewMode === "map" && visibleMapIds !== null && (
+              <div className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-300",
+                listUpdating
+                  ? "bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 animate-pulse"
+                  : "bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
+              )}>
+                <span className={cn("w-2 h-2 rounded-full flex-shrink-0", listUpdating ? "bg-amber-500 animate-ping" : "bg-amber-500")} />
+                <span>
+                  {listUpdating ? "Updating listings…" : `${combinedResults.length} homes in map area`}
+                </span>
+                {!listUpdating && (
+                  <button
+                    onClick={() => setVisibleMapIds(null)}
+                    className="ml-auto text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-semibold text-[10px] underline-offset-2 hover:underline"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Controls Bar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
@@ -525,7 +594,7 @@ function UnifiedSearchPage() {
               </div>
             </div>
 
-            {/* Results Grid */}
+            {/* Results Grid - 4 Rows Initial with Load More */}
             {(isLoadingProperties || isLoadingProjects) ? (
               <div className={cn("grid gap-6", viewMode === "map" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4")}>
                 {[...Array(8)].map((_, i) => (
@@ -533,14 +602,33 @@ function UnifiedSearchPage() {
                 ))}
               </div>
             ) : combinedResults.length > 0 ? (
-              <div className={cn("grid gap-6", viewMode === "map" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4")}>
-                {combinedResults.map((item, idx) => {
-                  if (item.type === "property") {
-                    return <PropertyCard key={`prop-${item.data.id}-${idx}`} property={item.data as any} />;
-                  } else {
-                    return <ProjectCard key={`proj-${item.data.id}-${idx}`} project={item.data as any} />;
-                  }
-                })}
+              <div className="flex flex-col gap-6">
+                <div className={cn("grid gap-6", viewMode === "map" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4")}>
+                  {displayedResults.map((item, idx) => {
+                    if (item.type === "property") {
+                      return <PropertyCard key={`prop-${item.data.id}-${idx}`} property={item.data as any} />;
+                    } else {
+                      return <ProjectCard key={`proj-${item.data.id}-${idx}`} project={item.data as any} />;
+                    }
+                  })}
+                </div>
+
+                {/* Load More Button */}
+                {combinedResults.length > visibleCount && (
+                  <div className="flex flex-col items-center justify-center pt-4 pb-2">
+                    <button
+                      type="button"
+                      onClick={() => setVisibleCount((prev) => prev + pageSize)}
+                      className="px-6 py-3 rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 hover:border-[#f1a010] text-slate-900 dark:text-white font-extrabold text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer group"
+                    >
+                      <Plus className="w-4 h-4 text-[#f1a010] group-hover:rotate-90 transition-transform duration-200" />
+                      <span>Load More Properties</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold ml-1">
+                        ({displayedResults.length} of {combinedResults.length})
+                      </span>
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -556,10 +644,10 @@ function UnifiedSearchPage() {
             )}
           </div>
 
-          {/* Map Pane */}
+          {/* Map Pane: Full-screen on mobile, split-pane on desktop */}
           {viewMode === "map" && (
-            <div className="flex-1 h-full overflow-hidden md:border-l md:border-slate-200 md:dark:border-slate-800">
-              <MapWrapper filteredItems={mapItems} userLocation={userLocation} onVisibleItemsChange={setVisibleMapIds} />
+            <div className="flex-1 w-full h-full min-h-0 overflow-hidden md:border-l md:border-slate-200 md:dark:border-slate-800">
+              <MapWrapper filteredItems={mapItems} userLocation={userLocation} onVisibleItemsChange={handleVisibleItemsChange} />
             </div>
           )}
         </div>

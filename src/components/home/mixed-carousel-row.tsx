@@ -148,14 +148,21 @@ export function MixedCarouselRow({
           <div 
             ref={scrollRef}
             onScroll={checkScroll}
-            className="flex gap-6 overflow-x-auto snap-x snap-mandatory hide-scrollbar pb-6"
+            className={cn(
+              "flex overflow-x-auto snap-x snap-mandatory hide-scrollbar",
+              cardVariant === "compact"
+                ? "gap-2.5 sm:gap-4 md:gap-5 pb-1 sm:pb-3"
+                : "gap-4 sm:gap-6 pb-4 sm:pb-6"
+            )}
           >
             {items.map((item, index) => (
               <div 
                 key={item.id} 
                 className={cn(
                   "shrink-0 snap-start",
-                  cardVariant === "category-style" 
+                  cardVariant === "compact"
+                    ? "w-[150px] sm:w-[210px] md:w-[250px]"
+                    : cardVariant === "category-style" 
                     ? "w-[160px] sm:w-[220px]" 
                     : "w-[220px] sm:w-[280px] md:w-[320px]"
                 )}

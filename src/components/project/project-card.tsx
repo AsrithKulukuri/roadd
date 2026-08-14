@@ -4,6 +4,7 @@ import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import type { Project, ProjectType } from "@/types/project";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -112,6 +113,69 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
     : null;
 
   const [isExpanded, setIsExpanded] = useState(false);
+
+  if (variant === "compact") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.25, delay: index * 0.03 }}
+        className="h-full"
+      >
+        <Link
+          href={`/projects/${project.slug}`}
+          className="block h-full group"
+        >
+          <div
+            className={cn(
+              "flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-200"
+            )}
+          >
+            {/* Image Thumbnail */}
+            <div className="relative w-full h-[95px] sm:h-[135px] md:h-[160px] overflow-hidden bg-slate-100 dark:bg-slate-800">
+              {project.coverImage ? (
+                <img
+                  src={project.coverImage}
+                  alt={project.name}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-slate-800 text-slate-500">
+                  <Icon className="w-8 h-8 opacity-40" />
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+              {/* Badge */}
+              <div className="absolute top-1.5 left-1.5">
+                <span className="px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black bg-amber-500 text-slate-950 shadow-xs">
+                  {TC.label}
+                </span>
+              </div>
+
+              {/* Price Tag Overlay on Image bottom-left */}
+              <div className="absolute bottom-1 left-1.5">
+                <span className="text-white font-black text-xs sm:text-sm drop-shadow-md">
+                  {priceLabel}
+                </span>
+              </div>
+            </div>
+
+            {/* Compact Details below Image */}
+            <div className="p-2 sm:p-2.5 flex flex-col justify-between">
+              <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate group-hover:text-amber-500 transition-colors">
+                {project.name}
+              </h4>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5 flex items-center gap-0.5">
+                <MapPin className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                <span>{project.location?.locality}, {project.location?.city}</span>
+              </p>
+            </div>
+          </div>
+        </Link>
+      </motion.div>
+    );
+  }
 
   if (variant === "category-style" && !isExpanded) {
     return (

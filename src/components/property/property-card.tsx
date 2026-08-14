@@ -128,6 +128,81 @@ export function PropertyCard({
   const status = getStatusBadge();
   const brokerName = property.ownerName || "Premier AP Properties";
 
+  if (variant === "compact") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.25, delay: index * 0.03 }}
+        className="h-full"
+      >
+        <Link
+          href={`/properties/${property.slug || property.id}`}
+          onClick={handleCardClick}
+          className="block h-full group"
+        >
+          <div
+            className={cn(
+              "flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-200",
+              className
+            )}
+          >
+            {/* Image Thumbnail */}
+            <div className="relative w-full h-[95px] sm:h-[135px] md:h-[160px] overflow-hidden bg-slate-100 dark:bg-slate-800">
+              <Image
+                src={images[0]?.url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80"}
+                alt={property.title}
+                fill
+                loading={index < 4 ? "eager" : "lazy"}
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="(max-width: 640px) 155px, 280px"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              
+              {/* Badge */}
+              <div className="absolute top-1.5 left-1.5">
+                <span className="px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black bg-slate-900/80 backdrop-blur-xs text-white border border-white/10">
+                  {property.bedrooms ? `${property.bedrooms} BHK` : property.propertyType}
+                </span>
+              </div>
+
+              {/* Heart */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleFavorite(property.id);
+                }}
+                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-white hover:text-red-500 transition-colors cursor-pointer"
+              >
+                <Heart className={cn("w-3.5 h-3.5", isSaved && "fill-red-500 text-red-500")} />
+              </button>
+
+              {/* Price Tag Overlay on Image bottom-left */}
+              <div className="absolute bottom-1 left-1.5">
+                <span className="text-white font-black text-xs sm:text-sm drop-shadow-md">
+                  {formatPriceCompact(property.price)}
+                </span>
+              </div>
+            </div>
+
+            {/* Compact Details below Image */}
+            <div className="p-2 sm:p-2.5 flex flex-col justify-between">
+              <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate group-hover:text-amber-500 transition-colors">
+                {property.title}
+              </h4>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5 flex items-center gap-0.5">
+                <MapPin className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                <span>{property.location.locality}, {property.location.city}</span>
+              </p>
+            </div>
+          </div>
+        </Link>
+      </motion.div>
+    );
+  }
+
   if (variant === "category-style" && !isExpanded) {
     return (
       <motion.div
@@ -379,7 +454,6 @@ export function PropertyCard({
         <div
           className={cn(
             "relative bg-white dark:bg-bg-card border border-border-default rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 h-full flex flex-col",
-            variant === "compact" ? "max-w-[280px]" : "",
             selected
               ? "ring-2 ring-red-500 border-red-500"
               : "hover:border-slate-300",

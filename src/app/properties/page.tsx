@@ -9,7 +9,7 @@ import { SearchFiltersModal, initialFilterState, type FilterState } from "@/comp
 import { RealtorSearchHeader } from "@/components/search/realtor-search-header";
 import { LocationCarousels } from "@/components/search/location-carousels";
 import { MapWrapper } from "@/components/map/map-wrapper";
-import { Building2, ChevronDown, Heart, HelpCircle, ArrowLeft } from "lucide-react";
+import { Building2, ChevronDown, Heart, HelpCircle, ArrowLeft, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function PropertiesPageWrapper() {
@@ -26,6 +26,7 @@ function PropertiesPage() {
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [sortBy, setSortBy] = useState<"relevant" | "price-asc" | "price-desc" | "newest">("relevant");
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState<number>(12);
   
   const properties = usePropertiesStore((state) => state.properties);
   const [mounted, setMounted] = useState(false);
@@ -368,15 +369,34 @@ function PropertiesPage() {
             </div>
           </div>
         ) : filteredProperties.length > 0 ? (
-          /* Realtor.com 3-Column Responsive Grid Layout on Desktop */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 pb-12">
-            {filteredProperties.map((property, index) => (
-              <PropertyCard
-                key={property.id}
-                property={property}
-                index={index}
-              />
-            ))}
+          /* Realtor.com 3-Column Responsive Grid Layout on Desktop - 4 Rows Initial with Load More */
+          <div className="flex flex-col gap-8 pb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              {filteredProperties.slice(0, visibleCount).map((property, index) => (
+                <PropertyCard
+                  key={property.id}
+                  property={property}
+                  index={index}
+                />
+              ))}
+            </div>
+
+            {/* Load More Button */}
+            {filteredProperties.length > visibleCount && (
+              <div className="flex flex-col items-center justify-center pt-4">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((prev) => prev + 12)}
+                  className="px-6 py-3 rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 hover:border-[#f1a010] text-slate-900 dark:text-white font-extrabold text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer group"
+                >
+                  <Plus className="w-4 h-4 text-[#f1a010] group-hover:rotate-90 transition-transform duration-200" />
+                  <span>Load More Properties</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold ml-1">
+                    (Showing {Math.min(visibleCount, filteredProperties.length)} of {filteredProperties.length})
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           /* Empty Search State */
