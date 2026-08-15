@@ -40,11 +40,10 @@ export async function generatePresignedGetUrl(
 }
 
 /**
- * Construct canonical S3 Object URL
+ * Construct secure media proxy URL for private S3 Objects
  * @param key S3 object key
  */
 export function getPublicUrl(key: string): string {
-  const bucket = getBucketName();
-  const region = getRegion();
-  return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+  const cleanKey = key.replace(/^\/+/, "");
+  return `/api/media/${cleanKey}`;
 }

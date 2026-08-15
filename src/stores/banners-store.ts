@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
-import { uploadToS3, deleteFromS3 } from "@/lib/aws/storage-utils";
+import { uploadToS3, deleteFromS3, resolveMediaUrl } from "@/lib/aws/storage-utils";
 
 export interface Banner {
   id: string;
@@ -46,7 +46,12 @@ export const useBannersStore = create<BannersStore>((set, get) => ({
       }
       const { data, error } = await query;
       if (!error && data) {
-        set({ banners: data as Banner[] });
+        const resolved = (data as Banner[]).map((b) => ({
+          ...b,
+          image_url: resolveMediaUrl(b.image_url),
+          mobile_image_url: b.mobile_image_url ? resolveMediaUrl(b.mobile_image_url) : null,
+        }));
+        set({ banners: resolved });
       }
     } catch (error) {
       console.error("Failed to fetch banners:", error);

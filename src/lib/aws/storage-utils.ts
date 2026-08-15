@@ -70,12 +70,31 @@ export function detectMimeType(filename: string, fileType?: string): string {
 export function extractS3Key(urlOrKey: string): string {
   if (!urlOrKey) return "";
   
+  if (urlOrKey.startsWith("/api/media/")) {
+    return urlOrKey.replace(/^\/api\/media\//, "");
+  }
+
   if (urlOrKey.includes(".amazonaws.com/")) {
     const parts = urlOrKey.split(".amazonaws.com/");
     return decodeURIComponent(parts[1] || urlOrKey);
   }
   
   return urlOrKey;
+}
+
+/**
+ * Ensures any media URL (including direct S3 URLs) resolves through the secure proxy
+ */
+export function resolveMediaUrl(url?: string | null): string {
+  if (!url) return "";
+  if (url.startsWith("/api/media/")) return url;
+  if (url.includes(".amazonaws.com/")) {
+    const parts = url.split(".amazonaws.com/");
+    if (parts[1]) {
+      return `/api/media/${decodeURIComponent(parts[1])}`;
+    }
+  }
+  return url;
 }
 
 /**
