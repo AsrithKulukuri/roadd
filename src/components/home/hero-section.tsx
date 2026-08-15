@@ -342,37 +342,44 @@ export function HeroSection() {
               transition={{ duration: 0.5 }}
               className="absolute inset-0"
             >
-              {/* Responsive Banner Images: Mobile image on mobile, Desktop image on desktop */}
-              {currentBanner?.mobile_image_url ? (
-                <>
-                  <div className="md:hidden absolute inset-0">
-                    <Image 
-                      src={resolveMediaUrl(currentBanner.mobile_image_url)} 
-                      alt={currentBanner.title || 'Banner Mobile'}
-                      fill
-                      priority
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="hidden md:block absolute inset-0">
-                    <Image 
-                      src={resolveMediaUrl(currentBanner.image_url)} 
-                      alt={currentBanner.title || 'Banner Desktop'}
-                      fill
-                      priority
-                      className="object-cover"
-                    />
-                  </div>
-                </>
-              ) : currentBanner?.image_url ? (
-                <Image 
-                  src={resolveMediaUrl(currentBanner.image_url)} 
-                  alt={currentBanner.title || 'Banner'}
-                  fill
-                  priority
-                  className="object-cover"
-                />
-              ) : null}
+              {/* Responsive Banner Images: Mobile image on mobile (with desktop fallback), Desktop image on desktop */}
+              {(() => {
+                const desktopImg = resolveMediaUrl(currentBanner?.image_url);
+                const mobileImg = resolveMediaUrl(currentBanner?.mobile_image_url) || desktopImg;
+                const activeImg = mobileImg || desktopImg;
+
+                if (!activeImg) return null;
+
+                return (
+                  <>
+                    <div className="md:hidden absolute inset-0">
+                      <Image 
+                        src={activeImg} 
+                        alt={currentBanner?.title || 'Banner Mobile'}
+                        fill
+                        priority
+                        unoptimized
+                        className="object-cover"
+                        onError={(e) => {
+                          if (desktopImg && (e.target as HTMLImageElement).src !== desktopImg) {
+                            (e.target as HTMLImageElement).src = desktopImg;
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="hidden md:block absolute inset-0">
+                      <Image 
+                        src={desktopImg || activeImg} 
+                        alt={currentBanner?.title || 'Banner Desktop'}
+                        fill
+                        priority
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </div>
+                  </>
+                );
+              })()}
 
               {/* Gradient overlay for contrast */}
               <div className="absolute inset-0 bg-black/40 bg-gradient-to-r from-black/80 via-black/45 to-transparent" />

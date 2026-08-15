@@ -423,6 +423,7 @@ export default function AdminBannersPage() {
                 src={resolveMediaUrl(banner.image_url)}
                 alt={banner.title || "Banner"}
                 fill
+                unoptimized
                 className={`object-cover ${!banner.is_active ? "opacity-40 grayscale" : ""}`}
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
