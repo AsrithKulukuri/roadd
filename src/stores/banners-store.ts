@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { uploadToS3, deleteFromS3 } from "@/lib/aws/storage-utils";
 
 export interface Banner {
   id: string;
@@ -57,34 +58,31 @@ export const useBannersStore = create<BannersStore>((set, get) => ({
   addBanner: async (bannerData, desktopFile, mobileFile) => {
     set({ isLoading: true });
     try {
-      // 1. Upload Desktop Image
-      const deskExt = desktopFile.name.split('.').pop() || 'jpg';
-      const deskPath = `banners/desktop_${Date.now()}_${Math.random().toString(36).substring(7)}.${deskExt}`;
-      
-      const { data: deskUpload, error: deskError } = await supabase.storage
-        .from('banners')
-        .upload(deskPath, desktopFile);
+      // 1. Upload Desktop Image directly to S3
+      const deskUpload = await uploadToS3({
+        file: desktopFile,
+        folder: "banners",
+      });
 
-      if (deskError) throw deskError;
-      const { data: deskPub } = supabase.storage.from('banners').getPublicUrl(deskUpload.path);
-      const imageUrl = deskPub.publicUrl;
+      if (!deskUpload.success || !deskUpload.fileUrl) {
+        throw new Error(deskUpload.error || "Failed to upload desktop banner to S3");
+      }
+      const imageUrl = deskUpload.fileUrl;
 
-      // 2. Upload Mobile Image (Optional)
+      // 2. Upload Mobile Image (Optional) to S3
       let mobileImageUrl: string | null = null;
       if (mobileFile) {
-        const mobExt = mobileFile.name.split('.').pop() || 'jpg';
-        const mobPath = `banners/mobile_${Date.now()}_${Math.random().toString(36).substring(7)}.${mobExt}`;
-        const { data: mobUpload, error: mobError } = await supabase.storage
-          .from('banners')
-          .upload(mobPath, mobileFile);
+        const mobUpload = await uploadToS3({
+          file: mobileFile,
+          folder: "banners",
+        });
 
-        if (!mobError && mobUpload) {
-          const { data: mobPub } = supabase.storage.from('banners').getPublicUrl(mobUpload.path);
-          mobileImageUrl = mobPub.publicUrl;
+        if (mobUpload.success && mobUpload.fileUrl) {
+          mobileImageUrl = mobUpload.fileUrl;
         }
       }
 
-      // 3. Insert into Supabase with fallback if custom columns are missing
+      // 3. Insert into Supabase
       const fullPayload = {
         ...bannerData,
         image_url: imageUrl,
@@ -124,27 +122,27 @@ export const useBannersStore = create<BannersStore>((set, get) => ({
       let mobileImageUrl = updates.mobile_image_url;
 
       if (desktopFile) {
-        const deskExt = desktopFile.name.split('.').pop() || 'jpg';
-        const deskPath = `banners/desktop_${Date.now()}_${Math.random().toString(36).substring(7)}.${deskExt}`;
-        const { data: deskUpload, error: deskError } = await supabase.storage
-          .from('banners')
-          .upload(deskPath, desktopFile);
+        const deskUpload = await uploadToS3({
+          file: desktopFile,
+          folder: "banners",
+        });
 
-        if (deskError) throw deskError;
-        const { data: deskPub } = supabase.storage.from('banners').getPublicUrl(deskUpload.path);
-        imageUrl = deskPub.publicUrl;
+        if (!deskUpload.success || !deskUpload.fileUrl) {
+          throw new Error(deskUpload.error || "Failed to upload new desktop banner to S3");
+        }
+        imageUrl = deskUpload.fileUrl;
       }
 
       if (mobileFile) {
-        const mobExt = mobileFile.name.split('.').pop() || 'jpg';
-        const mobPath = `banners/mobile_${Date.now()}_${Math.random().toString(36).substring(7)}.${mobExt}`;
-        const { data: mobUpload, error: mobError } = await supabase.storage
-          .from('banners')
-          .upload(mobPath, mobileFile);
+        const mobUpload = await uploadToS3({
+          file: mobileFile,
+          folder: "banners",
+        });
 
-        if (mobError) throw mobError;
-        const { data: mobPub } = supabase.storage.from('banners').getPublicUrl(mobUpload.path);
-        mobileImageUrl = mobPub.publicUrl;
+        if (!mobUpload.success || !mobUpload.fileUrl) {
+          throw new Error(mobUpload.error || "Failed to upload new mobile banner to S3");
+        }
+        mobileImageUrl = mobUpload.fileUrl;
       }
 
       const updatePayload: any = {
@@ -181,25 +179,13 @@ export const useBannersStore = create<BannersStore>((set, get) => ({
   deleteBanner: async (id, imageUrl, mobileImageUrl) => {
     set({ isLoading: true });
     try {
-      const s3Domain = '.amazonaws.com/';
-      const sbToken = '/public/banners/';
+      const keysToDelete: string[] = [];
+      if (imageUrl) keysToDelete.push(imageUrl);
+      if (mobileImageUrl) keysToDelete.push(mobileImageUrl);
 
-      const deleteStorageFile = async (url: string) => {
-        try {
-          if (url && url.includes(s3Domain)) {
-            const pathToDelete = decodeURIComponent(url.substring(url.indexOf(s3Domain) + s3Domain.length));
-            await supabase.storage.from('banners').remove([pathToDelete]);
-          } else if (url && url.includes(sbToken)) {
-            const pathToDelete = decodeURIComponent(url.substring(url.indexOf(sbToken) + sbToken.length));
-            await supabase.storage.from('banners').remove([pathToDelete]);
-          }
-        } catch (e) {
-          console.warn("Storage deletion ignored:", e);
-        }
-      };
-
-      if (imageUrl) await deleteStorageFile(imageUrl);
-      if (mobileImageUrl) await deleteStorageFile(mobileImageUrl);
+      if (keysToDelete.length > 0) {
+        await deleteFromS3(keysToDelete);
+      }
 
       const { error } = await supabase.from("banners").delete().eq("id", id);
       if (error) throw error;

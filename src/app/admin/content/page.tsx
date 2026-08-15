@@ -9,6 +9,7 @@ import { Edit2, Plus, Trash2, MapPin, LayoutGrid, UploadCloud, X, Sparkles, Exte
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+import { uploadToS3 } from "@/lib/aws/storage-utils";
 
 type Tab = "categories" | "locations";
 
@@ -51,22 +52,19 @@ export default function ContentAdminPage() {
     fetchTrendingLocations(); 
   }, [fetchTrendingLocations]);
 
-  // Helper to upload image to Supabase Storage or convert to DataURL
-  const uploadImage = async (file: File, folder: string): Promise<string> => {
+  // Helper to upload image to AWS S3 Storage or convert to DataURL
+  const uploadImage = async (file: File, folder: "categories" | "properties"): Promise<string> => {
     try {
-      const ext = file.name.split('.').pop() || 'jpg';
-      const path = `${folder}/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
-      
-      const { data, error } = await supabase.storage
-        .from('properties')
-        .upload(path, file);
+      const s3Res = await uploadToS3({
+        file,
+        folder: folder === "categories" ? "categories" : "properties",
+      });
 
-      if (!error && data) {
-        const { data: pubData } = supabase.storage.from('properties').getPublicUrl(data.path);
-        return pubData.publicUrl;
+      if (s3Res.success && s3Res.fileUrl) {
+        return s3Res.fileUrl;
       }
     } catch (e) {
-      console.warn("Storage upload fallback to DataURL:", e);
+      console.warn("[S3 Storage] upload fallback to DataURL:", e);
     }
 
     // Fallback to Data URL
@@ -82,7 +80,7 @@ export default function ContentAdminPage() {
     let imageUrl = locForm.image || "";
     if (locImageFile) {
       setIsUploading(true);
-      imageUrl = await uploadImage(locImageFile, "locations");
+      imageUrl = await uploadImage(locImageFile, "categories");
       setIsUploading(false);
     }
 

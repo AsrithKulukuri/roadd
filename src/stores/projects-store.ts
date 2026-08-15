@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
+import { deleteFromS3 } from '@/lib/aws/storage-utils';
 import type { Project } from '@/types/project';
 
 interface ProjectsState {
@@ -117,38 +118,21 @@ export const useProjectsStore = create<ProjectsState>()(
           if (error) {
             console.warn('Supabase project delete warning:', error.message);
           } else if (project) {
-            // Delete associated storage files
-            const bucket = 'projects';
-            const pathsToDelete: string[] = [];
-            const extract = (url?: string | null) => {
-              if (!url) return;
-              const s3Domain = '.amazonaws.com/';
-              const idx = url.indexOf(s3Domain);
-              if (idx !== -1) {
-                pathsToDelete.push(decodeURIComponent(url.substring(idx + s3Domain.length)));
-              }
-            };
-
-            extract(project.coverImage);
-            extract(project.builderLogoUrl);
-            extract(project.videoUrl);
-            extract(project.brochureUrl);
-            project.images?.forEach((img) => extract(img.url));
+            // Delete associated storage files from AWS S3
+            const urlsToDelete: string[] = [];
+            if (project.coverImage) urlsToDelete.push(project.coverImage);
+            if (project.builderLogoUrl) urlsToDelete.push(project.builderLogoUrl);
+            if (project.videoUrl) urlsToDelete.push(project.videoUrl);
+            if (project.brochureUrl) urlsToDelete.push(project.brochureUrl);
+            project.images?.forEach((img) => { if (img.url) urlsToDelete.push(img.url); });
             project.configurations?.forEach((cfg) => {
-              extract(cfg.floorPlanUrl);
-              extract(cfg.videoUrl);
-              cfg.images?.forEach(extract);
+              if (cfg.floorPlanUrl) urlsToDelete.push(cfg.floorPlanUrl);
+              if (cfg.videoUrl) urlsToDelete.push(cfg.videoUrl);
+              cfg.images?.forEach((imgUrl) => { if (imgUrl) urlsToDelete.push(imgUrl); });
             });
 
-            if (pathsToDelete.length > 0) {
-              const res = await fetch('/api/storage/delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ keys: pathsToDelete })
-              });
-              if (!res.ok) {
-                console.warn('S3 storage project delete warning:', await res.text());
-              }
+            if (urlsToDelete.length > 0) {
+              await deleteFromS3(urlsToDelete);
             }
           }
         } catch (err: any) {

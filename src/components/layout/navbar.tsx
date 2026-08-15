@@ -273,9 +273,9 @@ export function Navbar() {
               {/* Post Requirement CTA Button */}
               <button
                 onClick={() => setIsRequirementModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border border-amber-300"
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-black bg-slate-950 hover:bg-slate-900 text-white shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border border-slate-800"
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
                 <span className="hidden xs:inline">Post Requirement</span>
                 <span className="xs:hidden">Post</span>
               </button>
@@ -321,9 +321,9 @@ export function Navbar() {
                 setIsMobileMenuOpen(false);
                 setIsRequirementModalOpen(true);
               }}
-              className="w-full py-3.5 px-4 mb-4 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg active:scale-98 transition-all cursor-pointer border border-amber-300"
+              className="w-full py-3.5 px-4 mb-4 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg active:scale-98 transition-all cursor-pointer border border-slate-800"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 text-amber-400 fill-amber-400/20" />
               <span>Post Your Requirement</span>
             </button>
 

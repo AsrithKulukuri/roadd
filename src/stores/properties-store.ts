@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
+import { deleteFromS3 } from '@/lib/aws/storage-utils';
 import type { Property } from '@/types/property';
 
 interface PropertiesState {
@@ -99,35 +100,18 @@ export const usePropertiesStore = create<PropertiesState>()(
           if (error) {
             console.warn('Supabase delete warning:', error.message);
           } else if (property) {
-            // Delete associated storage files
-            const bucket = 'properties';
-            const pathsToDelete: string[] = [];
-            const extract = (url?: string | null) => {
-              if (!url) return;
-              const s3Domain = '.amazonaws.com/';
-              const idx = url.indexOf(s3Domain);
-              if (idx !== -1) {
-                pathsToDelete.push(decodeURIComponent(url.substring(idx + s3Domain.length)));
-              }
-            };
+            // Delete associated storage files from AWS S3
+            const urlsToDelete: string[] = [];
+            if (property.coverImage) urlsToDelete.push(property.coverImage);
+            if (property.videoUrl) urlsToDelete.push(property.videoUrl);
+            if (property.layoutMapUrl) urlsToDelete.push(property.layoutMapUrl);
+            if (property.floorPlanUrl) urlsToDelete.push(property.floorPlanUrl);
+            if (property.brochureUrl) urlsToDelete.push(property.brochureUrl);
+            property.images?.forEach((img) => { if (img.url) urlsToDelete.push(img.url); });
+            property.galleryImages?.forEach((url) => { if (url) urlsToDelete.push(url); });
 
-            extract(property.coverImage);
-            extract(property.videoUrl);
-            extract(property.layoutMapUrl);
-            extract(property.floorPlanUrl);
-            extract(property.brochureUrl);
-            property.images?.forEach((img) => extract(img.url));
-            property.galleryImages?.forEach(extract);
-
-            if (pathsToDelete.length > 0) {
-              const res = await fetch('/api/storage/delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ keys: pathsToDelete })
-              });
-              if (!res.ok) {
-                console.warn('S3 storage delete warning:', await res.text());
-              }
+            if (urlsToDelete.length > 0) {
+              await deleteFromS3(urlsToDelete);
             }
           }
         } catch (error: any) {
