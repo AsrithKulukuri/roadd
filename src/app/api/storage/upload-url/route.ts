@@ -11,26 +11,44 @@ const ALLOWED_FOLDERS = [
   "videos",
 ];
 
-const ALLOWED_MIME_TYPES = {
-  images: ["image/jpeg", "image/png", "image/webp", "image/jpg", "image/avif"],
-  videos: ["video/mp4", "video/webm"],
-  documents: ["application/pdf"],
-};
+const ALLOWED_IMAGE_MIMES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  "image/heic",
+  "image/heif",
+  "image/pjpeg",
+  "image/x-png",
+  "image/gif",
+];
+
+const ALLOWED_VIDEO_MIMES = [
+  "video/mp4",
+  "video/webm",
+  "video/quicktime", // iOS MOV videos
+  "video/x-m4v",
+];
+
+const ALLOWED_DOC_MIMES = [
+  "application/pdf",
+];
 
 const MAX_SIZES_MB = {
-  images: 15,
+  images: 20,
   videos: 500,
-  documents: 25,
+  documents: 30,
 };
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { filename, contentType, folder, size, entityId } = body;
+    let { filename, contentType, folder, size, entityId } = body;
 
-    if (!filename || !contentType || !folder || size === undefined) {
+    if (!filename || !folder || size === undefined) {
       return NextResponse.json(
-        { error: "Missing required fields (filename, contentType, folder, size)" },
+        { error: "Missing required fields (filename, folder, size)" },
         { status: 400 }
       );
     }
@@ -42,11 +60,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate MIME type and size
-    let isAllowed = false;
+    const rawExt = (filename.split(".").pop() || "").toLowerCase();
+
+    // If contentType is generic or empty, infer from extension
+    if (!contentType || contentType === "application/octet-stream" || !contentType.includes("/")) {
+      if (["jpg", "jpeg"].includes(rawExt)) contentType = "image/jpeg";
+      else if (rawExt === "png") contentType = "image/png";
+      else if (rawExt === "webp") contentType = "image/webp";
+      else if (["heic", "heif"].includes(rawExt)) contentType = "image/heic";
+      else if (rawExt === "pdf") contentType = "application/pdf";
+      else if (["mp4", "mov"].includes(rawExt)) contentType = "video/mp4";
+      else contentType = "image/jpeg";
+    }
+
+    const cleanContentType = contentType.toLowerCase().trim();
     const sizeMb = size / (1024 * 1024);
 
-    if (ALLOWED_MIME_TYPES.images.includes(contentType)) {
+    let isAllowed = false;
+
+    if (ALLOWED_IMAGE_MIMES.includes(cleanContentType) || cleanContentType.startsWith("image/")) {
       isAllowed = true;
       if (sizeMb > MAX_SIZES_MB.images) {
         return NextResponse.json(
@@ -54,7 +86,7 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-    } else if (ALLOWED_MIME_TYPES.videos.includes(contentType)) {
+    } else if (ALLOWED_VIDEO_MIMES.includes(cleanContentType) || cleanContentType.startsWith("video/")) {
       isAllowed = true;
       if (sizeMb > MAX_SIZES_MB.videos) {
         return NextResponse.json(
@@ -62,7 +94,7 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-    } else if (ALLOWED_MIME_TYPES.documents.includes(contentType)) {
+    } else if (ALLOWED_DOC_MIMES.includes(cleanContentType) || rawExt === "pdf") {
       isAllowed = true;
       if (sizeMb > MAX_SIZES_MB.documents) {
         return NextResponse.json(
@@ -74,14 +106,13 @@ export async function POST(request: Request) {
 
     if (!isAllowed) {
       return NextResponse.json(
-        { error: `Unsupported file type: ${contentType}` },
+        { error: `Unsupported file format: ${cleanContentType}` },
         { status: 400 }
       );
     }
 
     // Sanitize extension and generate safe UUID filename
-    const rawExt = filename.split(".").pop() || "";
-    const cleanExt = rawExt.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "webp";
+    const cleanExt = rawExt.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "jpg";
     const uuid = crypto.randomUUID();
 
     // Construct safe S3 key (prevent directory traversal)
@@ -94,13 +125,14 @@ export async function POST(request: Request) {
     }
 
     const expiresIn = 300; // 5 minutes
-    const uploadUrl = await generatePresignedUrl(key, contentType, expiresIn);
+    const uploadUrl = await generatePresignedUrl(key, cleanContentType, expiresIn);
     const fileUrl = getPublicUrl(key);
 
     return NextResponse.json({
       uploadUrl,
       fileUrl,
       key,
+      contentType: cleanContentType,
       expiresIn,
     });
   } catch (error: any) {

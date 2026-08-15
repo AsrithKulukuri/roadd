@@ -18,7 +18,7 @@ import Link from "next/link";
 import { Property, PropertyLocation } from "@/types/property";
 import { supabase } from "@/lib/supabase";
 import { parseGoogleMapsUrl } from "@/lib/utils";
-import imageCompression from 'browser-image-compression';
+import { uploadToS3 } from "@/lib/aws/storage-utils";
 
 const CoordinatePickerMap = dynamic(
   () => import("@/components/admin/coordinate-picker-map"),
@@ -133,46 +133,17 @@ export default function AddPropertyPage() {
       
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = isCover ? `cover/${fileName}` : `gallery/${fileName}`;
+        const s3Res = await uploadToS3({
+          file,
+          folder: 'properties',
+          compress: true,
+        });
 
-        let imgUrl = "";
-        try {
-          let fileToUpload = file;
-          if (file.type.startsWith('image/')) {
-            try {
-              fileToUpload = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true });
-            } catch (cErr) {
-              console.warn("Compression failed, using original:", cErr);
-            }
-          }
+        let imgUrl = s3Res.success && s3Res.fileUrl ? s3Res.fileUrl : "";
 
-          const res = await fetch('/api/storage/upload-url', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              filename: file.name,
-              contentType: file.type,
-              folder: 'properties',
-              size: fileToUpload.size
-            })
-          });
-          const { uploadUrl, fileUrl } = await res.json();
-          if (uploadUrl) {
-            const uploadRes = await fetch(uploadUrl, {
-              method: 'PUT',
-              headers: { 'Content-Type': file.type },
-              body: fileToUpload
-            });
-            if (uploadRes.ok) imgUrl = fileUrl;
-          }
-        } catch (storageErr) {
-          console.warn("Storage upload warning, fallback to object URL:", storageErr);
-        }
-
-        // Fallback to local Blob/Object URL if bucket upload is not configured or failed
+        // Fallback to local preview URL if offline
         if (!imgUrl) {
+          console.warn("[S3 Storage] Falling back to object URL:", s3Res.error);
           imgUrl = URL.createObjectURL(file);
         }
 
@@ -188,7 +159,7 @@ export default function AddPropertyPage() {
       }
     } catch (error: any) {
       console.error("Upload error:", error);
-      toast.error("Notice: Could not upload to cloud storage, using local preview image.");
+      toast.error("Failed to upload image. Please try again.");
     } finally {
       setIsUploading(false);
     }

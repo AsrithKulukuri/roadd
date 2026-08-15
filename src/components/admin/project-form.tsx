@@ -23,7 +23,7 @@ import type {
   ProjectPhase, ProjectImage, ConstructionStatus,
   ConstructionUpdate
 } from "@/types/project";
-import imageCompression from 'browser-image-compression';
+import { uploadToS3 } from "@/lib/aws/storage-utils";
 
 // ─── Lazy map import (SSR unsafe) ────────────────────────────────────────────
 const CoordinatePickerMap = dynamic(
@@ -74,37 +74,18 @@ const formatCurrency = (value: number) => {
 
 // ─── Upload helper ─────────────────────────────────────────────────────────────
 async function uploadFile(file: File, bucket: string, folder: string): Promise<string> {
-  const ext = file.name.split(".").pop();
-  const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
-  try {
-    let fileToUpload = file;
-    if (file.type.startsWith('image/')) {
-      try {
-        fileToUpload = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true });
-      } catch (cErr) {
-        console.warn("Compression failed, using original:", cErr);
-      }
-    }
-    const res = await fetch('/api/storage/upload-url', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        filename: file.name,
-        contentType: file.type,
-        folder: bucket === 'projects' ? 'projects' : bucket === 'properties' ? 'properties' : 'brochures',
-        size: fileToUpload.size
-      })
-    });
-    const { uploadUrl, fileUrl } = await res.json();
-    if (uploadUrl) {
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: fileToUpload
-      });
-      if (uploadRes.ok) return fileUrl;
-    }
-  } catch {}
+  const targetFolder = bucket === 'brochures' || folder === 'brochures' ? 'brochures' : 'projects';
+  const s3Res = await uploadToS3({
+    file,
+    folder: targetFolder,
+    compress: targetFolder !== 'brochures',
+  });
+
+  if (s3Res.success && s3Res.fileUrl) {
+    return s3Res.fileUrl;
+  }
+
+  console.warn("[S3 Storage] Falling back to object URL:", s3Res.error);
   return URL.createObjectURL(file);
 }
 
