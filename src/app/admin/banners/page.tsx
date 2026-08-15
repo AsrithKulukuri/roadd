@@ -88,8 +88,8 @@ export default function AdminBannersPage() {
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!desktopFile) {
-      toast.error("Please upload a desktop banner image");
+    if (!desktopFile && !mobileFile) {
+      toast.error("Please upload a banner image (desktop or mobile)");
       return;
     }
 
@@ -103,7 +103,7 @@ export default function AdminBannersPage() {
         order_index: banners.length,
         image_url: "", // handled by store
       },
-      desktopFile,
+      desktopFile || mobileFile!,
       mobileFile
     );
 
@@ -268,7 +268,6 @@ export default function AdminBannersPage() {
                   <input
                     type="file"
                     accept="image/*"
-                    required={isAdding && !editingBanner}
                     onChange={handleDesktopFileChange}
                     className="text-xs text-text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-500/10 file:text-blue-400 hover:file:bg-blue-500/20 cursor-pointer"
                   />

@@ -58,20 +58,25 @@ export const useBannersStore = create<BannersStore>((set, get) => ({
   addBanner: async (bannerData, desktopFile, mobileFile) => {
     set({ isLoading: true });
     try {
-      // 1. Upload Desktop Image directly to S3
+      const primaryFile = desktopFile || mobileFile;
+      if (!primaryFile) {
+        throw new Error("No image file provided");
+      }
+
+      // 1. Upload Desktop / Primary Image directly to S3
       const deskUpload = await uploadToS3({
-        file: desktopFile,
+        file: primaryFile,
         folder: "banners",
       });
 
       if (!deskUpload.success || !deskUpload.fileUrl) {
-        throw new Error(deskUpload.error || "Failed to upload desktop banner to S3");
+        throw new Error(deskUpload.error || "Failed to upload banner to S3");
       }
       const imageUrl = deskUpload.fileUrl;
 
-      // 2. Upload Mobile Image (Optional) to S3
+      // 2. Upload Mobile Image (if a distinct mobile file was selected)
       let mobileImageUrl: string | null = null;
-      if (mobileFile) {
+      if (mobileFile && desktopFile && mobileFile !== desktopFile) {
         const mobUpload = await uploadToS3({
           file: mobileFile,
           folder: "banners",
@@ -80,6 +85,8 @@ export const useBannersStore = create<BannersStore>((set, get) => ({
         if (mobUpload.success && mobUpload.fileUrl) {
           mobileImageUrl = mobUpload.fileUrl;
         }
+      } else if (mobileFile && !desktopFile) {
+        mobileImageUrl = imageUrl;
       }
 
       // 3. Insert into Supabase
