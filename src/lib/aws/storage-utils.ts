@@ -136,25 +136,53 @@ export async function uploadToS3({
     }
 
     // 2. Direct PUT upload to AWS S3 (MIME type must match exact header signed)
-    const s3Res = await fetch(uploadUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Type": effectiveMime,
-      },
-      body: fileToUpload,
-    });
+    try {
+      const s3Res = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": effectiveMime,
+        },
+        body: fileToUpload,
+      });
 
-    if (!s3Res.ok) {
-      throw new Error(`S3 direct upload failed with status: ${s3Res.status} (${s3Res.statusText})`);
+      if (s3Res.ok) {
+        return {
+          key,
+          fileUrl,
+          success: true,
+        };
+      }
+      console.warn(`Direct S3 PUT returned ${s3Res.status}, trying server proxy fallback...`);
+    } catch (putErr) {
+      console.warn("Direct S3 PUT threw error (CORS/network), trying server proxy fallback:", putErr);
     }
 
-    return {
-      key,
-      fileUrl,
-      success: true,
-    };
+    // 3. Fallback: Server-side S3 upload if direct browser PUT fails (e.g. S3 CORS not set yet)
+    const formData = new FormData();
+    formData.append("file", fileToUpload instanceof Blob ? new File([fileToUpload], file.name, { type: effectiveMime }) : file);
+    formData.append("folder", folder);
+    if (entityId) formData.append("entityId", entityId);
+
+    const fallbackRes = await fetch("/api/storage/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (fallbackRes.ok) {
+      const fallbackData = await fallbackRes.json();
+      if (fallbackData.fileUrl) {
+        return {
+          key: fallbackData.key,
+          fileUrl: fallbackData.fileUrl,
+          success: true,
+        };
+      }
+    }
+
+    const errData = await fallbackRes.json().catch(() => ({}));
+    throw new Error(errData.error || "Failed to upload file to S3");
   } catch (error: any) {
-    console.error("[S3 Mobile Storage Upload Error]:", error);
+    console.error("[S3 Storage Upload Error]:", error);
     return {
       key: "",
       fileUrl: "",
