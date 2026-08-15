@@ -28,6 +28,7 @@ import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { useContentStore } from "@/stores/content-store";
 import { useBannersStore } from "@/stores/banners-store";
+import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
@@ -346,7 +347,7 @@ export function HeroSection() {
                 <>
                   <div className="md:hidden absolute inset-0">
                     <Image 
-                      src={currentBanner.mobile_image_url} 
+                      src={resolveMediaUrl(currentBanner.mobile_image_url)} 
                       alt={currentBanner.title || 'Banner Mobile'}
                       fill
                       priority
@@ -355,7 +356,7 @@ export function HeroSection() {
                   </div>
                   <div className="hidden md:block absolute inset-0">
                     <Image 
-                      src={currentBanner.image_url} 
+                      src={resolveMediaUrl(currentBanner.image_url)} 
                       alt={currentBanner.title || 'Banner Desktop'}
                       fill
                       priority
@@ -365,7 +366,7 @@ export function HeroSection() {
                 </>
               ) : currentBanner?.image_url ? (
                 <Image 
-                  src={currentBanner.image_url} 
+                  src={resolveMediaUrl(currentBanner.image_url)} 
                   alt={currentBanner.title || 'Banner'}
                   fill
                   priority

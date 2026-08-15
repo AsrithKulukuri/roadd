@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     if (!ALLOWED_FOLDERS.includes(folder)) {
-      return NextResponse.json({ error: "Invalid folder" }, { status: 400 });
+      return NextResponse.json({ error: `Invalid folder: ${folder}` }, { status: 400 });
     }
 
     const rawExt = (file.name.split(".").pop() || "").toLowerCase();
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const uuid = crypto.randomUUID();
 
     let key: string;
-    if (entityId && typeof entityId === "string") {
+    if (entityId && typeof entityId === "string" && entityId.trim()) {
       const cleanEntityId = entityId.replace(/[^a-zA-Z0-9_-]/g, "");
       key = `${folder}/${cleanEntityId}/${uuid}.${cleanExt}`;
     } else {
@@ -43,11 +43,21 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    let contentType = file.type;
+    if (!contentType || contentType === "application/octet-stream" || !contentType.includes("/")) {
+      if (["jpg", "jpeg"].includes(cleanExt)) contentType = "image/jpeg";
+      else if (cleanExt === "png") contentType = "image/png";
+      else if (cleanExt === "webp") contentType = "image/webp";
+      else if (cleanExt === "pdf") contentType = "application/pdf";
+      else if (["mp4", "mov"].includes(cleanExt)) contentType = "video/mp4";
+      else contentType = "image/jpeg";
+    }
+
     const command = new PutObjectCommand({
       Bucket: getBucketName(),
       Key: key,
       Body: buffer,
-      ContentType: file.type || "image/jpeg",
+      ContentType: contentType,
     });
 
     await getClient().send(command);

@@ -12,7 +12,7 @@ export type StorageFolder =
 export interface UploadOptions {
   file: File;
   folder: StorageFolder;
-  entityId?: string; // Optional propertyId, projectId, categoryId, etc.
+  entityId?: string;
   compress?: boolean;
 }
 
@@ -29,7 +29,6 @@ export interface UploadResult {
 export function detectMimeType(filename: string, fileType?: string): string {
   const ext = (filename.split(".").pop() || "").toLowerCase();
 
-  // If browser provided a valid MIME type, normalize it
   if (fileType && fileType.trim() && fileType !== "application/octet-stream") {
     const cleanType = fileType.toLowerCase().trim();
     if (cleanType === "image/jpg" || cleanType === "image/pjpeg") return "image/jpeg";
@@ -37,7 +36,6 @@ export function detectMimeType(filename: string, fileType?: string): string {
     return cleanType;
   }
 
-  // Detect from extension (crucial for mobile camera uploads)
   switch (ext) {
     case "jpg":
     case "jpeg":
@@ -49,9 +47,8 @@ export function detectMimeType(filename: string, fileType?: string): string {
     case "avif":
       return "image/avif";
     case "heic":
-      return "image/heic";
     case "heif":
-      return "image/heif";
+      return "image/heic";
     case "pdf":
       return "application/pdf";
     case "mp4":
@@ -65,7 +62,7 @@ export function detectMimeType(filename: string, fileType?: string): string {
 }
 
 /**
- * Extracts S3 key from a full S3 URL or returns the key if already formatted
+ * Extracts S3 key from a full S3 URL or proxy URL
  */
 export function extractS3Key(urlOrKey: string): string {
   if (!urlOrKey) return "";
@@ -83,10 +80,11 @@ export function extractS3Key(urlOrKey: string): string {
 }
 
 /**
- * Ensures any media URL (including direct S3 URLs) resolves through the secure proxy
+ * Ensures any media URL (including direct S3 URLs) resolves through the secure media proxy
  */
 export function resolveMediaUrl(url?: string | null): string {
   if (!url) return "";
+  if (url.startsWith("blob:") || url.startsWith("data:")) return url;
   if (url.startsWith("/api/media/")) return url;
   if (url.includes(".amazonaws.com/")) {
     const parts = url.split(".amazonaws.com/");
@@ -94,12 +92,16 @@ export function resolveMediaUrl(url?: string | null): string {
       return `/api/media/${decodeURIComponent(parts[1])}`;
     }
   }
+  // If it's a relative S3 key (e.g. "banners/uuid.jpg" or "properties/uuid.webp")
+  if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("/")) {
+    return `/api/media/${url}`;
+  }
   return url;
 }
 
 /**
- * Direct browser-to-S3 upload using secure presigned PUT URLs
- * Fully compatible with mobile browsers (iOS Safari, Android Chrome).
+ * Robust Upload Function:
+ * Handles mobile photos, compression, and uploads reliably to AWS S3.
  */
 export async function uploadToS3({
   file,
@@ -109,9 +111,9 @@ export async function uploadToS3({
 }: UploadOptions): Promise<UploadResult> {
   try {
     let fileToUpload: File | Blob = file;
-    let effectiveMime = detectMimeType(file.name, file.type);
+    const effectiveMime = detectMimeType(file.name, file.type);
 
-    // Compress images on client (handles mobile photos smoothly)
+    // Compress images on client if supported
     const isImage = effectiveMime.startsWith("image/") && !effectiveMime.includes("svg");
     if (compress && isImage) {
       try {
@@ -119,87 +121,45 @@ export async function uploadToS3({
           maxSizeMB: 1.5,
           maxWidthOrHeight: 1920,
           useWebWorker: typeof window !== "undefined" && typeof Worker !== "undefined",
-          fileType: "image/jpeg",
         });
-        
         fileToUpload = compressedBlob;
-        effectiveMime = "image/jpeg";
       } catch (compErr) {
-        console.warn("[S3 Storage] Client compression skipped, uploading original:", compErr);
+        console.warn("[S3 Storage] Compression skipped, uploading original:", compErr);
         fileToUpload = file;
       }
     }
 
-    // 1. Request presigned upload URL from Next.js API
-    const presignRes = await fetch("/api/storage/upload-url", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        filename: file.name,
-        contentType: effectiveMime,
-        folder,
-        entityId,
-        size: fileToUpload.size,
-      }),
-    });
-
-    if (!presignRes.ok) {
-      const errData = await presignRes.json().catch(() => ({}));
-      throw new Error(errData.error || `Server rejected upload request (status ${presignRes.status})`);
-    }
-
-    const { uploadUrl, fileUrl, key } = await presignRes.json();
-
-    if (!uploadUrl) {
-      throw new Error("No presigned upload URL returned by server");
-    }
-
-    // 2. Direct PUT upload to AWS S3 (MIME type must match exact header signed)
-    try {
-      const s3Res = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": effectiveMime,
-        },
-        body: fileToUpload,
-      });
-
-      if (s3Res.ok) {
-        return {
-          key,
-          fileUrl,
-          success: true,
-        };
-      }
-      console.warn(`Direct S3 PUT returned ${s3Res.status}, trying server proxy fallback...`);
-    } catch (putErr) {
-      console.warn("Direct S3 PUT threw error (CORS/network), trying server proxy fallback:", putErr);
-    }
-
-    // 3. Fallback: Server-side S3 upload if direct browser PUT fails (e.g. S3 CORS not set yet)
+    // Upload directly via multipart FormData through the Next.js server API to AWS S3
     const formData = new FormData();
-    formData.append("file", fileToUpload instanceof Blob ? new File([fileToUpload], file.name, { type: effectiveMime }) : file);
+    const finalFile = fileToUpload instanceof File 
+      ? fileToUpload 
+      : new File([fileToUpload], file.name, { type: effectiveMime });
+
+    formData.append("file", finalFile);
     formData.append("folder", folder);
     if (entityId) formData.append("entityId", entityId);
 
-    const fallbackRes = await fetch("/api/storage/upload", {
+    const uploadRes = await fetch("/api/storage/upload", {
       method: "POST",
       body: formData,
     });
 
-    if (fallbackRes.ok) {
-      const fallbackData = await fallbackRes.json();
-      if (fallbackData.fileUrl) {
-        return {
-          key: fallbackData.key,
-          fileUrl: fallbackData.fileUrl,
-          success: true,
-        };
-      }
+    if (!uploadRes.ok) {
+      const errData = await uploadRes.json().catch(() => ({}));
+      throw new Error(errData.error || `Upload failed with status ${uploadRes.status}`);
     }
 
-    const errData = await fallbackRes.json().catch(() => ({}));
-    throw new Error(errData.error || "Failed to upload file to S3");
+    const data = await uploadRes.json();
+
+    if (!data.fileUrl) {
+      throw new Error("No media URL returned by server");
+    }
+
+    return {
+      key: data.key,
+      fileUrl: data.fileUrl,
+      success: true,
+    };
   } catch (error: any) {
     console.error("[S3 Storage Upload Error]:", error);
     return {

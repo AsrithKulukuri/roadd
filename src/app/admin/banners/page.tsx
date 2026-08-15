@@ -23,6 +23,7 @@ import { useBannersStore, Banner } from "@/stores/banners-store";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Image from "next/image";
+import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 
 export default function AdminBannersPage() {
   const { banners, isLoading, fetchBanners, addBanner, updateBanner, deleteBanner } = useBannersStore();
@@ -419,7 +420,7 @@ export default function AdminBannersPage() {
             {/* Banner Thumbnail Preview */}
             <div className="relative aspect-[16/6] w-full bg-slate-950 overflow-hidden">
               <Image
-                src={banner.image_url}
+                src={resolveMediaUrl(banner.image_url)}
                 alt={banner.title || "Banner"}
                 fill
                 className={`object-cover ${!banner.is_active ? "opacity-40 grayscale" : ""}`}
