@@ -344,11 +344,10 @@ export function HeroSection() {
             >
               {/* Responsive Banner Images: Mobile image on mobile (with desktop fallback), Desktop image on desktop */}
               {(() => {
+                const DEFAULT_FALLBACK = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1920&auto=format&fit=crop";
                 const desktopImg = resolveMediaUrl(currentBanner?.image_url);
                 const mobileImg = resolveMediaUrl(currentBanner?.mobile_image_url) || desktopImg;
-                const activeImg = mobileImg || desktopImg;
-
-                if (!activeImg) return null;
+                const activeImg = mobileImg || desktopImg || DEFAULT_FALLBACK;
 
                 return (
                   <>
@@ -361,8 +360,11 @@ export function HeroSection() {
                         unoptimized
                         className="object-cover"
                         onError={(e) => {
-                          if (desktopImg && (e.target as HTMLImageElement).src !== desktopImg) {
-                            (e.target as HTMLImageElement).src = desktopImg;
+                          const target = e.target as HTMLImageElement;
+                          if (desktopImg && !target.src.includes(desktopImg)) {
+                            target.src = desktopImg;
+                          } else if (!target.src.includes("unsplash.com")) {
+                            target.src = DEFAULT_FALLBACK;
                           }
                         }}
                       />
@@ -375,6 +377,12 @@ export function HeroSection() {
                         priority
                         unoptimized
                         className="object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          if (!target.src.includes("unsplash.com")) {
+                            target.src = DEFAULT_FALLBACK;
+                          }
+                        }}
                       />
                     </div>
                   </>
