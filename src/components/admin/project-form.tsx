@@ -638,12 +638,17 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                       </Field>
                     </div>
                     <div className="md:col-span-2">
-                      <Field label="YouTube Video URL (Optional)">
-                        <Input value={update.videoUrl || ""} onChange={e => {
-                          const val = e.target.value;
-                          setConstructionUpdates(prev => prev.map(u => u.id === update.id ? { ...u, videoUrl: val } : u));
-                        }} placeholder="https://youtube.com/watch?v=..." className={ic()} />
-                      </Field>
+                      <VideoMediaManager
+                        videoUrl={update.videoUrl || ""}
+                        videoThumbnail={update.imageUrl || ""}
+                        onChange={({ videoUrl, videoThumbnail }) => {
+                          setConstructionUpdates(prev => prev.map(u => u.id === update.id ? { ...u, videoUrl, imageUrl: videoThumbnail } : u));
+                        }}
+                        folder="projects"
+                        entityId={initialData?.id}
+                        label="Construction Update Video (Optional)"
+                        description="Attach only ONE video: either a YouTube video link or an uploaded video file (up to 50MB)."
+                      />
                     </div>
                   </div>
                 </div>
