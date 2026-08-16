@@ -3,17 +3,13 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { 
   ChevronLeft, 
   ChevronRight, 
-  Grid2X2, 
   Play, 
-  Camera, 
-  Tag, 
+  Layers, 
   X, 
-  ArrowLeft,
-  Film
+  ArrowLeft
 } from "lucide-react";
 import type { PropertyImage } from "@/types/property";
 import { getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
@@ -27,8 +23,6 @@ interface PropertyGalleryProps {
   isReadyToMove?: boolean;
 }
 
-const DEFAULT_ROOM_TAGS = ["Living Room", "Master Bedroom", "Kitchen", "Floor Plan"];
-
 export function PropertyGallery({ 
   images, 
   title, 
@@ -39,6 +33,12 @@ export function PropertyGallery({
   const [isOpen, setIsOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
+
+  const openVideoModal = () => {
+    setIsVideoLoading(true);
+    setIsVideoOpen(true);
+  };
 
   const embedUrl = getYoutubeEmbedUrl(videoUrl);
   const isShort = isYoutubeShort(videoUrl);
@@ -49,160 +49,125 @@ export function PropertyGallery({
   const handleNext = () => setCurrentIndex((prev) => (prev + 1) % images.length);
   const handlePrev = () => setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
 
-  // Effective thumbnail for video card
+  // Main hero cover image
+  const heroImageSrc = resolveMediaUrl(
+    typeof images[0] === "string" ? images[0] : (images[0] as any).url || images[0]
+  );
+
+  // Video card thumbnail
   const videoCoverSrc = videoThumbnail 
     ? resolveMediaUrl(videoThumbnail) 
-    : (images[1] ? (typeof images[1] === "string" ? images[1] : (images[1] as any).url || images[1]) : (typeof images[0] === "string" ? images[0] : (images[0] as any).url || images[0]));
+    : (images[1] ? resolveMediaUrl(typeof images[1] === "string" ? images[1] : (images[1] as any).url || images[1]) : heroImageSrc);
+
+  // Secondary/Outdoors card image
+  const secondaryImageSrc = images[hasVideo ? 1 : 1] 
+    ? resolveMediaUrl(typeof images[hasVideo ? 1 : 1] === "string" ? images[hasVideo ? 1 : 1] : (images[hasVideo ? 1 : 1] as any).url || images[hasVideo ? 1 : 1])
+    : (images[2] ? resolveMediaUrl(typeof images[2] === "string" ? images[2] : (images[2] as any).url || images[2]) : heroImageSrc);
+
+  const totalMediaCount = images.length + (hasVideo ? 1 : 0);
+  const outdoorsCount = Math.max(1, Math.floor(images.length * 0.4));
 
   return (
     <>
-      {/* Realtor.com Style Main Photo Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5 h-[320px] sm:h-[420px] lg:h-[500px] rounded-3xl overflow-hidden relative shadow-md bg-slate-100 dark:bg-slate-900">
+      {/* 2-Column Luxury 3-Card Grid (Exact Reference UI) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-3.5 h-[340px] sm:h-[400px] lg:h-[440px] select-none rounded-2xl">
         
-        {/* Main Hero Left Image (Takes 2 Columns on LG) */}
+        {/* LEFT HERO CARD: "All Photos & Videos" */}
         <div 
-          className="lg:col-span-2 relative h-full cursor-pointer group overflow-hidden"
+          className="md:col-span-2 relative h-full w-full rounded-2xl overflow-hidden cursor-pointer group shadow-sm bg-slate-950"
           onClick={() => { setCurrentIndex(0); setIsOpen(true); }}
         >
-          <Image
-            src={resolveMediaUrl(typeof images[0] === "string" ? images[0] : (images[0] as any).url || images[0])}
+          <img
+            src={heroImageSrc}
             alt={title}
-            fill
-            unoptimized
-            className="object-cover group-hover:scale-105 transition-transform duration-700"
-            priority
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-black/30 group-hover:from-slate-950/40 transition-colors" />
+          {/* Bottom gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:from-black/70 transition-colors" />
 
-          {/* Realtor.com Badges on Top Left */}
-          <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2 z-10">
-            <span className="bg-slate-950/80 backdrop-blur-md text-white font-extrabold text-[11px] px-3 py-1 rounded-full border border-white/20">
+          {/* Badge top-left */}
+          <div className="absolute top-3.5 left-3.5 flex items-center gap-2 z-10">
+            <span className="bg-slate-950/80 backdrop-blur-md text-white font-extrabold text-[11px] px-3 py-1 rounded-full border border-white/20 shadow-md">
               {isReadyToMove ? "Ready to Move" : "New Construction"}
             </span>
           </div>
-        </div>
 
-        {/* Small Image / Video Right Stack (Takes 1 Column on LG) */}
-        <div className="hidden lg:grid grid-cols-1 grid-rows-3 gap-2 h-full">
-          {/* Top Tile: Video Tour Card if video exists, otherwise 2nd Image */}
-          {hasVideo ? (
-            <div 
-              className="relative h-full cursor-pointer group overflow-hidden rounded-xl border border-amber-500/30 bg-slate-950 shadow-md"
-              onClick={() => setIsVideoOpen(true)}
-            >
-              <Image
-                src={videoCoverSrc}
-                alt={`${title} Video Tour`}
-                fill
-                unoptimized
-                className="object-cover group-hover:scale-110 transition-transform duration-500 opacity-80 group-hover:opacity-100"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/40 group-hover:from-black/60 transition-colors" />
-              
-              {/* Centered Glowing Play Button */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative flex items-center justify-center">
-                  <div className="absolute w-12 h-12 rounded-full bg-red-600/40 animate-ping" />
-                  <div className="relative w-11 h-11 rounded-full bg-red-600 group-hover:bg-red-500 text-white flex items-center justify-center shadow-2xl transition-transform group-hover:scale-110">
-                    <Play className="w-5 h-5 fill-white text-white ml-0.5" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Video Tag Label */}
-              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
-                <span className="bg-slate-950/90 backdrop-blur-md text-white font-black text-[10px] px-2.5 py-1 rounded-md border border-white/20 flex items-center gap-1">
-                  <Film className="w-3 h-3 text-amber-400" />
-                  <span>Video Tour</span>
-                </span>
-                <span className="text-[10px] font-bold text-amber-300 drop-shadow-md">
-                  Watch Now
-                </span>
-              </div>
-            </div>
-          ) : (
-            images[1] && (
-              <div 
-                className="relative h-full cursor-pointer group overflow-hidden rounded-xl border border-white/10"
-                onClick={() => { setCurrentIndex(1); setIsOpen(true); }}
-              >
-                <Image
-                  src={resolveMediaUrl(typeof images[1] === "string" ? images[1] : (images[1] as any).url || images[1])}
-                  alt={title}
-                  fill
-                  unoptimized
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
-                <div className="absolute bottom-2 left-2 bg-slate-950/80 backdrop-blur-md text-white font-bold text-[10px] px-2.5 py-1 rounded-md border border-white/10">
-                  {DEFAULT_ROOM_TAGS[0] || "Property Photo"}
-                </div>
-              </div>
-            )
-          )}
-
-          {/* 2nd & 3rd Stack Tiles */}
-          {images.slice(hasVideo ? 1 : 2, hasVideo ? 3 : 4).map((img, idx) => {
-            const imgSrc = resolveMediaUrl(typeof img === "string" ? img : (img as any).url || img);
-            const slotIndex = hasVideo ? idx + 1 : idx + 2;
-            const roomLabel = DEFAULT_ROOM_TAGS[slotIndex] || "Property Photo";
-
-            return (
-              <div 
-                key={idx} 
-                className="relative h-full cursor-pointer group overflow-hidden rounded-xl border border-white/10"
-                onClick={() => { setCurrentIndex(slotIndex); setIsOpen(true); }}
-              >
-                <Image
-                  src={imgSrc}
-                  alt={title}
-                  fill
-                  unoptimized
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
-                
-                {/* Room Name Tag Label */}
-                <div className="absolute bottom-2 left-2 bg-slate-950/80 backdrop-blur-md text-white font-bold text-[10px] px-2.5 py-1 rounded-md border border-white/10">
-                  {roomLabel}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Bottom Floating Bar: Listing Photo Count & Action Buttons */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2 z-20 pointer-events-none">
-          
-          {/* Photo Counter Badge (Left) */}
-          <div className="bg-slate-950/85 backdrop-blur-md text-white px-3 py-1.5 rounded-full font-black text-[11px] sm:text-xs border border-white/20 flex items-center gap-1.5 shadow-xl pointer-events-auto shrink-0">
-            <Camera className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">1/{images.length} - Listing Photos</span>
-            <span className="sm:hidden">1/{images.length}</span>
+          {/* Bottom Right: Total media counter */}
+          <div className="absolute bottom-3.5 right-4 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/15">
+            <Layers className="w-4 h-4 text-white" />
+            <span>{totalMediaCount} Photos</span>
           </div>
+        </div>
 
-          {/* Action Buttons (Right) */}
-          <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+        {/* RIGHT COLUMN: 2 Stacked Cards (Videos + Gallery) */}
+        <div className="hidden md:grid grid-rows-2 gap-3 sm:gap-3.5 h-full min-h-0">
+          
+          {/* TOP RIGHT CARD */}
+          <div 
+            className="relative h-full w-full rounded-2xl overflow-hidden cursor-pointer group shadow-sm bg-slate-950 min-h-0"
+            onClick={() => {
+              if (hasVideo) {
+                openVideoModal();
+              } else {
+                setCurrentIndex(1 % images.length);
+                setIsOpen(true);
+              }
+            }}
+          >
+            <img
+              src={videoCoverSrc}
+              alt={`${title} Videos`}
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out opacity-90 group-hover:opacity-100"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent group-hover:from-black/70 transition-colors" />
+
+            {/* Centered Circular Translucent Play Button if video exists */}
             {hasVideo && (
-              <Button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setIsVideoOpen(true); }}
-                className="bg-white/95 hover:bg-white text-slate-950 backdrop-blur-md border border-white/40 font-black text-[11px] sm:text-xs rounded-full px-3.5 sm:px-4 py-1.5 sm:py-2 shadow-xl flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 shrink-0"
-              >
-                <Play className="w-3.5 h-3.5 fill-red-600 text-red-600" />
-                <span>Watch Tour</span>
-              </Button>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-white/95 hover:bg-white text-slate-950 flex items-center justify-center shadow-2xl backdrop-blur-md group-hover:scale-110 transition-transform">
+                  <Play className="w-5 h-5 fill-slate-950 text-slate-950 ml-0.5" />
+                </div>
+              </div>
             )}
 
-            <Button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setCurrentIndex(0); setIsOpen(true); }}
-              className="bg-slate-950/85 hover:bg-slate-900 text-white backdrop-blur-md border border-white/20 font-black text-[11px] sm:text-xs rounded-full px-3 sm:px-4 py-1.5 sm:py-2 shadow-xl flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
-            >
-              <Grid2X2 className="w-3.5 h-3.5 text-amber-400" />
-              <span>View All ({images.length})</span>
-            </Button>
+            {/* Bottom Right Badge */}
+            <div className="absolute bottom-3 right-3.5 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/15">
+              {hasVideo ? (
+                <>
+                  <Play className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  <span>Video</span>
+                </>
+              ) : (
+                <>
+                  <Layers className="w-3.5 h-3.5 text-white" />
+                  <span>1</span>
+                </>
+              )}
+            </div>
           </div>
+
+          {/* BOTTOM RIGHT CARD */}
+          <div 
+            className="relative h-full w-full rounded-2xl overflow-hidden cursor-pointer group shadow-sm bg-slate-950 min-h-0" 
+            onClick={() => {
+              setCurrentIndex(Math.min(2, images.length - 1));
+              setIsOpen(true);
+            }}
+          >
+            <img
+              src={secondaryImageSrc}
+              alt={`${title} Gallery`}
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent group-hover:from-black/70 transition-colors" />
+
+            {/* Bottom Right: Count */}
+            <div className="absolute bottom-3 right-3.5 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/15">
+              <Layers className="w-3.5 h-3.5 text-white" />
+              <span>+{Math.max(1, images.length - 2)}</span>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -213,12 +178,10 @@ export function PropertyGallery({
           <DialogDescription className="sr-only">Full screen gallery images for {title}</DialogDescription>
 
           <div className="relative h-[80vh] w-full flex items-center justify-center bg-black">
-            <Image
+            <img
               src={resolveMediaUrl(typeof images[currentIndex] === "string" ? (images[currentIndex] as any) : (images[currentIndex] as any).url || images[currentIndex])}
               alt={title}
-              fill
-              unoptimized
-              className="object-contain"
+              className="w-full h-full object-contain"
             />
 
             <button
@@ -277,6 +240,28 @@ export function PropertyGallery({
               "relative w-full bg-black flex items-center justify-center overflow-hidden",
               isShort ? "h-[70vh] sm:h-[75vh] max-h-[640px] aspect-[9/16]" : "aspect-video"
             )}>
+              {/* Buffering / Loading Overlay */}
+              {isVideoLoading && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-md gap-3 pointer-events-none">
+                  {videoThumbnail && (
+                    <img
+                      src={resolveMediaUrl(videoThumbnail)}
+                      alt="Poster blur"
+                      className="absolute inset-0 w-full h-full object-cover opacity-20 filter blur-md"
+                    />
+                  )}
+                  <div className="relative z-10 flex flex-col items-center gap-3">
+                    <div className="relative flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full border-3 border-amber-500/20 border-t-amber-500 animate-spin" />
+                      <Play className="w-5 h-5 text-amber-500 fill-amber-500 absolute" />
+                    </div>
+                    <p className="text-white font-bold text-xs sm:text-sm tracking-wider animate-pulse uppercase">
+                      Loading Video Walkthrough...
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {embedUrl ? (
                 <iframe
                   src={`${embedUrl}?autoplay=1`}
@@ -284,6 +269,7 @@ export function PropertyGallery({
                   className="w-full h-full border-0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
+                  onLoad={() => setIsVideoLoading(false)}
                 />
               ) : (
                 <video
@@ -292,6 +278,8 @@ export function PropertyGallery({
                   autoPlay
                   poster={videoThumbnail ? resolveMediaUrl(videoThumbnail) : undefined}
                   className="w-full h-full object-contain"
+                  onLoadedData={() => setIsVideoLoading(false)}
+                  onCanPlay={() => setIsVideoLoading(false)}
                 />
               )}
             </div>

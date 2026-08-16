@@ -10,7 +10,7 @@ import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import {
   MapPin, CheckCircle2, Phone, MessageCircle, Download,
   ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark,
-  Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate, Film
+  Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate, Film, Layers, Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/back-button";
@@ -128,6 +128,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   const [galleryIdx, setGalleryIdx] = useState<number | null>(null);
   const [activeConfigLabel, setActiveConfigLabel] = useState<string>("All");
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
+  const openVideo = (url: string | null | undefined) => {
+    if (!url) return;
+    setIsVideoLoading(true);
+    setActiveVideoUrl(url);
+  };
   const [floorPlanLightbox, setFloorPlanLightbox] = useState<{ url: string; label: string } | null>(null);
   const [activeMedia, setActiveMedia] = useState<Record<string, 'image' | 'video'>>({});
   const [playingVideos, setPlayingVideos] = useState<Record<string, boolean>>({});
@@ -141,20 +147,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
   const project = projects.find((p) => p.slug === slug && p.isPublished);
-
-  // Gallery images including all
-  const galleryAll = project?.images || [];
-  
-  const [currentHeroIdx, setCurrentHeroIdx] = useState(0);
-
-  // Auto-slide hero image
-  useEffect(() => {
-    if (!galleryAll || galleryAll.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentHeroIdx((prev) => (prev + 1) % galleryAll.length);
-    }, 3500);
-    return () => clearInterval(interval);
-  }, [galleryAll.length]);
 
   useEffect(() => {
     if (!project) return;
@@ -193,15 +185,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
   const TypeIcon = TYPE_ICONS[project.projectType];
   const priceRange = getPriceRange(project.configurations);
 
-  const heroImage  = galleryAll[currentHeroIdx]?.url ?? project.coverImage ?? galleryAll[0]?.url;
-  
-  // The side images will be the next two images in the gallery sequence
-  const sideImages = galleryAll.length > 2 
-    ? [
-        galleryAll[(currentHeroIdx + 1) % galleryAll.length],
-        galleryAll[(currentHeroIdx + 2) % galleryAll.length]
-      ].filter(Boolean)
-    : galleryAll.filter((i) => i.url !== heroImage).slice(0, 2);
+  // Gallery images including all
+  const galleryAll = project.images || [];
+  const heroImage = project.coverImage || galleryAll[0]?.url;
+  const sideImages = galleryAll.filter((i) => i.url !== heroImage);
 
   // WhatsApp URL
   const whatsapp = project.builderWhatsapp
@@ -265,7 +252,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
       )}
 
       {/* Video Tour Modal */}
-      {activeVideoUrl && activeVideoEmbed && (
+      {activeVideoUrl && (
         <div className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4" onClick={() => setActiveVideoUrl(null)}>
           <div
             className={`relative w-full bg-black rounded-3xl overflow-hidden shadow-2xl ${activeIsShort ? "max-w-[420px]" : "max-w-4xl"}`}
@@ -288,7 +275,29 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className={`relative w-full bg-black flex items-center justify-center ${activeIsShort ? "aspect-[9/16] max-h-[75vh]" : "aspect-video"}`}>
+            <div className={`relative w-full bg-black flex items-center justify-center overflow-hidden ${activeIsShort ? "aspect-[9/16] max-h-[75vh]" : "aspect-video"}`}>
+              {/* Buffering / Loading Overlay */}
+              {isVideoLoading && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-md gap-3 pointer-events-none">
+                  {project.videoThumbnail && (
+                    <img
+                      src={resolveMediaUrl(project.videoThumbnail)}
+                      alt="Poster blur"
+                      className="absolute inset-0 w-full h-full object-cover opacity-20 filter blur-md"
+                    />
+                  )}
+                  <div className="relative z-10 flex flex-col items-center gap-3">
+                    <div className="relative flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full border-3 border-amber-500/20 border-t-amber-500 animate-spin" />
+                      <Play className="w-5 h-5 text-amber-500 fill-amber-500 absolute" />
+                    </div>
+                    <p className="text-white font-bold text-xs sm:text-sm tracking-wider animate-pulse uppercase">
+                      Loading Video Walkthrough...
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {activeVideoEmbed ? (
                 <iframe
                   src={`${activeVideoEmbed}?autoplay=1`}
@@ -296,6 +305,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   className="w-full h-full border-0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
+                  onLoad={() => setIsVideoLoading(false)}
                 />
               ) : (
                 <video
@@ -304,6 +314,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   autoPlay
                   poster={project.videoThumbnail ? resolveMediaUrl(project.videoThumbnail) : undefined}
                   className="w-full h-full object-contain"
+                  onLoadedData={() => setIsVideoLoading(false)}
+                  onCanPlay={() => setIsVideoLoading(false)}
                 />
               )}
             </div>
@@ -337,7 +349,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               </button>
             )}
             {project.videoUrl && (
-              <button onClick={(e) => { e.stopPropagation(); setActiveVideoUrl(project.videoUrl || null); }}
+              <button onClick={(e) => { e.stopPropagation(); openVideo(project.videoUrl); }}
                 className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg z-10 whitespace-nowrap">
                 <Play className="w-3.5 h-3.5 fill-white text-white shrink-0" /> Watch Tour
               </button>
@@ -355,97 +367,109 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             )}
           </div>
 
-          {/* Desktop: 3-col grid */}
-          <div className="hidden sm:grid grid-cols-3 gap-2 rounded-2xl overflow-hidden h-[400px] md:h-[450px] lg:h-[500px]">
-            <div className="col-span-2 relative overflow-hidden cursor-pointer group" onClick={() => heroImage && setGalleryIdx(0)}>
+          {/* Desktop & Tablet: 2-Column Luxury 3-Card Grid (Exact Reference UI) */}
+          <div className="hidden sm:grid grid-cols-3 gap-3 sm:gap-3.5 h-[340px] sm:h-[400px] lg:h-[440px] select-none rounded-2xl">
+            {/* LEFT HERO CARD */}
+            <div 
+              className="col-span-2 relative h-full w-full rounded-2xl overflow-hidden cursor-pointer group shadow-sm bg-slate-950" 
+              onClick={() => heroImage && setGalleryIdx(0)}
+            >
               {heroImage ? (
-                <motion.img style={{ y: yHero }} src={heroImage} alt={project.name} className="absolute inset-0 w-full h-[130%] -top-[15%] object-cover" />
+                <img src={heroImage} alt={project.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-amber-primary/20 to-amber-primary/5 flex items-center justify-center">
                   <TypeIcon className="w-16 h-16 text-amber-primary/30" />
                 </div>
               )}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-              {/* Bottom action bar */}
-              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-none">
-                {galleryAll.length > 0 && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setGalleryIdx(0); }}
-                    className="pointer-events-auto flex items-center gap-2 bg-black/70 text-white text-xs font-medium px-3 py-1.5 rounded-full hover:bg-black/90 transition-colors"
-                  >
-                    <Eye className="w-3.5 h-3.5" /> All Photos ({galleryAll.length})
-                  </button>
-                )}
-                {project.videoUrl && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setActiveVideoUrl(project.videoUrl || null); }}
-                    className="pointer-events-auto flex items-center gap-2 bg-white/90 hover:bg-white text-slate-950 text-xs font-black px-4 py-1.5 rounded-full shadow-xl transition-all hover:scale-105 whitespace-nowrap cursor-pointer"
-                  >
-                    <Play className="w-3.5 h-3.5 fill-red-600 text-red-600 shrink-0" /> Watch Tour
-                  </button>
-                )}
+              {/* Subtle dark bottom gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent group-hover:from-black/70 transition-colors" />
+              
+              {/* Bottom Right: Real total media counter */}
+              <div className="absolute bottom-3.5 right-4 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/15">
+                <Layers className="w-4 h-4 text-white" />
+                <span>{galleryAll.length + (project.videoUrl ? 1 : 0)} Photos</span>
               </div>
             </div>
-            <div className="flex flex-col gap-2">
-              {/* Top Side Stack: Video Tour Tile if videoUrl exists */}
-              {project.videoUrl ? (
-                <div
-                  className="flex-1 relative cursor-pointer group rounded-xl overflow-hidden bg-slate-950 border border-amber-500/30"
-                  onClick={() => setActiveVideoUrl(project.videoUrl || null)}
-                >
-                  <img
-                    src={project.videoThumbnail ? resolveMediaUrl(project.videoThumbnail) : (sideImages[0]?.url || heroImage || "")}
-                    alt={`${project.name} Video Tour`}
-                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/40 group-hover:from-black/60 transition-colors" />
-                  
-                  {/* Centered Glowing Play Button */}
+
+            {/* RIGHT COLUMN: 2 Stacked Cards */}
+            <div className="grid grid-rows-2 gap-3 sm:gap-3.5 h-full min-h-0">
+              {/* TOP RIGHT CARD */}
+              <div
+                className="relative h-full w-full rounded-2xl overflow-hidden cursor-pointer group shadow-sm bg-slate-950 min-h-0"
+                onClick={() => {
+                  if (project.videoUrl) {
+                    openVideo(project.videoUrl);
+                  } else if (sideImages[0]) {
+                    const idx = galleryAll.findIndex(img => img.url === sideImages[0].url);
+                    setGalleryIdx(idx >= 0 ? idx : 1);
+                  } else {
+                    setGalleryIdx(0);
+                  }
+                }}
+              >
+                <img
+                  src={project.videoUrl 
+                    ? (project.videoThumbnail ? resolveMediaUrl(project.videoThumbnail) : (sideImages[0]?.url || heroImage || ""))
+                    : (sideImages[0]?.url || heroImage || "")
+                  }
+                  alt={`${project.name} Media`}
+                  className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-transform duration-700 ease-out"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent group-hover:from-black/70 transition-colors" />
+                
+                {/* Centered Circular Play Button if video exists */}
+                {project.videoUrl && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="relative flex items-center justify-center">
-                      <div className="absolute w-10 h-10 rounded-full bg-red-600/40 animate-ping" />
-                      <div className="relative w-9 h-9 rounded-full bg-red-600 group-hover:bg-red-500 text-white flex items-center justify-center shadow-xl transition-transform group-hover:scale-110">
-                        <Play className="w-4 h-4 fill-white text-white ml-0.5" />
-                      </div>
+                    <div className="w-12 h-12 rounded-full bg-white/95 hover:bg-white text-slate-950 flex items-center justify-center shadow-2xl backdrop-blur-md group-hover:scale-110 transition-transform">
+                      <Play className="w-5 h-5 fill-slate-950 text-slate-950 ml-0.5" />
                     </div>
                   </div>
+                )}
 
-                  {/* Video Badge */}
-                  <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
-                    <span className="bg-slate-950/90 text-white font-black text-[10px] px-2 py-0.5 rounded border border-white/20 flex items-center gap-1">
-                      <Film className="w-3 h-3 text-amber-400" /> Video Tour
-                    </span>
-                    <span className="text-[10px] font-bold text-amber-300">Watch</span>
+                {/* Bottom Right Badge */}
+                <div className="absolute bottom-3 right-3.5 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/15">
+                  {project.videoUrl ? (
+                    <>
+                      <Film className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Video</span>
+                    </>
+                  ) : (
+                    <>
+                      <Layers className="w-3.5 h-3.5 text-white" />
+                      <span>1</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* BOTTOM RIGHT CARD */}
+              <div 
+                className="relative h-full w-full rounded-2xl overflow-hidden cursor-pointer group shadow-sm bg-slate-950 min-h-0" 
+                onClick={() => {
+                  const targetImage = project.videoUrl ? sideImages[0] : sideImages[1];
+                  const targetIdx = targetImage ? galleryAll.findIndex((x) => x.url === targetImage.url) : 0;
+                  setGalleryIdx(targetIdx >= 0 ? targetIdx : 0);
+                }}
+              >
+                {((project.videoUrl ? sideImages[0] : sideImages[1]) || sideImages[0]) ? (
+                  <img 
+                    src={(project.videoUrl ? sideImages[0] : sideImages[1])?.url || sideImages[0]?.url} 
+                    alt={`${project.name} Gallery`} 
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+                  />
+                ) : (
+                  <div className="w-full h-full bg-bg-card border border-border-default flex items-center justify-center">
+                    <TypeIcon className="w-8 h-8 text-text-tertiary/30" />
                   </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent group-hover:from-black/70 transition-colors" />
+                
+                {/* Bottom Right: Remaining photos count */}
+                <div className="absolute bottom-3 right-3.5 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/15">
+                  <Layers className="w-3.5 h-3.5 text-white" />
+                  <span>+{Math.max(1, galleryAll.length - 2)}</span>
                 </div>
-              ) : sideImages[0] ? (
-                <div className="flex-1 relative cursor-pointer group" onClick={() => setGalleryIdx(galleryAll.findIndex((x) => x.url === sideImages[0].url))}>
-                  <img src={sideImages[0].url} alt={sideImages[0].alt} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                  {sideImages[0].category && (
-                    <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded text-[10px] font-medium bg-black/60 text-white capitalize">{sideImages[0].category}</span>
-                  )}
-                </div>
-              ) : (
-                <div className="flex-1 bg-bg-card border border-border-default flex items-center justify-center">
-                  <TypeIcon className="w-8 h-8 text-text-tertiary/30" />
-                </div>
-              )}
-
-              {/* Bottom Side Stack Image */}
-              {sideImages[project.videoUrl ? 0 : 1] ? (
-                <div className="flex-1 relative cursor-pointer group" onClick={() => setGalleryIdx(galleryAll.findIndex((x) => x.url === sideImages[project.videoUrl ? 0 : 1].url))}>
-                  <img src={sideImages[project.videoUrl ? 0 : 1].url} alt={sideImages[project.videoUrl ? 0 : 1].alt} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                  {sideImages[project.videoUrl ? 0 : 1].category && (
-                    <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded text-[10px] font-medium bg-black/60 text-white capitalize">{sideImages[project.videoUrl ? 0 : 1].category}</span>
-                  )}
-                </div>
-              ) : (
-                <div className="flex-1 bg-bg-card border border-border-default flex items-center justify-center">
-                  <TypeIcon className="w-8 h-8 text-text-tertiary/30" />
-                </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
