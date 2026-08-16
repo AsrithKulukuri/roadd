@@ -207,11 +207,18 @@ export function VideoMediaManager({
           <p className="text-xs text-text-secondary mt-0.5">{description}</p>
         </div>
 
-        {/* Mode Toggle Buttons */}
+        {/* Mode Toggle Buttons (Mutually Exclusive) */}
         <div className="flex items-center p-1 bg-bg-tertiary rounded-xl border border-border-default shrink-0">
           <button
             type="button"
-            onClick={() => setMode("youtube")}
+            onClick={() => {
+              if (mode !== "youtube") {
+                setMode("youtube");
+                if (isUploadedVideo) {
+                  onChange({ videoUrl: "", videoThumbnail: "" });
+                }
+              }
+            }}
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
               mode === "youtube"
@@ -224,7 +231,15 @@ export function VideoMediaManager({
           </button>
           <button
             type="button"
-            onClick={() => setMode("upload")}
+            onClick={() => {
+              if (mode !== "upload") {
+                setMode("upload");
+                if (!isUploadedVideo && videoUrl) {
+                  onChange({ videoUrl: "", videoThumbnail: "" });
+                  setRawYoutubeInput("");
+                }
+              }
+            }}
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
               mode === "upload"
@@ -233,9 +248,14 @@ export function VideoMediaManager({
             )}
           >
             <UploadCloud className="w-4 h-4 text-blue-500" />
-            <span>Upload Video (50MB)</span>
+            <span>Upload Video (Max 50MB)</span>
           </button>
         </div>
+      </div>
+
+      <div className="text-[11px] font-semibold text-text-tertiary flex items-center gap-1.5 bg-bg-primary/50 px-3 py-1.5 rounded-lg border border-border-default/40">
+        <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+        <span>You can attach <strong>only ONE</strong> video per property/project: either a YouTube URL or a direct uploaded video file.</span>
       </div>
 
       {/* Mode 1: YouTube Link Input */}

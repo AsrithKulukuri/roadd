@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getClient, getBucketName } from "@/lib/aws/s3";
+import { Readable } from "stream";
 
 // Transparent / Placeholder fallback SVG if S3 file cannot be fetched
 const FALLBACK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600" fill="none">
@@ -23,18 +24,18 @@ export async function GET(
       return new NextResponse("Not Found", { status: 404 });
     }
 
+    const rangeHeader = request.headers.get("range");
+
     try {
       const command = new GetObjectCommand({
         Bucket: getBucketName(),
         Key: key,
+        ...(rangeHeader ? { Range: rangeHeader } : {}),
       });
 
       const response = await getClient().send(command);
 
       if (response.Body) {
-        const byteArray = await response.Body.transformToByteArray();
-        const buffer = Buffer.from(byteArray);
-
         const ext = (key.split(".").pop() || "").toLowerCase();
         let contentType = response.ContentType;
         if (!contentType || contentType === "application/octet-stream") {
@@ -42,16 +43,46 @@ export async function GET(
           else if (ext === "png") contentType = "image/png";
           else if (ext === "webp") contentType = "image/webp";
           else if (ext === "pdf") contentType = "application/pdf";
-          else if (ext === "mp4") contentType = "video/mp4";
+          else if (["mp4", "mov"].includes(ext)) contentType = "video/mp4";
+          else if (ext === "webm") contentType = "video/webm";
           else contentType = "image/jpeg";
         }
 
-        return new NextResponse(buffer, {
-          status: 200,
+        const isVideoOrAudio = contentType.startsWith("video/") || contentType.startsWith("audio/") || ext === "pdf";
+
+        // If it's a streaming response (like video with Range request or web stream)
+        const responseBody = response.Body as any;
+
+        // Convert S3 body stream to web ReadableStream
+        let stream: ReadableStream;
+        if (typeof responseBody.transformToWebStream === "function") {
+          stream = responseBody.transformToWebStream();
+        } else if (responseBody instanceof Readable) {
+          stream = Readable.toWeb(responseBody) as unknown as ReadableStream;
+        } else {
+          const bytes = await responseBody.transformToByteArray();
+          return new NextResponse(Buffer.from(bytes), {
+            status: rangeHeader && response.ContentRange ? 206 : 200,
+            headers: {
+              "Content-Type": contentType,
+              "Content-Length": String(bytes.length),
+              "Accept-Ranges": "bytes",
+              ...(response.ContentRange ? { "Content-Range": response.ContentRange } : {}),
+              "Cache-Control": "public, max-age=31536000, immutable",
+            },
+          });
+        }
+
+        const status = rangeHeader && response.ContentRange ? 206 : 200;
+
+        return new NextResponse(stream, {
+          status,
           headers: {
             "Content-Type": contentType,
-            "Content-Length": String(buffer.length),
-            "Cache-Control": "public, max-age=31536000, immutable",
+            "Accept-Ranges": "bytes",
+            ...(response.ContentLength ? { "Content-Length": String(response.ContentLength) } : {}),
+            ...(response.ContentRange ? { "Content-Range": response.ContentRange } : {}),
+            "Cache-Control": isVideoOrAudio ? "public, max-age=86400" : "public, max-age=31536000, immutable",
             ...(response.ETag ? { ETag: response.ETag } : {}),
           },
         });
@@ -60,7 +91,7 @@ export async function GET(
       console.warn("[Media Proxy Warning]:", s3Error?.message || s3Error);
     }
 
-    // If S3 fetch fails (e.g. missing Vercel environment variables or key not found), serve placeholder
+    // If S3 fetch fails, serve placeholder
     return new NextResponse(FALLBACK_SVG, {
       status: 200,
       headers: {
