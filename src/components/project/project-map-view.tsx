@@ -67,7 +67,13 @@ export default function ProjectMapView({
       <MapContainer
         center={center}
         zoom={15}
+        dragging={false}
         scrollWheelZoom={false}
+        doubleClickZoom={false}
+        touchZoom={false}
+        boxZoom={false}
+        keyboard={false}
+        zoomControl={false}
         style={{ height: "100%", width: "100%", zIndex: 0 }}
       >
         <TileLayer

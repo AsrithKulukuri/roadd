@@ -145,7 +145,13 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
         <MapContainer 
           center={propertyPos} 
           zoom={13} 
+          dragging={false}
           scrollWheelZoom={false}
+          doubleClickZoom={false}
+          touchZoom={false}
+          boxZoom={false}
+          keyboard={false}
+          zoomControl={false}
           style={{ height: "100%", width: "100%" }}
         >
           <TileLayer

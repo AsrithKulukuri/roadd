@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { BackButton } from "@/components/ui/back-button";
 import type { Project, ProjectConfig } from "@/types/project";
+import { ProjectFacilitiesGrid } from "@/components/project/project-facilities-grid";
 
 // ─── Lazy map (SSR unsafe) ─────────────────────────────────────────────────────
 const ProjectMapView = dynamic(
@@ -350,9 +351,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             {project.videoUrl && (
               <button 
                 onClick={(e) => { e.stopPropagation(); openVideo(project.videoUrl); }}
-                className="absolute top-3 right-3 flex items-center gap-1.5 bg-slate-950/80 hover:bg-slate-950 active:scale-95 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full border border-white/20 shadow-lg z-10 transition-all"
+                className="absolute top-3 right-3 flex items-center gap-1.5 bg-slate-950/85 hover:bg-slate-950 active:scale-95 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full border border-white/20 shadow-lg z-10 transition-all cursor-pointer"
               >
-                <Play className="w-3.5 h-3.5 fill-red-500 text-red-500 shrink-0" />
+                <Play className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" />
                 <span>Video Tour</span>
               </button>
             )}
@@ -496,21 +497,21 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             <div className="ml-auto flex items-center gap-2 py-2 shrink-0 pl-2">
               {project.videoUrl && (
                 <button
-                  onClick={() => setActiveVideoUrl(project.videoUrl || null)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
+                  onClick={() => openVideo(project.videoUrl)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold border border-white/15 transition-all shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
                 >
-                  <Play className="w-3.5 h-3.5 fill-white text-white shrink-0" /> Watch Tour
+                  <Play className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" /> Watch Tour
                 </button>
               )}
               {project.brochureUrl && (
                 <a href={project.brochureUrl} target="_blank" rel="noopener noreferrer"
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border-default text-xs font-semibold text-text-primary hover:border-amber-primary transition-colors whitespace-nowrap">
-                  <Download className="w-3.5 h-3.5 shrink-0" /> Brochure
+                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold border border-white/15 transition-all shadow-sm shrink-0 cursor-pointer whitespace-nowrap">
+                  <Download className="w-3.5 h-3.5 text-amber-500 shrink-0" /> Brochure
                 </a>
               )}
               {phone && (
-                <a href={phone} className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-primary text-slate-950 text-xs font-bold hover:bg-amber-500 transition-colors whitespace-nowrap">
-                  <Phone className="w-3.5 h-3.5 shrink-0" /> View Number
+                <a href={phone} className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold border border-white/15 transition-all shadow-sm shrink-0 cursor-pointer whitespace-nowrap">
+                  <Phone className="w-3.5 h-3.5 text-amber-500 shrink-0" /> View Number
                 </a>
               )}
             </div>
@@ -538,9 +539,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                       {project.videoUrl && (
                         <button
                           onClick={() => openVideo(project.videoUrl)}
-                          className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-600 border border-red-500/30 hover:bg-red-500/20 transition-all cursor-pointer whitespace-nowrap"
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all cursor-pointer whitespace-nowrap shadow-sm"
                         >
-                          <Play className="w-3.5 h-3.5 fill-red-600 text-red-600 shrink-0" /> Watch Tour
+                          <Play className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" /> Watch Tour
                         </button>
                       )}
                       {project.reraApproved && (
@@ -638,8 +639,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-10 h-10 rounded-full bg-white/95 text-slate-950 flex items-center justify-center shadow-xl backdrop-blur-sm group-hover/vid:scale-110 transition-transform">
-                                    <Play className="w-4 h-4 fill-slate-950 text-slate-950 ml-0.5" />
+                                  <div className="w-10 h-10 rounded-full bg-slate-950 text-white border border-white/20 flex items-center justify-center shadow-xl backdrop-blur-sm group-hover/vid:scale-110 transition-transform">
+                                    <Play className="w-4 h-4 fill-amber-500 text-amber-500 ml-0.5" />
                                   </div>
                                 </div>
                                 <span className="absolute bottom-2 left-2.5 text-[11px] font-bold text-white drop-shadow-md flex items-center gap-1">
@@ -680,9 +681,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                             <button
                               type="button"
                               onClick={() => openVideo(update.videoUrl)}
-                              className="mt-3 w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-600 hover:text-white text-red-600 border border-red-500/30 transition-all py-2 rounded-xl text-xs font-bold cursor-pointer active:scale-98 shadow-sm"
+                              className="mt-3 w-full flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all py-2.5 rounded-xl text-xs font-bold cursor-pointer active:scale-98 shadow-sm"
                             >
-                              <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+                              <Play className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" />
                               <span>Watch Update Video</span>
                             </button>
                           )}
@@ -708,8 +709,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 </div>
                 {project.brochureUrl && (
                   <a href={project.brochureUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-amber-primary text-amber-primary font-semibold text-sm hover:bg-amber-primary/10 transition-colors whitespace-nowrap">
-                    <Download className="w-4 h-4 shrink-0" /> Download Brochure
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 hover:border-amber-500/40 transition-all shadow-sm whitespace-nowrap">
+                    <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download Brochure
                   </a>
                 )}
               </div>
@@ -722,10 +723,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     <h2 className="text-xl font-bold text-text-primary">
                       {project.projectType === "venture" ? "Plot Layouts & Pricing" : project.projectType === "villa" ? "Villa Configurations & Pricing" : "Floor Plans & Pricing"}
                     </h2>
-                    <div className="flex sm:hidden items-center gap-1 text-[10px] text-text-tertiary font-bold uppercase tracking-wide bg-bg-primary px-2.5 py-1 rounded-full border border-border-default shrink-0">
-                      <span>Swipe</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </div>
                   </div>
 
                   {/* Config tabs */}
@@ -775,117 +772,127 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     >
                       <ChevronLeft className="w-6 h-6 text-text-tertiary drop-shadow-md group-hover:text-text-primary" />
                     </button>
-                    <div ref={cardsScrollRef} className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-6 px-6 sm:px-12">
-                    {(currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => (
-                      <div key={cfg.id || idx} className="w-[85vw] sm:w-[320px] shrink-0 snap-center p-5 rounded-2xl border border-border-default bg-bg-primary flex flex-col gap-4 sm:hover:-translate-y-1 hover:shadow-xl transition-all duration-300 relative z-0">
-                        {/* Top Section */}
-                        <div className="flex justify-between items-start gap-2">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-md bg-amber-500/10 flex items-center justify-center shrink-0">
-                                <LayoutTemplate className="w-4 h-4 text-amber-600" />
-                              </div>
-                              <div className="flex items-baseline gap-1.5">
-                                <span className="text-xl font-bold text-slate-800">
-                                  {cfg.superBuiltUpAreaMin ?? cfg.builtUpAreaMin ?? cfg.plotSizeMin}
-                                  {project.projectType === "venture" ? " sq.yds" : " sq.ft"}
+                    <div ref={cardsScrollRef} className="flex gap-4 sm:gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6">
+                    {(currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => {
+                      const areaMin = cfg.superBuiltUpAreaMin ?? cfg.builtUpAreaMin ?? cfg.plotSizeMin;
+                      const areaMax = cfg.superBuiltUpAreaMax ?? cfg.builtUpAreaMax ?? cfg.plotSizeMax;
+                      const hasAreaRange = areaMax && areaMax !== areaMin;
+                      const unit = project.projectType === "venture" ? "sq.yds" : "sq.ft";
+
+                      return (
+                        <div 
+                          key={cfg.id || idx} 
+                          className="w-[85vw] sm:w-[330px] shrink-0 snap-start p-5 rounded-3xl border border-border-default bg-white dark:bg-bg-card shadow-sm hover:shadow-xl hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between group"
+                        >
+                          {/* Card Top: Configuration Header & Price */}
+                          <div>
+                            <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-border-default/60">
+                              <div>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                                  {cfg.label}
                                 </span>
-                                {/* If we have max area, show it */}
-                                {((cfg.superBuiltUpAreaMax && cfg.superBuiltUpAreaMax !== cfg.superBuiltUpAreaMin) || (cfg.builtUpAreaMax && cfg.builtUpAreaMax !== cfg.builtUpAreaMin) || (cfg.plotSizeMax && cfg.plotSizeMax !== cfg.plotSizeMin)) ? (
-                                  <span className="text-sm text-slate-400 font-medium">
-                                    – {cfg.superBuiltUpAreaMax ?? cfg.builtUpAreaMax ?? cfg.plotSizeMax} {project.projectType === "venture" ? "sq.yds" : "sq.ft"}
-                                  </span>
-                                ) : null}
+                                <div className="text-xl font-black text-text-primary mt-1">
+                                  {areaMin} {hasAreaRange ? `– ${areaMax}` : ""} <span className="text-sm font-semibold text-text-tertiary">{unit}</span>
+                                </div>
+                                <div className="text-[11px] text-text-secondary font-medium mt-0.5">
+                                  {cfg.uds ? `UDS: ${cfg.uds} sq.yds • ` : ""}{project.projectType === "venture" ? "Plot Layout" : "Super Built-up Area"}
+                                </div>
+                              </div>
+
+                              <div className="text-right shrink-0">
+                                <div className="text-lg font-black text-amber-600 dark:text-amber-400">
+                                  {formatINRCrore(cfg.priceMin)}
+                                </div>
+                                {cfg.priceMax && cfg.priceMax !== cfg.priceMin && (
+                                  <div className="text-xs font-bold text-text-secondary">
+                                    – {formatINRCrore(cfg.priceMax)}
+                                  </div>
+                                )}
+                                <div className="text-[10px] text-text-tertiary font-semibold mt-0.5">
+                                  + Govt. Charges
+                                </div>
                               </div>
                             </div>
-                            <div className="text-sm text-slate-500 ml-8 flex flex-wrap items-center gap-x-0 gap-y-1">
-                              <span className="font-medium text-slate-600">{cfg.label}</span>
-                              {cfg.uds && (
-                                <span className="flex items-center">
-                                  <span className="mx-1.5 text-slate-300">|</span>
-                                  <span className="font-medium text-slate-600">UDS: {cfg.uds} sq.yds</span>
-                                </span>
+
+                            {/* Middle Box: Floor Plan Preview / Video */}
+                            <div 
+                              className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-50 dark:bg-bg-primary border border-border-default/80 my-3 flex items-center justify-center cursor-pointer group/media shadow-inner"
+                              onClick={() => {
+                                if (cfg.floorPlanUrl) {
+                                  setFloorPlanLightbox({ url: cfg.floorPlanUrl, label: `${cfg.label} (${areaMin} ${unit})` });
+                                } else if (cfg.videoUrl) {
+                                  openVideo(cfg.videoUrl);
+                                }
+                              }}
+                            >
+                              {cfg.floorPlanUrl ? (
+                                <img
+                                  src={resolveMediaUrl(cfg.floorPlanUrl)}
+                                  alt={`${cfg.label} Floor Plan`}
+                                  className="max-w-[92%] max-h-[92%] object-contain group-hover/media:scale-105 transition-transform duration-500"
+                                />
+                              ) : (
+                                <div className="flex flex-col items-center justify-center gap-1.5 text-text-tertiary">
+                                  <LayoutTemplate className="w-8 h-8 text-text-tertiary/40" />
+                                  <span className="text-xs font-semibold">Floor Plan on Request</span>
+                                </div>
+                              )}
+
+                              {/* Floating Zoom Badge */}
+                              {cfg.floorPlanUrl && (
+                                <div className="absolute bottom-2.5 left-2.5 bg-slate-950/80 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg border border-white/15 flex items-center gap-1.5 shadow-md">
+                                  <Eye className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>Tap to Zoom</span>
+                                </div>
+                              )}
+
+                              {/* Floating Video Tour Pill (if config has its own walkthrough) */}
+                              {cfg.videoUrl && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openVideo(cfg.videoUrl!);
+                                  }}
+                                  className="absolute top-2.5 right-2.5 bg-slate-950/85 hover:bg-slate-950 active:scale-95 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg border border-white/15 shadow-md flex items-center gap-1 transition-transform cursor-pointer"
+                                >
+                                  <Play className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                  <span>Tour</span>
+                                </button>
                               )}
                             </div>
-                          </div>
 
-                          {/* Toggle Switch */}
-                          {cfg.videoUrl && (
-                            <div className="flex items-center bg-slate-100 rounded-md p-1 shrink-0 h-fit">
-                              <button
-                                onClick={() => setActiveMedia(prev => ({ ...prev, [cfg.id]: 'image' }))}
-                                title="View Plan"
-                                className={`w-6 h-6 flex items-center justify-center rounded-[4px] transition-all ${(!activeMedia[cfg.id] || activeMedia[cfg.id] === 'image') ? 'bg-white shadow-sm text-amber-600' : 'text-slate-400 hover:text-slate-600'}`}
-                              >
-                                <LayoutTemplate className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => setActiveMedia(prev => ({ ...prev, [cfg.id]: 'video' }))}
-                                title="View Video"
-                                className={`w-6 h-6 flex items-center justify-center rounded-[4px] transition-all ${(activeMedia[cfg.id] === 'video') ? 'bg-white shadow-sm text-red-500' : 'text-slate-400 hover:text-slate-600'}`}
-                              >
-                                <Play className="w-3.5 h-3.5 fill-current" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Image/Video Section */}
-                        {(activeMedia[cfg.id] === 'video' && cfg.videoUrl) ? (
-                          <div className={`rounded-xl overflow-hidden bg-black flex items-center justify-center my-2 relative isolate transform-gpu ${isYoutubeShort(cfg.videoUrl) ? 'aspect-[9/16]' : 'aspect-[4/3]'}`}>
-                            <iframe
-                              src={`${getYoutubeEmbedUrl(cfg.videoUrl!)!}${playingVideos[cfg.id] ? '&autoplay=1' : ''}`}
-                              className="w-full h-full"
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              allowFullScreen
-                            />
-                            {!playingVideos[cfg.id] && (
-                              <div 
-                                className="absolute inset-0 z-10 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPlayingVideos(prev => ({ ...prev, [cfg.id]: true }));
-                                }}
-                              />
-                            )}
-                          </div>
-                        ) : (
-                          cfg.floorPlanUrl && (
-                            <div
-                              className="rounded-xl overflow-hidden bg-white aspect-[4/3] cursor-zoom-in flex items-center justify-center relative group my-2"
-                              onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: cfg.label })}
-                            >
-                              <img src={cfg.floorPlanUrl} alt={`${cfg.label} floor plan`} className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500" />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl" />
-                              <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Eye className="w-3 h-3" /> View
+                            {/* Micro-Specs Grid */}
+                            <div className="grid grid-cols-2 gap-2 my-2">
+                              <div className="bg-bg-primary dark:bg-bg-primary/60 border border-border-default/60 rounded-xl px-3 py-2">
+                                <div className="text-[10px] uppercase font-bold text-text-tertiary">Status</div>
+                                <div className="text-xs font-bold text-text-primary capitalize truncate mt-0.5">
+                                  {(cfg.constructionStatus || project.constructionStatus).replace("-", " ")}
+                                </div>
+                              </div>
+                              <div className="bg-bg-primary dark:bg-bg-primary/60 border border-border-default/60 rounded-xl px-3 py-2">
+                                <div className="text-[10px] uppercase font-bold text-text-tertiary">Possession</div>
+                                <div className="text-xs font-bold text-text-primary truncate mt-0.5">
+                                  {cfg.possessionDate || "On Request"}
+                                </div>
                               </div>
                             </div>
-                          )
-                        )}
-
-                        {/* Bottom Section */}
-                        <div className="mt-auto flex flex-col gap-3">
-                          <div className="text-2xl font-black text-slate-900">
-                            {formatINRCrore(cfg.priceMin)}
-                            {cfg.priceMax && cfg.priceMax !== cfg.priceMin ? ` – ${formatINRCrore(cfg.priceMax)}` : ""}
                           </div>
-                          
-                          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex flex-col gap-1 text-sm">
-                            <span className="text-slate-500">
-                              New Launch
-                            </span>
-                            {cfg.possessionDate && (
-                              <span className="font-semibold text-slate-700">
-                                {cfg.possessionDate} possession
-                              </span>
-                            )}
-                          </div>
-                          
 
+                          {/* Card Action Button */}
+                          {cfg.floorPlanUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: `${cfg.label} (${areaMin} ${unit})` })}
+                              className="mt-2 w-full flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all py-2.5 rounded-xl text-xs font-bold cursor-pointer active:scale-98 shadow-sm"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-amber-500" />
+                              <span>View Full Floor Plan</span>
+                            </button>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     </div>
                     <button 
                       onClick={() => cardsScrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
@@ -907,20 +914,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               </ScrollReveal>
 
               <ScrollReveal id="facilities" className="scroll-mt-32">
-                <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
-                  <h2 className="text-xl font-bold text-text-primary mb-4">Facilities &amp; Amenities</h2>
-                  {project.facilities.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {project.facilities.map((f) => (
-                        <span key={f} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-bg-primary border border-border-default text-text-secondary">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" /> {f}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-text-tertiary text-sm">No facilities listed.</p>
-                  )}
-                </div>
+                <ProjectFacilitiesGrid
+                  facilities={project.facilities}
+                  projectName={project.name}
+                />
               </ScrollReveal>
 
               <ScrollReveal id="location" className="scroll-mt-32">
@@ -942,16 +939,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                       projectType={project.projectType}
                     />
                   </div>
-
-                  {/* Google Maps link */}
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${project.location.latitude},${project.location.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-default text-sm font-semibold text-text-primary hover:border-amber-primary hover:text-amber-primary transition-colors"
-                  >
-                    <MapPin className="w-4 h-4" /> Open in Google Maps
-                  </a>
 
                   {/* Commute Radius Map */}
                   <div className="pt-6 mt-6 border-t border-border-default">
@@ -1055,29 +1042,29 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 <h3 className="font-bold text-text-primary mb-1">Contact Builder</h3>
                 <p className="text-xs text-text-tertiary mb-4">Get exact pricing, payment plans &amp; site visit</p>
                 <div className="space-y-3">
-                  {videoEmbed && (
+                  {project.videoUrl && (
                     <button
-                      onClick={() => setActiveVideoUrl(project.videoUrl || null)}
-                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-colors cursor-pointer shadow-md"
+                      onClick={() => openVideo(project.videoUrl)}
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all cursor-pointer shadow-md"
                     >
-                      <Play className="w-4 h-4 fill-white text-white" /> Watch Tour Video
+                      <Play className="w-4 h-4 fill-amber-500 text-amber-500" /> Watch Tour Video
                     </button>
                   )}
                   {phone && (
-                    <a href={phone} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-amber-primary text-slate-950 font-bold hover:bg-amber-500 transition-colors whitespace-nowrap">
-                      <Phone className="w-4 h-4 shrink-0" /> View Number
+                    <a href={phone} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-md">
+                      <Phone className="w-4 h-4 text-amber-500 shrink-0" /> View Number
                     </a>
                   )}
                   {whatsapp && (
                     <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-amber-500 text-amber-600 font-bold hover:bg-amber-500/10 transition-colors whitespace-nowrap">
-                      <MessageCircle className="w-4 h-4 shrink-0" /> WhatsApp
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-md">
+                      <MessageCircle className="w-4 h-4 text-amber-500 shrink-0" /> WhatsApp
                     </a>
                   )}
                   {project.brochureUrl && (
                     <a href={project.brochureUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border-default text-text-secondary font-semibold hover:border-amber-primary hover:text-text-primary transition-colors whitespace-nowrap">
-                      <Download className="w-4 h-4 shrink-0" /> Download Brochure
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-md">
+                      <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download Brochure
                     </a>
                   )}
                 </div>
@@ -1117,30 +1104,30 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
             <p className="text-[10px] text-text-tertiary truncate">{project.builderName}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {videoEmbed && (
+            {project.videoUrl && (
               <button
-                onClick={() => setActiveVideoUrl(project.videoUrl || null)}
-                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-red-600 text-white font-bold text-xs shrink-0 shadow-sm"
+                onClick={() => openVideo(project.videoUrl)}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 text-white border border-white/15 font-bold text-xs shrink-0 shadow-sm"
               >
-                <Play className="w-3.5 h-3.5 fill-white text-white" /> Watch Tour
+                <Play className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> Tour
               </button>
             )}
             {project.brochureUrl && (
               <a href={project.brochureUrl} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1 px-3 py-2 rounded-xl border border-border-default text-text-secondary text-xs font-semibold">
-                <Download className="w-3.5 h-3.5" />
+                className="flex items-center gap-1 px-3 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-white border border-white/15 text-xs font-bold shadow-sm">
+                <Download className="w-3.5 h-3.5 text-amber-500" />
               </a>
             )}
             {whatsapp && (
               <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 text-white font-bold text-xs">
-                <MessageCircle className="w-4 h-4" /> Chat
+                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 text-white border border-white/15 font-bold text-xs shadow-sm">
+                <MessageCircle className="w-4 h-4 text-amber-500" /> Chat
               </a>
             )}
             {phone && (
               <a href={phone}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-primary text-slate-950 font-bold text-xs">
-                <Phone className="w-4 h-4" /> Call
+                className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 text-white border border-white/15 font-bold text-xs shadow-sm">
+                <Phone className="w-4 h-4 text-amber-500" /> Call
               </a>
             )}
           </div>
