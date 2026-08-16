@@ -19,6 +19,7 @@ import { Property, PropertyLocation } from "@/types/property";
 import { supabase } from "@/lib/supabase";
 import { parseGoogleMapsUrl } from "@/lib/utils";
 import { uploadToS3 } from "@/lib/aws/storage-utils";
+import { VideoMediaManager } from "@/components/admin/video-media-manager";
 
 const CoordinatePickerMap = dynamic(
   () => import("@/components/admin/coordinate-picker-map"),
@@ -62,7 +63,7 @@ export default function AddPropertyPage() {
     bedrooms: "1", bathrooms: "1", balconies: "0", parking: "0", area: "", builtUpArea: "", carpetArea: "",
     furnishing: "unfurnished", facing: "east", yearBuilt: "",
     
-    coverImage: "", galleryImages: [] as string[], videoUrl: "",
+    coverImage: "", galleryImages: [] as string[], videoUrl: "", videoThumbnail: "",
     layoutMapUrl: "", floorPlanUrl: "", brochureUrl: "",
     
     latitude: 16.5062, longitude: 80.6480, address: "", locality: "", city: "Vijayawada", state: "Andhra Pradesh", pincode: "", landmark: "",
@@ -234,6 +235,7 @@ export default function AddPropertyPage() {
       coverImage: formData.coverImage,
       galleryImages: formData.galleryImages,
       videoUrl: formData.videoUrl,
+      videoThumbnail: formData.videoThumbnail || undefined,
       layoutMapUrl: formData.layoutMapUrl || undefined,
       floorPlanUrl: formData.floorPlanUrl || undefined,
       brochureUrl: formData.brochureUrl || undefined,
@@ -587,16 +589,20 @@ export default function AddPropertyPage() {
                 )}
               </div>
 
-              {/* Video URL */}
-              <div className="md:col-span-2 space-y-4">
-                <label className="text-sm font-medium text-text-secondary">YouTube Walkthrough Video URL</label>
-                <Input name="videoUrl" value={formData.videoUrl} onChange={handleChange} placeholder="https://youtube.com/watch?v=..." className="h-12" />
-                
-                {videoEmbedUrl && (
-                  <div className="w-full max-w-lg aspect-video rounded-xl overflow-hidden border border-border-default/50">
-                    <iframe width="100%" height="100%" src={videoEmbedUrl} title="YouTube preview" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
-                  </div>
-                )}
+              {/* Video Walkthrough (Dual-Mode: YouTube + 50MB S3 Upload + Custom Cover) */}
+              <div className="md:col-span-2">
+                <VideoMediaManager
+                  videoUrl={formData.videoUrl}
+                  videoThumbnail={formData.videoThumbnail}
+                  onChange={({ videoUrl, videoThumbnail }) => {
+                    setFormData((prev) => ({ ...prev, videoUrl, videoThumbnail }));
+                  }}
+                  suggestedThumbnails={[
+                    ...(formData.coverImage ? [formData.coverImage] : []),
+                    ...formData.galleryImages,
+                  ]}
+                  folder="properties"
+                />
               </div>
 
               {/* Additional Document URLs */}

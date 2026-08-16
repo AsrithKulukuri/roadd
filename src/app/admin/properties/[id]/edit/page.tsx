@@ -20,6 +20,7 @@ import { supabase } from "@/lib/supabase";
 import { getPropertyRefId } from "@/lib/ref-id";
 import { parseGoogleMapsUrl } from "@/lib/utils";
 import { uploadToS3 } from "@/lib/aws/storage-utils";
+import { VideoMediaManager } from "@/components/admin/video-media-manager";
 
 const CoordinatePickerMap = dynamic(
   () => import("@/components/admin/coordinate-picker-map"),
@@ -56,7 +57,7 @@ export default function EditPropertyPage() {
     bedrooms: "1", bathrooms: "1", balconies: "0", parking: "0", area: "", builtUpArea: "", carpetArea: "",
     furnishing: "unfurnished", facing: "east", yearBuilt: "",
     
-    coverImage: "", galleryImages: [] as string[], videoUrl: "",
+    coverImage: "", galleryImages: [] as string[], videoUrl: "", videoThumbnail: "",
     
     latitude: 16.5062, longitude: 80.6480, address: "", locality: "", city: "Vijayawada", state: "Andhra Pradesh", pincode: "", landmark: "",
     
@@ -99,6 +100,7 @@ export default function EditPropertyPage() {
         coverImage: coverImg,
         galleryImages: gImages,
         videoUrl: targetProperty.videoUrl || "",
+        videoThumbnail: targetProperty.videoThumbnail || "",
         
         latitude: targetProperty.location?.latitude || 16.5062,
         longitude: targetProperty.location?.longitude || 80.6480,
@@ -263,6 +265,7 @@ export default function EditPropertyPage() {
       coverImage: formData.coverImage,
       galleryImages: formData.galleryImages,
       videoUrl: formData.videoUrl,
+      videoThumbnail: formData.videoThumbnail || undefined,
       
       amenities: propertyAmenities,
       
@@ -476,15 +479,20 @@ export default function EditPropertyPage() {
                 )}
               </div>
 
-              {/* Video URL */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">YouTube Video URL</label>
-                <Input 
-                  name="videoUrl" 
-                  value={formData.videoUrl} 
-                  onChange={handleChange} 
-                  placeholder="https://www.youtube.com/watch?v=..." 
-                  className="h-12"
+              {/* Video Walkthrough (Dual-Mode: YouTube + 50MB S3 Upload + Custom Cover) */}
+              <div className="md:col-span-2 pt-2">
+                <VideoMediaManager
+                  videoUrl={formData.videoUrl}
+                  videoThumbnail={formData.videoThumbnail}
+                  onChange={({ videoUrl, videoThumbnail }) => {
+                    setFormData((prev) => ({ ...prev, videoUrl, videoThumbnail }));
+                  }}
+                  suggestedThumbnails={[
+                    ...(formData.coverImage ? [formData.coverImage] : []),
+                    ...formData.galleryImages,
+                  ]}
+                  folder="properties"
+                  entityId={targetProperty?.id}
                 />
               </div>
             </div>

@@ -6,10 +6,11 @@ import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useProjectsStore } from "@/stores/projects-store";
 import { getYoutubeEmbedUrl, isYoutubeShort } from "@/lib/utils";
+import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import {
   MapPin, CheckCircle2, Phone, MessageCircle, Download,
   ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark,
-  Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate
+  Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate, Film
 } from "lucide-react";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/back-button";
@@ -288,13 +289,23 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               </button>
             </div>
             <div className={`relative w-full bg-black flex items-center justify-center ${activeIsShort ? "aspect-[9/16] max-h-[75vh]" : "aspect-video"}`}>
-              <iframe
-                src={`${activeVideoEmbed}?autoplay=1`}
-                title={`Video Tour`}
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+              {activeVideoEmbed ? (
+                <iframe
+                  src={`${activeVideoEmbed}?autoplay=1`}
+                  title={`Video Tour`}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <video
+                  src={resolveMediaUrl(activeVideoUrl)}
+                  controls
+                  autoPlay
+                  poster={project.videoThumbnail ? resolveMediaUrl(project.videoThumbnail) : undefined}
+                  className="w-full h-full object-contain"
+                />
+              )}
             </div>
           </div>
         </div>
@@ -325,7 +336,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 <Eye className="w-3.5 h-3.5" /> {galleryAll.length} Photos
               </button>
             )}
-            {videoEmbed && (
+            {project.videoUrl && (
               <button onClick={(e) => { e.stopPropagation(); setActiveVideoUrl(project.videoUrl || null); }}
                 className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg z-10 whitespace-nowrap">
                 <Play className="w-3.5 h-3.5 fill-white text-white shrink-0" /> Watch Tour
@@ -365,10 +376,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     <Eye className="w-3.5 h-3.5" /> All Photos ({galleryAll.length})
                   </button>
                 )}
-                {videoEmbed && (
+                {project.videoUrl && (
                   <button
                     onClick={(e) => { e.stopPropagation(); setActiveVideoUrl(project.videoUrl || null); }}
-                    className="pointer-events-auto flex items-center gap-2 bg-white/90 hover:bg-white text-slate-950 text-xs font-black px-4 py-1.5 rounded-full shadow-xl transition-all hover:scale-105 whitespace-nowrap"
+                    className="pointer-events-auto flex items-center gap-2 bg-white/90 hover:bg-white text-slate-950 text-xs font-black px-4 py-1.5 rounded-full shadow-xl transition-all hover:scale-105 whitespace-nowrap cursor-pointer"
                   >
                     <Play className="w-3.5 h-3.5 fill-red-600 text-red-600 shrink-0" /> Watch Tour
                   </button>
@@ -376,25 +387,64 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              {sideImages.length > 0 ? (
-                sideImages.map((img, i) => (
-                  <div key={i} className="flex-1 relative cursor-pointer group" onClick={() => setGalleryIdx(galleryAll.findIndex((x) => x.url === img.url))}>
-                    <img src={img.url} alt={img.alt} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                    {img.category && (
-                      <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded text-[10px] font-medium bg-black/60 text-white capitalize">{img.category}</span>
-                    )}
+              {/* Top Side Stack: Video Tour Tile if videoUrl exists */}
+              {project.videoUrl ? (
+                <div
+                  className="flex-1 relative cursor-pointer group rounded-xl overflow-hidden bg-slate-950 border border-amber-500/30"
+                  onClick={() => setActiveVideoUrl(project.videoUrl || null)}
+                >
+                  <img
+                    src={project.videoThumbnail ? resolveMediaUrl(project.videoThumbnail) : (sideImages[0]?.url || heroImage || "")}
+                    alt={`${project.name} Video Tour`}
+                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/40 group-hover:from-black/60 transition-colors" />
+                  
+                  {/* Centered Glowing Play Button */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="relative flex items-center justify-center">
+                      <div className="absolute w-10 h-10 rounded-full bg-red-600/40 animate-ping" />
+                      <div className="relative w-9 h-9 rounded-full bg-red-600 group-hover:bg-red-500 text-white flex items-center justify-center shadow-xl transition-transform group-hover:scale-110">
+                        <Play className="w-4 h-4 fill-white text-white ml-0.5" />
+                      </div>
+                    </div>
                   </div>
-                ))
+
+                  {/* Video Badge */}
+                  <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
+                    <span className="bg-slate-950/90 text-white font-black text-[10px] px-2 py-0.5 rounded border border-white/20 flex items-center gap-1">
+                      <Film className="w-3 h-3 text-amber-400" /> Video Tour
+                    </span>
+                    <span className="text-[10px] font-bold text-amber-300">Watch</span>
+                  </div>
+                </div>
+              ) : sideImages[0] ? (
+                <div className="flex-1 relative cursor-pointer group" onClick={() => setGalleryIdx(galleryAll.findIndex((x) => x.url === sideImages[0].url))}>
+                  <img src={sideImages[0].url} alt={sideImages[0].alt} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                  {sideImages[0].category && (
+                    <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded text-[10px] font-medium bg-black/60 text-white capitalize">{sideImages[0].category}</span>
+                  )}
+                </div>
               ) : (
-                <>
-                  <div className="flex-1 bg-bg-card border border-border-default flex items-center justify-center">
-                    <TypeIcon className="w-8 h-8 text-text-tertiary/30" />
-                  </div>
-                  <div className="flex-1 bg-bg-card border border-border-default flex items-center justify-center">
-                    <TypeIcon className="w-8 h-8 text-text-tertiary/30" />
-                  </div>
-                </>
+                <div className="flex-1 bg-bg-card border border-border-default flex items-center justify-center">
+                  <TypeIcon className="w-8 h-8 text-text-tertiary/30" />
+                </div>
+              )}
+
+              {/* Bottom Side Stack Image */}
+              {sideImages[project.videoUrl ? 0 : 1] ? (
+                <div className="flex-1 relative cursor-pointer group" onClick={() => setGalleryIdx(galleryAll.findIndex((x) => x.url === sideImages[project.videoUrl ? 0 : 1].url))}>
+                  <img src={sideImages[project.videoUrl ? 0 : 1].url} alt={sideImages[project.videoUrl ? 0 : 1].alt} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                  {sideImages[project.videoUrl ? 0 : 1].category && (
+                    <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded text-[10px] font-medium bg-black/60 text-white capitalize">{sideImages[project.videoUrl ? 0 : 1].category}</span>
+                  )}
+                </div>
+              ) : (
+                <div className="flex-1 bg-bg-card border border-border-default flex items-center justify-center">
+                  <TypeIcon className="w-8 h-8 text-text-tertiary/30" />
+                </div>
               )}
             </div>
           </div>
@@ -427,7 +477,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               </button>
             )})}
             <div className="ml-auto flex items-center gap-2 py-2 shrink-0 pl-2">
-              {videoEmbed && (
+              {project.videoUrl && (
                 <button
                   onClick={() => setActiveVideoUrl(project.videoUrl || null)}
                   className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer whitespace-nowrap"

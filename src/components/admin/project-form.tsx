@@ -24,6 +24,7 @@ import type {
   ConstructionUpdate
 } from "@/types/project";
 import { uploadToS3 } from "@/lib/aws/storage-utils";
+import { VideoMediaManager } from "@/components/admin/video-media-manager";
 
 // ─── Lazy map import (SSR unsafe) ────────────────────────────────────────────
 const CoordinatePickerMap = dynamic(
@@ -175,6 +176,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const [images, setImages]         = useState<ProjectImage[]>(initialData?.images ?? []);
   const [coverImage, setCoverImage] = useState(initialData?.coverImage ?? "");
   const [videoUrl, setVideoUrl]     = useState(initialData?.videoUrl ?? "");
+  const [videoThumbnail, setVideoThumbnail] = useState(initialData?.videoThumbnail ?? "");
   const [brochureUrl, setBrochureUrl] = useState(initialData?.brochureUrl ?? "");
   const [highlights, setHighlights] = useState<string[]>(initialData?.highlights?.length ? initialData.highlights : [""]);
   const [facilities, setFacilities] = useState<string[]>(initialData?.facilities ?? []);
@@ -391,6 +393,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       images,
       coverImage: coverImage || images[0]?.url,
       videoUrl: videoUrl.trim() || undefined,
+      videoThumbnail: videoThumbnail.trim() || undefined,
       brochureUrl: brochureUrl.trim() || undefined,
       highlights: highlights.filter(Boolean),
       facilities,
@@ -1014,18 +1017,22 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 )}
               </div>
 
-              {/* Video URL */}
-              <div className="md:col-span-2 space-y-2">
-                <label className="text-sm font-medium text-text-secondary flex items-center gap-2">
-                  <Video className="w-4 h-4 text-red-500" />
-                  Watch Tour Video URL <span className="text-xs text-text-tertiary font-normal">(Shows as "Watch Tour" button on the project page)</span>
-                </label>
-                <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://youtube.com/watch?v=... or youtu.be/... or Shorts URL" className={ic()} />
-                {videoUrl.trim() && (
-                  <p className="text-xs text-amber-500 font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Video URL saved — Watch Tour button will appear on the project page.
-                  </p>
-                )}
+              {/* Video Walkthrough (Dual-Mode: YouTube + 50MB S3 Upload + Custom Cover) */}
+              <div className="md:col-span-2">
+                <VideoMediaManager
+                  videoUrl={videoUrl}
+                  videoThumbnail={videoThumbnail}
+                  onChange={({ videoUrl: vUrl, videoThumbnail: vThumb }) => {
+                    setVideoUrl(vUrl);
+                    setVideoThumbnail(vThumb);
+                  }}
+                  suggestedThumbnails={[
+                    ...(coverImage ? [coverImage] : []),
+                    ...images.map(img => typeof img === 'string' ? img : img.url)
+                  ]}
+                  folder="projects"
+                  entityId={initialData?.id}
+                />
               </div>
 
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border-default/50">

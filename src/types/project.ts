@@ -132,6 +132,7 @@ export interface Project {
   images: ProjectImage[];
   coverImage?: string;
   videoUrl?: string;
+  videoThumbnail?: string;
   brochureUrl?: string;
 
   // Content

@@ -124,6 +124,7 @@ export interface Property {
   coverImage?: string;
   galleryImages?: string[];
   videoUrl?: string;
+  videoThumbnail?: string;
   layoutMapUrl?: string;
   floorPlanUrl?: string;
   brochureUrl?: string;

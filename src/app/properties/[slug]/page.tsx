@@ -14,6 +14,7 @@ import { ContactAgentBelowMap } from "@/components/property/contact-agent-below-
 import { BackButton } from "@/components/ui/back-button";
 import { MortgageCalculator } from "@/components/property/mortgage-calculator";
 import { formatINR, formatPriceCompact, getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
+import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import Link from "next/link";
 import type { Property } from "@/types/property";
 import type { Metadata } from "next";
@@ -129,6 +130,7 @@ export default async function PropertyDetailPage({
             images={property.images}
             title={property.title}
             videoUrl={property.videoUrl}
+            videoThumbnail={property.videoThumbnail}
             isReadyToMove={property.isReadyToMove}
           />
         </div>
@@ -192,24 +194,36 @@ export default async function PropertyDetailPage({
               </p>
             </div>
 
-            {/* Embedded Property Video Tour */}
-            {property.videoUrl && getYoutubeEmbedUrl(property.videoUrl) && (
+            {/* Embedded Property Video Tour (Dual-Mode: YouTube or Uploaded HTML5 Video) */}
+            {property.videoUrl && (
               <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
                 <h3 className="font-heading text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Play className="w-6 h-6 text-red-500 fill-red-500" />
-                  {isYoutubeShort(property.videoUrl) ? "Property Short Tour" : "Property Video Tour"}
+                  {getYoutubeEmbedUrl(property.videoUrl) 
+                    ? (isYoutubeShort(property.videoUrl) ? "Property Short Tour" : "Property Video Tour")
+                    : "Property Video Walkthrough"
+                  }
                 </h3>
                 <div className={cn(
                   "relative rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 bg-slate-950 mx-auto",
                   isYoutubeShort(property.videoUrl) ? "max-w-[340px] sm:max-w-[380px] aspect-[9/16] h-[650px] max-h-[75vh]" : "w-full aspect-video"
                 )}>
-                  <iframe
-                    src={getYoutubeEmbedUrl(property.videoUrl)!}
-                    title={`${property.title} Video Tour`}
-                    className="w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
+                  {getYoutubeEmbedUrl(property.videoUrl) ? (
+                    <iframe
+                      src={getYoutubeEmbedUrl(property.videoUrl)!}
+                      title={`${property.title} Video Tour`}
+                      className="w-full h-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video
+                      src={resolveMediaUrl(property.videoUrl)}
+                      controls
+                      poster={property.videoThumbnail ? resolveMediaUrl(property.videoThumbnail) : undefined}
+                      className="w-full h-full object-contain"
+                    />
+                  )}
                 </div>
               </div>
             )}
