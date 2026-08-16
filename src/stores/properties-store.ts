@@ -4,6 +4,55 @@ import { supabase } from '@/lib/supabase';
 import { deleteFromS3 } from '@/lib/aws/storage-utils';
 import type { Property } from '@/types/property';
 
+// Valid columns in Supabase properties table
+const VALID_PROPERTY_COLUMNS = new Set([
+  'id', 'slug', 'title', 'description', 'price', 'pricePerSqft',
+  'propertyType', 'listingType', 'status', 'bedrooms', 'bathrooms', 'balconies',
+  'floors', 'totalFloors', 'floorNumber', 'parking', 'roadWidth', 'undividedShare',
+  'area', 'carpetArea', 'builtUpArea', 'furnishing', 'facing', 'ageOfProperty',
+  'possessionDate', 'isReadyToMove', 'location', 'images', 'coverImage', 'galleryImages',
+  'videoUrl', 'amenities', 'features', 'reraId', 'isVerified', 'isFeatured',
+  'isRecommended', 'isPremium', 'showOnMap', 'ownerId', 'ownerName', 'ownerPhone',
+  'ownerEmail', 'ownerAvatar', 'ownerType', 'isOwnerVerified', 'viewCount', 'savedCount',
+  'enquiryCount', 'createdAt', 'updatedAt', 'publishedAt', 'vastuCompliant', 'petFriendly',
+  'gatedSecurity', 'refId', 'category', 'subtype', 'listingContext', 'attributes',
+  'layoutMapUrl', 'floorPlanUrl', 'brochureUrl', 'displayCategory'
+]);
+
+export function toSupabaseProperty(prop: Partial<Property>): any {
+  const p: any = { ...prop };
+  
+  if (p.pricePerSqFt !== undefined && p.pricePerSqft === undefined) p.pricePerSqft = p.pricePerSqFt;
+  if (p.areaSqFt !== undefined && p.area === undefined) p.area = p.areaSqFt;
+  if (p.carpetAreaSqFt !== undefined && p.carpetArea === undefined) p.carpetArea = p.carpetAreaSqFt;
+  if (p.builtUpAreaSqFt !== undefined && p.builtUpArea === undefined) p.builtUpArea = p.builtUpAreaSqFt;
+  
+  if (!p.ownerId) p.ownerId = 'admin';
+  if (!p.ownerPhone) p.ownerPhone = prop.ownerPhone || '+91 9876543210';
+  if (!p.createdAt) p.createdAt = new Date().toISOString();
+  if (!p.updatedAt) p.updatedAt = new Date().toISOString();
+
+  // Strip keys that are not valid columns in Supabase
+  const cleaned: Record<string, any> = {};
+  for (const key of Object.keys(p)) {
+    if (VALID_PROPERTY_COLUMNS.has(key)) {
+      cleaned[key] = p[key];
+    }
+  }
+  return cleaned;
+}
+
+export function fromSupabaseProperty(p: any): Property {
+  return {
+    ...p,
+    pricePerSqFt: p.pricePerSqft ?? p.pricePerSqFt ?? 0,
+    areaSqFt: p.area ?? p.areaSqFt ?? 0,
+    carpetAreaSqFt: p.carpetArea ?? p.carpetAreaSqFt,
+    builtUpAreaSqFt: p.builtUpArea ?? p.builtUpAreaSqFt,
+    displayCategory: p.displayCategory || (p.isFeatured ? "featured" : p.isRecommended ? "recommended" : "none")
+  };
+}
+
 interface PropertiesState {
   properties: Property[];
   isLoading: boolean;
@@ -36,18 +85,28 @@ export const usePropertiesStore = create<PropertiesState>()(
             .select('*')
             .order('createdAt', { ascending: false });
 
-          if (error) throw error;
-          if (data) {
-            const mappedData = data.map((p: any) => {
-              if (!p.displayCategory) {
-                if (p.isFeatured) p.displayCategory = "featured";
-                else if (p.isRecommended) p.displayCategory = "recommended";
-                else p.displayCategory = "none";
-              }
-              return p;
-            });
+          if (error) {
+            console.warn('Error fetching properties from Supabase (keeping local state):', error.message);
+            set({ error: error.message, isLoading: false });
+            return;
+          }
+
+          if (data && data.length > 0) {
+            const mappedData = data.map(fromSupabaseProperty);
             set({ properties: mappedData as Property[], isLoading: false });
           } else {
+            // Non-destructive: if Supabase has 0 rows, check if local state has properties that need to be uploaded
+            const currentLocal = get().properties;
+            if (currentLocal && currentLocal.length > 0) {
+              for (const item of currentLocal) {
+                try {
+                  const dbPayload = toSupabaseProperty(item);
+                  await supabase.from('properties').insert([dbPayload]);
+                } catch (e) {
+                  console.warn('Auto-sync property to Supabase notice:', e);
+                }
+              }
+            }
             set({ isLoading: false });
           }
         } catch (error: any) {
@@ -57,25 +116,17 @@ export const usePropertiesStore = create<PropertiesState>()(
       },
 
       addProperty: async (property: Property) => {
-        // 1. Optimistically update local store state so property is immediately created
+        // 1. Optimistically update local store state so property is immediately accessible
         set((state) => ({
           properties: [property, ...state.properties.filter((p) => p.id !== property.id)],
         }));
 
         try {
-          // 2. Try inserting full object into Supabase
-          let { error } = await supabase
+          // 2. Prepare cleaned payload for Supabase
+          const dbPayload = toSupabaseProperty(property);
+          const { error } = await supabase
             .from('properties')
-            .insert([property]);
-
-          // 3. If failure due to missing column (e.g. refId), strip refId and retry
-          if (error && (error.message?.includes('refId') || error.code === 'PGRST204')) {
-            const { refId, ...dbPayload } = property as any;
-            const retryRes = await supabase
-              .from('properties')
-              .insert([dbPayload]);
-            error = retryRes.error;
-          }
+            .insert([dbPayload]);
 
           if (error) {
             console.warn('Supabase property insert notice (saved to local state):', error.message || error);
@@ -264,7 +315,6 @@ export const usePropertiesStore = create<PropertiesState>()(
 
         const isFeatured = category === "featured";
         const isRecommended = category === "recommended";
-        const isBudgetFriendly = category === "budget_friendly";
 
         set((state) => ({
           properties: state.properties.map((p) =>
@@ -274,7 +324,6 @@ export const usePropertiesStore = create<PropertiesState>()(
                   isFeatured,
                   isRecommended,
                   displayCategory: category,
-                  // Optionally you could map isBudgetFriendly to a boolean on Property if needed
                 }
               : p
           ),
@@ -325,21 +374,12 @@ export const usePropertiesStore = create<PropertiesState>()(
         }));
 
         try {
-          // 2. Try updating full object in Supabase DB
-          let { error } = await supabase
+          // 2. Prepare cleaned payload for Supabase
+          const dbPayload = toSupabaseProperty(updatedProperty);
+          const { error } = await supabase
             .from('properties')
-            .update(updatedProperty)
+            .update(dbPayload)
             .eq('id', id);
-
-          // 3. If failure due to missing column (e.g. refId), strip refId and retry
-          if (error && (error.message?.includes('refId') || error.code === 'PGRST204')) {
-            const { refId, ...dbPayload } = updatedProperty as any;
-            const retryRes = await supabase
-              .from('properties')
-              .update(dbPayload)
-              .eq('id', id);
-            error = retryRes.error;
-          }
 
           if (error) {
             console.warn('Supabase update warning (updated in local state):', error.message || error);

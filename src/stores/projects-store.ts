@@ -4,6 +4,62 @@ import { supabase } from '@/lib/supabase';
 import { deleteFromS3 } from '@/lib/aws/storage-utils';
 import type { Project } from '@/types/project';
 
+// Valid columns in Supabase projects table
+const VALID_PROJECT_COLUMNS = new Set([
+  'id', 'slug', 'name', 'tagline', 'description', 'projectType',
+  'builderName', 'builderLogoUrl', 'builderPhone', 'builderWhatsapp',
+  'location', 'reraId', 'reraApproved', 'noBrokerage',
+  'constructionStatus', 'totalUnits', 'totalArea', 'phases',
+  'configurations', 'images', 'coverImage', 'videoUrl',
+  'brochureUrl', 'highlights', 'facilities', 'isFeatured',
+  'isPublished', 'viewCount', 'createdAt', 'updatedAt',
+  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory'
+]);
+
+export function toSupabaseProject(proj: Partial<Project>): any {
+  const p: any = { ...proj };
+  
+  if (p.builder) {
+    p.builderName = p.builder.name || p.builderName || 'Independent Developer';
+    p.builderLogoUrl = p.builder.logoUrl || p.builderLogoUrl || null;
+    p.builderPhone = p.builder.phone || p.builderPhone || null;
+    p.builderWhatsapp = p.builder.whatsapp || p.builderWhatsapp || null;
+    delete p.builder;
+  }
+  if (!p.builderName) p.builderName = 'Independent Developer';
+
+  if (p.status && !p.constructionStatus) {
+    p.constructionStatus = p.status;
+  }
+  delete p.status;
+
+  if (!p.createdAt) p.createdAt = new Date().toISOString();
+  if (!p.updatedAt) p.updatedAt = new Date().toISOString();
+
+  // Strip keys that are not valid columns in Supabase
+  const cleaned: Record<string, any> = {};
+  for (const key of Object.keys(p)) {
+    if (VALID_PROJECT_COLUMNS.has(key)) {
+      cleaned[key] = p[key];
+    }
+  }
+  return cleaned;
+}
+
+export function fromSupabaseProject(p: any): Project {
+  return {
+    ...p,
+    status: p.constructionStatus || p.status || 'under-construction',
+    builder: {
+      name: p.builderName || (p.builder?.name ?? 'Independent Developer'),
+      logoUrl: p.builderLogoUrl || (p.builder?.logoUrl ?? null),
+      phone: p.builderPhone || (p.builder?.phone ?? null),
+      whatsapp: p.builderWhatsapp || (p.builder?.whatsapp ?? null),
+    },
+    displayCategory: p.displayCategory || (p.isFeatured ? "featured" : "none")
+  };
+}
+
 interface ProjectsState {
   projects: Project[];
   isLoading: boolean;
@@ -24,62 +80,62 @@ export const useProjectsStore = create<ProjectsState>()(
       isLoading: false,
       error: null,
 
-      // ─── Fetch (Supabase is source of truth) ──────────────────────────────
+      // ─── Fetch (Supabase is source of truth, but non-destructive) ──────────
       fetchProjects: async () => {
         set({ isLoading: true, error: null });
 
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*')
-          .order('id', { ascending: false });
+        try {
+          const { data, error } = await supabase
+            .from('projects')
+            .select('*')
+            .order('id', { ascending: false });
 
-        if (error) {
-          // Log full Supabase error details for debugging
-          console.warn(
-            'Projects fetch warning (keeping local state):',
-            error.message ?? error.details ?? error.code ?? JSON.stringify(error)
-          );
-          // Keep existing local state — table may not exist yet
-          set({ isLoading: false, error: error.message ?? 'Failed to fetch projects' });
-          return;
+          if (error) {
+            console.warn('Projects fetch warning (keeping local state):', error.message);
+            set({ isLoading: false, error: error.message });
+            return;
+          }
+
+          if (data && data.length > 0) {
+            const mappedData = data.map(fromSupabaseProject);
+            set({ projects: mappedData as Project[], isLoading: false });
+          } else {
+            // Non-destructive: if Supabase has 0 rows, check if local state has projects that need to be uploaded
+            const currentLocal = get().projects;
+            if (currentLocal && currentLocal.length > 0) {
+              for (const item of currentLocal) {
+                try {
+                  const dbPayload = toSupabaseProject(item);
+                  await supabase.from('projects').insert([dbPayload]);
+                } catch (e) {
+                  console.warn('Auto-sync project to Supabase notice:', e);
+                }
+              }
+            }
+            set({ isLoading: false });
+          }
+        } catch (err: any) {
+          console.warn('Error fetching projects:', err);
+          set({ isLoading: false, error: err?.message });
         }
-
-        // Normalize data to ensure displayCategory is set
-        const normalizedData = (data as Project[]).map((p) => ({
-          ...p,
-          displayCategory: p.displayCategory || (p.isFeatured ? "featured" : "none")
-        }));
-
-        // Supabase is source of truth — fully replace local state
-        set({ projects: normalizedData, isLoading: false });
       },
 
       // ─── Add ──────────────────────────────────────────────────────────────
       addProject: async (project: Project) => {
-        // Optimistic update
+        // 1. Optimistic update in Zustand & localStorage
         set((state) => ({
           projects: [project, ...state.projects.filter((p) => p.id !== project.id)],
         }));
 
         try {
-          const { error } = await supabase.from('projects').insert([project]);
+          // 2. Prepare cleaned payload for Supabase
+          const dbPayload = toSupabaseProject(project);
+          const { error } = await supabase
+            .from('projects')
+            .insert([dbPayload]);
+
           if (error) {
             console.warn('Supabase project insert warning:', error.message);
-          } else {
-            // Re-fetch so we get the server's canonical version (correct JSONB, location, etc.)
-            const { data } = await supabase
-              .from('projects')
-              .select('*')
-              .order('id', { ascending: false });
-            if (data) {
-              const mappedData = data.map((p: any) => {
-                if (!p.displayCategory) {
-                  p.displayCategory = p.isFeatured ? "featured" : "none";
-                }
-                return p;
-              });
-              set({ projects: mappedData as Project[] });
-            }
           }
         } catch (err: any) {
           console.warn('Supabase project insert exception:', err?.message ?? err);
@@ -95,9 +151,10 @@ export const useProjectsStore = create<ProjectsState>()(
         }));
 
         try {
+          const dbPayload = toSupabaseProject(data as any);
           const { error } = await supabase
             .from('projects')
-            .update({ ...data, updatedAt: new Date().toISOString() })
+            .update({ ...dbPayload, updatedAt: new Date().toISOString() })
             .eq('id', id);
           if (error) console.warn('Supabase project update warning:', error.message);
         } catch (err: any) {
