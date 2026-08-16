@@ -11,6 +11,7 @@ interface PropertiesState {
   fetchProperties: () => Promise<void>;
   addProperty: (property: Property) => Promise<void>;
   deleteProperty: (id: string) => Promise<void>;
+  deleteAllProperties: () => Promise<void>;
   toggleFeatured: (id: string) => Promise<void>;
   toggleSoldOut: (id: string) => Promise<void>;
   toggleShowOnMap: (id: string) => Promise<void>;
@@ -116,6 +117,41 @@ export const usePropertiesStore = create<PropertiesState>()(
           }
         } catch (error: any) {
           console.warn('Supabase delete exception:', error);
+        }
+      },
+
+      deleteAllProperties: async () => {
+        const allProperties = get().properties;
+        set({ properties: [] });
+
+        try {
+          // 1. Delete all records from Supabase
+          const { error } = await supabase
+            .from('properties')
+            .delete()
+            .neq('id', '___all___');
+
+          if (error) {
+            console.warn('Supabase delete all notice:', error.message);
+          }
+
+          // 2. Delete all S3 assets
+          const urlsToDelete: string[] = [];
+          allProperties.forEach((property) => {
+            if (property.coverImage) urlsToDelete.push(property.coverImage);
+            if (property.videoUrl) urlsToDelete.push(property.videoUrl);
+            if (property.layoutMapUrl) urlsToDelete.push(property.layoutMapUrl);
+            if (property.floorPlanUrl) urlsToDelete.push(property.floorPlanUrl);
+            if (property.brochureUrl) urlsToDelete.push(property.brochureUrl);
+            property.images?.forEach((img) => { if (img.url) urlsToDelete.push(img.url); });
+            property.galleryImages?.forEach((url) => { if (url) urlsToDelete.push(url); });
+          });
+
+          if (urlsToDelete.length > 0) {
+            await deleteFromS3(urlsToDelete);
+          }
+        } catch (err: any) {
+          console.warn('Error in deleteAllProperties:', err);
         }
       },
 

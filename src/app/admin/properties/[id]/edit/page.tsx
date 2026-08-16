@@ -401,12 +401,14 @@ export default function EditPropertyPage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-secondary">Facing Direction</label>
                 <select name="facing" value={formData.facing} onChange={handleChange} className="w-full h-12 rounded-xl bg-bg-primary border border-border-default/50 px-4 text-text-primary focus:outline-none focus:ring-2 focus:ring-amber-primary">
-                  <option value="east">East</option>
-                  <option value="west">West</option>
-                  <option value="north">North</option>
-                  <option value="south">South</option>
-                  <option value="north-east">North-East</option>
-                  <option value="south-east">South-East</option>
+                  <option value="east">East Facing</option>
+                  <option value="west">West Facing</option>
+                  <option value="north">North Facing</option>
+                  <option value="south">South Facing</option>
+                  <option value="north-east">North-East Facing</option>
+                  <option value="north-west">North-West Facing</option>
+                  <option value="south-east">South-East Facing</option>
+                  <option value="south-west">South-West Facing</option>
                 </select>
               </div>
             </div>

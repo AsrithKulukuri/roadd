@@ -7,7 +7,7 @@ import { PropertyAmenities } from "@/components/property/property-amenities";
 import { PropertyContact } from "@/components/property/property-contact";
 import { PropertySimilar } from "@/components/property/property-similar";
 import { PropertyActions } from "@/components/property/property-actions";
-import { MapPin, Shield, ChevronLeft, Building2, Tag, Percent, ArrowDownRight, Sparkles, Play } from "lucide-react";
+import { MapPin, Shield, ChevronLeft, Building2, Tag, Percent, ArrowDownRight, Sparkles, Play, Compass } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PropertyLocationWrapper } from "@/components/property/property-location-wrapper";
 import { ContactAgentBelowMap } from "@/components/property/contact-agent-below-map";
@@ -149,6 +149,17 @@ export default async function PropertyDetailPage({
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                   {property.listingType === "rent" ? "Home for Rent" : "House for Sale"}
                 </span>
+
+                {(property.facing || (property.attributes as any)?.facing) && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-900 text-white font-bold text-xs rounded-full border border-white/15 shadow-xs">
+                    <Compass className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="capitalize">
+                      {String(property.facing || (property.attributes as any)?.facing).toLowerCase().includes("facing")
+                        ? String(property.facing || (property.attributes as any)?.facing)
+                        : `${String(property.facing || (property.attributes as any)?.facing)} Facing`}
+                    </span>
+                  </span>
+                )}
 
                 {property.reraId && (
                   <Badge variant="rera" className="uppercase tracking-wider text-[10px]">

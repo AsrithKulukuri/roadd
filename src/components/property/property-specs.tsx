@@ -10,9 +10,16 @@ export function PropertySpecs({ property }: PropertySpecsProps) {
   const specs = [
     { label: "Bedrooms", value: property.bedrooms > 0 ? property.bedrooms : "N/A", icon: Bed },
     { label: "Bathrooms", value: property.bathrooms > 0 ? property.bathrooms : "N/A", icon: Bath },
-    { label: "Area", value: formatArea(property.area), icon: Maximize2 },
-    { label: "Facing", value: property.facing ? property.facing.charAt(0).toUpperCase() + property.facing.slice(1) : "N/A", icon: Compass },
-    { label: "Age", value: property.ageOfProperty === 0 ? "New Property" : `${property.ageOfProperty} Years`, icon: Calendar },
+    { 
+      label: "Facing Direction", 
+      value: (() => {
+        const raw = property.facing || (property.attributes as any)?.facing;
+        if (!raw) return "East Facing";
+        const formatted = raw.charAt(0).toUpperCase() + raw.slice(1);
+        return formatted.toLowerCase().includes("facing") ? formatted : `${formatted} Facing`;
+      })(), 
+      icon: Compass 
+    },
     { label: "Property Type", value: property.propertyType.replace("-", " ").toUpperCase(), icon: Building2 },
     { label: "Parking", value: property.parking > 0 ? `${property.parking} Covered` : "None", icon: Car },
     { label: "Floor", value: property.floorNumber ? `${property.floorNumber} of ${property.totalFloors}` : "N/A", icon: Layers },

@@ -13,23 +13,57 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function AdminPropertiesPage() {
-  const { properties, toggleSoldOut, deleteProperty, toggleShowOnMap, updateDisplayCategory } = usePropertiesStore();
+  const { properties, toggleSoldOut, deleteProperty, deleteAllProperties, toggleShowOnMap, updateDisplayCategory } = usePropertiesStore();
+
+  const handleDeleteAll = () => {
+    if (confirm("Are you sure you want to delete ALL properties? This action cannot be undone.")) {
+      deleteAllProperties();
+    }
+  };
 
   return (
     <div className="p-6 lg:p-10 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold font-heading text-text-primary">Properties</h1>
+          <h1 className="text-3xl font-bold font-heading text-text-primary">Properties ({properties.length})</h1>
           <p className="text-text-secondary mt-1">Manage all listings, feature them, or update their status.</p>
         </div>
-        <Button variant="amber" asChild>
-          <Link href="/admin/properties/new" className="gap-2">
-            <Plus className="w-4 h-4" />
-            Add New Property
-          </Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          {properties.length > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={handleDeleteAll}
+              className="border-red-500/30 text-red-500 hover:bg-red-500/10 hover:text-red-400 gap-2 cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete All
+            </Button>
+          )}
+          <Button variant="amber" asChild>
+            <Link href="/admin/properties/new" className="gap-2">
+              <Plus className="w-4 h-4" />
+              Add New Property
+            </Link>
+          </Button>
+        </div>
       </div>
 
+      {properties.length === 0 ? (
+        <div className="text-center py-20 bg-bg-card border border-border-default rounded-3xl p-8 space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto text-amber-500">
+            <Plus className="w-8 h-8" />
+          </div>
+          <h3 className="text-xl font-bold text-text-primary">No Properties Found</h3>
+          <p className="text-sm text-text-secondary max-w-md mx-auto">
+            All properties have been deleted. You can create brand new listings anytime using the button below.
+          </p>
+          <Button variant="amber" asChild className="mt-2">
+            <Link href="/admin/properties/new" className="gap-2">
+              <Plus className="w-4 h-4" /> Add New Property
+            </Link>
+          </Button>
+        </div>
+      ) : (
       <div className="bg-bg-card border border-border-default rounded-2xl overflow-hidden shadow-sm">
         
         {/* Mobile View: Property Cards */}
@@ -221,6 +255,7 @@ export default function AdminPropertiesPage() {
           </table>
         </div>
       </div>
+      )}
     </div>
   );
 }
