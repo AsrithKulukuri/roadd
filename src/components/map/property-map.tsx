@@ -937,7 +937,6 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   const { toggleFavorite, isFavorite } = useFavoritesStore();
 
   // Realtor.com Map Controls State
-  const [showMapOptionsMenu, setShowMapOptionsMenu] = useState(false);
   const [showLayerPanel, setShowLayerPanel] = useState(false);
   const [searchAsMove, setSearchAsMove] = useState(true);
   const [showSearchThisArea, setShowSearchThisArea] = useState(false);
@@ -1237,8 +1236,8 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
         
         {/* Sidebar Control Panel / Collapsible Drawer */}
         <div
-          className={`w-full md:w-80 flex-shrink-0 p-5 md:p-6 flex-col justify-between bg-slate-900 text-white z-[500] border-b md:border-b-0 md:border-r border-slate-800 shadow-2xl space-y-5 ${
-            showMapExplorer ? "flex absolute inset-x-0 top-0 bottom-0 md:relative" : "hidden"
+          className={`w-full md:w-80 flex-shrink-0 p-5 md:p-6 flex-col justify-between bg-slate-900 text-white z-[999] border-b md:border-b-0 md:border-r border-slate-800 shadow-2xl space-y-5 overflow-y-auto ${
+            showMapExplorer ? "flex absolute inset-0 md:relative" : "hidden"
           }`}
         >
           <div className="space-y-4">
@@ -1576,7 +1575,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
           )}
           
           {/* TOP: Entity Type Pills (All / Properties / Projects) - Centered on mobile, right-aligned on desktop */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 md:left-auto md:right-3 md:translate-x-0 z-[550] flex items-center gap-1 sm:gap-1.5 pointer-events-auto">
+          <div className={cn("absolute top-3 left-1/2 -translate-x-1/2 md:left-auto md:right-3 md:translate-x-0 z-[550] items-center gap-1 sm:gap-1.5 pointer-events-auto", showMapExplorer ? "hidden md:flex" : "flex")}>
             {(["all", "properties", "projects"] as const).map((lt) => (
               <button
                 key={lt}
@@ -1593,14 +1592,14 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
             ))}
           </div>
 
-          {/* RIGHT SIDE CONTROLS: Layer switcher, Draw, Layers/Options */}
-          <div className="absolute top-14 right-3 z-[550] flex flex-col items-center gap-2.5 pointer-events-auto">
+          {/* RIGHT SIDE CONTROLS: Layer switcher, Draw */}
+          <div className={cn("absolute top-14 right-3 z-[550] flex-col items-center gap-2.5 pointer-events-auto", showMapExplorer ? "hidden md:flex" : "flex")}>
 
             {/* 1. MAP STYLE BUTTON — opens layer panel */}
             <div className="relative">
               <button
                 type="button"
-                onClick={() => { setShowLayerPanel(!showLayerPanel); setShowMapOptionsMenu(false); }}
+                onClick={() => setShowLayerPanel(!showLayerPanel)}
                 title="Map Style"
                 className="relative w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl overflow-hidden shadow-xl border-2 border-white dark:border-slate-800 flex flex-col justify-end p-1 transition-all hover:scale-105 active:scale-95 cursor-pointer group shrink-0"
               >
@@ -1666,7 +1665,6 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                 } else {
                   setIsDrawing(true);
                   setShowLayerPanel(false);
-                  setShowMapOptionsMenu(false);
                 }
               }}
               title={drawPolygonPoints.length > 0 ? "Clear Drawn Area" : isDrawing ? "Cancel Drawing" : "Draw Custom Area"}
@@ -1687,153 +1685,10 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                 <><Pencil className="w-5 h-5 text-slate-900 dark:text-white" /><span className="text-[10px] font-extrabold leading-none">Draw</span></>
               )}
             </button>
-
-            {/* 3. MAP LAYERS BUTTON */}
-            <button
-              type="button"
-              onClick={() => { setShowMapOptionsMenu(!showMapOptionsMenu); setShowLayerPanel(false); }}
-              title="Map Layers"
-              className={cn(
-                "w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 cursor-pointer border shrink-0",
-                showMapOptionsMenu
-                  ? "bg-[#f1a010] text-slate-950 border-amber-600 font-black"
-                  : "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
-              )}
-            >
-              <Layers3 className="w-5 h-5" />
-              <span className="text-[10px] font-extrabold leading-none">Layers</span>
-            </button>
           </div>
 
-          {/* FULL DATA LAYERS + OPTIONS PANEL */}
-          {showMapOptionsMenu && (
-            <div className="absolute top-14 right-[76px] sm:right-[84px] z-[560] w-72 bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-y-auto max-h-[calc(100%-76px)] animate-in fade-in zoom-in-95 duration-150 pointer-events-auto pb-2">
-              <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 z-10">
-                <span className="font-extrabold text-sm flex items-center gap-1.5">
-                  <Layers3 className="w-4 h-4 text-[#f1a010]" /> Map Layers
-                </span>
-                <button onClick={() => setShowMapOptionsMenu(false)} className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* DATA LAYERS */}
-              <div className="p-3 border-b border-slate-200 dark:border-slate-800">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Data Layers</p>
-                <div className="space-y-0.5">
-                  {([
-                    { key: "none", label: "None", desc: "Standard view", color: "bg-slate-400" },
-                    { key: "hotness", label: "Market Hotness", desc: "Price tier heat index", color: "bg-red-500" },
-                    { key: "dom", label: "Days on Market", desc: "Fresh vs stale listings", color: "bg-green-500" },
-                    { key: "sqft", label: "Price per Sq.ft", desc: "₹ per sqft overlay", color: "bg-orange-500" },
-                    { key: "yearbuilt", label: "Year Built", desc: "New vs old property age", color: "bg-blue-500" },
-                    { key: "neighborhood", label: "Neighborhood Boundaries", desc: "Locality area outlines", color: "bg-purple-500" },
-                  ] as const).map((layer) => (
-                    <button
-                      key={layer.key}
-                      onClick={() => setMapDataLayer(layer.key)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all cursor-pointer",
-                        mapDataLayer === layer.key
-                          ? "bg-amber-50 dark:bg-amber-950/30 border border-[#f1a010]"
-                          : "hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent"
-                      )}
-                    >
-                      <div className={`w-3 h-3 rounded-full shrink-0 ${layer.color}`} />
-                      <div className="flex-1 min-w-0">
-                        <div className={cn("text-xs font-bold text-slate-700 dark:text-slate-200", mapDataLayer === layer.key && "text-[#f1a010]")}>{layer.label}</div>
-                        <div className="text-[10px] text-slate-400">{layer.desc}</div>
-                      </div>
-                      {mapDataLayer === layer.key && <Check className="w-4 h-4 text-[#f1a010] shrink-0" />}
-                    </button>
-                  ))}
-                </div>
-                {mapDataLayer !== "none" && mapDataLayer !== "neighborhood" && (
-                  <div className="mt-2 px-3 flex items-center gap-2">
-                    <div className="flex-1 h-2 rounded-full bg-gradient-to-r from-green-500 via-yellow-400 to-red-500" />
-                    <div className="flex justify-between text-[9px] text-slate-400 font-bold gap-2">
-                      <span>{mapDataLayer === "yearbuilt" ? "New" : "Low"}</span>
-                      <span>{mapDataLayer === "yearbuilt" ? "Old" : "High"}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* NEIGHBORHOOD OVERLAYS */}
-              <div className="p-3 border-b border-slate-200 dark:border-slate-800">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Neighborhood Overlays</p>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {([
-                    { key: "school", label: "Schools", icon: "🏫", activeColor: "bg-blue-600" },
-                    { key: "hospital", label: "Hospitals", icon: "🏥", activeColor: "bg-red-600" },
-                    { key: "transit", label: "Transit", icon: "⚡", activeColor: "bg-green-600" },
-                  ]).map((ovr) => (
-                    <button
-                      key={ovr.key}
-                      onClick={() => toggleLandmarkFilter(ovr.key)}
-                      className={cn(
-                        "py-2 px-2 rounded-xl flex flex-col items-center gap-1 text-[11px] font-bold border transition-all cursor-pointer",
-                        activeLandmarkTypes.includes(ovr.key)
-                          ? `${ovr.activeColor} text-white border-transparent shadow-md`
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
-                      )}
-                    >
-                      <span className="text-base">{ovr.icon}</span>
-                      {ovr.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* MAP OPTIONS */}
-              <div className="p-3 space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Map Options</p>
-                {([
-                  { label: "AP Price Heatmap", sub: "Color-coded price zones", checked: showHeatmap, onChange: (v: boolean) => setShowHeatmap(v) },
-                  { label: "Search as I move", sub: "Auto-update on pan", checked: searchAsMove, onChange: (v: boolean) => setSearchAsMove(v) },
-                ]).map((opt) => (
-                  <div key={opt.label} className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xs font-bold text-slate-700 dark:text-slate-200">{opt.label}</div>
-                      <div className="text-[10px] text-slate-400">{opt.sub}</div>
-                    </div>
-                    <button
-                      onClick={() => opt.onChange(!opt.checked)}
-                      className={cn("relative w-10 h-5 rounded-full transition-all cursor-pointer shrink-0", opt.checked ? "bg-[#f1a010]" : "bg-slate-300 dark:bg-slate-700")}
-                    >
-                      <div className={cn("absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all", opt.checked ? "left-5" : "left-0.5")} />
-                    </button>
-                  </div>
-                ))}
-
-                {/* Commute Radius */}
-                <div>
-                  <div className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5 flex items-center gap-1">
-                    <Timer className="w-3.5 h-3.5 text-[#f1a010]" /> Max Commute Radius
-                  </div>
-                  <div className="grid grid-cols-3 gap-1">
-                    {[0, 15, 30].map((mins) => (
-                      <button
-                        key={mins}
-                        onClick={() => setMaxCommuteMins(mins)}
-                        className={cn(
-                          "py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer",
-                          maxCommuteMins === mins
-                            ? "bg-[#f1a010] text-slate-950 border-[#f1a010]"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
-                        )}
-                      >
-                        {mins === 0 ? "Any" : `< ${mins}m`}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* FLOATING BOTTOM CENTER: Search This Area + Search As I Move */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[550] flex flex-col items-center gap-2 pointer-events-auto">
+          <div className={cn("absolute bottom-4 left-1/2 -translate-x-1/2 z-[550] flex-col items-center gap-2 pointer-events-auto", showMapExplorer ? "hidden md:flex" : "flex")}>
             {showSearchThisArea && (
               <button
                 type="button"
@@ -1881,7 +1736,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
           )}
 
           {/* FLOATING BOTTOM FOUND PROPERTIES TRAY — mobile only, desktop has left list pane */}
-          {displayedPropertiesFiltered.length > 0 && !isDrawing && (
+          {displayedPropertiesFiltered.length > 0 && !isDrawing && !showMapExplorer && (
             <div className="md:hidden absolute bottom-3 left-2 right-2 sm:left-4 sm:right-4 z-[550] pointer-events-auto flex flex-col items-center gap-2">
               {/* TRAY TOGGLE CAPSULE BUTTON */}
               <button
@@ -2042,7 +1897,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
           )}
 
           {/* FLOATING ZOOM + MY LOCATION CONTROLS (BOTTOM-RIGHT) */}
-          <div className="absolute bottom-20 right-3 z-[500] flex flex-col gap-1 pointer-events-auto">
+          <div className={cn("absolute bottom-20 right-3 z-[500] flex-col gap-1 pointer-events-auto", showMapExplorer ? "hidden md:flex" : "flex")}>
             <button
               type="button"
               onClick={handleGetLocation}

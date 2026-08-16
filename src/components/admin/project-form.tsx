@@ -14,7 +14,7 @@ import {
   Check, X, Upload, Link as LinkIcon,
   Image as ImageIcon, FileText, MapPin, Save,
   CheckCircle2, Loader2, Map, Info, Video, CheckSquare, Square,
-  Settings, AlertCircle
+  Settings, AlertCircle, ChevronDown, Sparkles
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -90,11 +90,10 @@ async function uploadFile(file: File, bucket: string, folder: string): Promise<s
   return URL.createObjectURL(file);
 }
 
-// ─── UI Helpers ───────────────────────────────────────────────────────────────
 function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1">
-      <label className="text-sm font-medium text-text-primary">
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-text-secondary">
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {children}
@@ -104,7 +103,7 @@ function Field({ label, required, hint, children }: { label: string; required?: 
 }
 
 const ic = (extra = "") =>
-  `w-full px-3.5 py-2.5 rounded-xl border border-border-default bg-bg-primary text-text-primary text-sm placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-primary/40 focus:border-amber-primary transition ${extra}`;
+  `w-full h-12 px-4 rounded-xl border border-border-default/80 bg-bg-primary text-text-primary text-sm placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition ${extra}`;
 
 // ─── Main Form ────────────────────────────────────────────────────────────────
 interface ProjectFormProps {
@@ -466,27 +465,26 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
-              {/* Project Type */}
-              <div className="md:col-span-2">
-                <label className="text-sm font-bold text-amber-500 uppercase tracking-wider mb-3 block">
+              {/* Project Type Dropdown Menu */}
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-sm font-bold text-amber-500 uppercase tracking-wider block">
                   Project Type *
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {(["apartment", "villa", "venture"] as ProjectType[]).map((type) => {
-                    const { icon: Icon, desc, color } = typeInfo[type];
-                    const active = projectType === type;
-                    return (
-                      <button key={type} type="button"
-                        onClick={() => { setProjectType(type); setConfigs([]); }}
-                        className={`p-4 rounded-2xl border-2 text-left transition-all relative ${active ? color : "border-border-default bg-bg-primary hover:border-border-default/60"}`}
-                      >
-                        {active && <CheckCircle2 className="w-4 h-4 absolute top-3 right-3" />}
-                        <Icon className={`w-6 h-6 mb-2 ${active ? "" : "text-text-tertiary"}`} />
-                        <p className={`font-bold capitalize ${active ? "" : "text-text-primary"}`}>{type}</p>
-                        <p className="text-xs text-text-secondary mt-0.5 leading-relaxed">{desc}</p>
-                      </button>
-                    );
-                  })}
+                <div className="relative">
+                  <select
+                    value={projectType}
+                    onChange={(e) => {
+                      const newType = e.target.value as ProjectType;
+                      setProjectType(newType);
+                      setConfigs([]);
+                    }}
+                    className="w-full h-12 rounded-xl bg-bg-primary border border-border-default/80 px-4 pr-10 text-text-primary font-bold text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all cursor-pointer shadow-xs appearance-none"
+                  >
+                    <option value="apartment">Apartments (Multi-storey flats with BHK configs)</option>
+                    <option value="villa">Villas (Independent luxury villas / row houses)</option>
+                    <option value="venture">Plots / Venture (Gated layout plots & lands)</option>
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-text-secondary absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
@@ -521,45 +519,67 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Brief overview of the project…" className={ic("resize-none")} />
               </div>
 
-              {/* Builder Info */}
-              <div className="md:col-span-2 p-5 rounded-2xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 space-y-4 mt-2">
-                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-black text-xs uppercase tracking-wider border-b border-amber-500/20 pb-3">
-                  <Building2 className="w-4 h-4 text-amber-500" />
-                  <span>Builder Details</span>
+              {/* Builder Info - Styled 1:1 like Property Dynamic Specific Fields card */}
+              <div className="md:col-span-2 p-5 rounded-2xl bg-slate-900/90 border-2 border-amber-500/30 space-y-4 mt-2">
+                <div className="flex items-center gap-2 text-amber-400 font-black text-xs uppercase tracking-wider border-b border-slate-800 pb-3">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>BUILDER &amp; DEVELOPER DETAILS</span>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div id="field-builderName" className="space-y-1">
-                    <label className="text-sm font-medium text-text-primary flex items-center justify-between">
-                      <span>Builder / Developer Name <span className="text-red-500 font-bold">*</span></span>
-                      {errors.builderName && <span className="text-xs text-red-500 font-bold">Required</span>}
+                    <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                      <span>Builder / Developer Name <span className="text-red-400">*</span></span>
+                      {errors.builderName && <span className="text-[10px] text-red-400 font-bold">Required</span>}
                     </label>
                     <Input
                       value={builderName}
                       onChange={(e) => handleBuilderNameChange(e.target.value)}
                       placeholder="e.g. Lansum Properties LLP"
                       className={cn(
-                        ic(),
-                        errors.builderName && "border-2 border-red-500 ring-2 ring-red-500/30 bg-red-50 dark:bg-red-950/20"
+                        "w-full h-11 rounded-xl bg-slate-950 border border-slate-800 px-3 text-xs text-white placeholder:text-slate-500 focus:border-amber-500 focus:outline-none",
+                        errors.builderName && "border-2 border-red-500 ring-2 ring-red-500/30 bg-red-950/20"
                       )}
                     />
                     {errors.builderName && (
-                      <p className="text-xs font-bold text-red-500 flex items-center gap-1 mt-1">
+                      <p className="text-xs font-bold text-red-400 flex items-center gap-1 mt-1">
                         <AlertCircle className="w-3.5 h-3.5" /> {errors.builderName}
                       </p>
                     )}
                   </div>
-                  <Field label="Builder Phone">
-                    <Input value={builderPhone} onChange={(e) => setBuilderPhone(e.target.value)} placeholder="+91 XXXXX XXXXX" className={ic()} />
-                  </Field>
-                  <Field label="Builder WhatsApp">
-                    <Input value={builderWhatsapp} onChange={(e) => setBuilderWhatsapp(e.target.value)} placeholder="+91 XXXXX XXXXX" className={ic()} />
-                  </Field>
+                  
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-text-primary">Builder Logo</label>
+                    <label className="text-xs font-bold text-slate-300">Builder Phone</label>
+                    <Input
+                      value={builderPhone}
+                      onChange={(e) => setBuilderPhone(e.target.value)}
+                      placeholder="+91 XXXXX XXXXX"
+                      className="w-full h-11 rounded-xl bg-slate-950 border border-slate-800 px-3 text-xs text-white placeholder:text-slate-500 focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300">Builder WhatsApp</label>
+                    <Input
+                      value={builderWhatsapp}
+                      onChange={(e) => setBuilderWhatsapp(e.target.value)}
+                      placeholder="+91 XXXXX XXXXX"
+                      className="w-full h-11 rounded-xl bg-slate-950 border border-slate-800 px-3 text-xs text-white placeholder:text-slate-500 focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300">Builder Logo</label>
                     <div className="flex items-center gap-3">
-                      {builderLogoUrl && <img src={builderLogoUrl} alt="Logo" className="w-10 h-10 rounded object-contain bg-white border border-border-default" />}
-                      <Input type="file" accept="image/*" onChange={handleLogoFile} className="file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-primary/10 file:text-amber-700 dark:file:text-amber-400 hover:file:bg-amber-primary/20 cursor-pointer" />
+                      {builderLogoUrl && (
+                        <img src={builderLogoUrl} alt="Logo" className="w-10 h-10 rounded-lg object-contain bg-slate-950 border border-slate-800 p-1" />
+                      )}
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoFile}
+                        className="h-11 bg-slate-950 border-slate-800 text-xs text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400 cursor-pointer"
+                      />
                     </div>
                   </div>
                 </div>
@@ -688,7 +708,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 const isSelected = configsForLabel.length > 0;
                 
                 return (
-                  <div key={label} className={`border rounded-2xl overflow-hidden transition-all ${isSelected ? 'border-amber-500/50 bg-amber-500/5' : 'border-border-default bg-bg-primary'}`}>
+                  <div key={label} className={`border rounded-2xl overflow-hidden transition-all ${isSelected ? 'border-amber-500/40 bg-bg-card' : 'border-border-default bg-bg-primary'}`}>
                     <div 
                       className="p-4 flex items-center justify-between cursor-pointer select-none"
                       onClick={() => toggleConfig(label)}
@@ -720,9 +740,9 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                                   <>
                                     <Field label="Plot Size (sqyd)"><Input type="number" value={config.plotSizeMin || ""} onChange={e => updateConfigCalculated(config.id, "size", Number(e.target.value))} placeholder="150" className={ic()} /></Field>
                                     <Field label="Price per Sqyd (₹)"><Input type="number" value={config.pricePerUnit || ""} onChange={e => updateConfigCalculated(config.id, "pricePerUnit", Number(e.target.value))} placeholder="15000" className={ic()} /></Field>
-                                    <div className="space-y-1">
+                                    <div className="space-y-2">
                                       <label className="text-sm font-medium text-text-secondary">Calculated Price</label>
-                                      <div className="h-11 px-3.5 flex items-center bg-amber-500/10 border border-amber-500/20 text-amber-600 font-black rounded-xl text-sm">
+                                      <div className="h-12 px-4 flex items-center bg-bg-primary border border-border-default/80 text-amber-500 font-bold rounded-xl text-sm">
                                         {formatCurrency(config.priceMin || 0)}
                                       </div>
                                     </div>
@@ -731,9 +751,9 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                                   <>
                                     <Field label="Built-up Area (sqft)"><Input type="number" value={config.builtUpAreaMin || ""} onChange={e => updateConfigCalculated(config.id, "size", Number(e.target.value))} placeholder="2000" className={ic()} /></Field>
                                     <Field label="Price per Sqft (₹)"><Input type="number" value={config.pricePerUnit || ""} onChange={e => updateConfigCalculated(config.id, "pricePerUnit", Number(e.target.value))} placeholder="6000" className={ic()} /></Field>
-                                    <div className="space-y-1">
+                                    <div className="space-y-2">
                                       <label className="text-sm font-medium text-text-secondary">Calculated Price</label>
-                                      <div className="h-11 px-3.5 flex items-center bg-amber-500/10 border border-amber-500/20 text-amber-600 font-black rounded-xl text-sm">
+                                      <div className="h-12 px-4 flex items-center bg-bg-primary border border-border-default/80 text-amber-500 font-bold rounded-xl text-sm">
                                         {formatCurrency(config.priceMin || 0)}
                                       </div>
                                     </div>
@@ -742,9 +762,9 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                                   <>
                                     <Field label="Built-up Area (sqft)"><Input type="number" value={config.superBuiltUpAreaMin || ""} onChange={e => updateConfigCalculated(config.id, "size", Number(e.target.value))} placeholder="1200" className={ic()} /></Field>
                                     <Field label="Price per Sqft (₹)"><Input type="number" value={config.pricePerUnit || ""} onChange={e => updateConfigCalculated(config.id, "pricePerUnit", Number(e.target.value))} placeholder="5000" className={ic()} /></Field>
-                                    <div className="space-y-1">
+                                    <div className="space-y-2">
                                       <label className="text-sm font-medium text-text-secondary">Calculated Price</label>
-                                      <div className="h-11 px-3.5 flex items-center bg-amber-500/10 border border-amber-500/20 text-amber-600 font-black rounded-xl text-sm">
+                                      <div className="h-12 px-4 flex items-center bg-bg-primary border border-border-default/80 text-amber-500 font-bold rounded-xl text-sm">
                                         {formatCurrency(config.priceMin || 0)}
                                       </div>
                                     </div>
@@ -865,12 +885,12 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
             </div>
 
             {/* Google Maps Location Link Auto-Fetcher */}
-            <div className="space-y-2 mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
-              <label className="text-xs font-black uppercase text-amber-500 tracking-wider flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-amber-500" />
-                Paste Google Maps Location Link (Auto-Fetches Map Coordinates)
-              </label>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="space-y-3 mb-6 p-5 rounded-2xl bg-slate-900/90 border-2 border-amber-500/30">
+              <div className="flex items-center gap-2 text-amber-400 font-black text-xs uppercase tracking-wider border-b border-slate-800 pb-2.5">
+                <MapPin className="w-4 h-4 text-amber-400" />
+                <span>PASTE GOOGLE MAPS LINK (AUTO-FETCH COORDINATES &amp; ADDRESS)</span>
+              </div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
                 <Input
                   type="text"
                   placeholder="Paste Google Maps URL e.g. https://maps.app.goo.gl/..."
@@ -896,7 +916,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                       }
                     } catch (err) {}
                   }}
-                  className="h-11 flex-1 text-xs bg-bg-primary font-bold border-amber-500/50"
+                  className="h-11 flex-1 text-xs bg-slate-950 border-slate-800 text-white placeholder:text-slate-500 focus:border-amber-500 focus:outline-none"
                 />
                 <Button
                   type="button"
@@ -926,7 +946,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                       toast.error("Failed to resolve Google Maps link", { id: "fetch-maps" });
                     }
                   }}
-                  className="h-11 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shrink-0 rounded-xl cursor-pointer shadow-md"
+                  className="h-11 px-5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shrink-0 rounded-xl cursor-pointer shadow-sm transition-all"
                 >
                   Fetch Location
                 </Button>
@@ -955,9 +975,9 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                     toast.error("Geolocation is not supported by your browser");
                   }
                 }}
-                className="h-11 px-6 bg-amber-500 hover:bg-amber-600 text-white font-black text-sm rounded-xl cursor-pointer shadow-md w-full sm:w-auto flex items-center justify-center gap-2 transition-colors"
+                className="h-12 px-6 bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm rounded-xl cursor-pointer border border-white/15 shadow-sm w-full sm:w-auto flex items-center justify-center gap-2 transition-all"
               >
-                <MapPin className="w-4 h-4" /> Use My Current Location
+                <MapPin className="w-4 h-4 text-amber-500 fill-amber-500" /> Use My Current Location
               </Button>
             </div>
 

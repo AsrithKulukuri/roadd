@@ -617,48 +617,48 @@ export function HeroSection() {
           </button>
         </form>
 
-        {/* Open Locations Pills */}
+        {/* Open Locations Pills - Equal width & matching Search Bar */}
         <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-4 text-left relative z-20">
-          {/* Scrollable Location Tabs */}
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar scrollbar-none snap-x snap-mandatory touch-pan-x pb-1 mb-1.5 sm:mb-2.5">
+          {/* 3 Equal width columns matching Search Bar width */}
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-3 w-full pb-1 mb-1.5 sm:mb-2.5">
             <button
               type="button"
               onClick={() => setOpenLocationTab(openLocationTab === "vijayawada" ? null : "vijayawada")}
               className={cn(
-                "h-[32px] sm:h-[36px] px-3 sm:px-[16px] rounded-full text-[11px] sm:text-[13px] flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-xs border shrink-0 snap-start",
+                "h-[36px] sm:h-[42px] px-1 sm:px-3 rounded-full text-[11px] xs:text-xs sm:text-sm flex items-center justify-center gap-0.5 sm:gap-1.5 transition-all duration-200 cursor-pointer shadow-xs border w-full text-center whitespace-nowrap",
                 openLocationTab === "vijayawada"
                   ? "bg-slate-950 border-amber-400 text-white font-bold"
                   : "bg-slate-900 border-slate-800 text-white font-semibold hover:bg-slate-800"
               )}
             >
-              <MapPin className="w-3.5 h-3.5 text-amber-400" />
-              <span>Vijayawada</span>
-              <ChevronDown className={cn("w-3 h-3 transition-transform", openLocationTab === "vijayawada" && "rotate-180")} />
+              <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
+              <span className="whitespace-nowrap tracking-tight">Vijayawada</span>
+              <ChevronDown className={cn("w-2.5 h-2.5 sm:w-3 sm:h-3 transition-transform shrink-0", openLocationTab === "vijayawada" && "rotate-180")} />
             </button>
 
             <button
               type="button"
               onClick={() => setOpenLocationTab(openLocationTab === "guntur" ? null : "guntur")}
               className={cn(
-                "h-[32px] sm:h-[36px] px-3 sm:px-[16px] rounded-full text-[11px] sm:text-[13px] flex items-center gap-1.5 transition-all duration-200 cursor-pointer shadow-xs border shrink-0 snap-start",
+                "h-[36px] sm:h-[42px] px-1 sm:px-3 rounded-full text-[11px] xs:text-xs sm:text-sm flex items-center justify-center gap-0.5 sm:gap-1.5 transition-all duration-200 cursor-pointer shadow-xs border w-full text-center whitespace-nowrap",
                 openLocationTab === "guntur"
                   ? "bg-slate-950 border-amber-400 text-white font-bold"
                   : "bg-slate-900 border-slate-800 text-white font-semibold hover:bg-slate-800"
               )}
             >
-              <Building2 className="w-3.5 h-3.5 text-amber-400" />
-              <span>Guntur</span>
-              <ChevronDown className={cn("w-3 h-3 transition-transform", openLocationTab === "guntur" && "rotate-180")} />
+              <Building2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
+              <span className="whitespace-nowrap tracking-tight">Guntur</span>
+              <ChevronDown className={cn("w-2.5 h-2.5 sm:w-3 sm:h-3 transition-transform shrink-0", openLocationTab === "guntur" && "rotate-180")} />
             </button>
 
             {/* Amaravati - Direct link */}
             <button
               type="button"
               onClick={() => router.push(`/search?type=${activeTab}&location=Amaravati`)}
-              className="h-[32px] sm:h-[36px] px-3 sm:px-[16px] rounded-full text-[11px] sm:text-[13px] flex items-center gap-1.5 transition-all duration-200 cursor-pointer bg-slate-900 border border-slate-800 text-white font-semibold hover:bg-slate-800 shadow-xs shrink-0 snap-start"
+              className="h-[36px] sm:h-[42px] px-1 sm:px-3 rounded-full text-[11px] xs:text-xs sm:text-sm flex items-center justify-center gap-0.5 sm:gap-1.5 transition-all duration-200 cursor-pointer bg-slate-900 border border-slate-800 text-white font-semibold hover:bg-slate-800 shadow-xs w-full text-center whitespace-nowrap"
             >
-              <MapPin className="w-3.5 h-3.5 text-amber-400" />
-              <span>Amaravati</span>
+              <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
+              <span className="whitespace-nowrap tracking-tight">Amaravati</span>
             </button>
           </div>
 
@@ -669,7 +669,10 @@ export function HeroSection() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 mt-1.5 w-full max-w-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2 z-50 max-h-[280px] overflow-y-auto"
+                className={cn(
+                  "absolute top-full mt-1.5 w-full max-w-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2 z-50 max-h-[280px] overflow-y-auto",
+                  openLocationTab === "guntur" ? "left-1/3 sm:left-[34%]" : "left-0"
+                )}
               >
                 {(openLocationTab === "vijayawada" ? vijayawadaHotspots :
                   openLocationTab === "guntur" ? gunturHotspots :

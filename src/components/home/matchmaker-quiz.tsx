@@ -10,7 +10,6 @@ const QUESTIONS = [
   {
     id: "goal",
     title: "What's your main goal?",
-    subtitle: "Let's start by understanding why you are looking.",
     options: [
       { label: "Dream Home", value: "home", icon: Home },
       { label: "High ROI Investment", value: "investment", icon: TrendingUp },
@@ -21,7 +20,6 @@ const QUESTIONS = [
   {
     id: "budget",
     title: "What's your comfortable budget?",
-    subtitle: "We'll find the best options in this range.",
     options: [
       { label: "Under ₹50 Lakhs", value: "0-5000000" },
       { label: "₹50L - ₹1 Crore", value: "5000000-10000000" },
@@ -86,45 +84,45 @@ export function MatchmakerQuiz() {
   };
 
   return (
-    <section className="py-8 sm:py-10 relative overflow-hidden">
+    <section className="py-4 sm:py-6 relative overflow-hidden">
       {/* Background Decor */}
       <div className="absolute inset-0 bg-amber-50/50 dark:bg-amber-950/10 z-0"></div>
-      <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[40rem] h-[40rem] bg-amber-200/30 dark:bg-amber-900/10 rounded-full blur-3xl opacity-50 z-0"></div>
+      <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[30rem] h-[30rem] bg-amber-200/30 dark:bg-amber-900/10 rounded-full blur-3xl opacity-40 z-0"></div>
 
-      <div className="max-w-3xl mx-auto px-4 relative z-10">
-        <div className="bg-white dark:bg-bg-card rounded-3xl p-6 sm:p-8 shadow-xl border border-amber-primary/20 relative overflow-hidden flex flex-col justify-center">
+      <div className="max-w-xl mx-auto px-4 relative z-10">
+        <div className="bg-white dark:bg-bg-card rounded-2xl p-4 sm:p-6 shadow-lg border border-amber-primary/20 relative overflow-hidden flex flex-col justify-center">
           
           {isAnalyzing ? (
-            <div className="text-center space-y-6">
-              <div className="relative w-20 h-20 mx-auto">
-                <div className="absolute inset-0 border-4 border-amber-200 rounded-full"></div>
-                <div className="absolute inset-0 border-4 border-amber-500 rounded-full border-t-transparent animate-spin"></div>
-                <Sparkles className="w-8 h-8 text-amber-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+            <div className="text-center py-6 space-y-4">
+              <div className="relative w-14 h-14 mx-auto">
+                <div className="absolute inset-0 border-3 border-amber-200 rounded-full"></div>
+                <div className="absolute inset-0 border-3 border-amber-500 rounded-full border-t-transparent animate-spin"></div>
+                <Sparkles className="w-6 h-6 text-amber-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-text-primary">Analyzing your profile...</h3>
-                <p className="text-text-secondary mt-2">Scanning all projects to find your perfect match.</p>
+                <h3 className="text-lg sm:text-xl font-bold text-text-primary">Analyzing your profile...</h3>
+                <p className="text-xs sm:text-sm text-text-secondary mt-1">Scanning all projects to find your perfect match.</p>
               </div>
             </div>
           ) : results ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-2xl font-bold text-text-primary">Your Top Matches</h3>
-                  <p className="text-text-secondary">Based on your unique profile.</p>
+                  <h3 className="text-lg sm:text-xl font-bold text-text-primary">Your Top Matches</h3>
+                  <p className="text-xs text-text-secondary">Based on your unique profile.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={resetQuiz} className="gap-2 rounded-xl">
-                  <RotateCcw className="w-4 h-4" /> Retake Quiz
+                <Button variant="outline" size="sm" onClick={resetQuiz} className="h-8 text-xs gap-1.5 rounded-xl">
+                  <RotateCcw className="w-3.5 h-3.5" /> Retake
                 </Button>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {results.map(({ project, matchScore }) => (
                   <div key={project.id} className="relative">
                     {/* Match Score Badge */}
-                    <div className="absolute -top-4 -right-4 z-20 bg-gradient-to-br from-amber-400 to-amber-600 text-white w-16 h-16 rounded-full flex items-center justify-center flex-col shadow-lg transform rotate-12 border-4 border-white dark:border-bg-card">
-                      <span className="text-xl font-black leading-none">{matchScore}%</span>
-                      <span className="text-[9px] font-bold uppercase tracking-wider">Match</span>
+                    <div className="absolute -top-3 -right-3 z-20 bg-gradient-to-br from-amber-400 to-amber-600 text-white w-12 h-12 rounded-full flex items-center justify-center flex-col shadow-md transform rotate-12 border-2 border-white dark:border-bg-card">
+                      <span className="text-sm font-black leading-none">{matchScore}%</span>
+                      <span className="text-[7px] font-bold uppercase tracking-wider">Match</span>
                     </div>
                     <ProjectCard project={project} />
                   </div>
@@ -132,11 +130,11 @@ export function MatchmakerQuiz() {
               </div>
             </div>
           ) : (
-            <div className="max-w-2xl mx-auto w-full relative">
+            <div className="w-full relative">
               {/* Progress Bar */}
-              <div className="flex items-center gap-2 mb-8">
+              <div className="flex items-center gap-2 mb-4 sm:mb-5">
                 {QUESTIONS.map((_, i) => (
-                  <div key={i} className="h-1.5 flex-1 rounded-full bg-border-default overflow-hidden">
+                  <div key={i} className="h-1 flex-1 rounded-full bg-border-default overflow-hidden">
                     <div 
                       className="h-full bg-amber-500 transition-all duration-500 ease-out"
                       style={{ width: i <= step ? "100%" : "0%" }}
@@ -146,13 +144,12 @@ export function MatchmakerQuiz() {
               </div>
 
               {/* Question */}
-              <div key={step} className="animate-in fade-in slide-in-from-right-8 duration-300">
-                <h3 className="text-2xl sm:text-3xl font-black text-text-primary mb-2">
+              <div key={step} className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <h3 className="text-lg sm:text-xl font-extrabold text-text-primary mb-3">
                   {QUESTIONS[step].title}
                 </h3>
-                <p className="text-text-secondary mb-8">{QUESTIONS[step].subtitle}</p>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {QUESTIONS[step].options.map((opt) => {
                     const Icon = (opt as any).icon;
                     const isSelected = answers[QUESTIONS[step].id] === opt.value;
@@ -161,22 +158,22 @@ export function MatchmakerQuiz() {
                       <button
                         key={opt.value}
                         onClick={() => handleSelect(QUESTIONS[step].id, opt.value)}
-                        className={`text-left p-5 rounded-2xl border-2 transition-all duration-200 flex items-center justify-between group ${
+                        className={`text-left p-3 sm:p-3.5 rounded-xl border transition-all duration-200 flex items-center justify-between group cursor-pointer ${
                           isSelected
-                            ? "border-amber-primary bg-amber-primary/5 shadow-md"
+                            ? "border-amber-primary bg-amber-primary/5 shadow-xs"
                             : "border-border-default hover:border-amber-primary/50 hover:bg-bg-primary"
                         }`}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           {Icon && (
-                            <div className={`p-2 rounded-xl ${isSelected ? 'bg-amber-primary text-slate-950' : 'bg-bg-primary text-text-secondary group-hover:bg-amber-primary/20 group-hover:text-amber-600'}`}>
-                              <Icon className="w-5 h-5" />
+                            <div className={`p-1.5 rounded-lg shrink-0 ${isSelected ? 'bg-amber-primary text-slate-950' : 'bg-bg-primary text-text-secondary group-hover:bg-amber-primary/20 group-hover:text-amber-600'}`}>
+                              <Icon className="w-4 h-4" />
                             </div>
                           )}
-                          <span className="font-bold text-text-primary">{opt.label}</span>
+                          <span className="font-bold text-xs sm:text-sm text-text-primary truncate">{opt.label}</span>
                         </div>
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-amber-primary' : 'border-border-default'}`}>
-                          {isSelected && <div className="w-2.5 h-2.5 bg-amber-primary rounded-full"></div>}
+                        <div className={`w-4 h-4 rounded-full border shrink-0 ml-2 flex items-center justify-center ${isSelected ? 'border-amber-primary' : 'border-border-default'}`}>
+                          {isSelected && <div className="w-2 h-2 bg-amber-primary rounded-full"></div>}
                         </div>
                       </button>
                     );
@@ -188,9 +185,9 @@ export function MatchmakerQuiz() {
               {step > 0 && (
                 <button 
                   onClick={() => setStep(step - 1)}
-                  className="mt-8 text-sm font-bold text-text-tertiary hover:text-text-primary transition-colors flex items-center gap-1"
+                  className="mt-4 text-xs font-bold text-text-tertiary hover:text-text-primary transition-colors flex items-center gap-1 cursor-pointer"
                 >
-                  <ChevronLeft className="w-4 h-4" /> Back
+                  <ChevronLeft className="w-3.5 h-3.5" /> Back
                 </button>
               )}
             </div>
