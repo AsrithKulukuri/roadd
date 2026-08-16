@@ -115,17 +115,13 @@ export function RealtorFilterBar({
     (filters.gatedCommunity ? 1 : 0) +
     (filters.reraApproved ? 1 : 0);
 
-  // Indian Price presets (INR)
+  // Indian Price presets (INR) — Concise, clean brackets
   const pricePresets = [
     { label: "Any Price", min: 0, max: 100000000 },
-    { label: "Under ₹30 Lakhs", min: 0, max: 3000000 },
-    { label: "₹30 Lakhs - ₹50 Lakhs", min: 3000000, max: 5000000 },
-    { label: "₹50 Lakhs - ₹70 Lakhs", min: 5000000, max: 7000000 },
-    { label: "₹70 Lakhs - ₹90 Lakhs", min: 7000000, max: 9000000 },
-    { label: "₹90 Lakhs - ₹1 Crore", min: 9000000, max: 10000000 },
-    { label: "₹1 Crore - ₹1.2 Crores", min: 10000000, max: 12000000 },
-    { label: "₹1.2 Crores - ₹1.5 Crores", min: 12000000, max: 15000000 },
-    { label: "Above ₹1.5 Crores", min: 15000000, max: 100000000 },
+    { label: "Under ₹50L", min: 0, max: 5000000 },
+    { label: "₹50L – ₹1 Cr", min: 5000000, max: 10000000 },
+    { label: "₹1 Cr – ₹2 Cr", min: 10000000, max: 20000000 },
+    { label: "₹2 Cr+", min: 20000000, max: 100000000 },
   ];
 
   // Property Type options
@@ -342,38 +338,82 @@ export function RealtorFilterBar({
                 </button>
               </div>
 
-              {/* 1. PRICE CONTENT — Dual-handle slider */}
+              {/* 1. PRICE CONTENT — Compact Home Budget Style */}
               {openDropdown === "price" && (
                 <div className="space-y-4">
                   {/* Live price label */}
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Set Budget</span>
-                    <span className="text-sm font-black text-amber-500">
-                      {formatINRWords(filters.budget[0])} –{" "}
-                      {formatINRWords(filters.budget[1], true)}
+                  <div className="flex justify-between items-center bg-amber-500/10 px-3.5 py-2 rounded-xl border border-amber-500/20">
+                    <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Set Budget</span>
+                    <span className="text-sm font-black text-amber-600 dark:text-amber-400">
+                      {formatINRWords(filters.budget[0])} – {formatINRWords(filters.budget[1], true)}
                     </span>
                   </div>
 
-                  {/* Dual-handle slider */}
-                  <Slider
-                    min={0}
-                    max={100000000}
-                    step={500000}
-                    value={filters.budget}
-                    onValueChange={(val) =>
-                      onFilterChange({ ...filters, budget: val as [number, number] })
-                    }
-                    className="w-full"
-                  />
+                  {/* Min & Max Dropdown Selects (Home Budget Style) */}
+                  <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Min</span>
+                      <select
+                        value={filters.budget[0]}
+                        onChange={(e) => onFilterChange({ ...filters, budget: [Number(e.target.value), Math.max(Number(e.target.value), filters.budget[1])] })}
+                        className="w-full h-8.5 px-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white outline-none cursor-pointer"
+                      >
+                        <option value={0}>₹0 (Min)</option>
+                        <option value={1000000}>₹10 Lakhs</option>
+                        <option value={2000000}>₹20 Lakhs</option>
+                        <option value={3000000}>₹30 Lakhs</option>
+                        <option value={5000000}>₹50 Lakhs</option>
+                        <option value={7500000}>₹75 Lakhs</option>
+                        <option value={10000000}>₹1 Crore</option>
+                        <option value={15000000}>₹1.5 Crores</option>
+                        <option value={20000000}>₹2 Crores</option>
+                        <option value={30000000}>₹3 Crores</option>
+                      </select>
+                    </div>
 
-                  {/* Axis labels */}
-                  <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                    <span>₹0</span>
-                    <span>₹10+ Crores</span>
+                    <span className="text-slate-400 font-bold text-[10px] mt-4">TO</span>
+
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Max</span>
+                      <select
+                        value={filters.budget[1]}
+                        onChange={(e) => onFilterChange({ ...filters, budget: [Math.min(filters.budget[0], Number(e.target.value)), Number(e.target.value)] })}
+                        className="w-full h-8.5 px-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white outline-none cursor-pointer"
+                      >
+                        <option value={100000000}>Any Price</option>
+                        <option value={2000000}>₹20 Lakhs</option>
+                        <option value={3000000}>₹30 Lakhs</option>
+                        <option value={5000000}>₹50 Lakhs</option>
+                        <option value={7500000}>₹75 Lakhs</option>
+                        <option value={10000000}>₹1 Crore</option>
+                        <option value={15000000}>₹1.5 Crores</option>
+                        <option value={20000000}>₹2 Crores</option>
+                        <option value={30000000}>₹3 Crores</option>
+                        <option value={50000000}>₹5 Crores</option>
+                      </select>
+                    </div>
                   </div>
 
-                  {/* Quick preset buttons */}
-                  <div className="flex flex-wrap gap-2 pt-1">
+                  {/* Dual-handle slider */}
+                  <div className="px-1 pt-1">
+                    <Slider
+                      min={0}
+                      max={100000000}
+                      step={500000}
+                      value={filters.budget}
+                      onValueChange={(val) =>
+                        onFilterChange({ ...filters, budget: val as [number, number] })
+                      }
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-1.5">
+                      <span>₹0</span>
+                      <span>₹10+ Cr</span>
+                    </div>
+                  </div>
+
+                  {/* Quick concise preset chips */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
                     {pricePresets.map((preset) => {
                       const isSelected =
                         Number(filters.budget[0]) === preset.min &&
@@ -385,10 +425,10 @@ export function RealtorFilterBar({
                           onPointerDown={(e) => handlePresetClick(preset.min, preset.max, e)}
                           onClick={(e) => handlePresetClick(preset.min, preset.max, e)}
                           className={cn(
-                            "py-2 px-3.5 rounded-full text-xs font-bold border transition-all cursor-pointer select-none active:scale-95 touch-manipulation z-10",
+                            "py-1.5 px-3 rounded-full text-xs font-bold border transition-all cursor-pointer select-none active:scale-95 touch-manipulation",
                             isSelected
-                              ? "bg-amber-500 text-slate-950 border-amber-500 shadow-md font-extrabold"
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-amber-400"
+                              ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-amber-400"
                           )}
                         >
                           {preset.label}
@@ -397,7 +437,7 @@ export function RealtorFilterBar({
                     })}
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <button
                       type="button"
                       onClick={() => {
@@ -405,14 +445,15 @@ export function RealtorFilterBar({
                       }}
                       className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
                     >
-                      <RotateCcw className="w-3 h-3" /> Reset Price
+                      <RotateCcw className="w-3 h-3" /> Reset
                     </button>
                     <button
                       type="button"
                       onClick={() => setOpenDropdown(null)}
-                      className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                      className="px-5 py-2 bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs rounded-xl border border-white/15 shadow-sm cursor-pointer active:scale-95 flex items-center gap-1.5"
                     >
-                      Done
+                      <Check className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Done</span>
                     </button>
                   </div>
                 </div>
@@ -517,38 +558,82 @@ export function RealtorFilterBar({
             width: openDropdown === "price" ? "320px" : "280px",
           }}
         >
-          {/* 1. PRICE DROPDOWN CONTENT — Dual-handle slider */}
+          {/* 1. PRICE DROPDOWN CONTENT — Compact Home Budget Style */}
           {openDropdown === "price" && (
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               {/* Live price label */}
-              <div className="flex justify-between items-center">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Set Budget</span>
-                <span className="text-sm font-black text-amber-500">
-                  {formatINRWords(filters.budget[0])} –{" "}
-                  {formatINRWords(filters.budget[1], true)}
+              <div className="flex justify-between items-center bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20">
+                <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Set Budget</span>
+                <span className="text-xs font-black text-amber-600 dark:text-amber-400">
+                  {formatINRWords(filters.budget[0])} – {formatINRWords(filters.budget[1], true)}
                 </span>
               </div>
 
-              {/* Dual-handle slider */}
-              <Slider
-                min={0}
-                max={100000000}
-                step={500000}
-                value={filters.budget}
-                onValueChange={(val) =>
-                  onFilterChange({ ...filters, budget: val as [number, number] })
-                }
-                className="w-full"
-              />
+              {/* Min & Max Dropdown Selects (Home Budget Style) */}
+              <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 p-2 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">Min</span>
+                  <select
+                    value={filters.budget[0]}
+                    onChange={(e) => onFilterChange({ ...filters, budget: [Number(e.target.value), Math.max(Number(e.target.value), filters.budget[1])] })}
+                    className="w-full h-7 px-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-900 dark:text-white outline-none cursor-pointer"
+                  >
+                    <option value={0}>₹0</option>
+                    <option value={1000000}>₹10 L</option>
+                    <option value={2000000}>₹20 L</option>
+                    <option value={3000000}>₹30 L</option>
+                    <option value={5000000}>₹50 L</option>
+                    <option value={7500000}>₹75 L</option>
+                    <option value={10000000}>₹1 Cr</option>
+                    <option value={15000000}>₹1.5 Cr</option>
+                    <option value={20000000}>₹2 Cr</option>
+                    <option value={30000000}>₹3 Cr</option>
+                  </select>
+                </div>
 
-              {/* Axis labels */}
-              <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                <span>₹0</span>
-                <span>₹10+ Crores</span>
+                <span className="text-slate-400 font-bold text-[10px] mt-3">TO</span>
+
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">Max</span>
+                  <select
+                    value={filters.budget[1]}
+                    onChange={(e) => onFilterChange({ ...filters, budget: [Math.min(filters.budget[0], Number(e.target.value)), Number(e.target.value)] })}
+                    className="w-full h-7 px-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-900 dark:text-white outline-none cursor-pointer"
+                  >
+                    <option value={100000000}>Any Price</option>
+                    <option value={2000000}>₹20 L</option>
+                    <option value={3000000}>₹30 L</option>
+                    <option value={5000000}>₹50 L</option>
+                    <option value={7500000}>₹75 L</option>
+                    <option value={10000000}>₹1 Cr</option>
+                    <option value={15000000}>₹1.5 Cr</option>
+                    <option value={20000000}>₹2 Cr</option>
+                    <option value={30000000}>₹3 Cr</option>
+                    <option value={50000000}>₹5 Cr</option>
+                  </select>
+                </div>
               </div>
 
-              {/* Quick preset buttons */}
-              <div className="flex flex-wrap gap-2 pt-1">
+              {/* Dual-handle slider */}
+              <div className="px-1">
+                <Slider
+                  min={0}
+                  max={100000000}
+                  step={500000}
+                  value={filters.budget}
+                  onValueChange={(val) =>
+                    onFilterChange({ ...filters, budget: val as [number, number] })
+                  }
+                  className="w-full"
+                />
+                <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-1">
+                  <span>₹0</span>
+                  <span>₹10+ Cr</span>
+                </div>
+              </div>
+
+              {/* Quick concise preset chips */}
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
                 {pricePresets.map((preset) => {
                   const isSelected =
                     Number(filters.budget[0]) === preset.min &&
@@ -560,10 +645,10 @@ export function RealtorFilterBar({
                       onPointerDown={(e) => handlePresetClick(preset.min, preset.max, e)}
                       onClick={(e) => handlePresetClick(preset.min, preset.max, e)}
                       className={cn(
-                        "py-2 px-3.5 rounded-full text-xs font-bold border transition-all cursor-pointer select-none active:scale-95 touch-manipulation z-10",
+                        "py-1 px-2.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer select-none active:scale-95 touch-manipulation",
                         isSelected
-                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-md font-extrabold"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-amber-400"
+                          ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-amber-400"
                       )}
                     >
                       {preset.label}
@@ -572,7 +657,7 @@ export function RealtorFilterBar({
                 })}
               </div>
 
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => {
@@ -580,14 +665,15 @@ export function RealtorFilterBar({
                   }}
                   className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
                 >
-                  <RotateCcw className="w-3 h-3" /> Reset Price
+                  <RotateCcw className="w-3 h-3" /> Reset
                 </button>
                 <button
                   type="button"
                   onClick={() => setOpenDropdown(null)}
-                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                  className="px-4 py-1.5 bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs rounded-xl border border-white/15 shadow-sm cursor-pointer active:scale-95 flex items-center gap-1"
                 >
-                  Done
+                  <Check className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Done</span>
                 </button>
               </div>
             </div>
