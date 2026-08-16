@@ -95,7 +95,7 @@ export function PropertyGallery({
           {/* Bottom Right: Total media counter */}
           <div className="absolute bottom-3.5 right-4 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/15">
             <Layers className="w-4 h-4 text-white" />
-            <span>{totalMediaCount} Photos</span>
+            <span>{totalMediaCount}</span>
           </div>
         </div>
 
@@ -132,17 +132,8 @@ export function PropertyGallery({
 
             {/* Bottom Right Badge */}
             <div className="absolute bottom-3 right-3.5 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/15">
-              {hasVideo ? (
-                <>
-                  <Play className="w-3 h-3 fill-amber-400 text-amber-400" />
-                  <span>Video</span>
-                </>
-              ) : (
-                <>
-                  <Layers className="w-3.5 h-3.5 text-white" />
-                  <span>1</span>
-                </>
-              )}
+              <Layers className="w-3.5 h-3.5 text-white" />
+              <span>{hasVideo ? 1 : 1}</span>
             </div>
           </div>
 
@@ -164,7 +155,7 @@ export function PropertyGallery({
             {/* Bottom Right: Count */}
             <div className="absolute bottom-3 right-3.5 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/15">
               <Layers className="w-3.5 h-3.5 text-white" />
-              <span>+{Math.max(1, images.length - 2)}</span>
+              <span>{Math.max(1, images.length - (hasVideo ? 1 : 2))}</span>
             </div>
           </div>
 

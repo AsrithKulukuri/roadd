@@ -333,8 +333,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
         {/* Hero Gallery */}
         <div className="max-w-7xl mx-auto px-3 sm:px-4 mb-4">
-          {/* Mobile: single full image with photo count badge */}
-          <div className="sm:hidden relative aspect-[4/3] rounded-2xl overflow-hidden bg-bg-card cursor-pointer" onClick={() => heroImage && setGalleryIdx(0)}>
+          {/* Mobile: Clean Luxury Hero Image with Floating Badges */}
+          <div 
+            className="sm:hidden relative aspect-[16/11] rounded-2xl overflow-hidden bg-slate-950 cursor-pointer shadow-sm" 
+            onClick={() => heroImage && setGalleryIdx(0)}
+          >
             {heroImage ? (
               <img src={heroImage} alt={project.name} className="w-full h-full object-cover" />
             ) : (
@@ -342,28 +345,27 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 <TypeIcon className="w-16 h-16 text-amber-primary/30" />
               </div>
             )}
-            {galleryAll.length > 0 && (
-              <button onClick={(e) => { e.stopPropagation(); setGalleryIdx(0); }}
-                className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/70 text-white text-xs font-semibold px-3 py-1.5 rounded-full z-10">
-                <Eye className="w-3.5 h-3.5" /> {galleryAll.length} Photos
-              </button>
-            )}
+            
+            {/* Top-Right: Sleek Video Tour Pill */}
             {project.videoUrl && (
-              <button onClick={(e) => { e.stopPropagation(); openVideo(project.videoUrl); }}
-                className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg z-10 whitespace-nowrap">
-                <Play className="w-3.5 h-3.5 fill-white text-white shrink-0" /> Watch Tour
+              <button 
+                onClick={(e) => { e.stopPropagation(); openVideo(project.videoUrl); }}
+                className="absolute top-3 right-3 flex items-center gap-1.5 bg-slate-950/80 hover:bg-slate-950 active:scale-95 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full border border-white/20 shadow-lg z-10 transition-all"
+              >
+                <Play className="w-3.5 h-3.5 fill-red-500 text-red-500 shrink-0" />
+                <span>Video Tour</span>
               </button>
             )}
-            {/* Thumbnail strip */}
-            {galleryAll.length > 1 && (
-              <div className="absolute bottom-0 left-0 right-0 px-3 pb-2 pt-6 bg-gradient-to-t from-black/60 flex gap-2 overflow-x-auto scrollbar-none">
-                {galleryAll.slice(0, 6).map((img, i) => (
-                  <div key={i} onClick={(e) => { e.stopPropagation(); setGalleryIdx(i); }}
-                    className="shrink-0 w-12 h-9 rounded-lg overflow-hidden border-2 border-white/60 cursor-pointer">
-                    <img src={img.url} alt={img.alt} className="w-full h-full object-cover" />
-                  </div>
-                ))}
-              </div>
+
+            {/* Bottom-Right: Clean Photo Counter Badge */}
+            {galleryAll.length > 0 && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); setGalleryIdx(0); }}
+                className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1 rounded-lg border border-white/20 shadow-md z-10"
+              >
+                <Layers className="w-3.5 h-3.5 text-white" />
+                <span>{galleryAll.length}</span>
+              </button>
             )}
           </div>
 
@@ -387,7 +389,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               {/* Bottom Right: Real total media counter */}
               <div className="absolute bottom-3.5 right-4 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/15">
                 <Layers className="w-4 h-4 text-white" />
-                <span>{galleryAll.length + (project.videoUrl ? 1 : 0)} Photos</span>
+                <span>{galleryAll.length + (project.videoUrl ? 1 : 0)}</span>
               </div>
             </div>
 
@@ -428,17 +430,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
                 {/* Bottom Right Badge */}
                 <div className="absolute bottom-3 right-3.5 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/15">
-                  {project.videoUrl ? (
-                    <>
-                      <Film className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Video</span>
-                    </>
-                  ) : (
-                    <>
-                      <Layers className="w-3.5 h-3.5 text-white" />
-                      <span>1</span>
-                    </>
-                  )}
+                  <Layers className="w-3.5 h-3.5 text-white" />
+                  <span>{project.videoUrl ? 1 : 1}</span>
                 </div>
               </div>
 
@@ -464,10 +457,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent group-hover:from-black/70 transition-colors" />
                 
-                {/* Bottom Right: Remaining photos count */}
+                {/* Bottom Right: Real photo count */}
                 <div className="absolute bottom-3 right-3.5 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/15">
                   <Layers className="w-3.5 h-3.5 text-white" />
-                  <span>+{Math.max(1, galleryAll.length - 2)}</span>
+                  <span>{Math.max(1, galleryAll.length - (project.videoUrl ? 1 : 2))}</span>
                 </div>
               </div>
             </div>
@@ -542,9 +535,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                       {project.location.locality}, {project.location.city}
                     </div>
                     <div className="flex flex-wrap gap-2 mt-3">
-                      {videoEmbed && (
+                      {project.videoUrl && (
                         <button
-                          onClick={() => setActiveVideoUrl(project.videoUrl || null)}
+                          onClick={() => openVideo(project.videoUrl)}
                           className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-600 border border-red-500/30 hover:bg-red-500/20 transition-all cursor-pointer whitespace-nowrap"
                         >
                           <Play className="w-3.5 h-3.5 fill-red-600 text-red-600 shrink-0" /> Watch Tour
@@ -568,6 +561,53 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   </div>
                 </div>
               </div>
+
+              {/* Dedicated Project Video Walkthrough Section */}
+              {project.videoUrl && (
+                <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-base sm:text-lg text-text-primary flex items-center gap-2">
+                      <Film className="w-5 h-5 text-amber-primary" />
+                      <span>Project Video Walkthrough</span>
+                    </h3>
+                    <button
+                      onClick={() => openVideo(project.videoUrl)}
+                      className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Play Fullscreen</span>
+                      <Play className="w-3 h-3 fill-amber-600" />
+                    </button>
+                  </div>
+                  
+                  <div 
+                    className="relative w-full aspect-video rounded-xl overflow-hidden cursor-pointer group shadow-sm bg-slate-950"
+                    onClick={() => openVideo(project.videoUrl)}
+                  >
+                    <img
+                      src={project.videoThumbnail ? resolveMediaUrl(project.videoThumbnail) : (heroImage || "")}
+                      alt={`${project.name} Video Walkthrough`}
+                      className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-transform duration-700 ease-out"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent group-hover:from-black/60 transition-colors" />
+                    
+                    {/* Centered Large Circular Play Button */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 text-slate-950 flex items-center justify-center shadow-2xl backdrop-blur-md group-hover:scale-110 active:scale-95 transition-transform">
+                        <Play className="w-6 h-6 fill-slate-950 text-slate-950 ml-0.5" />
+                      </div>
+                    </div>
+
+                    <div className="absolute bottom-3 left-3.5 right-3.5 flex items-center justify-between text-white pointer-events-none">
+                      <span className="font-bold text-xs sm:text-sm drop-shadow-md truncate">
+                        {project.name} • Virtual Tour
+                      </span>
+                      <span className="text-[11px] font-semibold bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-white/90 border border-white/10">
+                        Watch Tour
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
 
               {/* Construction Updates Timeline */}
