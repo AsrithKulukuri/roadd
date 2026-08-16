@@ -254,29 +254,36 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
       {/* Video Tour Modal */}
       {activeVideoUrl && (
-        <div className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4" onClick={() => setActiveVideoUrl(null)}>
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-2 sm:p-6" onClick={() => setActiveVideoUrl(null)}>
           <div
-            className={`relative w-full bg-black rounded-3xl overflow-hidden shadow-2xl ${activeIsShort ? "max-w-[420px]" : "max-w-4xl"}`}
+            className="relative w-full max-w-5xl h-[88vh] sm:h-[85vh] flex flex-col bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-white/15"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-4 py-3 bg-slate-900">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-white/10 shrink-0">
               <button
                 onClick={() => setActiveVideoUrl(null)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-amber-500 hover:text-slate-950 text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold transition-all border border-white/15 cursor-pointer shrink-0 shadow-sm"
                 title="Back to project"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
+                <ArrowLeft className="w-3.5 h-3.5 text-amber-500" />
                 <span>Back</span>
               </button>
               <div className="flex items-center gap-2 text-white font-bold text-sm truncate mx-2">
-                <Play className="w-4 h-4 text-red-500 fill-red-500 shrink-0" />
-                {activeIsShort ? "Video Short Tour" : "Video Tour"}
+                <Play className="w-4 h-4 fill-amber-500 text-amber-500 shrink-0" />
+                <span>Video Walkthrough</span>
               </div>
-              <button onClick={() => setActiveVideoUrl(null)} className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer shrink-0" title="Close video">
+              <button 
+                onClick={() => setActiveVideoUrl(null)} 
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0" 
+                title="Close video"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className={`relative w-full bg-black flex items-center justify-center overflow-hidden ${activeIsShort ? "aspect-[9/16] max-h-[75vh]" : "aspect-video"}`}>
+
+            {/* Video Player Box (fills all available modal height) */}
+            <div className="relative flex-1 w-full h-full min-h-0 bg-black flex items-center justify-center overflow-hidden">
               {/* Buffering / Loading Overlay */}
               {isVideoLoading && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-md gap-3 pointer-events-none">
@@ -313,8 +320,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   src={resolveMediaUrl(activeVideoUrl)}
                   controls
                   autoPlay
+                  playsInline
                   poster={project.videoThumbnail ? resolveMediaUrl(project.videoThumbnail) : undefined}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full max-h-full object-contain"
                   onLoadedData={() => setIsVideoLoading(false)}
                   onCanPlay={() => setIsVideoLoading(false)}
                 />

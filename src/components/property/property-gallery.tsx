@@ -216,21 +216,15 @@ export function PropertyGallery({
       {/* Video Tour Dialog Modal (Supports YouTube & Direct Uploaded Videos) */}
       {hasVideo && (
         <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>
-          <DialogContent className={cn(
-            "p-0 bg-slate-950 border-slate-800 text-white overflow-hidden rounded-3xl mx-auto shadow-2xl transition-all duration-300",
-            isShort ? "max-w-[360px] sm:max-w-[420px] w-[92vw]" : "max-w-4xl w-full"
-          )}>
-            <DialogTitle className="p-3.5 bg-slate-900 border-b border-slate-800 font-extrabold text-xs sm:text-sm text-white flex items-center justify-between">
+          <DialogContent className="p-0 bg-slate-950 border border-white/15 text-white overflow-hidden rounded-3xl mx-auto shadow-2xl transition-all duration-300 max-w-5xl w-full h-[88vh] sm:h-[85vh] flex flex-col">
+            <DialogTitle className="px-4 py-3 bg-slate-900 border-b border-white/10 font-extrabold text-xs sm:text-sm text-white flex items-center justify-between shrink-0">
               <span className="flex items-center gap-2 truncate">
-                <Play className="w-4 h-4 text-red-500 fill-red-500 shrink-0" />
-                {embedUrl ? (isShort ? "YouTube Short Tour" : "Property Video Tour") : "Property Video Walkthrough"} - {title}
+                <Play className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
+                <span>Video Walkthrough - {title}</span>
               </span>
             </DialogTitle>
             <DialogDescription className="sr-only">Video tour for {title}</DialogDescription>
-            <div className={cn(
-              "relative w-full bg-black flex items-center justify-center overflow-hidden",
-              isShort ? "h-[70vh] sm:h-[75vh] max-h-[640px] aspect-[9/16]" : "aspect-video"
-            )}>
+            <div className="relative flex-1 w-full h-full min-h-0 bg-black flex items-center justify-center overflow-hidden">
               {/* Buffering / Loading Overlay */}
               {isVideoLoading && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-md gap-3 pointer-events-none">
