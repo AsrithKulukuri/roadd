@@ -270,13 +270,13 @@ export function Navbar() {
                 </div>
               )}
 
-              {/* Post Requirement CTA Button (Desktop only - already available in mobile drawer) */}
+              {/* Post Requirement CTA Button */}
               <button
                 onClick={() => setIsRequirementModalOpen(true)}
-                className="hidden sm:flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-black bg-slate-950 hover:bg-slate-900 text-white shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border border-slate-800"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-slate-950 hover:bg-slate-900 text-white shadow-xs border border-white/15 active:scale-95 transition-all cursor-pointer shrink-0"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
-                <span>Post Requirement</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
+                <span className="whitespace-nowrap">Post Requirement</span>
               </button>
 
               {/* List Property CTA Button */}
