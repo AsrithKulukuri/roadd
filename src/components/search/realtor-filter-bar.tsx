@@ -412,31 +412,6 @@ export function RealtorFilterBar({
                     </div>
                   </div>
 
-                  {/* Quick concise preset chips */}
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {pricePresets.map((preset) => {
-                      const isSelected =
-                        Number(filters.budget[0]) === preset.min &&
-                        Number(filters.budget[1]) === preset.max;
-                      return (
-                        <button
-                          key={preset.label}
-                          type="button"
-                          onPointerDown={(e) => handlePresetClick(preset.min, preset.max, e)}
-                          onClick={(e) => handlePresetClick(preset.min, preset.max, e)}
-                          className={cn(
-                            "py-1.5 px-3 rounded-full text-xs font-bold border transition-all cursor-pointer select-none active:scale-95 touch-manipulation",
-                            isSelected
-                              ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm"
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-amber-400"
-                          )}
-                        >
-                          {preset.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-
                   <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <button
                       type="button"
@@ -630,31 +605,6 @@ export function RealtorFilterBar({
                   <span>₹0</span>
                   <span>₹10+ Cr</span>
                 </div>
-              </div>
-
-              {/* Quick concise preset chips */}
-              <div className="flex flex-wrap gap-1.5 pt-0.5">
-                {pricePresets.map((preset) => {
-                  const isSelected =
-                    Number(filters.budget[0]) === preset.min &&
-                    Number(filters.budget[1]) === preset.max;
-                  return (
-                    <button
-                      key={preset.label}
-                      type="button"
-                      onPointerDown={(e) => handlePresetClick(preset.min, preset.max, e)}
-                      onClick={(e) => handlePresetClick(preset.min, preset.max, e)}
-                      className={cn(
-                        "py-1 px-2.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer select-none active:scale-95 touch-manipulation",
-                        isSelected
-                          ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-amber-400"
-                      )}
-                    >
-                      {preset.label}
-                    </button>
-                  );
-                })}
               </div>
 
               <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
