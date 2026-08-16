@@ -723,55 +723,55 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     <h2 className="text-xl font-bold text-text-primary">
                       {project.projectType === "venture" ? "Plot Layouts & Pricing" : project.projectType === "villa" ? "Villa Configurations & Pricing" : "Floor Plans & Pricing"}
                     </h2>
+
+                    {/* Clean Header Slider Controls */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => cardsScrollRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
+                        className="w-8 h-8 rounded-full bg-bg-tertiary hover:bg-amber-500 hover:text-slate-950 border border-border-default flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95"
+                        title="Previous layouts"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => cardsScrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
+                        className="w-8 h-8 rounded-full bg-bg-tertiary hover:bg-amber-500 hover:text-slate-950 border border-border-default flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95"
+                        title="Next layouts"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Config tabs */}
-                  <div className="relative">
-                    <button 
-                      onClick={() => tabsScrollRef.current?.scrollBy({ left: -200, behavior: "smooth" })}
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center cursor-pointer group z-10"
-                    >
-                      <ChevronLeft className="w-5 h-5 text-text-tertiary drop-shadow-md group-hover:text-text-primary" />
-                    </button>
-                    <div ref={tabsScrollRef} className="flex gap-3 overflow-x-auto scrollbar-none touch-pan-x mb-6 pb-1 pr-8 pl-6">
+                  {/* Clean Config tabs (No overlapping floating arrows) */}
+                  <div className="flex gap-2.5 overflow-x-auto scrollbar-none touch-pan-x mb-5 pb-1">
                     <button
                       onClick={() => setActiveConfigLabel("All")}
-                      className={`px-5 py-2.5 rounded-full text-sm flex items-center justify-center border transition-all shrink-0 ${
+                      className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center justify-center border transition-all shrink-0 cursor-pointer ${
                         currentLabel === "All"
-                          ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white"
-                          : "bg-white text-text-secondary border-border-default hover:border-amber-primary/40 dark:bg-bg-primary"
+                          ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm"
+                          : "bg-bg-primary text-text-secondary border-border-default hover:border-amber-primary/40"
                       }`}
                     >
-                      <span className="font-bold">All</span>
+                      <span>All</span>
                     </button>
                     {groupedConfigs.map((group) => (
                       <button key={group.label} onClick={() => setActiveConfigLabel(group.label)}
-                        className={`px-5 py-1.5 rounded-full text-sm flex flex-col items-center justify-center border transition-all shrink-0 ${
+                        className={`px-4 py-1.5 rounded-full text-xs sm:text-sm flex flex-col items-center justify-center border transition-all shrink-0 cursor-pointer ${
                           currentLabel === group.label
-                            ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white"
-                            : "bg-white text-text-secondary border-border-default hover:border-amber-primary/40 dark:bg-bg-primary"
+                            ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm"
+                            : "bg-bg-primary text-text-secondary border-border-default hover:border-amber-primary/40"
                         }`}
                       >
                         <span className="font-bold">{group.label}</span>
                         <span className="text-[10px] opacity-80">{group.configs.length} Size{group.configs.length !== 1 ? 's' : ''}</span>
                       </button>
                     ))}
-                    </div>
-                    <button 
-                      onClick={() => tabsScrollRef.current?.scrollBy({ left: 200, behavior: "smooth" })}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center cursor-pointer group z-10"
-                    >
-                      <ChevronRight className="w-5 h-5 text-text-tertiary drop-shadow-md animate-pulse group-hover:text-text-primary" />
-                    </button>
                   </div>
 
-                  <div className="relative">
-                    <button 
-                      onClick={() => cardsScrollRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
-                      className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center cursor-pointer group z-10"
-                    >
-                      <ChevronLeft className="w-6 h-6 text-text-tertiary drop-shadow-md group-hover:text-text-primary" />
-                    </button>
+                  <div>
                     <div ref={cardsScrollRef} className="flex gap-4 sm:gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6">
                     {(currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => {
                       const areaMin = cfg.superBuiltUpAreaMin ?? cfg.builtUpAreaMin ?? cfg.plotSizeMin;
@@ -894,12 +894,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                       );
                     })}
                     </div>
-                    <button 
-                      onClick={() => cardsScrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
-                      className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center cursor-pointer group z-10"
-                    >
-                      <ChevronRight className="w-6 h-6 text-text-tertiary drop-shadow-md animate-pulse group-hover:text-text-primary" />
-                    </button>
                   </div>
 
                   {/* Add Simulator for Ventures */}
