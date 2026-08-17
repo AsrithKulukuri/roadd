@@ -86,8 +86,10 @@ async function uploadFile(file: File, bucket: string, folder: string): Promise<s
     return s3Res.fileUrl;
   }
 
-  console.warn("[S3 Storage] Falling back to object URL:", s3Res.error);
-  return URL.createObjectURL(file);
+  const err = s3Res.error || "Failed to upload file to cloud storage";
+  console.error("[S3 Storage Error]:", err);
+  toast.error(err);
+  throw new Error(err);
 }
 
 function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {

@@ -197,10 +197,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
     ? `https://wa.me/${project.builderWhatsapp.replace(/\D/g, "")}?text=Hi, I am interested in ${project.name}`
     : null;
   const phone = project.builderPhone ? `tel:${project.builderPhone.replace(/\s/g, "")}` : null;
+  const hasBrochure = Boolean(project.brochureUrl && !project.brochureUrl.startsWith("blob:"));
 
   const handleDownloadBrochure = async (e: React.MouseEvent, url: string, filename: string) => {
     e.preventDefault();
-    if (!url) return;
+    if (!url || url.startsWith("blob:")) {
+      toast.error("Brochure file is unavailable or expired. Please upload a PDF in the Admin Dashboard.");
+      return;
+    }
     const resolved = resolveMediaUrl(url);
     try {
       toast.info("Downloading brochure...");
@@ -536,7 +540,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   <Play className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" /> Watch Tour
                 </button>
               )}
-              {project.brochureUrl && (
+              {hasBrochure && (
                 <button
                   onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
                   className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold border border-white/15 transition-all shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
@@ -742,7 +746,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     </p>
                   )}
                 </div>
-                {project.brochureUrl && (
+                {hasBrochure && (
                   <button
                     onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 hover:border-amber-500/40 transition-all shadow-sm whitespace-nowrap cursor-pointer"
@@ -990,7 +994,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               <ScrollReveal id="brochure" className="scroll-mt-32">
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
                   <h2 className="text-xl font-bold text-text-primary mb-4">Brochure</h2>
-                  {project.brochureUrl ? (
+                  {hasBrochure ? (
                     <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl border border-border-default bg-bg-primary">
                       <div className="w-12 h-12 rounded-xl bg-amber-primary/10 flex items-center justify-center shrink-0">
                         <FileText className="w-6 h-6 text-amber-primary" />
@@ -1001,7 +1005,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                       </div>
                       <div className="sm:ml-auto flex items-center gap-2.5 w-full sm:w-auto">
                         <a
-                          href={resolveMediaUrl(project.brochureUrl)}
+                          href={resolveMediaUrl(project.brochureUrl!)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-border-default hover:bg-slate-100 dark:hover:bg-slate-800 text-text-primary font-bold text-sm transition-colors text-center shrink-0 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
@@ -1107,10 +1111,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                       <MessageCircle className="w-4 h-4 text-amber-500 shrink-0" /> WhatsApp
                     </a>
                   )}
-                  {project.brochureUrl && (
+                  {hasBrochure && (
                     <div className="flex items-center gap-2 w-full">
                       <a
-                        href={resolveMediaUrl(project.brochureUrl)}
+                        href={resolveMediaUrl(project.brochureUrl!)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border border-border-default hover:bg-slate-100 dark:hover:bg-slate-800 text-text-primary font-bold text-sm transition-colors text-center shrink-0 cursor-pointer"
@@ -1154,7 +1158,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
       </div>
 
       {/* ── Mobile Fixed Bottom CTA ─────────────────────────────────────── */}
-      {(phone || whatsapp || project.brochureUrl) && (
+      {(phone || whatsapp || hasBrochure) && (
         <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-800/50 px-4 py-3 flex items-center gap-2 shadow-[0_-4px_24px_rgba(0,0,0,0.04)]">
           {project.builderLogoUrl && (
             <img src={project.builderLogoUrl} alt={project.builderName} className="h-8 w-8 object-contain rounded-lg border border-border-default p-0.5 shrink-0" />
@@ -1172,7 +1176,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 <Play className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> Tour
               </button>
             )}
-            {project.brochureUrl && (
+            {hasBrochure && (
               <button
                 type="button"
                 onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}

@@ -47,8 +47,14 @@ export function toSupabaseProject(proj: Partial<Project>): any {
 }
 
 export function fromSupabaseProject(p: any): Project {
+  // Sanitize any expired temporary blob: URLs that were accidentally saved
+  const brochureUrl = p.brochureUrl && !p.brochureUrl.startsWith('blob:') ? p.brochureUrl : undefined;
+  const coverImage = p.coverImage && !p.coverImage.startsWith('blob:') ? p.coverImage : (p.cover_image && !p.cover_image.startsWith('blob:') ? p.cover_image : undefined);
+
   return {
     ...p,
+    brochureUrl,
+    coverImage,
     status: p.constructionStatus || p.status || 'under-construction',
     builder: {
       name: p.builderName || (p.builder?.name ?? 'Independent Developer'),
