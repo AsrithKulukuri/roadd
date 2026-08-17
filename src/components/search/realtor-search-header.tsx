@@ -26,7 +26,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { usePropertiesStore } from "@/stores/properties-store";
+import { useProjectsStore } from "@/stores/projects-store";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
+import { matchesPropertySearch, matchesProjectSearch } from "@/lib/search-engine";
 import { toast } from "sonner";
 import type { FilterState } from "./search-filters";
 import { RealtorFilterBar } from "./realtor-filter-bar";
@@ -93,11 +95,32 @@ export function RealtorSearchHeader({
 
   const router = useRouter();
   const properties = usePropertiesStore((state) => state.properties);
+  const projects = useProjectsStore((state) => state.projects);
 
   const refMatch = useMemo(() => {
     if (!searchInput.trim()) return null;
     return findPropertyByRefId(searchInput, properties);
   }, [searchInput, properties]);
+
+  // Live Auto-Suggestions for Dropdown
+  const liveSuggestions = useMemo(() => {
+    const q = searchInput.trim();
+    if (!q || q.length < 2) return null;
+
+    const matchingProjects = projects
+      .filter((proj) => matchesProjectSearch(proj, q))
+      .slice(0, 3);
+
+    const matchingProps = properties
+      .filter((prop) => matchesPropertySearch(prop, q))
+      .slice(0, 3);
+
+    return {
+      projects: matchingProjects,
+      properties: matchingProps,
+      hasResults: matchingProjects.length > 0 || matchingProps.length > 0
+    };
+  }, [searchInput, projects, properties]);
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -106,6 +129,7 @@ export function RealtorSearchHeader({
       router.push(`/properties/${refMatch.id}`);
       return;
     }
+    setIsFocused(false);
     onFilterChange({ ...filters, query: searchInput });
   };
 
@@ -269,6 +293,79 @@ export function RealtorSearchHeader({
                   <span className="flex items-center gap-1 bg-slate-950 text-white px-2.5 py-1 rounded-xl text-[11px] shrink-0 ml-2 shadow-md">
                     Jump to Property <ArrowRight className="w-3.5 h-3.5" />
                   </span>
+                </div>
+              )}
+
+              {/* LIVE SUGGESTIONS POPUP (PROJECTS & PROPERTIES) */}
+              {!refMatch && isFocused && liveSuggestions && liveSuggestions.hasResults && (
+                <div
+                  onMouseDown={(e) => e.preventDefault()}
+                  className="absolute left-0 right-0 top-full mt-2 z-[110] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 animate-in fade-in zoom-in-95"
+                >
+                  {/* Search All Option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFocused(false);
+                      onFilterChange({ ...filters, query: searchInput });
+                    }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-amber-500/10 flex items-center gap-3 transition-colors text-xs font-bold text-amber-600 dark:text-amber-400"
+                  >
+                    <Search className="w-4 h-4 shrink-0 text-amber-500" />
+                    <span className="truncate">Search for &ldquo;<strong>{searchInput}</strong>&rdquo;</span>
+                  </button>
+
+                  {/* Projects suggestions */}
+                  {liveSuggestions.projects.length > 0 && (
+                    <div className="p-2">
+                      <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        Builder Projects
+                      </div>
+                      {liveSuggestions.projects.map((p) => (
+                        <div
+                          key={`sugg-proj-${p.id}`}
+                          onClick={() => {
+                            setIsFocused(false);
+                            router.push(`/projects/${p.slug || p.id}`);
+                          }}
+                          className="px-2.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold shrink-0">Project</span>
+                            <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{p.name}</span>
+                            <span className="text-[11px] text-slate-400 truncate">({p.location?.locality || p.location?.city})</span>
+                          </div>
+                          <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Properties suggestions */}
+                  {liveSuggestions.properties.length > 0 && (
+                    <div className="p-2">
+                      <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        Properties
+                      </div>
+                      {liveSuggestions.properties.map((p) => (
+                        <div
+                          key={`sugg-prop-${p.id}`}
+                          onClick={() => {
+                            setIsFocused(false);
+                            router.push(`/properties/${p.slug || p.id}`);
+                          }}
+                          className="px-2.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold shrink-0">Property</span>
+                            <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{p.title}</span>
+                            <span className="text-[11px] text-slate-400 truncate">({p.location?.locality || p.location?.city})</span>
+                          </div>
+                          <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </form>

@@ -14,6 +14,7 @@ import { MapWrapper } from "@/components/map/map-wrapper";
 import { SlidersHorizontal, ArrowLeft, Search as SearchIcon, MapPin, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { matchesPropertySearch, matchesProjectSearch, parseSearchIntent } from "@/lib/search-engine";
 
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371; // Radius of the earth in km
@@ -166,17 +167,12 @@ function UnifiedSearchPage() {
   const filteredProperties = useMemo(() => {
     if (activeTab === "projects") return [];
     
+    const parsedIntent = filters.query ? parseSearchIntent(filters.query) : null;
+
     return properties.filter((property) => {
-      // 1. Text Query (Location / Title)
-      if (filters.query) {
-        const q = filters.query.toLowerCase();
-        const loc = property.location;
-        const matchesLoc = 
-          loc.city?.toLowerCase().includes(q) || 
-          loc.locality?.toLowerCase().includes(q) || 
-          loc.address?.toLowerCase().includes(q) ||
-          property.title.toLowerCase().includes(q);
-        if (!matchesLoc) return false;
+      // 1. Intelligent Real Estate Text & Intent Query (BHK, Locality, Builder, Category, Keyword)
+      if (filters.query && !matchesPropertySearch(property, filters.query, parsedIntent || undefined)) {
+        return false;
       }
 
       // 2. Listing Type
@@ -295,17 +291,12 @@ function UnifiedSearchPage() {
   const filteredProjects = useMemo(() => {
     if (activeTab === "properties") return [];
     
+    const parsedIntent = filters.query ? parseSearchIntent(filters.query) : null;
+
     return projects.filter((project) => {
-      // 1. Text Query (Location / Title)
-      if (filters.query) {
-        const q = filters.query.toLowerCase();
-        const loc = project.location;
-        const matchesLoc = 
-          loc.city?.toLowerCase().includes(q) || 
-          loc.locality?.toLowerCase().includes(q) || 
-          loc.address?.toLowerCase().includes(q) ||
-          project.name.toLowerCase().includes(q);
-        if (!matchesLoc) return false;
+      // 1. Intelligent Real Estate Text & Intent Query (BHK, Locality, Builder, Category, Keyword)
+      if (filters.query && !matchesProjectSearch(project, filters.query, parsedIntent || undefined)) {
+        return false;
       }
 
       // 3. Property Category / Type

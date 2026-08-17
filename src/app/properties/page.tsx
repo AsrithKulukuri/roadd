@@ -11,6 +11,7 @@ import { LocationCarousels } from "@/components/search/location-carousels";
 import { MapWrapper } from "@/components/map/map-wrapper";
 import { Building2, ChevronDown, Heart, HelpCircle, ArrowLeft, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { matchesPropertySearch } from "@/lib/search-engine";
 
 export default function PropertiesPageWrapper() {
   return (
@@ -150,40 +151,9 @@ function PropertiesPage() {
   // Filter properties based on FilterState
   const filteredProperties = useMemo(() => {
     return properties.filter((property: any) => {
-      // 1. Location & Free Text Query Match
-      if (filters.query.trim()) {
-        const queryLower = filters.query.toLowerCase().trim();
-        const stopWords = ["in", "at", "near", "for", "a", "an", "the", "of"];
-        const tokens = queryLower.split(/\s+/).filter((t) => !stopWords.includes(t));
-
-        const title = (property.title || "").toLowerCase();
-        const city = (property.location?.city || "").toLowerCase();
-        const locality = (property.location?.locality || "").toLowerCase();
-        const address = (property.location?.address || "").toLowerCase();
-        const propType = (property.propertyType || "").toLowerCase().replace("-", " ");
-        const listType = (property.listingType || "").toLowerCase();
-        const desc = (property.description || "").toLowerCase();
-
-        const searchableText = `${title} ${locality} ${city} ${address} ${propType} ${listType} ${desc}`;
-
-        const isMatch = tokens.every((token) => {
-          const stem = token.length > 3 && token.endsWith("s") ? token.slice(0, -1) : token;
-          if (stem === "apartment" || token === "flats" || token === "flat") {
-            return propType.includes("apartment") || searchableText.includes("apartment");
-          }
-          if (stem === "villa" || token === "house" || token === "houses") {
-            return propType.includes("villa") || searchableText.includes("villa");
-          }
-          if (stem === "plot" || stem === "land") {
-            return propType.includes("land") || propType.includes("plot") || searchableText.includes("plot") || searchableText.includes("land");
-          }
-          if (stem === "shop" || stem === "office" || token === "commercial") {
-            return propType.includes("commercial") || searchableText.includes("commercial");
-          }
-          return searchableText.includes(token) || searchableText.includes(stem);
-        });
-
-        if (!isMatch) return false;
+      // 1. Intelligent Location & Free Text Query Match
+      if (filters.query.trim() && !matchesPropertySearch(property, filters.query)) {
+        return false;
       }
 
       // 2. Listing Type (sale/rent/pg)
