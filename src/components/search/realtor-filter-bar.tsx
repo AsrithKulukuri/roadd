@@ -342,16 +342,16 @@ export function RealtorFilterBar({
               {openDropdown === "price" && (
                 <div className="space-y-4 p-1">
                   {/* Row 1: BUDGET: [ ₹ 10 L ⌄ ] TO [ Any Price ⌄ ] */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider shrink-0">
+                  <div className="flex items-center justify-between gap-1.5 w-full">
+                    <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider shrink-0 mr-1">
                       BUDGET:
                     </span>
                     
-                    <div className="relative flex-1">
+                    <div className="relative flex-1 min-w-0">
                       <select
                         value={filters.budget[0]}
                         onChange={(e) => onFilterChange({ ...filters, budget: [Number(e.target.value), Math.max(Number(e.target.value), filters.budget[1])] })}
-                        className="w-full h-9 px-3 pr-7 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
+                        className="w-full h-9 pl-2.5 pr-6 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white text-center appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
                       >
                         <option value={0}>₹ 0</option>
                         <option value={1000000}>₹ 10 L</option>
@@ -364,16 +364,16 @@ export function RealtorFilterBar({
                         <option value={20000000}>₹ 2 Cr</option>
                         <option value={30000000}>₹ 3 Cr</option>
                       </select>
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
 
-                    <span className="text-slate-400 font-black text-[10px] uppercase">TO</span>
+                    <span className="text-slate-400 font-black text-[10px] uppercase shrink-0 px-0.5">TO</span>
 
-                    <div className="relative flex-1">
+                    <div className="relative flex-1 min-w-0">
                       <select
                         value={filters.budget[1]}
                         onChange={(e) => onFilterChange({ ...filters, budget: [Math.min(filters.budget[0], Number(e.target.value)), Number(e.target.value)] })}
-                        className="w-full h-9 px-3 pr-7 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
+                        className="w-full h-9 pl-2.5 pr-6 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white text-center appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
                       >
                         <option value={100000000}>Any Price</option>
                         <option value={2000000}>₹ 20 L</option>
@@ -386,12 +386,12 @@ export function RealtorFilterBar({
                         <option value={30000000}>₹ 3 Cr</option>
                         <option value={50000000}>₹ 5 Cr</option>
                       </select>
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
                   </div>
 
                   {/* Row 2: Dual Slider */}
-                  <div className="px-1 py-1">
+                  <div className="px-1 py-1.5">
                     <Slider
                       min={0}
                       max={100000000}
@@ -516,23 +516,23 @@ export function RealtorFilterBar({
         <div
           className="hidden md:block absolute top-full left-0 mt-2 z-[100] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-4 animate-in fade-in zoom-in-95 duration-150"
           style={{
-            width: openDropdown === "price" ? "320px" : "280px",
+            width: openDropdown === "price" ? "340px" : "280px",
           }}
         >
           {/* 1. PRICE DROPDOWN CONTENT — Exact Home Budget Style (Screenshot 2 Match) */}
           {openDropdown === "price" && (
             <div className="space-y-4 p-1">
               {/* Row 1: BUDGET: [ ₹ 10 L ⌄ ] TO [ Any Price ⌄ ] */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider shrink-0">
+              <div className="flex items-center justify-between gap-1.5 w-full">
+                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider shrink-0 mr-1">
                   BUDGET:
                 </span>
                 
-                <div className="relative flex-1">
+                <div className="relative flex-1 min-w-0">
                   <select
                     value={filters.budget[0]}
                     onChange={(e) => onFilterChange({ ...filters, budget: [Number(e.target.value), Math.max(Number(e.target.value), filters.budget[1])] })}
-                    className="w-full h-9 px-3 pr-7 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
+                    className="w-full h-9 pl-2.5 pr-6 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white text-center appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
                   >
                     <option value={0}>₹ 0</option>
                     <option value={1000000}>₹ 10 L</option>
@@ -545,16 +545,16 @@ export function RealtorFilterBar({
                     <option value={20000000}>₹ 2 Cr</option>
                     <option value={30000000}>₹ 3 Cr</option>
                   </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
 
-                <span className="text-slate-400 font-black text-[10px] uppercase">TO</span>
+                <span className="text-slate-400 font-black text-[10px] uppercase shrink-0 px-0.5">TO</span>
 
-                <div className="relative flex-1">
+                <div className="relative flex-1 min-w-0">
                   <select
                     value={filters.budget[1]}
                     onChange={(e) => onFilterChange({ ...filters, budget: [Math.min(filters.budget[0], Number(e.target.value)), Number(e.target.value)] })}
-                    className="w-full h-9 px-3 pr-7 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
+                    className="w-full h-9 pl-2.5 pr-6 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white text-center appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
                   >
                     <option value={100000000}>Any Price</option>
                     <option value={2000000}>₹ 20 L</option>
@@ -567,12 +567,12 @@ export function RealtorFilterBar({
                     <option value={30000000}>₹ 3 Cr</option>
                     <option value={50000000}>₹ 5 Cr</option>
                   </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
               {/* Row 2: Dual Slider */}
-              <div className="px-1 py-1">
+              <div className="px-1 py-1.5">
                 <Slider
                   min={0}
                   max={100000000}
