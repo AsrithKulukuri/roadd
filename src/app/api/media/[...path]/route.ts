@@ -74,12 +74,14 @@ export async function GET(
         }
 
         const status = rangeHeader && response.ContentRange ? 206 : 200;
+        const filename = key.split('/').pop() || 'document.pdf';
 
         return new NextResponse(stream, {
           status,
           headers: {
             "Content-Type": contentType,
             "Accept-Ranges": "bytes",
+            "Content-Disposition": ext === "pdf" ? `inline; filename="${encodeURIComponent(filename)}"` : "inline",
             ...(response.ContentLength ? { "Content-Length": String(response.ContentLength) } : {}),
             ...(response.ContentRange ? { "Content-Range": response.ContentRange } : {}),
             "Cache-Control": isVideoOrAudio ? "public, max-age=86400" : "public, max-age=31536000, immutable",

@@ -8,7 +8,7 @@ import { useProjectsStore } from "@/stores/projects-store";
 import { getYoutubeEmbedUrl, isYoutubeShort } from "@/lib/utils";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import {
-  MapPin, CheckCircle2, Phone, MessageCircle, Download,
+  MapPin, CheckCircle2, Phone, MessageCircle, Download, FileText, ExternalLink,
   ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark,
   Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate, Film, Layers, Loader2
 } from "lucide-react";
@@ -16,6 +16,7 @@ import Link from "next/link";
 import { BackButton } from "@/components/ui/back-button";
 import type { Project, ProjectConfig } from "@/types/project";
 import { ProjectFacilitiesGrid } from "@/components/project/project-facilities-grid";
+import { toast } from "sonner";
 
 // ─── Lazy map (SSR unsafe) ─────────────────────────────────────────────────────
 const ProjectMapView = dynamic(
@@ -196,6 +197,30 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
     ? `https://wa.me/${project.builderWhatsapp.replace(/\D/g, "")}?text=Hi, I am interested in ${project.name}`
     : null;
   const phone = project.builderPhone ? `tel:${project.builderPhone.replace(/\s/g, "")}` : null;
+
+  const handleDownloadBrochure = async (e: React.MouseEvent, url: string, filename: string) => {
+    e.preventDefault();
+    if (!url) return;
+    const resolved = resolveMediaUrl(url);
+    try {
+      toast.info("Downloading brochure...");
+      const res = await fetch(resolved);
+      if (!res.ok) throw new Error("Fetch failed");
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      const cleanName = filename.replace(/[^a-zA-Z0-9_-]/g, "_");
+      a.download = cleanName.toLowerCase().endsWith(".pdf") ? cleanName : `${cleanName}_Brochure.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+      toast.success("Brochure downloaded!");
+    } catch {
+      window.open(resolved, "_blank");
+    }
+  };
 
   // YouTube embed — use the full utility that handles Shorts, Live, share links, etc.
   const videoEmbed = getYoutubeEmbedUrl(project.videoUrl);
@@ -512,10 +537,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 </button>
               )}
               {project.brochureUrl && (
-                <a href={project.brochureUrl} target="_blank" rel="noopener noreferrer"
-                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold border border-white/15 transition-all shadow-sm shrink-0 cursor-pointer whitespace-nowrap">
+                <button
+                  onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
+                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold border border-white/15 transition-all shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
+                >
                   <Download className="w-3.5 h-3.5 text-amber-500 shrink-0" /> Brochure
-                </a>
+                </button>
               )}
               {phone && (
                 <a href={phone} className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold border border-white/15 transition-all shadow-sm shrink-0 cursor-pointer whitespace-nowrap">
@@ -716,10 +743,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   )}
                 </div>
                 {project.brochureUrl && (
-                  <a href={project.brochureUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 hover:border-amber-500/40 transition-all shadow-sm whitespace-nowrap">
+                  <button
+                    onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 hover:border-amber-500/40 transition-all shadow-sm whitespace-nowrap cursor-pointer"
+                  >
                     <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download Brochure
-                  </a>
+                  </button>
                 )}
               </div>
 
@@ -964,16 +993,31 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                   {project.brochureUrl ? (
                     <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl border border-border-default bg-bg-primary">
                       <div className="w-12 h-12 rounded-xl bg-amber-primary/10 flex items-center justify-center shrink-0">
-                        <Download className="w-6 h-6 text-amber-primary" />
+                        <FileText className="w-6 h-6 text-amber-primary" />
                       </div>
-                      <div>
+                      <div className="text-center sm:text-left">
                         <p className="font-semibold text-text-primary">Download {project.name} Brochure</p>
                         <p className="text-sm text-text-secondary">Get complete floor plans, pricing &amp; payment plan</p>
                       </div>
-                      <a href={project.brochureUrl} target="_blank" rel="noopener noreferrer"
-                        className="ml-auto px-5 py-2.5 rounded-xl bg-amber-primary text-slate-950 font-bold text-sm hover:bg-amber-500 transition-colors shrink-0 whitespace-nowrap">
-                        Download
-                      </a>
+                      <div className="sm:ml-auto flex items-center gap-2.5 w-full sm:w-auto">
+                        <a
+                          href={resolveMediaUrl(project.brochureUrl)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-border-default hover:bg-slate-100 dark:hover:bg-slate-800 text-text-primary font-bold text-sm transition-colors text-center shrink-0 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 text-amber-500" />
+                          View
+                        </a>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
+                          className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-amber-primary text-slate-950 font-bold text-sm hover:bg-amber-500 transition-colors shrink-0 whitespace-nowrap flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <p className="text-text-tertiary text-sm">No brochure available.</p>
@@ -1064,10 +1108,24 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     </a>
                   )}
                   {project.brochureUrl && (
-                    <a href={project.brochureUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-md">
-                      <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download Brochure
-                    </a>
+                    <div className="flex items-center gap-2 w-full">
+                      <a
+                        href={resolveMediaUrl(project.brochureUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border border-border-default hover:bg-slate-100 dark:hover:bg-slate-800 text-text-primary font-bold text-sm transition-colors text-center shrink-0 cursor-pointer"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-amber-500" />
+                        View
+                      </a>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-md cursor-pointer"
+                      >
+                        <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download
+                      </button>
+                    </div>
                   )}
                 </div>
                 {project.builderLogoUrl && (
@@ -1115,10 +1173,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
               </button>
             )}
             {project.brochureUrl && (
-              <a href={project.brochureUrl} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1 px-3 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-white border border-white/15 text-xs font-bold shadow-sm">
+              <button
+                type="button"
+                onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
+                className="flex items-center gap-1 px-3 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 text-white border border-white/15 text-xs font-bold shadow-sm cursor-pointer"
+                title="Download Brochure"
+              >
                 <Download className="w-3.5 h-3.5 text-amber-500" />
-              </a>
+              </button>
             )}
             {whatsapp && (
               <a href={whatsapp} target="_blank" rel="noopener noreferrer"
