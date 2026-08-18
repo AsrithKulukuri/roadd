@@ -1,8 +1,21 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "sonner";
 import { ClientLayoutWrapper } from "@/components/layout/client-layout-wrapper";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const spaceGrotesk = Inter({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://road.in"),
@@ -90,6 +103,7 @@ export default function RootLayout({
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
+      className={`${inter.variable} ${spaceGrotesk.variable}`}
     >
       <body suppressHydrationWarning className="min-h-screen bg-bg-primary font-body text-text-primary antialiased">
         <ThemeProvider

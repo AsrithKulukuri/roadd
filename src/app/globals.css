@@ -1,11 +1,4 @@
 @import "tailwindcss";
-@import "@fontsource/metropolis/300.css";
-@import "@fontsource/metropolis/400.css";
-@import "@fontsource/metropolis/500.css";
-@import "@fontsource/metropolis/600.css";
-@import "@fontsource/metropolis/700.css";
-@import "@fontsource/metropolis/800.css";
-@import "@fontsource/metropolis/900.css";
 
 /* ========================================================================
    ROAD Design System — Tailwind v4 Custom Theme
@@ -54,10 +47,10 @@
   --color-glass-bg: var(--glass-bg);
   --color-glass-border: var(--glass-border);
 
-  /* Font Families — Metropolis */
-  --font-heading: "Metropolis", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-body: "Metropolis", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-sans: "Metropolis", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Font Families — Realtor.com Style Inter */
+  --font-heading: "Inter", var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-body: "Inter", var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-sans: "Inter", var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* Font Sizes */
@@ -255,17 +248,11 @@ html[data-theme="dark"] {
 
 html {
   scroll-behavior: smooth;
-  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-body,
-button,
-input,
-select,
-textarea,
-optgroup {
+body {
   font-family: var(--font-body);
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
