@@ -475,13 +475,13 @@ export function HeroSection() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center">
         {/* Realtor.com Search Options Bar */}
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-5 px-2">
+        <div className="flex flex-nowrap items-center justify-center gap-2.5 sm:gap-8 mb-5 px-1 max-w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <div 
                 key={tab.id} 
-                className="relative group"
+                className="relative group shrink-0"
                 onMouseEnter={() => {
                   if (tab.id === "buy") setShowBuyMenu(true);
                   if (tab.id === "projects") setShowProjectsMenu(true);
@@ -515,7 +515,7 @@ export function HeroSection() {
                     }
                   }}
                   className={cn(
-                    "relative py-1.5 text-base sm:text-lg font-extrabold transition-all cursor-pointer flex items-center gap-1.5",
+                    "relative py-1.5 text-[13px] xs:text-sm sm:text-lg font-extrabold transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 whitespace-nowrap px-1 sm:px-1.5",
                     isActive
                       ? "text-slate-900"
                       : "text-slate-500 hover:text-slate-900"
@@ -523,15 +523,15 @@ export function HeroSection() {
                 >
                   {tab.label}
                   {tab.id === "buy" && (
-                    <ChevronDown className={cn("w-4 h-4 opacity-50 transition-transform duration-200", showBuyMenu && "rotate-180")} />
+                    <ChevronDown className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-50 transition-transform duration-200", showBuyMenu && "rotate-180")} />
                   )}
                   {tab.id === "projects" && (
-                    <ChevronDown className={cn("w-4 h-4 opacity-50 transition-transform duration-200", showProjectsMenu && "rotate-180")} />
+                    <ChevronDown className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-50 transition-transform duration-200", showProjectsMenu && "rotate-180")} />
                   )}
                   {isActive && (
                     <motion.div
                       layoutId="realtorTabLine"
-                      className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full shadow-md"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 sm:h-1 bg-slate-900 rounded-full shadow-md"
                       transition={{ type: "spring", stiffness: 350, damping: 30 }}
                     />
                   )}
