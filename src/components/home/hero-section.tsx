@@ -473,9 +473,21 @@ export function HeroSection() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-30 flex flex-col items-center text-center">
+        {/* Mobile backdrop to close menu when tapping outside */}
+        {(showBuyMenu || showProjectsMenu) && (
+          <div 
+            className="fixed inset-0 z-40 bg-transparent sm:hidden" 
+            onClick={() => {
+              setShowBuyMenu(false);
+              setShowProjectsMenu(false);
+              setActiveBuySub(null);
+            }} 
+          />
+        )}
+
         {/* Realtor.com Search Options Bar */}
-        <div className="flex flex-nowrap items-center justify-center gap-2.5 sm:gap-8 mb-5 px-1 max-w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex items-center justify-center gap-2 sm:gap-8 mb-5 px-1 max-w-full relative z-50 overflow-visible">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -492,12 +504,13 @@ export function HeroSection() {
                 }}
               >
                 <button
+                  type="button"
                   onClick={() => {
                     if (tab.id === "buy") {
-                      setShowBuyMenu(!showBuyMenu);
+                      setShowBuyMenu((prev) => !prev);
                       setShowProjectsMenu(false);
                     } else if (tab.id === "projects") {
-                      setShowProjectsMenu(!showProjectsMenu);
+                      setShowProjectsMenu((prev) => !prev);
                       setShowBuyMenu(false);
                     } else {
                       setShowBuyMenu(false);
@@ -515,7 +528,7 @@ export function HeroSection() {
                     }
                   }}
                   className={cn(
-                    "relative py-1.5 text-[13px] xs:text-sm sm:text-lg font-extrabold transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 whitespace-nowrap px-1 sm:px-1.5",
+                    "relative py-1.5 text-[13px] xs:text-sm sm:text-lg font-extrabold transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 whitespace-nowrap px-1.5 sm:px-2",
                     isActive
                       ? "text-slate-900"
                       : "text-slate-500 hover:text-slate-900"
@@ -543,8 +556,8 @@ export function HeroSection() {
                       setActiveBuySub(null);
                     }}
                     className={cn(
-                      "absolute top-full left-1/2 -translate-x-1/2 pt-2 w-52 transition-all duration-200 z-50",
-                      showBuyMenu ? "opacity-100 visible" : "opacity-0 invisible"
+                      "absolute top-full left-0 sm:left-1/2 sm:-translate-x-1/2 pt-2 w-52 sm:w-56 transition-all duration-200 z-[100]",
+                      showBuyMenu ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
                     )}
                   >
                     <div className="bg-slate-950 text-white border border-slate-800 rounded-2xl shadow-2xl overflow-visible py-2 text-left relative">
@@ -706,21 +719,21 @@ export function HeroSection() {
                 
                 {tab.id === "projects" && (
                   <div className={cn(
-                    "absolute top-full left-1/2 -translate-x-1/2 pt-2 w-48 transition-all duration-200 z-50",
-                    showProjectsMenu ? "opacity-100 visible" : "opacity-0 invisible"
+                    "absolute top-full left-0 sm:left-1/2 sm:-translate-x-1/2 pt-2 w-48 sm:w-52 transition-all duration-200 z-[100]",
+                    showProjectsMenu ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
                   )}>
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2 text-left">
-                      <Link href="/search?type=projects&propertyType=apartment" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
+                    <div className="bg-slate-950 text-white border border-slate-800 rounded-2xl shadow-2xl overflow-hidden py-2 text-left">
+                      <Link href="/search?type=projects&propertyType=apartment" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-300 hover:bg-slate-900 hover:text-amber-400">
                         Apartments
                       </Link>
-                      <Link href="/search?type=projects&propertyType=villa" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
+                      <Link href="/search?type=projects&propertyType=villa" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-300 hover:bg-slate-900 hover:text-amber-400">
                         Villas
                       </Link>
-                      <Link href="/search?type=projects&propertyType=residential-plot" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
+                      <Link href="/search?type=projects&propertyType=residential-plot" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-300 hover:bg-slate-900 hover:text-amber-400">
                         Plots
                       </Link>
-                      <Link href="/search?type=projects" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400 border-t border-slate-100 dark:border-slate-800 mt-1 pt-3">
-                        View All Projects
+                      <Link href="/projects" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-amber-400 hover:bg-slate-900 hover:text-amber-300 border-t border-slate-800 mt-1 pt-3">
+                        View All Projects →
                       </Link>
                     </div>
                   </div>
