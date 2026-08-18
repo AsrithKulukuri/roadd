@@ -33,6 +33,11 @@ export function toSupabaseProperty(prop: Partial<Property>): any {
   if (!p.createdAt) p.createdAt = new Date().toISOString();
   if (!p.updatedAt) p.updatedAt = new Date().toISOString();
 
+  // Store saleType in attributes JSONB as well for 100% database persistence reliability
+  if (p.saleType) {
+    p.attributes = { ...(p.attributes || {}), saleType: p.saleType };
+  }
+
   // Strip keys that are not valid columns in Supabase
   const cleaned: Record<string, any> = {};
   for (const key of Object.keys(p)) {
@@ -46,6 +51,7 @@ export function toSupabaseProperty(prop: Partial<Property>): any {
 export function fromSupabaseProperty(p: any): Property {
   return {
     ...p,
+    saleType: p.saleType || p.attributes?.saleType || "new",
     pricePerSqFt: p.pricePerSqft ?? p.pricePerSqFt ?? 0,
     areaSqFt: p.area ?? p.areaSqFt ?? 0,
     carpetAreaSqFt: p.carpetArea ?? p.carpetAreaSqFt,
