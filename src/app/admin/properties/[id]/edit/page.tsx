@@ -53,7 +53,9 @@ export default function EditPropertyPage() {
 
   const [formData, setFormData] = useState({
     refId: "",
-    title: "", description: "", propertyType: "apartment", listingType: "sale", price: "", negotiable: false,
+    title: "", description: "", propertyType: "apartment", listingType: "sale", 
+    saleType: "new" as "new" | "resale",
+    price: "", negotiable: false,
     bedrooms: "1", bathrooms: "1", balconies: "0", parking: "0", area: "", builtUpArea: "", carpetArea: "",
     furnishing: "unfurnished", facing: "east", yearBuilt: "",
     
@@ -84,6 +86,7 @@ export default function EditPropertyPage() {
         description: targetProperty.description || "",
         propertyType: targetProperty.propertyType || "apartment",
         listingType: targetProperty.listingType || "sale",
+        saleType: (targetProperty.saleType as "new" | "resale") || "new",
         price: String(targetProperty.price || ""),
         negotiable: false,
         bedrooms: String(targetProperty.bedrooms || "1"),
@@ -231,6 +234,7 @@ export default function EditPropertyPage() {
       pricePerSqft: parseInt(formData.price) / (parseInt(formData.area) || 1),
       propertyType: formData.propertyType as any,
       listingType: formData.listingType as any,
+      saleType: formData.saleType,
       status: finalStatus as any,
       isFeatured: formData.displayCategory === "featured",
       isRecommended: formData.displayCategory === "recommended",
@@ -381,6 +385,21 @@ export default function EditPropertyPage() {
                   <option value="sale">For Sale</option>
                   <option value="rent">For Rent</option>
                   <option value="lease">Lease</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
+                  Property Condition (New / Old) *
+                </label>
+                <select 
+                  name="saleType" 
+                  value={formData.saleType} 
+                  onChange={handleChange} 
+                  className="w-full h-12 rounded-xl bg-slate-900 border border-amber-500/50 px-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  <option value="new">✨ New Property (Brand New / New Launch)</option>
+                  <option value="resale">🏠 Old Property (Resale / Pre-owned)</option>
                 </select>
               </div>
 

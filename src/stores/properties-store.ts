@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 // Valid columns in Supabase properties table
 const VALID_PROPERTY_COLUMNS = new Set([
   'id', 'slug', 'title', 'description', 'price', 'pricePerSqft',
-  'propertyType', 'listingType', 'status', 'bedrooms', 'bathrooms', 'balconies',
+  'propertyType', 'listingType', 'saleType', 'status', 'bedrooms', 'bathrooms', 'balconies',
   'floors', 'totalFloors', 'floorNumber', 'parking', 'roadWidth', 'undividedShare',
   'area', 'carpetArea', 'builtUpArea', 'furnishing', 'facing', 'ageOfProperty',
   'possessionDate', 'isReadyToMove', 'location', 'images', 'coverImage', 'galleryImages',

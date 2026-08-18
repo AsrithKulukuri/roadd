@@ -139,12 +139,20 @@ function UnifiedSearchPage() {
       propertyType = propTypeStr.split(",");
     }
 
+    // Parse saleType (new / resale)
+    const saleTypeStr = searchParams.get("saleType");
+    let saleType: string[] = [];
+    if (saleTypeStr) {
+      saleType = saleTypeStr.split(",");
+    }
+
     return {
       ...initialFilterState,
       query: loc,
       budget,
       listingType,
       propertyType,
+      saleType,
     };
   };
 

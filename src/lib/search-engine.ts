@@ -8,6 +8,7 @@ export interface ParsedSearchIntent {
   bhks: number[];
   propertyTypes: string[];
   listingType?: "sale" | "rent";
+  saleType?: "new" | "resale";
   isGatedCommunity?: boolean;
   minPrice?: number;
   maxPrice?: number;
@@ -37,6 +38,7 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
   const bhks = new Set<number>();
   const propertyTypes = new Set<string>();
   let listingType: "sale" | "rent" | undefined = undefined;
+  let saleType: "new" | "resale" | undefined = undefined;
   let isGatedCommunity: boolean | undefined = undefined;
   let minPrice: number | undefined = undefined;
   let maxPrice: number | undefined = undefined;
@@ -81,10 +83,16 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     propertyTypes.add("buildings");
   }
 
-  // 3. Detect Listing Type (Rent / Sale)
-  if (/\b(?:rent|rental|lease|to\s*rent|for\s*rent)\b/i.test(norm)) {
+  // 3. Detect Listing Type & Sale Type (New / Resale / Old / Rent / Sale)
+  if (/\b(?:resale|old|used|pre-owned|preowned|second\s*hand)\b/i.test(norm)) {
+    saleType = "resale";
+    listingType = "sale";
+  } else if (/\b(?:brand\s*new|new\s*launch|new\s*flat|new\s*flats|new\s*house|new\s*houses|new\s*villa|new\s*villas|new\s*property|new\s*project)\b/i.test(norm)) {
+    saleType = "new";
+    listingType = "sale";
+  } else if (/\b(?:rent|rental|lease|to\s*rent|for\s*rent)\b/i.test(norm)) {
     listingType = "rent";
-  } else if (/\b(?:buy|sale|purchase|for\s*sale|resale|new)\b/i.test(norm)) {
+  } else if (/\b(?:buy|sale|purchase|for\s*sale)\b/i.test(norm)) {
     listingType = "sale";
   }
 
@@ -125,7 +133,7 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     "looking", "want", "need", "show", "me", "find", "best", "top", "good", "cheap", "luxury",
     "buy", "rent", "sale", "bhk", "bk", "bed", "beds", "bedroom", "bedrooms", "property", "properties",
     "project", "projects", "flat", "flats", "apartment", "apartments", "villa", "villas", "house", "houses",
-    "plot", "plots", "land", "lands", "venture", "ventures", "commercial", "space", "spaces", "ready", "move", "new"
+    "plot", "plots", "land", "lands", "venture", "ventures", "commercial", "space", "spaces", "ready", "move", "new", "old", "resale"
   ]);
 
   const specificKeywords: string[] = [];
@@ -142,6 +150,7 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     bhks: Array.from(bhks),
     propertyTypes: Array.from(propertyTypes),
     listingType,
+    saleType,
     isGatedCommunity,
     minPrice,
     maxPrice,
@@ -251,6 +260,13 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
   // 2. Listing Type requirement (sale / rent)
   if (intent.listingType) {
     if (property.listingType && property.listingType !== intent.listingType) {
+      return false;
+    }
+  }
+
+  // 2b. Sale Type requirement (new / resale)
+  if (intent.saleType) {
+    if (property.saleType && property.saleType !== intent.saleType) {
       return false;
     }
   }

@@ -92,6 +92,7 @@ export function HeroSection() {
   const [activeTab, setActiveTab] = useState("buy");
   const [locationTab, setLocationTab] = useState<"trending" | "vijayawada" | "guntur" | "popular" | "nearyou">("trending");
   const [showBuyMenu, setShowBuyMenu] = useState(false);
+  const [activeBuySub, setActiveBuySub] = useState<string | null>(null);
   const [showProjectsMenu, setShowProjectsMenu] = useState(false);
   const [openLocationTab, setOpenLocationTab] = useState<string | null>(null);
   const [showBudgetDropdown, setShowBudgetDropdown] = useState(false);
@@ -533,24 +534,166 @@ export function HeroSection() {
                 </button>
 
                 {tab.id === "buy" && (
-                  <div className={cn(
-                    "absolute top-full left-1/2 -translate-x-1/2 pt-2 w-48 transition-all duration-200 z-50",
-                    showBuyMenu ? "opacity-100 visible" : "opacity-0 invisible"
-                  )}>
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2 text-left">
-                      <Link href="/search?type=buy&propertyType=apartment" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
-                        Flats
-                      </Link>
-                      <Link href="/search?type=buy&propertyType=independent-house" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
-                        Houses
-                      </Link>
-                      <Link href="/search?type=buy&propertyType=villa" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
-                        Villas
-                      </Link>
-                      <Link href="/search?type=buy&propertyType=residential-plot" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
+                  <div 
+                    onMouseLeave={() => {
+                      setActiveBuySub(null);
+                    }}
+                    className={cn(
+                      "absolute top-full left-1/2 -translate-x-1/2 pt-2 w-52 transition-all duration-200 z-50",
+                      showBuyMenu ? "opacity-100 visible" : "opacity-0 invisible"
+                    )}
+                  >
+                    <div className="bg-slate-950 text-white border border-slate-800 rounded-2xl shadow-2xl overflow-visible py-2 text-left relative">
+                      {/* 1. Flats */}
+                      <div 
+                        className="relative group"
+                        onMouseEnter={() => setActiveBuySub("flats")}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setActiveBuySub(activeBuySub === "flats" ? null : "flats")}
+                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-900 hover:text-amber-400 transition-colors text-left cursor-pointer"
+                        >
+                          <span>Flats</span>
+                          <ChevronRight className={cn("w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-transform", activeBuySub === "flats" && "rotate-90 sm:rotate-0 text-amber-400")} />
+                        </button>
+                        
+                        {/* Flats Submenu */}
+                        {activeBuySub === "flats" && (
+                          <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0">
+                            <Link 
+                              href="/search?type=buy&propertyType=apartment&saleType=new" 
+                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                              className="flex items-center justify-between px-3.5 py-2 text-xs font-black text-amber-300 hover:bg-slate-800 hover:text-amber-400 rounded-lg mx-1 transition-colors"
+                            >
+                              <span>✨ New Flat</span>
+                              <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-extrabold">New</span>
+                            </Link>
+                            <Link 
+                              href="/search?type=buy&propertyType=apartment&saleType=resale" 
+                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                              className="flex items-center justify-between px-3.5 py-2 text-xs font-black text-slate-300 hover:bg-slate-800 hover:text-amber-400 rounded-lg mx-1 transition-colors"
+                            >
+                              <span>🏠 Old Flat (Resale)</span>
+                              <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-extrabold">Resale</span>
+                            </Link>
+                            <div className="h-px bg-slate-800 my-1 mx-2" />
+                            <Link 
+                              href="/search?type=buy&propertyType=apartment" 
+                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                              className="block px-3.5 py-1.5 text-[11px] font-bold text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg mx-1 transition-colors"
+                            >
+                              All Flats
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 2. Houses */}
+                      <div 
+                        className="relative group"
+                        onMouseEnter={() => setActiveBuySub("houses")}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setActiveBuySub(activeBuySub === "houses" ? null : "houses")}
+                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-900 hover:text-amber-400 transition-colors text-left cursor-pointer"
+                        >
+                          <span>Houses</span>
+                          <ChevronRight className={cn("w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-transform", activeBuySub === "houses" && "rotate-90 sm:rotate-0 text-amber-400")} />
+                        </button>
+                        
+                        {/* Houses Submenu */}
+                        {activeBuySub === "houses" && (
+                          <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0">
+                            <Link 
+                              href="/search?type=buy&propertyType=independent-house&saleType=new" 
+                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                              className="flex items-center justify-between px-3.5 py-2 text-xs font-black text-amber-300 hover:bg-slate-800 hover:text-amber-400 rounded-lg mx-1 transition-colors"
+                            >
+                              <span>✨ New House</span>
+                              <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-extrabold">New</span>
+                            </Link>
+                            <Link 
+                              href="/search?type=buy&propertyType=independent-house&saleType=resale" 
+                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                              className="flex items-center justify-between px-3.5 py-2 text-xs font-black text-slate-300 hover:bg-slate-800 hover:text-amber-400 rounded-lg mx-1 transition-colors"
+                            >
+                              <span>🏠 Old House (Resale)</span>
+                              <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-extrabold">Resale</span>
+                            </Link>
+                            <div className="h-px bg-slate-800 my-1 mx-2" />
+                            <Link 
+                              href="/search?type=buy&propertyType=independent-house" 
+                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                              className="block px-3.5 py-1.5 text-[11px] font-bold text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg mx-1 transition-colors"
+                            >
+                              All Houses
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 3. Villas */}
+                      <div 
+                        className="relative group"
+                        onMouseEnter={() => setActiveBuySub("villas")}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setActiveBuySub(activeBuySub === "villas" ? null : "villas")}
+                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-900 hover:text-amber-400 transition-colors text-left cursor-pointer"
+                        >
+                          <span>Villas</span>
+                          <ChevronRight className={cn("w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-transform", activeBuySub === "villas" && "rotate-90 sm:rotate-0 text-amber-400")} />
+                        </button>
+                        
+                        {/* Villas Submenu */}
+                        {activeBuySub === "villas" && (
+                          <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0">
+                            <Link 
+                              href="/search?type=buy&propertyType=villa&saleType=new" 
+                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                              className="flex items-center justify-between px-3.5 py-2 text-xs font-black text-amber-300 hover:bg-slate-800 hover:text-amber-400 rounded-lg mx-1 transition-colors"
+                            >
+                              <span>✨ New Villa</span>
+                              <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-extrabold">New</span>
+                            </Link>
+                            <Link 
+                              href="/search?type=buy&propertyType=villa&saleType=resale" 
+                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                              className="flex items-center justify-between px-3.5 py-2 text-xs font-black text-slate-300 hover:bg-slate-800 hover:text-amber-400 rounded-lg mx-1 transition-colors"
+                            >
+                              <span>🏠 Old Villa (Resale)</span>
+                              <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-extrabold">Resale</span>
+                            </Link>
+                            <div className="h-px bg-slate-800 my-1 mx-2" />
+                            <Link 
+                              href="/search?type=buy&propertyType=villa" 
+                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                              className="block px-3.5 py-1.5 text-[11px] font-bold text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg mx-1 transition-colors"
+                            >
+                              All Villas
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 4. Plots */}
+                      <Link 
+                        href="/search?type=buy&propertyType=residential-plot" 
+                        onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                        className="block px-4 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-900 hover:text-amber-400 transition-colors"
+                      >
                         Plots
                       </Link>
-                      <Link href="/search?type=buy&propertyType=agricultural-land" className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400">
+
+                      {/* 5. Agriculture */}
+                      <Link 
+                        href="/search?type=buy&propertyType=agricultural-land" 
+                        onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                        className="block px-4 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-900 hover:text-amber-400 transition-colors"
+                      >
                         Agriculture
                       </Link>
                     </div>

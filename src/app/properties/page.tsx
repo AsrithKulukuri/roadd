@@ -95,11 +95,18 @@ function PropertiesPage() {
       }
     }
 
+    const saleTypeRaw = searchParams.get("saleType");
+    let saleType: string[] = [];
+    if (saleTypeRaw) {
+      saleType = saleTypeRaw.split(",");
+    }
+
     return {
       ...initialFilterState,
       query: loc,
       listingType,
       propertyType,
+      saleType,
       budget,
     };
   };
@@ -132,6 +139,11 @@ function PropertiesPage() {
           hasChanges = true;
         }
       }
+      const saleType = searchParams.get("saleType");
+      if (saleType) {
+        next.saleType = saleType.split(",");
+        hasChanges = true;
+      }
       if (bhk) {
         next.bhk = bhk.split(",");
         hasChanges = true;
@@ -159,6 +171,11 @@ function PropertiesPage() {
       // 2. Listing Type (sale/rent/pg)
       if (filters.listingType.length > 0) {
         if (!filters.listingType.includes(property.listingType)) return false;
+      }
+
+      // 2b. Sale Type (new / resale)
+      if (filters.saleType && filters.saleType.length > 0) {
+        if (property.saleType && !filters.saleType.includes(property.saleType)) return false;
       }
 
       // 3. Property Type (apartment/villa/land/commercial/agricultural)
