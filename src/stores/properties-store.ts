@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
 import { deleteFromS3 } from '@/lib/aws/storage-utils';
 import type { Property } from '@/types/property';
+import { toast } from 'sonner';
 
 // Valid columns in Supabase properties table
 const VALID_PROPERTY_COLUMNS = new Set([
@@ -91,24 +92,8 @@ export const usePropertiesStore = create<PropertiesState>()(
             return;
           }
 
-          if (data && data.length > 0) {
-            const mappedData = data.map(fromSupabaseProperty);
-            set({ properties: mappedData as Property[], isLoading: false });
-          } else {
-            // Non-destructive: if Supabase has 0 rows, check if local state has properties that need to be uploaded
-            const currentLocal = get().properties;
-            if (currentLocal && currentLocal.length > 0) {
-              for (const item of currentLocal) {
-                try {
-                  const dbPayload = toSupabaseProperty(item);
-                  await supabase.from('properties').insert([dbPayload]);
-                } catch (e) {
-                  console.warn('Auto-sync property to Supabase notice:', e);
-                }
-              }
-            }
-            set({ isLoading: false });
-          }
+          const mappedData = (data || []).map(fromSupabaseProperty);
+          set({ properties: mappedData as Property[], isLoading: false });
         } catch (error: any) {
           console.error('Error fetching properties from Supabase:', error);
           set({ error: error.message, isLoading: false });
@@ -150,24 +135,28 @@ export const usePropertiesStore = create<PropertiesState>()(
             .eq('id', id);
 
           if (error) {
-            console.warn('Supabase delete warning:', error.message);
-          } else if (property) {
-            // Delete associated storage files from AWS S3
-            const urlsToDelete: string[] = [];
-            if (property.coverImage) urlsToDelete.push(property.coverImage);
-            if (property.videoUrl) urlsToDelete.push(property.videoUrl);
-            if (property.layoutMapUrl) urlsToDelete.push(property.layoutMapUrl);
-            if (property.floorPlanUrl) urlsToDelete.push(property.floorPlanUrl);
-            if (property.brochureUrl) urlsToDelete.push(property.brochureUrl);
-            property.images?.forEach((img) => { if (img.url) urlsToDelete.push(img.url); });
-            property.galleryImages?.forEach((url) => { if (url) urlsToDelete.push(url); });
+            console.error('Supabase delete error:', error.message);
+            toast.error('Delete failed: ' + error.message);
+          } else {
+            toast.success('Property deleted');
+            if (property) {
+              // Delete associated storage files from AWS S3
+              const urlsToDelete: string[] = [];
+              if (property.coverImage) urlsToDelete.push(property.coverImage);
+              if (property.videoUrl) urlsToDelete.push(property.videoUrl);
+              if (property.layoutMapUrl) urlsToDelete.push(property.layoutMapUrl);
+              if (property.floorPlanUrl) urlsToDelete.push(property.floorPlanUrl);
+              if (property.brochureUrl) urlsToDelete.push(property.brochureUrl);
+              property.images?.forEach((img) => { if (img.url) urlsToDelete.push(img.url); });
+              property.galleryImages?.forEach((url) => { if (url) urlsToDelete.push(url); });
 
-            if (urlsToDelete.length > 0) {
-              await deleteFromS3(urlsToDelete);
+              if (urlsToDelete.length > 0) {
+                deleteFromS3(urlsToDelete).catch(() => {});
+              }
             }
           }
         } catch (error: any) {
-          console.warn('Supabase delete exception:', error);
+          console.error('Supabase delete exception:', error);
         }
       },
 

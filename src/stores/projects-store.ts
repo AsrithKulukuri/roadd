@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
 import { deleteFromS3 } from '@/lib/aws/storage-utils';
 import type { Project } from '@/types/project';
+import { toast } from 'sonner';
 
 // Valid columns in Supabase projects table
 const VALID_PROJECT_COLUMNS = new Set([
@@ -86,7 +87,7 @@ export const useProjectsStore = create<ProjectsState>()(
       isLoading: false,
       error: null,
 
-      // ─── Fetch (Supabase is source of truth, but non-destructive) ──────────
+      // ─── Fetch (Supabase is source of truth) ─────────────────────────────
       fetchProjects: async () => {
         set({ isLoading: true, error: null });
 
@@ -102,24 +103,8 @@ export const useProjectsStore = create<ProjectsState>()(
             return;
           }
 
-          if (data && data.length > 0) {
-            const mappedData = data.map(fromSupabaseProject);
-            set({ projects: mappedData as Project[], isLoading: false });
-          } else {
-            // Non-destructive: if Supabase has 0 rows, check if local state has projects that need to be uploaded
-            const currentLocal = get().projects;
-            if (currentLocal && currentLocal.length > 0) {
-              for (const item of currentLocal) {
-                try {
-                  const dbPayload = toSupabaseProject(item);
-                  await supabase.from('projects').insert([dbPayload]);
-                } catch (e) {
-                  console.warn('Auto-sync project to Supabase notice:', e);
-                }
-              }
-            }
-            set({ isLoading: false });
-          }
+          const mappedData = (data || []).map(fromSupabaseProject);
+          set({ projects: mappedData as Project[], isLoading: false });
         } catch (err: any) {
           console.warn('Error fetching projects:', err);
           set({ isLoading: false, error: err?.message });
@@ -179,23 +164,27 @@ export const useProjectsStore = create<ProjectsState>()(
         try {
           const { error } = await supabase.from('projects').delete().eq('id', id);
           if (error) {
-            console.warn('Supabase project delete warning:', error.message);
-          } else if (project) {
-            // Delete associated storage files from AWS S3
-            const urlsToDelete: string[] = [];
-            if (project.coverImage) urlsToDelete.push(project.coverImage);
-            if (project.builderLogoUrl) urlsToDelete.push(project.builderLogoUrl);
-            if (project.videoUrl) urlsToDelete.push(project.videoUrl);
-            if (project.brochureUrl) urlsToDelete.push(project.brochureUrl);
-            project.images?.forEach((img) => { if (img.url) urlsToDelete.push(img.url); });
-            project.configurations?.forEach((cfg) => {
-              if (cfg.floorPlanUrl) urlsToDelete.push(cfg.floorPlanUrl);
-              if (cfg.videoUrl) urlsToDelete.push(cfg.videoUrl);
-              cfg.images?.forEach((imgUrl) => { if (imgUrl) urlsToDelete.push(imgUrl); });
-            });
+            console.error('Supabase project delete error:', error.message);
+            toast.error('Delete failed: ' + error.message);
+          } else {
+            toast.success('Project deleted');
+            if (project) {
+              // Delete associated storage files from AWS S3
+              const urlsToDelete: string[] = [];
+              if (project.coverImage) urlsToDelete.push(project.coverImage);
+              if (project.builderLogoUrl) urlsToDelete.push(project.builderLogoUrl);
+              if (project.videoUrl) urlsToDelete.push(project.videoUrl);
+              if (project.brochureUrl) urlsToDelete.push(project.brochureUrl);
+              project.images?.forEach((img) => { if (img.url) urlsToDelete.push(img.url); });
+              project.configurations?.forEach((cfg) => {
+                if (cfg.floorPlanUrl) urlsToDelete.push(cfg.floorPlanUrl);
+                if (cfg.videoUrl) urlsToDelete.push(cfg.videoUrl);
+                cfg.images?.forEach((imgUrl) => { if (imgUrl) urlsToDelete.push(imgUrl); });
+              });
 
-            if (urlsToDelete.length > 0) {
-              await deleteFromS3(urlsToDelete);
+              if (urlsToDelete.length > 0) {
+                deleteFromS3(urlsToDelete).catch(() => {});
+              }
             }
           }
         } catch (err: any) {
