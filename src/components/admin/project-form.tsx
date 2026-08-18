@@ -589,12 +589,21 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
 
               {/* Project Stats & Status */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Construction Status</label>
-                <select value={constructionStatus} onChange={(e) => setConstructionStatus(e.target.value as ConstructionStatus)} className={ic()}>
-                  {STATUSES.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
+                <label className="text-sm font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4" /> Project Launch & Construction Status *
+                </label>
+                <select 
+                  value={constructionStatus} 
+                  onChange={(e) => setConstructionStatus(e.target.value as ConstructionStatus)} 
+                  className={cn(ic(), "font-bold text-white bg-slate-900 border-amber-500/50 focus:ring-2 focus:ring-amber-500")}
+                >
+                  <option value="new-launch">🚀 ✨ New Launch (Freshly Announced / Booking Open)</option>
+                  <option value="under-construction">🏗️ Under Construction (Work in Progress)</option>
+                  <option value="ready-to-move">🏠 Ready to Move (Completed)</option>
                 </select>
+                <p className="text-xs text-text-tertiary">
+                  Selecting <span className="text-amber-400 font-semibold">&quot;New Launch&quot;</span> will automatically display this project under the <strong>New Launch</strong> tab on the homepage and projects page.
+                </p>
               </div>
 
               <div className="space-y-2">

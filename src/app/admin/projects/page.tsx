@@ -28,7 +28,7 @@ const TYPE_CONFIG: Record<ProjectType, { label: string; icon: React.ElementType;
 const STATUS_CONFIG = {
   "under-construction": { label: "Under Construction", color: "text-orange-500 bg-orange-500/10" },
   "ready-to-move":      { label: "Ready to Move",      color: "text-amber-500 bg-amber-500/10" },
-  "new-launch":         { label: "New Launch",          color: "text-amber-500 bg-amber-500/10" },
+  "new-launch":         { label: "✨ New Launch",       color: "text-amber-300 bg-amber-500/20 border border-amber-500/30" },
 };
 
 function ConfirmDeleteModal({
