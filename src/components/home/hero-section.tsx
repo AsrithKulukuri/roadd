@@ -34,10 +34,11 @@ import { matchesPropertySearch, matchesProjectSearch } from "@/lib/search-engine
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 
-// Search Tabs: Buy, Projects and Near me
+// Search Tabs: Buy, Projects, New Launch and Near me
 const tabs = [
   { id: "buy", label: "Buy" },
   { id: "projects", label: "Projects" },
+  { id: "new-launch", label: "New Launch" },
   { id: "nearme", label: "Near me" },
 ];
 
@@ -503,6 +504,9 @@ export function HeroSection() {
                       setShowProjectsMenu(false);
                     }
                     setActiveTab(tab.id);
+                    if (tab.id === "new-launch") {
+                      router.push("/projects?status=new-launch");
+                    }
                     if (tab.id === "pre-approval") {
                       router.push("/mortgage-calculator");
                     }

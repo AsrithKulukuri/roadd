@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { Suspense, useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useProjectsStore } from "@/stores/projects-store";
 import { ProjectCard } from "@/components/project/project-card";
 import { BackButton } from "@/components/ui/back-button";
@@ -37,7 +38,28 @@ function getMinPrice(p: { configurations: { priceMin: number; priceMax: number }
   return prices.length ? Math.min(...prices) : 0;
 }
 
-export default function ProjectsPage() {
+function ProjectSkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="rounded-3xl overflow-hidden border border-border-default bg-bg-card animate-pulse">
+          <div className="aspect-[16/9] bg-border-default" />
+          <div className="p-4 space-y-3">
+            <div className="h-5 bg-border-default rounded-full w-3/4" />
+            <div className="h-4 bg-border-default rounded-full w-1/2" />
+            <div className="flex gap-2">
+              <div className="h-6 bg-border-default rounded-full w-16" />
+              <div className="h-6 bg-border-default rounded-full w-16" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ProjectsPageContent() {
+  const searchParams = useSearchParams();
   const { projects, fetchProjects, isLoading } = useProjectsStore();
 
   const [activeType,   setActiveType]   = useState<ProjectType | "all">("all");
@@ -48,6 +70,18 @@ export default function ProjectsPage() {
   const [showFilters,  setShowFilters]  = useState(false);
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
+
+  // Read status & type from searchParams
+  useEffect(() => {
+    const statusParam = searchParams.get("status") as ConstructionStatus;
+    if (statusParam && ["new-launch", "under-construction", "ready-to-move"].includes(statusParam)) {
+      setActiveStatus(statusParam);
+    }
+    const typeParam = searchParams.get("type") as ProjectType;
+    if (typeParam && ["apartment", "villa", "venture"].includes(typeParam)) {
+      setActiveType(typeParam);
+    }
+  }, [searchParams]);
 
   const published = useMemo(() => projects.filter((p) => p.isPublished), [projects]);
 
@@ -96,25 +130,6 @@ export default function ProjectsPage() {
     setActiveCity("all");
     setQuery("");
   };
-
-  // ─── Skeleton ───────────────────────────────────────────────────────────────
-  const Skeleton = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[1, 2, 3, 4, 5, 6].map((i) => (
-        <div key={i} className="rounded-3xl overflow-hidden border border-border-default bg-bg-card animate-pulse">
-          <div className="aspect-[16/9] bg-border-default" />
-          <div className="p-4 space-y-3">
-            <div className="h-5 bg-border-default rounded-full w-3/4" />
-            <div className="h-4 bg-border-default rounded-full w-1/2" />
-            <div className="flex gap-2">
-              <div className="h-6 bg-border-default rounded-full w-16" />
-              <div className="h-6 bg-border-default rounded-full w-16" />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-bg-primary pt-20 pb-20">
@@ -302,7 +317,7 @@ export default function ProjectsPage() {
         </div>
 
         {isLoading ? (
-          <Skeleton />
+          <ProjectSkeleton />
         ) : filtered.length === 0 ? (
           <div className="py-24 text-center">
             <Building2 className="w-14 h-14 mx-auto mb-4 text-text-tertiary/30" />
@@ -324,5 +339,21 @@ export default function ProjectsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ProjectsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-bg-primary pt-24">
+          <div className="max-w-7xl mx-auto px-4">
+            <ProjectSkeleton />
+          </div>
+        </div>
+      }
+    >
+      <ProjectsPageContent />
+    </Suspense>
   );
 }
