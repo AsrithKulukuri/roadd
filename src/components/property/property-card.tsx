@@ -461,7 +461,7 @@ export function PropertyCard({
           )}
         >
           {/* Image Container */}
-          <div className="relative aspect-[16/9] w-full overflow-hidden bg-bg-primary shrink-0">
+          <div className="relative aspect-[16/10] w-full overflow-hidden bg-bg-primary shrink-0">
             {/* Selection Checkbox */}
             {selectable && (
               <div className="absolute top-3 right-3 z-30">
@@ -524,22 +524,18 @@ export function PropertyCard({
             )}
 
             {/* Top Badges */}
-            <div
-              className={cn("absolute top-3 left-3 flex gap-2 flex-wrap z-10")}
-            >
-              {property.saleType === "new" && (
-                <span className="bg-amber-500/10 text-amber-600 border border-amber-500/20 backdrop-blur-sm font-semibold text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> New
+            <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap z-10">
+              <span className="bg-amber-500/10 text-amber-600 border border-amber-500/20 backdrop-blur-md font-bold text-[11px] px-2.5 py-0.5 rounded-full capitalize">
+                {property.propertyType || "Residential"}
+              </span>
+              {property.reraId && (
+                <span className="bg-amber-500 text-slate-950 shadow-sm backdrop-blur-md font-bold text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <Shield className="w-3 h-3 text-slate-950" /> RERA
                 </span>
               )}
               {property.isFeatured && (
-                <span className="bg-amber-500/90 text-white backdrop-blur-sm font-bold text-xs px-2.5 py-1 rounded-full">
+                <span className="bg-slate-950/80 text-white backdrop-blur-md border border-white/10 font-bold text-[11px] px-2.5 py-0.5 rounded-full">
                   Featured
-                </span>
-              )}
-              {property.reraId && (
-                <span className="bg-slate-900/80 text-white backdrop-blur-sm font-bold text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
-                  <Shield className="w-3 h-3" /> RERA
                 </span>
               )}
             </div>
@@ -547,16 +543,9 @@ export function PropertyCard({
             {/* Status Bottom Left */}
             <div className="absolute bottom-3 left-3 z-10">
               <span
-                className={cn(
-                  "px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm",
-                  property.isReadyToMove
-                    ? "bg-amber-500/10 text-amber-600"
-                    : "bg-orange-500/10 text-orange-600",
-                )}
+                className="px-2.5 py-0.5 rounded-full text-[11px] font-bold backdrop-blur-md border border-white/10 bg-slate-950/85 text-amber-400 shadow-sm"
               >
-                {property.isReadyToMove
-                  ? "Ready to Move"
-                  : "Under Construction"}
+                {property.isReadyToMove ? "Ready to Move" : "Under Construction"}
               </span>
             </div>
 
@@ -583,45 +572,75 @@ export function PropertyCard({
           </div>
 
           {/* Details Section */}
-          <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-            <div>
+          <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+            <div className="space-y-2.5">
               {/* Title & Location */}
-              <h3 className="font-bold text-text-primary text-lg leading-tight group-hover:text-amber-primary transition-colors line-clamp-1">
-                {property.title}
-              </h3>
-              <div className="flex items-center gap-1 text-text-secondary text-sm mt-0.5">
-                <MapPin className="w-3.5 h-3.5 shrink-0 text-amber-primary" />
-                <span className="truncate">
-                  {property.location.locality}, {property.location.city}{" "}
-                  {property.location.pincode ? property.location.pincode : ""}
-                </span>
+              <div>
+                <h3 className="font-bold text-text-primary text-base sm:text-lg leading-tight group-hover:text-amber-primary transition-colors line-clamp-1">
+                  {property.title}
+                </h3>
+                <div className="flex items-center gap-1.5 text-text-secondary text-xs sm:text-sm mt-1 truncate">
+                  <MapPin className="w-3.5 h-3.5 shrink-0 text-amber-primary" />
+                  <span className="truncate">
+                    {property.location.locality}, {property.location.city}
+                  </span>
+                </div>
+              </div>
+
+              {/* Clean 1-Row Specs Pills (Guaranteed uniform height across all cards) */}
+              <div className="h-[28px] flex items-center gap-1.5 overflow-hidden">
+                {property.bedrooms > 0 && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap">
+                    {property.bedrooms} BHK
+                  </span>
+                )}
+                {property.furnishing && property.furnishing !== "unfurnished" && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap capitalize">
+                    {property.furnishing.replace("-", " ")}
+                  </span>
+                )}
+                {property.facing && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap capitalize">
+                    {property.facing} Facing
+                  </span>
+                )}
+              </div>
+
+              {/* Area Row */}
+              <div className="h-[20px] flex items-center gap-1.5 text-xs text-text-secondary">
+                {property.area || property.builtUpArea || property.carpetArea ? (
+                  <>
+                    <Maximize2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span className="truncate">
+                      {formatArea(property.area || property.builtUpArea || property.carpetArea || 0)}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-text-tertiary text-[11px]">Ready for Possession</span>
+                )}
               </div>
             </div>
 
-
-
-            {/* Bottom Row / Footer */}
-            <div className="pt-3 mt-1 border-t border-border-default">
+            {/* Locked Bottom Price & Broker Row */}
+            <div className="mt-auto pt-3 border-t border-border-default">
               <div className="flex items-end justify-between gap-2">
-                <div>
-                  <p className="text-[10px] text-text-tertiary uppercase tracking-wide font-medium mb-0.5">
-                    {property.listingType === "rent" ||
-                    property.listingType === "pg"
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold">
+                    {property.listingType === "rent" || property.listingType === "pg"
                       ? "Monthly Rent"
                       : "Price"}
                   </p>
-                  <p className="font-bold text-amber-primary text-base leading-tight">
-                    {property.listingType === "rent" ||
-                    property.listingType === "pg"
+                  <p className="font-black text-amber-primary text-base sm:text-lg leading-tight truncate">
+                    {property.listingType === "rent" || property.listingType === "pg"
                       ? `${formatINR(property.price)}/mo`
                       : formatPriceCompact(property.price)}
                   </p>
                 </div>
-                <div className="text-right shrink-0 max-w-[120px]">
-                  <p className="text-[10px] text-text-tertiary uppercase tracking-wide mb-0.5">
-                    Brokered By
+                <div className="text-right shrink-0 max-w-[130px]">
+                  <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold">
+                    By
                   </p>
-                  <p className="text-sm font-semibold text-text-primary truncate flex items-center justify-end gap-1">
+                  <p className="text-xs sm:text-sm font-bold text-text-primary truncate flex items-center justify-end gap-1">
                     {brokerName}
                     {property.isOwnerVerified && (
                       <BadgeCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />

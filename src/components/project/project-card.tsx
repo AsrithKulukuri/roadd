@@ -213,11 +213,11 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
   }
 
   return (
-    <Link href={`/projects/${project.slug}`} className="group block">
-      <div className="relative bg-white dark:bg-bg-card border border-border-default rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300">
+    <Link href={`/projects/${project.slug}`} className="group block h-full">
+      <div className="relative h-full flex flex-col justify-between bg-white dark:bg-bg-card border border-border-default rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
 
-        {/* Image */}
-        <div className="relative aspect-[16/9] overflow-hidden bg-bg-primary">
+        {/* Image with 16/10 uniform aspect ratio */}
+        <div className="relative aspect-[16/10] w-full overflow-hidden bg-bg-primary shrink-0">
           {project.coverImage ? (
             <img
               src={project.coverImage}
@@ -232,130 +232,123 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
           )}
 
           {/* Type + RERA badges */}
-          <div className="absolute top-3 left-3 flex items-center gap-2 flex-wrap">
-            <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border backdrop-blur-sm ${TC.badgeClass}`}>
+          <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10">
+            <span className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border backdrop-blur-md ${TC.badgeClass}`}>
               <Icon className="w-3 h-3" />
               {TC.label}
             </span>
             {project.reraApproved && (
-              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/90 text-white backdrop-blur-sm">
-                <CheckCircle2 className="w-3 h-3" /> RERA
+              <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-slate-950 shadow-sm backdrop-blur-md">
+                <CheckCircle2 className="w-3 h-3 text-slate-950" /> RERA
               </span>
             )}
             {project.noBrokerage && (
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-900/80 text-white backdrop-blur-sm">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-950/80 text-white backdrop-blur-md border border-white/10">
                 0% Brokerage
               </span>
             )}
           </div>
 
           {/* Status */}
-          <div className="absolute bottom-3 left-3">
-            <span className={`px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${STATUS_COLORS[project.constructionStatus]}`}>
+          <div className="absolute bottom-3 left-3 z-10">
+            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold backdrop-blur-md border border-white/10 bg-slate-950/85 text-amber-400 shadow-sm`}>
               {STATUS_LABELS[project.constructionStatus]}
             </span>
           </div>
 
           {/* Builder logo */}
           {project.builderLogoUrl && (
-            <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm rounded-lg px-2 py-1 shadow">
-              <img src={project.builderLogoUrl} alt={project.builderName} className="h-5 object-contain max-w-[72px]" />
+            <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm rounded-lg px-2 py-1 shadow-md border border-slate-200/50 z-10">
+              <img src={project.builderLogoUrl} alt={project.builderName} className="h-4 object-contain max-w-[64px]" />
             </div>
           )}
         </div>
 
         {/* Body */}
-        <div className="p-4 space-y-3">
+        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
 
-          {/* Name + Location */}
-          <div>
-            <h3 className="font-bold text-text-primary text-lg leading-tight group-hover:text-amber-primary transition-colors line-clamp-1">
-              {project.name}
-            </h3>
-            <div className="flex items-center gap-1 text-text-secondary text-sm mt-0.5">
-              <MapPin className="w-3.5 h-3.5 shrink-0 text-amber-primary" />
-              <span className="truncate">{project.location.locality}, {project.location.city}</span>
+          {/* Top Block: Title, Location, Configuration Pills, Specs */}
+          <div className="space-y-2.5">
+            {/* Title & Locality */}
+            <div>
+              <h3 className="font-bold text-text-primary text-base sm:text-lg leading-tight group-hover:text-amber-primary transition-colors line-clamp-1">
+                {project.name}
+              </h3>
+              <div className="flex items-center gap-1.5 text-text-secondary text-xs sm:text-sm mt-1 truncate">
+                <MapPin className="w-3.5 h-3.5 shrink-0 text-amber-primary" />
+                <span className="truncate">{project.location.locality}, {project.location.city}</span>
+              </div>
+            </div>
+
+            {/* Clean 1-Row Config Pills (Guaranteed uniform height across all cards) */}
+            <div className="h-[28px] flex items-center gap-1.5 overflow-hidden">
+              {configLabels.length > 0 ? (
+                <>
+                  {configLabels.slice(0, 2).map((label) => (
+                    <span key={label} className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap truncate max-w-[130px]">
+                      {label}
+                    </span>
+                  ))}
+                  {configLabels.length > 2 && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 whitespace-nowrap shrink-0">
+                      +{configLabels.length - 2} more
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-bg-primary border border-border-default text-text-tertiary">
+                  {TC.label} Project
+                </span>
+              )}
+            </div>
+
+            {/* Area Row */}
+            <div className="h-[20px] flex items-center gap-1.5 text-xs text-text-secondary">
+              {builtUpRange ? (
+                <>
+                  <Ruler className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span className="truncate">{builtUpRange}</span>
+                </>
+              ) : plotSizeRange ? (
+                <>
+                  <SquareDashed className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span className="truncate">{plotSizeRange}</span>
+                </>
+              ) : totalLabel ? (
+                <>
+                  <Trees className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span className="truncate">{totalLabel}</span>
+                </>
+              ) : (
+                <span className="text-text-tertiary text-[11px]">Premium Specifications</span>
+              )}
             </div>
           </div>
 
-          {/* TYPE-ADAPTIVE config pills */}
-          {isVenture ? (
-            /* Venture: show plot types */
-            <div className="space-y-1.5">
-              {plotSizeRange && (
-                <div className="flex items-center gap-2 text-xs text-text-secondary">
-                  <SquareDashed className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span>Plot sizes: <span className="font-semibold text-text-primary">{plotSizeRange}</span></span>
-                </div>
-              )}
-              {totalLabel && (
-                <div className="flex items-center gap-2 text-xs text-text-secondary">
-                  <Trees className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span>{totalLabel}</span>
-                </div>
-              )}
-              {configLabels.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {configLabels.slice(0, 3).map((label) => (
-                    <span key={label} className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/5 border border-amber-500/20 text-amber-700 dark:text-amber-400">
-                      {label}
-                    </span>
-                  ))}
-                  {configLabels.length > 3 && (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-bg-primary border border-border-default text-text-tertiary">
-                      +{configLabels.length - 3} more
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Apartment / Villa: show BHK tags + area */
-            <div className="space-y-2">
-              {configLabels.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {configLabels.slice(0, 4).map((label) => (
-                    <span key={label} className="px-2.5 py-1 rounded-full text-xs font-medium bg-bg-primary border border-border-default text-text-secondary">
-                      {label}
-                    </span>
-                  ))}
-                  {configLabels.length > 4 && (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-bg-primary border border-border-default text-text-tertiary">
-                      +{configLabels.length - 4} more
-                    </span>
-                  )}
-                </div>
-              )}
-              {builtUpRange && (
-                <div className="flex items-center gap-2 text-xs text-text-secondary">
-                  <Ruler className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>{builtUpRange}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Price row */}
-          <div className="pt-2 border-t border-border-default">
+          {/* Locked Bottom Price & Developer Row */}
+          <div className="mt-auto pt-3 border-t border-border-default">
             <div className="flex items-end justify-between gap-2">
-              <div>
-                <p className="text-[10px] text-text-tertiary uppercase tracking-wide font-medium">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold">
                   {isVenture ? "Starting Price" : "Price Range"}
                 </p>
-                <p className="font-bold text-amber-primary text-base leading-tight">{priceLabel}</p>
+                <p className="font-black text-amber-primary text-base sm:text-lg leading-tight truncate">
+                  {priceLabel}
+                </p>
                 {pricePerUnit && (
-                  <p className="text-[11px] text-text-secondary font-medium mt-0.5">{pricePerUnit}</p>
+                  <p className="text-[10px] text-text-secondary font-medium truncate">{pricePerUnit}</p>
                 )}
               </div>
-              <div className="text-right shrink-0 max-w-[120px]">
-                <p className="text-[10px] text-text-tertiary uppercase tracking-wide">By</p>
-                <p className="text-sm font-semibold text-text-primary truncate">{project.builderName}</p>
+              <div className="text-right shrink-0 max-w-[130px]">
+                <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold">By</p>
+                <p className="text-xs sm:text-sm font-bold text-text-primary truncate">{project.builderName}</p>
                 {totalLabel && !isVenture && (
-                  <p className="text-[10px] text-text-tertiary">{totalLabel}</p>
+                  <p className="text-[10px] text-text-tertiary truncate">{totalLabel}</p>
                 )}
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </Link>
