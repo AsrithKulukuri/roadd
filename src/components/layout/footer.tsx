@@ -50,9 +50,7 @@ export function Footer() {
           <div className="col-span-2 space-y-5">
             <Logo size="lg" />
             <p className="text-text-secondary text-sm leading-relaxed max-w-sm">
-              India&apos;s most premium real estate platform. Discover verified
-              properties, connect with trusted agents, and find your dream home
-              with AI-powered search.
+              <strong className="text-text-primary">Real Projects. Real People. Real Updates.</strong> RoadFacing brings you closer to projects through real, on-ground videos and regular updates so you can make informed decisions.
             </p>
             <div className="space-y-3">
               <a
@@ -190,6 +188,22 @@ export function Footer() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </form>
+          </div>
+        </div>
+
+        {/* Our Promise & Regulatory Disclaimer Box */}
+        <div className="border-t border-border-default py-8 space-y-4">
+          <div className="p-5 rounded-2xl bg-bg-card border border-border-default/80 text-xs sm:text-[13px] text-text-secondary leading-relaxed space-y-3">
+            <div className="flex flex-wrap items-center gap-2 font-bold text-text-primary">
+              <span className="text-amber-400">Our Promise:</span>
+              <span>We show. We don&apos;t exaggerate.</span>
+            </div>
+            <p>
+              We aim to present projects through actual site visits, real visuals, and straightforward information. Where information comes from an owner, agent, developer, or public record, we make that clear. We believe buyers should have the opportunity to see, compare, verify, and decide.
+            </p>
+            <p className="text-text-tertiary text-[11px] sm:text-xs pt-1 border-t border-border-default/50">
+              <strong className="text-text-secondary">Disclaimer:</strong> RoadFacing is an information and project-discovery platform. The information and visuals presented on our website and channels are intended to help users understand projects and their current on-ground status. Buyers should independently verify title, approvals, RERA details, specifications, pricing, legal matters, and other relevant information with the concerned authorities, owner, developer, or qualified professionals before making any decision or financial commitment.
+            </p>
           </div>
         </div>
 

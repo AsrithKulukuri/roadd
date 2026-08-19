@@ -1,9 +1,9 @@
 export const siteConfig = {
   name: "ROAD FACING",
-  fullName: "Real Owner Agent Developer",
+  fullName: "Real Projects. Real People. Real Updates.",
   description:
-    "India's most premium real estate platform. Buy, sell, rent properties across India with verified listings, AI-powered search, and trusted agents.",
-  url: "https://road.in",
+    "Real Projects. Real People. Real Updates. RoadFacing brings you closer to projects through real, on-ground videos and regular updates so you can see the location, development, and progress for yourself.",
+  url: "https://roadfacing.com",
   ogImage: "/og-image.png",
   locale: "en-IN",
   currency: "INR",

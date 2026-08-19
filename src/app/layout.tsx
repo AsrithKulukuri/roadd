@@ -18,13 +18,13 @@ const spaceGrotesk = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://road.in"),
+  metadataBase: new URL("https://roadfacing.com"),
   title: {
-    default: "ROAD FACING — India's Premium Real Estate Platform",
-    template: "%s | ROAD FACING",
+    default: "RoadFacing — Real Projects. Real People. Real Updates.",
+    template: "%s | RoadFacing",
   },
   description:
-    "Buy, sell, and rent properties across India with ROAD FACING. Verified listings, RERA-compliant, AI-powered search, and trusted agents. Explore apartments, villas, plots, and commercial spaces in Visakhapatnam, Hyderabad, Bengaluru, Mumbai, Chennai & Delhi NCR.",
+    "Real Projects. Real People. Real Updates. RoadFacing brings you closer to projects through real, on-ground videos and regular updates. We show projects as they are today — their progress, location, development, and current status.",
   keywords: [
     "real estate India",
     "buy property India",
