@@ -39,7 +39,9 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
         <>
           <Footer />
           <AiAssistantWidget />
-          <MobileBottomNav />
+          <Suspense fallback={null}>
+            <MobileBottomNav />
+          </Suspense>
         </>
       )}
     </>

@@ -44,7 +44,7 @@ function UnifiedSearchPage() {
     searchParams.get("type") === "projects" ? "projects" : "all"
   );
   const [viewMode, setViewMode] = useState<"grid" | "map">(
-    searchParams.get("nearMe") === "true" ? "map" : "grid"
+    searchParams.get("nearMe") === "true" || searchParams.get("view") === "map" ? "map" : "grid"
   );
   const [sortBy, setSortBy] = useState<"relevant" | "price-asc" | "price-desc" | "newest">("relevant");
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -78,6 +78,12 @@ function UnifiedSearchPage() {
     setMounted(true);
     fetchProperties();
     fetchProjects();
+
+    if (searchParams.get("view") === "map") {
+      setViewMode("map");
+    } else if (searchParams.get("view") === "grid") {
+      setViewMode("grid");
+    }
 
     // Check for nearMe parameter and trigger geolocation
     if (searchParams.get("nearMe") === "true" && !userLocation && !isLocating) {

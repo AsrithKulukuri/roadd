@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Home, Search, MapPin, Heart, Menu, X, Sparkles, Plus, User, LogOut, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFavoritesStore } from "@/stores/favorites-store";
@@ -15,6 +15,9 @@ import { PostRequirementModal } from "@/components/shared/post-requirement-modal
 export function MobileBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isMapView = (pathname === "/search" && searchParams.get("view") === "map") || pathname === "/properties/map";
+
   const savedPropertyIds = useFavoritesStore((state) => state.savedPropertyIds);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
@@ -23,7 +26,7 @@ export function MobileBottomNav() {
 
   useEffect(() => {
     setIsMenuOpen(false);
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   // Lock body scroll when mobile menu sheet is open
   useEffect(() => {
@@ -95,14 +98,14 @@ export function MobileBottomNav() {
       label: "Search",
       href: "/search",
       icon: Search,
-      isActive: pathname.startsWith("/search") || pathname.startsWith("/properties") || pathname.startsWith("/projects"),
+      isActive: (pathname.startsWith("/search") && !isMapView) || pathname.startsWith("/properties") || pathname.startsWith("/projects"),
     },
     {
       id: "map",
       label: "Map",
-      href: "/properties/map",
+      href: "/search?view=map",
       icon: MapPin,
-      isActive: pathname.startsWith("/properties/map"),
+      isActive: isMapView,
     },
     {
       id: "activity",
