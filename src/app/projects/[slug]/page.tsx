@@ -3,7 +3,7 @@
 import { use, useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useProjectsStore } from "@/stores/projects-store";
 import { getYoutubeEmbedUrl, isYoutubeShort } from "@/lib/utils";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
@@ -48,6 +48,35 @@ function formatINRCrore(amount: number): string {
   if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
   if (amount >= 100000)   return `₹${(amount / 100000).toFixed(2)} L`;
   return `₹${amount.toLocaleString("en-IN")}`;
+}
+
+function RollingStatusTab({ active }: { active?: boolean }) {
+  const [index, setIndex] = useState(0);
+  const phrases = ["Status", "Project Update"];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % phrases.length);
+    }, 2400);
+    return () => clearInterval(timer);
+  }, [phrases.length]);
+
+  return (
+    <span className="relative inline-flex items-center h-4 overflow-hidden min-w-[94px] text-left">
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={phrases[index]}
+          initial={{ y: 12, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -12, opacity: 0 }}
+          transition={{ duration: 0.35, ease: "easeInOut" }}
+          className={`inline-block whitespace-nowrap font-bold text-xs ${active ? "text-slate-950" : ""}`}
+        >
+          {phrases[index]}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
 }
 
 function getPriceRange(configs: ProjectConfig[]): string {
@@ -509,7 +538,37 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
         <div className="sticky top-16 z-20 bg-white dark:bg-bg-card border-b border-border-default shadow-sm">
           <div className="max-w-7xl mx-auto px-2 sm:px-4 flex items-center gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none touch-pan-x">
             {TABS.map((tab) => {
-              const Icon = tab === "Status" ? Activity : null;
+              const isStatusTab = tab === "Status";
+              const Icon = isStatusTab ? Activity : null;
+
+              if (isStatusTab) {
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => {
+                      setActiveTab(tab);
+                      const el = document.getElementById("status");
+                      if (el) {
+                        const y = el.getBoundingClientRect().top + window.scrollY - 120;
+                        window.scrollTo({ top: y, behavior: "smooth" });
+                      }
+                    }}
+                    className={`my-auto shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 mx-1 rounded-full text-xs font-bold transition-all shadow-xs border whitespace-nowrap cursor-pointer select-none ${
+                      activeTab === tab
+                        ? "bg-amber-500 text-slate-950 border-amber-500 shadow-md ring-2 ring-amber-500/25"
+                        : "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 hover:border-amber-500/50"
+                    }`}
+                  >
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${activeTab === tab ? "bg-slate-950" : "bg-amber-400"}`} />
+                      <span className={`relative inline-flex rounded-full h-2 w-2 ${activeTab === tab ? "bg-slate-950" : "bg-amber-500"}`} />
+                    </span>
+                    {Icon && <Icon className={`w-3.5 h-3.5 shrink-0 ${activeTab === tab ? "text-slate-950" : "text-amber-500"}`} />}
+                    <RollingStatusTab active={activeTab === tab} />
+                  </button>
+                );
+              }
+
               return (
               <button
                 key={tab}
@@ -527,7 +586,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                     : "border-transparent text-text-secondary hover:text-text-primary"
                 }`}
               >
-                {Icon && <Icon className="w-4 h-4" />}
                 {tab === "Floor Plans" && project.projectType === "venture" ? "Plot Layouts" : tab}
               </button>
             )})}
