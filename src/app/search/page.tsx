@@ -152,6 +152,9 @@ function UnifiedSearchPage() {
       saleType = saleTypeStr.split(",");
     }
 
+    // Parse displayCategory (featured / recommended / budget)
+    const categoryParam = searchParams.get("category") || searchParams.get("displayCategory") || "all";
+
     return {
       ...initialFilterState,
       query: loc,
@@ -159,6 +162,7 @@ function UnifiedSearchPage() {
       listingType,
       propertyType,
       saleType,
+      displayCategory: categoryParam,
     };
   };
 
@@ -219,6 +223,20 @@ function UnifiedSearchPage() {
       // 1. Intelligent Real Estate Text & Intent Query (BHK, Locality, Builder, Category, Keyword)
       if (filters.query && !matchesProjectSearch(project, filters.query, parsedIntent || undefined)) {
         return false;
+      }
+
+      // 2. Display Category (Featured / Recommended / Budget Friendly)
+      if (filters.displayCategory && filters.displayCategory !== "all") {
+        const cat = filters.displayCategory.toLowerCase();
+        if (cat === "featured" && !(project.displayCategory === "featured" || project.isFeatured)) {
+          return false;
+        }
+        if (cat === "recommended" && !(project.displayCategory === "recommended")) {
+          return false;
+        }
+        if ((cat === "budget" || cat === "budget_friendly") && project.displayCategory !== "budget_friendly") {
+          return false;
+        }
       }
 
       // 3. Property Category / Type

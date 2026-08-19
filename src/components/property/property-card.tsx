@@ -268,44 +268,62 @@ export function PropertyCard({
                 onLoad={() => setIsImageLoaded(true)}
                 sizes="(max-width: 640px) 100vw, 288px"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
 
-              {/* Badges */}
-              <div className="absolute top-3 left-3 flex gap-1.5 z-10">
-                {property.isFeatured && (
-                  <Badge
-                    variant="default"
-                    className="bg-amber-500 text-white font-semibold"
+              {/* Subtle Shimmer Light Reflection on Hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
+
+              {/* Glowing Badges */}
+              <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10 pointer-events-none">
+                {(property.displayCategory === "featured" || property.isFeatured) && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-[0_0_14px_rgba(245,158,11,0.45)] border border-amber-300/40 backdrop-blur-md"
                   >
-                    Featured
-                  </Badge>
+                    ⭐ Featured
+                  </span>
+                )}
+                {property.displayCategory === "recommended" && !property.isFeatured && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_12px_rgba(37,99,235,0.4)] border border-blue-400/40 backdrop-blur-md"
+                  >
+                    👍 Recommended
+                  </span>
+                )}
+                {property.displayCategory === "budget_friendly" && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)] border border-emerald-400/40 backdrop-blur-md"
+                  >
+                    💰 Budget Friendly
+                  </span>
                 )}
                 {property.reraId && (
-                  <Badge
-                    variant="rera"
-                    className="bg-amber-600 text-white font-semibold"
+                  <span
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-950/80 text-amber-400 border border-amber-400/30 backdrop-blur-md shadow-xs"
                   >
                     RERA
-                  </Badge>
+                  </span>
                 )}
               </div>
 
-              {/* Heart Button Overlay */}
-              <button
+              {/* Animated Spring Heart Button Overlay */}
+              <motion.button
                 type="button"
-                className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
+                whileTap={{ scale: 0.8 }}
+                whileHover={{ scale: 1.12 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/95 dark:bg-slate-900/90 hover:bg-white text-slate-800 dark:text-white shadow-lg flex items-center justify-center cursor-pointer border border-white/20 backdrop-blur-sm active:scale-90"
                 onClick={toggleSave}
                 aria-label={isSaved ? "Remove from saved" : "Save property"}
               >
                 <Heart
                   className={cn(
-                    "h-4 w-4 transition-all",
+                    "h-4 w-4 transition-transform duration-300",
                     isSaved
-                      ? "fill-red-600 text-red-600 scale-110"
-                      : "text-slate-700",
+                      ? "fill-red-600 text-red-600 scale-110 drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]"
+                      : "text-slate-700 dark:text-slate-200",
                   )}
                 />
-              </button>
+              </motion.button>
             </div>
 
             {/* Content */}

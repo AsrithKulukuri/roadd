@@ -16,6 +16,9 @@ import {
   Compass,
   Trees,
   RotateCcw,
+  Star,
+  ThumbsUp,
+  Sparkles,
 } from "lucide-react";
 import { cn, formatINR, formatINRWords } from "@/lib/utils";
 import type { FilterState } from "./search-filters";
@@ -34,9 +37,9 @@ export function RealtorFilterBar({
   onOpenAllFilters,
   totalResults,
 }: RealtorFilterBarProps) {
-  // Track open dropdown popover/sheet: "propertyType" | "price" | "postedBy" | null
+  // Track open dropdown popover/sheet: "propertyType" | "price" | "postedBy" | "category" | null
   const [openDropdown, setOpenDropdown] = useState<
-    "propertyType" | "price" | "postedBy" | null
+    "propertyType" | "price" | "postedBy" | "category" | null
   >(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -113,7 +116,8 @@ export function RealtorFilterBar({
     (filters.facing.length > 0 ? 1 : 0) +
     (filters.vastuCompliant ? 1 : 0) +
     (filters.gatedCommunity ? 1 : 0) +
-    (filters.reraApproved ? 1 : 0);
+    (filters.reraApproved ? 1 : 0) +
+    (filters.displayCategory && filters.displayCategory !== "all" ? 1 : 0);
 
   // Indian Price presets (INR) — Concise, clean brackets
   const pricePresets = [
@@ -198,6 +202,21 @@ export function RealtorFilterBar({
     { label: "Agricultural Land", value: "agricultural-lands", icon: Compass },
   ];
 
+  // Category options
+  const categoryOptions = [
+    { label: "All Listings", value: "all", icon: Sparkles },
+    { label: "⭐ Featured", value: "featured", icon: Star },
+    { label: "👍 Recommended", value: "recommended", icon: ThumbsUp },
+    { label: "💰 Budget Friendly", value: "budget_friendly", icon: IndianRupee },
+  ];
+
+  // Category summary label
+  const getCategoryLabel = () => {
+    if (!filters.displayCategory || filters.displayCategory === "all") return "Category";
+    const match = categoryOptions.find((c) => c.value === filters.displayCategory);
+    return match ? match.label : "Category";
+  };
+
   // Posted By options
   const postedByOptions = [
     { label: "Direct Owner", value: "owner", icon: UserCheck },
@@ -248,7 +267,7 @@ export function RealtorFilterBar({
   return (
     <div ref={containerRef} className="relative w-full">
       {/* HORIZONTAL FILTER PILLS SCROLL STRIP */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 px-1 touch-pan-x">
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5 px-1 touch-pan-x scroll-smooth">
         {/* 1. ALL FILTERS BUTTON */}
         <button
           type="button"
@@ -269,7 +288,30 @@ export function RealtorFilterBar({
           )}
         </button>
 
-        {/* 2. HOME TYPE BUTTON */}
+        {/* 2. CATEGORY FILTER BUTTON */}
+        <button
+          type="button"
+          onClick={() =>
+            setOpenDropdown(openDropdown === "category" ? null : "category")
+          }
+          className={cn(
+            "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
+            (filters.displayCategory && filters.displayCategory !== "all") || openDropdown === "category"
+              ? "bg-[#f1a010] text-slate-950 font-bold border-[#f1a010] shadow-xs"
+              : "bg-white text-slate-800 border-slate-300 hover:border-slate-400"
+          )}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>{getCategoryLabel()}</span>
+          <ChevronDown
+            className={cn(
+              "w-3.5 h-3.5 transition-transform duration-200",
+              openDropdown === "category" && "rotate-180"
+            )}
+          />
+        </button>
+
+        {/* 3. HOME TYPE BUTTON */}
         <button
           type="button"
           onClick={() =>
@@ -386,7 +428,9 @@ export function RealtorFilterBar({
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                   <h3 className="text-base font-extrabold text-slate-900 dark:text-white capitalize">
                     {openDropdown === "price"
-                      ? "Select Budget Range (INR)"
+                      ? "Select Budget"
+                      : openDropdown === "category"
+                      ? "Select Category"
                       : openDropdown === "propertyType"
                       ? "Home Type"
                       : "Posted By"}
@@ -555,6 +599,39 @@ export function RealtorFilterBar({
                     >
                       Apply
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. CATEGORY CONTENT */}
+              {openDropdown === "category" && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    {categoryOptions.map((opt) => {
+                      const isSelected =
+                        opt.value === "all"
+                          ? !filters.displayCategory || filters.displayCategory === "all"
+                          : filters.displayCategory === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => {
+                            onFilterChange({ ...filters, displayCategory: opt.value });
+                            setOpenDropdown(null);
+                          }}
+                          className={cn(
+                            "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
+                            isSelected
+                              ? "bg-amber-500 text-slate-950 font-bold"
+                              : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          )}
+                        >
+                          <span>{opt.label}</span>
+                          {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -736,6 +813,42 @@ export function RealtorFilterBar({
                 >
                   Apply
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* 4. CATEGORY DROPDOWN CONTENT (DESKTOP) */}
+          {openDropdown === "category" && (
+            <div className="space-y-3">
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
+                Display Category
+              </div>
+              <div className="space-y-1">
+                {categoryOptions.map((opt) => {
+                  const isSelected =
+                    opt.value === "all"
+                      ? !filters.displayCategory || filters.displayCategory === "all"
+                      : filters.displayCategory === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        onFilterChange({ ...filters, displayCategory: opt.value });
+                        setOpenDropdown(null);
+                      }}
+                      className={cn(
+                        "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
+                        isSelected
+                          ? "bg-amber-500 text-slate-950 font-bold"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <span>{opt.label}</span>
+                      {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

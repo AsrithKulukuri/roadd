@@ -209,6 +209,9 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const [brochureUrl, setBrochureUrl] = useState(initialData?.brochureUrl ?? "");
   const [highlights, setHighlights] = useState<string[]>(initialData?.highlights?.length ? initialData.highlights : [""]);
   const [facilities, setFacilities] = useState<string[]>(initialData?.facilities ?? []);
+  const [displayCategory, setDisplayCategory] = useState<"featured" | "recommended" | "budget_friendly" | "none">(
+    initialData?.displayCategory ?? (initialData?.isFeatured ? "featured" : "none")
+  );
   const [isFeatured, setIsFeatured] = useState<boolean>(initialData?.isFeatured ?? false);
   const [constructionUpdates, setConstructionUpdates] = useState<ConstructionUpdate[]>(initialData?.constructionUpdates ?? []);
 
@@ -475,7 +478,8 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       brochureUrl: brochureUrl.trim() || undefined,
       highlights: highlights.filter(Boolean),
       facilities,
-      isFeatured,
+      isFeatured: displayCategory === "featured" || isFeatured,
+      displayCategory,
       isPublished: publish,
       viewCount: initialData?.viewCount ?? 0,
       createdAt: initialData?.createdAt ?? new Date().toISOString(),
@@ -697,6 +701,29 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 </select>
                 <p className="text-xs text-text-tertiary">
                   Selecting <span className="text-amber-400 font-semibold">&quot;New Launch&quot;</span> will automatically display this project under the <strong>New Launch</strong> tab on the homepage and projects page.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4" /> Display Category (Featured / Recommended / Budget Friendly)
+                </label>
+                <select 
+                  value={displayCategory} 
+                  onChange={(e) => {
+                    const cat = e.target.value as "featured" | "recommended" | "budget_friendly" | "none";
+                    setDisplayCategory(cat);
+                    setIsFeatured(cat === "featured");
+                  }} 
+                  className={cn(ic(), "font-bold text-white bg-slate-900 border-amber-500/50 focus:ring-2 focus:ring-amber-500")}
+                >
+                  <option value="none">None (Standard Project Listing)</option>
+                  <option value="featured">⭐ Featured Project (Homepage & Featured Lists)</option>
+                  <option value="recommended">👍 Recommended Project (Top Editor's Choice)</option>
+                  <option value="budget_friendly">💰 Budget Friendly (Best Value / Affordable)</option>
+                </select>
+                <p className="text-xs text-text-tertiary">
+                  Selected category highlights this project in homepage carousels, category tabs, and search filter shortcuts.
                 </p>
               </div>
 
@@ -1404,12 +1431,21 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
           
           <div className="flex items-center justify-between sm:justify-start gap-4">
             <div className="flex items-center gap-2">
-              <Checkbox 
-                id="featured" name="featured"
-                checked={isFeatured}
-                onCheckedChange={(checked) => setIsFeatured(checked as boolean)} 
-              />
-              <label htmlFor="featured" className="text-xs sm:text-sm font-medium text-text-primary cursor-pointer select-none">Mark as Featured</label>
+              <span className="text-xs sm:text-sm font-medium text-text-secondary">Category:</span>
+              <select 
+                value={displayCategory} 
+                onChange={(e) => {
+                  const cat = e.target.value as "featured" | "recommended" | "budget_friendly" | "none";
+                  setDisplayCategory(cat);
+                  setIsFeatured(cat === "featured");
+                }} 
+                className="h-8 sm:h-9 rounded-lg bg-bg-primary border border-border-default/50 px-2 sm:px-3 text-xs sm:text-sm text-text-primary font-bold focus:outline-none focus:ring-1 focus:ring-amber-500"
+              >
+                <option value="none">None</option>
+                <option value="featured">⭐ Featured</option>
+                <option value="recommended">👍 Recommended</option>
+                <option value="budget_friendly">💰 Budget Friendly</option>
+              </select>
             </div>
           </div>
 

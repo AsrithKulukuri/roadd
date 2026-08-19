@@ -336,16 +336,46 @@ export default function AdminProjectsPage() {
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${SC.color}`}>
                             {SC.label}
                           </span>
+                          {project.displayCategory && project.displayCategory !== "none" && (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              project.displayCategory === "featured"
+                                ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
+                                : project.displayCategory === "recommended"
+                                ? "bg-blue-500/15 text-blue-500 border border-blue-500/30"
+                                : "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                            }`}>
+                              {project.displayCategory === "featured" ? "⭐ Featured" : project.displayCategory === "recommended" ? "👍 Recommended" : "💰 Budget Friendly"}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
+
+                    {/* Category Selector Bar on Mobile */}
+                    <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-bg-primary/60 border border-border-default/60 text-xs">
+                      <span className="text-[11px] font-medium text-text-secondary">Category:</span>
+                      <select
+                        value={project.displayCategory || (project.isFeatured ? "featured" : "none")}
+                        onChange={(e) => {
+                          updateDisplayCategory(project.id, e.target.value as any);
+                          toast.success("Project category updated!");
+                        }}
+                        className="bg-bg-card border border-border-default text-text-primary text-xs rounded-lg px-2.5 py-1 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-primary cursor-pointer"
+                      >
+                        <option value="none">None (Regular)</option>
+                        <option value="featured">⭐ Featured</option>
+                        <option value="recommended">👍 Recommended</option>
+                        <option value="budget_friendly">💰 Budget Friendly</option>
+                      </select>
+                    </div>
+
                     <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
                       <span className="text-amber-primary font-bold text-sm">{getPriceRange(project)}</span>
                       <div className="flex items-center gap-1">
-                        <button onClick={async () => { await toggleFeatured(project.id); toast.success("Updated!"); }} className={`p-2 rounded-full transition-colors ${project.isFeatured ? "text-amber-500 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-500 hover:bg-bg-primary"}`}>
+                        <button onClick={async () => { await toggleFeatured(project.id); toast.success("Updated!"); }} title={project.isFeatured ? "Unfeature" : "Feature"} className={`p-2 rounded-full transition-colors ${project.isFeatured ? "text-amber-500 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-500 hover:bg-bg-primary"}`}>
                           <Star className={`w-4 h-4 ${project.isFeatured ? "fill-amber-500" : ""}`} />
                         </button>
-                        <button onClick={async () => { await togglePublished(project.id); toast.success("Updated!"); }} className={`p-2 rounded-full transition-colors ${project.isPublished ? "text-amber-600 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-600 hover:bg-bg-primary"}`}>
+                        <button onClick={async () => { await togglePublished(project.id); toast.success("Updated!"); }} title={project.isPublished ? "Unpublish" : "Publish"} className={`p-2 rounded-full transition-colors ${project.isPublished ? "text-amber-600 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-600 hover:bg-bg-primary"}`}>
                           {project.isPublished ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                         </button>
                         <Link href={`/admin/projects/${project.id}/edit`} className="p-2 rounded-full text-text-tertiary hover:text-text-primary hover:bg-bg-primary transition-colors">

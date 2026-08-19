@@ -8,6 +8,7 @@ interface FavoritesState {
   isLoading: boolean;
   isInitialized: boolean;
   toggleFavorite: (id: string) => Promise<void>;
+  setSavedPropertyIds: (ids: string[]) => void;
   isFavorite: (id: string) => boolean;
   syncWithSupabase: () => Promise<void>;
 }
@@ -18,6 +19,10 @@ export const useFavoritesStore = create<FavoritesState>()(
       savedPropertyIds: [],
       isLoading: false,
       isInitialized: false,
+
+      setSavedPropertyIds: (ids: string[]) => {
+        set({ savedPropertyIds: ids });
+      },
 
       syncWithSupabase: async () => {
         set({ isLoading: true });
@@ -31,9 +36,7 @@ export const useFavoritesStore = create<FavoritesState>()(
 
             if (!error && data) {
               const dbIds = data.map((d) => d.property_id);
-              // Merge local saved IDs with database saved IDs
-              const merged = Array.from(new Set([...get().savedPropertyIds, ...dbIds]));
-              set({ savedPropertyIds: merged });
+              set({ savedPropertyIds: dbIds });
             }
           }
         } catch (error) {

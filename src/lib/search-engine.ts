@@ -494,5 +494,19 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
     if (!hasWater) return false;
   }
 
+  // 19. Display Category (Featured / Recommended / Budget Friendly)
+  if (filters.displayCategory && filters.displayCategory !== "all") {
+    const cat = filters.displayCategory.toLowerCase();
+    if (cat === "featured" && !(property.displayCategory === "featured" || property.isFeatured)) {
+      return false;
+    }
+    if (cat === "recommended" && !(property.displayCategory === "recommended" || property.isRecommended)) {
+      return false;
+    }
+    if ((cat === "budget" || cat === "budget_friendly") && property.displayCategory !== "budget_friendly") {
+      return false;
+    }
+  }
+
   return true;
 }

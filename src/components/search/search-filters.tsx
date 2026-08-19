@@ -85,6 +85,7 @@ export interface FilterState {
   reraApproved: boolean;
   ageRange: string[];
   availability: string[];
+  displayCategory: "all" | "featured" | "recommended" | "budget_friendly" | string;
 }
 
 export const initialFilterState: FilterState = {
@@ -144,6 +145,7 @@ export const initialFilterState: FilterState = {
   reraApproved: false,
   ageRange: [],
   availability: [],
+  displayCategory: "all",
 };
 
 interface SearchFiltersModalProps {

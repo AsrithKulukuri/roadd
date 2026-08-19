@@ -1,11 +1,12 @@
 "use client";
 
-import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight, Ruler, SquareDashed, Trees } from "lucide-react";
+import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight, Ruler, SquareDashed, Trees, Heart } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { Project, ProjectType } from "@/types/project";
+import { useFavoritesStore } from "@/stores/favorites-store";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<ProjectType, { icon: React.ElementType; label: string; cardAccent: string; badgeClass: string }> = {
@@ -90,6 +91,8 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, index = 0, variant = "default" }: ProjectCardProps) {
+  const { toggleFavorite, isFavorite } = useFavoritesStore();
+  const isSaved = isFavorite(project.id);
   const TC   = TYPE_CONFIG[project.projectType];
   const Icon = TC.icon;
   const isVenture   = project.projectType === "venture";
@@ -152,6 +155,19 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
                   {TC.label}
                 </span>
               </div>
+
+              {/* Heart Button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleFavorite(project.id);
+                }}
+                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-white hover:text-red-500 transition-colors cursor-pointer z-10"
+              >
+                <Heart className={cn("w-3.5 h-3.5", isSaved && "fill-red-500 text-red-500")} />
+              </button>
 
               {/* Price Tag Overlay on Image bottom-left */}
               <div className="absolute bottom-1 left-1.5">
@@ -222,7 +238,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
             <img
               src={project.coverImage}
               alt={project.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             />
           ) : (
             <div className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br ${TC.cardAccent} bg-bg-primary gap-3`}>
@@ -231,15 +247,33 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
             </div>
           )}
 
-          {/* Type + RERA badges */}
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10">
+          {/* Subtle Shimmer Light Reflection on Hover */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
+
+          {/* Type + RERA + Category badges */}
+          <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10 pointer-events-none">
             <span className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border backdrop-blur-md ${TC.badgeClass}`}>
               <Icon className="w-3 h-3" />
               {TC.label}
             </span>
+            {(project.displayCategory === "featured" || project.isFeatured) && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-[0_0_14px_rgba(245,158,11,0.45)] border border-amber-300/40 backdrop-blur-md">
+                ⭐ Featured
+              </span>
+            )}
+            {project.displayCategory === "recommended" && !project.isFeatured && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_12px_rgba(37,99,235,0.4)] border border-blue-400/40 backdrop-blur-md">
+                👍 Recommended
+              </span>
+            )}
+            {project.displayCategory === "budget_friendly" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)] border border-emerald-400/40 backdrop-blur-md">
+                💰 Budget Friendly
+              </span>
+            )}
             {project.reraApproved && (
-              <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-slate-950 shadow-sm backdrop-blur-md">
-                <CheckCircle2 className="w-3 h-3 text-slate-950" /> RERA
+              <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-950/80 text-amber-400 border border-amber-400/30 backdrop-blur-md shadow-xs">
+                <CheckCircle2 className="w-3 h-3 text-amber-400" /> RERA
               </span>
             )}
             {project.noBrokerage && (
@@ -248,6 +282,30 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
               </span>
             )}
           </div>
+
+          {/* Heart Button Overlay with Spring Animation */}
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.8 }}
+            whileHover={{ scale: 1.12 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/95 dark:bg-slate-900/90 hover:bg-white text-slate-800 dark:text-white shadow-lg flex items-center justify-center cursor-pointer border border-white/20 backdrop-blur-sm active:scale-90"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleFavorite(project.id);
+            }}
+            aria-label={isSaved ? "Remove from saved" : "Save project"}
+          >
+            <Heart
+              className={cn(
+                "h-4 w-4 transition-transform duration-300",
+                isSaved
+                  ? "fill-red-600 text-red-600 scale-110 drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]"
+                  : "text-slate-700 dark:text-slate-200"
+              )}
+            />
+          </motion.button>
 
           {/* Status */}
           <div className="absolute bottom-3 left-3 z-10">

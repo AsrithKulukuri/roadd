@@ -484,6 +484,9 @@ export function HeroSection() {
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-30 flex flex-col items-center text-center">
+        {/* Ambient Aurora Mesh Glow behind search bar */}
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[350px] sm:w-[750px] h-[200px] bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-yellow-500/20 blur-[80px] rounded-full pointer-events-none -z-10" />
+
         {/* Mobile backdrop to close menu when tapping outside */}
         {(showBuyMenu || showProjectsMenu) && (
           <div 
@@ -750,7 +753,7 @@ export function HeroSection() {
         {/* Realtor.com Search Input Bar */}
         <form
           onSubmit={handleSearchSubmit}
-          className="relative w-full max-w-[760px] h-[54px] sm:h-[64px] mx-auto flex items-center bg-white border border-slate-200 rounded-full pl-3.5 sm:pl-4 pr-1.5 sm:pr-2 shadow-xl transition-all duration-300"
+          className="relative w-full max-w-[760px] h-[54px] sm:h-[64px] mx-auto flex items-center bg-white border border-slate-200 focus-within:border-amber-500 focus-within:shadow-[0_8px_30px_rgba(245,158,11,0.22)] rounded-full pl-3.5 sm:pl-4 pr-1.5 sm:pr-2 shadow-xl transition-all duration-300"
         >
           <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-2 sm:mr-3 shrink-0 pointer-events-none" />
 

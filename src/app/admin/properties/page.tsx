@@ -104,14 +104,17 @@ export default function AdminPropertiesPage() {
 
                   <div className="relative">
                     <select
-                      value={property.displayCategory || "none"}
-                      onChange={(e) => updateDisplayCategory(property.id, e.target.value as any)}
-                      className="appearance-none bg-bg-primary border border-border-default text-text-secondary text-xs rounded-full px-3 py-1 pr-7 focus:outline-none focus:ring-1 focus:ring-amber-primary"
+                      value={property.displayCategory || (property.isFeatured ? "featured" : property.isRecommended ? "recommended" : "none")}
+                      onChange={(e) => {
+                        updateDisplayCategory(property.id, e.target.value as any);
+                        toast.success("Property category updated!");
+                      }}
+                      className="bg-bg-primary border border-border-default text-text-primary text-xs rounded-full px-2.5 py-1 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-primary cursor-pointer"
                     >
                       <option value="none">None</option>
-                      <option value="featured">Featured</option>
-                      <option value="recommended">Recommended</option>
-                      <option value="budget_friendly">Budget Friendly</option>
+                      <option value="featured">⭐ Featured</option>
+                      <option value="recommended">👍 Recommended</option>
+                      <option value="budget_friendly">💰 Budget Friendly</option>
                     </select>
                   </div>
                 </div>
@@ -202,14 +205,17 @@ export default function AdminPropertiesPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <select
-                      value={property.displayCategory || "none"}
-                      onChange={(e) => updateDisplayCategory(property.id, e.target.value as any)}
-                      className="appearance-none bg-bg-primary border border-border-default text-text-secondary text-xs rounded-full px-3 py-1.5 pr-7 focus:outline-none focus:ring-1 focus:ring-amber-primary transition-colors hover:bg-bg-card"
+                      value={property.displayCategory || (property.isFeatured ? "featured" : property.isRecommended ? "recommended" : "none")}
+                      onChange={(e) => {
+                        updateDisplayCategory(property.id, e.target.value as any);
+                        toast.success("Property category updated!");
+                      }}
+                      className="bg-bg-primary border border-border-default text-text-primary text-xs rounded-full px-3 py-1.5 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-primary transition-colors hover:bg-bg-card cursor-pointer"
                     >
                       <option value="none">None</option>
-                      <option value="featured">Featured</option>
-                      <option value="recommended">Recommended</option>
-                      <option value="budget_friendly">Budget Friendly</option>
+                      <option value="featured">⭐ Featured</option>
+                      <option value="recommended">👍 Recommended</option>
+                      <option value="budget_friendly">💰 Budget Friendly</option>
                     </select>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap font-medium text-text-primary">

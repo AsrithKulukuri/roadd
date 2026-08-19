@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Home, Search, MapPin, Heart, Menu, X, Sparkles, Plus, User, LogOut, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFavoritesStore } from "@/stores/favorites-store";
+import { usePropertiesStore } from "@/stores/properties-store";
+import { useProjectsStore } from "@/stores/projects-store";
 import { motion, AnimatePresence } from "framer-motion";
 import { navigationLinks } from "@/config/site";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
@@ -19,10 +21,49 @@ export function MobileBottomNav() {
   const isMapView = (pathname === "/search" && searchParams.get("view") === "map") || pathname === "/properties/map";
 
   const savedPropertyIds = useFavoritesStore((state) => state.savedPropertyIds);
+  const setSavedPropertyIds = useFavoritesStore((state) => state.setSavedPropertyIds);
+  const syncWithSupabase = useFavoritesStore((state) => state.syncWithSupabase);
+  const storeProperties = usePropertiesStore((state) => state.properties);
+  const fetchProperties = usePropertiesStore((state) => state.fetchProperties);
+  const storeProjects = useProjectsStore((state) => state.projects);
+  const fetchProjects = useProjectsStore((state) => state.fetchProjects);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
   const [user, setUser] = useState<{ name: string } | null>(null);
-  const savedCount = savedPropertyIds?.length || 0;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    syncWithSupabase();
+    fetchProperties();
+    fetchProjects();
+  }, [syncWithSupabase, fetchProperties, fetchProjects]);
+
+  // Valid active ID set from both properties and projects
+  const validIdSet = useMemo(() => {
+    const set = new Set<string>();
+    storeProperties.forEach((p) => set.add(p.id));
+    storeProjects.forEach((p) => set.add(p.id));
+    return set;
+  }, [storeProperties, storeProjects]);
+
+  // Purge any orphan/phantom IDs that do not match active properties or projects
+  useEffect(() => {
+    if (mounted && (storeProperties.length > 0 || storeProjects.length > 0)) {
+      const cleanIds = savedPropertyIds.filter((id) => validIdSet.has(id));
+      if (cleanIds.length !== savedPropertyIds.length) {
+        setSavedPropertyIds(cleanIds);
+      }
+    }
+  }, [mounted, savedPropertyIds, validIdSet, storeProperties.length, storeProjects.length, setSavedPropertyIds]);
+
+  const savedCount = useMemo(() => {
+    if (!mounted || !savedPropertyIds || savedPropertyIds.length === 0) return 0;
+    // If stores haven't loaded yet, default to 0 to prevent ghost badge flashes
+    if (storeProperties.length === 0 && storeProjects.length === 0) return 0;
+    return savedPropertyIds.filter((id) => validIdSet.has(id)).length;
+  }, [mounted, savedPropertyIds, validIdSet, storeProperties.length, storeProjects.length]);
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -144,42 +185,60 @@ export function MobileBottomNav() {
       {/* ── Fixed Mobile Bottom Nav Bar ── */}
       <nav 
         aria-label="Mobile Navigation"
-        className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-white/98 dark:bg-slate-950/98 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] py-1.5 px-3"
+        className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-white/92 dark:bg-slate-950/92 backdrop-blur-2xl border-t border-slate-200/80 dark:border-slate-800/80 shadow-[0_-8px_30px_rgba(0,0,0,0.1)] py-1.5 px-3"
       >
-        <div className="grid grid-cols-5 items-center justify-around max-w-md mx-auto">
+        <div className="grid grid-cols-5 items-center justify-around max-w-md mx-auto relative">
           {navItems.map((item) => {
             const Icon = item.icon;
             const content = (
-              <div
+              <motion.div
+                whileTap={{ scale: 0.92 }}
                 className={cn(
-                  "flex flex-col items-center justify-center py-1 rounded-xl transition-all relative cursor-pointer group",
+                  "flex flex-col items-center justify-center py-1 rounded-2xl transition-all relative cursor-pointer group",
                   item.isActive
                     ? "text-amber-600 dark:text-amber-400 font-extrabold"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
                 )}
               >
+                {/* Active Tab Spring Glow Pill */}
+                {item.isActive && (
+                  <motion.div
+                    layoutId="mobileNavActivePill"
+                    className="absolute inset-0 bg-amber-500/10 dark:bg-amber-400/15 rounded-2xl -z-10"
+                    transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                  />
+                )}
+
                 {/* Icon Container with Badge */}
                 <div className="relative flex items-center justify-center">
                   <Icon
                     className={cn(
-                      "w-5 h-5 transition-transform duration-200 group-active:scale-90",
-                      item.isActive ? "stroke-[2.5]" : "stroke-[1.8]"
+                      "w-5 h-5 transition-transform duration-200",
+                      item.isActive ? "stroke-[2.5] scale-105" : "stroke-[1.8]"
                     )}
                   />
 
-                  {/* Heart / Activity Saved Count Badge */}
-                  {typeof item.count === "number" && (
-                    <span className="absolute -top-1.5 -right-2 px-1.5 py-0.2 min-w-[15px] text-center rounded-full bg-red-600 text-white text-[8px] font-black leading-tight shadow-xs">
-                      {item.count}
-                    </span>
-                  )}
+                  {/* Heart / Activity Saved Count Badge with Spring Bounce */}
+                  <AnimatePresence>
+                    {typeof item.count === "number" && item.count > 0 && (
+                      <motion.span
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                        className="absolute -top-1.5 -right-2 px-1.5 py-0.2 min-w-[15px] text-center rounded-full bg-red-600 text-white text-[8px] font-black leading-tight shadow-md"
+                      >
+                        {item.count}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {/* Text Label */}
                 <span className="text-[10px] tracking-tight mt-1 leading-tight">
                   {item.label}
                 </span>
-              </div>
+              </motion.div>
             );
 
             if (item.onClick) {
