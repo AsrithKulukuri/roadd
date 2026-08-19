@@ -40,6 +40,14 @@ export function MobileBottomNav() {
     };
   }, [isMenuOpen]);
 
+  const isDetailPage = 
+    (pathname.startsWith("/properties/") && pathname !== "/properties" && pathname !== "/properties/map" && pathname !== "/properties/compare") ||
+    (pathname.startsWith("/projects/") && pathname !== "/projects");
+
+  if (isDetailPage) {
+    return null;
+  }
+
   // Load user session
   useEffect(() => {
     const checkUser = async () => {
