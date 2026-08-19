@@ -17,6 +17,7 @@ import {
   Image as ImageIcon,
   LayoutGrid,
   MessageSquare,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -30,6 +31,7 @@ const sidebarLinks = [
   { href: "/admin/inquiries", label: "Requirements", icon: MessageSquare, isBadge: true },
   { href: "/admin/properties", label: "Properties", icon: Building2 },
   { href: "/admin/projects", label: "Projects", icon: FolderOpen },
+  { href: "/admin/locations", label: "Locations & Localities", icon: MapPin },
   { href: "/admin/banners", label: "Banners", icon: ImageIcon },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/content", label: "Categories & Content", icon: LayoutGrid },

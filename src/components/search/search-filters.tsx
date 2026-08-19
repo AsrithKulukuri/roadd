@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { formatINRWords, cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
+import { useLocationsStore } from "@/stores/locations-store";
 
 export interface FilterState {
   query: string;
@@ -282,6 +283,11 @@ export function SearchFiltersModal({
 }: SearchFiltersModalProps) {
   const [localFilters, setLocalFilters] = useState<FilterState>(filters);
   const [activeDesktopTab, setActiveDesktopTab] = useState<TabId>("coveredArea");
+  const { cities, fetchLocations } = useLocationsStore();
+
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
 
   useEffect(() => {
     if (isOpen) {
@@ -435,22 +441,65 @@ export function SearchFiltersModal({
             </div>
           </div>
 
-          {/* Select City/Localities */}
-          <div className="py-3.5">
-            <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">
+          {/* Select City/Localities from Master Locations */}
+          <div className="py-3.5 space-y-2">
+            <label className="text-[13px] font-semibold text-slate-900 block">
               Select City/Localities
             </label>
             <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
-              <span className="py-2 px-4 rounded-full text-xs font-semibold bg-[#e6f4f2] text-[#008075] border border-[#008075]/40 whitespace-nowrap shrink-0">
-                Hyderabad
-              </span>
-              <button
-                type="button"
-                className="py-2 px-4 rounded-full text-xs font-medium bg-white text-slate-700 border border-slate-200 hover:border-slate-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5 text-slate-400" />
-                <span>Add More</span>
-              </button>
+              {cities.map((city) => {
+                const isSelected = localFilters.query.toLowerCase().includes(city.name.toLowerCase());
+                return (
+                  <button
+                    key={city.id}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        setLocalFilters({ ...localFilters, query: "" });
+                      } else {
+                        setLocalFilters({ ...localFilters, query: city.name });
+                      }
+                    }}
+                    className={cn(
+                      "py-2 px-4 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer border",
+                      isSelected
+                        ? "bg-[#e6f4f2] text-[#008075] border-[#008075]/40"
+                        : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                    )}
+                  >
+                    {isSelected && <Check className="w-3.5 h-3.5 inline mr-1 stroke-[2.5]" />}
+                    {city.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Sublocalities for selected city or top cities */}
+            <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
+              {cities.flatMap((c) => c.sublocations).slice(0, 12).map((sub) => {
+                const isSelected = localFilters.query.toLowerCase().includes(sub.name.toLowerCase());
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        setLocalFilters({ ...localFilters, query: "" });
+                      } else {
+                        setLocalFilters({ ...localFilters, query: sub.name });
+                      }
+                    }}
+                    className={cn(
+                      "py-1 px-3 rounded-full text-[11px] font-medium border transition-all whitespace-nowrap shrink-0 cursor-pointer",
+                      isSelected
+                        ? "bg-[#008075] text-white border-[#008075]"
+                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                    )}
+                  >
+                    {sub.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

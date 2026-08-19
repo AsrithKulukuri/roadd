@@ -28,6 +28,7 @@ import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { useContentStore } from "@/stores/content-store";
 import { useBannersStore } from "@/stores/banners-store";
+import { useLocationsStore } from "@/stores/locations-store";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { matchesPropertySearch, matchesProjectSearch } from "@/lib/search-engine";
@@ -137,13 +138,20 @@ export function HeroSection() {
     return () => clearTimeout(timer);
   }, [typedText, isDeleting, loopNum, typingSpeed]);
 
-  // Dynamic Background Banners
   const { banners, fetchBanners } = useBannersStore();
+  const { cities, fetchLocations: fetchMasterLocations } = useLocationsStore();
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
   useEffect(() => {
     fetchBanners();
-  }, [fetchBanners]);
+    fetchMasterLocations();
+  }, [fetchBanners, fetchMasterLocations]);
+
+  // Hero cities (only those marked as isHeroPill, or fallback to first 3)
+  const heroCities = useMemo(() => {
+    const pills = cities.filter((c) => c.isHeroPill);
+    return pills.length > 0 ? pills : cities.slice(0, 3);
+  }, [cities]);
 
   useEffect(() => {
     if (banners.length <= 1) return;
@@ -868,81 +876,99 @@ export function HeroSection() {
           )}
         </form>
 
-        {/* Open Locations Pills - Equal width & matching Search Bar */}
+        {/* Dynamic Location Pills from Admin Master Locations */}
         <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-4 text-left relative z-20">
-          {/* 3 Equal width columns matching Search Bar width */}
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-3 w-full pb-1 mb-1.5 sm:mb-2.5">
-            <button
-              type="button"
-              onClick={() => setOpenLocationTab(openLocationTab === "vijayawada" ? null : "vijayawada")}
-              className={cn(
-                "h-[36px] sm:h-[42px] px-1 sm:px-3 rounded-full text-[11px] xs:text-xs sm:text-sm flex items-center justify-center gap-0.5 sm:gap-1.5 transition-all duration-200 cursor-pointer shadow-xs border w-full text-center whitespace-nowrap",
-                openLocationTab === "vijayawada"
-                  ? "bg-slate-950 border-amber-400 text-white font-bold"
-                  : "bg-slate-900 border-slate-800 text-white font-semibold hover:bg-slate-800"
-              )}
-            >
-              <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
-              <span className="whitespace-nowrap tracking-tight">Vijayawada</span>
-              <ChevronDown className={cn("w-2.5 h-2.5 sm:w-3 sm:h-3 transition-transform shrink-0", openLocationTab === "vijayawada" && "rotate-180")} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setOpenLocationTab(openLocationTab === "guntur" ? null : "guntur")}
-              className={cn(
-                "h-[36px] sm:h-[42px] px-1 sm:px-3 rounded-full text-[11px] xs:text-xs sm:text-sm flex items-center justify-center gap-0.5 sm:gap-1.5 transition-all duration-200 cursor-pointer shadow-xs border w-full text-center whitespace-nowrap",
-                openLocationTab === "guntur"
-                  ? "bg-slate-950 border-amber-400 text-white font-bold"
-                  : "bg-slate-900 border-slate-800 text-white font-semibold hover:bg-slate-800"
-              )}
-            >
-              <Building2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
-              <span className="whitespace-nowrap tracking-tight">Guntur</span>
-              <ChevronDown className={cn("w-2.5 h-2.5 sm:w-3 sm:h-3 transition-transform shrink-0", openLocationTab === "guntur" && "rotate-180")} />
-            </button>
-
-            {/* Amaravati - Direct link */}
-            <button
-              type="button"
-              onClick={() => router.push(`/search?type=${activeTab}&location=Amaravati`)}
-              className="h-[36px] sm:h-[42px] px-1 sm:px-3 rounded-full text-[11px] xs:text-xs sm:text-sm flex items-center justify-center gap-0.5 sm:gap-1.5 transition-all duration-200 cursor-pointer bg-slate-900 border border-slate-800 text-white font-semibold hover:bg-slate-800 shadow-xs w-full text-center whitespace-nowrap"
-            >
-              <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
-              <span className="whitespace-nowrap tracking-tight">Amaravati</span>
-            </button>
-          </div>
-
-          {/* Shared Location Dropdown */}
-          <AnimatePresence>
-            {openLocationTab && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className={cn(
-                  "absolute top-full mt-1.5 w-full max-w-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2 z-50 max-h-[280px] overflow-y-auto",
-                  openLocationTab === "guntur" ? "left-1/3 sm:left-[34%]" : "left-0"
-                )}
-              >
-                {(openLocationTab === "vijayawada" ? vijayawadaHotspots :
-                  openLocationTab === "guntur" ? gunturHotspots :
-                  []).map(spot => (
-                  <div 
-                    key={spot.name}
-                    onClick={() => {
-                      setOpenLocationTab(null);
-                      router.push(`/search?type=${activeTab}&location=${encodeURIComponent(spot.name)}`);
-                    }}
-                    className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer flex flex-col"
-                  >
-                    <span className="font-semibold text-sm text-slate-700 dark:text-slate-300">{spot.name}</span>
-                    <span className="text-xs text-slate-500">{spot.tag}</span>
-                  </div>
-                ))}
-              </motion.div>
+          <div 
+            className={cn(
+              "grid gap-1.5 sm:gap-3 w-full pb-1 mb-1.5 sm:mb-2.5",
+              heroCities.length === 1 ? "grid-cols-1" :
+              heroCities.length === 2 ? "grid-cols-2" :
+              heroCities.length === 3 ? "grid-cols-3" :
+              "grid-cols-2 sm:grid-cols-4"
             )}
-          </AnimatePresence>
+          >
+            {heroCities.map((city) => {
+              const isOpen = openLocationTab === city.id;
+              const hasSublocations = city.sublocations && city.sublocations.length > 0;
+
+              return (
+                <div key={city.id} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (hasSublocations) {
+                        setOpenLocationTab(isOpen ? null : city.id);
+                      } else {
+                        router.push(`/search?type=${activeTab}&location=${encodeURIComponent(city.name)}`);
+                      }
+                    }}
+                    className={cn(
+                      "h-[36px] sm:h-[42px] px-1 sm:px-3 rounded-full text-[11px] xs:text-xs sm:text-sm flex items-center justify-center gap-0.5 sm:gap-1.5 transition-all duration-200 cursor-pointer shadow-xs border w-full text-center whitespace-nowrap",
+                      isOpen
+                        ? "bg-slate-950 border-amber-400 text-white font-bold"
+                        : "bg-slate-900 border-slate-800 text-white font-semibold hover:bg-slate-800"
+                    )}
+                  >
+                    <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
+                    <span className="whitespace-nowrap tracking-tight">{city.name}</span>
+                    {hasSublocations && (
+                      <ChevronDown className={cn("w-2.5 h-2.5 sm:w-3 sm:h-3 transition-transform shrink-0", isOpen && "rotate-180")} />
+                    )}
+                  </button>
+
+                  {/* Sublocations Dropdown for this City */}
+                  <AnimatePresence>
+                    {isOpen && hasSublocations && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute top-full mt-1.5 left-0 right-0 sm:left-auto sm:w-72 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden py-2 z-50 max-h-[300px] overflow-y-auto no-scrollbar"
+                      >
+                        <div className="px-3.5 py-1.5 border-b border-slate-800 text-[10px] uppercase font-black tracking-wider text-amber-400 flex items-center justify-between">
+                          <span>{city.name} Localities</span>
+                          <span className="text-slate-400 font-normal">{city.sublocations.length} areas</span>
+                        </div>
+                        {city.sublocations.map((sub) => (
+                          <div
+                            key={sub.id}
+                            onClick={() => {
+                              setOpenLocationTab(null);
+                              router.push(`/search?type=${activeTab}&location=${encodeURIComponent(city.name)}&locality=${encodeURIComponent(sub.name)}`);
+                            }}
+                            className="px-3.5 py-2.5 hover:bg-slate-900 cursor-pointer flex items-center justify-between gap-2 border-b border-slate-900/60 last:border-b-0 transition-colors group"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-xs text-white group-hover:text-amber-400 transition-colors truncate">
+                                  {sub.name}
+                                </span>
+                                {sub.badge && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400">
+                                    {sub.badge}
+                                  </span>
+                                )}
+                              </div>
+                              {sub.tagline && (
+                                <span className="text-[10px] text-slate-400 truncate block mt-0.5">
+                                  {sub.tagline}
+                                </span>
+                              )}
+                            </div>
+                            {sub.count && (
+                              <span className="text-[10px] text-amber-400/90 font-semibold shrink-0">
+                                {sub.count}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* ── Option 2: Compact 1-Line Budget Bar (Clean White) ── */}
