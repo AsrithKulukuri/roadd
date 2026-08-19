@@ -15,6 +15,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { MortgageCalculator } from "@/components/property/mortgage-calculator";
 import { formatINR, formatPriceCompact, getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
+import { getRefId } from "@/lib/ref-id";
 import Link from "next/link";
 import type { Property } from "@/types/property";
 import type { Metadata } from "next";
@@ -63,11 +64,11 @@ export async function generateMetadata({
       ? `₹${(property.price / 10000000).toFixed(2)} Cr`
       : `₹${(property.price / 100000).toFixed(2)} Lakh`;
 
-  const locationFormatted = `${property.location?.locality || property.location?.area || ""}, ${property.location?.city || "Andhra Pradesh"}`;
+  const locationFormatted = `${property.location?.locality || (property.location as any)?.area || ""}, ${property.location?.city || "Andhra Pradesh"}`;
   const specsFormatted = [
     property.bedrooms ? `${property.bedrooms} Beds` : null,
     property.bathrooms ? `${property.bathrooms} Baths` : null,
-    property.areaSqFt ? `${property.areaSqFt.toLocaleString()} sq.ft` : null,
+    (property as any).areaSqFt || (property as any).area || (property as any).builtUpArea ? `${((property as any).areaSqFt || (property as any).area || (property as any).builtUpArea).toLocaleString()} sq.ft` : null,
   ]
     .filter(Boolean)
     .join(" • ");
@@ -153,10 +154,10 @@ export default async function PropertyDetailPage({
       : undefined,
     numberOfRooms: property.bedrooms,
     numberOfBathroomsTotal: property.bathrooms,
-    floorSize: property.areaSqFt
+    floorSize: (property.area || property.builtUpArea || property.carpetArea)
       ? {
           "@type": "QuantitativeValue",
-          value: property.areaSqFt,
+          value: property.area || property.builtUpArea || property.carpetArea,
           unitCode: "FTK",
         }
       : undefined,
@@ -247,6 +248,10 @@ export default async function PropertyDetailPage({
             <div className="space-y-3 pb-6 border-b border-slate-200 dark:border-slate-800">
               
               <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono font-black text-xs rounded-full border border-amber-500/40 shadow-xs">
+                  Ref ID: {getRefId(property)}
+                </span>
+
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold text-xs rounded-full border border-amber-500/30">
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                   {property.listingType === "rent" ? "Home for Rent" : "House for Sale"}

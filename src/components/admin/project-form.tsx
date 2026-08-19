@@ -168,6 +168,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   // ── Step 1 ──
   const [projectType, setProjectType]         = useState<ProjectType>(initialData?.projectType ?? "apartment");
   const [name, setName]                       = useState(initialData?.name ?? "");
+  const [refId, setRefId]                     = useState(initialData?.refId ?? `REF${Math.floor(100 + Math.random() * 900)}`);
   const [tagline, setTagline]                 = useState(initialData?.tagline ?? "");
   const [description, setDescription]         = useState(initialData?.description ?? "");
   const [builderName, setBuilderName]         = useState(initialData?.builderName ?? "");
@@ -453,6 +454,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     const project: Project = {
       id: initialData?.id ?? `proj-${Date.now()}`,
       slug: initialData?.slug ?? slug,
+      refId: refId.trim().toUpperCase() || undefined,
       name: name.trim(),
       tagline: tagline.trim() || undefined,
       description: description.trim() || undefined,
@@ -595,6 +597,30 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-secondary">Tagline</label>
                 <Input value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="e.g. Life elevated" className={ic()} />
+              </div>
+
+              {/* Unique Ref ID Input Field */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-amber-500 flex items-center gap-1.5">
+                    <span>Reference ID (Ref ID)</span>
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setRefId(`REF${Math.floor(100 + Math.random() * 900)}`)}
+                    className="text-[11px] font-bold text-amber-500 hover:text-amber-400 cursor-pointer"
+                  >
+                    🎲 Generate New
+                  </button>
+                </div>
+                <Input
+                  value={refId}
+                  onChange={(e) => setRefId(e.target.value.toUpperCase())}
+                  placeholder="e.g. REF101"
+                  className={cn(ic(), "uppercase font-black tracking-wider text-amber-500")}
+                />
+                <p className="text-[11px] text-text-tertiary">Direct search key for users (e.g. searching &ldquo;{refId || 'REF101'}&rdquo; opens this project directly)</p>
               </div>
 
               <div className="md:col-span-2 space-y-2">

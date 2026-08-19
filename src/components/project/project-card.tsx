@@ -7,6 +7,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { Project, ProjectType } from "@/types/project";
 import { useFavoritesStore } from "@/stores/favorites-store";
+import { getRefId } from "@/lib/ref-id";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<ProjectType, { icon: React.ElementType; label: string; cardAccent: string; badgeClass: string }> = {
@@ -387,9 +388,14 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
           <div className="mt-auto pt-3 border-t border-border-default">
             <div className="flex items-end justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold">
-                  {isVenture ? "Starting Price" : "Price Range"}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold">
+                    {isVenture ? "Starting Price" : "Price Range"}
+                  </p>
+                  <span className="text-[9px] font-mono font-black px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                    {getRefId(project)}
+                  </span>
+                </div>
                 <p className="font-black text-amber-primary text-base sm:text-lg leading-tight truncate">
                   {priceLabel}
                 </p>

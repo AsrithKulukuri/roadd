@@ -24,8 +24,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, formatPriceCompact, formatArea, formatINR } from "@/lib/utils";
-import type { Property } from "@/types/property";
+import { getYoutubeEmbedUrl } from "@/lib/utils";
+import { getRefId } from "@/lib/ref-id";
 import { useFavoritesStore } from "@/stores/favorites-store";
+import type { Property } from "@/types/property";
 
 interface PropertyCardProps {
   property: Property;
@@ -643,11 +645,16 @@ export function PropertyCard({
             <div className="mt-auto pt-3 border-t border-border-default">
               <div className="flex items-end justify-between gap-2">
                 <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
                   <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold">
                     {property.listingType === "rent" || property.listingType === "pg"
                       ? "Monthly Rent"
                       : "Price"}
                   </p>
+                  <span className="text-[9px] font-mono font-black px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                    {getRefId(property)}
+                  </span>
+                </div>
                   <p className="font-black text-amber-primary text-base sm:text-lg leading-tight truncate">
                     {property.listingType === "rent" || property.listingType === "pg"
                       ? `${formatINR(property.price)}/mo`

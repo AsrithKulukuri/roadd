@@ -10,12 +10,13 @@ import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import {
   MapPin, CheckCircle2, Phone, MessageCircle, Download, FileText, ExternalLink,
   ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark,
-  Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate, Film, Layers, Loader2
+  Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate, Film, Layers, Loader2, Copy
 } from "lucide-react";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/back-button";
 import type { Project, ProjectConfig } from "@/types/project";
 import { ProjectFacilitiesGrid } from "@/components/project/project-facilities-grid";
+import { getRefId } from "@/lib/ref-id";
 import { toast } from "sonner";
 
 // ─── Lazy map (SSR unsafe) ─────────────────────────────────────────────────────
@@ -632,7 +633,20 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                       <MapPin className="w-4 h-4" />
                       {project.location.locality}, {project.location.city}
                     </div>
-                    <div className="flex flex-wrap gap-2 mt-3">
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const ref = getRefId(project);
+                          navigator.clipboard.writeText(ref);
+                          toast.success(`Copied Reference ID: ${ref}`);
+                        }}
+                        title="Click to copy Reference ID"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-black bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/40 hover:bg-amber-500/25 transition-all cursor-pointer shadow-xs whitespace-nowrap"
+                      >
+                        <span>Ref ID: {getRefId(project)}</span>
+                        <Copy className="w-3 h-3 opacity-70" />
+                      </button>
                       {project.videoUrl && (
                         <button
                           onClick={() => openVideo(project.videoUrl)}

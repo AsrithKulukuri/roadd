@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useContentStore, TrendingLocation, HomeCategory, ApRegion } from "@/stores/content-store";
 import { useProjectsStore } from "@/stores/projects-store";
-import { getPropertyRefId, findPropertyByRefId } from "@/lib/ref-id";
+import { getRefId, getPropertyRefId, findItemByRefId } from "@/lib/ref-id";
 import { formatPriceCompact, formatINR } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -130,16 +130,16 @@ export default function AdminDashboardPage() {
   // Live Reference ID Search Tester
   const liveRefMatch = useMemo(() => {
     if (!refSearchQuery.trim()) return null;
-    return findPropertyByRefId(refSearchQuery, properties);
-  }, [refSearchQuery, properties]);
+    return findItemByRefId(refSearchQuery, properties, projects);
+  }, [refSearchQuery, properties, projects]);
 
   const handleExecuteRefSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (liveRefMatch) {
-      toast.success(`🎯 Direct match for ${getPropertyRefId(liveRefMatch)}! Redirecting...`);
-      router.push(`/properties/${liveRefMatch.id}`);
+      toast.success(`🎯 Direct match for ${liveRefMatch.refId} (${liveRefMatch.title})! Opening...`);
+      router.push(liveRefMatch.url);
     } else {
-      toast.error(`No property found matching Reference ID "${refSearchQuery}"`);
+      toast.error(`No property or project found matching Reference ID "${refSearchQuery}"`);
     }
   };
 
@@ -298,14 +298,14 @@ export default function AdminDashboardPage() {
           {liveRefMatch && (
             <div
               onClick={() => {
-                toast.success(`🎯 Direct match for ${getPropertyRefId(liveRefMatch)}! Redirecting...`);
-                router.push(`/properties/${liveRefMatch.id}`);
+                toast.success(`🎯 Direct match for ${liveRefMatch.refId} (${liveRefMatch.title})! Opening...`);
+                router.push(liveRefMatch.url);
               }}
               className="absolute left-0 right-0 top-full mt-2 z-[100] bg-amber-500 text-slate-950 p-3 rounded-2xl shadow-2xl flex items-center justify-between font-bold text-xs cursor-pointer border-2 border-slate-950 animate-in fade-in"
             >
               <div className="truncate pr-2">
                 <span className="bg-slate-950 text-amber-400 px-1.5 py-0.5 rounded text-[10px] uppercase mr-1">
-                  {getPropertyRefId(liveRefMatch)}
+                  {liveRefMatch.refId}
                 </span>
                 <span className="truncate">{liveRefMatch.title}</span>
               </div>

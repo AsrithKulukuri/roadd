@@ -30,7 +30,7 @@ import { useContentStore } from "@/stores/content-store";
 import { useBannersStore } from "@/stores/banners-store";
 import { useLocationsStore } from "@/stores/locations-store";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
-import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
+import { findItemByRefId, getRefId } from "@/lib/ref-id";
 import { matchesPropertySearch, matchesProjectSearch } from "@/lib/search-engine";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
@@ -182,10 +182,10 @@ export function HeroSection() {
     const b = customBudget ?? heroBudget;
 
     if (searchQuery.trim()) {
-      const refMatch = findPropertyByRefId(searchQuery, properties);
+      const refMatch = findItemByRefId(searchQuery, properties, projects);
       if (refMatch) {
-        toast.success(`🎯 Direct match for Reference ID ${getPropertyRefId(refMatch)}! Redirecting...`);
-        router.push(`/properties/${refMatch.id}`);
+        toast.success(`🎯 Direct match for Reference ID ${refMatch.refId} (${refMatch.title})! Opening...`);
+        router.push(refMatch.url);
         return;
       }
     }
@@ -215,6 +215,8 @@ export function HeroSection() {
     const q = searchQuery.trim();
     if (!q || q.length < 2) return null;
 
+    const directRefMatch = findItemByRefId(q, properties, projects);
+
     const matchingProjects = projects
       .filter((proj) => matchesProjectSearch(proj, q))
       .slice(0, 3);
@@ -224,9 +226,10 @@ export function HeroSection() {
       .slice(0, 3);
 
     return {
+      directRefMatch,
       projects: matchingProjects,
       properties: matchingProps,
-      hasResults: matchingProjects.length > 0 || matchingProps.length > 0
+      hasResults: Boolean(directRefMatch) || matchingProjects.length > 0 || matchingProps.length > 0
     };
   }, [searchQuery, projects, properties]);
 
@@ -810,6 +813,32 @@ export function HeroSection() {
               onMouseDown={(e) => e.preventDefault()}
               className="absolute left-0 right-0 top-full mt-2 z-[100] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 text-left animate-in fade-in zoom-in-95"
             >
+              {/* Direct Ref ID Match Card */}
+              {liveHeroSuggestions.directRefMatch && (
+                <div
+                  onClick={() => {
+                    setIsFocused(false);
+                    router.push(liveHeroSuggestions.directRefMatch!.url);
+                  }}
+                  className="px-4 py-3 bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent hover:from-amber-500/30 cursor-pointer flex items-center justify-between gap-3 border-b border-amber-500/30 transition-all"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-xs tracking-wider shadow-xs shrink-0">
+                      🎯 {liveHeroSuggestions.directRefMatch.refId}
+                    </span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-black text-slate-900 dark:text-white truncate">
+                        {liveHeroSuggestions.directRefMatch.title}
+                      </span>
+                      <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                        Exact Ref Match • Tap to Open Directly
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-amber-500 shrink-0" />
+                </div>
+              )}
+
               {/* Search All button */}
               <button
                 type="button"

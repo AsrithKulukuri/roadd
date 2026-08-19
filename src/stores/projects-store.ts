@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 // Valid columns in Supabase projects table
 const VALID_PROJECT_COLUMNS = new Set([
-  'id', 'slug', 'name', 'tagline', 'description', 'projectType',
+  'id', 'slug', 'refId', 'name', 'tagline', 'description', 'projectType',
   'builderName', 'builderLogoUrl', 'builderPhone', 'builderWhatsapp',
   'location', 'reraId', 'reraApproved', 'noBrokerage',
   'constructionStatus', 'totalUnits', 'totalArea', 'phases',
@@ -54,6 +54,7 @@ export function fromSupabaseProject(p: any): Project {
 
   return {
     ...p,
+    refId: p.refId || (p.id ? `REF${(p.id.replace(/\D/g, "") || "100").padStart(3, "0").slice(0, 5)}` : undefined),
     brochureUrl,
     coverImage,
     status: p.constructionStatus || p.status || 'under-construction',
@@ -74,6 +75,7 @@ interface ProjectsState {
   fetchProjects: () => Promise<void>;
   addProject: (project: Project) => Promise<void>;
   updateProject: (id: string, data: Partial<Project>) => Promise<void>;
+  updateRefId: (id: string, refId: string) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   toggleFeatured: (id: string) => Promise<void>;
   updateDisplayCategory: (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => Promise<void>;
@@ -232,6 +234,26 @@ export const useProjectsStore = create<ProjectsState>()(
           if (error) console.warn('Supabase updateDisplayCategory warning:', error.message);
         } catch (error: any) {
           console.warn('Supabase updateDisplayCategory exception:', error);
+        }
+      },
+
+      // ─── Update Ref ID ────────────────────────────────────────────────────
+      updateRefId: async (id: string, refId: string) => {
+        const cleanRef = refId.trim().toUpperCase();
+        set((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === id ? { ...p, refId: cleanRef, updatedAt: new Date().toISOString() } : p
+          ),
+        }));
+
+        try {
+          const { error } = await supabase
+            .from('projects')
+            .update({ refId: cleanRef, updatedAt: new Date().toISOString() })
+            .eq('id', id);
+          if (error) console.warn('Error updating project refId in Supabase:', error.message);
+        } catch (error) {
+          console.warn('Error updating project refId in Supabase:', error);
         }
       },
 

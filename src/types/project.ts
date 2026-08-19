@@ -85,6 +85,7 @@ export interface ProjectImage {
 export interface Project {
   id: string;
   slug: string;
+  refId?: string;
   name: string;
   tagline?: string;
   description?: string;

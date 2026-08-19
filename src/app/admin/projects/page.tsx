@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import {
   Plus, Trash2, Edit3, Star, Eye, EyeOff,
   Building2, Home, Landmark, MoreHorizontal,
-  MapPin, CheckCircle2, AlertCircle, Play,
+  MapPin, CheckCircle2, AlertCircle, Play, Copy, Search
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Project, ProjectType } from "@/types/project";
+import { getRefId, findItemByRefId } from "@/lib/ref-id";
 
 const TYPE_CONFIG: Record<ProjectType, { label: string; icon: React.ElementType; color: string }> = {
   apartment: { label: "Apartment", icon: Building2, color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
@@ -191,7 +192,23 @@ export default function AdminProjectsPage() {
                               )}
                             </div>
                             <div>
-                              <p className="font-semibold text-text-primary truncate max-w-[200px]">{project.name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-text-primary truncate max-w-[200px]">{project.name}</p>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const ref = getRefId(project);
+                                    navigator.clipboard.writeText(ref);
+                                    toast.success(`Copied Ref ID: ${ref}`);
+                                  }}
+                                  title="Click to copy Ref ID"
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-mono text-[10px] font-black tracking-wide border border-amber-500/30 transition-all cursor-pointer"
+                                >
+                                  <span>{getRefId(project)}</span>
+                                  <Copy className="w-2.5 h-2.5 opacity-60" />
+                                </button>
+                              </div>
                               <p className="text-xs text-text-tertiary">{project.builderName}</p>
                             </div>
                           </div>
@@ -327,7 +344,23 @@ export default function AdminProjectsPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-text-primary truncate">{project.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-text-primary truncate">{project.name}</p>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const ref = getRefId(project);
+                              navigator.clipboard.writeText(ref);
+                              toast.success(`Copied Ref ID: ${ref}`);
+                            }}
+                            title="Click to copy Ref ID"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-mono text-[10px] font-black tracking-wide border border-amber-500/30 transition-all cursor-pointer shrink-0"
+                          >
+                            <span>{getRefId(project)}</span>
+                            <Copy className="w-2.5 h-2.5 opacity-60" />
+                          </button>
+                        </div>
                         <p className="text-xs text-text-tertiary">{project.builderName}</p>
                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${TC.color}`}>
