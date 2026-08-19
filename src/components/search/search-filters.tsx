@@ -18,6 +18,8 @@ import {
 import { formatINRWords, cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import { useLocationsStore } from "@/stores/locations-store";
+import { usePropertiesStore } from "@/stores/properties-store";
+import { evaluatePropertyFilters } from "@/lib/search-engine";
 
 export interface FilterState {
   query: string;
@@ -286,6 +288,7 @@ export function SearchFiltersModal({
   const [localFilters, setLocalFilters] = useState<FilterState>(filters);
   const [activeDesktopTab, setActiveDesktopTab] = useState<TabId>("location");
   const { cities, fetchLocations } = useLocationsStore();
+  const properties = usePropertiesStore((state) => state.properties);
 
   useEffect(() => {
     fetchLocations();
@@ -307,6 +310,13 @@ export function SearchFiltersModal({
       document.body.style.overflow = "";
     };
   }, [isOpen]);
+
+  // Real-time matching property count calculated dynamically from active localFilters
+  const liveMatchingCount = useMemo(() => {
+    if (!properties || properties.length === 0) return totalResults;
+    const matches = properties.filter((p) => evaluatePropertyFilters(p, localFilters));
+    return matches.length;
+  }, [properties, localFilters, totalResults]);
 
   // Calculate dynamic active filter count matching screenshot (Hook called unconditionally)
   const activeCount = useMemo(() => {
@@ -988,7 +998,7 @@ export function SearchFiltersModal({
             onClick={handleApply}
             className="w-full py-3.5 bg-[#d8232a] hover:bg-[#c01e25] text-white font-bold text-sm rounded-full shadow-md active:scale-98 transition-all cursor-pointer text-center"
           >
-            View {totalResults} Properties
+            View {liveMatchingCount} Properties
           </button>
         </div>
       </div>
@@ -1623,9 +1633,9 @@ export function SearchFiltersModal({
           <button
             type="button"
             onClick={handleApply}
-            className="py-2.5 px-6 bg-[#d8232a] hover:bg-[#c01e25] text-white font-bold text-xs rounded-full shadow-sm"
+            className="py-2.5 px-6 bg-[#d8232a] hover:bg-[#c01e25] text-white font-bold text-xs rounded-full shadow-sm cursor-pointer"
           >
-            View {totalResults} Properties
+            View {liveMatchingCount} Properties
           </button>
         </div>
       </div>
