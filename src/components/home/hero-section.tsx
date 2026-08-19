@@ -921,23 +921,40 @@ export function HeroSection() {
               if (!activeCity || !activeCity.sublocations || activeCity.sublocations.length === 0) return null;
 
               return (
-                <motion.div
-                  key={activeCity.id}
-                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                  transition={{ duration: 0.16, ease: "easeOut" }}
-                  className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-[92vw] max-w-[340px] sm:max-w-[360px] bg-slate-950/98 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden py-2 z-[100] max-h-[340px] overflow-y-auto no-scrollbar"
-                >
-                  <div className="px-4 py-2 border-b border-slate-800/80 text-[11px] uppercase font-black tracking-wider text-amber-400 flex items-center justify-between gap-4 sticky top-0 bg-slate-950 z-10">
-                    <span className="whitespace-nowrap flex items-center gap-1.5">
-                      <MapPin className="w-3 h-3 text-amber-400" />
-                      {activeCity.name} Localities
-                    </span>
-                    <span className="text-slate-400 font-medium text-[10px] whitespace-nowrap lowercase">
-                      {activeCity.sublocations.length} areas
-                    </span>
-                  </div>
+                <>
+                  {/* Click-outside dismissal backdrop */}
+                  <div 
+                    className="fixed inset-0 z-[95]" 
+                    onClick={() => setOpenLocationTab(null)} 
+                  />
+
+                  <motion.div
+                    key={activeCity.id}
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                    transition={{ duration: 0.16, ease: "easeOut" }}
+                    className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-[92vw] max-w-[340px] sm:max-w-[360px] bg-slate-950/98 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden py-2 z-[100] max-h-[340px] overflow-y-auto no-scrollbar"
+                  >
+                    <div className="px-4 py-2 border-b border-slate-800/80 text-[11px] uppercase font-black tracking-wider text-amber-400 flex items-center justify-between gap-3 sticky top-0 bg-slate-950 z-10">
+                      <span className="whitespace-nowrap flex items-center gap-1.5">
+                        <MapPin className="w-3 h-3 text-amber-400" />
+                        {activeCity.name} Localities
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-400 font-medium text-[10px] whitespace-nowrap lowercase">
+                          {activeCity.sublocations.length} areas
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setOpenLocationTab(null)}
+                          className="w-5 h-5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                          aria-label="Close"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
                   <div className="divide-y divide-slate-900/60">
                     {activeCity.sublocations.map((sub) => (
                       <div
@@ -962,6 +979,7 @@ export function HeroSection() {
                     ))}
                   </div>
                 </motion.div>
+                </>
               );
             })()}
           </AnimatePresence>
