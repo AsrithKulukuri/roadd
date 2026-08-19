@@ -55,7 +55,6 @@ export default function AdminLocationsPage() {
   const [editingSub, setEditingSub] = useState<SubLocation | null>(null);
   const [subName, setSubName] = useState("");
   const [subTagline, setSubTagline] = useState("");
-  const [subBadge, setSubBadge] = useState("Hot");
   const [subCount, setSubCount] = useState("20+ Homes");
 
   useEffect(() => {
@@ -113,14 +112,12 @@ export default function AdminLocationsPage() {
       await updateSublocation(subModalCityId, editingSub.id, {
         name: subName.trim(),
         tagline: subTagline.trim(),
-        badge: subBadge,
         count: subCount.trim() || "15+ Homes",
       });
     } else {
       await addSublocation(subModalCityId, {
         name: subName.trim(),
         tagline: subTagline.trim(),
-        badge: subBadge,
         count: subCount.trim() || "15+ Homes",
       });
     }
@@ -136,7 +133,6 @@ export default function AdminLocationsPage() {
     setEditingSub(null);
     setSubName("");
     setSubTagline("");
-    setSubBadge("Hot");
     setSubCount("25+ Homes");
   };
 
@@ -145,7 +141,6 @@ export default function AdminLocationsPage() {
     setEditingSub(sub);
     setSubName(sub.name);
     setSubTagline(sub.tagline || "");
-    setSubBadge(sub.badge || "Hot");
     setSubCount(sub.count || "20+ Homes");
   };
 
@@ -302,11 +297,6 @@ export default function AdminLocationsPage() {
                           <span className="font-bold text-sm text-text-primary truncate">
                             {sub.name}
                           </span>
-                          {sub.badge && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-primary">
-                              {sub.badge}
-                            </span>
-                          )}
                         </div>
                         {sub.tagline && (
                           <p className="text-xs text-text-secondary truncate mt-0.5">
@@ -469,24 +459,6 @@ export default function AdminLocationsPage() {
                   placeholder="e.g. Prime Commercial Hub, Luxury Villas"
                   className="bg-bg-primary text-sm"
                 />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-text-primary block mb-1.5">
-                  Highlight Badge
-                </label>
-                <select
-                  value={subBadge}
-                  onChange={(e) => setSubBadge(e.target.value)}
-                  className="w-full h-10 px-3 rounded-lg bg-bg-primary border border-border-default text-text-primary text-xs outline-none"
-                >
-                  <option value="Hot">🔥 Hot</option>
-                  <option value="Top">⭐ Top</option>
-                  <option value="Fast Growing">🚀 Fast Growing</option>
-                  <option value="High ROI">📈 High ROI</option>
-                  <option value="Popular">✨ Popular</option>
-                  <option value="None">None</option>
-                </select>
               </div>
             </div>
 

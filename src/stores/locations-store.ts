@@ -7,7 +7,7 @@ export interface SubLocation {
   id: string;
   name: string;
   tagline?: string;
-  badge?: "Hot" | "Top" | "Fast Growing" | "High ROI" | "Popular" | string;
+  badge?: string;
   count?: string;
 }
 
@@ -30,14 +30,16 @@ export const INITIAL_CITIES: LocationCity[] = [
     isHeroPill: true,
     order: 1,
     sublocations: [
-      { id: "sub-vja-1", name: "Benz Circle", tagline: "Prime Commercial Hub", badge: "Hot", count: "45+ Homes" },
-      { id: "sub-vja-2", name: "Poranki", tagline: "Fastest Growing Residential", badge: "Top", count: "32+ Homes" },
-      { id: "sub-vja-3", name: "Kanuru", tagline: "Premium Villas & Apartments", badge: "High ROI", count: "28+ Homes" },
-      { id: "sub-vja-4", name: "Patamata", tagline: "Central City Living", badge: "Hot", count: "38+ Homes" },
-      { id: "sub-vja-5", name: "Tadepalli", tagline: "Near Capital Region", badge: "Fast Growing", count: "25+ Homes" },
-      { id: "sub-vja-6", name: "Penamaluru", tagline: "Gated Communities", badge: "Top", count: "20+ Homes" },
-      { id: "sub-vja-7", name: "Auto Nagar", tagline: "Commercial & Plots", badge: "High ROI", count: "18+ Homes" },
-      { id: "sub-vja-8", name: "Gollapudi", tagline: "High Growth Hub", badge: "Popular", count: "15+ Homes" },
+      { id: "sub-vja-1", name: "Benz Circle", tagline: "Prime Commercial Hub", count: "45+ Homes" },
+      { id: "sub-vja-2", name: "Poranki", tagline: "Fastest Growing Residential", count: "32+ Homes" },
+      { id: "sub-vja-3", name: "Kanuru", tagline: "Premium Villas & Apartments", count: "28+ Homes" },
+      { id: "sub-vja-4", name: "Patamata", tagline: "Central City Living", count: "38+ Homes" },
+      { id: "sub-vja-5", name: "Tadepalli", tagline: "Near Capital Region", count: "25+ Homes" },
+      { id: "sub-vja-6", name: "Penamaluru", tagline: "Gated Communities", count: "20+ Homes" },
+      { id: "sub-vja-7", name: "Auto Nagar", tagline: "Commercial & Plots", count: "18+ Homes" },
+      { id: "sub-vja-8", name: "Gollapudi", tagline: "High Growth Hub", count: "15+ Homes" },
+      { id: "sub-vja-9", name: "Enikepadu", tagline: "NH-16 Corridor", count: "22+ Homes" },
+      { id: "sub-vja-10", name: "Edupugallu", tagline: "Residential Township", count: "18+ Homes" },
     ],
   },
   {
@@ -48,13 +50,14 @@ export const INITIAL_CITIES: LocationCity[] = [
     isHeroPill: true,
     order: 2,
     sublocations: [
-      { id: "sub-gtr-1", name: "Gorantla", tagline: "Top Residential Location", badge: "Hot", count: "35+ Homes" },
-      { id: "sub-gtr-2", name: "Amaravati Road", tagline: "Capital Highway Corridor", badge: "Fast Growing", count: "42+ Homes" },
-      { id: "sub-gtr-3", name: "Brodipet", tagline: "Commercial & Premium Flats", badge: "Top", count: "30+ Homes" },
-      { id: "sub-gtr-4", name: "Pattabhipuram", tagline: "Established Housing", badge: "Popular", count: "24+ Homes" },
-      { id: "sub-gtr-5", name: "Kaza", tagline: "High-yield Plots & Villas", badge: "High ROI", count: "22+ Homes" },
-      { id: "sub-gtr-6", name: "Mangalagiri", tagline: "Near AIIMS & Highway", badge: "Hot", count: "40+ Homes" },
-      { id: "sub-gtr-7", name: "Pedakakani", tagline: "Connecting Corridor", badge: "Fast Growing", count: "16+ Homes" },
+      { id: "sub-gtr-1", name: "Gorantla", tagline: "Top Residential Location", count: "35+ Homes" },
+      { id: "sub-gtr-2", name: "Amaravati Road", tagline: "Capital Highway Corridor", count: "42+ Homes" },
+      { id: "sub-gtr-3", name: "Brodipet", tagline: "Commercial & Premium Flats", count: "30+ Homes" },
+      { id: "sub-gtr-4", name: "Pattabhipuram", tagline: "Established Housing", count: "24+ Homes" },
+      { id: "sub-gtr-5", name: "Kaza", tagline: "High-yield Plots & Villas", count: "22+ Homes" },
+      { id: "sub-gtr-6", name: "Mangalagiri", tagline: "Near AIIMS & Highway", count: "40+ Homes" },
+      { id: "sub-gtr-7", name: "Pedakakani", tagline: "Connecting Corridor", count: "16+ Homes" },
+      { id: "sub-gtr-8", name: "Vidya Nagar", tagline: "Educational Hub", count: "14+ Homes" },
     ],
   },
   {
@@ -65,12 +68,14 @@ export const INITIAL_CITIES: LocationCity[] = [
     isHeroPill: true,
     order: 3,
     sublocations: [
-      { id: "sub-amr-1", name: "Secretariat Zone", tagline: "Core Government District", badge: "Hot", count: "30+ Projects" },
-      { id: "sub-amr-2", name: "Rayapudi", tagline: "High Rise Township", badge: "Top", count: "22+ Projects" },
-      { id: "sub-amr-3", name: "Tulluru", tagline: "Central Capital Corridor", badge: "Fast Growing", count: "28+ Projects" },
-      { id: "sub-amr-4", name: "Velagapudi", tagline: "Administrative Hub", badge: "Hot", count: "18+ Projects" },
-      { id: "sub-amr-5", name: "Mandadam", tagline: "Premium Riverside Lands", badge: "High ROI", count: "15+ Projects" },
-      { id: "sub-amr-6", name: "Uddandarayunipalem", tagline: "Foundation Corridor", badge: "Popular", count: "12+ Projects" },
+      { id: "sub-amr-1", name: "Secretariat Zone", tagline: "Core Government District", count: "30+ Projects" },
+      { id: "sub-amr-2", name: "Rayapudi", tagline: "High Rise Township", count: "22+ Projects" },
+      { id: "sub-amr-3", name: "Tulluru", tagline: "Central Capital Corridor", count: "28+ Projects" },
+      { id: "sub-amr-4", name: "Velagapudi", tagline: "Administrative Hub", count: "18+ Projects" },
+      { id: "sub-amr-5", name: "Mandadam", tagline: "Premium Riverside Lands", count: "15+ Projects" },
+      { id: "sub-amr-6", name: "Uddandarayunipalem", tagline: "Foundation Corridor", count: "12+ Projects" },
+      { id: "sub-amr-7", name: "Nelapadu", tagline: "Judicial Complex Corridor", count: "16+ Projects" },
+      { id: "sub-amr-8", name: "Inavolu", tagline: "Institutional Zone", count: "14+ Projects" },
     ],
   },
   {
@@ -81,13 +86,13 @@ export const INITIAL_CITIES: LocationCity[] = [
     isHeroPill: false,
     order: 4,
     sublocations: [
-      { id: "sub-vzg-1", name: "Rushikonda", tagline: "IT SEZ & Beachside Villas", badge: "Hot", count: "50+ Homes" },
-      { id: "sub-vzg-2", name: "Madhurawada", tagline: "Fast Growing High-Rise Hub", badge: "Top", count: "65+ Homes" },
-      { id: "sub-vzg-3", name: "MVP Colony", tagline: "Asia's Largest Layout", badge: "Hot", count: "45+ Homes" },
-      { id: "sub-vzg-4", name: "Gajuwaka", tagline: "Industrial & Housing Hub", badge: "Popular", count: "38+ Homes" },
-      { id: "sub-vzg-5", name: "Seethammadhara", tagline: "Prime Central Living", badge: "High ROI", count: "30+ Homes" },
-      { id: "sub-vzg-6", name: "Yendada", tagline: "Coastal Scenic Corridor", badge: "Fast Growing", count: "25+ Homes" },
-      { id: "sub-vzg-7", name: "Siripuram", tagline: "Commercial Heart", badge: "Top", count: "20+ Homes" },
+      { id: "sub-vzg-1", name: "Rushikonda", tagline: "IT SEZ & Beachside Villas", count: "50+ Homes" },
+      { id: "sub-vzg-2", name: "Madhurawada", tagline: "Fast Growing High-Rise Hub", count: "65+ Homes" },
+      { id: "sub-vzg-3", name: "MVP Colony", tagline: "Asia's Largest Layout", count: "45+ Homes" },
+      { id: "sub-vzg-4", name: "Gajuwaka", tagline: "Industrial & Housing Hub", count: "38+ Homes" },
+      { id: "sub-vzg-5", name: "Seethammadhara", tagline: "Prime Central Living", count: "30+ Homes" },
+      { id: "sub-vzg-6", name: "Yendada", tagline: "Coastal Scenic Corridor", count: "25+ Homes" },
+      { id: "sub-vzg-7", name: "Siripuram", tagline: "Commercial Heart", count: "20+ Homes" },
     ],
   },
   {
@@ -98,12 +103,12 @@ export const INITIAL_CITIES: LocationCity[] = [
     isHeroPill: false,
     order: 5,
     sublocations: [
-      { id: "sub-hyd-1", name: "Gachibowli", tagline: "Financial District Hub", badge: "Hot", count: "120+ Homes" },
-      { id: "sub-hyd-2", name: "Madhapur", tagline: "IT Corridor Heart", badge: "Hot", count: "95+ Homes" },
-      { id: "sub-hyd-3", name: "Kondapur", tagline: "Premium Residential", badge: "Top", count: "80+ Homes" },
-      { id: "sub-hyd-4", name: "Hitec City", tagline: "Tech Hub Living", badge: "Hot", count: "70+ Homes" },
-      { id: "sub-hyd-5", name: "Tellapur", tagline: "Luxury Villa Township", badge: "High ROI", count: "55+ Homes" },
-      { id: "sub-hyd-6", name: "Kukatpally", tagline: "Metro & Commercial Hub", badge: "Popular", count: "60+ Homes" },
+      { id: "sub-hyd-1", name: "Gachibowli", tagline: "Financial District Hub", count: "120+ Homes" },
+      { id: "sub-hyd-2", name: "Madhapur", tagline: "IT Corridor Heart", count: "95+ Homes" },
+      { id: "sub-hyd-3", name: "Kondapur", tagline: "Premium Residential", count: "80+ Homes" },
+      { id: "sub-hyd-4", name: "Hitec City", tagline: "Tech Hub Living", count: "70+ Homes" },
+      { id: "sub-hyd-5", name: "Tellapur", tagline: "Luxury Villa Township", count: "55+ Homes" },
+      { id: "sub-hyd-6", name: "Kukatpally", tagline: "Metro & Commercial Hub", count: "60+ Homes" },
     ],
   },
 ];
@@ -135,14 +140,54 @@ export const useLocationsStore = create<LocationsState>()(
       fetchLocations: async () => {
         set({ isLoading: true });
         try {
+          // Fetch master list from Supabase trending_locations
           const { data, error } = await supabase
-            .from("app_settings")
-            .select("value")
-            .eq("key", "master_locations")
-            .single();
+            .from("trending_locations")
+            .select("*")
+            .order("created_at", { ascending: true });
 
-          if (!error && data?.value && Array.isArray(data.value)) {
-            set({ cities: data.value, isLoading: false });
+          if (!error && data && data.length > 0) {
+            // Group by city
+            const cityMap: Record<string, SubLocation[]> = {};
+            for (const row of data) {
+              const cityName = row.city;
+              if (!cityName) continue;
+              if (!cityMap[cityName]) cityMap[cityName] = [];
+              cityMap[cityName].push({
+                id: row.id,
+                name: row.locality || cityName,
+                tagline: row.locality ? `${row.locality}, ${cityName}` : undefined,
+                count: row.properties_count ? `${row.properties_count}+ Homes` : "20+ Homes",
+              });
+            }
+
+            // Map existing base cities and append dynamic cities
+            const currentCities = get().cities.length > 0 ? get().cities : INITIAL_CITIES;
+            const updatedCities: LocationCity[] = currentCities.map((c) => {
+              const matchingSubs = cityMap[c.name] || cityMap[c.name.toLowerCase()];
+              return {
+                ...c,
+                sublocations: matchingSubs && matchingSubs.length > 0 ? matchingSubs : c.sublocations,
+              };
+            });
+
+            // Check if any cities in cityMap aren't in updatedCities yet
+            Object.keys(cityMap).forEach((cityName) => {
+              const exists = updatedCities.some((c) => c.name.toLowerCase() === cityName.toLowerCase());
+              if (!exists) {
+                updatedCities.push({
+                  id: `city-${Date.now()}-${cityName.toLowerCase()}`,
+                  name: cityName,
+                  tagline: `${cityName} Region`,
+                  icon: "MapPin",
+                  isHeroPill: false,
+                  order: updatedCities.length + 1,
+                  sublocations: cityMap[cityName],
+                });
+              }
+            });
+
+            set({ cities: updatedCities, isLoading: false });
           } else {
             set({ isLoading: false });
           }
@@ -165,11 +210,13 @@ export const useLocationsStore = create<LocationsState>()(
         const updatedCities = [...get().cities, newCity];
         set({ cities: updatedCities });
 
+        // Also insert default entry into Supabase
         try {
-          await supabase.from("app_settings").upsert({
-            key: "master_locations",
-            value: updatedCities,
-            updated_at: new Date().toISOString(),
+          await supabase.from("trending_locations").insert({
+            city: cityData.name,
+            locality: cityData.name,
+            image: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&q=80",
+            properties_count: 25,
           });
         } catch {}
 
@@ -181,15 +228,6 @@ export const useLocationsStore = create<LocationsState>()(
           c.id === id ? { ...c, ...cityData } : c
         );
         set({ cities: updatedCities });
-
-        try {
-          await supabase.from("app_settings").upsert({
-            key: "master_locations",
-            value: updatedCities,
-            updated_at: new Date().toISOString(),
-          });
-        } catch {}
-
         toast.success("Location updated successfully!");
       },
 
@@ -198,24 +236,24 @@ export const useLocationsStore = create<LocationsState>()(
         const updatedCities = get().cities.filter((c) => c.id !== id);
         set({ cities: updatedCities });
 
-        try {
-          await supabase.from("app_settings").upsert({
-            key: "master_locations",
-            value: updatedCities,
-            updated_at: new Date().toISOString(),
-          });
-        } catch {}
+        if (targetCity) {
+          try {
+            await supabase.from("trending_locations").delete().eq("city", targetCity.name);
+          } catch {}
+        }
 
         toast.success(`Location "${targetCity?.name || ""}" removed!`);
       },
 
       addSublocation: async (cityId, subData) => {
+        const targetCity = get().cities.find((c) => c.id === cityId);
+        const newSubId = `sub-${Date.now()}`;
+
         const newSub: SubLocation = {
-          id: `sub-${Date.now()}`,
+          id: newSubId,
           name: subData.name,
           tagline: subData.tagline || "",
-          badge: subData.badge || "Hot",
-          count: subData.count || "10+ Homes",
+          count: subData.count || "20+ Homes",
         };
 
         const updatedCities = get().cities.map((c) => {
@@ -230,18 +268,39 @@ export const useLocationsStore = create<LocationsState>()(
 
         set({ cities: updatedCities });
 
-        try {
-          await supabase.from("app_settings").upsert({
-            key: "master_locations",
-            value: updatedCities,
-            updated_at: new Date().toISOString(),
-          });
-        } catch {}
+        // Save directly to Supabase trending_locations
+        if (targetCity) {
+          try {
+            const { data } = await supabase.from("trending_locations").insert({
+              city: targetCity.name,
+              locality: subData.name,
+              image: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&q=80",
+              properties_count: 25,
+            }).select().single();
 
-        toast.success(`Sublocation "${subData.name}" added!`);
+            if (data?.id) {
+              // Update local state with real Supabase uuid
+              set({
+                cities: get().cities.map((c) => {
+                  if (c.id === cityId) {
+                    return {
+                      ...c,
+                      sublocations: c.sublocations.map((s) => s.id === newSubId ? { ...s, id: data.id } : s),
+                    };
+                  }
+                  return c;
+                }),
+              });
+            }
+          } catch {}
+        }
+
+        toast.success(`Sublocation "${subData.name}" added and synced!`);
       },
 
       updateSublocation: async (cityId, subId, subData) => {
+        const targetCity = get().cities.find((c) => c.id === cityId);
+
         const updatedCities = get().cities.map((c) => {
           if (c.id === cityId) {
             return {
@@ -256,18 +315,24 @@ export const useLocationsStore = create<LocationsState>()(
 
         set({ cities: updatedCities });
 
-        try {
-          await supabase.from("app_settings").upsert({
-            key: "master_locations",
-            value: updatedCities,
-            updated_at: new Date().toISOString(),
-          });
-        } catch {}
+        // Update in Supabase
+        if (targetCity && subData.name) {
+          try {
+            if (subId.includes("-") && subId.length > 20) {
+              await supabase.from("trending_locations").update({
+                locality: subData.name,
+              }).eq("id", subId);
+            }
+          } catch {}
+        }
 
         toast.success("Sublocation updated!");
       },
 
       deleteSublocation: async (cityId, subId) => {
+        const targetCity = get().cities.find((c) => c.id === cityId);
+        const targetSub = targetCity?.sublocations.find((s) => s.id === subId);
+
         const updatedCities = get().cities.map((c) => {
           if (c.id === cityId) {
             return {
@@ -280,13 +345,19 @@ export const useLocationsStore = create<LocationsState>()(
 
         set({ cities: updatedCities });
 
-        try {
-          await supabase.from("app_settings").upsert({
-            key: "master_locations",
-            value: updatedCities,
-            updated_at: new Date().toISOString(),
-          });
-        } catch {}
+        // Delete from Supabase
+        if (targetCity && targetSub) {
+          try {
+            if (subId.includes("-") && subId.length > 20) {
+              await supabase.from("trending_locations").delete().eq("id", subId);
+            } else {
+              await supabase.from("trending_locations").delete().match({
+                city: targetCity.name,
+                locality: targetSub.name,
+              });
+            }
+          } catch {}
+        }
 
         toast.success("Sublocation removed!");
       },
@@ -296,25 +367,10 @@ export const useLocationsStore = create<LocationsState>()(
           c.id === cityId ? { ...c, isHeroPill: !c.isHeroPill } : c
         );
         set({ cities: updatedCities });
-
-        try {
-          supabase.from("app_settings").upsert({
-            key: "master_locations",
-            value: updatedCities,
-            updated_at: new Date().toISOString(),
-          });
-        } catch {}
       },
 
       resetToDefaults: () => {
         set({ cities: INITIAL_CITIES });
-        try {
-          supabase.from("app_settings").upsert({
-            key: "master_locations",
-            value: INITIAL_CITIES,
-            updated_at: new Date().toISOString(),
-          });
-        } catch {}
         toast.info("Reset to default AP locations");
       },
     }),
@@ -323,3 +379,4 @@ export const useLocationsStore = create<LocationsState>()(
     }
   )
 );
+

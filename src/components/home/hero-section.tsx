@@ -958,11 +958,6 @@ export function HeroSection() {
                           <span className="font-bold text-xs text-white group-hover:text-amber-400 transition-colors whitespace-nowrap">
                             {sub.name}
                           </span>
-                          {sub.badge && (
-                            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
-                              {sub.badge}
-                            </span>
-                          )}
                         </div>
                         {sub.tagline && (
                           <span className="text-[10px] text-slate-400 block mt-0.5 whitespace-nowrap">
