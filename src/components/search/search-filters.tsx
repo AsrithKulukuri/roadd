@@ -19,6 +19,7 @@ import { formatINRWords, cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import { useLocationsStore } from "@/stores/locations-store";
 import { usePropertiesStore } from "@/stores/properties-store";
+import { useProjectsStore } from "@/stores/projects-store";
 import { evaluatePropertyFilters } from "@/lib/search-engine";
 
 export interface FilterState {
@@ -268,7 +269,7 @@ function ToggleSwitch({
         }}
         className={cn(
           "w-11 h-6 rounded-full transition-colors relative focus:outline-none cursor-pointer shrink-0",
-          checked ? "bg-[#d8232a]" : "bg-slate-200"
+          checked ? "bg-amber-500" : "bg-slate-200"
         )}
       >
         <span
@@ -357,10 +358,15 @@ export function SearchFiltersModal({
   const [activeDesktopTab, setActiveDesktopTab] = useState<TabId>("location");
   const { cities, fetchLocations } = useLocationsStore();
   const properties = usePropertiesStore((state) => state.properties);
+  const projects = useProjectsStore((state) => state.projects);
+  const fetchProperties = usePropertiesStore((state) => state.fetchProperties);
+  const fetchProjects = useProjectsStore((state) => state.fetchProjects);
 
   useEffect(() => {
     fetchLocations();
-  }, [fetchLocations]);
+    if (properties.length === 0) fetchProperties();
+    if (projects.length === 0) fetchProjects();
+  }, [fetchLocations, fetchProperties, fetchProjects, properties.length, projects.length]);
 
   useEffect(() => {
     if (isOpen) {
@@ -379,12 +385,72 @@ export function SearchFiltersModal({
     };
   }, [isOpen]);
 
-  // Real-time matching property count calculated dynamically from active localFilters
+  // Real-time matching property and project count calculated dynamically from active localFilters
   const liveMatchingCount = useMemo(() => {
-    if (!properties || properties.length === 0) return totalResults;
-    const matches = properties.filter((p) => evaluatePropertyFilters(p, localFilters));
-    return matches.length;
-  }, [properties, localFilters, totalResults]);
+    const propMatches = (properties || []).filter((p) => evaluatePropertyFilters(p, localFilters));
+    
+    const projMatches = (projects || []).filter((proj) => {
+      // 1. Cities
+      if (localFilters.cities && localFilters.cities.length > 0) {
+        const pCity = (proj.location?.city || "").toLowerCase();
+        const pLoc = (proj.location?.locality || "").toLowerCase();
+        const matchesCity = localFilters.cities.some((c) => {
+          const tc = c.toLowerCase().trim();
+          return pCity.includes(tc) || pLoc.includes(tc);
+        });
+        if (!matchesCity) return false;
+      }
+      // 2. Localities
+      if (localFilters.localities && localFilters.localities.length > 0) {
+        const pLoc = (proj.location?.locality || "").toLowerCase();
+        const matchesLoc = localFilters.localities.some((l) => pLoc.includes(l.toLowerCase().trim()));
+        if (!matchesLoc) return false;
+      }
+      // 3. Property Type
+      if (localFilters.propertyType && localFilters.propertyType.length > 0) {
+        const pType = (proj.projectType || "").toLowerCase();
+        const matchesType = localFilters.propertyType.some((t) => {
+          const tt = t.toLowerCase();
+          if (tt === pType) return true;
+          if (tt === "apartment" && pType.includes("apartment")) return true;
+          if (tt === "villa" && (pType.includes("villa") || pType.includes("independent-house"))) return true;
+          if (tt === "residential-land" && (pType.includes("land") || pType.includes("plot") || pType === "venture")) return true;
+          if (tt === "commercial-spaces" && (pType.includes("commercial") || pType.includes("shop"))) return true;
+          return false;
+        });
+        if (!matchesType) return false;
+      }
+      // 4. BHK
+      if (localFilters.bhk && localFilters.bhk.length > 0) {
+        if (!proj.configurations || proj.configurations.length === 0) return false;
+        const hasMatchingBhk = proj.configurations.some((cfg) => {
+          const beds = cfg.bedrooms || 0;
+          return localFilters.bhk.some((b) => (b === "5+" || b === "4+" ? beds >= parseInt(b, 10) : beds.toString() === b));
+        });
+        if (!hasMatchingBhk) return false;
+      }
+      // 5. Budget
+      if (localFilters.budget && (localFilters.budget[0] > 0 || localFilters.budget[1] < 100000000)) {
+        if (proj.configurations && proj.configurations.length > 0) {
+          const hasOverlap = proj.configurations.some((cfg) => {
+            const pMin = cfg.priceMin || 0;
+            const pMax = cfg.priceMax || pMin;
+            return pMin <= localFilters.budget[1] && pMax >= localFilters.budget[0];
+          });
+          if (!hasOverlap) return false;
+        }
+      }
+      // 6. Possession
+      if (localFilters.possessionStatus && localFilters.possessionStatus.length > 0) {
+        const isReady = proj.constructionStatus === "ready-to-move";
+        const matchesPoss = localFilters.possessionStatus.some((ps) => (ps === "ready" ? isReady : !isReady));
+        if (!matchesPoss) return false;
+      }
+      return true;
+    });
+
+    return propMatches.length + projMatches.length;
+  }, [properties, projects, localFilters]);
 
   // Calculate dynamic active filter count matching screenshot (Hook called unconditionally)
   const activeCount = useMemo(() => {
@@ -1060,12 +1126,12 @@ export function SearchFiltersModal({
 
         </div>
 
-        {/* 3. Sticky Bottom CTA matching screenshot */}
+        {/* 3. Sticky Bottom CTA matching ROAD website brand button */}
         <div className="p-4 bg-white border-t border-slate-100 fixed bottom-0 left-0 right-0 z-30 shadow-lg">
           <button
             type="button"
             onClick={handleApply}
-            className="w-full py-3.5 bg-[#d8232a] hover:bg-[#c01e25] text-white font-bold text-sm rounded-full shadow-md active:scale-98 transition-all cursor-pointer text-center"
+            className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 active:scale-98 text-slate-950 font-black text-sm rounded-full shadow-lg transition-all cursor-pointer text-center"
           >
             View {liveMatchingCount} Properties
           </button>
@@ -1216,7 +1282,7 @@ export function SearchFiltersModal({
             {/* 2. Budget / Price Tab */}
             {activeDesktopTab === "budget" && (
               <div className="space-y-5">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center pr-10">
                   <span className="text-[13px] font-semibold text-slate-900">Budget Range</span>
                   <span className="text-xs font-semibold text-[#008075]">
                     {formatINRWords(localFilters.budget[0])} – {formatINRWords(localFilters.budget[1], true)}
@@ -1377,7 +1443,7 @@ export function SearchFiltersModal({
             {/* 5. Covered Area Tab */}
             {activeDesktopTab === "coveredArea" && (
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center pr-10">
                   <span className="text-[13px] font-semibold text-slate-900">Covered Area (sqft)</span>
                   <span className="text-xs font-semibold text-[#008075]">
                     {localFilters.coveredArea[0]} sqft – {localFilters.coveredArea[1] >= 10000 ? "10,000+ sqft" : `${localFilters.coveredArea[1]} sqft`}
@@ -1684,19 +1750,19 @@ export function SearchFiltersModal({
           </div>
         </div>
 
-        {/* Desktop Sticky Bottom Action Bar */}
+        {/* Desktop Sticky Bottom Action Bar matching ROAD website brand */}
         <div className="px-6 py-3.5 border-t border-slate-200 bg-white flex items-center justify-between shrink-0">
           <button
             type="button"
             onClick={handleReset}
-            className="text-xs font-semibold text-[#d8232a] hover:underline cursor-pointer"
+            className="text-xs font-semibold text-slate-600 hover:text-amber-600 transition-colors cursor-pointer"
           >
             Clear All
           </button>
           <button
             type="button"
             onClick={handleApply}
-            className="py-2.5 px-6 bg-[#d8232a] hover:bg-[#c01e25] text-white font-bold text-xs rounded-full shadow-sm cursor-pointer"
+            className="py-2.5 px-7 bg-amber-500 hover:bg-amber-600 active:scale-98 text-slate-950 font-black text-xs rounded-full shadow-sm hover:shadow-md transition-all cursor-pointer"
           >
             View {liveMatchingCount} Properties
           </button>
