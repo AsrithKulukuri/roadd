@@ -147,7 +147,7 @@ function GalleryModal({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-const TABS = ["Status", "Floor Plans", "Facilities", "Location", "Brochure", "Builder"] as const;
+const TABS = ["Status", "Overview", "Floor Plans", "Facilities", "Location", "Brochure", "Builder"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -816,6 +816,73 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
 
               {/* Tab Content Area */}
               <div className="space-y-8">
+                {/* 1. Overview / About This Project Section */}
+                <ScrollReveal id="overview" className="scroll-mt-32">
+                  <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6 space-y-6">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <h2 className="text-xl font-bold text-text-primary">About {project.name}</h2>
+                        {project.reraId && (
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                            RERA: {project.reraId}
+                          </span>
+                        )}
+                      </div>
+                      {project.tagline && (
+                        <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+                          {project.tagline}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Rich Description */}
+                    {project.description ? (
+                      <div className="text-sm sm:text-base text-text-secondary leading-relaxed whitespace-pre-line space-y-3">
+                        {project.description}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-text-tertiary italic">
+                        Experience modern luxury living at {project.name}, thoughtfully designed by {project.builderName} with world-class architecture and amenities in {project.location.locality}, {project.location.city}.
+                      </p>
+                    )}
+
+                    {/* Highlights Bullet Matrix */}
+                    {project.highlights && project.highlights.length > 0 && (
+                      <div className="pt-4 border-t border-border-default">
+                        <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-3">Project Highlights</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {project.highlights.map((hl, idx) => (
+                            <div key={idx} className="flex items-start gap-2 text-xs sm:text-sm font-medium text-text-secondary">
+                              <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                              <span>{hl}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Project Snapshot Specs */}
+                    <div className="pt-4 border-t border-border-default grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
+                        <span className="text-[10px] font-bold text-text-tertiary uppercase block">Project Type</span>
+                        <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.projectType}</span>
+                      </div>
+                      <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
+                        <span className="text-[10px] font-bold text-text-tertiary uppercase block">Total Area</span>
+                        <span className="text-xs sm:text-sm font-bold text-text-primary">{project.totalArea || "On Request"}</span>
+                      </div>
+                      <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
+                        <span className="text-[10px] font-bold text-text-tertiary uppercase block">Total Units</span>
+                        <span className="text-xs sm:text-sm font-bold text-text-primary">{project.totalUnits ? `${project.totalUnits} Units` : "On Request"}</span>
+                      </div>
+                      <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
+                        <span className="text-[10px] font-bold text-text-tertiary uppercase block">Status</span>
+                        <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.constructionStatus.replace("-", " ")}</span>
+                      </div>
+                    </div>
+                  </div>
+                </ScrollReveal>
+
                 <ScrollReveal id="floor-plans" className="scroll-mt-32">
                   <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
                   <div className="flex items-center justify-between gap-4 mb-4">

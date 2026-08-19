@@ -118,6 +118,34 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const { addProject, updateProject } = useProjectsStore();
 
   const [submitting, setSubmitting] = useState(false);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+
+  const generateAiDescription = async () => {
+    try {
+      setIsGeneratingAi(true);
+      const res = await fetch("/api/ai-generate-desc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          projectType,
+          location: `${locality || 'Prime Location'}, ${city}`,
+          builderName: builderName || 'Prominent Developer',
+          features: facilities.slice(0, 8).join(", "),
+        }),
+      });
+      const data = await res.json();
+      if (data?.description) {
+        setDescription(data.description);
+        toast.success("AI project description generated!");
+      }
+    } catch (err) {
+      toast.error("Failed to generate description");
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [showMap, setShowMap] = useState(false);
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
@@ -517,8 +545,25 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
               </div>
 
               <div className="md:col-span-2 space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Description</label>
-                <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Brief overview of the project…" className={ic("resize-none")} />
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-text-secondary">Project Overview &amp; Description</label>
+                  <button
+                    type="button"
+                    onClick={generateAiDescription}
+                    disabled={isGeneratingAi}
+                    className="text-xs font-bold text-amber-500 hover:text-amber-400 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {isGeneratingAi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                    <span>{isGeneratingAi ? "Generating..." : "Generate with AI"}</span>
+                  </button>
+                </div>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={6}
+                  placeholder="Enter a comprehensive overview of the project, architectural highlights, lifestyle features, connectivity advantages, and specifications..."
+                  className="w-full min-h-[140px] px-4 py-3 rounded-2xl border border-border-default/80 bg-bg-primary text-text-primary text-sm placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition leading-relaxed"
+                />
               </div>
 
               {/* Builder Info - Styled 1:1 like Property Dynamic Specific Fields card */}

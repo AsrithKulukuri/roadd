@@ -51,6 +51,7 @@ export default function AddPropertyPage() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
 
   const [formData, setFormData] = useState({
@@ -283,6 +284,34 @@ export default function AddPropertyPage() {
     }
   };
 
+  const generateAiDescription = async () => {
+    try {
+      setIsGeneratingAi(true);
+      const res = await fetch("/api/ai-generate-desc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: formData.title,
+          type: formData.category,
+          location: `${formData.locality || 'Prime Location'}, ${formData.city}`,
+          price: formData.price,
+          bhk: formData.bedrooms,
+          size: formData.area || formData.builtUpArea,
+          features: formData.amenities.slice(0, 6).join(", "),
+        }),
+      });
+      const data = await res.json();
+      if (data?.description) {
+        setFormData(prev => ({ ...prev, description: data.description }));
+        toast.success("AI property description generated!");
+      }
+    } catch (err) {
+      toast.error("Failed to generate description");
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-bg-primary pt-20 sm:pt-24 pb-44 sm:pb-32">
       <div className="max-w-5xl mx-auto px-4 md:px-6">
@@ -330,11 +359,25 @@ export default function AddPropertyPage() {
               </div>
 
               <div className="md:col-span-2 space-y-2">
-                <label className="text-sm font-medium text-text-secondary">Description</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-text-secondary">Property Description</label>
+                  <button
+                    type="button"
+                    onClick={generateAiDescription}
+                    disabled={isGeneratingAi}
+                    className="text-xs font-bold text-amber-500 hover:text-amber-400 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{isGeneratingAi ? "Generating..." : "Generate with AI"}</span>
+                  </button>
+                </div>
                 <textarea 
-                  name="description" value={formData.description} onChange={handleChange} 
-                  rows={4} className="w-full rounded-xl bg-bg-primary border border-border-default/50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-primary text-text-primary"
-                  placeholder="Describe the property..."
+                  name="description" 
+                  value={formData.description} 
+                  onChange={handleChange} 
+                  rows={6} 
+                  className="w-full min-h-[140px] rounded-2xl bg-bg-primary border border-border-default/80 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-primary text-text-primary text-sm leading-relaxed"
+                  placeholder="Describe the property, key interior features, sunlight/ventilation, neighborhood benefits, nearby schools, hospitals, and transit hubs..."
                 />
               </div>
 
