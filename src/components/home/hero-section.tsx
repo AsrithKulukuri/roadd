@@ -920,14 +920,15 @@ export function HeroSection() {
                   <AnimatePresence>
                     {isOpen && hasSublocations && (
                       <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute top-full mt-1.5 left-0 right-0 sm:left-auto sm:w-72 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden py-2 z-50 max-h-[300px] overflow-y-auto no-scrollbar"
+                        initial={{ opacity: 0, y: -10, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-full mt-2 left-0 min-w-[270px] sm:min-w-[290px] w-max max-w-[90vw] bg-slate-950/98 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden py-2 z-[100] max-h-[320px] overflow-y-auto no-scrollbar"
                       >
-                        <div className="px-3.5 py-1.5 border-b border-slate-800 text-[10px] uppercase font-black tracking-wider text-amber-400 flex items-center justify-between">
-                          <span>{city.name} Localities</span>
-                          <span className="text-slate-400 font-normal">{city.sublocations.length} areas</span>
+                        <div className="px-4 py-2 border-b border-slate-800/80 text-[11px] uppercase font-black tracking-wider text-amber-400 flex items-center justify-between gap-4">
+                          <span className="whitespace-nowrap">{city.name} Localities</span>
+                          <span className="text-slate-400 font-medium text-[10px] whitespace-nowrap lowercase">{city.sublocations.length} areas</span>
                         </div>
                         {city.sublocations.map((sub) => (
                           <div
@@ -936,20 +937,20 @@ export function HeroSection() {
                               setOpenLocationTab(null);
                               router.push(`/search?type=${activeTab}&location=${encodeURIComponent(city.name)}&locality=${encodeURIComponent(sub.name)}`);
                             }}
-                            className="px-3.5 py-2 hover:bg-slate-900 cursor-pointer flex flex-col border-b border-slate-900/60 last:border-b-0 transition-colors group"
+                            className="px-4 py-2.5 hover:bg-slate-900/90 cursor-pointer flex flex-col border-b border-slate-900/60 last:border-b-0 transition-colors group"
                           >
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-xs text-white group-hover:text-amber-400 transition-colors truncate">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="font-bold text-xs text-white group-hover:text-amber-400 transition-colors whitespace-nowrap">
                                 {sub.name}
                               </span>
                               {sub.badge && (
-                                <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400">
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
                                   {sub.badge}
                                 </span>
                               )}
                             </div>
                             {sub.tagline && (
-                              <span className="text-[10px] text-slate-400 truncate block mt-0.5">
+                              <span className="text-[10px] text-slate-400 block mt-0.5 whitespace-nowrap">
                                 {sub.tagline}
                               </span>
                             )}
