@@ -29,7 +29,7 @@ export function Logo({
   const { width, height, textClass } = sizeMap[size];
 
   const resolvedTextColor = textColor || "text-white";
-  const resolvedSubtitleColor = textColor ? "text-slate-500 dark:text-slate-400" : "text-slate-300";
+  const resolvedSubtitleColor = textColor ? "text-slate-600 font-bold" : "text-slate-300";
 
   const content = (
     <div className={cn("flex items-center gap-2", className)}>
