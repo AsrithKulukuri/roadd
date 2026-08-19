@@ -119,7 +119,7 @@ export function AiAssistantWidget() {
             whileTap={{ scale: 0.94 }}
             onClick={() => setIsOpen(true)}
             aria-label="Open AI Assistant"
-            className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 rounded-full shadow-[0_8px_30px_rgba(245,158,11,0.35)] flex items-center justify-center z-[45] text-slate-950 border-2 border-amber-300/80 cursor-pointer"
+            className="fixed bottom-20 left-4 lg:bottom-6 lg:left-auto lg:right-6 w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 rounded-full shadow-[0_8px_30px_rgba(245,158,11,0.35)] flex items-center justify-center z-[45] text-slate-950 border-2 border-amber-300/80 cursor-pointer"
           >
             <div className="relative flex items-center justify-center">
               <Bot className="w-6 h-6 lg:w-7 lg:h-7 stroke-[2.2]" />
@@ -136,7 +136,7 @@ export function AiAssistantWidget() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-[calc(7.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6 right-4 lg:right-6 w-[90vw] max-w-sm h-[500px] max-h-[80vh] bg-bg-card border border-border-default shadow-elevated rounded-2xl flex flex-col overflow-hidden z-[100]"
+            className="fixed bottom-[calc(7.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6 left-4 lg:left-auto lg:right-6 w-[90vw] max-w-sm h-[500px] max-h-[80vh] bg-bg-card border border-border-default shadow-elevated rounded-2xl flex flex-col overflow-hidden z-[100]"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-bg-primary/50 border-b border-border-default backdrop-blur-md">
