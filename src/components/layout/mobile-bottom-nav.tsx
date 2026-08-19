@@ -209,23 +209,24 @@ export function MobileBottomNav() {
               className="absolute inset-0 bg-black/60 backdrop-blur-xs"
             />
 
-            {/* Slide-in Menu View */}
+            {/* Slide-in Menu View - Only takes required space */}
             <motion.div
               initial={{ opacity: 0, y: "100%" }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: "100%" }}
               transition={{ type: "spring", stiffness: 350, damping: 32 }}
-              className="absolute inset-x-0 bottom-0 top-[40px] bg-white dark:bg-slate-950 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto p-6 pb-24 flex flex-col justify-between"
+              className="absolute inset-x-0 bottom-0 max-h-[85vh] bg-white dark:bg-slate-950 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto p-5 pb-8"
             >
               <div>
-                {/* Header Close Row */}
-                <div className="flex items-center justify-end pb-3">
+                {/* Drag handle & Header Close Row */}
+                <div className="flex items-center justify-between pb-2">
+                  <div className="w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto ml-auto pl-10" />
                   <button
                     type="button"
                     onClick={() => setIsMenuOpen(false)}
                     className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
 
