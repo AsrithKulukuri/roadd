@@ -231,7 +231,7 @@ export const navigationLinks = {
     ],
     forBuyers: [
       { label: "Browse Properties", href: "/search" },
-      { label: "New Projects", href: "/projects" },
+      { label: "New Projects", href: "/properties" },
       { label: "Home Loans", href: "/mortgage-calculator" },
       { label: "EMI Calculator", href: "/mortgage-calculator" },
       { label: "Property Guides", href: "/blog" },

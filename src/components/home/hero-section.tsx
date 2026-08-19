@@ -735,7 +735,7 @@ export function HeroSection() {
                       <Link href="/search?type=projects&propertyType=residential-plot" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-300 hover:bg-slate-900 hover:text-amber-400">
                         Plots
                       </Link>
-                      <Link href="/projects" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-amber-400 hover:bg-slate-900 hover:text-amber-300 border-t border-slate-800 mt-1 pt-3">
+                      <Link href="/properties" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-amber-400 hover:bg-slate-900 hover:text-amber-300 border-t border-slate-800 mt-1 pt-3">
                         View All Projects →
                       </Link>
                     </div>

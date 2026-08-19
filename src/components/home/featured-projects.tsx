@@ -32,7 +32,7 @@ export function FeaturedProjects() {
             </p>
           </div>
           <Link
-            href="/projects"
+            href="/properties"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-primary hover:underline shrink-0"
           >
             View all projects <ArrowRight className="w-4 h-4" />

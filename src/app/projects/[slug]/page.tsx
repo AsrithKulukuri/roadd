@@ -208,7 +208,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
       <div className="min-h-screen pt-24 flex flex-col items-center justify-center gap-4 text-text-secondary">
         <Building2 className="w-12 h-12 opacity-30" />
         <h2 className="text-xl font-bold text-text-primary">Project not found</h2>
-        <Link href="/projects" className="text-amber-primary hover:underline">← Browse all projects</Link>
+        <Link href="/properties" className="text-amber-primary hover:underline">← Browse all properties &amp; projects</Link>
       </div>
     );
   }
