@@ -28,7 +28,7 @@ export function Logo({
 }: LogoProps) {
   const { width, height, textClass } = sizeMap[size];
 
-  const defaultTextColor = isDarkBg ? "text-white" : "text-slate-900 dark:text-white";
+  const defaultTextColor = isDarkBg ? "text-white" : "text-text-primary";
   const resolvedTextColor = textColor || defaultTextColor;
 
   const content = (
@@ -60,10 +60,10 @@ export function Logo({
             <span
               className={cn(
                 "text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.18em] leading-none mt-1 font-bold hidden sm:block",
-                isDarkBg ? "text-slate-400" : "text-slate-600 dark:text-slate-400"
+                isDarkBg ? "text-slate-400" : "text-text-tertiary"
               )}
             >
-              Real Owner Agent Developer
+              Real Projects. Real People. Real Updates.
             </span>
           )}
         </div>

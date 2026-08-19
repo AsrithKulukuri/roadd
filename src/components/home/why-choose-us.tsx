@@ -43,30 +43,30 @@ const features = [
 
 export function WhyChooseUs() {
   return (
-    <section className="py-20 sm:py-28 relative overflow-hidden bg-slate-900/40 border-t border-border-default/40">
+    <section className="py-20 sm:py-28 relative overflow-hidden bg-white dark:bg-slate-950 border-t border-slate-200/80 dark:border-slate-800/80">
       {/* Subtle Glows */}
-      <div className="absolute top-0 right-1/4 -mt-32 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 -mb-32 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 right-1/4 -mt-32 w-96 h-96 bg-amber-500/5 dark:bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-1/4 -mb-32 w-96 h-96 bg-amber-500/5 dark:bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="container-road relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-black uppercase tracking-widest">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs font-black uppercase tracking-widest">
             <Sparkles className="w-3.5 h-3.5" /> What We Do
           </div>
           
-          <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-black text-text-primary tracking-tight">
+          <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-black text-slate-950 dark:text-white tracking-tight">
             Real Projects. Real Progress. <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500">
+            <span className="text-amber-500 dark:text-amber-400">
               Real Information.
             </span>
           </h2>
           
-          <p className="text-text-secondary text-base sm:text-lg leading-relaxed pt-2">
-            At <strong>RoadFacing</strong>, we bring projects closer to you through real, on-ground videos and regular updates. We showcase projects as they actually are — their progress, location, development, and current status.
+          <p className="text-slate-700 dark:text-slate-300 text-base sm:text-lg leading-relaxed pt-2 font-medium">
+            At <strong className="text-slate-950 dark:text-white font-extrabold">RoadFacing</strong>, we bring projects closer to you through real, on-ground videos and regular updates. We showcase projects as they actually are — their progress, location, development, and current status.
           </p>
           
-          <p className="text-text-tertiary text-sm sm:text-base leading-relaxed italic">
+          <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base leading-relaxed italic font-medium">
             &ldquo;No exaggerated promises. No unnecessary hype. Just real projects, real visuals, and regular updates.&rdquo;
           </p>
         </div>
@@ -78,21 +78,21 @@ export function WhyChooseUs() {
             return (
               <div
                 key={index}
-                className="group p-7 sm:p-8 rounded-3xl bg-bg-card border border-border-default/70 hover:border-amber-500/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative flex flex-col justify-between"
+                className="group p-7 sm:p-8 rounded-3xl bg-slate-50/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 hover:border-amber-500/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-6">
-                    <div className="w-13 h-13 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <Icon className="h-6 w-6 text-amber-400" />
+                    <div className="w-13 h-13 rounded-2xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <Icon className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                     </div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-800/80 text-amber-300 border border-amber-500/20">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-white dark:bg-slate-800 text-slate-800 dark:text-amber-300 border border-slate-200 dark:border-amber-500/20 shadow-2xs">
                       {feature.badge}
                     </span>
                   </div>
-                  <h3 className="font-heading text-lg sm:text-xl font-bold text-text-primary mb-3">
+                  <h3 className="font-heading text-lg sm:text-xl font-extrabold text-slate-950 dark:text-white mb-3">
                     {feature.title}
                   </h3>
-                  <p className="text-text-secondary text-sm sm:text-base leading-relaxed">
+                  <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed font-normal">
                     {feature.description}
                   </p>
                 </div>
@@ -102,8 +102,8 @@ export function WhyChooseUs() {
         </div>
 
         {/* Bottom Banner Box */}
-        <div className="max-w-4xl mx-auto rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 p-6 sm:p-8 text-center shadow-xl">
-          <p className="text-base sm:text-lg font-bold text-slate-200 leading-relaxed">
+        <div className="max-w-4xl mx-auto rounded-2xl bg-slate-950 text-white border border-slate-800 p-6 sm:p-8 text-center shadow-xl">
+          <p className="text-base sm:text-lg font-bold text-slate-100 leading-relaxed">
             &ldquo;RoadFacing brings you real, on-ground videos and regular project updates, helping you understand projects through what you can actually see — not just what you are told.&rdquo;
           </p>
           <div className="mt-3 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-amber-400">
