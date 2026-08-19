@@ -936,28 +936,21 @@ export function HeroSection() {
                               setOpenLocationTab(null);
                               router.push(`/search?type=${activeTab}&location=${encodeURIComponent(city.name)}&locality=${encodeURIComponent(sub.name)}`);
                             }}
-                            className="px-3.5 py-2.5 hover:bg-slate-900 cursor-pointer flex items-center justify-between gap-2 border-b border-slate-900/60 last:border-b-0 transition-colors group"
+                            className="px-3.5 py-2 hover:bg-slate-900 cursor-pointer flex flex-col border-b border-slate-900/60 last:border-b-0 transition-colors group"
                           >
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-xs text-white group-hover:text-amber-400 transition-colors truncate">
-                                  {sub.name}
-                                </span>
-                                {sub.badge && (
-                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400">
-                                    {sub.badge}
-                                  </span>
-                                )}
-                              </div>
-                              {sub.tagline && (
-                                <span className="text-[10px] text-slate-400 truncate block mt-0.5">
-                                  {sub.tagline}
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-xs text-white group-hover:text-amber-400 transition-colors truncate">
+                                {sub.name}
+                              </span>
+                              {sub.badge && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400">
+                                  {sub.badge}
                                 </span>
                               )}
                             </div>
-                            {sub.count && (
-                              <span className="text-[10px] text-amber-400/90 font-semibold shrink-0">
-                                {sub.count}
+                            {sub.tagline && (
+                              <span className="text-[10px] text-slate-400 truncate block mt-0.5">
+                                {sub.tagline}
                               </span>
                             )}
                           </div>

@@ -313,11 +313,6 @@ export default function AdminLocationsPage() {
                             {sub.tagline}
                           </p>
                         )}
-                        {sub.count && (
-                          <p className="text-[11px] text-amber-primary/80 font-medium mt-0.5">
-                            {sub.count}
-                          </p>
-                        )}
                       </div>
 
                       <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity shrink-0">
@@ -476,35 +471,22 @@ export default function AdminLocationsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-text-primary block mb-1.5">
-                    Highlight Badge
-                  </label>
-                  <select
-                    value={subBadge}
-                    onChange={(e) => setSubBadge(e.target.value)}
-                    className="w-full h-10 px-3 rounded-lg bg-bg-primary border border-border-default text-text-primary text-xs outline-none"
-                  >
-                    <option value="Hot">🔥 Hot</option>
-                    <option value="Top">⭐ Top</option>
-                    <option value="Fast Growing">🚀 Fast Growing</option>
-                    <option value="High ROI">📈 High ROI</option>
-                    <option value="Popular">✨ Popular</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-text-primary block mb-1.5">
-                    Property Count Label
-                  </label>
-                  <Input
-                    value={subCount}
-                    onChange={(e) => setSubCount(e.target.value)}
-                    placeholder="e.g. 45+ Homes"
-                    className="bg-bg-primary text-sm"
-                  />
-                </div>
+              <div>
+                <label className="text-xs font-bold text-text-primary block mb-1.5">
+                  Highlight Badge
+                </label>
+                <select
+                  value={subBadge}
+                  onChange={(e) => setSubBadge(e.target.value)}
+                  className="w-full h-10 px-3 rounded-lg bg-bg-primary border border-border-default text-text-primary text-xs outline-none"
+                >
+                  <option value="Hot">🔥 Hot</option>
+                  <option value="Top">⭐ Top</option>
+                  <option value="Fast Growing">🚀 Fast Growing</option>
+                  <option value="High ROI">📈 High ROI</option>
+                  <option value="Popular">✨ Popular</option>
+                  <option value="None">None</option>
+                </select>
               </div>
             </div>
 
