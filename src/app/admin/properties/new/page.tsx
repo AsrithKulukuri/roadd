@@ -256,7 +256,16 @@ export default function AddPropertyPage() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       isPremium: false,
-      isVerified: true
+      isVerified: true,
+      ownership: (formData.attributes as any)?.ownership || "freehold",
+      floorRange: (formData.attributes as any)?.floorRange,
+      furnishingItems: (formData.attributes as any)?.furnishingItems || [],
+      verifiedBadges: ["owner_verified", ...(formData.videoUrl ? ["video_verified"] : []), "rera"],
+      tenantPreference: (formData.attributes as any)?.tenantPreference || [],
+      petsAllowed: (formData.attributes as any)?.petsAllowed || false,
+      nonVegAllowed: (formData.attributes as any)?.nonVegAllowed || false,
+      waterSource: (formData.attributes as any)?.waterSource || [],
+      cultivationCrop: (formData.attributes as any)?.cultivationCrop || [],
     };
 
     try {

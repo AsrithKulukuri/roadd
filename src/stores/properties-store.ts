@@ -33,10 +33,26 @@ export function toSupabaseProperty(prop: Partial<Property>): any {
   if (!p.createdAt) p.createdAt = new Date().toISOString();
   if (!p.updatedAt) p.updatedAt = new Date().toISOString();
 
-  // Store saleType in attributes JSONB as well for 100% database persistence reliability
-  if (p.saleType) {
-    p.attributes = { ...(p.attributes || {}), saleType: p.saleType };
-  }
+  // Store all structured real-estate attributes in attributes JSONB for 100% database persistence reliability
+  p.attributes = {
+    ...(p.attributes || {}),
+    saleType: p.saleType,
+    furnishingItems: p.furnishingItems,
+    floorRange: p.floorRange,
+    ownership: p.ownership,
+    verifiedBadges: p.verifiedBadges,
+    mediaTypes: p.mediaTypes,
+    tenantPreference: p.tenantPreference,
+    petsAllowed: p.petsAllowed,
+    nonVegAllowed: p.nonVegAllowed,
+    pgGender: p.pgGender,
+    pgSharing: p.pgSharing,
+    foodIncluded: p.foodIncluded,
+    commercialType: p.commercialType,
+    furnishingGrade: p.furnishingGrade,
+    waterSource: p.waterSource,
+    cultivationCrop: p.cultivationCrop,
+  };
 
   // Strip keys that are not valid columns in Supabase
   const cleaned: Record<string, any> = {};
@@ -49,14 +65,30 @@ export function toSupabaseProperty(prop: Partial<Property>): any {
 }
 
 export function fromSupabaseProperty(p: any): Property {
+  const attr = p.attributes || {};
   return {
     ...p,
-    saleType: p.saleType || p.attributes?.saleType || "new",
+    saleType: p.saleType || attr.saleType || "new",
     pricePerSqFt: p.pricePerSqft ?? p.pricePerSqFt ?? 0,
     areaSqFt: p.area ?? p.areaSqFt ?? 0,
     carpetAreaSqFt: p.carpetArea ?? p.carpetAreaSqFt,
     builtUpAreaSqFt: p.builtUpArea ?? p.builtUpAreaSqFt,
-    displayCategory: p.displayCategory || (p.isFeatured ? "featured" : p.isRecommended ? "recommended" : "none")
+    displayCategory: p.displayCategory || (p.isFeatured ? "featured" : p.isRecommended ? "recommended" : "none"),
+    furnishingItems: p.furnishingItems || attr.furnishingItems || [],
+    floorRange: p.floorRange || attr.floorRange,
+    ownership: p.ownership || attr.ownership,
+    verifiedBadges: p.verifiedBadges || attr.verifiedBadges || [],
+    mediaTypes: p.mediaTypes || attr.mediaTypes || [],
+    tenantPreference: p.tenantPreference || attr.tenantPreference || [],
+    petsAllowed: p.petsAllowed ?? attr.petsAllowed ?? false,
+    nonVegAllowed: p.nonVegAllowed ?? attr.nonVegAllowed ?? false,
+    pgGender: p.pgGender || attr.pgGender || [],
+    pgSharing: p.pgSharing || attr.pgSharing || [],
+    foodIncluded: p.foodIncluded ?? attr.foodIncluded ?? false,
+    commercialType: p.commercialType || attr.commercialType || [],
+    furnishingGrade: p.furnishingGrade || attr.furnishingGrade || [],
+    waterSource: p.waterSource || attr.waterSource || [],
+    cultivationCrop: p.cultivationCrop || attr.cultivationCrop || [],
   };
 }
 

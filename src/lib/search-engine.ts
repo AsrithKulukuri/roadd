@@ -247,65 +247,197 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
   const ownerText = `${property.ownerName || ""} ${property.postedBy || ""}`.toLowerCase();
   const propertyTypeText = `${property.propertyType || ""} ${property.listingType || ""}`.toLowerCase();
   const bhkText = property.bedrooms ? `${property.bedrooms}bhk ${property.bedrooms}bk ${property.bedrooms} bhk ${property.bedrooms} bed ${property.bedrooms} bedroom` : "";
-  const tagsText = `${(property.amenities || []).join(" ")} ${(property.features || []).join(" ")} ${property.refId || ""}`.toLowerCase();
+  const tagsText = `${(property.amenities || []).map((a: any) => typeof a === "string" ? a : a.name || "").join(" ")} ${(property.features || []).map((f: any) => typeof f === "string" ? f : f.name || "").join(" ")} ${property.refId || ""}`.toLowerCase();
   const titleAndDesc = `${property.title || ""} ${property.description || ""}`.toLowerCase();
 
   const fullCorpus = `${titleAndDesc} ${locationText} ${ownerText} ${propertyTypeText} ${bhkText} ${tagsText}`;
 
-  // 1. Direct exact or full substring match
-  if (fullCorpus.includes(norm)) {
-    return true;
-  }
+  if (fullCorpus.includes(norm)) return true;
 
-  // 2. Listing Type requirement (sale / rent)
-  if (intent.listingType) {
-    if (property.listingType && property.listingType !== intent.listingType) {
-      return false;
-    }
-  }
+  if (intent.listingType && property.listingType && property.listingType !== intent.listingType) return false;
+  if (intent.saleType && property.saleType && property.saleType !== intent.saleType) return false;
 
-  // 2b. Sale Type requirement (new / resale)
-  if (intent.saleType) {
-    if (property.saleType && property.saleType !== intent.saleType) {
-      return false;
-    }
-  }
-
-  // 3. BHK requirement
   if (intent.bhks.length > 0) {
     const hasMatchingBhk = property.bedrooms ? intent.bhks.includes(property.bedrooms) : false;
-    if (!hasMatchingBhk && property.bedrooms) {
-      return false;
-    }
+    if (!hasMatchingBhk && property.bedrooms) return false;
   }
 
-  // 4. Property Type requirement
-  if (intent.propertyTypes.length > 0) {
-    const pType = property.propertyType?.toLowerCase() || "";
-    let typeMatches = intent.propertyTypes.includes(pType);
-    if (!typeMatches && pType === "residential-land" && (intent.propertyTypes.includes("residential-land") || intent.propertyTypes.includes("venture"))) typeMatches = true;
-    if (!typeMatches && pType === "apartment" && intent.propertyTypes.includes("apartment")) typeMatches = true;
-    if (!typeMatches && (pType === "villa" || pType === "independent-house") && intent.propertyTypes.includes("villa")) typeMatches = true;
-
-    if (!typeMatches) {
-      return false;
-    }
-  }
-
-  // 5. Location Keywords requirement (e.g. "edupugallu", "benz circle", "guntur")
   if (intent.locationKeywords.length > 0) {
     const matchesLoc = intent.locationKeywords.some(loc => locationText.includes(loc) || fullCorpus.includes(loc));
-    if (!matchesLoc) {
+    if (!matchesLoc) return false;
+  }
+
+  if (intent.specificKeywords.length > 0) {
+    const allSpecificMatch = intent.specificKeywords.every(kw => fullCorpus.includes(kw));
+    if (!allSpecificMatch) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Complete Multi-Attribute Filter Engine for Properties
+ */
+export function evaluatePropertyFilters(property: Property, filters: any): boolean {
+  if (!filters) return true;
+
+  // 1. Transaction Type / Listing Type
+  if (filters.transactionType && filters.transactionType !== "all") {
+    if (filters.transactionType === "rent" && property.listingType !== "rent") return false;
+    if (filters.transactionType === "buy" && property.listingType !== "sale") return false;
+    if (filters.transactionType === "commercial" && !["commercial-spaces", "shops", "buildings", "warehouse"].includes(property.propertyType)) return false;
+    if (filters.transactionType === "pg" && property.propertyType !== "pg-coliving") return false;
+  }
+  if (filters.listingType && filters.listingType.length > 0) {
+    if (!filters.listingType.includes(property.listingType)) return false;
+  }
+
+  // 2. Budget (Min / Max)
+  if (filters.budget && Array.isArray(filters.budget)) {
+    const min = filters.budget[0] || 0;
+    const max = filters.budget[1] || 100000000;
+    if (property.price < min || property.price > max) return false;
+  }
+
+  // 3. Property Category / Type
+  if (filters.propertyType && filters.propertyType.length > 0) {
+    const pType = (property.propertyType || "").toLowerCase();
+    const hasMatch = filters.propertyType.some((reqType: string) => {
+      const rt = reqType.toLowerCase();
+      if (rt === pType) return true;
+      if (rt === "apartment" && pType.includes("apartment")) return true;
+      if (rt === "villa" && (pType.includes("villa") || pType.includes("independent-house"))) return true;
+      if (rt === "residential-land" && (pType.includes("land") || pType.includes("plot") || pType === "venture")) return true;
+      if (rt === "commercial-spaces" && (pType.includes("commercial") || pType.includes("shop") || pType.includes("building"))) return true;
       return false;
+    });
+    if (!hasMatch) return false;
+  }
+
+  // 4. BHK
+  if (filters.bhk && filters.bhk.length > 0) {
+    const bedrooms = property.bedrooms || 0;
+    const matchesBhk = filters.bhk.some((b: string) => {
+      if (b === "5+" || b === "4+") return bedrooms >= parseInt(b, 10);
+      if (b === "1rk") return bedrooms === 1 && (property.propertyType as string) === "1rk";
+      return bedrooms.toString() === b;
+    });
+    if (!matchesBhk) return false;
+  }
+
+  // 5. Bathrooms
+  if (filters.bathrooms && filters.bathrooms.length > 0) {
+    const baths = property.bathrooms || 0;
+    const matchesBath = filters.bathrooms.some((b: string) => {
+      if (b.includes("+")) return baths >= parseInt(b, 10);
+      return baths.toString() === b;
+    });
+    if (!matchesBath) return false;
+  }
+
+  // 6. Balconies
+  if (filters.balconies && filters.balconies.length > 0) {
+    const balcs = property.balconies || 0;
+    const matchesBalc = filters.balconies.some((b: string) => {
+      if (b.includes("+")) return balcs >= parseInt(b, 10);
+      return balcs.toString() === b;
+    });
+    if (!matchesBalc) return false;
+  }
+
+  // 7. Covered Area
+  if (filters.coveredArea && Array.isArray(filters.coveredArea)) {
+    const area = property.area || property.carpetArea || property.builtUpArea || 0;
+    if (area > 0) {
+      const min = filters.coveredArea[0] || 0;
+      const max = filters.coveredArea[1] || 10000;
+      if (area < min || area > max) return false;
     }
   }
 
-  // 6. Specific Keywords requirement
-  if (intent.specificKeywords.length > 0) {
-    const allSpecificMatch = intent.specificKeywords.every(kw => fullCorpus.includes(kw));
-    if (!allSpecificMatch) {
+  // 8. Possession Status
+  if (filters.possessionStatus && filters.possessionStatus.length > 0) {
+    const isReady = property.isReadyToMove;
+    const matchesPossession = filters.possessionStatus.some((ps: string) => {
+      if (ps === "ready") return isReady;
+      if (ps === "under-construction") return !isReady;
+      if (ps === "immediate") return isReady;
+      return true;
+    });
+    if (!matchesPossession) return false;
+  }
+
+  // 9. Property Age
+  if (filters.propertyAge && filters.propertyAge.length > 0 && property.ageOfProperty !== undefined) {
+    const age = property.ageOfProperty;
+    const matchesAge = filters.propertyAge.some((r: string) => {
+      if (r === "0-1") return age <= 1;
+      if (r === "1-5") return age >= 1 && age <= 5;
+      if (r === "5-10") return age >= 5 && age <= 10;
+      if (r === "10-15") return age >= 10 && age <= 15;
+      if (r === "15+") return age > 15;
       return false;
-    }
+    });
+    if (!matchesAge) return false;
+  }
+
+  // 10. Sale Type
+  if (filters.saleType && filters.saleType.length > 0 && property.saleType) {
+    if (!filters.saleType.includes(property.saleType.toLowerCase())) return false;
+  }
+
+  // 11. Posted By
+  if (filters.postedBy && filters.postedBy.length > 0 && property.postedBy) {
+    if (!filters.postedBy.includes(property.postedBy.toLowerCase())) return false;
+  }
+
+  // 12. Furnishing
+  if (filters.furnished && filters.furnished.length > 0 && property.furnishing) {
+    if (!filters.furnished.includes(property.furnishing.toLowerCase())) return false;
+  }
+
+  // 13. Facing & Vastu
+  if (filters.facing && filters.facing.length > 0 && property.facing) {
+    if (!filters.facing.includes(property.facing.toLowerCase())) return false;
+  }
+  if (filters.vastuCompliant && !property.vastuCompliant) return false;
+
+  // 14. Ownership
+  if (filters.ownership && filters.ownership.length > 0 && property.ownership) {
+    if (!filters.ownership.includes(property.ownership.toLowerCase())) return false;
+  }
+
+  // 15. Amenities
+  if (filters.amenities && filters.amenities.length > 0) {
+    const propAmenities = (property.amenities || []).map((a: any) =>
+      typeof a === "string" ? a.toLowerCase() : (a.name || a.label || "").toLowerCase()
+    );
+    const hasReqAmenity = filters.amenities.some((req: string) =>
+      propAmenities.some((pa: string) => pa.includes(req.toLowerCase()))
+    );
+    if (!hasReqAmenity && propAmenities.length > 0) return false;
+  }
+
+  // 16. Verified & RERA Badges
+  if (filters.verifiedBadges && filters.verifiedBadges.length > 0) {
+    if (filters.verifiedBadges.includes("rera") && !property.reraId) return false;
+    if (filters.verifiedBadges.includes("video_verified") && !property.videoUrl) return false;
+    if (filters.verifiedBadges.includes("zero_brokerage") && property.postedBy !== "owner") return false;
+    if (filters.verifiedBadges.includes("owner_verified") && !property.isOwnerVerified) return false;
+  }
+  if (filters.reraApproved && !property.reraId) return false;
+
+  // 17. Media (Photos / Video / Floorplan)
+  if (filters.mediaTypes && filters.mediaTypes.length > 0) {
+    if (filters.mediaTypes.includes("photos") && (!property.images || property.images.length === 0)) return false;
+    if (filters.mediaTypes.includes("video") && !property.videoUrl) return false;
+    if (filters.mediaTypes.includes("floorplan") && !property.floorPlanUrl) return false;
+  }
+
+  // 18. Water & Agriculture (AP Specs)
+  if (filters.waterSource && filters.waterSource.length > 0 && property.waterSource) {
+    const hasWater = filters.waterSource.some((w: string) => property.waterSource?.includes(w));
+    if (!hasWater) return false;
   }
 
   return true;

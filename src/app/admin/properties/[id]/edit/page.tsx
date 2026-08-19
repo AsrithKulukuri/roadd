@@ -67,6 +67,7 @@ export default function EditPropertyPage() {
     
     ownerName: "", ownerPhone: "+91", ownerEmail: "",
     
+    attributes: {} as Record<string, any>,
     slug: "", metaTitle: "", metaDescription: "", ogImage: "",
     displayCategory: "none" as "featured" | "recommended" | "budget_friendly" | "none", status: "draft"
   });
@@ -98,7 +99,7 @@ export default function EditPropertyPage() {
         carpetArea: String(targetProperty.carpetArea || ""),
         furnishing: targetProperty.furnishing || "unfurnished",
         facing: targetProperty.facing || "east",
-        yearBuilt: targetProperty.ageOfProperty ? String(new Date().getFullYear() - targetProperty.ageOfProperty) : "",
+        yearBuilt: String(new Date().getFullYear() - (targetProperty.ageOfProperty || 0)),
         
         coverImage: coverImg,
         galleryImages: gImages,
@@ -114,12 +115,13 @@ export default function EditPropertyPage() {
         pincode: targetProperty.location?.pincode || "",
         landmark: targetProperty.location?.landmark || "",
         
-        amenities: targetProperty.amenities?.map(a => a.id) || [],
+        amenities: (targetProperty.amenities || []).map(a => typeof a === "string" ? a : a.id),
         
         ownerName: targetProperty.ownerName || "",
         ownerPhone: targetProperty.ownerPhone || "+91",
         ownerEmail: targetProperty.ownerEmail || "",
         
+        attributes: (targetProperty as any).attributes || {},
         slug: targetProperty.slug || "",
         metaTitle: "", metaDescription: "", ogImage: "",
         
@@ -278,6 +280,15 @@ export default function EditPropertyPage() {
       ownerEmail: formData.ownerEmail || targetProperty.ownerEmail,
       
       updatedAt: new Date().toISOString(),
+      ownership: (formData.attributes as any)?.ownership || targetProperty.ownership || "freehold",
+      floorRange: (formData.attributes as any)?.floorRange || targetProperty.floorRange,
+      furnishingItems: (formData.attributes as any)?.furnishingItems || targetProperty.furnishingItems || [],
+      verifiedBadges: targetProperty.verifiedBadges || ["owner_verified", "rera"],
+      tenantPreference: (formData.attributes as any)?.tenantPreference || targetProperty.tenantPreference || [],
+      petsAllowed: (formData.attributes as any)?.petsAllowed ?? targetProperty.petsAllowed ?? false,
+      nonVegAllowed: (formData.attributes as any)?.nonVegAllowed ?? targetProperty.nonVegAllowed ?? false,
+      waterSource: (formData.attributes as any)?.waterSource || targetProperty.waterSource || [],
+      cultivationCrop: (formData.attributes as any)?.cultivationCrop || targetProperty.cultivationCrop || [],
     };
 
     try {

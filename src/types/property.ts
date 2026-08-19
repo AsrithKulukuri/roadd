@@ -162,4 +162,19 @@ export interface Property {
   publishedAt?: string;
   ownerId?: string;
   agentId?: string;
+  furnishingItems?: string[];
+  floorRange?: string;
+  ownership?: string;
+  verifiedBadges?: string[];
+  mediaTypes?: string[];
+  tenantPreference?: string[];
+  petsAllowed?: boolean;
+  nonVegAllowed?: boolean;
+  pgGender?: string[];
+  pgSharing?: string[];
+  foodIncluded?: boolean;
+  commercialType?: string[];
+  furnishingGrade?: string[];
+  waterSource?: string[];
+  cultivationCrop?: string[];
 }

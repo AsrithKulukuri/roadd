@@ -14,7 +14,7 @@ import { MapWrapper } from "@/components/map/map-wrapper";
 import { SlidersHorizontal, ArrowLeft, Search as SearchIcon, MapPin, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { matchesPropertySearch, matchesProjectSearch, parseSearchIntent } from "@/lib/search-engine";
+import { matchesPropertySearch, matchesProjectSearch, parseSearchIntent, evaluatePropertyFilters } from "@/lib/search-engine";
 
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371; // Radius of the earth in km
@@ -178,138 +178,17 @@ function UnifiedSearchPage() {
     const parsedIntent = filters.query ? parseSearchIntent(filters.query) : null;
 
     return properties.filter((property) => {
-      // 1. Intelligent Real Estate Text & Intent Query (BHK, Locality, Builder, Category, Keyword)
+      // 1. Text & Intent Query (BHK, Locality, Builder, Category, Keyword)
       if (filters.query && !matchesPropertySearch(property, filters.query, parsedIntent || undefined)) {
         return false;
       }
 
-      // 2. Listing Type
-      if (filters.listingType.length > 0) {
-        if (!filters.listingType.includes(property.listingType)) return false;
-      }
-
-      // 3. Property Category / Type
-      if (filters.propertyType.length > 0) {
-        const pType = property.propertyType;
-        let matches = false;
-        if (pType === "apartment" && filters.propertyType.includes("apartment")) matches = true;
-        if (pType === "villa" && filters.propertyType.includes("villa")) matches = true;
-        if (pType === "independent-house" && filters.propertyType.includes("independent-house")) matches = true;
-        if ((pType === "residential-land" || pType === "commercial-lands" || pType === "industrial-lands") && (filters.propertyType.includes("residential-land") || filters.propertyType.includes("agricultural-lands") || filters.propertyType.includes("agricultural-land") || filters.propertyType.includes("agricultural"))) matches = true;
-        if ((pType === "shops" || pType === "buildings" || pType === "commercial-spaces") && (filters.propertyType.includes("commercial-spaces") || filters.propertyType.includes("commercial") || filters.propertyType.includes("shops"))) matches = true;
-        if (pType === "pg-coliving" && filters.propertyType.includes("pg")) matches = true;
-        if (pType === "farmhouse" && (filters.propertyType.includes("farmhouse") || filters.propertyType.includes("agricultural-land") || filters.propertyType.includes("agricultural"))) matches = true;
-        if (filters.propertyType.includes("gated-community") && ["apartment", "villa", "independent-house"].includes(pType)) matches = true;
-        
-        if (!matches) return false;
-      }
-
-      // 4. BHK
-      if (filters.bhk.length > 0) {
-        const propBhk = property.bedrooms ? property.bedrooms.toString() : "";
-        const matchesBhk = filters.bhk.some((b) => {
-          if (b === "4+") return (property.bedrooms || 0) >= 4;
-          return propBhk === b;
-        });
-        if (!matchesBhk) return false;
-      }
-
-      // 5. Budget Range (INR)
-      if (property.price < filters.budget[0] || property.price > filters.budget[1]) {
+      // 2. Complete Multi-Attribute Evaluation
+      if (!evaluatePropertyFilters(property, filters)) {
         return false;
       }
 
-      // 6. Availability
-      if (filters.availability.length > 0) {
-        const isReady = property.isReadyToMove;
-        const matchesAvailability = filters.availability.some((av) => {
-          if (av === "ready") return isReady;
-          if (av === "under-construction") return !isReady;
-          return true;
-        });
-        if (!matchesAvailability) return false;
-      }
-
-      // 7. Facing
-      if (filters.facing.length > 0 && property.facing) {
-        if (!filters.facing.includes(property.facing.toLowerCase())) return false;
-      }
-
-      // 8. RERA
-      if (filters.reraApproved && !property.reraId) return false;
-
-      // 9. Posted By
-      if (filters.postedBy.length > 0 && property.postedBy) {
-        if (!filters.postedBy.includes(property.postedBy.toLowerCase())) return false;
-      }
-
-      // 10. Gated Community
-      if (filters.gatedCommunity) {
-        const isGated = property.gatedSecurity || property.attributes?.gatedCommunity === "Yes" || property.attributes?.gatedCommunity === true;
-        if (!isGated) return false;
-      }
-
-      // 11. Vastu Compliant
-      if (filters.vastuCompliant && !property.vastuCompliant) return false;
-
-      // 12. Furnished
-      if (filters.furnished.length > 0 && property.furnishing) {
-        if (!filters.furnished.includes(property.furnishing.toLowerCase())) return false;
-      }
-
-      // 13. Bathrooms
-      if (filters.bathrooms.length > 0) {
-        const propBaths = property.bathrooms ? property.bathrooms.toString() : "";
-        const matchesBaths = filters.bathrooms.some((b) => {
-          if (b === "4+") return (property.bathrooms || 0) >= 4;
-          return propBaths === b;
-        });
-        if (!matchesBaths) return false;
-      }
-
-      // 14. Covered Area (sqft)
-      if (filters.coveredArea && (filters.coveredArea[0] > 0 || filters.coveredArea[1] < 10000)) {
-        const area = property.area || property.carpetArea || property.builtUpArea || 0;
-        if (area > 0 && (area < filters.coveredArea[0] || area > filters.coveredArea[1])) {
-          return false;
-        }
-      }
-
-      // 15. Ownership
-      if (filters.ownership.length > 0 && property.attributes?.ownership) {
-        if (!filters.ownership.includes(property.attributes.ownership.toLowerCase())) return false;
-      }
-
-      // 16. Verified Badges (Video / Zero Brokerage / RERA)
-      if (filters.verifiedBadges.length > 0) {
-        if (filters.verifiedBadges.includes("video_verified") && !property.videoUrl) return false;
-        if (filters.verifiedBadges.includes("zero_brokerage") && property.postedBy !== "owner") return false;
-        if (filters.verifiedBadges.includes("rera") && !property.reraId) return false;
-      }
-
-      // 17. Amenities
-      if (filters.amenities.length > 0) {
-        const propAmenities = (property.amenities || []).map((a) => a.name.toLowerCase());
-        const hasAmenity = filters.amenities.some((req) =>
-          propAmenities.some((pa) => pa.includes(req.toLowerCase()))
-        );
-        if (!hasAmenity && property.amenities && property.amenities.length > 0) return false;
-      }
-
-      // 18. Age Range
-      if (filters.ageRange.length > 0 && property.ageOfProperty !== undefined) {
-        const age = property.ageOfProperty;
-        const matchesAge = filters.ageRange.some((range) => {
-          if (range === "0-1") return age <= 1;
-          if (range === "0-10" || range === "1-10") return age <= 10;
-          if (range === "10-30") return age > 10 && age <= 30;
-          if (range === "30+") return age > 30;
-          return false;
-        });
-        if (!matchesAge) return false;
-      }
-
-      // 19. Near Me Distance
+      // 3. Near Me Distance
       if (searchParams.get("nearMe") === "true" && userLocation) {
         if (!property.location?.latitude || !property.location?.longitude) return false;
         const distance = getDistanceFromLatLonInKm(
