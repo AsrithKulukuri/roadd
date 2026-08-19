@@ -97,6 +97,7 @@ export function HeroSection() {
   const [activeBuySub, setActiveBuySub] = useState<string | null>(null);
   const [showProjectsMenu, setShowProjectsMenu] = useState(false);
   const [openLocationTab, setOpenLocationTab] = useState<string | null>(null);
+  const [sublocationSearch, setSublocationSearch] = useState("");
   const [showBudgetDropdown, setShowBudgetDropdown] = useState(false);
   const [showAllCategoriesMobile, setShowAllCategoriesMobile] = useState(false);
 
@@ -893,6 +894,7 @@ export function HeroSection() {
                   onClick={() => {
                     if (hasSublocations) {
                       setOpenLocationTab(isOpen ? null : city.id);
+                      setSublocationSearch("");
                     } else {
                       router.push(`/search?type=${activeTab}&location=${encodeURIComponent(city.name)}`);
                     }
@@ -920,12 +922,24 @@ export function HeroSection() {
               const activeCity = heroCities.find((c) => c.id === openLocationTab);
               if (!activeCity || !activeCity.sublocations || activeCity.sublocations.length === 0) return null;
 
+              const filteredSublocations = activeCity.sublocations.filter((sub) => {
+                const q = sublocationSearch.trim().toLowerCase();
+                if (!q) return true;
+                return (
+                  sub.name.toLowerCase().includes(q) ||
+                  (sub.tagline && sub.tagline.toLowerCase().includes(q))
+                );
+              });
+
               return (
                 <>
                   {/* Click-outside dismissal backdrop */}
                   <div 
                     className="fixed inset-0 z-[95]" 
-                    onClick={() => setOpenLocationTab(null)} 
+                    onClick={() => {
+                      setOpenLocationTab(null);
+                      setSublocationSearch("");
+                    }} 
                   />
 
                   <motion.div
@@ -934,20 +948,26 @@ export function HeroSection() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.98 }}
                     transition={{ duration: 0.16, ease: "easeOut" }}
-                    className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-[92vw] max-w-[340px] sm:max-w-[360px] bg-slate-950/98 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden py-2 z-[100] max-h-[340px] overflow-y-auto no-scrollbar"
+                    className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-[92vw] max-w-[340px] sm:max-w-[360px] bg-slate-950/98 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-[100] max-h-[380px] flex flex-col"
                   >
-                    <div className="px-4 py-2 border-b border-slate-800/80 text-[11px] uppercase font-black tracking-wider text-amber-400 flex items-center justify-between gap-3 sticky top-0 bg-slate-950 z-10">
+                    {/* Header */}
+                    <div className="px-4 py-2.5 border-b border-slate-800/80 text-[11px] uppercase font-black tracking-wider text-amber-400 flex items-center justify-between gap-3 sticky top-0 bg-slate-950 z-10 shrink-0">
                       <span className="whitespace-nowrap flex items-center gap-1.5">
                         <MapPin className="w-3 h-3 text-amber-400" />
                         {activeCity.name} Localities
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="text-slate-400 font-medium text-[10px] whitespace-nowrap lowercase">
-                          {activeCity.sublocations.length} areas
+                          {filteredSublocations.length === activeCity.sublocations.length
+                            ? `${activeCity.sublocations.length} areas`
+                            : `${filteredSublocations.length} of ${activeCity.sublocations.length}`}
                         </span>
                         <button
                           type="button"
-                          onClick={() => setOpenLocationTab(null)}
+                          onClick={() => {
+                            setOpenLocationTab(null);
+                            setSublocationSearch("");
+                          }}
                           className="w-5 h-5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
                           aria-label="Close"
                         >
@@ -955,30 +975,87 @@ export function HeroSection() {
                         </button>
                       </div>
                     </div>
-                  <div className="divide-y divide-slate-900/60">
-                    {activeCity.sublocations.map((sub) => (
-                      <div
-                        key={sub.id}
-                        onClick={() => {
-                          setOpenLocationTab(null);
-                          router.push(`/search?type=${activeTab}&location=${encodeURIComponent(activeCity.name)}&locality=${encodeURIComponent(sub.name)}`);
-                        }}
-                        className="px-4 py-2.5 hover:bg-slate-900/90 cursor-pointer flex flex-col transition-colors group"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="font-bold text-xs text-white group-hover:text-amber-400 transition-colors whitespace-nowrap">
-                            {sub.name}
-                          </span>
-                        </div>
-                        {sub.tagline && (
-                          <span className="text-[10px] text-slate-400 block mt-0.5 whitespace-nowrap">
-                            {sub.tagline}
-                          </span>
+
+                    {/* Search Bar */}
+                    <div className="p-2 border-b border-slate-800/60 bg-slate-950/95 shrink-0">
+                      <div className="relative flex items-center bg-slate-900 border border-slate-800 focus-within:border-amber-400/80 rounded-xl px-2.5 py-1.5 transition-colors">
+                        <Search className="w-3.5 h-3.5 text-slate-400 shrink-0 mr-2" />
+                        <input
+                          type="text"
+                          value={sublocationSearch}
+                          onChange={(e) => setSublocationSearch(e.target.value)}
+                          placeholder={`Search ${activeCity.name} localities...`}
+                          className="w-full bg-transparent text-xs text-white placeholder-slate-500 font-medium outline-none border-none p-0 focus:ring-0"
+                          autoFocus
+                        />
+                        {sublocationSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setSublocationSearch("")}
+                            className="p-0.5 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors shrink-0 cursor-pointer ml-1"
+                            aria-label="Clear sublocation search"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         )}
                       </div>
-                    ))}
-                  </div>
-                </motion.div>
+                    </div>
+
+                    {/* Localities List */}
+                    <div className="overflow-y-auto divide-y divide-slate-900/60 no-scrollbar flex-1 py-1">
+                      {filteredSublocations.length > 0 ? (
+                        filteredSublocations.map((sub) => (
+                          <div
+                            key={sub.id}
+                            onClick={() => {
+                              setOpenLocationTab(null);
+                              setSublocationSearch("");
+                              router.push(
+                                `/search?type=${activeTab}&location=${encodeURIComponent(
+                                  activeCity.name
+                                )}&locality=${encodeURIComponent(sub.name)}`
+                              );
+                            }}
+                            className="px-4 py-2.5 hover:bg-slate-900/90 cursor-pointer flex flex-col transition-colors group"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="font-bold text-xs text-white group-hover:text-amber-400 transition-colors whitespace-nowrap">
+                                {sub.name}
+                              </span>
+                            </div>
+                            {sub.tagline && (
+                              <span className="text-[10px] text-slate-400 block mt-0.5 whitespace-nowrap">
+                                {sub.tagline}
+                              </span>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-6 px-4 text-center">
+                          <p className="text-xs text-slate-400 font-medium mb-2.5">
+                            No localities found for &ldquo;{sublocationSearch}&rdquo;
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const term = sublocationSearch;
+                              setOpenLocationTab(null);
+                              setSublocationSearch("");
+                              router.push(
+                                `/search?type=${activeTab}&location=${encodeURIComponent(
+                                  activeCity.name
+                                )}&locality=${encodeURIComponent(term)}`
+                              );
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[11px] font-bold transition-colors cursor-pointer"
+                          >
+                            <Search className="w-3 h-3 text-amber-400" />
+                            <span>Search &ldquo;{sublocationSearch}&rdquo; in {activeCity.name}</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
                 </>
               );
             })()}
