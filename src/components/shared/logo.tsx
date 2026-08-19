@@ -28,8 +28,8 @@ export function Logo({
 }: LogoProps) {
   const { width, height, textClass } = sizeMap[size];
 
-  const defaultTextColor = isDarkBg ? "text-white" : "text-text-primary";
-  const resolvedTextColor = textColor || defaultTextColor;
+  const resolvedTextColor = textColor || (isDarkBg ? "text-white" : "text-text-primary");
+  const resolvedSubtitleColor = isDarkBg ? "text-slate-200" : "text-text-tertiary";
 
   const content = (
     <div className={cn("flex items-center gap-2", className)}>
@@ -60,7 +60,7 @@ export function Logo({
             <span
               className={cn(
                 "text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.18em] leading-none mt-1 font-bold hidden sm:block",
-                isDarkBg ? "text-slate-400" : "text-text-tertiary"
+                resolvedSubtitleColor
               )}
             >
               Real Projects. Real People. Real Updates.
