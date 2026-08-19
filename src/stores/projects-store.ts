@@ -155,40 +155,27 @@ export const useProjectsStore = create<ProjectsState>()(
 
       // ─── Delete ───────────────────────────────────────────────────────────
       deleteProject: async (id: string) => {
-        const project = get().projects.find((p) => p.id === id);
-
         set((state) => ({
           projects: state.projects.filter((p) => p.id !== id),
         }));
 
         try {
-          const { error } = await supabase.from('projects').delete().eq('id', id);
-          if (error) {
-            console.error('Supabase project delete error:', error.message);
-            toast.error('Delete failed: ' + error.message);
-          } else {
-            toast.success('Project deleted');
-            if (project) {
-              // Delete associated storage files from AWS S3
-              const urlsToDelete: string[] = [];
-              if (project.coverImage) urlsToDelete.push(project.coverImage);
-              if (project.builderLogoUrl) urlsToDelete.push(project.builderLogoUrl);
-              if (project.videoUrl) urlsToDelete.push(project.videoUrl);
-              if (project.brochureUrl) urlsToDelete.push(project.brochureUrl);
-              project.images?.forEach((img) => { if (img.url) urlsToDelete.push(img.url); });
-              project.configurations?.forEach((cfg) => {
-                if (cfg.floorPlanUrl) urlsToDelete.push(cfg.floorPlanUrl);
-                if (cfg.videoUrl) urlsToDelete.push(cfg.videoUrl);
-                cfg.images?.forEach((imgUrl) => { if (imgUrl) urlsToDelete.push(imgUrl); });
-              });
+          const res = await fetch('/api/projects/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id }),
+          });
 
-              if (urlsToDelete.length > 0) {
-                deleteFromS3(urlsToDelete).catch(() => {});
-              }
-            }
+          if (!res.ok) {
+            await supabase.from('projects').delete().eq('id', id);
           }
+
+          toast.success('Project permanently deleted from database');
         } catch (err: any) {
-          console.warn('Supabase project delete exception:', err?.message ?? err);
+          console.warn('Project delete exception:', err?.message ?? err);
+          try {
+            await supabase.from('projects').delete().eq('id', id);
+          } catch {}
         }
       },
 

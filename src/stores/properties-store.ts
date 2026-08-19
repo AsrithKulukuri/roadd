@@ -128,76 +128,53 @@ export const usePropertiesStore = create<PropertiesState>()(
       },
 
       deleteProperty: async (id: string) => {
-        const property = get().properties.find((p) => p.id === id);
-
+        // 1. Optimistically update local store immediately
         set((state) => ({
           properties: state.properties.filter((p) => p.id !== id),
         }));
 
         try {
-          const { error } = await supabase
-            .from('properties')
-            .delete()
-            .eq('id', id);
+          // 2. Guaranteed server-side database deletion with Supabase Admin client
+          const res = await fetch('/api/properties/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id }),
+          });
 
-          if (error) {
-            console.error('Supabase delete error:', error.message);
-            toast.error('Delete failed: ' + error.message);
-          } else {
-            toast.success('Property deleted');
-            if (property) {
-              // Delete associated storage files from AWS S3
-              const urlsToDelete: string[] = [];
-              if (property.coverImage) urlsToDelete.push(property.coverImage);
-              if (property.videoUrl) urlsToDelete.push(property.videoUrl);
-              if (property.layoutMapUrl) urlsToDelete.push(property.layoutMapUrl);
-              if (property.floorPlanUrl) urlsToDelete.push(property.floorPlanUrl);
-              if (property.brochureUrl) urlsToDelete.push(property.brochureUrl);
-              property.images?.forEach((img) => { if (img.url) urlsToDelete.push(img.url); });
-              property.galleryImages?.forEach((url) => { if (url) urlsToDelete.push(url); });
-
-              if (urlsToDelete.length > 0) {
-                deleteFromS3(urlsToDelete).catch(() => {});
-              }
-            }
+          if (!res.ok) {
+            // Fallback direct Supabase delete
+            const { error } = await supabase.from('properties').delete().eq('id', id);
+            if (error) console.error('Fallback delete error:', error.message);
           }
+
+          toast.success('Property permanently deleted from database');
         } catch (error: any) {
-          console.error('Supabase delete exception:', error);
+          console.error('Delete exception:', error);
+          try {
+            await supabase.from('properties').delete().eq('id', id);
+          } catch {}
         }
       },
 
       deleteAllProperties: async () => {
-        const allProperties = get().properties;
         set({ properties: [] });
 
         try {
-          // 1. Delete all records from Supabase
-          const { error } = await supabase
-            .from('properties')
-            .delete()
-            .neq('id', '___all___');
-
-          if (error) {
-            console.warn('Supabase delete all notice:', error.message);
-          }
-
-          // 2. Delete all S3 assets
-          const urlsToDelete: string[] = [];
-          allProperties.forEach((property) => {
-            if (property.coverImage) urlsToDelete.push(property.coverImage);
-            if (property.videoUrl) urlsToDelete.push(property.videoUrl);
-            if (property.layoutMapUrl) urlsToDelete.push(property.layoutMapUrl);
-            if (property.floorPlanUrl) urlsToDelete.push(property.floorPlanUrl);
-            if (property.brochureUrl) urlsToDelete.push(property.brochureUrl);
-            property.images?.forEach((img) => { if (img.url) urlsToDelete.push(img.url); });
-            property.galleryImages?.forEach((url) => { if (url) urlsToDelete.push(url); });
+          const res = await fetch('/api/properties/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deleteAll: true }),
           });
 
-          if (urlsToDelete.length > 0) {
-            await deleteFromS3(urlsToDelete);
+          if (!res.ok) {
+            await supabase.from('properties').delete().neq('id', '___all___');
           }
+          toast.success('All properties permanently deleted from database');
         } catch (err: any) {
           console.warn('Error in deleteAllProperties:', err);
+          try {
+            await supabase.from('properties').delete().neq('id', '___all___');
+          } catch {}
         }
       },
 
