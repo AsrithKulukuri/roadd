@@ -267,7 +267,36 @@ function UnifiedSearchPage() {
         if (!matchesBaths) return false;
       }
 
-      // 14. Age Range
+      // 14. Covered Area (sqft)
+      if (filters.coveredArea && (filters.coveredArea[0] > 0 || filters.coveredArea[1] < 10000)) {
+        const area = property.area || property.carpetArea || property.builtUpArea || 0;
+        if (area > 0 && (area < filters.coveredArea[0] || area > filters.coveredArea[1])) {
+          return false;
+        }
+      }
+
+      // 15. Ownership
+      if (filters.ownership.length > 0 && property.attributes?.ownership) {
+        if (!filters.ownership.includes(property.attributes.ownership.toLowerCase())) return false;
+      }
+
+      // 16. Verified Badges (Video / Zero Brokerage / RERA)
+      if (filters.verifiedBadges.length > 0) {
+        if (filters.verifiedBadges.includes("video_verified") && !property.videoUrl) return false;
+        if (filters.verifiedBadges.includes("zero_brokerage") && property.postedBy !== "owner") return false;
+        if (filters.verifiedBadges.includes("rera") && !property.reraId) return false;
+      }
+
+      // 17. Amenities
+      if (filters.amenities.length > 0) {
+        const propAmenities = (property.amenities || []).map((a) => a.name.toLowerCase());
+        const hasAmenity = filters.amenities.some((req) =>
+          propAmenities.some((pa) => pa.includes(req.toLowerCase()))
+        );
+        if (!hasAmenity && property.amenities && property.amenities.length > 0) return false;
+      }
+
+      // 18. Age Range
       if (filters.ageRange.length > 0 && property.ageOfProperty !== undefined) {
         const age = property.ageOfProperty;
         const matchesAge = filters.ageRange.some((range) => {
@@ -280,7 +309,7 @@ function UnifiedSearchPage() {
         if (!matchesAge) return false;
       }
 
-      // 15. Near Me Distance
+      // 19. Near Me Distance
       if (searchParams.get("nearMe") === "true" && userLocation) {
         if (!property.location?.latitude || !property.location?.longitude) return false;
         const distance = getDistanceFromLatLonInKm(
