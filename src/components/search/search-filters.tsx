@@ -23,6 +23,8 @@ import { evaluatePropertyFilters } from "@/lib/search-engine";
 
 export interface FilterState {
   query: string;
+  cities: string[];
+  localities: string[];
   transactionType: "buy" | "rent" | "commercial" | "pg" | "all";
   listingType: string[];
   propertyCategory: "residential" | "commercial" | "land" | "all";
@@ -86,6 +88,8 @@ export interface FilterState {
 
 export const initialFilterState: FilterState = {
   query: "",
+  cities: [],
+  localities: [],
   transactionType: "all",
   listingType: [],
   propertyCategory: "all",
@@ -321,6 +325,8 @@ export function SearchFiltersModal({
   // Calculate dynamic active filter count matching screenshot (Hook called unconditionally)
   const activeCount = useMemo(() => {
     let count = 0;
+    if ((localFilters.cities || []).length > 0) count += localFilters.cities.length;
+    if ((localFilters.localities || []).length > 0) count += localFilters.localities.length;
     if (localFilters.propertyType.length > 0) count += localFilters.propertyType.length;
     if (localFilters.bhk.length > 0) count += localFilters.bhk.length;
     if (localFilters.bathrooms.length > 0) count += localFilters.bathrooms.length;
@@ -358,7 +364,7 @@ export function SearchFiltersModal({
   };
 
   const handleReset = () => {
-    setLocalFilters({ ...initialFilterState, query: localFilters.query });
+    setLocalFilters({ ...initialFilterState });
   };
 
   const handleApply = () => {
@@ -453,24 +459,23 @@ export function SearchFiltersModal({
             </div>
           </div>
 
-          {/* Select City/Localities from Master Locations */}
+          {/* Select City/Localities from Master Locations (Multi-Select Supported) */}
           <div className="py-3.5 space-y-2">
             <label className="text-[13px] font-semibold text-slate-900 block">
-              Select City/Localities
+              Select City / Primary Location
             </label>
             <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
               {cities.map((city) => {
-                const isSelected = localFilters.query.toLowerCase().includes(city.name.toLowerCase());
+                const isSelected = (localFilters.cities || []).includes(city.name);
                 return (
                   <button
                     key={city.id}
                     type="button"
                     onClick={() => {
-                      if (isSelected) {
-                        setLocalFilters({ ...localFilters, query: "" });
-                      } else {
-                        setLocalFilters({ ...localFilters, query: city.name });
-                      }
+                      const nextCities = isSelected
+                        ? (localFilters.cities || []).filter((c) => c !== city.name)
+                        : [...(localFilters.cities || []), city.name];
+                      setLocalFilters({ ...localFilters, cities: nextCities });
                     }}
                     className={cn(
                       "py-2 px-4 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer border",
@@ -486,32 +491,37 @@ export function SearchFiltersModal({
               })}
             </div>
 
-            {/* Sublocalities for selected city or top cities */}
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
-              {cities.flatMap((c) => c.sublocations).slice(0, 12).map((sub) => {
-                const isSelected = localFilters.query.toLowerCase().includes(sub.name.toLowerCase());
-                return (
-                  <button
-                    key={sub.id}
-                    type="button"
-                    onClick={() => {
-                      if (isSelected) {
-                        setLocalFilters({ ...localFilters, query: "" });
-                      } else {
-                        setLocalFilters({ ...localFilters, query: sub.name });
-                      }
-                    }}
-                    className={cn(
-                      "py-1 px-3 rounded-full text-[11px] font-medium border transition-all whitespace-nowrap shrink-0 cursor-pointer",
-                      isSelected
-                        ? "bg-[#008075] text-white border-[#008075]"
-                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                    )}
-                  >
-                    {sub.name}
-                  </button>
-                );
-              })}
+            {/* Sublocalities for selected city or top cities (Multi-Select) */}
+            <div className="pt-1">
+              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+                Popular Localities & Hubs
+              </label>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
+                {cities.flatMap((c) => c.sublocations).slice(0, 16).map((sub) => {
+                  const isSelected = (localFilters.localities || []).includes(sub.name);
+                  return (
+                    <button
+                      key={sub.id}
+                      type="button"
+                      onClick={() => {
+                        const nextLocs = isSelected
+                          ? (localFilters.localities || []).filter((l) => l !== sub.name)
+                          : [...(localFilters.localities || []), sub.name];
+                        setLocalFilters({ ...localFilters, localities: nextLocs });
+                      }}
+                      className={cn(
+                        "py-1.5 px-3 rounded-full text-xs font-medium border transition-all whitespace-nowrap shrink-0 cursor-pointer",
+                        isSelected
+                          ? "bg-[#008075] text-white border-[#008075] font-semibold"
+                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      )}
+                    >
+                      {isSelected && <Check className="w-3 h-3 inline mr-1 stroke-[2.5]" />}
+                      {sub.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -1050,21 +1060,20 @@ export function SearchFiltersModal({
               <div className="space-y-6">
                 <div>
                   <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">
-                    Select City / Primary Location
+                    Select City / Primary Location (Multi-Select Allowed)
                   </label>
                   <div className="flex flex-wrap gap-2.5">
                     {cities.map((city) => {
-                      const isSelected = localFilters.query.toLowerCase().includes(city.name.toLowerCase());
+                      const isSelected = (localFilters.cities || []).includes(city.name);
                       return (
                         <button
                           key={city.id}
                           type="button"
                           onClick={() => {
-                            if (isSelected) {
-                              setLocalFilters({ ...localFilters, query: "" });
-                            } else {
-                              setLocalFilters({ ...localFilters, query: city.name });
-                            }
+                            const nextCities = isSelected
+                              ? (localFilters.cities || []).filter((c) => c !== city.name)
+                              : [...(localFilters.cities || []), city.name];
+                            setLocalFilters({ ...localFilters, cities: nextCities });
                           }}
                           className={cn(
                             "py-2 px-4 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer border",
@@ -1084,21 +1093,20 @@ export function SearchFiltersModal({
                 {/* Sublocalities Section */}
                 <div className="pt-2 border-t border-slate-100">
                   <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">
-                    Select Popular Localities & Hubs
+                    Select Popular Localities & Hubs (Multi-Select Allowed)
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {cities.flatMap((c) => c.sublocations).map((sub) => {
-                      const isSelected = localFilters.query.toLowerCase().includes(sub.name.toLowerCase());
+                      const isSelected = (localFilters.localities || []).includes(sub.name);
                       return (
                         <button
                           key={sub.id}
                           type="button"
                           onClick={() => {
-                            if (isSelected) {
-                              setLocalFilters({ ...localFilters, query: "" });
-                            } else {
-                              setLocalFilters({ ...localFilters, query: sub.name });
-                            }
+                            const nextLocs = isSelected
+                              ? (localFilters.localities || []).filter((l) => l !== sub.name)
+                              : [...(localFilters.localities || []), sub.name];
+                            setLocalFilters({ ...localFilters, localities: nextLocs });
                           }}
                           className={cn(
                             "py-1.5 px-3 rounded-full text-xs font-medium border transition-all whitespace-nowrap shrink-0 cursor-pointer",
@@ -1107,6 +1115,7 @@ export function SearchFiltersModal({
                               : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                           )}
                         >
+                          {isSelected && <Check className="w-3 h-3 inline mr-1 stroke-[2.5]" />}
                           {sub.name}
                         </button>
                       );

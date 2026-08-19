@@ -281,6 +281,60 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
 export function evaluatePropertyFilters(property: Property, filters: any): boolean {
   if (!filters) return true;
 
+  // 0. Location & Geography (Cities, Localities, Query)
+  const propCity = (property.location?.city || "").toLowerCase();
+  const propLocality = (property.location?.locality || "").toLowerCase();
+  const propAddress = (property.location?.address || "").toLowerCase();
+  const propLandmark = (property.location?.landmark || "").toLowerCase();
+  const propTitle = (property.title || "").toLowerCase();
+  const propLocationCorpus = `${propCity} ${propLocality} ${propAddress} ${propLandmark} ${propTitle}`;
+
+  // Multiple Cities selection
+  if (filters.cities && Array.isArray(filters.cities) && filters.cities.length > 0) {
+    const matchesCity = filters.cities.some((c: string) => {
+      const target = c.toLowerCase().trim();
+      if (!target) return false;
+      return (
+        propCity.includes(target) ||
+        propLocality.includes(target) ||
+        propLocationCorpus.includes(target)
+      );
+    });
+    if (!matchesCity) return false;
+  }
+
+  // Multiple Localities selection
+  if (filters.localities && Array.isArray(filters.localities) && filters.localities.length > 0) {
+    const matchesLocality = filters.localities.some((l: string) => {
+      const target = l.toLowerCase().trim();
+      if (!target) return false;
+      return (
+        propLocality.includes(target) ||
+        propAddress.includes(target) ||
+        propLandmark.includes(target) ||
+        propLocationCorpus.includes(target)
+      );
+    });
+    if (!matchesLocality) return false;
+  }
+
+  // Location string parameter (single location / query)
+  if (filters.location && typeof filters.location === "string" && filters.location.trim()) {
+    const locTarget = filters.location.toLowerCase().trim();
+    if (!propLocationCorpus.includes(locTarget)) return false;
+  }
+
+  // General text query fallback
+  if (filters.query && typeof filters.query === "string" && filters.query.trim()) {
+    const q = filters.query.toLowerCase().trim();
+    if (!propLocationCorpus.includes(q)) {
+      const tagsText = `${(property.amenities || []).map((a: any) => typeof a === "string" ? a : a.name || "").join(" ")}`.toLowerCase();
+      if (!tagsText.includes(q) && !(property.propertyType || "").toLowerCase().includes(q)) {
+        return false;
+      }
+    }
+  }
+
   // 1. Transaction Type / Listing Type
   if (filters.transactionType && filters.transactionType !== "all") {
     if (filters.transactionType === "rent" && property.listingType !== "rent") return false;
