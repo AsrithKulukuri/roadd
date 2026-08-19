@@ -98,6 +98,7 @@ export function HeroSection() {
   const [showProjectsMenu, setShowProjectsMenu] = useState(false);
   const [openLocationTab, setOpenLocationTab] = useState<string | null>(null);
   const [showBudgetDropdown, setShowBudgetDropdown] = useState(false);
+  const [showAllCategoriesMobile, setShowAllCategoriesMobile] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -1091,24 +1092,18 @@ export function HeroSection() {
             </Link>
           </div>
 
-          {/* Category cards grid */}
+          {/* Category cards grid: 4 cards initially on mobile, all on desktop */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-            {browseCategories.map((cat) => {
-              const catCount = categoryBudgetCounts[cat.id] ?? 0;
-              const hasBudgetResults = budgetActive && catCount > 0;
-              const noBudgetResults = budgetActive && catCount === 0;
+            {browseCategories.map((cat, idx) => {
+              const isHiddenOnMobile = !showAllCategoriesMobile && idx >= 4;
 
               return (
                 <Link
                   key={cat.id}
-                  href={getCatHref(cat.baseHref)}
+                  href={cat.baseHref}
                   className={cn(
-                    "group relative h-40 sm:h-52 rounded-2xl overflow-hidden shadow-lg block bg-slate-800 transition-all duration-300",
-                    hasBudgetResults
-                      ? "border-2 border-amber-400/70 shadow-amber-500/20 hover:shadow-amber-500/40 hover:-translate-y-1.5 hover:shadow-2xl"
-                      : noBudgetResults
-                        ? "border border-white/5 opacity-50 hover:opacity-70"
-                        : "border border-white/10 hover:shadow-2xl hover:-translate-y-1"
+                    "group relative h-40 sm:h-52 rounded-2xl overflow-hidden shadow-lg bg-slate-800 border border-white/10 hover:border-amber-400/70 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300",
+                    isHiddenOnMobile ? "hidden sm:block" : "block"
                   )}
                 >
                   <Image
@@ -1118,18 +1113,10 @@ export function HeroSection() {
                     className="object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                   {/* Dark scrim */}
-                  <div className={cn(
-                    "absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent transition-opacity duration-300",
-                    hasBudgetResults ? "from-slate-950/90" : ""
-                  )} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-transparent transition-opacity duration-300" />
 
-                  {/* Amber glow frame when matches found */}
-                  {hasBudgetResults && (
-                    <div className="absolute inset-0 ring-2 ring-amber-400/40 rounded-2xl pointer-events-none" />
-                  )}
-
-                  {/* Category badge (top-right) — hidden when budget count shows */}
-                  {cat.badge && !budgetActive && (
+                  {/* Category badge (top-right) */}
+                  {cat.badge && (
                     <div
                       className={cn(
                         "absolute top-3 right-3 text-xs px-2.5 py-1 rounded-full shadow-xs backdrop-blur-sm",
@@ -1140,62 +1127,30 @@ export function HeroSection() {
                     </div>
                   )}
 
-                  {/* ── Budget count badge (top-right) ── */}
-                  <AnimatePresence>
-                    {budgetActive && (
-                      <motion.div
-                        key={`count-${cat.id}`}
-                        initial={{ opacity: 0, scale: 0.55, y: -6 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.55, y: -6 }}
-                        transition={{ type: "spring", stiffness: 420, damping: 24, delay: 0.04 }}
-                        className={cn(
-                          "absolute top-2.5 right-2.5 flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black shadow-lg backdrop-blur-sm border",
-                          catCount > 0
-                            ? "bg-amber-500 text-slate-950 border-amber-400 shadow-amber-500/40"
-                            : "bg-slate-800/90 text-white/40 border-white/10"
-                        )}
-                      >
-                        {catCount > 0 ? (
-                          <>
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-950/40" />
-                            {catCount} found
-                          </>
-                        ) : (
-                          <span>0 found</span>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
                   {/* Bottom info */}
                   <div className="absolute bottom-3 left-3 right-3">
-                    <span className={cn(
-                      "font-heading font-bold text-base sm:text-lg block leading-snug transition-colors",
-                      hasBudgetResults ? "text-amber-300 group-hover:text-amber-200" : "text-white group-hover:text-amber-400"
-                    )}>
+                    <span className="font-heading font-bold text-base sm:text-lg block leading-snug text-white group-hover:text-amber-400 transition-colors">
                       {cat.title}
                     </span>
                     <span className="text-[11px] text-slate-300 block line-clamp-1 mt-0.5">
-                      {budgetActive && catCount > 0
-                        ? `${catCount} propert${catCount === 1 ? "y" : "ies"} in your range`
-                        : cat.subtitle}
+                      {cat.subtitle}
                     </span>
-                    {/* "Tap to view" CTA only when there are results */}
-                    {hasBudgetResults && (
-                      <motion.span
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.15 }}
-                        className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-amber-400/80 group-hover:text-amber-300"
-                      >
-                        View all <ChevronRight className="w-3 h-3" />
-                      </motion.span>
-                    )}
                   </div>
                 </Link>
               );
             })}
+          </div>
+
+          {/* Mobile View All Categories Expand Button */}
+          <div className="sm:hidden pt-1">
+            <button
+              type="button"
+              onClick={() => setShowAllCategoriesMobile(!showAllCategoriesMobile)}
+              className="w-full py-3 px-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-400 text-slate-900 dark:text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-98 cursor-pointer"
+            >
+              <span>{showAllCategoriesMobile ? "Show Less" : "Click to View All Categories"}</span>
+              <ChevronDown className={cn("w-4 h-4 text-amber-500 transition-transform duration-300", showAllCategoriesMobile && "rotate-180")} />
+            </button>
           </div>
         </div>
       </div>
