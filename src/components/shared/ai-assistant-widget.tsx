@@ -115,13 +115,16 @@ export function AiAssistantWidget() {
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.94 }}
             onClick={() => setIsOpen(true)}
             aria-label="Open AI Assistant"
-            className="fixed bottom-4 left-4 lg:bottom-6 lg:left-auto lg:right-6 w-12 h-12 lg:w-14 lg:h-14 bg-amber-primary rounded-full shadow-amber-glow flex items-center justify-center z-[450] text-bg-primary border-2 border-amber-400"
+            className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 rounded-full shadow-[0_8px_30px_rgba(245,158,11,0.35)] flex items-center justify-center z-[45] text-slate-950 border-2 border-amber-300/80 cursor-pointer"
           >
-            <Sparkles className="w-5 h-5 lg:w-6 lg:h-6" />
+            <div className="relative flex items-center justify-center">
+              <Bot className="w-6 h-6 lg:w-7 lg:h-7 stroke-[2.2]" />
+              <Sparkles className="w-3 h-3 absolute -top-1 -right-1.5 text-slate-950 fill-slate-950 animate-pulse" />
+            </div>
           </motion.button>
         )}
       </AnimatePresence>

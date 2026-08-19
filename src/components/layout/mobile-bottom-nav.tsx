@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Search, PlusCircle, Heart, Menu, X, Sparkles, Plus, User, LogOut, LogIn } from "lucide-react";
+import { Home, Search, MapPin, Heart, Menu, X, Sparkles, Plus, User, LogOut, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { motion, AnimatePresence } from "framer-motion";
@@ -98,12 +98,11 @@ export function MobileBottomNav() {
       isActive: pathname.startsWith("/search") || pathname.startsWith("/properties") || pathname.startsWith("/projects"),
     },
     {
-      id: "sell-rent",
-      label: "Sell/Rent",
-      href: "/list-with-us",
-      icon: PlusCircle,
-      isActive: pathname === "/list-with-us" || pathname.startsWith("/dashboard/listings/new"),
-      badge: "FREE",
+      id: "map",
+      label: "Map",
+      href: "/properties/map",
+      icon: MapPin,
+      isActive: pathname.startsWith("/properties/map"),
     },
     {
       id: "activity",
@@ -156,13 +155,6 @@ export function MobileBottomNav() {
                       item.isActive ? "stroke-[2.5]" : "stroke-[1.8]"
                     )}
                   />
-
-                  {/* FREE Badge for Sell/Rent */}
-                  {item.badge && (
-                    <span className="absolute -top-2.5 px-1.5 py-0.2 rounded-full bg-emerald-600 text-white text-[8px] font-black uppercase tracking-wider shadow-xs animate-pulse">
-                      {item.badge}
-                    </span>
-                  )}
 
                   {/* Heart / Activity Saved Count Badge */}
                   {typeof item.count === "number" && (
