@@ -1103,11 +1103,6 @@ export function SearchFiltersModal({
               onChange={(val) => setLocalFilters({ ...localFilters, propertiesWithOffers: val })}
             />
             <ToggleSwitch
-              label="MB Exclusive Properties"
-              checked={localFilters.roadExclusive}
-              onChange={(val) => setLocalFilters({ ...localFilters, roadExclusive: val })}
-            />
-            <ToggleSwitch
               label="Posted By Certified Agents"
               checked={localFilters.certifiedAgentsOnly}
               onChange={(val) => setLocalFilters({ ...localFilters, certifiedAgentsOnly: val })}
