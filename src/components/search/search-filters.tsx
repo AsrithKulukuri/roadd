@@ -300,28 +300,7 @@ export function SearchFiltersModal({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
-  const toggleArrayFilter = (field: keyof FilterState, value: string) => {
-    setLocalFilters((prev) => {
-      const current = (prev[field] as string[]) || [];
-      const updated = current.includes(value)
-        ? current.filter((v) => v !== value)
-        : [...current, value];
-      return { ...prev, [field]: updated };
-    });
-  };
-
-  const handleReset = () => {
-    setLocalFilters({ ...initialFilterState, query: localFilters.query });
-  };
-
-  const handleApply = () => {
-    onApplyFilters(localFilters);
-    onClose();
-  };
-
-  // Calculate dynamic active filter count matching screenshot
+  // Calculate dynamic active filter count matching screenshot (Hook called unconditionally)
   const activeCount = useMemo(() => {
     let count = 0;
     if (localFilters.propertyType.length > 0) count += localFilters.propertyType.length;
@@ -347,6 +326,27 @@ export function SearchFiltersModal({
     if (localFilters.vastuCompliant) count += 1;
     return count;
   }, [localFilters]);
+
+  if (!isOpen) return null;
+
+  const toggleArrayFilter = (field: keyof FilterState, value: string) => {
+    setLocalFilters((prev) => {
+      const current = (prev[field] as string[]) || [];
+      const updated = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value];
+      return { ...prev, [field]: updated };
+    });
+  };
+
+  const handleReset = () => {
+    setLocalFilters({ ...initialFilterState, query: localFilters.query });
+  };
+
+  const handleApply = () => {
+    onApplyFilters(localFilters);
+    onClose();
+  };
 
   // Master Amenities list for 2-column checkbox grid
   const AMENITIES_GRID = [
