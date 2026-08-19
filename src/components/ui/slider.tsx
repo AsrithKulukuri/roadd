@@ -7,8 +7,12 @@ import { cn } from "@/lib/utils"
 
 const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({ className, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root> & {
+    rangeClassName?: string;
+    thumbClassName?: string;
+    trackClassName?: string;
+  }
+>(({ className, rangeClassName, thumbClassName, trackClassName, ...props }, ref) => {
   // Support dual-handle (range) sliders by rendering one Thumb per value
   const values = Array.isArray(props.value)
     ? props.value
@@ -18,18 +22,28 @@ const Slider = React.forwardRef<
     <SliderPrimitive.Root
       ref={ref}
       className={cn(
-        "relative flex w-full touch-none select-none items-center",
+        "relative flex w-full touch-none select-none items-center py-2",
         className
       )}
       {...props}
     >
-      <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-        <SliderPrimitive.Range className="absolute h-full bg-amber-500" />
+      <SliderPrimitive.Track
+        className={cn(
+          "relative h-1.5 w-full grow overflow-hidden rounded-full bg-slate-200",
+          trackClassName
+        )}
+      >
+        <SliderPrimitive.Range
+          className={cn("absolute h-full bg-[#008075]", rangeClassName)}
+        />
       </SliderPrimitive.Track>
       {values.map((_, i) => (
         <SliderPrimitive.Thumb
           key={i}
-          className="block h-5 w-5 rounded-full border-2 border-amber-500 bg-white dark:bg-slate-950 shadow-md ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:scale-110"
+          className={cn(
+            "block h-5 w-5 rounded-full border-2 border-[#008075] bg-white shadow-sm ring-offset-background transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-grab active:cursor-grabbing",
+            thumbClassName
+          )}
         />
       ))}
     </SliderPrimitive.Root>

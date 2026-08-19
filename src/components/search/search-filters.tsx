@@ -223,7 +223,7 @@ function PillTag({
       type="button"
       onClick={onClick}
       className={cn(
-        "py-1.5 px-3.5 rounded-full text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 select-none shrink-0 whitespace-nowrap",
+        "py-2 px-4 rounded-full text-xs sm:text-[13px] font-medium border transition-all cursor-pointer flex items-center gap-1.5 select-none shrink-0 whitespace-nowrap",
         isSelected
           ? "bg-[#e6f4f2] text-[#008075] border-[#008075]/40 font-semibold"
           : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
@@ -408,7 +408,7 @@ export function SearchFiltersModal({
           {/* Sort By */}
           <div className="py-3.5">
             <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">Sort By</label>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
+            <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
               {[
                 { label: "Relevance", val: "relevance" },
                 { label: "Price - Low to High", val: "price_asc" },
@@ -422,10 +422,10 @@ export function SearchFiltersModal({
                     type="button"
                     onClick={() => setLocalFilters({ ...localFilters, sortBy: sort.val })}
                     className={cn(
-                      "py-1.5 px-3.5 rounded-full text-xs font-medium border transition-all cursor-pointer whitespace-nowrap select-none",
+                      "py-2 px-4 rounded-full text-xs sm:text-[13px] font-medium border transition-all cursor-pointer whitespace-nowrap select-none shrink-0",
                       isSelected
                         ? "bg-[#e6f4f2] text-[#008075] border-[#008075]/40 font-semibold"
-                        : "bg-white text-slate-700 border-slate-200"
+                        : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
                     )}
                   >
                     {sort.label}
@@ -440,13 +440,13 @@ export function SearchFiltersModal({
             <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">
               Select City/Localities
             </label>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
-              <span className="py-1.5 px-3.5 rounded-full text-xs font-semibold bg-[#e6f4f2] text-[#008075] border border-[#008075]/40 whitespace-nowrap">
+            <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
+              <span className="py-2 px-4 rounded-full text-xs font-semibold bg-[#e6f4f2] text-[#008075] border border-[#008075]/40 whitespace-nowrap shrink-0">
                 Hyderabad
               </span>
               <button
                 type="button"
-                className="py-1.5 px-3.5 rounded-full text-xs font-medium bg-white text-slate-700 border border-slate-200 flex items-center gap-1 whitespace-nowrap"
+                className="py-2 px-4 rounded-full text-xs font-medium bg-white text-slate-700 border border-slate-200 hover:border-slate-300 flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5 text-slate-400" />
                 <span>Add More</span>
@@ -515,7 +515,7 @@ export function SearchFiltersModal({
             <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">
               Property Type
             </label>
-            <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-0.5">
+            <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
               {[
                 { label: "Flat", val: "apartment", icon: Building },
                 { label: "House/Villa", val: "villa", icon: Home },
@@ -530,19 +530,19 @@ export function SearchFiltersModal({
                     type="button"
                     onClick={() => toggleArrayFilter("propertyType", item.val)}
                     className={cn(
-                      "min-w-[100px] h-20 rounded-xl border p-2.5 flex flex-col items-center justify-center relative transition-all cursor-pointer shrink-0 select-none",
+                      "min-w-[100px] h-[86px] rounded-2xl border p-2.5 flex flex-col items-center justify-center relative transition-all cursor-pointer shrink-0 select-none",
                       isSelected
-                        ? "bg-[#e6f4f2] border-[#008075]/40 text-slate-900 font-semibold"
+                        ? "bg-[#e6f4f2] border-[#008075]/40 text-slate-950 font-semibold shadow-xs"
                         : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
                     )}
                   >
                     {isSelected && (
-                      <span className="absolute top-1.5 right-1.5 text-[#008075]">
+                      <span className="absolute top-2 right-2 text-[#008075]">
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </span>
                     )}
                     <Icon className={cn("w-6 h-6 mb-1.5", isSelected ? "text-[#008075]" : "text-slate-600")} />
-                    <span className="text-xs">{item.label}</span>
+                    <span className="text-xs leading-tight">{item.label}</span>
                   </button>
                 );
               })}
@@ -552,7 +552,7 @@ export function SearchFiltersModal({
           {/* BHK */}
           <div className="py-3.5">
             <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">BHK</label>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
+            <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
               {["1 BHK", "2 BHK", "3 BHK", "4 BHK", "5 BHK", "5+ BHK"].map((bhk) => {
                 const cleanVal = bhk.replace(" BHK", "");
                 const isSelected = localFilters.bhk.includes(cleanVal);
