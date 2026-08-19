@@ -341,10 +341,26 @@ export function SearchFiltersModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+    <div 
+      onClick={onClose}
+      className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4"
+    >
       {/* Main Filter Popover/Modal: Pure Clean White */}
-      <div className="bg-white text-slate-900 rounded-2xl w-full max-w-3xl h-[85vh] max-h-[650px] flex flex-col shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white text-slate-900 rounded-2xl w-full max-w-3xl h-[85vh] max-h-[650px] flex flex-col shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200 relative"
+      >
         
+        {/* Close Button in top-right */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-3.5 right-3.5 z-20 p-1.5 rounded-full text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+          aria-label="Close filters"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
         {/* ─── 2-Column Split Body ───────────────────────────────── */}
         <div className="flex-1 flex overflow-hidden">
           
