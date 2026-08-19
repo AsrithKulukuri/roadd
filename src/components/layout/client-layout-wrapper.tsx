@@ -9,6 +9,7 @@ import { useProjectsStore } from "@/stores/projects-store";
 
 
 import dynamic from "next/dynamic";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
 const AiAssistantWidget = dynamic(
   () => import("@/components/shared/ai-assistant-widget").then((m) => ({ default: m.AiAssistantWidget })),
@@ -33,11 +34,12 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
           <Navbar />
         </Suspense>
       )}
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 pb-16 sm:pb-0">{children}</main>
       {!isAdmin && (
         <>
           <Footer />
           <AiAssistantWidget />
+          <MobileBottomNav />
         </>
       )}
     </>
