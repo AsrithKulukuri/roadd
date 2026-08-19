@@ -14,7 +14,7 @@ import {
   Check, X, Upload, Link as LinkIcon,
   Image as ImageIcon, FileText, MapPin, Save,
   CheckCircle2, Loader2, Map, Info, Video, CheckSquare, Square,
-  Settings, AlertCircle, ChevronDown, Sparkles
+  Settings, AlertCircle, ChevronDown, Sparkles, Plus, Trash2, Calendar, ListChecks
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -319,6 +319,55 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     updateConfigField(id, "floorPlanUrl", url);
     setUpl(`config-${id}`, false);
     toast.success("Floor plan uploaded!");
+  };
+
+  // ─── Highlights helpers ──────────────────────────────────────────────────
+  const addHighlight = (text: string = "") => {
+    setHighlights(prev => [...prev, text]);
+  };
+  const updateHighlight = (index: number, text: string) => {
+    setHighlights(prev => {
+      const next = [...prev];
+      next[index] = text;
+      return next;
+    });
+  };
+  const removeHighlight = (index: number) => {
+    setHighlights(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // ─── Construction Updates helpers ────────────────────────────────────────
+  const addConstructionUpdate = () => {
+    setConstructionUpdates(prev => [
+      ...prev,
+      {
+        id: `up-${Date.now()}`,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        title: "",
+        description: "",
+        imageUrl: "",
+        videoUrl: "",
+      }
+    ]);
+  };
+  const updateConstructionUpdate = (id: string, field: keyof ConstructionUpdate, value: string) => {
+    setConstructionUpdates(prev => prev.map(u => u.id === id ? { ...u, [field]: value } : u));
+  };
+  const removeConstructionUpdate = (id: string) => {
+    setConstructionUpdates(prev => prev.filter(u => u.id !== id));
+  };
+
+  const handleUpdateImageUpload = async (id: string, file: File) => {
+    setUpl(`update-${id}`, true);
+    try {
+      const url = await uploadFile(file, "projects", "updates");
+      updateConstructionUpdate(id, "imageUrl", url);
+      toast.success("Update photo uploaded!");
+    } catch {
+      toast.error("Failed to upload update photo");
+    } finally {
+      setUpl(`update-${id}`, false);
+    }
   };
 
   const updateConfigCalculated = (id: string, field: "size" | "pricePerUnit", value: number) => {
@@ -1116,12 +1165,29 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 />
               </div>
 
-              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border-default/50">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-text-secondary block mb-2">Brochure (PDF/Image)</label>
-                  <div className="flex items-center gap-3">
-                    <Input type="file" onChange={handleBrochureFile} className="file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700" />
-                    {brochureUrl && <span className="text-xs text-amber-500 font-bold">Uploaded ✓</span>}
+              {/* Brochure (Upload or Direct URL) */}
+              <div className="md:col-span-2 pt-4 border-t border-border-default/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="w-4 h-4" /> Project Brochure (PDF)
+                  </label>
+                  {brochureUrl && (
+                    <a href={brochureUrl} target="_blank" rel="noreferrer" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1">
+                      View Uploaded Brochure ↗
+                    </a>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-text-secondary block mb-1.5 font-medium">Upload PDF / Document</label>
+                    <div className="flex items-center gap-3">
+                      <Input type="file" accept=".pdf,.doc,.docx,image/*" onChange={handleBrochureFile} className="file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-600 dark:file:text-amber-400 cursor-pointer" />
+                      {uploading.brochure && <Loader2 className="w-4 h-4 animate-spin text-amber-500 shrink-0" />}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-secondary block mb-1.5 font-medium">Or Direct Brochure URL</label>
+                    <Input value={brochureUrl} onChange={(e) => setBrochureUrl(e.target.value)} placeholder="https://example.com/brochure.pdf" className={ic()} />
                   </div>
                 </div>
               </div>
@@ -1151,6 +1217,182 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
               </div>
 
             </div>
+          </div>
+
+          {/* SECTION 5: Key Project Highlights */}
+          <div className="bg-bg-card border border-border-default rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-heading font-semibold text-text-primary flex items-center gap-2">
+                <ListChecks className="w-5 h-5 text-amber-primary" /> Key Project Highlights
+              </h2>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => addHighlight("")}
+                className="text-xs font-bold border-amber-500/40 text-amber-500 hover:bg-amber-500/10 flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Highlight
+              </Button>
+            </div>
+            <p className="text-xs sm:text-sm text-text-secondary">
+              Bullet points shown on the project page and the &quot;Why consider this project?&quot; card.
+            </p>
+
+            {/* Quick Presets */}
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              <span className="text-[11px] font-bold text-text-tertiary self-center mr-1">Quick add:</span>
+              {[
+                "Panoramic Riverfront Views",
+                "45,000 Sq.Ft Luxury Clubhouse",
+                "Smart Home Automation",
+                "100% Vastu Compliant with 80% Green Space",
+                "10 Mins to High Court & Secretariat",
+                "Bank Loan Approvals from SBI, HDFC & ICICI",
+                "100% Power Backup with EV Fast-Charging"
+              ].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => {
+                    if (!highlights.includes(preset)) addHighlight(preset);
+                  }}
+                  className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-bg-primary border border-border-default hover:border-amber-500/50 hover:text-amber-500 transition-colors text-text-secondary cursor-pointer"
+                >
+                  + {preset}
+                </button>
+              ))}
+            </div>
+
+            {/* Highlights Inputs List */}
+            <div className="space-y-2.5 pt-2">
+              {highlights.map((hl, idx) => (
+                <div key={idx} className="flex items-center gap-2.5">
+                  <span className="w-6 text-center text-xs font-bold text-amber-500">#{idx + 1}</span>
+                  <Input
+                    value={hl}
+                    onChange={(e) => updateHighlight(idx, e.target.value)}
+                    placeholder="e.g. 5 Mins from Benz Circle, Italian Marble Living Room..."
+                    className={cn(ic(), "flex-1")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeHighlight(idx)}
+                    className="p-2.5 rounded-xl text-text-tertiary hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    title="Remove Highlight"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* SECTION 6: Construction & Timeline Updates */}
+          <div className="bg-bg-card border border-border-default rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-heading font-semibold text-text-primary flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-amber-primary" /> Construction &amp; Timeline Updates
+                </h2>
+                <p className="text-xs sm:text-sm text-text-secondary mt-1">
+                  Share milestone updates, tower progress photos, and walkthrough videos with buyers.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="amber"
+                size="sm"
+                onClick={addConstructionUpdate}
+                className="text-xs font-bold flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Milestone Update
+              </Button>
+            </div>
+
+            {constructionUpdates.length === 0 ? (
+              <div className="p-8 text-center border-2 border-dashed border-border-default rounded-2xl bg-bg-primary/40">
+                <Calendar className="w-8 h-8 text-text-tertiary mx-auto mb-2 opacity-50" />
+                <p className="text-sm font-semibold text-text-secondary">No construction updates yet</p>
+                <p className="text-xs text-text-tertiary mt-1">Click &quot;Add Milestone Update&quot; to post project progress photos and videos.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {constructionUpdates.map((update, idx) => (
+                  <div key={update.id} className="p-4 sm:p-5 rounded-2xl border border-border-default bg-bg-primary space-y-4 relative group">
+                    <div className="flex items-center justify-between border-b border-border-default/60 pb-3">
+                      <span className="text-xs font-black uppercase text-amber-500 tracking-wider">
+                        Update #{idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeConstructionUpdate(update.id)}
+                        className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Delete Update
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Field label="Update Title *">
+                        <Input
+                          value={update.title}
+                          onChange={(e) => updateConstructionUpdate(update.id, "title", e.target.value)}
+                          placeholder="e.g. Tower A 14th Floor Slab Cast"
+                          className={ic()}
+                        />
+                      </Field>
+                      <Field label="Month & Year *">
+                        <Input
+                          value={update.date}
+                          onChange={(e) => updateConstructionUpdate(update.id, "date", e.target.value)}
+                          placeholder="e.g. Aug 2026"
+                          className={ic()}
+                        />
+                      </Field>
+                      <Field label="Progress Video URL (Optional)">
+                        <Input
+                          value={update.videoUrl || ""}
+                          onChange={(e) => updateConstructionUpdate(update.id, "videoUrl", e.target.value)}
+                          placeholder="https://youtube.com/..."
+                          className={ic()}
+                        />
+                      </Field>
+                    </div>
+
+                    <Field label="Progress Description">
+                      <textarea
+                        value={update.description || ""}
+                        onChange={(e) => updateConstructionUpdate(update.id, "description", e.target.value)}
+                        rows={2}
+                        placeholder="Brief notes on what milestone was achieved during this phase..."
+                        className="w-full min-h-[70px] px-3.5 py-2.5 rounded-xl border border-border-default/80 bg-bg-card text-text-primary text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      />
+                    </Field>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-text-secondary">Progress Photo</label>
+                      <div className="flex items-center gap-3">
+                        {update.imageUrl && (
+                          <img src={update.imageUrl} alt="Update" className="w-12 h-12 rounded-lg object-cover border border-border-default bg-slate-950" />
+                        )}
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUpdateImageUpload(update.id, file);
+                          }}
+                          className="file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-600 dark:file:text-amber-400 text-xs w-full cursor-pointer"
+                          disabled={uploading[`update-${update.id}`]}
+                        />
+                        {uploading[`update-${update.id}`] && <Loader2 className="w-4 h-4 animate-spin text-amber-500 shrink-0" />}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </form>
