@@ -950,7 +950,7 @@ export function HeroSection() {
           <div className="bg-white rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-2.5 shadow-lg border border-slate-200 flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
             
             {/* Min & Max Selects */}
-            <div className="flex items-center gap-1.5 w-full sm:w-auto shrink-0">
+            <div className="flex items-center justify-center gap-1.5 w-full sm:w-auto shrink-0">
               <span className="text-[11px] sm:text-xs font-black text-slate-700 uppercase tracking-wider shrink-0 mr-0.5">
                 Budget:
               </span>

@@ -342,12 +342,12 @@ export function RealtorFilterBar({
               {openDropdown === "price" && (
                 <div className="space-y-4 p-1">
                   {/* Row 1: BUDGET: [ ₹ 10 L ⌄ ] TO [ Any Price ⌄ ] */}
-                  <div className="flex items-center justify-between gap-1.5 w-full">
-                    <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider shrink-0 mr-1">
+                  <div className="flex items-center justify-center gap-2 w-full mx-auto">
+                    <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider shrink-0">
                       BUDGET:
                     </span>
                     
-                    <div className="relative flex-1 min-w-0">
+                    <div className="relative flex-1 min-w-0 max-w-[110px]">
                       <select
                         value={filters.budget[0]}
                         onChange={(e) => onFilterChange({ ...filters, budget: [Number(e.target.value), Math.max(Number(e.target.value), filters.budget[1])] })}
@@ -369,7 +369,7 @@ export function RealtorFilterBar({
 
                     <span className="text-slate-400 font-black text-[10px] uppercase shrink-0 px-0.5">TO</span>
 
-                    <div className="relative flex-1 min-w-0">
+                    <div className="relative flex-1 min-w-0 max-w-[110px]">
                       <select
                         value={filters.budget[1]}
                         onChange={(e) => onFilterChange({ ...filters, budget: [Math.min(filters.budget[0], Number(e.target.value)), Number(e.target.value)] })}
@@ -523,12 +523,12 @@ export function RealtorFilterBar({
           {openDropdown === "price" && (
             <div className="space-y-4 p-1">
               {/* Row 1: BUDGET: [ ₹ 10 L ⌄ ] TO [ Any Price ⌄ ] */}
-              <div className="flex items-center justify-between gap-1.5 w-full">
-                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider shrink-0 mr-1">
+              <div className="flex items-center justify-center gap-2 w-full mx-auto">
+                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider shrink-0">
                   BUDGET:
                 </span>
                 
-                <div className="relative flex-1 min-w-0">
+                <div className="relative flex-1 min-w-0 max-w-[110px]">
                   <select
                     value={filters.budget[0]}
                     onChange={(e) => onFilterChange({ ...filters, budget: [Number(e.target.value), Math.max(Number(e.target.value), filters.budget[1])] })}
@@ -550,7 +550,7 @@ export function RealtorFilterBar({
 
                 <span className="text-slate-400 font-black text-[10px] uppercase shrink-0 px-0.5">TO</span>
 
-                <div className="relative flex-1 min-w-0">
+                <div className="relative flex-1 min-w-0 max-w-[110px]">
                   <select
                     value={filters.budget[1]}
                     onChange={(e) => onFilterChange({ ...filters, budget: [Math.min(filters.budget[0], Number(e.target.value)), Number(e.target.value)] })}
