@@ -48,7 +48,7 @@ export function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-6 gap-8 sm:gap-10 py-10 sm:py-16">
           {/* Brand Column */}
           <div className="col-span-2 space-y-5">
-            <Logo size="lg" />
+            <Logo size="lg" textColor="text-slate-900 dark:text-white" />
             <p className="text-text-secondary text-sm leading-relaxed max-w-sm">
               <strong className="text-text-primary">Real Projects. Real People. Real Updates.</strong> RoadFacing brings you closer to projects through real, on-ground videos and regular updates so you can make informed decisions.
             </p>
