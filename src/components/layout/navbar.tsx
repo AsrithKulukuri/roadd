@@ -226,13 +226,15 @@ export function Navbar() {
 
             {/* Right Action Icons & Controls */}
             <div className="flex items-center gap-1.5 sm:gap-3">
-              <ThemeToggle />
+              <div className="hidden sm:block">
+                <ThemeToggle />
+              </div>
 
               {/* Saved Items Heart Button */}
               <Link
                 href="/dashboard/saved"
                 className={cn(
-                  "p-2 rounded-xl transition-colors",
+                  "hidden sm:inline-flex p-2 rounded-xl transition-colors",
                   isTransparent
                     ? "text-white hover:bg-white/10"
                     : "text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
