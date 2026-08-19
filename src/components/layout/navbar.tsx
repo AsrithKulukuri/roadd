@@ -287,19 +287,6 @@ export function Navbar() {
                 </Button>
               </Link>
 
-              {/* Mobile Menu Toggle Hamburger */}
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className={cn(
-                  "lg:hidden p-2 rounded-xl transition-colors cursor-pointer",
-                  isTransparent
-                    ? "text-white hover:bg-white/10"
-                    : "text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-                )}
-                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-              >
-                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
             </div>
           </div>
         </div>

@@ -2,17 +2,23 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Home, Search, PlusCircle, Heart, Menu, X, Sparkles } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Home, Search, PlusCircle, Heart, Menu, X, Sparkles, Plus, User, LogOut, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { motion, AnimatePresence } from "framer-motion";
 import { navigationLinks } from "@/config/site";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { toast } from "sonner";
+import { PostRequirementModal } from "@/components/shared/post-requirement-modal";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const savedPropertyIds = useFavoritesStore((state) => state.savedPropertyIds);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
+  const [user, setUser] = useState<{ name: string } | null>(null);
   const savedCount = savedPropertyIds?.length || 0;
 
   useEffect(() => {
@@ -30,6 +36,51 @@ export function MobileBottomNav() {
       document.body.style.overflow = "";
     };
   }, [isMenuOpen]);
+
+  // Load user session
+  useEffect(() => {
+    const checkUser = async () => {
+      if (isSupabaseConfigured()) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            const u = session.user;
+            setUser({
+              name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
+            });
+            return;
+          }
+        } catch (e) {
+          console.error("Error fetching mobile nav user session:", e);
+        }
+      }
+      
+      const stored = localStorage.getItem("road_user");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed.isLoggedIn) {
+            setUser(parsed);
+            return;
+          }
+        } catch (e) {}
+      }
+      setUser(null);
+    };
+
+    checkUser();
+  }, [pathname, isMenuOpen]);
+
+  const handleSignOut = async () => {
+    if (isSupabaseConfigured()) {
+      await supabase.auth.signOut();
+    }
+    localStorage.removeItem("road_user");
+    setUser(null);
+    toast.success("Signed out successfully");
+    setIsMenuOpen(false);
+    router.refresh();
+  };
 
   const navItems = [
     {
@@ -65,10 +116,17 @@ export function MobileBottomNav() {
     {
       id: "menu",
       label: "Menu",
-      onClick: () => setIsMenuOpen(true),
+      onClick: () => setIsMenuOpen(!isMenuOpen),
       icon: Menu,
       isActive: isMenuOpen,
     },
+  ];
+
+  const menuLinks = [
+    { label: "New projects", href: "/search?type=projects" },
+    { label: "Gated Communities", href: "/search?type=buy&propertyType=gated-community" },
+    { label: "Commercial", href: "/search?type=buy&propertyType=commercial" },
+    { label: "Agriculture", href: "/search?type=buy&propertyType=agricultural-land" },
   ];
 
   return (
@@ -143,7 +201,7 @@ export function MobileBottomNav() {
         </div>
       </nav>
 
-      {/* ── Mobile Full Menu Sheet / Drawer ── */}
+      {/* ── Mobile Full Menu Page / Slide-in Drawer ── */}
       <AnimatePresence>
         {isMenuOpen && (
           <div className="fixed inset-0 z-50 sm:hidden">
@@ -156,97 +214,112 @@ export function MobileBottomNav() {
               className="absolute inset-0 bg-black/60 backdrop-blur-xs"
             />
 
-            {/* Slide-up Menu Sheet */}
+            {/* Slide-in Menu View */}
             <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
               transition={{ type: "spring", stiffness: 350, damping: 32 }}
-              className="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-950 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 shadow-2xl max-h-[85vh] overflow-y-auto p-5 pb-8 space-y-5"
+              className="absolute inset-x-0 bottom-0 top-[40px] bg-white dark:bg-slate-950 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto p-6 pb-24 flex flex-col justify-between"
             >
-              {/* Sheet Header */}
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">Quick Navigation</h3>
-                    <p className="text-[11px] text-slate-500">Explore properties, ventures & tools</p>
-                  </div>
+              <div>
+                {/* Header Close Row */}
+                <div className="flex items-center justify-end pb-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
+
+                {/* 1. Post Your Requirement Big Black Pill Button */}
                 <button
                   type="button"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="p-2 rounded-full text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsRequirementModalOpen(true);
+                  }}
+                  className="w-full py-3.5 px-4 mb-6 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-xl active:scale-98 transition-all cursor-pointer border border-slate-800"
                 >
-                  <X className="w-5 h-5" />
+                  <Sparkles className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+                  <span>Post Your Requirement</span>
                 </button>
-              </div>
 
-              {/* Main Quick Action Cards */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <Link
-                  href="/list-with-us"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col gap-1 hover:bg-amber-500/15 transition-colors"
-                >
-                  <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-500/20 px-2 py-0.5 rounded-full w-fit">
-                    Free Listing
-                  </span>
-                  <span className="font-extrabold text-xs text-slate-900 dark:text-white mt-1">Post Property</span>
-                  <span className="text-[10px] text-slate-500">Sell or rent your property</span>
-                </Link>
-
-                <Link
-                  href="/dashboard"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex flex-col gap-1 hover:bg-blue-500/15 transition-colors"
-                >
-                  <span className="text-[9px] font-black uppercase text-blue-600 bg-blue-500/20 px-2 py-0.5 rounded-full w-fit">
-                    Account
-                  </span>
-                  <span className="font-extrabold text-xs text-slate-900 dark:text-white mt-1">My Dashboard</span>
-                  <span className="text-[10px] text-slate-500">Saved homes & inquiries</span>
-                </Link>
-              </div>
-
-              {/* Navigation Links List */}
-              <div className="space-y-1 divide-y divide-slate-100 dark:divide-slate-800/60">
-                {(navigationLinks.main || []).map((link) => (
-                  <div key={link.href} className="pt-2 first:pt-0">
+                {/* 2. Navigation Links */}
+                <div className="flex flex-col space-y-4 px-1">
+                  {menuLinks.map((link) => (
                     <Link
+                      key={link.href}
                       href={link.href}
                       onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center justify-between py-2 px-3 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/70 transition-colors"
+                      className="font-bold text-[15px] text-slate-800 dark:text-slate-200 hover:text-amber-500 transition-colors"
                     >
-                      <span>{link.label}</span>
+                      {link.label}
                     </Link>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              {/* Extra Tools */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                <Link
-                  href="/mortgage-calculator"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block text-center py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-                >
-                  📐 EMI &amp; Mortgage Calculator
-                </Link>
-                <Link
-                  href="/about"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block text-center py-2.5 px-4 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-                >
-                  About RoadFacing • Real Projects. Real People. Real Updates.
-                </Link>
+                {/* 3. Divider */}
+                <div className="my-6 border-t border-slate-100 dark:border-slate-800/80" />
+
+                {/* 4. Action Buttons */}
+                <div className="space-y-3">
+                  {/* List Property Free Black Button */}
+                  <Link
+                    href="/list-with-us"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-full py-3.5 px-4 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg active:scale-98 transition-all border border-slate-800"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3] text-amber-400" />
+                    <span>List Property Free</span>
+                  </Link>
+
+                  {/* My Dashboard or Log In */}
+                  {user ? (
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="w-full py-3.5 px-4 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-98 transition-all border border-slate-800"
+                    >
+                      <User className="w-4 h-4 text-slate-300" />
+                      <span>My Dashboard ({user.name})</span>
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/login"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="w-full py-3.5 px-4 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-98 transition-all border border-slate-800"
+                    >
+                      <LogIn className="w-4 h-4 text-amber-400" />
+                      <span>Log in / Register</span>
+                    </Link>
+                  )}
+
+                  {/* Sign Out Button */}
+                  {user && (
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-2 py-3 px-1 text-red-500 hover:text-red-600 font-bold text-sm transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
+      {/* Post Requirement Modal */}
+      <PostRequirementModal
+        isOpen={isRequirementModalOpen}
+        onClose={() => setIsRequirementModalOpen(false)}
+      />
     </>
   );
 }
