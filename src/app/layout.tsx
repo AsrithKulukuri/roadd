@@ -18,52 +18,60 @@ const spaceGrotesk = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://roadfacing.com"),
+  metadataBase: new URL("https://www.roadfacing.com"),
   title: {
-    default: "RoadFacing — Real Projects. Real People. Real Updates.",
-    template: "%s | RoadFacing",
+    default: "Road Facing — Real Projects. Real People. Real Updates | Vijayawada, Guntur & Amaravati",
+    template: "%s | Road Facing",
   },
   description:
-    "Real Projects. Real People. Real Updates. RoadFacing brings you closer to projects through real, on-ground videos and regular updates. We show projects as they are today — their progress, location, development, and current status.",
+    "Explore verified properties, luxury apartments, gated villas, and CRDA approved plots across Vijayawada, Guntur, Amaravati, Mangalagiri, and Tadepalli. Real on-ground video updates & developer transparency.",
   keywords: [
-    "real estate India",
-    "buy property India",
-    "rent apartment",
-    "flat for sale",
-    "villa for sale",
-    "plot for sale",
-    "RERA verified",
-    "Hyderabad real estate",
-    "Bengaluru apartments",
-    "Mumbai flats",
+    "real estate Vijayawada",
+    "properties in Guntur",
+    "plots in Amaravati",
+    "CRDA approved plots",
+    "flats for sale in Benz Circle",
+    "villas in Mangalagiri",
+    "apartments in Tadepalli",
+    "Poranki gated community",
+    "Kanuru luxury apartments",
+    "Gorantla Guntur flats",
+    "buy property Andhra Pradesh",
+    "RERA verified projects AP",
+    "Road Facing real estate",
   ],
-  authors: [{ name: "ROAD FACING", url: "https://road.in" }],
-  creator: "ROAD FACING — Real Owner Agent Developer",
-  publisher: "ROAD FACING",
+  authors: [{ name: "Road Facing", url: "https://www.roadfacing.com" }],
+  creator: "Road Facing",
+  publisher: "Road Facing",
+  alternates: {
+    canonical: "https://www.roadfacing.com",
+  },
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://road.in",
-    title: "ROAD FACING — India's Premium Real Estate Platform",
+    url: "https://www.roadfacing.com",
+    siteName: "Road Facing",
+    title: "Road Facing — Real Projects. Real People. Real Updates",
     description:
-      "Buy, sell, and rent properties across India with verified listings and AI-powered search.",
-    siteName: "ROAD FACING",
+      "Buy, sell, and rent verified properties across Vijayawada, Guntur, Amaravati & Andhra Pradesh with real video updates and AI search.",
     images: [
       {
-        url: "/og-image.png",
+        url: "/api/og?title=Find+Verified+Homes+in+Vijayawada,+Guntur+&+Amaravati&location=AP+Capital+Region&type=Real+Estate+Portal&badge=RERA+%26+CRDA+Verified",
         width: 1200,
         height: 630,
-        alt: "ROAD FACING — Real Owner Agent Developer",
+        alt: "Road Facing — Real Projects. Real People. Real Updates",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ROAD FACING — India's Premium Real Estate Platform",
+    title: "Road Facing — Real Projects. Real People. Real Updates",
     description:
-      "Buy, sell, and rent properties across India with verified listings and AI-powered search.",
-    images: ["/og-image.png"],
-    creator: "@road_in",
+      "Verified properties, luxury apartments & plots across Vijayawada, Guntur, and Amaravati.",
+    images: [
+      "/api/og?title=Find+Verified+Homes+in+Vijayawada,+Guntur+&+Amaravati&location=AP+Capital+Region&type=Real+Estate+Portal&badge=RERA+%26+CRDA+Verified",
+    ],
+    creator: "@roadfacing",
   },
   robots: {
     index: true,
@@ -84,13 +92,65 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#16161A" },
-    { media: "(prefers-color-scheme: light)", color: "#F7F6F3" },
+    { media: "(prefers-color-scheme: dark)", color: "#020617" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
   ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
   viewportFit: "cover",
+};
+
+const jsonLdWebsite = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "RealEstateAgent",
+      "@id": "https://www.roadfacing.com/#organization",
+      name: "Road Facing",
+      url: "https://www.roadfacing.com",
+      logo: "https://www.roadfacing.com/favicon.ico",
+      description:
+        "India's premier real estate platform bringing real on-ground video updates for properties and projects across Vijayawada, Guntur, and Amaravati.",
+      email: "care@roadfacing.com",
+      telephone: "+91 98765 43210",
+      areaServed: [
+        { "@type": "City", name: "Vijayawada" },
+        { "@type": "City", name: "Guntur" },
+        { "@type": "City", name: "Amaravati" },
+        { "@type": "City", name: "Mangalagiri" },
+        { "@type": "City", name: "Tadepalli" },
+      ],
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Vijayawada",
+        addressRegion: "Andhra Pradesh",
+        addressCountry: "IN",
+      },
+      sameAs: [
+        "https://www.instagram.com/roadfacing",
+        "https://twitter.com/roadfacing",
+        "https://www.youtube.com/@roadfacing",
+      ],
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://www.roadfacing.com/#website",
+      url: "https://www.roadfacing.com",
+      name: "Road Facing",
+      publisher: {
+        "@id": "https://www.roadfacing.com/#organization",
+      },
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: "https://www.roadfacing.com/search?q={search_term_string}",
+        },
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -105,6 +165,12 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${spaceGrotesk.variable}`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebsite) }}
+        />
+      </head>
       <body suppressHydrationWarning className="min-h-screen bg-bg-primary font-body text-text-primary antialiased">
         <ThemeProvider
           attribute="class"

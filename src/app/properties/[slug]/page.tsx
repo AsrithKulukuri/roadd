@@ -56,11 +56,66 @@ export async function generateMetadata({
   const { slug } = await params;
   const property = await getProperty(slug);
 
-  if (!property) return { title: "Property Not Found | ROAD FACING" };
+  if (!property) return { title: "Property Not Found | Road Facing" };
+
+  const priceFormatted =
+    property.price >= 10000000
+      ? `₹${(property.price / 10000000).toFixed(2)} Cr`
+      : `₹${(property.price / 100000).toFixed(2)} Lakh`;
+
+  const locationFormatted = `${property.location?.locality || property.location?.area || ""}, ${property.location?.city || "Andhra Pradesh"}`;
+  const specsFormatted = [
+    property.bedrooms ? `${property.bedrooms} Beds` : null,
+    property.bathrooms ? `${property.bathrooms} Baths` : null,
+    property.areaSqFt ? `${property.areaSqFt.toLocaleString()} sq.ft` : null,
+  ]
+    .filter(Boolean)
+    .join(" • ");
+
+  const coverUrl = property.coverImage || property.images?.[0]?.url || "";
+
+  const ogParams = new URLSearchParams({
+    title: property.title,
+    price: priceFormatted,
+    location: locationFormatted,
+    type: (property.propertyType || "Property").replace("-", " ").toUpperCase(),
+    badge: property.reraId ? `RERA: ${property.reraId}` : "Verified Property",
+  });
+  if (specsFormatted) ogParams.set("specs", specsFormatted);
+  if (coverUrl) ogParams.set("image", coverUrl);
+
+  const ogImageUrl = `https://www.roadfacing.com/api/og?${ogParams.toString()}`;
+  const canonicalUrl = `https://www.roadfacing.com/properties/${property.slug}`;
 
   return {
-    title: `${property.title} | ROAD FACING`,
-    description: property.description,
+    title: `${property.title} in ${locationFormatted} — ${priceFormatted}`,
+    description: `${property.title} for sale in ${locationFormatted}. ${specsFormatted ? `${specsFormatted}. ` : ""}Explore photos, verified details, and price updates on Road Facing.`,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      type: "article",
+      locale: "en_IN",
+      url: canonicalUrl,
+      title: `${property.title} — ${priceFormatted}`,
+      description: property.description || `Verified listing in ${locationFormatted}. View details on Road Facing.`,
+      siteName: "Road Facing",
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: property.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${property.title} — ${priceFormatted}`,
+      description: property.description || `Verified listing in ${locationFormatted}`,
+      images: [ogImageUrl],
+      creator: "@roadfacing",
+    },
   };
 }
 
@@ -76,8 +131,55 @@ export default async function PropertyDetailPage({
     notFound();
   }
 
+  const propertyJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SingleFamilyResidence",
+    name: property.title,
+    description: property.description,
+    image: property.coverImage || property.images?.map((img) => img.url),
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: property.location?.address || property.location?.locality,
+      addressLocality: property.location?.locality || property.location?.city,
+      addressRegion: "Andhra Pradesh",
+      addressCountry: "IN",
+    },
+    geo: property.location?.latitude
+      ? {
+          "@type": "GeoCoordinates",
+          latitude: property.location.latitude,
+          longitude: property.location.longitude,
+        }
+      : undefined,
+    numberOfRooms: property.bedrooms,
+    numberOfBathroomsTotal: property.bathrooms,
+    floorSize: property.areaSqFt
+      ? {
+          "@type": "QuantitativeValue",
+          value: property.areaSqFt,
+          unitCode: "FTK",
+        }
+      : undefined,
+    offers: {
+      "@type": "Offer",
+      price: property.price,
+      priceCurrency: "INR",
+      availability: "https://schema.org/InStock",
+      validFrom: property.createdAt,
+      seller: {
+        "@type": "RealEstateAgent",
+        name: property.ownerName || "Road Facing Verified Partner",
+        telephone: property.ownerPhone || "+91 98765 43210",
+      },
+    },
+  };
+
   return (
     <div className="flex flex-col min-h-screen pt-16 pb-24 bg-bg-primary text-text-primary">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(propertyJsonLd) }}
+      />
       
       {/* REALTOR.COM STYLE TOP NAVBAR (Left: Search Back, Center: ROAD FACING Logo, Right: Actions) */}
       <div className="sticky top-16 z-30 w-full bg-white backdrop-blur-md border-b border-slate-200 py-3 shadow-xs">
