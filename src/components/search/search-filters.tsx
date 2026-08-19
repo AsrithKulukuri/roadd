@@ -177,6 +177,70 @@ const DESKTOP_CATEGORY_TABS = [
 
 type TabId = (typeof DESKTOP_CATEGORY_TABS)[number]["id"];
 
+// Comprehensive Budget Options for Min / Max Selects
+const BUDGET_MIN_OPTIONS = [
+  { label: "Min (₹ 0)", value: 0 },
+  { label: "₹ 5 L", value: 500000 },
+  { label: "₹ 10 L", value: 1000000 },
+  { label: "₹ 15 L", value: 1500000 },
+  { label: "₹ 20 L", value: 2000000 },
+  { label: "₹ 25 L", value: 2500000 },
+  { label: "₹ 30 L", value: 3000000 },
+  { label: "₹ 40 L", value: 4000000 },
+  { label: "₹ 50 L", value: 5000000 },
+  { label: "₹ 60 L", value: 6000000 },
+  { label: "₹ 75 L", value: 7500000 },
+  { label: "₹ 90 L", value: 9000000 },
+  { label: "₹ 1 Cr", value: 10000000 },
+  { label: "₹ 1.25 Cr", value: 12500000 },
+  { label: "₹ 1.5 Cr", value: 15000000 },
+  { label: "₹ 1.75 Cr", value: 17500000 },
+  { label: "₹ 2 Cr", value: 20000000 },
+  { label: "₹ 2.5 Cr", value: 25000000 },
+  { label: "₹ 3 Cr", value: 30000000 },
+  { label: "₹ 4 Cr", value: 40000000 },
+  { label: "₹ 5 Cr", value: 50000000 },
+  { label: "₹ 7.5 Cr", value: 75000000 },
+  { label: "₹ 10 Cr", value: 100000000 },
+];
+
+const BUDGET_MAX_OPTIONS = [
+  { label: "₹ 15 L", value: 1500000 },
+  { label: "₹ 20 L", value: 2000000 },
+  { label: "₹ 25 L", value: 2500000 },
+  { label: "₹ 30 L", value: 3000000 },
+  { label: "₹ 40 L", value: 4000000 },
+  { label: "₹ 50 L", value: 5000000 },
+  { label: "₹ 60 L", value: 6000000 },
+  { label: "₹ 75 L", value: 7500000 },
+  { label: "₹ 90 L", value: 9000000 },
+  { label: "₹ 1 Cr", value: 10000000 },
+  { label: "₹ 1.25 Cr", value: 12500000 },
+  { label: "₹ 1.5 Cr", value: 15000000 },
+  { label: "₹ 1.75 Cr", value: 17500000 },
+  { label: "₹ 2 Cr", value: 20000000 },
+  { label: "₹ 2.5 Cr", value: 25000000 },
+  { label: "₹ 3 Cr", value: 30000000 },
+  { label: "₹ 4 Cr", value: 40000000 },
+  { label: "₹ 5 Cr", value: 50000000 },
+  { label: "₹ 7.5 Cr", value: 75000000 },
+  { label: "Max (₹ 10+ Cr)", value: 100000000 },
+];
+
+function getBudgetOptionsWithCustom(
+  options: { label: string; value: number }[],
+  customVal: number,
+  isMax = false
+) {
+  if (options.some((o) => o.value === customVal)) return options;
+  const customOption = {
+    label: formatINRWords(customVal, isMax),
+    value: customVal,
+  };
+  const list = [...options, customOption];
+  return list.sort((a, b) => a.value - b.value);
+}
+
 // ─── Reusable Components ────────────────────────────────────────────────────
 
 function ToggleSwitch({
@@ -539,13 +603,11 @@ export function SearchFiltersModal({
                 }
                 className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none"
               >
-                <option value={0}>Min</option>
-                <option value={1000000}>₹ 10 L</option>
-                <option value={2500000}>₹ 25 L</option>
-                <option value={5000000}>₹ 50 L</option>
-                <option value={7500000}>₹ 75 L</option>
-                <option value={10000000}>₹ 1 Cr</option>
-                <option value={20000000}>₹ 2 Cr</option>
+                {getBudgetOptionsWithCustom(BUDGET_MIN_OPTIONS, localFilters.budget[0]).map((opt) => (
+                  <option key={`min-${opt.value}`} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
 
               <span className="text-xs text-slate-500 font-medium">to</span>
@@ -560,14 +622,11 @@ export function SearchFiltersModal({
                 }
                 className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none"
               >
-                <option value={100000000}>Max</option>
-                <option value={2500000}>₹ 25 L</option>
-                <option value={5000000}>₹ 50 L</option>
-                <option value={7500000}>₹ 75 L</option>
-                <option value={10000000}>₹ 1 Cr</option>
-                <option value={20000000}>₹ 2 Cr</option>
-                <option value={50000000}>₹ 5 Cr</option>
-                <option value={100000000}>₹ 10+ Cr</option>
+                {getBudgetOptionsWithCustom(BUDGET_MAX_OPTIONS, localFilters.budget[1], true).map((opt) => (
+                  <option key={`max-${opt.value}`} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -1173,15 +1232,13 @@ export function SearchFiltersModal({
                         budget: [parseInt(e.target.value, 10), localFilters.budget[1]],
                       })
                     }
-                    className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none"
+                    className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none cursor-pointer"
                   >
-                    <option value={0}>Min</option>
-                    <option value={1000000}>₹ 10 L</option>
-                    <option value={2500000}>₹ 25 L</option>
-                    <option value={5000000}>₹ 50 L</option>
-                    <option value={7500000}>₹ 75 L</option>
-                    <option value={10000000}>₹ 1 Cr</option>
-                    <option value={20000000}>₹ 2 Cr</option>
+                    {getBudgetOptionsWithCustom(BUDGET_MIN_OPTIONS, localFilters.budget[0]).map((opt) => (
+                      <option key={`desk-min-${opt.value}`} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
 
                   <span className="text-xs text-slate-500 font-medium">to</span>
@@ -1194,16 +1251,13 @@ export function SearchFiltersModal({
                         budget: [localFilters.budget[0], parseInt(e.target.value, 10)],
                       })
                     }
-                    className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none"
+                    className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none cursor-pointer"
                   >
-                    <option value={100000000}>Max</option>
-                    <option value={2500000}>₹ 25 L</option>
-                    <option value={5000000}>₹ 50 L</option>
-                    <option value={7500000}>₹ 75 L</option>
-                    <option value={10000000}>₹ 1 Cr</option>
-                    <option value={20000000}>₹ 2 Cr</option>
-                    <option value={50000000}>₹ 5 Cr</option>
-                    <option value={100000000}>₹ 10+ Cr</option>
+                    {getBudgetOptionsWithCustom(BUDGET_MAX_OPTIONS, localFilters.budget[1], true).map((opt) => (
+                      <option key={`desk-max-${opt.value}`} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

@@ -124,6 +124,69 @@ export function RealtorFilterBar({
     { label: "₹2 Cr+", min: 20000000, max: 100000000 },
   ];
 
+  const BUDGET_MIN_OPTIONS = [
+    { label: "₹ 0", value: 0 },
+    { label: "₹ 5 L", value: 500000 },
+    { label: "₹ 10 L", value: 1000000 },
+    { label: "₹ 15 L", value: 1500000 },
+    { label: "₹ 20 L", value: 2000000 },
+    { label: "₹ 25 L", value: 2500000 },
+    { label: "₹ 30 L", value: 3000000 },
+    { label: "₹ 40 L", value: 4000000 },
+    { label: "₹ 50 L", value: 5000000 },
+    { label: "₹ 60 L", value: 6000000 },
+    { label: "₹ 75 L", value: 7500000 },
+    { label: "₹ 90 L", value: 9000000 },
+    { label: "₹ 1 Cr", value: 10000000 },
+    { label: "₹ 1.25 Cr", value: 12500000 },
+    { label: "₹ 1.5 Cr", value: 15000000 },
+    { label: "₹ 1.75 Cr", value: 17500000 },
+    { label: "₹ 2 Cr", value: 20000000 },
+    { label: "₹ 2.5 Cr", value: 25000000 },
+    { label: "₹ 3 Cr", value: 30000000 },
+    { label: "₹ 4 Cr", value: 40000000 },
+    { label: "₹ 5 Cr", value: 50000000 },
+    { label: "₹ 7.5 Cr", value: 75000000 },
+    { label: "₹ 10 Cr", value: 100000000 },
+  ];
+
+  const BUDGET_MAX_OPTIONS = [
+    { label: "₹ 15 L", value: 1500000 },
+    { label: "₹ 20 L", value: 2000000 },
+    { label: "₹ 25 L", value: 2500000 },
+    { label: "₹ 30 L", value: 3000000 },
+    { label: "₹ 40 L", value: 4000000 },
+    { label: "₹ 50 L", value: 5000000 },
+    { label: "₹ 60 L", value: 6000000 },
+    { label: "₹ 75 L", value: 7500000 },
+    { label: "₹ 90 L", value: 9000000 },
+    { label: "₹ 1 Cr", value: 10000000 },
+    { label: "₹ 1.25 Cr", value: 12500000 },
+    { label: "₹ 1.5 Cr", value: 15000000 },
+    { label: "₹ 1.75 Cr", value: 17500000 },
+    { label: "₹ 2 Cr", value: 20000000 },
+    { label: "₹ 2.5 Cr", value: 25000000 },
+    { label: "₹ 3 Cr", value: 30000000 },
+    { label: "₹ 4 Cr", value: 40000000 },
+    { label: "₹ 5 Cr", value: 50000000 },
+    { label: "₹ 7.5 Cr", value: 75000000 },
+    { label: "Any Price", value: 100000000 },
+  ];
+
+  function getBudgetOpts(
+    options: { label: string; value: number }[],
+    customVal: number,
+    isMax = false
+  ) {
+    if (options.some((o) => o.value === customVal)) return options;
+    const customOption = {
+      label: customVal === 0 ? "₹ 0" : formatINRWords(customVal, isMax),
+      value: customVal,
+    };
+    const list = [...options, customOption];
+    return list.sort((a, b) => a.value - b.value);
+  }
+
   // Property Type options
   const propertyTypes = [
     { label: "Apartment / Flat", value: "apartment", icon: Building2 },
@@ -353,16 +416,11 @@ export function RealtorFilterBar({
                         onChange={(e) => onFilterChange({ ...filters, budget: [Number(e.target.value), Math.max(Number(e.target.value), filters.budget[1])] })}
                         className="w-full h-9 pl-2.5 pr-6 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white text-center appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
                       >
-                        <option value={0}>₹ 0</option>
-                        <option value={1000000}>₹ 10 L</option>
-                        <option value={2000000}>₹ 20 L</option>
-                        <option value={3000000}>₹ 30 L</option>
-                        <option value={5000000}>₹ 50 L</option>
-                        <option value={7500000}>₹ 75 L</option>
-                        <option value={10000000}>₹ 1 Cr</option>
-                        <option value={15000000}>₹ 1.5 Cr</option>
-                        <option value={20000000}>₹ 2 Cr</option>
-                        <option value={30000000}>₹ 3 Cr</option>
+                        {getBudgetOpts(BUDGET_MIN_OPTIONS, filters.budget[0]).map((opt) => (
+                          <option key={`mob-min-${opt.value}`} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
                       </select>
                       <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
@@ -375,16 +433,11 @@ export function RealtorFilterBar({
                         onChange={(e) => onFilterChange({ ...filters, budget: [Math.min(filters.budget[0], Number(e.target.value)), Number(e.target.value)] })}
                         className="w-full h-9 pl-2.5 pr-6 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white text-center appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
                       >
-                        <option value={100000000}>Any Price</option>
-                        <option value={2000000}>₹ 20 L</option>
-                        <option value={3000000}>₹ 30 L</option>
-                        <option value={5000000}>₹ 50 L</option>
-                        <option value={7500000}>₹ 75 L</option>
-                        <option value={10000000}>₹ 1 Cr</option>
-                        <option value={15000000}>₹ 1.5 Cr</option>
-                        <option value={20000000}>₹ 2 Cr</option>
-                        <option value={30000000}>₹ 3 Cr</option>
-                        <option value={50000000}>₹ 5 Cr</option>
+                        {getBudgetOpts(BUDGET_MAX_OPTIONS, filters.budget[1], true).map((opt) => (
+                          <option key={`mob-max-${opt.value}`} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
                       </select>
                       <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
@@ -534,16 +587,11 @@ export function RealtorFilterBar({
                     onChange={(e) => onFilterChange({ ...filters, budget: [Number(e.target.value), Math.max(Number(e.target.value), filters.budget[1])] })}
                     className="w-full h-9 pl-2.5 pr-6 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white text-center appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
                   >
-                    <option value={0}>₹ 0</option>
-                    <option value={1000000}>₹ 10 L</option>
-                    <option value={2000000}>₹ 20 L</option>
-                    <option value={3000000}>₹ 30 L</option>
-                    <option value={5000000}>₹ 50 L</option>
-                    <option value={7500000}>₹ 75 L</option>
-                    <option value={10000000}>₹ 1 Cr</option>
-                    <option value={15000000}>₹ 1.5 Cr</option>
-                    <option value={20000000}>₹ 2 Cr</option>
-                    <option value={30000000}>₹ 3 Cr</option>
+                    {getBudgetOpts(BUDGET_MIN_OPTIONS, filters.budget[0]).map((opt) => (
+                      <option key={`desk-pop-min-${opt.value}`} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
@@ -556,16 +604,11 @@ export function RealtorFilterBar({
                     onChange={(e) => onFilterChange({ ...filters, budget: [Math.min(filters.budget[0], Number(e.target.value)), Number(e.target.value)] })}
                     className="w-full h-9 pl-2.5 pr-6 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white text-center appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
                   >
-                    <option value={100000000}>Any Price</option>
-                    <option value={2000000}>₹ 20 L</option>
-                    <option value={3000000}>₹ 30 L</option>
-                    <option value={5000000}>₹ 50 L</option>
-                    <option value={7500000}>₹ 75 L</option>
-                    <option value={10000000}>₹ 1 Cr</option>
-                    <option value={15000000}>₹ 1.5 Cr</option>
-                    <option value={20000000}>₹ 2 Cr</option>
-                    <option value={30000000}>₹ 3 Cr</option>
-                    <option value={50000000}>₹ 5 Cr</option>
+                    {getBudgetOpts(BUDGET_MAX_OPTIONS, filters.budget[1], true).map((opt) => (
+                      <option key={`desk-pop-max-${opt.value}`} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
