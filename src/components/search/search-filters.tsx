@@ -147,8 +147,12 @@ interface SearchFiltersModalProps {
   totalResults: number;
 }
 
-// Left Navigation Tabs for Desktop Modal
+// Left Navigation Tabs for Desktop Modal - Location & Budget at the VERY TOP
 const DESKTOP_CATEGORY_TABS = [
+  { id: "location", label: "Location / City" },
+  { id: "budget", label: "Budget / Price" },
+  { id: "propertyType", label: "Property Type" },
+  { id: "bhk", label: "BHK & Bathroom" },
   { id: "coveredArea", label: "Covered Area" },
   { id: "possession", label: "Possession Status" },
   { id: "subPropertyType", label: "Sub Property Type" },
@@ -162,8 +166,6 @@ const DESKTOP_CATEGORY_TABS = [
   { id: "media", label: "Photos & Videos" },
   { id: "facing", label: "Facing" },
   { id: "floor", label: "Floor Selection" },
-  { id: "budget", label: "Budget / Price" },
-  { id: "bhk", label: "BHK & Bathroom" },
   { id: "agriculture", label: "Water & Agriculture" },
 ] as const;
 
@@ -201,7 +203,7 @@ function ToggleSwitch({
       >
         <span
           className={cn(
-            "w-4 h-4 rounded-full bg-white shadow-md transform transition-transform absolute top-1 left-1",
+            "w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform absolute top-1 left-1",
             checked ? "translate-x-5" : "translate-x-0"
           )}
         />
@@ -282,7 +284,7 @@ export function SearchFiltersModal({
   totalResults,
 }: SearchFiltersModalProps) {
   const [localFilters, setLocalFilters] = useState<FilterState>(filters);
-  const [activeDesktopTab, setActiveDesktopTab] = useState<TabId>("coveredArea");
+  const [activeDesktopTab, setActiveDesktopTab] = useState<TabId>("location");
   const { cities, fetchLocations } = useLocationsStore();
 
   useEffect(() => {
@@ -1033,20 +1035,77 @@ export function SearchFiltersModal({
 
           {/* Right Column */}
           <div className="flex-1 overflow-y-auto p-7 space-y-5 text-xs bg-white no-scrollbar">
-            {activeDesktopTab === "coveredArea" && (
-              <div className="space-y-4">
-                <label className="text-[13px] font-semibold text-slate-900 block">Bathroom</label>
-                <div className="flex flex-wrap gap-2">
-                  {["1", "2", "3", "4", "5"].map((bath) => (
-                    <PillTag
-                      key={bath}
-                      label={bath}
-                      isSelected={localFilters.bathrooms.includes(bath)}
-                      onClick={() => toggleArrayFilter("bathrooms", bath)}
-                    />
-                  ))}
+            {/* 1. Location / City Tab (Default & Top Priority) */}
+            {activeDesktopTab === "location" && (
+              <div className="space-y-6">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">
+                    Select City / Primary Location
+                  </label>
+                  <div className="flex flex-wrap gap-2.5">
+                    {cities.map((city) => {
+                      const isSelected = localFilters.query.toLowerCase().includes(city.name.toLowerCase());
+                      return (
+                        <button
+                          key={city.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setLocalFilters({ ...localFilters, query: "" });
+                            } else {
+                              setLocalFilters({ ...localFilters, query: city.name });
+                            }
+                          }}
+                          className={cn(
+                            "py-2 px-4 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer border",
+                            isSelected
+                              ? "bg-[#e6f4f2] text-[#008075] border-[#008075]/40"
+                              : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                          )}
+                        >
+                          {isSelected && <Check className="w-3.5 h-3.5 inline mr-1 stroke-[2.5]" />}
+                          {city.name}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="divide-y divide-slate-100 pt-3">
+
+                {/* Sublocalities Section */}
+                <div className="pt-2 border-t border-slate-100">
+                  <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">
+                    Select Popular Localities & Hubs
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {cities.flatMap((c) => c.sublocations).map((sub) => {
+                      const isSelected = localFilters.query.toLowerCase().includes(sub.name.toLowerCase());
+                      return (
+                        <button
+                          key={sub.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setLocalFilters({ ...localFilters, query: "" });
+                            } else {
+                              setLocalFilters({ ...localFilters, query: sub.name });
+                            }
+                          }}
+                          className={cn(
+                            "py-1.5 px-3 rounded-full text-xs font-medium border transition-all whitespace-nowrap shrink-0 cursor-pointer",
+                            isSelected
+                              ? "bg-[#008075] text-white border-[#008075] font-semibold"
+                              : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                          )}
+                        >
+                          {sub.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Quick Toggle Switches */}
+                <div className="divide-y divide-slate-100 pt-3 border-t border-slate-100">
                   <ToggleSwitch
                     label="Properties with Offers"
                     checked={localFilters.propertiesWithOffers}
@@ -1076,6 +1135,193 @@ export function SearchFiltersModal({
               </div>
             )}
 
+            {/* 2. Budget / Price Tab */}
+            {activeDesktopTab === "budget" && (
+              <div className="space-y-5">
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] font-semibold text-slate-900">Budget Range</span>
+                  <span className="text-xs font-semibold text-[#008075]">
+                    {formatINRWords(localFilters.budget[0])} – {formatINRWords(localFilters.budget[1], true)}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <select
+                    value={localFilters.budget[0]}
+                    onChange={(e) =>
+                      setLocalFilters({
+                        ...localFilters,
+                        budget: [parseInt(e.target.value, 10), localFilters.budget[1]],
+                      })
+                    }
+                    className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none"
+                  >
+                    <option value={0}>Min</option>
+                    <option value={1000000}>₹ 10 L</option>
+                    <option value={2500000}>₹ 25 L</option>
+                    <option value={5000000}>₹ 50 L</option>
+                    <option value={7500000}>₹ 75 L</option>
+                    <option value={10000000}>₹ 1 Cr</option>
+                    <option value={20000000}>₹ 2 Cr</option>
+                  </select>
+
+                  <span className="text-xs text-slate-500 font-medium">to</span>
+
+                  <select
+                    value={localFilters.budget[1]}
+                    onChange={(e) =>
+                      setLocalFilters({
+                        ...localFilters,
+                        budget: [localFilters.budget[0], parseInt(e.target.value, 10)],
+                      })
+                    }
+                    className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none"
+                  >
+                    <option value={100000000}>Max</option>
+                    <option value={2500000}>₹ 25 L</option>
+                    <option value={5000000}>₹ 50 L</option>
+                    <option value={7500000}>₹ 75 L</option>
+                    <option value={10000000}>₹ 1 Cr</option>
+                    <option value={20000000}>₹ 2 Cr</option>
+                    <option value={50000000}>₹ 5 Cr</option>
+                    <option value={100000000}>₹ 10+ Cr</option>
+                  </select>
+                </div>
+
+                <Slider
+                  min={0}
+                  max={100000000}
+                  step={500000}
+                  value={localFilters.budget}
+                  onValueChange={(val) => setLocalFilters({ ...localFilters, budget: val as [number, number] })}
+                  className="w-full py-2"
+                />
+
+                <div className="pt-2">
+                  <label className="text-[13px] font-semibold text-slate-900 block mb-2">
+                    Popular Price Ranges
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: "Under ₹25 L", min: 0, max: 2500000 },
+                      { label: "₹25 L – ₹50 L", min: 2500000, max: 5000000 },
+                      { label: "₹50 L – ₹75 L", min: 5000000, max: 7500000 },
+                      { label: "₹75 L – ₹1 Cr", min: 7500000, max: 10000000 },
+                      { label: "₹1 Cr – ₹2 Cr", min: 10000000, max: 20000000 },
+                      { label: "₹2 Cr+", min: 20000000, max: 100000000 },
+                    ].map((preset) => {
+                      const isSelected = localFilters.budget[0] === preset.min && localFilters.budget[1] === preset.max;
+                      return (
+                        <PillTag
+                          key={preset.label}
+                          label={preset.label}
+                          isSelected={isSelected}
+                          onClick={() => setLocalFilters({ ...localFilters, budget: [preset.min, preset.max] })}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3. Property Type Tab */}
+            {activeDesktopTab === "propertyType" && (
+              <div className="space-y-5">
+                <label className="text-[13px] font-semibold text-slate-900 block">Property Type</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: "Flat / Apartment", val: "apartment", icon: Building },
+                    { label: "House / Villa", val: "villa", icon: Home },
+                    { label: "Plot / Land", val: "residential-land", icon: Trees },
+                    { label: "Commercial Space", val: "commercial-spaces", icon: Briefcase },
+                  ].map((item) => {
+                    const isSelected = localFilters.propertyType.includes(item.val);
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.val}
+                        type="button"
+                        onClick={() => toggleArrayFilter("propertyType", item.val)}
+                        className={cn(
+                          "h-24 rounded-2xl border p-3 flex flex-col items-center justify-center relative transition-all cursor-pointer select-none",
+                          isSelected
+                            ? "bg-[#e6f4f2] border-[#008075]/40 text-slate-950 font-semibold shadow-xs"
+                            : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                        )}
+                      >
+                        {isSelected && (
+                          <span className="absolute top-2 right-2 text-[#008075]">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          </span>
+                        )}
+                        <Icon className={cn("w-6 h-6 mb-1.5", isSelected ? "text-[#008075]" : "text-slate-600")} />
+                        <span className="text-xs text-center">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 4. BHK & Bathroom Tab */}
+            {activeDesktopTab === "bhk" && (
+              <div className="space-y-5">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">Bedrooms (BHK)</label>
+                  <div className="flex flex-wrap gap-2.5">
+                    {["1 BHK", "2 BHK", "3 BHK", "4 BHK", "5 BHK", "5+ BHK"].map((bhk) => {
+                      const cleanVal = bhk.replace(" BHK", "");
+                      const isSelected = localFilters.bhk.includes(cleanVal);
+                      return (
+                        <PillTag
+                          key={bhk}
+                          label={bhk}
+                          isSelected={isSelected}
+                          onClick={() => toggleArrayFilter("bhk", cleanVal)}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100">
+                  <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">Number of Bathrooms</label>
+                  <div className="flex flex-wrap gap-2.5">
+                    {["1", "2", "3", "4", "5+"].map((bath) => (
+                      <PillTag
+                        key={bath}
+                        label={bath}
+                        isSelected={localFilters.bathrooms.includes(bath)}
+                        onClick={() => toggleArrayFilter("bathrooms", bath)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 5. Covered Area Tab */}
+            {activeDesktopTab === "coveredArea" && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] font-semibold text-slate-900">Covered Area (sqft)</span>
+                  <span className="text-xs font-semibold text-[#008075]">
+                    {localFilters.coveredArea[0]} sqft – {localFilters.coveredArea[1] >= 10000 ? "10,000+ sqft" : `${localFilters.coveredArea[1]} sqft`}
+                  </span>
+                </div>
+                <Slider
+                  min={0}
+                  max={10000}
+                  step={100}
+                  value={localFilters.coveredArea}
+                  onValueChange={(val) => setLocalFilters({ ...localFilters, coveredArea: val as [number, number] })}
+                  className="w-full py-2"
+                />
+              </div>
+            )}
+
+            {/* 6. Possession Status Tab */}
             {activeDesktopTab === "possession" && (
               <div className="space-y-4">
                 <label className="text-[13px] font-semibold text-slate-900 block">Possession Status</label>
@@ -1083,6 +1329,9 @@ export function SearchFiltersModal({
                   {[
                     { label: "Ready to Move", val: "ready" },
                     { label: "Under Construction", val: "under-construction" },
+                    { label: "Within 3 Months", val: "3months" },
+                    { label: "Within 6 Months", val: "6months" },
+                    { label: "Within 1 Year", val: "1year" },
                   ].map((p) => (
                     <PillTag
                       key={p.val}
@@ -1095,6 +1344,7 @@ export function SearchFiltersModal({
               </div>
             )}
 
+            {/* 7. Sub Property Type Tab */}
             {activeDesktopTab === "subPropertyType" && (
               <div className="space-y-4">
                 <label className="text-[13px] font-semibold text-slate-900 block">Residential Properties</label>
@@ -1105,6 +1355,8 @@ export function SearchFiltersModal({
                     { label: "Villa", val: "villa" },
                     { label: "Residential Plot", val: "residential-land" },
                     { label: "Penthouse", val: "penthouse" },
+                    { label: "Studio Apartment", val: "studio" },
+                    { label: "Farm House", val: "farmhouse" },
                   ].map((item) => (
                     <PillTag
                       key={item.val}
@@ -1117,6 +1369,115 @@ export function SearchFiltersModal({
               </div>
             )}
 
+            {/* 8. Sale Type Tab */}
+            {activeDesktopTab === "saleType" && (
+              <div className="space-y-4">
+                <label className="text-[13px] font-semibold text-slate-900 block">Sale Type</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {[
+                    { label: "New Property", val: "new" },
+                    { label: "Resale", val: "resale" },
+                  ].map((st) => (
+                    <PillTag
+                      key={st.val}
+                      label={st.label}
+                      isSelected={localFilters.saleType.includes(st.val)}
+                      onClick={() => toggleArrayFilter("saleType", st.val)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 9. Posted Since Tab */}
+            {activeDesktopTab === "postedSince" && (
+              <div className="space-y-4">
+                <label className="text-[13px] font-semibold text-slate-900 block">Posted Since</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {[
+                    { label: "All Properties", val: "any" },
+                    { label: "Yesterday", val: "1day" },
+                    { label: "Last 3 Days", val: "3days" },
+                    { label: "Last 1 Week", val: "7days" },
+                    { label: "Last 2 Weeks", val: "15days" },
+                    { label: "Last 1 Month", val: "30days" },
+                  ].map((d) => (
+                    <PillTag
+                      key={d.val}
+                      label={d.label}
+                      isSelected={localFilters.postedSince === d.val}
+                      onClick={() => setLocalFilters({ ...localFilters, postedSince: d.val })}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 10. Posted By Tab */}
+            {activeDesktopTab === "postedBy" && (
+              <div className="space-y-4">
+                <label className="text-[13px] font-semibold text-slate-900 block">Posted By</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {[
+                    { label: "Owner", val: "owner" },
+                    { label: "Agent / Broker", val: "agent" },
+                    { label: "Builder / Developer", val: "builder" },
+                  ].map((p) => (
+                    <PillTag
+                      key={p.val}
+                      label={p.label}
+                      isSelected={localFilters.postedBy.includes(p.val)}
+                      onClick={() => toggleArrayFilter("postedBy", p.val)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 11. Ownership Tab */}
+            {activeDesktopTab === "ownership" && (
+              <div className="space-y-4">
+                <label className="text-[13px] font-semibold text-slate-900 block">Ownership Title</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {[
+                    { label: "Freehold", val: "freehold" },
+                    { label: "Leasehold", val: "leasehold" },
+                    { label: "Co-operative Society", val: "society" },
+                    { label: "Power of Attorney", val: "poa" },
+                  ].map((o) => (
+                    <PillTag
+                      key={o.val}
+                      label={o.label}
+                      isSelected={localFilters.ownership.includes(o.val)}
+                      onClick={() => toggleArrayFilter("ownership", o.val)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 12. Furnishing Tab */}
+            {activeDesktopTab === "furnishing" && (
+              <div className="space-y-4">
+                <label className="text-[13px] font-semibold text-slate-900 block">Furnishing Status</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {[
+                    { label: "Furnished", val: "furnished" },
+                    { label: "Semi-Furnished", val: "semi-furnished" },
+                    { label: "Unfurnished", val: "unfurnished" },
+                  ].map((f) => (
+                    <PillTag
+                      key={f.val}
+                      label={f.label}
+                      isSelected={localFilters.furnished.includes(f.val)}
+                      onClick={() => toggleArrayFilter("furnished", f.val)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 13. Amenities Tab */}
             {activeDesktopTab === "amenities" && (
               <div className="space-y-4">
                 <label className="text-[13px] font-semibold text-slate-900 block">Amenities</label>
@@ -1139,22 +1500,112 @@ export function SearchFiltersModal({
               </div>
             )}
 
-            {activeDesktopTab === "budget" && (
+            {/* 14. Verified Properties Tab */}
+            {activeDesktopTab === "verified" && (
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-[13px] font-semibold text-slate-900">Budget Range</span>
-                  <span className="text-xs font-semibold text-[#008075]">
-                    {formatINRWords(localFilters.budget[0])} – {formatINRWords(localFilters.budget[1], true)}
-                  </span>
+                <label className="text-[13px] font-semibold text-slate-900 block">Trust & Verification</label>
+                <div className="divide-y divide-slate-100">
+                  <ToggleSwitch
+                    label="RERA Registered Properties"
+                    checked={localFilters.reraRegisteredProperties}
+                    onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val })}
+                  />
+                  <ToggleSwitch
+                    label="RERA Registered Agents"
+                    checked={localFilters.reraRegisteredAgents}
+                    onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredAgents: val })}
+                  />
+                  <ToggleSwitch
+                    label="ROAD Exclusive Properties"
+                    checked={localFilters.roadExclusive}
+                    onChange={(val) => setLocalFilters({ ...localFilters, roadExclusive: val })}
+                  />
+                  <ToggleSwitch
+                    label="Properties with Offers"
+                    checked={localFilters.propertiesWithOffers}
+                    onChange={(val) => setLocalFilters({ ...localFilters, propertiesWithOffers: val })}
+                  />
                 </div>
-                <Slider
-                  min={0}
-                  max={100000000}
-                  step={500000}
-                  value={localFilters.budget}
-                  onValueChange={(val) => setLocalFilters({ ...localFilters, budget: val as [number, number] })}
-                  className="w-full py-2"
-                />
+              </div>
+            )}
+
+            {/* 15. Photos & Videos Tab */}
+            {activeDesktopTab === "media" && (
+              <div className="space-y-4">
+                <label className="text-[13px] font-semibold text-slate-900 block">Media Types</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {[
+                    { label: "Photos Available", val: "photos" },
+                    { label: "Video Verified Tours", val: "video" },
+                  ].map((m) => (
+                    <PillTag
+                      key={m.val}
+                      label={m.label}
+                      isSelected={localFilters.mediaTypes.includes(m.val)}
+                      onClick={() => toggleArrayFilter("mediaTypes", m.val)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 16. Facing Tab */}
+            {activeDesktopTab === "facing" && (
+              <div className="space-y-4">
+                <label className="text-[13px] font-semibold text-slate-900 block">Facing Direction</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {["East", "North", "North-East", "West", "South", "North-West", "South-East", "South-West"].map((face) => {
+                    const clean = face.toLowerCase().replace(/\s+/g, "");
+                    return (
+                      <PillTag
+                        key={face}
+                        label={`${face} Facing`}
+                        isSelected={localFilters.facing.includes(clean)}
+                        onClick={() => toggleArrayFilter("facing", clean)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 17. Floor Selection Tab */}
+            {activeDesktopTab === "floor" && (
+              <div className="space-y-4">
+                <label className="text-[13px] font-semibold text-slate-900 block">Floor Selection</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {[
+                    { label: "Ground Floor", val: "ground" },
+                    { label: "1st – 4th Floor", val: "1-4" },
+                    { label: "5th – 10th Floor", val: "5-10" },
+                    { label: "11th – 20th Floor", val: "11-20" },
+                    { label: "20th+ Floor", val: "20+" },
+                  ].map((fl) => (
+                    <PillTag
+                      key={fl.val}
+                      label={fl.label}
+                      isSelected={localFilters.floorRange.includes(fl.val)}
+                      onClick={() => toggleArrayFilter("floorRange", fl.val)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 18. Water & Agriculture Tab */}
+            {activeDesktopTab === "agriculture" && (
+              <div className="space-y-4">
+                <label className="text-[13px] font-semibold text-slate-900 block">Water & Crop Type</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {["Borewell Water", "Canal Water", "Municipal Water", "Paddy Crop", "Cotton", "Chilli", "Horticulture"].map((agri) => (
+                    <PillTag
+                      key={agri}
+                      label={agri}
+                      isSelected={localFilters.waterSource.includes(agri) || localFilters.cultivationCrop.includes(agri)}
+                      onClick={() => toggleArrayFilter("waterSource", agri)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>
