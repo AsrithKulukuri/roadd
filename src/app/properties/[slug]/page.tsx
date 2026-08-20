@@ -218,7 +218,7 @@ export default async function PropertyDetailPage({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
         
         {/* BUILDER & MARKETING BADGE CARD ABOVE GALLERY */}
-        <div className="flex items-center gap-3 p-3.5 mb-5 bg-white dark:bg-bg-card border border-border-default rounded-2xl shadow-xs w-fit">
+        <div className="flex items-center gap-3 p-3.5 mb-5 bg-bg-card border border-border-default rounded-2xl shadow-xs w-fit">
           <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-500 border border-amber-500/30 flex items-center justify-center shrink-0 font-bold">
             <Building2 className="w-5 h-5 text-amber-500" />
           </div>
@@ -248,7 +248,7 @@ export default async function PropertyDetailPage({
           <div className="lg:col-span-2 space-y-6 sm:space-y-8">
             
             {/* BOX 1: Title, Status, Price & Highlights Box */}
-            <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+            <div className="bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
               
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono font-black text-xs rounded-full border border-amber-500/40 shadow-xs">
@@ -306,7 +306,7 @@ export default async function PropertyDetailPage({
             </div>
 
             {/* BOX 2: Property Specifications Box */}
-            <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+            <div className="bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
               <div>
                 <h2 className="text-xl font-bold text-text-primary">
                   Property Specifications
@@ -320,24 +320,24 @@ export default async function PropertyDetailPage({
             </div>
 
             {/* BOX 3: "About this property" Description Box */}
-            <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+            <div className="bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-950 dark:text-white">
+                <h2 className="text-xl font-bold text-text-primary">
                   About this property
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                <p className="text-xs text-text-tertiary mt-0.5 font-medium">
                   Verified property overview and on-ground details
                 </p>
               </div>
 
-              <div className="text-slate-900 dark:text-slate-100 font-semibold leading-relaxed whitespace-pre-line text-sm sm:text-base pt-1">
+              <div className="text-text-primary font-semibold leading-relaxed whitespace-pre-line text-sm sm:text-base pt-1">
                 {property.description}
               </div>
             </div>
 
             {/* BOX 4: Embedded Property Video Tour */}
             {property.videoUrl && (
-              <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+              <div className="bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
                     <Play className="w-5 h-5 text-red-500 fill-red-500 shrink-0" />
@@ -377,7 +377,7 @@ export default async function PropertyDetailPage({
 
             {/* BOX 5: Amenities & Features */}
             {property.amenities && property.amenities.length > 0 && (
-              <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+              <div className="bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
                 <div>
                   <h2 className="text-xl font-bold text-text-primary">
                     Amenities & Facilities
@@ -391,7 +391,7 @@ export default async function PropertyDetailPage({
             )}
 
             {/* BOX 6: Location & Neighborhood Map */}
-            <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+            <div className="bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
               <div>
                 <h2 className="text-xl font-bold text-text-primary">
                   Location & Neighborhood

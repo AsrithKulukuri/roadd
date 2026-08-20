@@ -66,19 +66,19 @@ export function PropertySpecs({ property }: PropertySpecsProps) {
         return (
           <div 
             key={i} 
-            className="flex items-start gap-3 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-slate-900 dark:hover:border-white transition-all shadow-xs"
+            className="flex items-start gap-3 p-3.5 sm:p-4 rounded-2xl bg-bg-primary border border-border-default hover:border-amber-primary/50 transition-all shadow-xs"
           >
-            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-900 dark:text-white shrink-0 font-bold">
-              <Icon className="w-5 h-5 text-slate-900 dark:text-white" />
+            <div className="w-10 h-10 rounded-xl bg-bg-elevated border border-border-default flex items-center justify-center text-text-primary shrink-0 font-bold">
+              <Icon className="w-5 h-5 text-amber-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 truncate">
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-wider font-extrabold text-text-tertiary truncate">
                 {spec.label}
               </p>
-              <p className="font-extrabold text-slate-950 dark:text-white text-xs sm:text-sm truncate mt-0.5 leading-snug">
+              <p className="font-extrabold text-text-primary text-xs sm:text-sm truncate mt-0.5 leading-snug">
                 {spec.value}
               </p>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+              <p className="text-[10px] text-text-secondary font-medium truncate mt-0.5">
                 {spec.sub}
               </p>
             </div>
