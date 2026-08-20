@@ -1897,7 +1897,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
           )}
 
           {/* FLOATING ZOOM + MY LOCATION CONTROLS (BOTTOM-RIGHT) */}
-          <div className={cn("absolute bottom-20 right-3 z-[500] flex-col gap-1 pointer-events-auto", showMapExplorer ? "hidden md:flex" : "flex")}>
+          <div className={cn("absolute bottom-6 right-3 z-[500] flex-col gap-1 pointer-events-auto", showMapExplorer ? "hidden md:flex" : "flex")}>
             <button
               type="button"
               onClick={handleGetLocation}

@@ -119,7 +119,7 @@ export function MobileBottomNav() {
     (pathname.startsWith("/properties/") && pathname !== "/properties" && pathname !== "/properties/map" && pathname !== "/properties/compare") ||
     (pathname.startsWith("/projects/") && pathname !== "/projects");
 
-  if (isDetailPage) {
+  if (isDetailPage || isMapView) {
     return null;
   }
 

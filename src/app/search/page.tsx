@@ -451,7 +451,18 @@ function UnifiedSearchPage() {
         filters={filters}
         onFilterChange={setFilters}
         viewMode={viewMode}
-        onViewModeChange={(mode) => setViewMode(mode as "grid" | "map")}
+        onViewModeChange={(mode) => {
+          const nextMode = mode as "grid" | "map";
+          setViewMode(nextMode);
+          const newParams = new URLSearchParams(searchParams.toString());
+          if (nextMode === "map") {
+            newParams.set("view", "map");
+          } else {
+            newParams.delete("view");
+          }
+          const queryStr = newParams.toString();
+          router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
+        }}
         onOpenAllFilters={() => setIsFilterModalOpen(true)}
         totalResults={combinedResults.length}
       />

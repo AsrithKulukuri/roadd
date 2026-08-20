@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X, Send, Bot, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Message {
   id: string;
@@ -17,6 +18,13 @@ interface Message {
 export function AiAssistantWidget() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isMapView = (pathname === "/search" && searchParams?.get("view") === "map") || pathname === "/properties/map";
+  const isDetailPage = 
+    (pathname.startsWith("/properties/") && pathname !== "/properties" && pathname !== "/properties/map" && pathname !== "/properties/compare") ||
+    (pathname.startsWith("/projects/") && pathname !== "/projects");
+  const isNavHidden = isDetailPage || isMapView;
+
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { id: "1", role: "assistant", content: "Hi! I'm your AI Real Estate Assistant. What kind of property are you looking for today? (e.g., 'Find me a 3 BHK under 2 Cr in Jubilee Hills')" }
@@ -119,7 +127,10 @@ export function AiAssistantWidget() {
             whileTap={{ scale: 0.94 }}
             onClick={() => setIsOpen(true)}
             aria-label="Open AI Assistant"
-            className="fixed bottom-20 left-4 lg:bottom-6 lg:left-auto lg:right-6 w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 rounded-full shadow-[0_8px_30px_rgba(245,158,11,0.35)] flex items-center justify-center z-[45] text-slate-950 border-2 border-amber-300/80 cursor-pointer"
+            className={cn(
+              "fixed left-4 lg:bottom-6 lg:left-auto lg:right-6 w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 rounded-full shadow-[0_8px_30px_rgba(245,158,11,0.35)] flex items-center justify-center z-[45] text-slate-950 border-2 border-amber-300/80 cursor-pointer transition-all",
+              isNavHidden ? "bottom-6" : "bottom-20"
+            )}
           >
             <div className="relative flex items-center justify-center">
               <Bot className="w-6 h-6 lg:w-7 lg:h-7 stroke-[2.2]" />
@@ -136,7 +147,10 @@ export function AiAssistantWidget() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-[calc(7.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6 left-4 lg:left-auto lg:right-6 w-[90vw] max-w-sm h-[500px] max-h-[80vh] bg-bg-card border border-border-default shadow-elevated rounded-2xl flex flex-col overflow-hidden z-[100]"
+            className={cn(
+              "fixed left-4 lg:bottom-6 lg:left-auto lg:right-6 w-[90vw] max-w-sm h-[500px] max-h-[80vh] bg-bg-card border border-border-default shadow-elevated rounded-2xl flex flex-col overflow-hidden z-[100] transition-all",
+              isNavHidden ? "bottom-6" : "bottom-[calc(7.5rem+env(safe-area-inset-bottom,0px))]"
+            )}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-bg-primary/50 border-b border-border-default backdrop-blur-md">
