@@ -129,7 +129,46 @@ export async function uploadToS3({
       }
     }
 
-    // Upload directly via multipart FormData through the Next.js server API to AWS S3
+    // 1. Direct Presigned PUT Upload: Bypasses Next.js server limits (essential for videos and large media)
+    try {
+      const presignRes = await fetch("/api/storage/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: effectiveMime,
+          folder,
+          size: fileToUpload.size || file.size,
+          entityId,
+        }),
+      });
+
+      if (presignRes.ok) {
+        const presignData = await presignRes.json();
+        if (presignData?.uploadUrl && presignData?.fileUrl) {
+          const s3PutRes = await fetch(presignData.uploadUrl, {
+            method: "PUT",
+            headers: {
+              "Content-Type": effectiveMime,
+            },
+            body: fileToUpload,
+          });
+
+          if (s3PutRes.ok) {
+            return {
+              key: presignData.key,
+              fileUrl: presignData.fileUrl,
+              success: true,
+            };
+          }
+          console.warn("[S3 Storage Direct Presign failed with status]:", s3PutRes.status);
+        }
+      }
+    } catch (presignErr) {
+      console.warn("[S3 Storage Presign attempt warning]:", presignErr);
+    }
+
+    // 2. Fallback: Upload via multipart FormData through Next.js server API
     const formData = new FormData();
     const finalFile = fileToUpload instanceof File 
       ? fileToUpload 
