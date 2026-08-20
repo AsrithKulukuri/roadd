@@ -147,10 +147,10 @@ function UnifiedSearchPage() {
       propertyType = propTypeStr.split(",");
     }
 
-    // Parse saleType (new / resale)
+    // Parse saleType (resale filters specifically for resale; 'new' indicates recent listings)
     const saleTypeStr = searchParams.get("saleType");
     let saleType: string[] = [];
-    if (saleTypeStr) {
+    if (saleTypeStr && saleTypeStr !== "new") {
       saleType = saleTypeStr.split(",");
     }
 

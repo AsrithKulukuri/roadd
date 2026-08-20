@@ -345,15 +345,23 @@ export function HeroSection() {
   }, [properties, projects, heroBudget, homeCategories, activeTab]);
 
   const browseCategories = useMemo(() => {
-    return homeCategories.map((cat) => ({
-      id: cat.id,
-      title: cat.name,
-      subtitle: cat.subtitle || cat.description,
-      badge: cat.badge,
-      badgeClass: cat.badgeClass,
-      image: cat.image,
-      baseHref: cat.href || `/search?type=buy&propertyType=${cat.type}`,
-    }));
+    return homeCategories.map((cat) => {
+      let href = cat.href;
+      if (cat.id === "new-listings") {
+        href = "/search?type=buy&sort=newest";
+      } else if (!href) {
+        href = `/search?type=buy&propertyType=${cat.type}`;
+      }
+      return {
+        id: cat.id,
+        title: cat.name,
+        subtitle: cat.subtitle || cat.description,
+        badge: cat.badge,
+        badgeClass: cat.badgeClass,
+        image: cat.image,
+        baseHref: href,
+      };
+    });
   }, [homeCategories]);
 
   /** Append budget params to any category href when budget is active */
