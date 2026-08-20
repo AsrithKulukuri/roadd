@@ -12,10 +12,10 @@ interface LogoProps {
 }
 
 const sizeMap = {
-  sm: { width: 28, height: 28, textClass: "text-base" },
-  md: { width: 36, height: 36, textClass: "text-lg" },
-  lg: { width: 48, height: 48, textClass: "text-2xl" },
-  xl: { width: 64, height: 64, textClass: "text-3xl" },
+  sm: { width: 32, height: 32, textClass: "text-base" },
+  md: { width: 42, height: 42, textClass: "text-lg" },
+  lg: { width: 54, height: 54, textClass: "text-2xl" },
+  xl: { width: 72, height: 72, textClass: "text-3xl" },
 };
 
 export function Logo({
@@ -32,14 +32,14 @@ export function Logo({
   const resolvedSubtitleColor = textColor ? "text-slate-600 font-bold" : "text-slate-300";
 
   const content = (
-    <div className={cn("flex items-center gap-2", className)}>
-      <div className="relative flex-shrink-0 rounded-full overflow-hidden">
+    <div className={cn("flex items-center gap-2.5", className)}>
+      <div className="relative flex-shrink-0 flex items-center justify-center">
         <Image
           src="/logo.png"
           alt="ROAD FACING Logo"
           width={width}
           height={height}
-          className="object-cover rounded-full"
+          className="object-contain w-auto h-auto max-h-[44px] drop-shadow-sm"
           priority
         />
       </div>
