@@ -322,18 +322,16 @@ export default async function PropertyDetailPage({
             {/* BOX 3: "About this property" Description Box */}
             <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
               <div>
-                <h2 className="text-xl font-bold text-text-primary">
+                <h2 className="text-xl font-bold text-slate-950 dark:text-white">
                   About this property
                 </h2>
-                <p className="text-xs text-text-tertiary mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
                   Verified property overview and on-ground details
                 </p>
               </div>
 
-              <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80">
-                <div className="text-text-primary font-medium leading-relaxed whitespace-pre-line text-sm sm:text-base space-y-2">
-                  {property.description}
-                </div>
+              <div className="text-slate-900 dark:text-slate-100 font-semibold leading-relaxed whitespace-pre-line text-sm sm:text-base pt-1">
+                {property.description}
               </div>
             </div>
 
