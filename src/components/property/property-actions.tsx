@@ -58,16 +58,16 @@ export function PropertyActions({ propertyId, property }: PropertyActionsProps) 
         <Scale className={`w-4 h-4 stroke-[2.5] ${isComparing ? 'text-slate-950' : 'text-slate-900 dark:text-white'}`} />
       </Button>
 
-      {/* 2. WhatsApp Share Button */}
+      {/* 2. Share Button */}
       <Button 
         type="button"
         variant="outline" 
         size="icon" 
-        className="rounded-full w-10 h-10 bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:border-emerald-500 transition-all cursor-pointer shadow-xs"
+        className="rounded-full w-10 h-10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 hover:border-amber-500 transition-all cursor-pointer shadow-xs"
         onClick={() => shareOnWhatsApp({ item: activeProperty, type: "property", source: "detail" })}
-        title="Share on WhatsApp"
+        title="Share Property"
       >
-        <WhatsAppIcon className="w-4 h-4 fill-emerald-500/20 stroke-[2.2]" />
+        <Share2 className="w-4 h-4 text-slate-900 dark:text-white stroke-[2.5]" />
       </Button>
 
       {/* 3. Save / Heart Button */}

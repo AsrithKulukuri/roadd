@@ -160,7 +160,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
                 </span>
               </div>
 
-              {/* Actions: WhatsApp & Heart */}
+              {/* Actions: Share & Heart */}
               <div className="absolute top-1.5 right-1.5 flex items-center gap-1 z-10">
                 <button
                   type="button"
@@ -169,10 +169,10 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
                     e.stopPropagation();
                     shareOnWhatsApp({ item: project, type: "project", source: "card" });
                   }}
-                  title="Share on WhatsApp"
-                  className="w-6 h-6 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                  title="Share project"
+                  className="w-6 h-6 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-white hover:text-amber-400 transition-colors cursor-pointer"
                 >
-                  <WhatsAppIcon className="w-3 h-3 fill-emerald-400/20" />
+                  <Share2 className="w-3 h-3" />
                 </button>
                 <button
                   type="button"
@@ -302,23 +302,23 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
             )}
           </div>
 
-          {/* Actions: WhatsApp & Heart Button Overlay with Spring Animation */}
+          {/* Actions: Share & Heart Button Overlay with Spring Animation */}
           <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
             <motion.button
               type="button"
               whileTap={{ scale: 0.8 }}
               whileHover={{ scale: 1.12 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="w-9 h-9 rounded-full bg-white/95 dark:bg-slate-900/90 hover:bg-white text-emerald-600 dark:text-emerald-400 shadow-lg flex items-center justify-center cursor-pointer border border-emerald-500/20 backdrop-blur-sm active:scale-90"
+              className="w-9 h-9 rounded-full bg-white/95 dark:bg-slate-900/90 hover:bg-white text-slate-800 dark:text-white shadow-lg flex items-center justify-center cursor-pointer border border-white/20 backdrop-blur-sm active:scale-90"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 shareOnWhatsApp({ item: project, type: "project", source: "card" });
               }}
-              title="Share on WhatsApp"
-              aria-label="Share on WhatsApp"
+              title="Share project"
+              aria-label="Share project"
             >
-              <WhatsAppIcon className="h-4 w-4 fill-emerald-500/20" />
+              <Share2 className="h-4 w-4 text-slate-700 dark:text-slate-200" />
             </motion.button>
             <motion.button
               type="button"

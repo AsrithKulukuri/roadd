@@ -403,11 +403,11 @@ export function ProjectDetailView({ slug }: { slug: string }) {
             <button
               type="button"
               onClick={() => shareOnWhatsApp({ item: project, type: "project", source: "detail" })}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-all"
-              title="Share on WhatsApp"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-amber-500 shadow-xs cursor-pointer active:scale-95 transition-all"
+              title="Share project"
             >
-              <WhatsAppIcon className="w-3.5 h-3.5 fill-emerald-500/20" />
-              <span>WhatsApp</span>
+              <Share2 className="w-3.5 h-3.5 text-amber-500" />
+              <span>Share</span>
             </button>
           </div>
         </div>
