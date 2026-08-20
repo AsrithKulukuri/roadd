@@ -244,12 +244,15 @@ html[data-theme="dark"] {
 
 * {
   border-color: var(--color-border-default);
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 body {
@@ -257,6 +260,19 @@ body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+/* Prevent iOS Safari from auto-zooming when tapping inputs */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* App-like UI touch selection prevention for navigation and buttons */
+button, nav, a, [role="button"] {
+  -webkit-touch-callout: none;
 }
 
 /* ========================================================================
