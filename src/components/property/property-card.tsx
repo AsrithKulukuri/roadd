@@ -21,6 +21,7 @@ import {
   ArrowDownRight,
   Mail,
   Phone,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -581,18 +582,18 @@ export function PropertyCard({
             )}
 
             {/* Top Badges */}
-            <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap z-10">
-              <span className="bg-amber-500/10 text-amber-600 border border-amber-500/20 backdrop-blur-md font-bold text-[11px] px-2.5 py-0.5 rounded-full capitalize">
+            <div className="absolute top-2.5 left-2.5 flex gap-1.5 flex-wrap z-10">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md capitalize tracking-tight">
                 {property.propertyType || "Residential"}
               </span>
               {property.reraId && (
-                <span className="bg-amber-500 text-slate-950 shadow-sm backdrop-blur-md font-bold text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                  <Shield className="w-3 h-3 text-slate-950" /> RERA
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
+                  <Shield className="w-3.5 h-3.5 text-slate-900" /> RERA
                 </span>
               )}
               {property.isFeatured && (
-                <span className="bg-slate-950/80 text-white backdrop-blur-md border border-white/10 font-bold text-[11px] px-2.5 py-0.5 rounded-full">
-                  Featured
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
+                  <Sparkles className="w-3.5 h-3.5 text-slate-900" /> Featured
                 </span>
               )}
             </div>

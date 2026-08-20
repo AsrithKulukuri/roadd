@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight, Ruler, SquareDashed, Trees, Heart, Share2 } from "lucide-react";
+import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight, Ruler, SquareDashed, Trees, Heart, Share2, Sparkles, Award, Tag, Shield } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -13,24 +13,18 @@ import { shareOnWhatsApp } from "@/lib/whatsapp/whatsapp-share";
 import { WhatsAppIcon } from "@/components/property/whatsapp-share-button";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const TYPE_CONFIG: Record<ProjectType, { icon: React.ElementType; label: string; cardAccent: string; badgeClass: string }> = {
+const TYPE_CONFIG: Record<ProjectType, { icon: React.ElementType; label: string }> = {
   apartment: {
     icon: Building2,
     label: "Apartment",
-    cardAccent: "from-amber-500/5 to-transparent",
-    badgeClass: "bg-amber-500/10 text-amber-600 border-amber-500/20",
   },
   villa: {
     icon: Home,
     label: "Villa",
-    cardAccent: "from-amber-500/5 to-transparent",
-    badgeClass: "bg-amber-500/10 text-amber-600 border-amber-500/20",
   },
   venture: {
     icon: Landmark,
     label: "Venture",
-    cardAccent: "from-amber-500/5 to-transparent",
-    badgeClass: "bg-amber-500/10 text-amber-600 border-amber-500/20",
   },
 };
 
@@ -227,7 +221,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
         {project.coverImage ? (
           <img src={project.coverImage} alt={project.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
         ) : (
-          <div className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br ${TC.cardAccent} bg-bg-primary gap-3`}>
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 gap-3">
             <Icon className="w-10 h-10 sm:w-14 sm:h-14 text-text-tertiary/30" />
           </div>
         )}
@@ -260,7 +254,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             />
           ) : (
-            <div className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br ${TC.cardAccent} bg-bg-primary gap-3`}>
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 gap-3">
               <Icon className="w-14 h-14 text-text-tertiary/30" />
               <span className="text-xs text-text-tertiary font-medium">{TC.label} Project</span>
             </div>
@@ -269,37 +263,46 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
           {/* Subtle Shimmer Light Reflection on Hover */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
-          {/* Top Bar Header Overlay (Clean non-overlapping flex layout) */}
+          {/* Top Bar Header Overlay (Clean luxury non-overlapping flex layout) */}
           <div className="absolute top-2.5 left-2.5 right-2.5 z-10 flex items-start justify-between gap-2 pointer-events-none">
-            {/* Left: Badges */}
+            {/* Left: Ultra-Luxury Monochromatic Pill Badges */}
             <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
-              <span className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold border backdrop-blur-md shadow-xs ${TC.badgeClass}`}>
-                <Icon className="w-3 h-3 shrink-0" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
+                <Icon className="w-3.5 h-3.5 text-slate-900 shrink-0" />
                 <span>{TC.label}</span>
               </span>
+
               {(project.displayCategory === "featured" || project.isFeatured) && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-xs border border-amber-300/40 backdrop-blur-md">
-                  ⭐ Featured
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
+                  <Sparkles className="w-3.5 h-3.5 text-slate-900 shrink-0" />
+                  <span>Featured</span>
                 </span>
               )}
+
               {project.displayCategory === "recommended" && !project.isFeatured && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs border border-blue-400/40 backdrop-blur-md">
-                  👍 Recommended
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
+                  <Award className="w-3.5 h-3.5 text-slate-900 shrink-0" />
+                  <span>Recommended</span>
                 </span>
               )}
+
               {project.displayCategory === "budget_friendly" && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs border border-emerald-400/40 backdrop-blur-md">
-                  💰 Budget Friendly
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
+                  <Tag className="w-3.5 h-3.5 text-slate-900 shrink-0" />
+                  <span>Best Value</span>
                 </span>
               )}
+
               {project.reraApproved && (
-                <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-slate-950/80 text-amber-400 border border-amber-400/30 backdrop-blur-md shadow-xs">
-                  <CheckCircle2 className="w-3 h-3 text-amber-400 shrink-0" /> RERA
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 shrink-0" />
+                  <span>RERA</span>
                 </span>
               )}
+
               {project.noBrokerage && (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-slate-950/80 text-white backdrop-blur-md border border-white/10">
-                  0% Brokerage
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
+                  <span>0% Brokerage</span>
                 </span>
               )}
             </div>
@@ -311,7 +314,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
                 whileTap={{ scale: 0.8 }}
                 whileHover={{ scale: 1.12 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                className="w-8 h-8 rounded-full bg-slate-950/80 hover:bg-slate-950 text-white shadow-md flex items-center justify-center cursor-pointer border border-white/20 backdrop-blur-md active:scale-90"
+                className="w-8 h-8 rounded-full bg-white text-slate-900 shadow-md flex items-center justify-center cursor-pointer border border-slate-200/80 backdrop-blur-md active:scale-90"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -320,14 +323,14 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
                 title="Share project"
                 aria-label="Share project"
               >
-                <Share2 className="h-3.5 w-3.5 text-white" />
+                <Share2 className="h-3.5 w-3.5 text-slate-900" />
               </motion.button>
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.8 }}
                 whileHover={{ scale: 1.12 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                className="w-8 h-8 rounded-full bg-slate-950/80 hover:bg-slate-950 text-white shadow-md flex items-center justify-center cursor-pointer border border-white/20 backdrop-blur-md active:scale-90"
+                className="w-8 h-8 rounded-full bg-white text-slate-900 shadow-md flex items-center justify-center cursor-pointer border border-slate-200/80 backdrop-blur-md active:scale-90"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -336,7 +339,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
                 title={isSaved ? "Remove from saved" : "Save project"}
                 aria-label={isSaved ? "Remove from saved" : "Save project"}
               >
-                <Heart className={cn("h-3.5 w-3.5", isSaved ? "fill-red-500 text-red-500" : "text-white")} />
+                <Heart className={cn("h-3.5 w-3.5", isSaved ? "fill-red-500 text-red-500" : "text-slate-900")} />
               </motion.button>
             </div>
           </div>
