@@ -560,82 +560,61 @@ export function ProjectDetailView({
           </div>
         </div>
 
-        {/* Sticky Tabs */}
-        <div className="sticky top-16 z-20 bg-white dark:bg-bg-card border-b border-border-default shadow-sm">
-          <div className="max-w-7xl mx-auto px-2 sm:px-4 flex items-center gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none touch-pan-x">
-            {TABS.map((tab) => {
-              const isStatusTab = tab === "Status";
-              const Icon = isStatusTab ? Activity : null;
+        {/* Sticky Tabs Bar */}
+        <div className="sticky top-16 z-20 bg-white/95 dark:bg-bg-card/95 backdrop-blur-md border-b border-border-default shadow-xs">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 overflow-x-auto scrollbar-none touch-pan-x">
+            <div className="flex items-center gap-1.5 shrink-0">
+              {TABS.map((tab) => {
+                const isStatusTab = tab === "Status";
+                const isSelected = activeTab === tab;
 
-              if (isStatusTab) {
                 return (
                   <button
                     key={tab}
                     onClick={() => {
                       setActiveTab(tab);
-                      const el = document.getElementById("status");
+                      const el = document.getElementById(tab.toLowerCase().replace(" ", "-"));
                       if (el) {
                         const y = el.getBoundingClientRect().top + window.scrollY - 120;
                         window.scrollTo({ top: y, behavior: "smooth" });
                       }
                     }}
-                    className={`my-auto shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 mx-1 rounded-full text-xs font-bold transition-all shadow-xs border whitespace-nowrap cursor-pointer select-none ${
-                      activeTab === tab
-                        ? "bg-amber-500 text-slate-950 border-amber-500 shadow-md ring-2 ring-amber-500/25"
-                        : "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 hover:border-amber-500/50"
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer select-none ${
+                      isSelected
+                        ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-sm ring-1 ring-black/10"
+                        : "bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-transparent"
                     }`}
                   >
-                    <span className="relative flex h-2 w-2 shrink-0">
-                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${activeTab === tab ? "bg-slate-950" : "bg-amber-400"}`} />
-                      <span className={`relative inline-flex rounded-full h-2 w-2 ${activeTab === tab ? "bg-slate-950" : "bg-amber-500"}`} />
-                    </span>
-                    {Icon && <Icon className={`w-3.5 h-3.5 shrink-0 ${activeTab === tab ? "text-slate-950" : "text-amber-500"}`} />}
-                    <RollingStatusTab active={activeTab === tab} />
+                    {isStatusTab && (
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isSelected ? "bg-emerald-400" : "bg-emerald-500"}`} />
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${isSelected ? "bg-emerald-400" : "bg-emerald-500"}`} />
+                      </span>
+                    )}
+                    <span>{tab === "Floor Plans" && project.projectType === "venture" ? "Plot Layouts" : tab}</span>
                   </button>
                 );
-              }
+              })}
+            </div>
 
-              return (
-              <button
-                key={tab}
-                onClick={() => {
-                  setActiveTab(tab);
-                  const el = document.getElementById(tab.toLowerCase().replace(" ", "-"));
-                  if (el) {
-                    const y = el.getBoundingClientRect().top + window.scrollY - 120;
-                    window.scrollTo({ top: y, behavior: "smooth" });
-                  }
-                }}
-                className={`shrink-0 flex items-center gap-1.5 px-3 sm:px-4 py-3.5 text-xs sm:text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
-                  activeTab === tab
-                    ? "border-amber-primary text-amber-primary"
-                    : "border-transparent text-text-secondary hover:text-text-primary"
-                }`}
-              >
-                {tab === "Floor Plans" && project.projectType === "venture" ? "Plot Layouts" : tab}
-              </button>
-            )})}
-            <div className="ml-auto flex items-center gap-2 py-2 shrink-0 pl-2">
+            <div className="hidden sm:flex items-center gap-2 shrink-0">
               {project.videoUrl && (
                 <button
                   onClick={() => openVideo(project.videoUrl)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold border border-white/15 transition-all shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold border border-white/15 transition-all shadow-xs shrink-0 cursor-pointer"
                 >
-                  <Play className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" /> Watch Tour
+                  <Play className="w-3 h-3 fill-amber-500 text-amber-500 shrink-0" />
+                  <span>Watch Tour</span>
                 </button>
               )}
               {hasBrochure && (
                 <button
                   onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
-                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold border border-white/15 transition-all shadow-sm shrink-0 cursor-pointer whitespace-nowrap"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 transition-all shadow-xs shrink-0 cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5 text-amber-500 shrink-0" /> Brochure
+                  <Download className="w-3 h-3 text-slate-700 dark:text-slate-300 shrink-0" />
+                  <span>Brochure</span>
                 </button>
-              )}
-              {phone && (
-                <a href={phone} className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold border border-white/15 transition-all shadow-sm shrink-0 cursor-pointer whitespace-nowrap">
-                  <Phone className="w-3.5 h-3.5 text-amber-500 shrink-0" /> View Number
-                </a>
               )}
             </div>
           </div>
@@ -646,118 +625,105 @@ export function ProjectDetailView({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-8">
             {/* Left / Main column */}
             <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-              {/* Project Header */}
-              <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
-                <div className="flex items-start gap-4">
-                  {project.builderLogoUrl && (
-                    <img src={project.builderLogoUrl} alt={project.builderName} className="h-14 w-14 object-contain rounded-xl border border-border-default p-1 shrink-0" />
-                  )}
-                  <div className="flex-1">
-                    <h1 className="text-2xl font-bold font-heading text-text-primary">{project.name}</h1>
-                    <div className="flex items-center gap-1 text-text-secondary text-sm mt-1">
-                      <MapPin className="w-4 h-4" />
-                      {project.location.locality}, {project.location.city}
+              
+              {/* Box 1: Project Header & Key Identifiers */}
+              <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3.5">
+                    {project.builderLogoUrl && (
+                      <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 dark:border-slate-800 p-1.5 flex items-center justify-center shrink-0 shadow-2xs">
+                        <img src={project.builderLogoUrl} alt={project.builderName} className="w-full h-full object-contain" />
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h1 className="text-xl sm:text-2xl font-black font-heading text-text-primary tracking-tight">
+                          {project.name}
+                        </h1>
+                        {project.reraApproved && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-xs">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-400 dark:text-emerald-600" /> RERA
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 text-text-secondary text-xs sm:text-sm font-medium mt-1">
+                        <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                        <span>{project.location.locality}, {project.location.city}</span>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const ref = getRefId(project);
+                        navigator.clipboard.writeText(ref);
+                        toast.success(`Copied Reference ID: ${ref}`);
+                      }}
+                      title="Click to copy Reference ID"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer shadow-2xs"
+                    >
+                      <span>Ref ID: {getRefId(project)}</span>
+                      <Copy className="w-3 h-3 opacity-60" />
+                    </button>
+                    {project.videoUrl && (
                       <button
-                        type="button"
-                        onClick={() => {
-                          const ref = getRefId(project);
-                          navigator.clipboard.writeText(ref);
-                          toast.success(`Copied Reference ID: ${ref}`);
-                        }}
-                        title="Click to copy Reference ID"
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-black bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/40 hover:bg-amber-500/25 transition-all cursor-pointer shadow-xs whitespace-nowrap"
+                        onClick={() => openVideo(project.videoUrl)}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-950 hover:bg-slate-900 text-white shadow-xs transition-all cursor-pointer active:scale-95"
                       >
-                        <span>Ref ID: {getRefId(project)}</span>
-                        <Copy className="w-3 h-3 opacity-70" />
+                        <Play className="w-3 h-3 fill-amber-500 text-amber-500 shrink-0" />
+                        <span>Watch Tour</span>
                       </button>
-                      {project.videoUrl && (
-                        <button
-                          onClick={() => openVideo(project.videoUrl)}
-                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all cursor-pointer whitespace-nowrap shadow-sm"
-                        >
-                          <Play className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" /> Watch Tour
-                        </button>
-                      )}
-                      {project.reraApproved && (
-                        <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 whitespace-nowrap">
-                          <CheckCircle2 className="w-3 h-3" /> RERA
-                        </span>
-                      )}
-                      {project.noBrokerage && (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 whitespace-nowrap">No Brokerage</span>
-                      )}
-                      {project.totalUnits && (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-bg-primary border border-border-default text-text-secondary">
-                          {project.totalUnits} {project.projectType === "apartment" ? "Units" : project.projectType === "villa" ? "Villas" : "Plots"}
-                          {project.totalArea && ` in ${project.totalArea}`}
-                        </span>
-                      )}
-                    </div>
+                    )}
+                    {project.totalUnits && (
+                      <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        {project.totalUnits} {project.projectType === "apartment" ? "Units" : project.projectType === "villa" ? "Villas" : "Plots"}
+                      </span>
+                    )}
+                    {project.noBrokerage && (
+                      <span className="px-2.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        Zero Brokerage
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
-
-              {/* Construction Updates Slider View */}
+              {/* Box 2: Construction Updates Box */}
               {project.constructionUpdates && project.constructionUpdates.length > 0 && (
                 <ScrollReveal id="status" className="scroll-mt-32">
-                  <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-5 sm:p-6">
-                    {/* Header with Title & Slider Controls */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <Video className="w-5 h-5 text-amber-primary" />
-                        <h3 className="font-bold text-base sm:text-lg text-text-primary">Construction Updates</h3>
-                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 ml-1">
-                          {project.constructionUpdates.length}
-                        </span>
+                  <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+                    {/* Header */}
+                    <div className="flex items-center justify-between border-b border-border-default pb-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white">
+                          <Video className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-base sm:text-lg text-text-primary">Construction Updates</h3>
+                          <p className="text-xs text-text-secondary">Verified site progress and milestone footage</p>
+                        </div>
                       </div>
-
-                      {/* Left / Right Slide Arrow Buttons */}
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const container = document.getElementById("construction-updates-slider");
-                            if (container) container.scrollBy({ left: -300, behavior: "smooth" });
-                          }}
-                          className="w-8 h-8 rounded-full bg-bg-tertiary hover:bg-amber-500 hover:text-slate-950 border border-border-default flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95"
-                          title="Previous updates"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const container = document.getElementById("construction-updates-slider");
-                            if (container) container.scrollBy({ left: 300, behavior: "smooth" });
-                          }}
-                          className="w-8 h-8 rounded-full bg-bg-tertiary hover:bg-amber-500 hover:text-slate-950 border border-border-default flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95"
-                          title="Next updates"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                        {project.constructionUpdates.length} Updates
+                      </span>
                     </div>
 
-                    {/* Horizontal Slide Container */}
-                    <div
-                      id="construction-updates-slider"
-                      className="flex gap-3.5 sm:gap-4 overflow-x-auto scrollbar-none snap-x snap-mandatory py-1 -mx-1 px-1"
-                    >
+                    {/* Updates Responsive Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {[...project.constructionUpdates].reverse().map((update, i) => (
                         <div
                           key={update.id || i}
-                          className="w-[270px] sm:w-[310px] shrink-0 snap-start bg-slate-50 dark:bg-bg-primary border border-border-default rounded-2xl p-4 flex flex-col justify-between hover:border-amber-500/40 hover:shadow-md transition-all group"
+                          className="bg-slate-50/80 dark:bg-bg-primary border border-border-default/90 rounded-2xl p-4 sm:p-5 flex flex-col justify-between hover:border-slate-400 dark:hover:border-slate-700 hover:shadow-sm transition-all group"
                         >
                           <div>
                             {/* Card Top: Date Badge & Status */}
                             <div className="flex items-center justify-between gap-2 mb-3">
-                              <span className="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
-                                <Calendar className="w-3.5 h-3.5" /> {update.date}
+                              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-800 shadow-2xs">
+                                <Calendar className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" /> {update.date}
                               </span>
-                              <div className="flex items-center gap-1 text-[11px] font-semibold text-text-tertiary">
+                              <div className="flex items-center gap-1 text-[11px] font-bold text-text-tertiary">
                                 <span>Update #{i + 1}</span>
                               </div>
                             </div>
@@ -766,7 +732,7 @@ export function ProjectDetailView({
                             {update.videoUrl ? (
                               <div
                                 onClick={() => openVideo(update.videoUrl)}
-                                className="relative aspect-video rounded-xl overflow-hidden cursor-pointer group/vid mb-3 bg-slate-950 shadow-inner"
+                                className="relative aspect-video rounded-xl overflow-hidden cursor-pointer group/vid mb-3.5 bg-slate-950 shadow-inner"
                               >
                                 <img
                                   src={update.imageUrl ? resolveMediaUrl(update.imageUrl) : (project.videoThumbnail ? resolveMediaUrl(project.videoThumbnail) : (heroImage || ""))}
@@ -775,11 +741,11 @@ export function ProjectDetailView({
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-10 h-10 rounded-full bg-slate-950 text-white border border-white/20 flex items-center justify-center shadow-xl backdrop-blur-sm group-hover/vid:scale-110 transition-transform">
+                                  <div className="w-11 h-11 rounded-full bg-slate-950/90 text-white border border-white/20 flex items-center justify-center shadow-xl backdrop-blur-xs group-hover/vid:scale-110 transition-transform">
                                     <Play className="w-4 h-4 fill-amber-500 text-amber-500 ml-0.5" />
                                   </div>
                                 </div>
-                                <span className="absolute bottom-2 left-2.5 text-[11px] font-bold text-white drop-shadow-md flex items-center gap-1">
+                                <span className="absolute bottom-2 left-2.5 text-[11px] font-bold text-white drop-shadow-md flex items-center gap-1 bg-black/40 backdrop-blur-xs px-2 py-0.5 rounded-md border border-white/10">
                                   <Film className="w-3 h-3 text-amber-400" /> Progress Video
                                 </span>
                               </div>
@@ -789,7 +755,7 @@ export function ProjectDetailView({
                                   const idx = galleryAll.findIndex((g) => g.url === update.imageUrl);
                                   if (idx >= 0) setGalleryIdx(idx);
                                 }}
-                                className="relative aspect-video rounded-xl overflow-hidden cursor-pointer mb-3 bg-slate-950"
+                                className="relative aspect-video rounded-xl overflow-hidden cursor-pointer mb-3.5 bg-slate-950"
                               >
                                 <img
                                   src={resolveMediaUrl(update.imageUrl)}
@@ -800,13 +766,13 @@ export function ProjectDetailView({
                             ) : null}
 
                             {/* Title */}
-                            <h4 className="font-bold text-text-primary text-base mb-1.5 capitalize group-hover:text-amber-primary transition-colors">
+                            <h4 className="font-bold text-text-primary text-base mb-1.5 capitalize">
                               {update.title}
                             </h4>
 
                             {/* Description */}
                             {update.description && (
-                              <p className="text-xs text-text-secondary line-clamp-3 leading-relaxed mb-3">
+                              <p className="text-xs sm:text-sm text-text-secondary leading-relaxed mb-3">
                                 {update.description}
                               </p>
                             )}
@@ -817,7 +783,7 @@ export function ProjectDetailView({
                             <button
                               type="button"
                               onClick={() => openVideo(update.videoUrl)}
-                              className="mt-3 w-full flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all py-2.5 rounded-xl text-xs font-bold cursor-pointer active:scale-98 shadow-sm"
+                              className="mt-3 w-full flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all py-2.5 rounded-xl text-xs sm:text-sm font-bold cursor-pointer active:scale-98 shadow-sm"
                             >
                               <Play className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" />
                               <span>Watch Update Video</span>
@@ -830,23 +796,23 @@ export function ProjectDetailView({
                 </ScrollReveal>
               )}
 
-              {/* Price Range */}
-              <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4">
+              {/* Box 3: Price Range & Quick Actions */}
+              <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wide mb-1">Price Range</p>
-                  <p className="text-2xl font-bold text-amber-primary">{priceRange}
-                    <span className="text-sm font-medium text-text-secondary ml-2">+ Charges</span>
+                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider mb-1">Starting Price Range</p>
+                  <p className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">{priceRange}
+                    <span className="text-xs font-semibold text-text-secondary ml-2 font-normal">+ Govt. Charges</span>
                   </p>
                   {project.configurations[0] && (
-                    <p className="text-sm text-text-secondary mt-1">
-                      {[...new Set(project.configurations.map((c) => c.label))].join(", ")} {project.projectType === "venture" ? "Plots" : project.projectType === "villa" ? "Villa" : "Apartment"}
+                    <p className="text-xs sm:text-sm text-text-secondary mt-1 font-medium">
+                      Available in {[...new Set(project.configurations.map((c) => c.label))].join(", ")} {project.projectType === "venture" ? "Plots" : project.projectType === "villa" ? "Villas" : "Apartments"}
                     </p>
                   )}
                 </div>
                 {hasBrochure && (
                   <button
                     onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 hover:border-amber-500/40 transition-all shadow-sm whitespace-nowrap cursor-pointer"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all shadow-sm whitespace-nowrap cursor-pointer active:scale-95"
                   >
                     <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download Brochure
                   </button>
@@ -857,7 +823,7 @@ export function ProjectDetailView({
               <div className="space-y-8">
                 {/* 1. Overview / About This Project Section */}
                 <ScrollReveal id="overview" className="scroll-mt-32">
-                  <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6 space-y-6">
+                  <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm space-y-6">
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h2 className="text-xl font-bold text-text-primary">About {project.name}</h2>
@@ -922,9 +888,10 @@ export function ProjectDetailView({
                   </div>
                 </ScrollReveal>
 
+                {/* Box 4: Floor Plans / Configurations */}
                 <ScrollReveal id="floor-plans" className="scroll-mt-32">
-                  <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
-                  <div className="flex items-center justify-between gap-4 mb-4">
+                  <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between gap-4 mb-2">
                     <h2 className="text-xl font-bold text-text-primary">
                       {project.projectType === "venture" ? "Plot Layouts & Pricing" : project.projectType === "villa" ? "Villa Configurations & Pricing" : "Floor Plans & Pricing"}
                     </h2>
@@ -934,7 +901,7 @@ export function ProjectDetailView({
                       <button
                         type="button"
                         onClick={() => cardsScrollRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
-                        className="w-8 h-8 rounded-full bg-bg-tertiary hover:bg-amber-500 hover:text-slate-950 border border-border-default flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95"
+                        className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-95"
                         title="Previous layouts"
                       >
                         <ChevronLeft className="w-4 h-4" />
@@ -942,7 +909,7 @@ export function ProjectDetailView({
                       <button
                         type="button"
                         onClick={() => cardsScrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
-                        className="w-8 h-8 rounded-full bg-bg-tertiary hover:bg-amber-500 hover:text-slate-950 border border-border-default flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95"
+                        className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-95"
                         title="Next layouts"
                       >
                         <ChevronRight className="w-4 h-4" />
@@ -950,14 +917,14 @@ export function ProjectDetailView({
                     </div>
                   </div>
 
-                  {/* Clean Config tabs (No overlapping floating arrows) */}
-                  <div className="flex gap-2.5 overflow-x-auto scrollbar-none touch-pan-x mb-5 pb-1">
+                  {/* Clean Config tabs */}
+                  <div className="flex gap-2 overflow-x-auto scrollbar-none touch-pan-x mb-4 pb-1">
                     <button
                       onClick={() => setActiveConfigLabel("All")}
                       className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center justify-center border transition-all shrink-0 cursor-pointer ${
                         currentLabel === "All"
-                          ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm"
-                          : "bg-bg-primary text-text-secondary border-border-default hover:border-amber-primary/40"
+                          ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
+                          : "bg-slate-50 dark:bg-slate-900 text-text-secondary border-border-default hover:border-slate-400"
                       }`}
                     >
                       <span>All</span>
@@ -966,8 +933,8 @@ export function ProjectDetailView({
                       <button key={group.label} onClick={() => setActiveConfigLabel(group.label)}
                         className={`px-4 py-1.5 rounded-full text-xs sm:text-sm flex flex-col items-center justify-center border transition-all shrink-0 cursor-pointer ${
                           currentLabel === group.label
-                            ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-sm"
-                            : "bg-bg-primary text-text-secondary border-border-default hover:border-amber-primary/40"
+                            ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
+                            : "bg-slate-50 dark:bg-slate-900 text-text-secondary border-border-default hover:border-slate-400"
                         }`}
                       >
                         <span className="font-bold">{group.label}</span>
@@ -977,7 +944,7 @@ export function ProjectDetailView({
                   </div>
 
                   <div>
-                    <div ref={cardsScrollRef} className="flex gap-4 sm:gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6">
+                    <div ref={cardsScrollRef} className="flex gap-4 sm:gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-1 px-1">
                     {(currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => {
                       const areaMin = cfg.superBuiltUpAreaMin ?? cfg.builtUpAreaMin ?? cfg.plotSizeMin;
                       const areaMax = cfg.superBuiltUpAreaMax ?? cfg.builtUpAreaMax ?? cfg.plotSizeMax;
@@ -1051,7 +1018,7 @@ export function ProjectDetailView({
                                 </div>
                               )}
 
-                              {/* Floating Video Tour Pill (if config has its own walkthrough) */}
+                              {/* Floating Video Tour Pill */}
                               {cfg.videoUrl && (
                                 <button
                                   type="button"
@@ -1120,7 +1087,7 @@ export function ProjectDetailView({
               </ScrollReveal>
 
               <ScrollReveal id="location" className="scroll-mt-32">
-                <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6 space-y-4">
+                <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
                   <h2 className="text-xl font-bold text-text-primary">Location & Map</h2>
                   <div className="flex items-center gap-2 text-text-secondary text-sm">
                     <MapPin className="w-4 h-4 text-amber-primary shrink-0" />
@@ -1156,7 +1123,7 @@ export function ProjectDetailView({
               </ScrollReveal>
 
               <ScrollReveal id="brochure" className="scroll-mt-32">
-                <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
+                <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm">
                   <h2 className="text-xl font-bold text-text-primary mb-4">Brochure</h2>
                   {hasBrochure ? (
                     <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl border border-border-default bg-bg-primary">
@@ -1202,7 +1169,7 @@ export function ProjectDetailView({
               </ScrollReveal>
 
               <ScrollReveal id="builder" className="scroll-mt-32">
-                <div className="bg-white dark:bg-bg-card border border-border-default rounded-2xl p-6">
+                <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm">
                   <h2 className="text-xl font-bold text-text-primary mb-4">About the Builder</h2>
                   <div className="flex items-center gap-4">
                     {project.builderLogoUrl && (
@@ -1235,7 +1202,7 @@ export function ProjectDetailView({
             <div className="space-y-5">
               {/* Why consider */}
               {project.highlights.length > 0 && (
-                <div className="bg-white dark:bg-bg-card border border-amber-primary/20 rounded-2xl p-5 lg:sticky lg:top-32">
+                <div className="bg-white dark:bg-bg-card border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm lg:sticky lg:top-32">
                   <h3 className="font-bold text-text-primary mb-4 flex items-center gap-2">
                     <Star className="w-4 h-4 text-amber-primary fill-amber-primary" />
                     Why {project.name}?
@@ -1252,26 +1219,26 @@ export function ProjectDetailView({
               )}
 
               {/* Quick contact — desktop only (mobile has fixed bar) */}
-              <div className="hidden sm:block bg-white dark:bg-bg-card border border-border-default rounded-2xl p-5">
+              <div className="hidden sm:block bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm">
                 <h3 className="font-bold text-text-primary mb-1">Contact Builder</h3>
                 <p className="text-xs text-text-tertiary mb-4">Get exact pricing, payment plans &amp; site visit</p>
                 <div className="space-y-3">
                   {project.videoUrl && (
                     <button
                       onClick={() => openVideo(project.videoUrl)}
-                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all cursor-pointer shadow-md"
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all cursor-pointer shadow-sm active:scale-98"
                     >
                       <Play className="w-4 h-4 fill-amber-500 text-amber-500" /> Watch Tour Video
                     </button>
                   )}
                   {phone && (
-                    <a href={phone} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-md">
+                    <a href={phone} className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-sm active:scale-98">
                       <Phone className="w-4 h-4 text-amber-500 shrink-0" /> View Number
                     </a>
                   )}
                   {whatsapp && (
                     <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-md">
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-sm active:scale-98">
                       <MessageCircle className="w-4 h-4 text-amber-500 shrink-0" /> WhatsApp
                     </a>
                   )}
@@ -1281,7 +1248,7 @@ export function ProjectDetailView({
                         href={resolveMediaUrl(project.brochureUrl!)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border border-border-default hover:bg-slate-100 dark:hover:bg-slate-800 text-text-primary font-bold text-sm transition-colors text-center shrink-0 cursor-pointer"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl border border-border-default hover:bg-slate-100 dark:hover:bg-slate-800 text-text-primary font-bold text-sm transition-colors text-center shrink-0 cursor-pointer"
                       >
                         <ExternalLink className="w-3.5 h-3.5 text-amber-500" />
                         View
@@ -1289,7 +1256,7 @@ export function ProjectDetailView({
                       <button
                         type="button"
                         onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-md cursor-pointer"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-sm cursor-pointer active:scale-98"
                       >
                         <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download
                       </button>
