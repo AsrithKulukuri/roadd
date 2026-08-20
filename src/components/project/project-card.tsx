@@ -154,34 +154,6 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
                 </span>
               </div>
 
-              {/* Actions: Share & Heart */}
-              <div className="absolute top-1.5 right-1.5 flex items-center gap-1 z-10">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    shareOnWhatsApp({ item: project, type: "project", source: "card" });
-                  }}
-                  title="Share project"
-                  className="w-6 h-6 rounded-full bg-slate-950/80 backdrop-blur-md flex items-center justify-center text-white hover:text-white/80 transition-colors cursor-pointer"
-                >
-                  <Share2 className="w-3 h-3" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleFavorite(project.id);
-                  }}
-                  title={isSaved ? "Remove from saved" : "Save project"}
-                  className="w-6 h-6 rounded-full bg-slate-950/80 backdrop-blur-md flex items-center justify-center text-white transition-colors cursor-pointer"
-                >
-                  <Heart className={cn("w-3.5 h-3.5", isSaved ? "fill-red-500 text-red-500" : "text-white")} />
-                </button>
-              </div>
-
               {/* Price Tag Overlay on Image bottom-left */}
               <div className="absolute bottom-1.5 left-2">
                 <span className="text-white font-extrabold text-xs sm:text-sm drop-shadow-md">

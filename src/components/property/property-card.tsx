@@ -173,34 +173,6 @@ export function PropertyCard({
                 </span>
               </div>
 
-              {/* Actions: Share & Heart */}
-              <div className="absolute top-1.5 right-1.5 flex items-center gap-1 z-10">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    shareOnWhatsApp({ item: property, type: "property", source: "card" });
-                  }}
-                  title="Share property"
-                  className="w-6 h-6 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-white hover:text-amber-400 transition-colors cursor-pointer"
-                >
-                  <Share2 className="w-3 h-3" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleFavorite(property.id);
-                  }}
-                  title={isSaved ? "Remove from saved" : "Save property"}
-                  className="w-6 h-6 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-white hover:text-red-500 transition-colors cursor-pointer"
-                >
-                  <Heart className={cn("w-3.5 h-3.5", isSaved && "fill-red-500 text-red-500")} />
-                </button>
-              </div>
-
               {/* Price Tag Overlay on Image bottom-left */}
               <div className="absolute bottom-1 left-1.5">
                 <span className="text-white font-black text-xs sm:text-sm drop-shadow-md">
