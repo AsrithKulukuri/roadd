@@ -214,50 +214,73 @@ export async function uploadToS3({
         }
       }
     } catch (presignErr) {
-      console.warn("[S3 Storage Direct Presign warning, falling back to proxy]:", presignErr);
+      console.warn("[S3 Storage Direct Presign fallback]:", presignErr);
     }
 
-    // 2. Fallback: Upload via multipart FormData through Next.js server API
-    const formData = new FormData();
-    const finalFile = fileToUpload instanceof File 
-      ? fileToUpload 
-      : new File([fileToUpload], file.name, { type: effectiveMime });
+    // 2. Direct streaming upload to Next.js API via raw binary body (100% bypasses multipart/form-data buffer limits)
+    const uploadApiUrl = `/api/storage/upload?folder=${encodeURIComponent(folder)}&filename=${encodeURIComponent(file.name)}${entityId ? `&entityId=${encodeURIComponent(entityId)}` : ""}`;
 
-    formData.append("file", finalFile);
-    formData.append("folder", folder);
-    if (entityId) formData.append("entityId", entityId);
+    const serverUploadResult = await new Promise<UploadResult>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const startTime = Date.now();
 
-    const uploadRes = await fetch("/api/storage/upload", {
-      method: "POST",
-      body: formData,
+      xhr.open("POST", uploadApiUrl, true);
+      xhr.setRequestHeader("Content-Type", effectiveMime);
+      xhr.setRequestHeader("x-filename", encodeURIComponent(file.name));
+      xhr.setRequestHeader("x-folder", folder);
+      if (entityId) xhr.setRequestHeader("x-entity-id", entityId);
+
+      xhr.upload.onprogress = (evt) => {
+        if (evt.lengthComputable && onProgress) {
+          const percent = Math.min(99, Math.round((evt.loaded / evt.total) * 100));
+          const elapsedSec = Math.max(0.1, (Date.now() - startTime) / 1000);
+          const speed = evt.loaded / elapsedSec;
+          const remainingBytes = Math.max(0, evt.total - evt.loaded);
+          const remainingSec = speed > 0 ? Math.round(remainingBytes / speed) : 0;
+
+          onProgress({
+            percent,
+            loaded: evt.loaded,
+            total: evt.total,
+            speedBytesPerSec: speed,
+            remainingSec,
+          });
+        }
+      };
+
+      xhr.onload = () => {
+        try {
+          const res = JSON.parse(xhr.responseText || "{}");
+          if (xhr.status >= 200 && xhr.status < 300 && res.fileUrl) {
+            if (onProgress) {
+              onProgress({
+                percent: 100,
+                loaded: fileSize,
+                total: fileSize,
+                speedBytesPerSec: 0,
+                remainingSec: 0,
+              });
+            }
+            resolve({
+              key: res.key,
+              fileUrl: res.fileUrl,
+              success: true,
+            });
+          } else {
+            reject(new Error(res.error || `Upload failed with status ${xhr.status}`));
+          }
+        } catch {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error("Network error during upload"));
+      xhr.ontimeout = () => reject(new Error("Upload timed out"));
+
+      xhr.send(fileToUpload);
     });
 
-    if (!uploadRes.ok) {
-      const errData = await uploadRes.json().catch(() => ({}));
-      throw new Error(errData.error || `Upload failed with status ${uploadRes.status}`);
-    }
-
-    const data = await uploadRes.json();
-
-    if (!data.fileUrl) {
-      throw new Error("No media URL returned by server");
-    }
-
-    if (onProgress) {
-      onProgress({
-        percent: 100,
-        loaded: fileSize,
-        total: fileSize,
-        speedBytesPerSec: 0,
-        remainingSec: 0,
-      });
-    }
-
-    return {
-      key: data.key,
-      fileUrl: data.fileUrl,
-      success: true,
-    };
+    return serverUploadResult;
   } catch (error: any) {
     console.error("[S3 Storage Upload Error]:", error);
     return {

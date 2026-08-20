@@ -13,22 +13,49 @@ const ALLOWED_FOLDERS = [
   "videos",
 ];
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
-    const file = formData.get("file") as File | null;
-    const folder = (formData.get("folder") as string) || "properties";
-    const entityId = formData.get("entityId") as string | null;
+    const url = new URL(request.url);
+    const contentTypeHeader = request.headers.get("content-type") || "";
 
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    let buffer: Buffer;
+    let filename = url.searchParams.get("filename") || request.headers.get("x-filename") || "upload.jpg";
+    let folder = url.searchParams.get("folder") || request.headers.get("x-folder") || "properties";
+    let entityId = url.searchParams.get("entityId") || request.headers.get("x-entity-id") || null;
+    let contentType = contentTypeHeader;
+
+    try {
+      filename = decodeURIComponent(filename);
+    } catch {}
+
+    if (contentTypeHeader.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      const file = formData.get("file") as File | null;
+      if (!file) {
+        return NextResponse.json({ error: "No file provided" }, { status: 400 });
+      }
+      filename = file.name;
+      folder = (formData.get("folder") as string) || folder;
+      entityId = (formData.get("entityId") as string) || entityId;
+      contentType = file.type || contentType;
+      const bytes = await file.arrayBuffer();
+      buffer = Buffer.from(bytes);
+    } else {
+      // Direct raw binary stream (Bypasses Next.js FormData body parser limits!)
+      const bytes = await request.arrayBuffer();
+      if (!bytes || bytes.byteLength === 0) {
+        return NextResponse.json({ error: "Empty upload stream" }, { status: 400 });
+      }
+      buffer = Buffer.from(bytes);
     }
 
     if (!ALLOWED_FOLDERS.includes(folder)) {
-      return NextResponse.json({ error: `Invalid folder: ${folder}` }, { status: 400 });
+      folder = "properties";
     }
 
-    const rawExt = (file.name.split(".").pop() || "").toLowerCase();
+    const rawExt = (filename.split(".").pop() || "").toLowerCase();
     const cleanExt = rawExt.replace(/[^a-zA-Z0-9]/g, "") || "jpg";
     const uuid = crypto.randomUUID();
 
@@ -40,16 +67,13 @@ export async function POST(request: Request) {
       key = `${folder}/${uuid}.${cleanExt}`;
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    let contentType = file.type;
     if (!contentType || contentType === "application/octet-stream" || !contentType.includes("/")) {
       if (["jpg", "jpeg"].includes(cleanExt)) contentType = "image/jpeg";
       else if (cleanExt === "png") contentType = "image/png";
       else if (cleanExt === "webp") contentType = "image/webp";
       else if (cleanExt === "pdf") contentType = "application/pdf";
       else if (["mp4", "mov"].includes(cleanExt)) contentType = "video/mp4";
+      else if (cleanExt === "webm") contentType = "video/webm";
       else contentType = "image/jpeg";
     }
 
@@ -71,7 +95,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("[Server S3 Upload Error]:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to upload file to S3 via server" },
+      { error: error.message || "Failed to upload file to S3" },
       { status: 500 }
     );
   }
