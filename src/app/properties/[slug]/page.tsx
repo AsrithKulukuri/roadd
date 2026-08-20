@@ -17,6 +17,7 @@ import { formatINR, formatPriceCompact, getYoutubeEmbedUrl, isYoutubeShort, cn }
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import { getRefId } from "@/lib/ref-id";
 import Link from "next/link";
+import { Logo } from "@/components/shared/logo";
 import type { Property } from "@/types/property";
 import type { Metadata } from "next";
 
@@ -189,8 +190,8 @@ export default async function PropertyDetailPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(propertyJsonLd) }}
       />
       
-      {/* REALTOR.COM STYLE TOP NAVBAR (Left: Search Back, Center: ROAD FACING Logo, Right: Actions) */}
-      <div className="sticky top-16 z-30 w-full bg-white backdrop-blur-md border-b border-slate-200 py-3 shadow-xs">
+      {/* TOP NAVBAR (Left: Search Back, Center: Official Logo, Right: Actions) */}
+      <div className="sticky top-16 z-30 w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-border-default py-2.5 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
           
           {/* Left: Back Button & Search Properties Link */}
@@ -198,20 +199,15 @@ export default async function PropertyDetailPage({
             <BackButton />
             <Link
               href="/properties"
-              className="flex items-center gap-1.5 text-xs font-black text-slate-900 hover:text-amber-500 transition-colors"
+              className="flex items-center gap-1.5 text-xs font-black text-slate-800 dark:text-slate-200 hover:text-amber-500 transition-colors"
             >
-              <span className="underline decoration-slate-400 underline-offset-4 font-extrabold">Search Properties</span>
+              <span className="underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4 font-extrabold">Search Properties</span>
             </Link>
           </div>
 
-          {/* Center: Realtor.com Style CENTERED ROAD FACING BRANDING */}
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 font-black flex items-center justify-center text-xs shadow-xs">
-              R
-            </div>
-            <span className="font-heading font-black text-base sm:text-lg tracking-tight text-slate-900">
-              ROAD <span className="text-amber-500">FACING</span>
-            </span>
+          {/* Center: Official Transparent Logo */}
+          <div className="hidden sm:flex items-center">
+            <Logo size="sm" textColor="text-slate-900 dark:text-white" />
           </div>
 
           {/* Right: Favorite & Share Buttons */}
@@ -221,20 +217,20 @@ export default async function PropertyDetailPage({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
         
-        {/* REALTOR.COM STYLE BUILDER & MARKETING BADGE CARD ABOVE GALLERY */}
-        <div className="flex items-center gap-3 p-3 mb-4 bg-white border border-slate-200 rounded-2xl shadow-xs w-fit">
+        {/* BUILDER & MARKETING BADGE CARD ABOVE GALLERY */}
+        <div className="flex items-center gap-3 p-3.5 mb-5 bg-white dark:bg-bg-card border border-border-default rounded-2xl shadow-xs w-fit">
           <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-500 border border-amber-500/30 flex items-center justify-center shrink-0 font-bold">
             <Building2 className="w-5 h-5 text-amber-500" />
           </div>
           <div className="text-xs">
-            <span className="text-slate-600 font-bold block">Marketed & Brokered by:</span>
-            <span className="font-extrabold text-slate-900 underline underline-offset-2">
+            <span className="text-text-tertiary font-bold block">Marketed & Brokered by:</span>
+            <span className="font-extrabold text-text-primary">
               {property.ownerName || "ROAD FACING Premier Realty AP"}
             </span>
           </div>
         </div>
 
-        {/* Realtor.com Style Main Photo Gallery */}
+        {/* Main Photo Gallery */}
         <div className="mb-8">
           <PropertyGallery
             images={property.images}
@@ -246,13 +242,13 @@ export default async function PropertyDetailPage({
         </div>
 
         {/* Main Content Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Main Left Content Column */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
             
-            {/* Title, Status, Price & Promotion Header (Realtor.com Style) */}
-            <div className="space-y-3 pb-6 border-b border-slate-200 dark:border-slate-800">
+            {/* BOX 1: Title, Status, Price & Highlights Box */}
+            <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
               
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono font-black text-xs rounded-full border border-amber-500/40 shadow-xs">
@@ -261,7 +257,7 @@ export default async function PropertyDetailPage({
 
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold text-xs rounded-full border border-amber-500/30">
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                  {property.listingType === "rent" ? "Home for Rent" : "House for Sale"}
+                  {property.listingType === "rent" ? "Home for Rent" : property.saleType === "resale" ? "Resale Property" : "House for Sale"}
                 </span>
 
                 {(property.facing || (property.attributes as any)?.facing) && (
@@ -282,11 +278,11 @@ export default async function PropertyDetailPage({
                 )}
               </div>
 
-              <h1 className="font-heading text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white leading-tight">
+              <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-extrabold text-text-primary leading-tight">
                 {property.title}
               </h1>
 
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
+              <div className="flex items-center gap-2 text-text-secondary text-sm">
                 <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
                 <span>
                   {property.location.address}, {property.location.locality},{" "}
@@ -294,44 +290,72 @@ export default async function PropertyDetailPage({
                 </span>
               </div>
 
-              {/* Realtor.com Large Price & Price Drop Badge Row */}
-              <div className="pt-2 flex flex-wrap items-baseline gap-4">
-                <span className="font-black text-3xl sm:text-4xl text-slate-900 dark:text-white tracking-tight">
+              {/* Large Price Row */}
+              <div className="pt-2 flex flex-wrap items-baseline gap-3 sm:gap-4 border-t border-border-default/60">
+                <span className="font-black text-3xl sm:text-4xl text-amber-600 dark:text-amber-400 tracking-tight">
                   {formatINR(property.price)}
                 </span>
 
-                <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold text-xs bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30">
-                  <ArrowDownRight className="w-4 h-4" /> ₹{formatPriceCompact(Math.round(property.price * 0.04))} Price Reduced
+                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold text-xs bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/30">
+                  <ArrowDownRight className="w-4 h-4" /> ₹{formatPriceCompact(Math.round(property.price * 0.04))} Best Price Verified
+                </span>
+                <span className="text-xs text-text-tertiary font-semibold ml-auto">
+                  + Govt. Charges & Registration
                 </span>
               </div>
             </div>
 
-            {/* Property Specs */}
-            <PropertySpecs property={property} />
+            {/* BOX 2: Property Specifications Box */}
+            <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+              <div>
+                <h2 className="text-xl font-bold text-text-primary">
+                  Property Specifications
+                </h2>
+                <p className="text-xs text-text-tertiary mt-0.5">
+                  Detailed architectural, layout & dimension breakdown
+                </p>
+              </div>
 
-            {/* Description */}
-            <div className="space-y-3">
-              <h3 className="font-heading text-2xl font-black text-black">
-                About this property
-              </h3>
-              <p className="text-black font-bold leading-relaxed whitespace-pre-line text-base sm:text-lg">
-                {property.description}
-              </p>
+              <PropertySpecs property={property} />
             </div>
 
-            {/* Embedded Property Video Tour (Dual-Mode: YouTube or Uploaded HTML5 Video) */}
+            {/* BOX 3: "About this property" Description Box */}
+            <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+              <div>
+                <h2 className="text-xl font-bold text-text-primary">
+                  About this property
+                </h2>
+                <p className="text-xs text-text-tertiary mt-0.5">
+                  Verified property overview and on-ground details
+                </p>
+              </div>
+
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80">
+                <div className="text-text-primary font-medium leading-relaxed whitespace-pre-line text-sm sm:text-base space-y-2">
+                  {property.description}
+                </div>
+              </div>
+            </div>
+
+            {/* BOX 4: Embedded Property Video Tour */}
             {property.videoUrl && (
-              <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-                <h3 className="font-heading text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Play className="w-6 h-6 text-red-500 fill-red-500" />
-                  {getYoutubeEmbedUrl(property.videoUrl) 
-                    ? (isYoutubeShort(property.videoUrl) ? "Property Short Tour" : "Property Video Tour")
-                    : "Property Video Walkthrough"
-                  }
-                </h3>
+              <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
+                    <Play className="w-5 h-5 text-red-500 fill-red-500 shrink-0" />
+                    {getYoutubeEmbedUrl(property.videoUrl) 
+                      ? (isYoutubeShort(property.videoUrl) ? "Property Video Short" : "Property Video Tour")
+                      : "Property Video Walkthrough"
+                    }
+                  </h2>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                    HD Video
+                  </span>
+                </div>
+
                 <div className={cn(
-                  "relative rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 bg-slate-950 mx-auto",
-                  isYoutubeShort(property.videoUrl) ? "max-w-[340px] sm:max-w-[380px] aspect-[9/16] h-[650px] max-h-[75vh]" : "w-full aspect-video"
+                  "relative rounded-2xl overflow-hidden shadow-lg border border-border-default bg-slate-950 mx-auto",
+                  isYoutubeShort(property.videoUrl) ? "max-w-[340px] sm:max-w-[380px] aspect-[9/16] h-[600px] max-h-[70vh]" : "w-full aspect-video"
                 )}>
                   {getYoutubeEmbedUrl(property.videoUrl) ? (
                     <iframe
@@ -353,14 +377,32 @@ export default async function PropertyDetailPage({
               </div>
             )}
 
-            {/* Amenities */}
-            <PropertyAmenities amenities={property.amenities} />
+            {/* BOX 5: Amenities & Features */}
+            {property.amenities && property.amenities.length > 0 && (
+              <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+                <div>
+                  <h2 className="text-xl font-bold text-text-primary">
+                    Amenities & Facilities
+                  </h2>
+                  <p className="text-xs text-text-tertiary mt-0.5">
+                    Available amenities and community features
+                  </p>
+                </div>
+                <PropertyAmenities amenities={property.amenities} />
+              </div>
+            )}
 
-            {/* Location Map */}
-            <div className="py-6 border-t border-slate-200 dark:border-slate-800">
-              <h3 className="font-heading text-2xl font-bold text-slate-900 dark:text-white mb-4">
-                Location & Neighborhood
-              </h3>
+            {/* BOX 6: Location & Neighborhood Map */}
+            <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+              <div>
+                <h2 className="text-xl font-bold text-text-primary">
+                  Location & Neighborhood
+                </h2>
+                <p className="text-xs text-text-tertiary mt-0.5">
+                  Precise geographic location in {property.location.locality}, {property.location.city}
+                </p>
+              </div>
+
               <PropertyLocationWrapper
                 latitude={property.location.latitude}
                 longitude={property.location.longitude}
@@ -369,11 +411,11 @@ export default async function PropertyDetailPage({
               <ContactAgentBelowMap property={property} />
             </div>
 
-            {/* Similar Properties */}
+            {/* BOX 7: Similar Properties */}
             <PropertySimilar currentProperty={property} />
           </div>
 
-          {/* Right Column: Realtor.com Style Action Card Form */}
+          {/* Right Column: Contact & Booking Form Box */}
           <div className="lg:col-span-1">
             <PropertyContact property={property} />
           </div>
