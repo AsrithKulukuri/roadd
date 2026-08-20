@@ -142,6 +142,7 @@ export function ProjectDetailView({
 
   const tabsScrollRef = useRef<HTMLDivElement>(null);
   const cardsScrollRef = useRef<HTMLDivElement>(null);
+  const updatesScrollRef = useRef<HTMLDivElement>(null);
   
   const { scrollY } = useScroll();
   const yHero = useTransform(scrollY, [0, 800], [0, 200]);
@@ -730,7 +731,7 @@ export function ProjectDetailView({
                 <ScrollReveal id="status" className="scroll-mt-32">
                   <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
                     {/* Header */}
-                    <div className="flex items-center justify-between border-b border-border-default pb-3.5">
+                    <div className="flex items-center justify-between border-b border-border-default pb-3.5 gap-2">
                       <div className="flex items-center gap-2.5">
                         <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white">
                           <Video className="w-4 h-4" />
@@ -740,17 +741,47 @@ export function ProjectDetailView({
                           <p className="text-xs text-text-secondary">Verified site progress and milestone footage</p>
                         </div>
                       </div>
-                      <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs">
-                        {project.constructionUpdates.length} Updates
-                      </span>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                          {project.constructionUpdates.length} Updates
+                        </span>
+
+                        {/* Navigation Arrows for Scroll Slider */}
+                        {project.constructionUpdates.length > 1 && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => updatesScrollRef.current?.scrollBy({ left: -340, behavior: "smooth" })}
+                              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-90"
+                              title="Previous update"
+                              aria-label="Previous update"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => updatesScrollRef.current?.scrollBy({ left: 340, behavior: "smooth" })}
+                              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-90"
+                              title="Next update"
+                              aria-label="Next update"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Updates Responsive Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Updates Horizontal Scroll View */}
+                    <div 
+                      ref={updatesScrollRef}
+                      className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-2 -mx-1 px-1 touch-pan-x"
+                    >
                       {[...project.constructionUpdates].reverse().map((update, i) => (
                         <div
                           key={update.id || i}
-                          className="bg-slate-50/80 dark:bg-bg-primary border border-border-default/90 rounded-2xl p-4 sm:p-5 flex flex-col justify-between hover:border-slate-400 dark:hover:border-slate-700 hover:shadow-sm transition-all group"
+                          className="w-[85vw] sm:w-[340px] shrink-0 snap-start bg-slate-50/80 dark:bg-bg-primary border border-border-default/90 rounded-2xl p-4 sm:p-5 flex flex-col justify-between hover:border-slate-400 dark:hover:border-slate-700 hover:shadow-sm transition-all group"
                         >
                           <div>
                             {/* Card Top: Date Badge & Status */}
@@ -759,7 +790,7 @@ export function ProjectDetailView({
                                 <Calendar className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" /> {update.date}
                               </span>
                               <div className="flex items-center gap-1 text-[11px] font-bold text-text-tertiary">
-                                <span>Update #{i + 1}</span>
+                                <span>Update #{(project.constructionUpdates?.length ?? 0) - i}</span>
                               </div>
                             </div>
 
@@ -807,7 +838,7 @@ export function ProjectDetailView({
 
                             {/* Description */}
                             {update.description && (
-                              <p className="text-xs sm:text-sm text-text-secondary leading-relaxed mb-3">
+                              <p className="text-xs sm:text-sm text-text-secondary leading-relaxed mb-3 line-clamp-3">
                                 {update.description}
                               </p>
                             )}
