@@ -1094,157 +1094,110 @@ export function HeroSection() {
           </AnimatePresence>
         </div>
 
-        {/* ── Budget Filter Pill (Old Style: Dark Navy Pill with Dropdown Popup) ── */}
-        <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-3.5 text-left relative z-40">
-          <button
-            type="button"
-            onClick={() => setShowBudgetDropdown((prev) => !prev)}
-            className="w-full h-11 sm:h-12 px-4 sm:px-5 rounded-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-white flex items-center justify-between shadow-xl transition-all active:scale-98 cursor-pointer"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0">
+        {/* ── Budget Filter Card (White Box with Pill Selects, Teal Slider & Black Apply Button) ── */}
+        <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-4 text-left">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3.5">
+            
+            {/* Row 1: BUDGET: [ ₹ 10 L ⌄ ] TO [ Any Price ⌄ ] */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-xs font-black text-slate-800 uppercase tracking-wider shrink-0">
                 BUDGET:
               </span>
-              <span className="text-xs sm:text-sm font-extrabold text-white truncate">
-                {heroBudget[0] === 1000000 && heroBudget[1] >= 30000000
-                  ? "Any Price"
-                  : `${formatINRWords(heroBudget[0])} – ${heroBudget[1] >= 30000000 ? "Any Price" : formatINRWords(heroBudget[1])}`}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="px-2.5 py-0.5 rounded-full bg-slate-900 text-slate-200 border border-slate-800 text-[11px] font-extrabold shadow-inner">
-                {matchingCount} Homes
-              </span>
-              <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform duration-200", showBudgetDropdown && "rotate-180")} />
-            </div>
-          </button>
-
-          {/* Budget Dropdown Popup Panel */}
-          <AnimatePresence>
-            {showBudgetDropdown && (
-              <>
-                {/* Click-outside backdrop */}
-                <div 
-                  className="fixed inset-0 z-[110]" 
-                  onClick={() => setShowBudgetDropdown(false)} 
-                />
-
-                <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.97 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
-                  className="absolute top-full mt-2 left-0 right-0 z-[120] bg-slate-950/98 backdrop-blur-2xl border border-white/15 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.7)] p-4 sm:p-6 space-y-4 text-white"
+              
+              <div className="relative flex-1">
+                <select
+                  value={heroBudget[0]}
+                  onChange={(e) => setHeroBudget([Number(e.target.value), Math.max(Number(e.target.value), heroBudget[1])])}
+                  className="w-full h-9 px-3.5 pr-8 bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200 hover:border-slate-400 rounded-full text-xs font-extrabold text-slate-900 appearance-none outline-none cursor-pointer transition-colors shadow-2xs"
                 >
-                  {/* Selects Row */}
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <span className="text-xs font-black text-slate-300 uppercase tracking-wider shrink-0">
-                      BUDGET:
-                    </span>
-                    
-                    <div className="relative flex-1">
-                      <select
-                        value={heroBudget[0]}
-                        onChange={(e) => setHeroBudget([Number(e.target.value), Math.max(Number(e.target.value), heroBudget[1])])}
-                        className="w-full h-11 px-3.5 pr-8 bg-slate-900/90 hover:bg-slate-900 border border-white/20 focus:border-white rounded-2xl text-xs sm:text-sm font-extrabold text-white appearance-none outline-none cursor-pointer shadow-inner transition-all"
-                      >
-                        {![1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000, 30000000].includes(heroBudget[0]) && (
-                          <option value={heroBudget[0]}>{formatINRWords(heroBudget[0])}</option>
-                        )}
-                        <option value={1000000}>₹ 10 L</option>
-                        <option value={2000000}>₹ 20 L</option>
-                        <option value={3000000}>₹ 30 L</option>
-                        <option value={5000000}>₹ 50 L</option>
-                        <option value={7500000}>₹ 75 L</option>
-                        <option value={10000000}>₹ 1 Cr</option>
-                        <option value={15000000}>₹ 1.5 Cr</option>
-                        <option value={20000000}>₹ 2 Cr</option>
-                        <option value={30000000}>₹ 3 Cr</option>
-                      </select>
-                      <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
+                  {![1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000, 30000000].includes(heroBudget[0]) && (
+                    <option value={heroBudget[0]}>{formatINRWords(heroBudget[0])}</option>
+                  )}
+                  <option value={1000000}>₹ 10 L</option>
+                  <option value={2000000}>₹ 20 L</option>
+                  <option value={3000000}>₹ 30 L</option>
+                  <option value={5000000}>₹ 50 L</option>
+                  <option value={7500000}>₹ 75 L</option>
+                  <option value={10000000}>₹ 1 Cr</option>
+                  <option value={15000000}>₹ 1.5 Cr</option>
+                  <option value={20000000}>₹ 2 Cr</option>
+                  <option value={30000000}>₹ 3 Cr</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-700 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none stroke-[2.5]" />
+              </div>
 
-                    <span className="text-slate-400 font-black text-[11px] uppercase tracking-wider">TO</span>
+              <span className="text-slate-400 font-black text-[10px] sm:text-[11px] uppercase tracking-wider">TO</span>
 
-                    <div className="relative flex-1">
-                      <select
-                        value={heroBudget[1]}
-                        onChange={(e) => setHeroBudget([Math.min(heroBudget[0], Number(e.target.value)), Number(e.target.value)])}
-                        className="w-full h-11 px-3.5 pr-8 bg-slate-900/90 hover:bg-slate-900 border border-white/20 focus:border-white rounded-2xl text-xs sm:text-sm font-extrabold text-white appearance-none outline-none cursor-pointer shadow-inner transition-all"
-                      >
-                        {![30000000, 1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000].includes(heroBudget[1]) && (
-                          <option value={heroBudget[1]}>{heroBudget[1] >= 30000000 ? "Any Price" : formatINRWords(heroBudget[1], true)}</option>
-                        )}
-                        <option value={30000000}>Any Price</option>
-                        <option value={1000000}>₹ 10 L</option>
-                        <option value={2000000}>₹ 20 L</option>
-                        <option value={3000000}>₹ 30 L</option>
-                        <option value={5000000}>₹ 50 L</option>
-                        <option value={7500000}>₹ 75 L</option>
-                        <option value={10000000}>₹ 1 Cr</option>
-                        <option value={15000000}>₹ 1.5 Cr</option>
-                        <option value={20000000}>₹ 2 Cr</option>
-                        <option value={30000000}>₹ 3 Cr</option>
-                      </select>
-                      <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
-                  </div>
+              <div className="relative flex-1">
+                <select
+                  value={heroBudget[1]}
+                  onChange={(e) => setHeroBudget([Math.min(heroBudget[0], Number(e.target.value)), Number(e.target.value)])}
+                  className="w-full h-9 px-3.5 pr-8 bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200 hover:border-slate-400 rounded-full text-xs font-extrabold text-slate-900 appearance-none outline-none cursor-pointer transition-colors shadow-2xs"
+                >
+                  {![30000000, 1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000].includes(heroBudget[1]) && (
+                    <option value={heroBudget[1]}>{heroBudget[1] >= 30000000 ? "Any Price" : formatINRWords(heroBudget[1], true)}</option>
+                  )}
+                  <option value={30000000}>Any Price</option>
+                  <option value={1000000}>₹ 10 L</option>
+                  <option value={2000000}>₹ 20 L</option>
+                  <option value={3000000}>₹ 30 L</option>
+                  <option value={5000000}>₹ 50 L</option>
+                  <option value={7500000}>₹ 75 L</option>
+                  <option value={10000000}>₹ 1 Cr</option>
+                  <option value={15000000}>₹ 1.5 Cr</option>
+                  <option value={20000000}>₹ 2 Cr</option>
+                  <option value={30000000}>₹ 3 Cr</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-700 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none stroke-[2.5]" />
+              </div>
+            </div>
 
-                  {/* Slider */}
-                  <div className="px-1.5 py-2">
-                    <style>{`
-                      .budget-slider [role="slider"] {
-                        background: #050816 !important;
-                        border: 3px solid #ffffff !important;
-                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-                        width: 20px !important;
-                        height: 20px !important;
-                        transition: transform 0.2s, box-shadow 0.2s;
-                        cursor: grab;
-                      }
-                      .budget-slider [role="slider"]:hover, .budget-slider [role="slider"]:active {
-                        transform: scale(1.18);
-                        box-shadow: 0 0 14px rgba(255, 255, 255, 0.4);
-                        cursor: grabbing;
-                      }
-                      .budget-slider [data-orientation="horizontal"] .radix-slider-track {
-                        height: 5px !important;
-                        border-radius: 9999px;
-                        background: #334155;
-                      }
-                      .budget-slider [data-orientation="horizontal"] .radix-slider-range {
-                        background: #ffffff !important;
-                      }
-                    `}</style>
-                    <Slider
-                      min={1000000}
-                      max={30000000}
-                      step={250000}
-                      value={heroBudget}
-                      onValueChange={(val) => setHeroBudget(val as [number, number])}
-                      className="w-full budget-slider cursor-pointer"
-                    />
-                  </div>
+            {/* Row 2: Range Slider (Emerald/Teal Track with Dark Navy Knobs) */}
+            <div className="px-1 py-1">
+              <style>{`
+                .budget-slider [role="slider"] {
+                  background: #0f172a !important;
+                  border: 2px solid #ffffff !important;
+                  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.4);
+                  width: 18px !important;
+                  height: 18px !important;
+                  transition: transform 0.2s;
+                }
+                .budget-slider [role="slider"]:hover {
+                  transform: scale(1.18);
+                }
+                .budget-slider [data-orientation="horizontal"] .radix-slider-track {
+                  height: 4px !important;
+                  border-radius: 9999px;
+                  background: #e2e8f0;
+                }
+                .budget-slider [data-orientation="horizontal"] .radix-slider-range {
+                  background: #0d9488 !important;
+                }
+              `}</style>
+              <Slider
+                min={1000000}
+                max={30000000}
+                step={250000}
+                value={heroBudget}
+                onValueChange={(val) => setHeroBudget(val as [number, number])}
+                className="w-full budget-slider cursor-pointer"
+              />
+            </div>
 
-                  {/* Apply Button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowBudgetDropdown(false);
-                      handleSearchSubmit();
-                    }}
-                    className="w-full h-12 rounded-2xl bg-white hover:bg-slate-100 text-slate-950 font-black text-sm flex items-center justify-center gap-2.5 shadow-2xl transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
-                  >
-                    <span>Apply Budget</span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-slate-950 text-white text-xs font-black shadow-xs">
-                      {matchingCount} Homes
-                    </span>
-                  </button>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
+            {/* Row 3: Solid Black Pill Apply Button */}
+            <button
+              type="button"
+              onClick={() => handleSearchSubmit()}
+              className="w-full h-11 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs sm:text-sm rounded-full flex items-center justify-center gap-2 shadow-md transition-all active:scale-98 cursor-pointer"
+            >
+              <span>Apply</span>
+              <span className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-xs">
+                {matchingCount}
+              </span>
+            </button>
+
+          </div>
         </div>
 
         <div className="w-full mt-3 sm:mt-6 text-left space-y-3">
