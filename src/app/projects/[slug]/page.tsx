@@ -4,6 +4,9 @@ import type { Project } from "@/types/project";
 import type { Metadata } from "next";
 import { ProjectDetailView } from "@/components/project/project-detail-view";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 function getSupabaseClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -112,9 +115,6 @@ export async function generateMetadata({
     },
   };
 }
-
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 export default async function ProjectPage({
   params,
