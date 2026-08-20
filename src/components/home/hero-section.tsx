@@ -1096,17 +1096,17 @@ export function HeroSection() {
 
         {/* ── Option 2: Compact 1-Line Budget Bar (Clean White) ── */}
         <div className="w-full max-w-[760px] mx-auto mt-1 sm:mt-2">
-          <div className="bg-white rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-2.5 shadow-lg border border-slate-200 flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+          <div className="bg-white rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 shadow-md border border-slate-200/80 flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
             
             {/* Min & Max Selects */}
             <div className="flex items-center justify-center gap-1.5 w-full sm:w-auto shrink-0">
-              <span className="text-[11px] sm:text-xs font-black text-slate-700 uppercase tracking-wider shrink-0 mr-0.5">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-0.5">
                 Budget:
               </span>
               <select
                 value={heroBudget[0]}
                 onChange={(e) => setHeroBudget([Number(e.target.value), Math.max(Number(e.target.value), heroBudget[1])])}
-                className="h-8 px-2.5 border border-slate-300 hover:border-amber-400 focus:border-amber-500 rounded-xl bg-slate-50 text-[11px] sm:text-xs font-black text-slate-900 outline-none cursor-pointer shadow-2xs transition-colors"
+                className="h-7.5 px-2 border border-slate-200 hover:border-slate-400 focus:border-slate-900 rounded-lg bg-slate-50/80 text-xs font-semibold text-slate-800 outline-none cursor-pointer shadow-2xs transition-colors"
               >
                 {![1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000, 30000000].includes(heroBudget[0]) && (
                   <option value={heroBudget[0]}>{formatINRWords(heroBudget[0])}</option>
@@ -1122,12 +1122,12 @@ export function HeroSection() {
                 <option value={30000000}>₹ 3 Cr</option>
               </select>
 
-              <span className="text-slate-400 font-black text-[10px]">TO</span>
+              <span className="text-slate-400 font-semibold text-[10px] uppercase">to</span>
 
               <select
                 value={heroBudget[1]}
                 onChange={(e) => setHeroBudget([Math.min(heroBudget[0], Number(e.target.value)), Number(e.target.value)])}
-                className="h-8 px-2.5 border border-slate-300 hover:border-amber-400 focus:border-amber-500 rounded-xl bg-slate-50 text-[11px] sm:text-xs font-black text-slate-900 outline-none cursor-pointer shadow-2xs transition-colors"
+                className="h-7.5 px-2 border border-slate-200 hover:border-slate-400 focus:border-slate-900 rounded-lg bg-slate-50/80 text-xs font-semibold text-slate-800 outline-none cursor-pointer shadow-2xs transition-colors"
               >
                 {![30000000, 1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000].includes(heroBudget[1]) && (
                   <option value={heroBudget[1]}>{heroBudget[1] >= 30000000 ? "Any Price" : formatINRWords(heroBudget[1], true)}</option>
@@ -1152,21 +1152,21 @@ export function HeroSection() {
                   background: #0f172a !important;
                   border: 2px solid #ffffff !important;
                   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.3);
-                  width: 18px !important;
-                  height: 18px !important;
+                  width: 16px !important;
+                  height: 16px !important;
                   transition: transform 0.2s;
                 }
                 .budget-slider [role="slider"]:hover {
-                  transform: scale(1.2);
-                  background: #f59e0b !important;
+                  transform: scale(1.15);
+                  background: #000000 !important;
                 }
                 .budget-slider [data-orientation="horizontal"] .radix-slider-track {
-                  height: 5px !important;
+                  height: 4px !important;
                   border-radius: 999px;
                   background: #e2e8f0;
                 }
                 .budget-slider [data-orientation="horizontal"] .radix-slider-range {
-                  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%) !important;
+                  background: #0f172a !important;
                 }
               `}</style>
               <Slider
@@ -1183,10 +1183,10 @@ export function HeroSection() {
             <button
               type="button"
               onClick={() => handleSearchSubmit()}
-              className="h-8 px-4 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 w-full sm:w-auto"
+              className="h-7.5 px-3.5 bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all hover:scale-102 active:scale-98 cursor-pointer shrink-0 w-full sm:w-auto"
             >
               <span>Apply</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black">
+              <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-extrabold leading-none">
                 {matchingCount}
               </span>
             </button>
