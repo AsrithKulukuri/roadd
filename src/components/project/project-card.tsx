@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight, Ruler, SquareDashed, Trees, Heart } from "lucide-react";
+import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight, Ruler, SquareDashed, Trees, Heart, Share2 } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import type { Project, ProjectType } from "@/types/project";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { getRefId } from "@/lib/ref-id";
+import { shareItem } from "@/lib/share-utils";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<ProjectType, { icon: React.ElementType; label: string; cardAccent: string; badgeClass: string }> = {
@@ -157,18 +158,33 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
                 </span>
               </div>
 
-              {/* Heart Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleFavorite(project.id);
-                }}
-                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-white hover:text-red-500 transition-colors cursor-pointer z-10"
-              >
-                <Heart className={cn("w-3.5 h-3.5", isSaved && "fill-red-500 text-red-500")} />
-              </button>
+              {/* Actions: Share & Heart */}
+              <div className="absolute top-1.5 right-1.5 flex items-center gap-1 z-10">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    shareItem({ item: project, type: "project" });
+                  }}
+                  title="Share project"
+                  className="w-6 h-6 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-white hover:text-amber-400 transition-colors cursor-pointer"
+                >
+                  <Share2 className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleFavorite(project.id);
+                  }}
+                  title={isSaved ? "Remove from saved" : "Save project"}
+                  className="w-6 h-6 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-white hover:text-red-500 transition-colors cursor-pointer"
+                >
+                  <Heart className={cn("w-3.5 h-3.5", isSaved && "fill-red-500 text-red-500")} />
+                </button>
+              </div>
 
               {/* Price Tag Overlay on Image bottom-left */}
               <div className="absolute bottom-1 left-1.5">
@@ -284,29 +300,48 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
             )}
           </div>
 
-          {/* Heart Button Overlay with Spring Animation */}
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.8 }}
-            whileHover={{ scale: 1.12 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/95 dark:bg-slate-900/90 hover:bg-white text-slate-800 dark:text-white shadow-lg flex items-center justify-center cursor-pointer border border-white/20 backdrop-blur-sm active:scale-90"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              toggleFavorite(project.id);
-            }}
-            aria-label={isSaved ? "Remove from saved" : "Save project"}
-          >
-            <Heart
-              className={cn(
-                "h-4 w-4 transition-transform duration-300",
-                isSaved
-                  ? "fill-red-600 text-red-600 scale-110 drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]"
-                  : "text-slate-700 dark:text-slate-200"
-              )}
-            />
-          </motion.button>
+          {/* Actions: Share & Heart Button Overlay with Spring Animation */}
+          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.8 }}
+              whileHover={{ scale: 1.12 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              className="w-9 h-9 rounded-full bg-white/95 dark:bg-slate-900/90 hover:bg-white text-slate-800 dark:text-white shadow-lg flex items-center justify-center cursor-pointer border border-white/20 backdrop-blur-sm active:scale-90"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                shareItem({ item: project, type: "project" });
+              }}
+              title="Share project"
+              aria-label="Share project"
+            >
+              <Share2 className="h-4 w-4 text-slate-700 dark:text-slate-200" />
+            </motion.button>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.8 }}
+              whileHover={{ scale: 1.12 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              className="w-9 h-9 rounded-full bg-white/95 dark:bg-slate-900/90 hover:bg-white text-slate-800 dark:text-white shadow-lg flex items-center justify-center cursor-pointer border border-white/20 backdrop-blur-sm active:scale-90"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFavorite(project.id);
+              }}
+              aria-label={isSaved ? "Remove from saved" : "Save project"}
+              title={isSaved ? "Remove from saved" : "Save project"}
+            >
+              <Heart
+                className={cn(
+                  "h-4 w-4 transition-transform duration-300",
+                  isSaved
+                    ? "fill-red-600 text-red-600 scale-110 drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]"
+                    : "text-slate-700 dark:text-slate-200"
+                )}
+              />
+            </motion.button>
+          </div>
 
           {/* Status */}
           <div className="absolute bottom-3 left-3 z-10">

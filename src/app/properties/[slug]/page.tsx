@@ -208,7 +208,7 @@ export default async function PropertyDetailPage({
           </div>
 
           {/* Right: Favorite & Share Buttons */}
-          <PropertyActions propertyId={property.id} />
+          <PropertyActions propertyId={property.id} property={property} />
         </div>
       </div>
 

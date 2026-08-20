@@ -5,47 +5,31 @@ import { Share2, Heart, Scale, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCompareStore } from "@/stores/compare-store";
 import { useFavoritesStore } from "@/stores/favorites-store";
+import { usePropertiesStore } from "@/stores/properties-store";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { shareItem } from "@/lib/share-utils";
+import type { Property } from "@/types/property";
 
 interface PropertyActionsProps {
   propertyId: string;
+  property?: Property;
 }
 
-export function PropertyActions({ propertyId }: PropertyActionsProps) {
+export function PropertyActions({ propertyId, property }: PropertyActionsProps) {
   const router = useRouter();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const { toggleCompare, isCompared } = useCompareStore();
-  const [copied, setCopied] = useState(false);
+  const storeProperty = usePropertiesStore((state) => 
+    state.properties.find((p) => p.id === propertyId || p.slug === propertyId)
+  );
+  const activeProperty = property || storeProperty || { id: propertyId, title: "Property Listing" };
 
   const isSaved = isFavorite(propertyId);
   const isComparing = isCompared(propertyId);
 
   const handleShare = async () => {
-    const shareData = {
-      title: "ROAD FACING Property",
-      text: "Check out this property listing on ROAD FACING!",
-      url: window.location.href,
-    };
-
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        copyLink();
-      }
-    } else {
-      copyLink();
-    }
-  };
-
-  const copyLink = () => {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      toast.success("Property link copied to clipboard!");
-      setTimeout(() => setCopied(false), 2000);
-    }
+    await shareItem({ item: activeProperty, type: "property" });
   };
 
   return (
@@ -81,11 +65,7 @@ export function PropertyActions({ propertyId }: PropertyActionsProps) {
         onClick={handleShare}
         title="Share Property"
       >
-        {copied ? (
-          <Check className="w-4 h-4 text-amber-500 stroke-[3]" />
-        ) : (
-          <Share2 className="w-4 h-4 text-slate-900 dark:text-white stroke-[2.5]" />
-        )}
+        <Share2 className="w-4 h-4 text-slate-900 dark:text-white stroke-[2.5]" />
       </Button>
 
       {/* 3. Save / Heart Button */}

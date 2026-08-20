@@ -13,7 +13,7 @@ import {
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart, ChevronLeft, ChevronRight, Plus, Share2 } from "lucide-react";
 import L from "leaflet";
 import Link from "next/link";
 import { PropertyCard } from "@/components/property/property-card";
@@ -23,6 +23,7 @@ import { formatPriceCompact, formatINR, cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { useFavoritesStore } from "@/stores/favorites-store";
+import { shareItem } from "@/lib/share-utils";
 import { toast } from "sonner";
 
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -2154,19 +2155,33 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                             <X className="w-4 h-4" />
                           </button>
 
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              toggleFavorite(property.id);
-                              toast.success(isFavorite(property.id) ? "Removed from saved properties" : "Saved to your favorites!");
-                            }}
-                            className="absolute bottom-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform z-10"
-                          >
-                            <Heart className={cn("w-5 h-5 transition-colors", isFavorite(property.id) ? "fill-amber-500 text-amber-500" : "text-slate-900")} />
-                          </button>
+                          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 z-10">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                shareItem({ item: property, type: (property as any)._isProject ? "project" : "property" });
+                              }}
+                              title="Share property"
+                              className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform text-slate-900 hover:text-amber-500 cursor-pointer"
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                toggleFavorite(property.id);
+                                toast.success(isFavorite(property.id) ? "Removed from saved properties" : "Saved to your favorites!");
+                              }}
+                              title={isFavorite(property.id) ? "Remove from saved" : "Save property"}
+                              className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer"
+                            >
+                              <Heart className={cn("w-5 h-5 transition-colors", isFavorite(property.id) ? "fill-amber-500 text-amber-500" : "text-slate-900")} />
+                            </button>
+                          </div>
 
-                          <Link href={linkUrl} className="absolute bottom-3 left-3 right-14 text-white z-0 flex flex-col items-start">
+                          <Link href={linkUrl} className="absolute bottom-3 left-3 right-24 text-white z-0 flex flex-col items-start">
                             <div className="text-[28px] font-black drop-shadow-md leading-none mb-1 text-white tracking-tight">
                               {formatPriceCompact(property.price)}
                             </div>
