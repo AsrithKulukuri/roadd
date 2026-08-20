@@ -55,27 +55,31 @@ function formatINRCrore(amount: number): string {
   return `₹${amount.toLocaleString("en-IN")}`;
 }
 
-function RollingStatusTab({ active }: { active?: boolean }) {
+function RollingStatusTab({ isSelected }: { isSelected?: boolean }) {
   const [index, setIndex] = useState(0);
-  const phrases = ["Status", "Project Update"];
+  const phrases = ["Status", "Project Progress", "Project Updates"];
 
   useEffect(() => {
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % phrases.length);
-    }, 2400);
+    }, 2200);
     return () => clearInterval(timer);
   }, [phrases.length]);
 
   return (
-    <span className="relative inline-flex items-center h-4 overflow-hidden min-w-[94px] text-left">
+    <span className="relative inline-flex items-center h-4 overflow-hidden text-left min-w-[96px]">
       <AnimatePresence mode="wait">
         <motion.span
           key={phrases[index]}
-          initial={{ y: 12, opacity: 0 }}
+          initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -12, opacity: 0 }}
-          transition={{ duration: 0.35, ease: "easeInOut" }}
-          className={`inline-block whitespace-nowrap font-bold text-xs ${active ? "text-slate-950" : ""}`}
+          exit={{ y: -10, opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className={`inline-block whitespace-nowrap font-bold text-xs ${
+            isSelected
+              ? "text-white dark:text-slate-950"
+              : "text-slate-800 dark:text-slate-200"
+          }`}
         >
           {phrases[index]}
         </motion.span>
@@ -516,19 +520,23 @@ export function ProjectDetailView({
                         window.scrollTo({ top: y, behavior: "smooth" });
                       }
                     }}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer select-none ${
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer select-none border ${
                       isSelected
-                        ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-sm ring-1 ring-black/10"
-                        : "bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-transparent"
+                        ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 border-slate-950 dark:border-white shadow-sm ring-1 ring-black/10"
+                        : "bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/90 dark:border-slate-800 shadow-2xs"
                     }`}
                   >
-                    {isStatusTab && (
-                      <span className="relative flex h-2 w-2 shrink-0">
-                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isSelected ? "bg-emerald-400" : "bg-emerald-500"}`} />
-                        <span className={`relative inline-flex rounded-full h-2 w-2 ${isSelected ? "bg-emerald-400" : "bg-emerald-500"}`} />
-                      </span>
+                    {isStatusTab ? (
+                      <>
+                        <span className="relative flex h-2 w-2 shrink-0">
+                          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isSelected ? "bg-emerald-400" : "bg-emerald-500"}`} />
+                          <span className={`relative inline-flex rounded-full h-2 w-2 ${isSelected ? "bg-emerald-400" : "bg-emerald-500"}`} />
+                        </span>
+                        <RollingStatusTab isSelected={isSelected} />
+                      </>
+                    ) : (
+                      <span>{tab === "Floor Plans" && project.projectType === "venture" ? "Plot Layouts" : tab}</span>
                     )}
-                    <span>{tab === "Floor Plans" && project.projectType === "venture" ? "Plot Layouts" : tab}</span>
                   </button>
                 );
               })}
