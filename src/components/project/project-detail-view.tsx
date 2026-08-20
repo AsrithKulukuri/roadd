@@ -110,7 +110,7 @@ const TYPE_ICONS = { apartment: Building2, villa: Home, venture: Landmark };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-const TABS = ["Status", "Overview", "Floor Plans", "Facilities", "Location", "Brochure", "Builder"] as const;
+const TABS = ["Overview", "Status", "Floor Plans", "Facilities", "Location", "Brochure", "Builder"] as const;
 type Tab = (typeof TABS)[number];
 
 export function ProjectDetailView({ 
@@ -122,7 +122,7 @@ export function ProjectDetailView({
 }) {
   const { projects, fetchProjects } = useProjectsStore();
 
-  const [activeTab, setActiveTab] = useState<Tab>("Status");
+  const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const [statusOpen, setStatusOpen] = useState(true);
   const [galleryIdx, setGalleryIdx] = useState<number | null>(null);
   const [activeConfigLabel, setActiveConfigLabel] = useState<string>("All");
@@ -635,7 +635,97 @@ export function ProjectDetailView({
                 </div>
               </div>
 
-              {/* Box 2: Construction Updates Box */}
+              {/* Box 2: Overview / About This Project Section */}
+              <ScrollReveal id="overview" className="scroll-mt-32">
+                <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm space-y-6">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <h2 className="text-xl font-bold text-text-primary">About {project.name}</h2>
+                      {project.reraId && (
+                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                          RERA: {project.reraId}
+                        </span>
+                      )}
+                    </div>
+                    {project.tagline && (
+                      <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+                        {project.tagline}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Rich Description */}
+                  {project.description ? (
+                    <div className="text-sm sm:text-base text-text-secondary leading-relaxed whitespace-pre-line space-y-3">
+                      {project.description}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-text-tertiary italic">
+                      Experience modern luxury living at {project.name}, thoughtfully designed by {project.builderName} with world-class architecture and amenities in {project.location.locality}, {project.location.city}.
+                    </p>
+                  )}
+
+                  {/* Highlights Bullet Matrix */}
+                  {project.highlights && project.highlights.length > 0 && (
+                    <div className="pt-4 border-t border-border-default">
+                      <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-3">Project Highlights</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {project.highlights.map((hl, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-xs sm:text-sm font-medium text-text-secondary">
+                            <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                            <span>{hl}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Project Snapshot Specs */}
+                  <div className="pt-4 border-t border-border-default grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
+                      <span className="text-[10px] font-bold text-text-tertiary uppercase block">Project Type</span>
+                      <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.projectType}</span>
+                    </div>
+                    <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
+                      <span className="text-[10px] font-bold text-text-tertiary uppercase block">Total Area</span>
+                      <span className="text-xs sm:text-sm font-bold text-text-primary">{project.totalArea || "On Request"}</span>
+                    </div>
+                    <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
+                      <span className="text-[10px] font-bold text-text-tertiary uppercase block">Total Units</span>
+                      <span className="text-xs sm:text-sm font-bold text-text-primary">{project.totalUnits ? `${project.totalUnits} Units` : "On Request"}</span>
+                    </div>
+                    <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
+                      <span className="text-[10px] font-bold text-text-tertiary uppercase block">Status</span>
+                      <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.constructionStatus.replace("-", " ")}</span>
+                    </div>
+                  </div>
+                </div>
+              </ScrollReveal>
+
+              {/* Box 3: Price Range & Quick Actions */}
+              <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider mb-1">Starting Price Range</p>
+                  <p className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">{priceRange}
+                    <span className="text-xs font-semibold text-text-secondary ml-2 font-normal">+ Govt. Charges</span>
+                  </p>
+                  {project.configurations[0] && (
+                    <p className="text-xs sm:text-sm text-text-secondary mt-1 font-medium">
+                      Available in {[...new Set(project.configurations.map((c) => c.label))].join(", ")} {project.projectType === "venture" ? "Plots" : project.projectType === "villa" ? "Villas" : "Apartments"}
+                    </p>
+                  )}
+                </div>
+                {hasBrochure && (
+                  <button
+                    onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all shadow-sm whitespace-nowrap cursor-pointer active:scale-95"
+                  >
+                    <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download Brochure
+                  </button>
+                )}
+              </div>
+
+              {/* Box 4: Construction Updates Box */}
               {project.constructionUpdates && project.constructionUpdates.length > 0 && (
                 <ScrollReveal id="status" className="scroll-mt-32">
                   <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
@@ -741,97 +831,8 @@ export function ProjectDetailView({
                 </ScrollReveal>
               )}
 
-              {/* Box 3: Price Range & Quick Actions */}
-              <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider mb-1">Starting Price Range</p>
-                  <p className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">{priceRange}
-                    <span className="text-xs font-semibold text-text-secondary ml-2 font-normal">+ Govt. Charges</span>
-                  </p>
-                  {project.configurations[0] && (
-                    <p className="text-xs sm:text-sm text-text-secondary mt-1 font-medium">
-                      Available in {[...new Set(project.configurations.map((c) => c.label))].join(", ")} {project.projectType === "venture" ? "Plots" : project.projectType === "villa" ? "Villas" : "Apartments"}
-                    </p>
-                  )}
-                </div>
-                {hasBrochure && (
-                  <button
-                    onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all shadow-sm whitespace-nowrap cursor-pointer active:scale-95"
-                  >
-                    <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download Brochure
-                  </button>
-                )}
-              </div>
-
               {/* Tab Content Area */}
               <div className="space-y-8">
-                {/* 1. Overview / About This Project Section */}
-                <ScrollReveal id="overview" className="scroll-mt-32">
-                  <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm space-y-6">
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <h2 className="text-xl font-bold text-text-primary">About {project.name}</h2>
-                        {project.reraId && (
-                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                            RERA: {project.reraId}
-                          </span>
-                        )}
-                      </div>
-                      {project.tagline && (
-                        <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-                          {project.tagline}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Rich Description */}
-                    {project.description ? (
-                      <div className="text-sm sm:text-base text-text-secondary leading-relaxed whitespace-pre-line space-y-3">
-                        {project.description}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-text-tertiary italic">
-                        Experience modern luxury living at {project.name}, thoughtfully designed by {project.builderName} with world-class architecture and amenities in {project.location.locality}, {project.location.city}.
-                      </p>
-                    )}
-
-                    {/* Highlights Bullet Matrix */}
-                    {project.highlights && project.highlights.length > 0 && (
-                      <div className="pt-4 border-t border-border-default">
-                        <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-3">Project Highlights</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                          {project.highlights.map((hl, idx) => (
-                            <div key={idx} className="flex items-start gap-2 text-xs sm:text-sm font-medium text-text-secondary">
-                              <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                              <span>{hl}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Project Snapshot Specs */}
-                    <div className="pt-4 border-t border-border-default grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
-                        <span className="text-[10px] font-bold text-text-tertiary uppercase block">Project Type</span>
-                        <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.projectType}</span>
-                      </div>
-                      <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
-                        <span className="text-[10px] font-bold text-text-tertiary uppercase block">Total Area</span>
-                        <span className="text-xs sm:text-sm font-bold text-text-primary">{project.totalArea || "On Request"}</span>
-                      </div>
-                      <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
-                        <span className="text-[10px] font-bold text-text-tertiary uppercase block">Total Units</span>
-                        <span className="text-xs sm:text-sm font-bold text-text-primary">{project.totalUnits ? `${project.totalUnits} Units` : "On Request"}</span>
-                      </div>
-                      <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
-                        <span className="text-[10px] font-bold text-text-tertiary uppercase block">Status</span>
-                        <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.constructionStatus.replace("-", " ")}</span>
-                      </div>
-                    </div>
-                  </div>
-                </ScrollReveal>
 
                 {/* Box 4: Floor Plans / Configurations */}
                 <ScrollReveal id="floor-plans" className="scroll-mt-32">
