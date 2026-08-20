@@ -1218,7 +1218,7 @@ export function HeroSection() {
                   key={cat.id}
                   href={cat.baseHref}
                   className={cn(
-                    "group relative h-40 sm:h-52 rounded-2xl overflow-hidden shadow-lg bg-slate-800 border border-white/10 hover:border-amber-400/70 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300",
+                    "group relative h-40 sm:h-52 rounded-2xl overflow-hidden shadow-md bg-slate-950 border border-white/15 hover:border-white/40 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300",
                     isHiddenOnMobile ? "hidden sm:block" : "block"
                   )}
                 >
@@ -1226,29 +1226,24 @@ export function HeroSection() {
                     src={cat.image}
                     alt={cat.title}
                     fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-108 opacity-95 group-hover:opacity-100"
                   />
-                  {/* Dark scrim */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-transparent transition-opacity duration-300" />
+                  {/* Clean deep gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300" />
 
-                  {/* Category badge (top-right) */}
+                  {/* Luxury Monochromatic Badge (top-right) */}
                   {cat.badge && (
-                    <div
-                      className={cn(
-                        "absolute top-3 right-3 text-xs px-2.5 py-1 rounded-full shadow-xs backdrop-blur-sm",
-                        cat.badgeClass ? cat.badgeClass : "bg-white/90 text-slate-900 font-bold"
-                      )}
-                    >
+                    <div className="absolute top-3 right-3 text-[11px] font-bold px-3 py-1 rounded-full bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
                       {cat.badge}
                     </div>
                   )}
 
-                  {/* Bottom info */}
+                  {/* Bottom info: Crisp white typography */}
                   <div className="absolute bottom-3 left-3 right-3">
-                    <span className="font-heading font-bold text-base sm:text-lg block leading-snug text-white group-hover:text-amber-400 transition-colors">
+                    <span className="font-heading font-extrabold text-base sm:text-lg block leading-snug text-white group-hover:translate-x-0.5 transition-transform drop-shadow-sm">
                       {cat.title}
                     </span>
-                    <span className="text-[11px] text-slate-300 block line-clamp-1 mt-0.5">
+                    <span className="text-[11px] text-slate-200/90 block line-clamp-1 mt-0.5 font-medium">
                       {cat.subtitle}
                     </span>
                   </div>
