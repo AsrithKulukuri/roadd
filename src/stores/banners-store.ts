@@ -191,16 +191,21 @@ export const useBannersStore = create<BannersStore>((set, get) => ({
   deleteBanner: async (id, imageUrl, mobileImageUrl) => {
     set({ isLoading: true });
     try {
-      const keysToDelete: string[] = [];
-      if (imageUrl) keysToDelete.push(imageUrl);
-      if (mobileImageUrl) keysToDelete.push(mobileImageUrl);
+      const res = await fetch("/api/banners/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, imageUrl, mobileImageUrl }),
+      });
 
-      if (keysToDelete.length > 0) {
-        await deleteFromS3(keysToDelete);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to delete banner");
       }
 
-      const { error } = await supabase.from("banners").delete().eq("id", id);
-      if (error) throw error;
+      // Optimistically remove from state & refetch
+      set((state) => ({
+        banners: state.banners.filter((b) => b.id !== id),
+      }));
 
       await get().fetchBanners(true);
       return true;

@@ -238,8 +238,18 @@ export const useLocationsStore = create<LocationsState>()(
 
         if (targetCity) {
           try {
-            await supabase.from("trending_locations").delete().eq("city", targetCity.name);
-          } catch {}
+            await fetch("/api/locations/delete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                type: "city",
+                cityId: id,
+                cityName: targetCity.name,
+              }),
+            });
+          } catch (err) {
+            console.error("Failed to delete city on server:", err);
+          }
         }
 
         toast.success(`Location "${targetCity?.name || ""}" removed!`);
@@ -268,34 +278,43 @@ export const useLocationsStore = create<LocationsState>()(
 
         set({ cities: updatedCities });
 
-        // Save directly to Supabase trending_locations
+        // Save directly to Supabase trending_locations via server API
         if (targetCity) {
           try {
-            const { data } = await supabase.from("trending_locations").insert({
-              city: targetCity.name,
-              locality: subData.name,
-              image: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&q=80",
-              properties_count: 25,
-            }).select().single();
+            const res = await fetch("/api/locations/sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "add_sublocation",
+                city: targetCity.name,
+                locality: subData.name,
+                properties_count: 25,
+              }),
+            });
 
-            if (data?.id) {
-              // Update local state with real Supabase uuid
-              set({
-                cities: get().cities.map((c) => {
-                  if (c.id === cityId) {
-                    return {
-                      ...c,
-                      sublocations: c.sublocations.map((s) => s.id === newSubId ? { ...s, id: data.id } : s),
-                    };
-                  }
-                  return c;
-                }),
-              });
+            if (res.ok) {
+              const resData = await res.json();
+              if (resData.data?.id) {
+                // Update local state with real Supabase uuid
+                set({
+                  cities: get().cities.map((c) => {
+                    if (c.id === cityId) {
+                      return {
+                        ...c,
+                        sublocations: c.sublocations.map((s) => s.id === newSubId ? { ...s, id: resData.data.id } : s),
+                      };
+                    }
+                    return c;
+                  }),
+                });
+              }
             }
-          } catch {}
+          } catch (err) {
+            console.error("Failed to sync sublocation:", err);
+          }
         }
 
-        toast.success(`Sublocation "${subData.name}" added and synced!`);
+        toast.success(`Sublocation "${subData.name}" added!`);
       },
 
       updateSublocation: async (cityId, subId, subData) => {
@@ -315,15 +334,22 @@ export const useLocationsStore = create<LocationsState>()(
 
         set({ cities: updatedCities });
 
-        // Update in Supabase
+        // Update in Supabase via server API
         if (targetCity && subData.name) {
           try {
-            if (subId.includes("-") && subId.length > 20) {
-              await supabase.from("trending_locations").update({
+            await fetch("/api/locations/sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "update_sublocation",
+                id: subId,
+                city: targetCity.name,
                 locality: subData.name,
-              }).eq("id", subId);
-            }
-          } catch {}
+              }),
+            });
+          } catch (err) {
+            console.error("Failed to update sublocation on server:", err);
+          }
         }
 
         toast.success("Sublocation updated!");
@@ -345,18 +371,23 @@ export const useLocationsStore = create<LocationsState>()(
 
         set({ cities: updatedCities });
 
-        // Delete from Supabase
-        if (targetCity && targetSub) {
+        // Delete from Supabase via server API
+        if (targetCity) {
           try {
-            if (subId.includes("-") && subId.length > 20) {
-              await supabase.from("trending_locations").delete().eq("id", subId);
-            } else {
-              await supabase.from("trending_locations").delete().match({
-                city: targetCity.name,
-                locality: targetSub.name,
-              });
-            }
-          } catch {}
+            await fetch("/api/locations/delete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                type: "sublocation",
+                cityId,
+                cityName: targetCity.name,
+                subId,
+                subName: targetSub?.name,
+              }),
+            });
+          } catch (err) {
+            console.error("Failed to delete sublocation on server:", err);
+          }
         }
 
         toast.success("Sublocation removed!");
