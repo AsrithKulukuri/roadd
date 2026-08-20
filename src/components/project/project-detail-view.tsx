@@ -863,13 +863,13 @@ export function ProjectDetailView({
                   </div>
 
                   {/* Clean Config tabs */}
-                  <div className="flex gap-2 overflow-x-auto scrollbar-none touch-pan-x mb-4 pb-1">
+                  <div className="flex gap-2 overflow-x-auto scrollbar-none touch-pan-x mb-4 pb-1 items-center">
                     <button
                       onClick={() => setActiveConfigLabel("All")}
-                      className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center justify-center border transition-all shrink-0 cursor-pointer ${
+                      className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center border transition-all shrink-0 cursor-pointer shadow-2xs ${
                         currentLabel === "All"
-                          ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
-                          : "bg-slate-50 dark:bg-slate-900 text-text-secondary border-border-default hover:border-slate-400"
+                          ? "bg-slate-950 !text-white border-slate-950 dark:bg-white dark:!text-slate-950 shadow-sm ring-1 ring-black/10"
+                          : "bg-white dark:bg-slate-900 !text-slate-900 dark:!text-white border-slate-200/90 dark:border-slate-800 hover:border-slate-400"
                       }`}
                     >
                       <span>All</span>
@@ -879,29 +879,36 @@ export function ProjectDetailView({
                     {project.masterPlanUrl && (
                       <button
                         onClick={() => setActiveConfigLabel("Master Plan")}
-                        className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 border transition-all shrink-0 cursor-pointer ${
+                        className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1.5 border transition-all shrink-0 cursor-pointer shadow-2xs ${
                           currentLabel === "Master Plan"
-                            ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
-                            : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
+                            ? "bg-slate-950 !text-white border-slate-950 dark:bg-white dark:!text-slate-950 shadow-sm ring-1 ring-black/10"
+                            : "bg-white dark:bg-slate-900 !text-slate-900 dark:!text-white border-slate-200/90 dark:border-slate-800 hover:border-slate-400"
                         }`}
                       >
-                        <LayoutTemplate className="w-3.5 h-3.5" />
+                        <LayoutTemplate className="w-3.5 h-3.5 text-amber-500" />
                         <span>Master Plan</span>
                       </button>
                     )}
 
-                    {groupedConfigs.map((group) => (
-                      <button key={group.label} onClick={() => setActiveConfigLabel(group.label)}
-                        className={`px-4 py-1.5 rounded-full text-xs sm:text-sm flex flex-col items-center justify-center border transition-all shrink-0 cursor-pointer ${
-                          currentLabel === group.label
-                            ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
-                            : "bg-slate-50 dark:bg-slate-900 text-text-secondary border-border-default hover:border-slate-400"
-                        }`}
-                      >
-                        <span className="font-bold">{group.label}</span>
-                        <span className="text-[10px] opacity-80">{group.configs.length} Size{group.configs.length !== 1 ? 's' : ''}</span>
-                      </button>
-                    ))}
+                    {groupedConfigs.map((group) => {
+                      const isSelected = currentLabel === group.label;
+                      return (
+                        <button
+                          key={group.label}
+                          onClick={() => setActiveConfigLabel(group.label)}
+                          className={`px-4 py-1.5 rounded-2xl text-xs sm:text-sm flex flex-col items-center justify-center border transition-all shrink-0 cursor-pointer shadow-2xs ${
+                            isSelected
+                              ? "bg-slate-950 !text-white border-slate-950 dark:bg-white dark:!text-slate-950 shadow-sm ring-1 ring-black/10"
+                              : "bg-white dark:bg-slate-900 !text-slate-900 dark:!text-white border-slate-200/90 dark:border-slate-800 hover:border-slate-400"
+                          }`}
+                        >
+                          <span className="font-extrabold">{group.label}</span>
+                          <span className={`text-[10px] ${isSelected ? "opacity-90" : "text-slate-500 dark:text-slate-400"}`}>
+                            {group.configs.length} Size{group.configs.length !== 1 ? 's' : ''}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div>
