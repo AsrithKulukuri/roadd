@@ -35,7 +35,7 @@ export function Logo({
     <div className={cn("flex items-center gap-2", className)}>
       <div className="relative flex-shrink-0 rounded-full overflow-hidden">
         <Image
-          src="/logooo.jpeg"
+          src="/logo.png"
           alt="ROAD FACING Logo"
           width={width}
           height={height}
