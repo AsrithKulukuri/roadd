@@ -85,8 +85,9 @@ export async function generateMetadata({
   if (specsFormatted) ogParams.set("specs", specsFormatted);
   if (coverUrl) ogParams.set("image", coverUrl);
 
-  const ogImageUrl = `https://www.roadfacing.com/api/og?${ogParams.toString()}`;
-  const canonicalUrl = `https://www.roadfacing.com/properties/${property.slug}`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://roadd-three.vercel.app";
+  const ogImageUrl = `${siteUrl}/api/og?${ogParams.toString()}`;
+  const canonicalUrl = `${siteUrl}/properties/${property.slug}`;
 
   return {
     title: `${property.title} in ${locationFormatted} — ${priceFormatted}`,

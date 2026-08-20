@@ -65,7 +65,7 @@ export async function shareItem({ item, type }: ShareItemOptions) {
   const origin =
     !isLocalhost && typeof window !== "undefined" && window.location.origin
       ? window.location.origin
-      : "https://www.roadfacing.com";
+      : (process.env.NEXT_PUBLIC_SITE_URL || "https://roadd-three.vercel.app");
 
   const path = isProject
     ? `/projects/${item.slug || item.id}`

@@ -17,8 +17,10 @@ const spaceGrotesk = Inter({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://roadd-three.vercel.app";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.roadfacing.com"),
+  metadataBase: new URL(siteUrl),
   title: {
     default: "Road Facing — Real Projects. Real People. Real Updates | Vijayawada, Guntur & Amaravati",
     template: "%s | Road Facing",
