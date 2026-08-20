@@ -5,9 +5,9 @@ import { deleteFromS3 } from '@/lib/aws/storage-utils';
 import type { Project } from '@/types/project';
 import { toast } from 'sonner';
 
-// Valid columns in Supabase projects table
+// Valid columns in Supabase projects table (matching actual database schema)
 const VALID_PROJECT_COLUMNS = new Set([
-  'id', 'slug', 'refId', 'name', 'tagline', 'description', 'projectType',
+  'id', 'slug', 'name', 'tagline', 'description', 'projectType',
   'builderName', 'builderLogoUrl', 'builderPhone', 'builderWhatsapp',
   'location', 'reraId', 'reraApproved', 'noBrokerage',
   'constructionStatus', 'totalUnits', 'totalArea', 'phases',
@@ -273,16 +273,6 @@ export const useProjectsStore = create<ProjectsState>()(
             p.id === id ? { ...p, refId: cleanRef, updatedAt: new Date().toISOString() } : p
           ),
         }));
-
-        try {
-          const { error } = await supabase
-            .from('projects')
-            .update({ refId: cleanRef, updatedAt: new Date().toISOString() })
-            .eq('id', id);
-          if (error) console.warn('Error updating project refId in Supabase:', error.message);
-        } catch (error) {
-          console.warn('Error updating project refId in Supabase:', error);
-        }
       },
 
       // ─── Toggle Published ─────────────────────────────────────────────────
