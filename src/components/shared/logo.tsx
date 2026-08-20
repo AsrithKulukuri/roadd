@@ -12,10 +12,10 @@ interface LogoProps {
 }
 
 const sizeMap = {
-  sm: { width: 32, height: 32, textClass: "text-base" },
-  md: { width: 42, height: 42, textClass: "text-lg" },
-  lg: { width: 54, height: 54, textClass: "text-2xl" },
-  xl: { width: 72, height: 72, textClass: "text-3xl" },
+  sm: { iconHeight: 26, textClass: "text-base", subClass: "text-[9px]" },
+  md: { iconHeight: 32, textClass: "text-lg sm:text-xl", subClass: "text-[10px]" },
+  lg: { iconHeight: 42, textClass: "text-2xl", subClass: "text-[11px]" },
+  xl: { iconHeight: 52, textClass: "text-3xl", subClass: "text-xs" },
 };
 
 export function Logo({
@@ -26,40 +26,44 @@ export function Logo({
   isDarkBg = false,
   textColor,
 }: LogoProps) {
-  const { width, height, textClass } = sizeMap[size];
+  const { iconHeight, textClass, subClass } = sizeMap[size];
 
   const resolvedTextColor = textColor || "text-white";
   const resolvedSubtitleColor = textColor ? "text-slate-600 font-bold" : "text-slate-300";
 
   const content = (
-    <div className={cn("flex items-center gap-2.5", className)}>
-      <div className="relative flex-shrink-0 flex items-center justify-center">
+    <div className={cn("flex items-center gap-2.5 group select-none", className)}>
+      <div 
+        className="relative flex-shrink-0 flex items-center justify-center"
+        style={{ height: `${iconHeight}px` }}
+      >
         <Image
           src="/logo.png"
           alt="ROAD FACING Logo"
-          width={width}
-          height={height}
-          className="object-contain w-auto h-auto max-h-[44px] drop-shadow-sm"
+          width={Math.round(iconHeight * 0.73)}
+          height={iconHeight}
+          className="h-full w-auto object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105"
           priority
         />
       </div>
       {showText && (
-        <div className="flex flex-col">
-          <span
+        <div className="flex flex-col justify-center">
+          <div
             className={cn(
-              "font-heading font-extrabold tracking-tight leading-none flex items-center",
+              "font-heading font-black tracking-tight leading-none flex items-center gap-1",
               textClass
             )}
           >
-            <span className="text-[#f1a010] font-black">R</span>
-            <span className={cn("font-black tracking-tight ml-0.5", resolvedTextColor)}>
-              OAD FACING
+            <span className="text-[#f59e0b] font-black">ROAD</span>
+            <span className={cn("font-black tracking-tight", resolvedTextColor)}>
+              FACING
             </span>
-          </span>
+          </div>
           {size !== "sm" && (
             <span
               className={cn(
-                "text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.18em] leading-none mt-1 font-bold hidden sm:block",
+                "uppercase tracking-[0.16em] leading-none mt-1 font-bold hidden sm:block",
+                subClass,
                 resolvedSubtitleColor
               )}
             >
