@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { shareItem } from "@/lib/share-utils";
 import { shareOnWhatsApp } from "@/lib/whatsapp/whatsapp-share";
 import { WhatsAppIcon } from "@/components/property/whatsapp-share-button";
+import { haptic } from "@/lib/haptics";
 import type { Property } from "@/types/property";
 
 interface PropertyActionsProps {
@@ -31,6 +32,7 @@ export function PropertyActions({ propertyId, property }: PropertyActionsProps) 
   const isComparing = isCompared(propertyId);
 
   const handleShare = async () => {
+    haptic.medium();
     await shareItem({ item: activeProperty, type: "property" });
   };
 
@@ -47,6 +49,7 @@ export function PropertyActions({ propertyId, property }: PropertyActionsProps) 
             : 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-300 dark:border-slate-700 hover:border-amber-500'
         }`}
         onClick={() => {
+          haptic.selection();
           toggleCompare(propertyId);
           toast.success(isComparing ? "Removed from comparison" : "Added to comparison");
           if (!isComparing) {
@@ -64,7 +67,10 @@ export function PropertyActions({ propertyId, property }: PropertyActionsProps) 
         variant="outline" 
         size="icon" 
         className="rounded-full w-10 h-10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 hover:border-amber-500 transition-all cursor-pointer shadow-xs"
-        onClick={() => shareOnWhatsApp({ item: activeProperty, type: "property", source: "detail" })}
+        onClick={() => {
+          haptic.medium();
+          shareOnWhatsApp({ item: activeProperty, type: "property", source: "detail" });
+        }}
         title="Share Property"
       >
         <Share2 className="w-4 h-4 text-slate-900 dark:text-white stroke-[2.5]" />

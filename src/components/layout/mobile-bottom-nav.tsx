@@ -13,6 +13,7 @@ import { navigationLinks } from "@/config/site";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
 import { PostRequirementModal } from "@/components/shared/post-requirement-modal";
+import { haptic } from "@/lib/haptics";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -246,7 +247,10 @@ export function MobileBottomNav() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={item.onClick}
+                  onClick={() => {
+                    haptic.selection();
+                    item.onClick();
+                  }}
                   className="w-full text-center"
                 >
                   {content}
@@ -255,7 +259,12 @@ export function MobileBottomNav() {
             }
 
             return (
-              <Link key={item.id} href={item.href} className="w-full text-center">
+              <Link 
+                key={item.id} 
+                href={item.href} 
+                onClick={() => haptic.selection()}
+                className="w-full text-center"
+              >
                 {content}
               </Link>
             );

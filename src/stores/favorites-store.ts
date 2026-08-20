@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { haptic } from '@/lib/haptics';
 
 interface FavoritesState {
   savedPropertyIds: string[];
@@ -58,8 +59,10 @@ export const useFavoritesStore = create<FavoritesState>()(
         set({ savedPropertyIds: updatedIds });
 
         if (isSaved) {
+          haptic.light();
           toast.success('Removed from saved properties');
         } else {
+          haptic.favorite();
           toast.success('Property saved!');
         }
 
