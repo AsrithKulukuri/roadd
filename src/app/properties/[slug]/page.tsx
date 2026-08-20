@@ -291,15 +291,12 @@ export default async function PropertyDetailPage({
               </div>
 
               {/* Large Price Row */}
-              <div className="pt-2 flex flex-wrap items-baseline gap-3 sm:gap-4 border-t border-border-default/60">
+              <div className="pt-2 flex flex-wrap items-baseline justify-between gap-3 sm:gap-4 border-t border-border-default/60">
                 <span className="font-black text-3xl sm:text-4xl text-amber-600 dark:text-amber-400 tracking-tight">
                   {formatINR(property.price)}
                 </span>
 
-                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold text-xs bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/30">
-                  <ArrowDownRight className="w-4 h-4" /> ₹{formatPriceCompact(Math.round(property.price * 0.04))} Best Price Verified
-                </span>
-                <span className="text-xs text-text-tertiary font-semibold ml-auto">
+                <span className="text-xs text-text-tertiary font-semibold">
                   + Govt. Charges & Registration
                 </span>
               </div>
