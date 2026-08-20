@@ -257,9 +257,16 @@ export const useContentStore = create<ContentState>()(
 
       deleteLocation: async (id) => {
         try {
-          await supabase.from("trending_locations").delete().eq("id", id);
+          await fetch("/api/locations/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "sublocation",
+              subId: id,
+            }),
+          });
         } catch (err) {
-          // Ignore fallback
+          console.error("Failed to delete location on server:", err);
         }
         set((state) => ({
           trendingLocations: state.trendingLocations.filter((loc) => loc.id !== id),
