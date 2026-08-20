@@ -14,29 +14,22 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
-
-  useEffect(() => {
-    // 1. Check in zustand store
-    const found = projects.find((p) => p.id === id || p.slug === id);
-    if (found) {
-      setProject(found);
-      setLoading(false);
-      return;
-    }
-
-    // 2. Fetch directly from Supabase
     async function loadProject() {
+      setLoading(true);
       try {
+        // 1. Always query Supabase directly for the freshest data
         const { data, error } = await supabase
           .from("projects")
           .select("*")
           .or(`id.eq.${id},slug.eq.${id}`)
-          .single();
+          .maybeSingle();
 
         if (data && !error) {
           setProject(fromSupabaseProject(data));
+        } else {
+          // Fallback to local store
+          const found = projects.find((p) => p.id === id || p.slug === id);
+          if (found) setProject(found);
         }
       } catch (err) {
         console.error("Error loading project for edit:", err);
@@ -46,7 +39,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     }
 
     loadProject();
-  }, [id, projects]);
+  }, [id]);
 
   if (loading) {
     return (
@@ -67,5 +60,5 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  return <ProjectForm mode="edit" initialData={project} />;
+  return <ProjectForm key={project.id || project.slug} mode="edit" initialData={project} />;
 }

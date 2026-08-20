@@ -34,6 +34,13 @@ export function toSupabaseProject(proj: Partial<Project>): any {
   }
   delete p.status;
 
+  if (p.videoUrl !== undefined) {
+    p.videoUrl = p.videoUrl ? p.videoUrl.trim() : null;
+  }
+  if (p.coverImage !== undefined) {
+    p.coverImage = p.coverImage ? p.coverImage.trim() : null;
+  }
+
   if (!p.createdAt) p.createdAt = new Date().toISOString();
   if (!p.updatedAt) p.updatedAt = new Date().toISOString();
 
@@ -139,32 +146,40 @@ export const useProjectsStore = create<ProjectsState>()(
 
       // ─── Update ───────────────────────────────────────────────────────────
       updateProject: async (id: string, data: Partial<Project>) => {
+        const cleanData = { ...data };
+        if (cleanData.videoUrl === "") cleanData.videoUrl = null as any;
+
         set((state) => ({
           projects: state.projects.map((p) =>
-            p.id === id || (p.slug && data.slug && p.slug === data.slug)
-              ? { ...p, ...data, updatedAt: new Date().toISOString() }
+            p.id === id || (p.slug && cleanData.slug && p.slug === cleanData.slug)
+              ? { ...p, ...cleanData, updatedAt: new Date().toISOString() }
               : p
           ),
         }));
 
         try {
-          const dbPayload = toSupabaseProject(data as any);
+          const dbPayload = toSupabaseProject(cleanData as any);
           let { error } = await supabase
             .from('projects')
             .update({ ...dbPayload, updatedAt: new Date().toISOString() })
             .eq('id', id);
 
-          if (error && data.slug) {
+          if (error && cleanData.slug) {
             const fallbackRes = await supabase
               .from('projects')
               .update({ ...dbPayload, updatedAt: new Date().toISOString() })
-              .eq('slug', data.slug);
+              .eq('slug', cleanData.slug);
             error = fallbackRes.error;
           }
 
-          if (error) console.warn('Supabase project update warning:', error.message);
+          if (error) {
+            console.error('Supabase project update warning:', error.message);
+          } else {
+            // Refresh store from Supabase
+            await get().fetchProjects();
+          }
         } catch (err: any) {
-          console.warn('Supabase project update exception:', err?.message ?? err);
+          console.error('Supabase project update exception:', err?.message ?? err);
         }
       },
 
