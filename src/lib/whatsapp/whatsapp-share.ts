@@ -36,7 +36,7 @@ export function getBaseUrl(): string {
 }
 
 /**
- * Generates an SEO-friendly, tracked property or project URL for WhatsApp
+ * Generates an SEO-friendly, clean property or project URL for WhatsApp
  */
 export function generateTrackedPropertyUrl(item: any, type?: "property" | "project"): string {
   const baseUrl = getBaseUrl();
@@ -49,20 +49,11 @@ export function generateTrackedPropertyUrl(item: any, type?: "property" | "proje
   const slugOrId = item.slug || item.id || "listing";
   const path = isProject ? `/projects/${slugOrId}` : `/properties/${slugOrId}`;
 
-  // Add UTM tracking parameters
-  const url = new URL(path, baseUrl);
-  url.searchParams.set("utm_source", "whatsapp");
-  url.searchParams.set("utm_medium", "property_share");
-  url.searchParams.set("utm_campaign", isProject ? "project_share" : "property_share");
-  if (item.id) {
-    url.searchParams.set("ref", getRefId(item));
-  }
-
-  return url.toString();
+  return `${baseUrl}${path}`;
 }
 
 /**
- * Formats a professional, high-converting WhatsApp message for ROAD listings
+ * Formats a clean, luxury, organized WhatsApp message for ROAD listings
  */
 export function formatWhatsAppPropertyMessage(item: any, type?: "property" | "project"): {
   text: string;
@@ -84,13 +75,16 @@ export function formatWhatsAppPropertyMessage(item: any, type?: "property" | "pr
   if (typeof item.price === "number" && item.price > 0) {
     priceFormatted =
       item.listingType === "rent" || item.listingType === "pg"
-        ? `${formatINR(item.price)}/month`
+        ? `${formatINR(item.price)}/mo`
         : formatPriceCompact(item.price);
   } else if (item.configurations && Array.isArray(item.configurations) && item.configurations.length > 0) {
-    const min = item.configurations[0]?.priceMin;
-    const max = item.configurations[0]?.priceMax || min;
-    if (min) {
-      priceFormatted = min === max ? formatPriceCompact(min) : `${formatPriceCompact(min)} – ${formatPriceCompact(max)}`;
+    const allPrices = item.configurations.flatMap((c: any) => [c.priceMin, c.priceMax]).filter(Boolean);
+    if (allPrices.length > 0) {
+      const min = Math.min(...allPrices);
+      const max = Math.max(...allPrices);
+      priceFormatted = min >= 10000000 
+        ? `₹${(min / 10000000).toFixed(2)} Cr${max && max !== min ? ` – ₹${(max / 10000000).toFixed(2)} Cr` : ""}`
+        : `₹${(min / 100000).toFixed(2)} Lakh`;
     }
   }
 
@@ -99,55 +93,43 @@ export function formatWhatsAppPropertyMessage(item: any, type?: "property" | "pr
   const city = item.location?.city || "Andhra Pradesh";
   const locationFormatted = locality ? `${locality}, ${city}` : city;
 
-  // Specs & BHK
-  const specs: string[] = [];
-  if (item.bedrooms) specs.push(`🛏 ${item.bedrooms} BHK`);
-  if (item.bathrooms) specs.push(`🚿 ${item.bathrooms} Baths`);
-  const areaValue = item.area || item.builtUpArea || item.areaSqFt;
-  if (areaValue) specs.push(`📐 ${Number(areaValue).toLocaleString()} sq.ft`);
-  if (item.projectType || item.propertyType) {
-    specs.push(`🏢 ${String(item.projectType || item.propertyType).toUpperCase()}`);
+  // Key highlights
+  const bullets: string[] = [];
+
+  if (isProject) {
+    const pType = item.projectType ? String(item.projectType).charAt(0).toUpperCase() + String(item.projectType).slice(1) : "Project";
+    bullets.push(`• Type: ${pType}`);
+    if (item.totalArea) bullets.push(`• Total Area: ${item.totalArea}`);
+    if (item.totalUnits) bullets.push(`• Total Units: ${item.totalUnits}`);
+  } else {
+    const specs: string[] = [];
+    if (item.bedrooms) specs.push(`${item.bedrooms} BHK`);
+    if (item.bathrooms) specs.push(`${item.bathrooms} Baths`);
+    const areaVal = item.area || item.builtUpArea || item.areaSqFt;
+    if (areaVal) specs.push(`${Number(areaVal).toLocaleString()} sq.ft`);
+    if (specs.length > 0) bullets.push(`• Specs: ${specs.join(" • ")}`);
+    if (item.propertyType) {
+      const propType = String(item.propertyType).replace("-", " ");
+      bullets.push(`• Type: ${propType.charAt(0).toUpperCase() + propType.slice(1)}`);
+    }
   }
 
-  // Verification & Highlights
-  const isVerified = Boolean(
-    item.verified ||
-    item.isVerified ||
-    item.reraApproved ||
-    item.reraId ||
-    item.crdaApproved
-  );
-  const verifiedBadge = isVerified ? "✓ Verified on ROAD" : "";
-
-  // Short description (first 140 chars)
-  const rawDesc = item.tagline || item.description || "";
-  const cleanDesc = rawDesc.replace(/<[^>]*>?/gm, "").slice(0, 140).trim();
+  bullets.push(`• Ref ID: ${refId}`);
+  bullets.push(`• Status: Verified on ROAD`);
 
   const propertyUrl = generateTrackedPropertyUrl(item, type);
 
-  // Structured message layout matching ROAD luxury identity
+  // Clean, organized, luxury layout
   const lines: string[] = [
-    `🏠 *${title}* — *${priceFormatted}*`,
-    `📍 *Location:* ${locationFormatted}`,
-    `🆔 *Ref ID:* ${refId}`,
+    `*${title}*`,
+    `💰 *${priceFormatted}*`,
+    `📍 ${locationFormatted}`,
+    ``,
+    ...bullets,
+    ``,
+    `Explore complete details & photos:`,
+    propertyUrl,
   ];
-
-  if (specs.length > 0) {
-    lines.push(`📐 ${specs.join("  •  ")}`);
-  }
-
-  if (verifiedBadge) {
-    lines.push(verifiedBadge);
-  }
-
-  if (cleanDesc) {
-    lines.push(`\n"${cleanDesc}${rawDesc.length > 140 ? "..." : ""}"`);
-  }
-
-  lines.push(
-    `\n✨ *View full property details, photos & walkthrough:*`,
-    propertyUrl
-  );
 
   return {
     text: lines.join("\n"),
