@@ -51,12 +51,14 @@ export function fromSupabaseProject(p: any): Project {
   // Sanitize any expired temporary blob: URLs that were accidentally saved
   const brochureUrl = p.brochureUrl && !p.brochureUrl.startsWith('blob:') ? p.brochureUrl : undefined;
   const coverImage = p.coverImage && !p.coverImage.startsWith('blob:') ? p.coverImage : (p.cover_image && !p.cover_image.startsWith('blob:') ? p.cover_image : undefined);
+  const videoUrl = p.videoUrl && !p.videoUrl.startsWith('blob:') ? p.videoUrl : (p.video_url && !p.video_url.startsWith('blob:') ? p.video_url : undefined);
 
   return {
     ...p,
     refId: p.refId || (p.id ? `REF${(p.id.replace(/\D/g, "") || "100").padStart(3, "0").slice(0, 5)}` : undefined),
     brochureUrl,
     coverImage,
+    videoUrl,
     status: p.constructionStatus || p.status || 'under-construction',
     builder: {
       name: p.builderName || (p.builder?.name ?? 'Independent Developer'),
@@ -139,16 +141,27 @@ export const useProjectsStore = create<ProjectsState>()(
       updateProject: async (id: string, data: Partial<Project>) => {
         set((state) => ({
           projects: state.projects.map((p) =>
-            p.id === id ? { ...p, ...data, updatedAt: new Date().toISOString() } : p
+            p.id === id || (p.slug && data.slug && p.slug === data.slug)
+              ? { ...p, ...data, updatedAt: new Date().toISOString() }
+              : p
           ),
         }));
 
         try {
           const dbPayload = toSupabaseProject(data as any);
-          const { error } = await supabase
+          let { error } = await supabase
             .from('projects')
             .update({ ...dbPayload, updatedAt: new Date().toISOString() })
             .eq('id', id);
+
+          if (error && data.slug) {
+            const fallbackRes = await supabase
+              .from('projects')
+              .update({ ...dbPayload, updatedAt: new Date().toISOString() })
+              .eq('slug', data.slug);
+            error = fallbackRes.error;
+          }
+
           if (error) console.warn('Supabase project update warning:', error.message);
         } catch (err: any) {
           console.warn('Supabase project update exception:', err?.message ?? err);

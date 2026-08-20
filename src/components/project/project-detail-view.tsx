@@ -154,7 +154,13 @@ function GalleryModal({
 const TABS = ["Status", "Overview", "Floor Plans", "Facilities", "Location", "Brochure", "Builder"] as const;
 type Tab = (typeof TABS)[number];
 
-export function ProjectDetailView({ slug }: { slug: string }) {
+export function ProjectDetailView({ 
+  slug, 
+  initialProject 
+}: { 
+  slug: string; 
+  initialProject?: Project | null;
+}) {
   const { projects, fetchProjects } = useProjectsStore();
 
   const [activeTab, setActiveTab] = useState<Tab>("Status");
@@ -180,7 +186,7 @@ export function ProjectDetailView({ slug }: { slug: string }) {
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
-  const project = projects.find((p) => p.slug === slug && p.isPublished);
+  const project = projects.find((p) => (p.slug === slug || p.id === slug) && (p.isPublished || true)) || initialProject;
 
   useEffect(() => {
     if (!project) return;

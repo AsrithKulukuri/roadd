@@ -113,11 +113,15 @@ export async function generateMetadata({
   };
 }
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function ProjectPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  return <ProjectDetailView slug={slug} />;
+  const project = await getProject(slug);
+  return <ProjectDetailView slug={slug} initialProject={project} />;
 }
