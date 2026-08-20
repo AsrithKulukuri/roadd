@@ -100,6 +100,7 @@ export function HeroSection() {
   const [sublocationSearch, setSublocationSearch] = useState("");
   const [showBudgetDropdown, setShowBudgetDropdown] = useState(false);
   const [showAllCategoriesMobile, setShowAllCategoriesMobile] = useState(false);
+  const [isMobileBudgetSheetOpen, setIsMobileBudgetSheetOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -1094,12 +1095,137 @@ export function HeroSection() {
           </AnimatePresence>
         </div>
 
-        {/* ── Option 2: Compact 1-Line Budget Bar (Clean White) ── */}
-        <div className="w-full max-w-[760px] mx-auto mt-1 sm:mt-2">
-          <div className="bg-white rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 shadow-md border border-slate-200/80 flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+        {/* ── Mobile Budget Trigger Button (Opens Bottom Sheet) ── */}
+        <div className="w-full max-w-[760px] mx-auto mt-2 sm:hidden">
+          <button
+            type="button"
+            onClick={() => setIsMobileBudgetSheetOpen(true)}
+            className="w-full h-10 px-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl flex items-center justify-between shadow-xs active:scale-98 transition-all cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Budget:</span>
+              <span className="text-xs font-extrabold text-slate-900 dark:text-white">
+                {heroBudget[0] === 1000000 && heroBudget[1] >= 30000000
+                  ? "Any Price"
+                  : `${formatINRWords(heroBudget[0])} – ${heroBudget[1] >= 30000000 ? "Any" : formatINRWords(heroBudget[1])}`}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-extrabold text-slate-700 dark:text-slate-300">
+                {matchingCount} Homes
+              </span>
+              <ChevronDown className="w-4 h-4 text-slate-400" />
+            </div>
+          </button>
+        </div>
+
+        {/* ── Mobile Budget Filter Bottom Sheet ── */}
+        <AnimatePresence>
+          {isMobileBudgetSheetOpen && (
+            <div className="fixed inset-0 z-[120] sm:hidden">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMobileBudgetSheetOpen(false)}
+                className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+              />
+              <motion.div
+                initial={{ opacity: 0, y: "100%" }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: "100%" }}
+                transition={{ type: "spring", stiffness: 350, damping: 32 }}
+                className="absolute inset-x-0 bottom-0 bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 shadow-2xl p-5 pb-8 space-y-4"
+              >
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <h3 className="font-extrabold text-base text-slate-900 dark:text-white">Select Budget</h3>
+                    <p className="text-[11px] text-slate-500">Filter properties by investment range</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileBudgetSheetOpen(false)}
+                    className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Minimum</label>
+                    <select
+                      value={heroBudget[0]}
+                      onChange={(e) => setHeroBudget([Number(e.target.value), Math.max(Number(e.target.value), heroBudget[1])])}
+                      className="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white"
+                    >
+                      <option value={1000000}>₹ 10 L</option>
+                      <option value={2000000}>₹ 20 L</option>
+                      <option value={3000000}>₹ 30 L</option>
+                      <option value={5000000}>₹ 50 L</option>
+                      <option value={7500000}>₹ 75 L</option>
+                      <option value={10000000}>₹ 1 Cr</option>
+                      <option value={15000000}>₹ 1.5 Cr</option>
+                      <option value={20000000}>₹ 2 Cr</option>
+                      <option value={30000000}>₹ 3 Cr</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Maximum</label>
+                    <select
+                      value={heroBudget[1]}
+                      onChange={(e) => setHeroBudget([Math.min(heroBudget[0], Number(e.target.value)), Number(e.target.value)])}
+                      className="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white"
+                    >
+                      <option value={30000000}>Any Price</option>
+                      <option value={1000000}>₹ 10 L</option>
+                      <option value={2000000}>₹ 20 L</option>
+                      <option value={3000000}>₹ 30 L</option>
+                      <option value={5000000}>₹ 50 L</option>
+                      <option value={7500000}>₹ 75 L</option>
+                      <option value={10000000}>₹ 1 Cr</option>
+                      <option value={15000000}>₹ 1.5 Cr</option>
+                      <option value={20000000}>₹ 2 Cr</option>
+                      <option value={30000000}>₹ 3 Cr</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="py-3 px-1">
+                  <Slider
+                    min={1000000}
+                    max={30000000}
+                    step={250000}
+                    value={heroBudget}
+                    onValueChange={(val) => setHeroBudget(val as [number, number])}
+                    className="w-full budget-slider cursor-pointer"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileBudgetSheetOpen(false);
+                    handleSearchSubmit();
+                  }}
+                  className="w-full py-3.5 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-xl active:scale-98 transition-all cursor-pointer"
+                >
+                  <span>Apply Budget</span>
+                  <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-xs font-bold">
+                    {matchingCount} Homes
+                  </span>
+                </button>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Desktop Option: Compact 1-Line Budget Bar (Clean White) ── */}
+        <div className="hidden sm:block w-full max-w-[760px] mx-auto mt-2">
+          <div className="bg-white rounded-2xl px-4 py-2.5 shadow-md border border-slate-200/80 flex items-center gap-3">
             
             {/* Min & Max Selects */}
-            <div className="flex items-center justify-center gap-1.5 w-full sm:w-auto shrink-0">
+            <div className="flex items-center justify-center gap-1.5 shrink-0">
               <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-0.5">
                 Budget:
               </span>
@@ -1183,7 +1309,7 @@ export function HeroSection() {
             <button
               type="button"
               onClick={() => handleSearchSubmit()}
-              className="h-7.5 px-3.5 bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all hover:scale-102 active:scale-98 cursor-pointer shrink-0 w-full sm:w-auto"
+              className="h-7.5 px-3.5 bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all hover:scale-102 active:scale-98 cursor-pointer shrink-0"
             >
               <span>Apply</span>
               <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-extrabold leading-none">
