@@ -269,80 +269,76 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
           {/* Subtle Shimmer Light Reflection on Hover */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
-          {/* Type + RERA + Category badges */}
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10 pointer-events-none">
-            <span className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border backdrop-blur-md ${TC.badgeClass}`}>
-              <Icon className="w-3 h-3" />
-              {TC.label}
-            </span>
-            {(project.displayCategory === "featured" || project.isFeatured) && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-[0_0_14px_rgba(245,158,11,0.45)] border border-amber-300/40 backdrop-blur-md">
-                ⭐ Featured
+          {/* Top Bar Header Overlay (Clean non-overlapping flex layout) */}
+          <div className="absolute top-2.5 left-2.5 right-2.5 z-10 flex items-start justify-between gap-2 pointer-events-none">
+            {/* Left: Badges */}
+            <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+              <span className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold border backdrop-blur-md shadow-xs ${TC.badgeClass}`}>
+                <Icon className="w-3 h-3 shrink-0" />
+                <span>{TC.label}</span>
               </span>
-            )}
-            {project.displayCategory === "recommended" && !project.isFeatured && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_12px_rgba(37,99,235,0.4)] border border-blue-400/40 backdrop-blur-md">
-                👍 Recommended
-              </span>
-            )}
-            {project.displayCategory === "budget_friendly" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)] border border-emerald-400/40 backdrop-blur-md">
-                💰 Budget Friendly
-              </span>
-            )}
-            {project.reraApproved && (
-              <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-950/80 text-amber-400 border border-amber-400/30 backdrop-blur-md shadow-xs">
-                <CheckCircle2 className="w-3 h-3 text-amber-400" /> RERA
-              </span>
-            )}
-            {project.noBrokerage && (
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-950/80 text-white backdrop-blur-md border border-white/10">
-                0% Brokerage
-              </span>
-            )}
-          </div>
+              {(project.displayCategory === "featured" || project.isFeatured) && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-xs border border-amber-300/40 backdrop-blur-md">
+                  ⭐ Featured
+                </span>
+              )}
+              {project.displayCategory === "recommended" && !project.isFeatured && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs border border-blue-400/40 backdrop-blur-md">
+                  👍 Recommended
+                </span>
+              )}
+              {project.displayCategory === "budget_friendly" && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs border border-emerald-400/40 backdrop-blur-md">
+                  💰 Budget Friendly
+                </span>
+              )}
+              {project.reraApproved && (
+                <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-slate-950/80 text-amber-400 border border-amber-400/30 backdrop-blur-md shadow-xs">
+                  <CheckCircle2 className="w-3 h-3 text-amber-400 shrink-0" /> RERA
+                </span>
+              )}
+              {project.noBrokerage && (
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-slate-950/80 text-white backdrop-blur-md border border-white/10">
+                  0% Brokerage
+                </span>
+              )}
+            </div>
 
-          {/* Actions: Share & Heart Button Overlay with Spring Animation */}
-          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.8 }}
-              whileHover={{ scale: 1.12 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="w-9 h-9 rounded-full bg-white/95 dark:bg-slate-900/90 hover:bg-white text-slate-800 dark:text-white shadow-lg flex items-center justify-center cursor-pointer border border-white/20 backdrop-blur-sm active:scale-90"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                shareOnWhatsApp({ item: project, type: "project", source: "card" });
-              }}
-              title="Share project"
-              aria-label="Share project"
-            >
-              <Share2 className="h-4 w-4 text-slate-700 dark:text-slate-200" />
-            </motion.button>
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.8 }}
-              whileHover={{ scale: 1.12 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="w-9 h-9 rounded-full bg-white/95 dark:bg-slate-900/90 hover:bg-white text-slate-800 dark:text-white shadow-lg flex items-center justify-center cursor-pointer border border-white/20 backdrop-blur-sm active:scale-90"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleFavorite(project.id);
-              }}
-              aria-label={isSaved ? "Remove from saved" : "Save project"}
-              title={isSaved ? "Remove from saved" : "Save project"}
-            >
-              <Heart
-                className={cn(
-                  "h-4 w-4 transition-transform duration-300",
-                  isSaved
-                    ? "fill-red-600 text-red-600 scale-110 drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]"
-                    : "text-slate-700 dark:text-slate-200"
-                )}
-              />
-            </motion.button>
+            {/* Right: Actions: Share & Heart Button Overlay */}
+            <div className="flex items-center gap-1.5 shrink-0 pointer-events-auto">
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.8 }}
+                whileHover={{ scale: 1.12 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                className="w-8 h-8 rounded-full bg-slate-950/80 hover:bg-slate-950 text-white shadow-md flex items-center justify-center cursor-pointer border border-white/20 backdrop-blur-md active:scale-90"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  shareOnWhatsApp({ item: project, type: "project", source: "card" });
+                }}
+                title="Share project"
+                aria-label="Share project"
+              >
+                <Share2 className="h-3.5 w-3.5 text-white" />
+              </motion.button>
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.8 }}
+                whileHover={{ scale: 1.12 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                className="w-8 h-8 rounded-full bg-slate-950/80 hover:bg-slate-950 text-white shadow-md flex items-center justify-center cursor-pointer border border-white/20 backdrop-blur-md active:scale-90"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleFavorite(project.id);
+                }}
+                title={isSaved ? "Remove from saved" : "Save project"}
+                aria-label={isSaved ? "Remove from saved" : "Save project"}
+              >
+                <Heart className={cn("h-3.5 w-3.5", isSaved ? "fill-red-500 text-red-500" : "text-white")} />
+              </motion.button>
+            </div>
           </div>
 
           {/* Status */}
