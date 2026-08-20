@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Project, ProjectType } from "@/types/project";
 import { getRefId, findItemByRefId } from "@/lib/ref-id";
+import { WhatsAppIcon } from "@/components/property/whatsapp-share-button";
+import { AdminWhatsAppModal } from "@/components/admin/admin-whatsapp-modal";
 
 const TYPE_CONFIG: Record<ProjectType, { label: string; icon: React.ElementType; color: string }> = {
   apartment: { label: "Apartment", icon: Building2, color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
@@ -66,6 +68,7 @@ function ConfirmDeleteModal({
 export default function AdminProjectsPage() {
   const { projects, fetchProjects, deleteProject, toggleFeatured, togglePublished, updateDisplayCategory } = useProjectsStore();
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [whatsAppModalProject, setWhatsAppModalProject] = useState<Project | null>(null);
   const [filterType, setFilterType] = useState<ProjectType | "all">("all");
 
   useEffect(() => {
@@ -282,31 +285,47 @@ export default function AdminProjectsPage() {
                         </td>
                         {/* Actions */}
                         <td className="px-4 py-4">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button className="p-2 rounded-lg hover:bg-bg-primary text-text-secondary hover:text-text-primary transition-colors">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 bg-white dark:bg-bg-card border border-border-default">
-                              <DropdownMenuItem asChild>
-                                <Link href={`/projects/${project.slug}`} target="_blank" className="flex items-center gap-2">
-                                  <Eye className="w-4 h-4" /> View
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <Link href={`/admin/projects/${project.id}/edit`} className="flex items-center gap-2">
-                                  <Edit3 className="w-4 h-4" /> Edit
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-500 focus:text-red-500 flex items-center gap-2"
-                                onClick={() => setDeleteTarget(project)}
-                              >
-                                <Trash2 className="w-4 h-4" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setWhatsAppModalProject(project)}
+                              className="p-1.5 rounded-lg border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                              title="Share on WhatsApp"
+                            >
+                              <WhatsAppIcon className="w-4 h-4 fill-emerald-500/20" />
+                            </button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="p-2 rounded-lg hover:bg-bg-primary text-text-secondary hover:text-text-primary transition-colors">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-bg-card border border-border-default">
+                                <DropdownMenuItem
+                                  className="text-emerald-500 focus:text-emerald-500 flex items-center gap-2 cursor-pointer"
+                                  onClick={() => setWhatsAppModalProject(project)}
+                                >
+                                  <WhatsAppIcon className="w-4 h-4 fill-emerald-500/20" /> Share on WhatsApp
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/projects/${project.slug}`} target="_blank" className="flex items-center gap-2">
+                                    <Eye className="w-4 h-4" /> View
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/admin/projects/${project.id}/edit`} className="flex items-center gap-2">
+                                    <Edit3 className="w-4 h-4" /> Edit
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-red-500 focus:text-red-500 flex items-center gap-2"
+                                  onClick={() => setDeleteTarget(project)}
+                                >
+                                  <Trash2 className="w-4 h-4" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -405,6 +424,14 @@ export default function AdminProjectsPage() {
                     <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
                       <span className="text-amber-primary font-bold text-sm">{getPriceRange(project)}</span>
                       <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setWhatsAppModalProject(project)}
+                          className="p-2 rounded-full text-emerald-500 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                          title="Share on WhatsApp"
+                        >
+                          <WhatsAppIcon className="w-4 h-4 fill-emerald-500/20" />
+                        </button>
                         <button onClick={async () => { await toggleFeatured(project.id); toast.success("Updated!"); }} title={project.isFeatured ? "Unfeature" : "Feature"} className={`p-2 rounded-full transition-colors ${project.isFeatured ? "text-amber-500 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-500 hover:bg-bg-primary"}`}>
                           <Star className={`w-4 h-4 ${project.isFeatured ? "fill-amber-500" : ""}`} />
                         </button>
@@ -426,6 +453,14 @@ export default function AdminProjectsPage() {
           </div>
         </div>
       </div>
+
+      {/* WhatsApp Sharing & Business API Modal */}
+      <AdminWhatsAppModal
+        item={whatsAppModalProject}
+        type="project"
+        isOpen={Boolean(whatsAppModalProject)}
+        onClose={() => setWhatsAppModalProject(null)}
+      />
     </>
   );
 }

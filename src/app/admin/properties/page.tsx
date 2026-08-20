@@ -11,10 +11,14 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { WhatsAppIcon } from "@/components/property/whatsapp-share-button";
+import { AdminWhatsAppModal } from "@/components/admin/admin-whatsapp-modal";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export default function AdminPropertiesPage() {
   const { properties, toggleSoldOut, deleteProperty, deleteAllProperties, toggleShowOnMap, updateDisplayCategory } = usePropertiesStore();
+  const [whatsAppModalItem, setWhatsAppModalItem] = useState<any | null>(null);
 
   const handleDeleteAll = () => {
     if (confirm("Are you sure you want to delete ALL properties? This action cannot be undone.")) {
@@ -120,7 +124,17 @@ export default function AdminPropertiesPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setWhatsAppModalItem(property)}
+                    className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 flex items-center gap-1 hover:bg-emerald-500/20 transition-colors cursor-pointer"
+                    title="Share on WhatsApp"
+                  >
+                    <WhatsAppIcon className="w-3 h-3 fill-emerald-500/20" />
+                    <span>WhatsApp</span>
+                  </button>
+
                   <Link
                     href={`/admin/properties/${property.id}/edit`}
                     className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center gap-1"
@@ -226,35 +240,56 @@ export default function AdminPropertiesPage() {
                     {property.location.locality}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-text-secondary">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 bg-bg-card border-border-default">
-                        <DropdownMenuItem asChild className="cursor-pointer gap-2 text-amber-500 focus:text-amber-500 focus:bg-amber-500/10">
-                          <Link href={`/admin/properties/${property.id}/edit`}>
-                            <Edit3 className="w-4 h-4" />
-                            Edit Property
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="cursor-pointer gap-2"
-                          onClick={() => toggleSoldOut(property.id)}
-                        >
-                          <PowerOff className="w-4 h-4" />
-                          {property.status === 'sold' ? 'Mark Active' : 'Mark Sold Out'}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="cursor-pointer gap-2 text-red-500 focus:text-red-500 focus:bg-red-500/10"
-                          onClick={() => deleteProperty(property.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete Property
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setWhatsAppModalItem(property)}
+                        className="gap-1.5 text-xs border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer h-8"
+                        title="Share on WhatsApp"
+                      >
+                        <WhatsAppIcon className="w-3.5 h-3.5 fill-emerald-500/20" />
+                        <span className="hidden lg:inline">WhatsApp</span>
+                      </Button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-text-secondary">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 bg-bg-card border-border-default">
+                          <DropdownMenuItem 
+                            className="cursor-pointer gap-2 text-emerald-500 focus:text-emerald-500 focus:bg-emerald-500/10"
+                            onClick={() => setWhatsAppModalItem(property)}
+                          >
+                            <WhatsAppIcon className="w-4 h-4 fill-emerald-500/20" />
+                            Share on WhatsApp
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild className="cursor-pointer gap-2 text-amber-500 focus:text-amber-500 focus:bg-amber-500/10">
+                            <Link href={`/admin/properties/${property.id}/edit`}>
+                              <Edit3 className="w-4 h-4" />
+                              Edit Property
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="cursor-pointer gap-2"
+                            onClick={() => toggleSoldOut(property.id)}
+                          >
+                            <PowerOff className="w-4 h-4" />
+                            {property.status === 'sold' ? 'Mark Active' : 'Mark Sold Out'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="cursor-pointer gap-2 text-red-500 focus:text-red-500 focus:bg-red-500/10"
+                            onClick={() => deleteProperty(property.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete Property
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -263,6 +298,14 @@ export default function AdminPropertiesPage() {
         </div>
       </div>
       )}
+
+      {/* WhatsApp Sharing & Business API Modal */}
+      <AdminWhatsAppModal
+        item={whatsAppModalItem}
+        type="property"
+        isOpen={Boolean(whatsAppModalItem)}
+        onClose={() => setWhatsAppModalItem(null)}
+      />
     </div>
   );
 }
