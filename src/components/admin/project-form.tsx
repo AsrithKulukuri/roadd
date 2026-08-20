@@ -836,8 +836,8 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
             <p className="text-sm text-text-secondary mb-4">Add dated updates, progress text, and YouTube video links.</p>
             
             <div className="space-y-4">
-              {constructionUpdates.map((update) => (
-                <div key={update.id} className="relative p-4 rounded-2xl border border-border-default bg-bg-primary group">
+              {constructionUpdates.map((update, idx) => (
+                <div key={update.id || `cu-${idx}`} className="relative p-4 rounded-2xl border border-border-default bg-bg-primary group">
                   <button
                     type="button"
                     onClick={() => setConstructionUpdates(prev => prev.filter(u => u.id !== update.id))}
@@ -979,7 +979,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                     {isSelected && (
                       <div className="p-4 pt-0 border-t border-border-default/50 flex flex-col gap-6 mt-4">
                         {configsForLabel.map((config, index) => (
-                          <div key={config.id} className="relative group">
+                          <div key={config.id || `cfg-${index}`} className="relative group">
                             {configsForLabel.length > 1 && (
                               <button
                                 type="button"
@@ -1287,9 +1287,9 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 {images.length > 0 && (
                   <div className="flex gap-2 overflow-x-auto py-2">
                     {images.filter(img => img.url !== coverImage).map((img, i) => (
-                      <div key={img.id} className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                      <div key={img.id || img.url || `gal-${i}`} className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
                         <img src={img.url} alt={`Gallery ${i}`} className="w-full h-full object-cover" />
-                        <button type="button" onClick={() => setImages(prev => prev.filter(x => x.id !== img.id))} className="absolute top-1 right-1 bg-black/60 text-white p-1 rounded-full">
+                        <button type="button" onClick={() => setImages(prev => prev.filter(x => (x.id && img.id ? x.id !== img.id : x.url !== img.url)))} className="absolute top-1 right-1 bg-black/60 text-white p-1 rounded-full cursor-pointer">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
