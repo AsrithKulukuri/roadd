@@ -83,9 +83,9 @@ export function MixedCarouselRow({
         {!hideHeader && (
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 mb-3">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-amber-400 text-xs sm:text-sm font-bold shadow-sm">
-                <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400" />
-                {title}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white text-slate-950 border border-slate-200/80 shadow-md text-xs sm:text-sm font-extrabold tracking-tight">
+                <Icon className="h-4 w-4 text-slate-950 shrink-0" />
+                <span>{title}</span>
               </div>
             </div>
 

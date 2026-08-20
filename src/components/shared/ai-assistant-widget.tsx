@@ -128,13 +128,13 @@ export function AiAssistantWidget() {
             onClick={() => setIsOpen(true)}
             aria-label="Open AI Assistant"
             className={cn(
-              "fixed left-4 lg:bottom-6 lg:left-auto lg:right-6 w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 rounded-full shadow-[0_8px_30px_rgba(245,158,11,0.35)] flex items-center justify-center z-[45] text-slate-950 border-2 border-amber-300/80 cursor-pointer transition-all",
+              "fixed left-4 lg:bottom-6 lg:left-auto lg:right-6 w-12 h-12 lg:w-14 lg:h-14 bg-slate-950 hover:bg-slate-900 rounded-full shadow-2xl flex items-center justify-center z-[45] text-white border border-white/20 ring-2 ring-white/10 cursor-pointer transition-all active:scale-95",
               isNavHidden ? "bottom-6" : "bottom-20"
             )}
           >
             <div className="relative flex items-center justify-center">
-              <Bot className="w-6 h-6 lg:w-7 lg:h-7 stroke-[2.2]" />
-              <Sparkles className="w-3 h-3 absolute -top-1 -right-1.5 text-slate-950 fill-slate-950 animate-pulse" />
+              <Bot className="w-6 h-6 lg:w-7 lg:h-7 stroke-[2.2] text-white" />
+              <Sparkles className="w-3 h-3 absolute -top-1 -right-1.5 text-white fill-white animate-pulse" />
             </div>
           </motion.button>
         )}
@@ -155,8 +155,8 @@ export function AiAssistantWidget() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-bg-primary/50 border-b border-border-default backdrop-blur-md">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-amber-primary/20 flex items-center justify-center">
-                  <Bot className="w-4 h-4 text-amber-primary" />
+                <div className="w-8 h-8 rounded-full bg-slate-950 text-white flex items-center justify-center shadow-xs">
+                  <Bot className="w-4 h-4 text-white" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-text-primary text-sm">ROAD AI</h3>
@@ -181,14 +181,14 @@ export function AiAssistantWidget() {
                   className={`flex items-start gap-2 max-w-[85%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}
                 >
                   <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center mt-1 ${
-                    msg.role === 'assistant' ? 'bg-amber-primary/20 text-amber-primary' : 'bg-white/10 text-text-secondary'
+                    msg.role === 'assistant' ? 'bg-slate-950 text-white' : 'bg-white/10 text-text-secondary'
                   }`}>
                     {msg.role === 'assistant' ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
                   </div>
                   <div className={`p-3 rounded-2xl text-sm ${
                     msg.role === 'assistant' 
                       ? 'bg-bg-primary border border-border-default text-text-primary rounded-tl-sm' 
-                      : 'bg-amber-primary text-bg-primary font-medium rounded-tr-sm'
+                      : 'bg-slate-950 text-white font-medium rounded-tr-sm'
                   }`}>
                     {msg.content}
                   </div>
@@ -203,13 +203,13 @@ export function AiAssistantWidget() {
                   transition={{ delay: 0.3 }}
                   className="flex flex-col gap-2 mt-2 ml-10"
                 >
-                  <button onClick={() => handleQuickSearch("Find me a 3 BHK in Benz Circle")} className="text-left text-xs bg-amber-primary/10 hover:bg-amber-primary/20 text-amber-primary border border-amber-primary/20 rounded-xl px-3 py-2 transition-colors w-fit">
+                  <button onClick={() => handleQuickSearch("Find me a 3 BHK in Benz Circle")} className="text-left text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-text-primary border border-border-default rounded-xl px-3 py-2 transition-colors w-fit">
                     Find me a 3 BHK in Benz Circle
                   </button>
-                  <button onClick={() => handleQuickSearch("Show me Villas under 2 Cr in Vijayawada")} className="text-left text-xs bg-amber-primary/10 hover:bg-amber-primary/20 text-amber-primary border border-amber-primary/20 rounded-xl px-3 py-2 transition-colors w-fit">
+                  <button onClick={() => handleQuickSearch("Show me Villas under 2 Cr in Vijayawada")} className="text-left text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-text-primary border border-border-default rounded-xl px-3 py-2 transition-colors w-fit">
                     Show me Villas under 2 Cr in Vijayawada
                   </button>
-                  <button onClick={() => handleQuickSearch("Apartments for rent in Patamata")} className="text-left text-xs bg-amber-primary/10 hover:bg-amber-primary/20 text-amber-primary border border-amber-primary/20 rounded-xl px-3 py-2 transition-colors w-fit">
+                  <button onClick={() => handleQuickSearch("Apartments for rent in Patamata")} className="text-left text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-text-primary border border-border-default rounded-xl px-3 py-2 transition-colors w-fit">
                     Apartments for rent in Patamata
                   </button>
                 </motion.div>
@@ -221,11 +221,11 @@ export function AiAssistantWidget() {
                   animate={{ opacity: 1 }}
                   className="flex items-start gap-2 max-w-[85%]"
                 >
-                  <div className="w-6 h-6 rounded-full bg-amber-primary/20 text-amber-primary flex-shrink-0 flex items-center justify-center mt-1">
+                  <div className="w-6 h-6 rounded-full bg-slate-950 text-white flex-shrink-0 flex items-center justify-center mt-1">
                     <Bot className="w-3 h-3" />
                   </div>
                   <div className="bg-bg-primary border border-border-default p-3 rounded-2xl rounded-tl-sm">
-                    <Loader2 className="w-4 h-4 text-amber-primary animate-spin" />
+                    <Loader2 className="w-4 h-4 text-text-primary animate-spin" />
                   </div>
                 </motion.div>
               )}
@@ -239,7 +239,7 @@ export function AiAssistantWidget() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask me anything..."
-                  className="pr-10 bg-bg-card border-border-default focus-visible:ring-amber-primary"
+                  className="pr-10 bg-bg-card border-border-default focus-visible:ring-slate-950"
                   disabled={isLoading}
                 />
                 <Button
@@ -247,7 +247,7 @@ export function AiAssistantWidget() {
                   size="icon"
                   variant="ghost"
                   disabled={!input.trim() || isLoading}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 text-amber-primary hover:text-amber-primary hover:bg-amber-primary/10"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 text-slate-950 dark:text-white hover:bg-white/10"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
