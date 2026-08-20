@@ -95,7 +95,13 @@ export default function AddPropertyPage() {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ ...prev, [name]: checked }));
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData(prev => {
+        const next = { ...prev, [name]: value };
+        if (name === "listingType" && value === "resale") {
+          next.saleType = "resale";
+        }
+        return next;
+      });
       
       // Auto-generate slug from title
       if (name === "title") {
@@ -601,6 +607,7 @@ export default function AddPropertyPage() {
                 <label className="text-sm font-medium text-text-secondary">Listing Type</label>
                 <select name="listingType" value={formData.listingType} onChange={handleChange} className="w-full h-12 rounded-xl bg-bg-primary border border-border-default/50 px-4 text-text-primary focus:outline-none focus:ring-2 focus:ring-amber-primary">
                   <option value="sale">For Sale</option>
+                  <option value="resale">Resale</option>
                   <option value="rent">For Rent</option>
                   <option value="pg">PG / Co-living</option>
                 </select>

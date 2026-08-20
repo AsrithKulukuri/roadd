@@ -48,7 +48,8 @@ export const propertyTypeLabels: Record<string, string> = {
 };
 
 export const listingTypeLabels: Record<string, string> = {
-  sale: "Buy",
+  sale: "Buy / For Sale",
+  resale: "Resale",
   rent: "Rent",
   pg: "PG / Co-living",
 };

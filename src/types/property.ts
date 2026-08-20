@@ -32,7 +32,7 @@ export type PropertyStatus =
   | "archived"
   | "hidden";
 
-export type ListingType = "sale" | "rent" | "pg";
+export type ListingType = "sale" | "resale" | "rent" | "pg";
 
 export type SaleType = "new" | "resale";
 

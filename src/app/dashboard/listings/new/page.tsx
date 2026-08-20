@@ -82,7 +82,8 @@ export default function PostPropertyPage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-secondary">Listing For</label>
                 <select required className="flex h-10 w-full rounded-xl border border-border-default bg-bg-card px-4 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-amber-primary/40 focus:border-amber-primary">
-                  <option value="sale">Sale</option>
+                  <option value="sale">For Sale</option>
+                  <option value="resale">Resale</option>
                   <option value="rent">Rent / Lease</option>
                   <option value="pg">PG / Co-living</option>
                 </select>
