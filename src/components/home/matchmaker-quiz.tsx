@@ -89,17 +89,17 @@ export function MatchmakerQuiz() {
       <div className="absolute inset-0 bg-slate-50/50 dark:bg-slate-950/20 z-0"></div>
 
       <div className="max-w-xl mx-auto px-4 relative z-10">
-        <div className="bg-white dark:bg-bg-card rounded-3xl p-5 sm:p-7 shadow-xl border border-slate-200/80 dark:border-slate-800 relative overflow-hidden flex flex-col justify-center">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 shadow-xl border border-slate-200 dark:border-slate-800 relative overflow-hidden flex flex-col justify-center text-left">
           
           {isAnalyzing ? (
             <div className="text-center py-6 space-y-4">
               <div className="relative w-14 h-14 mx-auto">
-                <div className="absolute inset-0 border-3 border-slate-200 rounded-full"></div>
+                <div className="absolute inset-0 border-3 border-slate-200 dark:border-slate-700 rounded-full"></div>
                 <div className="absolute inset-0 border-3 border-slate-950 dark:border-white rounded-full border-t-transparent animate-spin"></div>
                 <Sparkles className="w-6 h-6 text-slate-950 dark:text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
               </div>
               <div>
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">Analyzing your profile...</h3>
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-950 dark:text-white">Analyzing your profile...</h3>
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Scanning curated projects to match your lifestyle.</p>
               </div>
             </div>
@@ -107,10 +107,10 @@ export function MatchmakerQuiz() {
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">Your Curated Matches</h3>
+                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-950 dark:text-white">Your Curated Matches</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">Based on your preferences.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={resetQuiz} className="h-8 text-xs gap-1.5 rounded-full border-slate-300 dark:border-slate-700">
+                <Button variant="outline" size="sm" onClick={resetQuiz} className="h-8 text-xs gap-1.5 rounded-full border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white">
                   <RotateCcw className="w-3.5 h-3.5" /> Retake
                 </Button>
               </div>
@@ -144,7 +144,7 @@ export function MatchmakerQuiz() {
 
               {/* Question */}
               <div key={step} className="animate-in fade-in slide-in-from-right-4 duration-300">
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mb-3.5 tracking-tight">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-950 dark:text-white mb-3.5 tracking-tight">
                   {QUESTIONS[step].title}
                 </h3>
                 
@@ -159,20 +159,32 @@ export function MatchmakerQuiz() {
                         onClick={() => handleSelect(QUESTIONS[step].id, opt.value)}
                         className={`text-left p-3 sm:p-3.5 rounded-2xl border transition-all duration-200 flex items-center justify-between group cursor-pointer ${
                           isSelected
-                            ? "border-slate-950 bg-slate-950 text-white shadow-md"
-                            : "border-slate-200 dark:border-slate-800 hover:border-slate-900 dark:hover:border-white bg-white dark:bg-slate-900"
+                            ? "border-slate-950 bg-slate-950 text-white shadow-md dark:border-white dark:bg-white dark:text-slate-950"
+                            : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white hover:border-slate-950 dark:hover:border-white hover:bg-slate-100 dark:hover:bg-slate-800"
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           {Icon && (
-                            <div className={`p-1.5 rounded-xl shrink-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 group-hover:bg-slate-200 dark:group-hover:bg-slate-700'}`}>
+                            <div className={`p-1.5 rounded-xl shrink-0 ${
+                              isSelected 
+                                ? 'bg-white/20 text-white dark:bg-slate-950/10 dark:text-slate-950' 
+                                : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 group-hover:bg-slate-200 dark:group-hover:bg-slate-600'
+                            }`}>
                               <Icon className="w-4 h-4" />
                             </div>
                           )}
-                          <span className={`font-bold text-xs sm:text-sm truncate ${isSelected ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{opt.label}</span>
+                          <span className={`font-bold text-xs sm:text-sm truncate ${
+                            isSelected 
+                              ? 'text-white dark:text-slate-950' 
+                              : 'text-slate-900 dark:text-white'
+                          }`}>{opt.label}</span>
                         </div>
-                        <div className={`w-4 h-4 rounded-full border shrink-0 ml-2 flex items-center justify-center ${isSelected ? 'border-white' : 'border-slate-300 dark:border-slate-700'}`}>
-                          {isSelected && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                        <div className={`w-4 h-4 rounded-full border shrink-0 ml-2 flex items-center justify-center ${
+                          isSelected 
+                            ? 'border-white dark:border-slate-950' 
+                            : 'border-slate-300 dark:border-slate-600'
+                        }`}>
+                          {isSelected && <div className="w-2 h-2 bg-white dark:bg-slate-950 rounded-full"></div>}
                         </div>
                       </button>
                     );
@@ -184,7 +196,7 @@ export function MatchmakerQuiz() {
               {step > 0 && (
                 <button 
                   onClick={() => setStep(step - 1)}
-                  className="mt-4 text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+                  className="mt-4 text-xs font-bold text-slate-500 hover:text-slate-950 dark:hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" /> Back
                 </button>
