@@ -16,6 +16,7 @@ import Link from "next/link";
 import { BackButton } from "@/components/ui/back-button";
 import type { Project, ProjectConfig } from "@/types/project";
 import { ProjectFacilitiesGrid } from "@/components/project/project-facilities-grid";
+import { ZoomableImageModal } from "@/components/ui/zoomable-image-modal";
 import { getRefId } from "@/lib/ref-id";
 import { shareItem } from "@/lib/share-utils";
 import { shareOnWhatsApp } from "@/lib/whatsapp/whatsapp-share";
@@ -102,52 +103,6 @@ const STATUS_LABELS = {
   "new-launch":         "New Launch",
 };
 const TYPE_ICONS = { apartment: Building2, villa: Home, venture: Landmark };
-
-// ─── Gallery Modal ─────────────────────────────────────────────────────────────
-
-function GalleryModal({
-  images, startIdx, onClose,
-}: {
-  images: { url: string; alt?: string; category?: string }[];
-  startIdx: number;
-  onClose: () => void;
-}) {
-  const [idx, setIdx] = useState(startIdx);
-  const prev = () => setIdx((i) => (i - 1 + images.length) % images.length);
-  const next = () => setIdx((i) => (i + 1) % images.length);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowLeft") prev();
-      if (e.key === "ArrowRight") next();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  });
-
-  return (
-    <div className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center p-4">
-      {/* Image Counter top-left */}
-      <div className="absolute top-4 left-4 z-20 px-3.5 py-1.5 rounded-full bg-slate-900/90 text-white border border-white/20 text-xs font-bold shadow-lg pointer-events-none">
-        {idx + 1} / {images.length}
-      </div>
-
-      {/* Close X button top-right */}
-      <button onClick={onClose} className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-white border border-white/20 transition-all cursor-pointer shadow-lg" title="Close photo gallery">
-        <X className="w-5 h-5" />
-      </button>
-
-      <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-slate-900/80 hover:bg-amber-500 hover:text-slate-950 text-white transition-all cursor-pointer z-10">
-        <ChevronLeft className="w-6 h-6" />
-      </button>
-      <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-slate-900/80 hover:bg-amber-500 hover:text-slate-950 text-white transition-all cursor-pointer z-10">
-        <ChevronRight className="w-6 h-6" />
-      </button>
-      <img src={images[idx].url} alt={images[idx].alt ?? "Project image"} className="max-h-[85vh] max-w-full object-contain rounded-xl" />
-    </div>
-  );
-}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -286,41 +241,23 @@ export function ProjectDetailView({
 
   return (
     <>
-      {/* Gallery modal */}
-      {galleryIdx !== null && (
-        <GalleryModal images={galleryAll} startIdx={galleryIdx} onClose={() => setGalleryIdx(null)} />
-      )}
+      {/* Zoomable Photo Gallery Modal (Touch & Pinch-to-Zoom enabled) */}
+      <ZoomableImageModal
+        isOpen={galleryIdx !== null}
+        onClose={() => setGalleryIdx(null)}
+        images={galleryAll}
+        initialIndex={galleryIdx ?? 0}
+        title={project.name}
+      />
 
-      {/* Floor Plan Lightbox */}
-      {floorPlanLightbox && (
-        <div
-          className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center p-4"
-          onClick={() => setFloorPlanLightbox(null)}
-        >
-          {/* Close button top-right */}
-          <button
-            onClick={() => setFloorPlanLightbox(null)}
-            className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-white border border-white/20 transition-all cursor-pointer shadow-lg"
-            title="Close floor plan"
-          >
-            <X className="w-5 h-5" />
-          </button>
-          <p className="absolute top-5 left-5 text-white/70 text-sm font-semibold">
-            {floorPlanLightbox.label} — Floor Plan
-          </p>
-          <div
-            className="w-full max-w-3xl max-h-[85vh] flex items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={floorPlanLightbox.url}
-              alt={`${floorPlanLightbox.label} floor plan`}
-              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
-            />
-          </div>
-          <p className="mt-4 text-white/40 text-xs">Click anywhere outside to close</p>
-        </div>
-      )}
+      {/* Zoomable Floor Plan & Master Plan Lightbox Modal (Touch & Pinch-to-Zoom enabled) */}
+      <ZoomableImageModal
+        isOpen={floorPlanLightbox !== null}
+        onClose={() => setFloorPlanLightbox(null)}
+        images={floorPlanLightbox ? [{ url: floorPlanLightbox.url, label: floorPlanLightbox.label }] : []}
+        initialIndex={0}
+        title={floorPlanLightbox?.label || `${project.name} Plan`}
+      />
 
       {/* Video Tour Modal */}
       {activeVideoUrl && (
@@ -929,6 +866,22 @@ export function ProjectDetailView({
                     >
                       <span>All</span>
                     </button>
+
+                    {/* Master Plan Tab Button (Only displayed if found) */}
+                    {project.masterPlanUrl && (
+                      <button
+                        onClick={() => setActiveConfigLabel("Master Plan")}
+                        className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 border transition-all shrink-0 cursor-pointer ${
+                          currentLabel === "Master Plan"
+                            ? "bg-slate-950 text-white border-slate-950 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
+                            : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
+                        }`}
+                      >
+                        <LayoutTemplate className="w-3.5 h-3.5" />
+                        <span>Master Plan</span>
+                      </button>
+                    )}
+
                     {groupedConfigs.map((group) => (
                       <button key={group.label} onClick={() => setActiveConfigLabel(group.label)}
                         className={`px-4 py-1.5 rounded-full text-xs sm:text-sm flex flex-col items-center justify-center border transition-all shrink-0 cursor-pointer ${
@@ -945,7 +898,77 @@ export function ProjectDetailView({
 
                   <div>
                     <div ref={cardsScrollRef} className="flex gap-4 sm:gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-1 px-1">
-                    {(currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => {
+                    
+                    {/* Featured Master Plan Card (Only displayed if found) */}
+                    {project.masterPlanUrl && (currentLabel === "All" || currentLabel === "Master Plan") && (
+                      <div className="w-[85vw] sm:w-[350px] shrink-0 snap-start p-5 rounded-3xl border-2 border-amber-500/30 dark:border-amber-500/30 bg-amber-500/5 dark:bg-slate-900/60 shadow-sm hover:shadow-xl hover:border-amber-500/60 transition-all duration-300 flex flex-col justify-between group">
+                        <div>
+                          <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-border-default/60">
+                            <div>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-500 text-slate-950 shadow-xs">
+                                <LayoutTemplate className="w-3 h-3" /> Master Plan
+                              </span>
+                              <div className="text-xl font-black text-text-primary mt-1">
+                                Overall Site Layout
+                              </div>
+                              <div className="text-[11px] text-text-secondary font-medium mt-0.5">
+                                {project.totalArea ? `Total Area: ${project.totalArea}` : "Complete Project Layout"}
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-2xs">
+                                Master Plan
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Middle Preview Box */}
+                          <div
+                            className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-950 border border-border-default/80 my-3 flex items-center justify-center cursor-pointer group/media shadow-inner"
+                            onClick={() => setFloorPlanLightbox({ url: project.masterPlanUrl!, label: `${project.name} — Master Plan` })}
+                          >
+                            <img
+                              src={resolveMediaUrl(project.masterPlanUrl)}
+                              alt={`${project.name} Master Plan`}
+                              className="max-w-[95%] max-h-[95%] object-contain group-hover/media:scale-105 transition-transform duration-500"
+                            />
+                            <div className="absolute bottom-2.5 left-2.5 bg-slate-950/85 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg border border-white/15 flex items-center gap-1.5 shadow-md">
+                              <Eye className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Tap to Zoom</span>
+                            </div>
+                          </div>
+
+                          {/* Micro-specs */}
+                          <div className="grid grid-cols-2 gap-2 my-2">
+                            <div className="bg-bg-primary dark:bg-bg-card border border-border-default/60 rounded-xl px-3 py-2">
+                              <div className="text-[10px] uppercase font-bold text-text-tertiary">Type</div>
+                              <div className="text-xs font-bold text-text-primary capitalize truncate mt-0.5">
+                                {project.projectType} Layout
+                              </div>
+                            </div>
+                            <div className="bg-bg-primary dark:bg-bg-card border border-border-default/60 rounded-xl px-3 py-2">
+                              <div className="text-[10px] uppercase font-bold text-text-tertiary">Total Units</div>
+                              <div className="text-xs font-bold text-text-primary truncate mt-0.5">
+                                {project.totalUnits ? `${project.totalUnits} Units` : "On Request"}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card Action Button */}
+                        <button
+                          type="button"
+                          onClick={() => setFloorPlanLightbox({ url: project.masterPlanUrl!, label: `${project.name} — Master Plan` })}
+                          className="mt-2 w-full flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all py-2.5 rounded-xl text-xs font-bold cursor-pointer active:scale-98 shadow-sm"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-amber-500" />
+                          <span>View Full Master Plan</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {currentLabel !== "Master Plan" && (currentLabel === "All" ? project.configurations : activeGroupConfigs).map((cfg, idx) => {
                       const areaMin = cfg.superBuiltUpAreaMin ?? cfg.builtUpAreaMin ?? cfg.plotSizeMin;
                       const areaMax = cfg.superBuiltUpAreaMax ?? cfg.builtUpAreaMax ?? cfg.plotSizeMax;
                       const hasAreaRange = areaMax && areaMax !== areaMin;

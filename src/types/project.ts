@@ -135,6 +135,7 @@ export interface Project {
   videoUrl?: string;
   videoThumbnail?: string;
   brochureUrl?: string;
+  masterPlanUrl?: string;
 
   // Content
   /** Bullet points for "Why consider?" sidebar */

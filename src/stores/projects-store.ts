@@ -14,7 +14,8 @@ const VALID_PROJECT_COLUMNS = new Set([
   'configurations', 'images', 'coverImage', 'videoUrl',
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
-  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory'
+  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory',
+  'masterPlanUrl'
 ]);
 
 export function toSupabaseProject(proj: Partial<Project>): any {
@@ -40,6 +41,9 @@ export function toSupabaseProject(proj: Partial<Project>): any {
   if (p.coverImage !== undefined) {
     p.coverImage = p.coverImage ? p.coverImage.trim() : null;
   }
+  if (p.masterPlanUrl !== undefined) {
+    p.masterPlanUrl = p.masterPlanUrl ? p.masterPlanUrl.trim() : null;
+  }
 
   if (!p.createdAt) p.createdAt = new Date().toISOString();
   if (!p.updatedAt) p.updatedAt = new Date().toISOString();
@@ -59,6 +63,7 @@ export function fromSupabaseProject(p: any): Project {
   const brochureUrl = p.brochureUrl && !p.brochureUrl.startsWith('blob:') ? p.brochureUrl : undefined;
   const coverImage = p.coverImage && !p.coverImage.startsWith('blob:') ? p.coverImage : (p.cover_image && !p.cover_image.startsWith('blob:') ? p.cover_image : undefined);
   const videoUrl = p.videoUrl && !p.videoUrl.startsWith('blob:') ? p.videoUrl : (p.video_url && !p.video_url.startsWith('blob:') ? p.video_url : undefined);
+  const masterPlanUrl = p.masterPlanUrl && !p.masterPlanUrl.startsWith('blob:') ? p.masterPlanUrl : undefined;
 
   return {
     ...p,
@@ -66,6 +71,7 @@ export function fromSupabaseProject(p: any): Project {
     brochureUrl,
     coverImage,
     videoUrl,
+    masterPlanUrl,
     status: p.constructionStatus || p.status || 'under-construction',
     builder: {
       name: p.builderName || (p.builder?.name ?? 'Independent Developer'),

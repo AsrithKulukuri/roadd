@@ -14,6 +14,7 @@ import {
 import type { PropertyImage } from "@/types/property";
 import { getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
+import { ZoomableImageModal } from "@/components/ui/zoomable-image-modal";
 
 interface PropertyGalleryProps {
   images: PropertyImage[];
@@ -162,56 +163,17 @@ export function PropertyGallery({
         </div>
       </div>
 
-      {/* Fullscreen Photo Gallery Lightbox Dialog */}
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-5xl p-0 bg-slate-950 border-slate-800 text-white overflow-hidden">
-          <DialogTitle className="sr-only">{title} Photo Gallery</DialogTitle>
-          <DialogDescription className="sr-only">Full screen gallery images for {title}</DialogDescription>
-
-          <div className="relative h-[80vh] w-full flex items-center justify-center bg-black">
-            <img
-              src={resolveMediaUrl(typeof images[currentIndex] === "string" ? (images[currentIndex] as any) : (images[currentIndex] as any).url || images[currentIndex])}
-              alt={title}
-              className="w-full h-full object-contain"
-            />
-
-            <button
-              onClick={() => setIsOpen(false)}
-              className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-white border border-white/20 text-xs font-bold transition-all cursor-pointer shadow-lg"
-              title="Back to property"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Property</span>
-            </button>
-
-            <button
-              onClick={() => setIsOpen(false)}
-              className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-slate-900/90 hover:bg-amber-500 hover:text-slate-950 text-white border border-white/20 transition-all cursor-pointer shadow-lg"
-              title="Close Image Gallery"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <button
-              onClick={handlePrev}
-              className="absolute left-4 p-3 rounded-full bg-slate-900/80 hover:bg-amber-500 hover:text-slate-950 text-white transition-all cursor-pointer z-10"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-
-            <button
-              onClick={handleNext}
-              className="absolute right-4 p-3 rounded-full bg-slate-900/80 hover:bg-amber-500 hover:text-slate-950 text-white transition-all cursor-pointer z-10"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md px-4 py-1.5 rounded-full font-bold text-xs border border-white/20">
-              {currentIndex + 1} / {images.length}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Fullscreen Photo Gallery Lightbox with Pinch-to-Zoom & Pan */}
+      <ZoomableImageModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        images={images.map(img => ({
+          url: typeof img === "string" ? img : img.url,
+          label: typeof img === "string" ? title : img.alt || title,
+        }))}
+        initialIndex={currentIndex}
+        title={title}
+      />
 
       {/* Video Tour Dialog Modal (Supports YouTube & Direct Uploaded Videos) */}
       {hasVideo && (

@@ -14,7 +14,7 @@ import {
   Check, X, Upload, Link as LinkIcon,
   Image as ImageIcon, FileText, MapPin, Save,
   CheckCircle2, Loader2, Map, Info, Video, CheckSquare, Square,
-  Settings, AlertCircle, ChevronDown, Sparkles, Plus, Trash2, Calendar, ListChecks
+  Settings, AlertCircle, ChevronDown, Sparkles, Plus, Trash2, Calendar, ListChecks, LayoutTemplate
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -208,6 +208,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const [videoUrl, setVideoUrl]     = useState(initialData?.videoUrl ?? "");
   const [videoThumbnail, setVideoThumbnail] = useState(initialData?.videoThumbnail ?? "");
   const [brochureUrl, setBrochureUrl] = useState(initialData?.brochureUrl ?? "");
+  const [masterPlanUrl, setMasterPlanUrl] = useState(initialData?.masterPlanUrl ?? "");
   const [highlights, setHighlights] = useState<string[]>(initialData?.highlights?.length ? initialData.highlights : [""]);
   const [facilities, setFacilities] = useState<string[]>(initialData?.facilities ?? []);
   const [displayCategory, setDisplayCategory] = useState<"featured" | "recommended" | "budget_friendly" | "none">(
@@ -228,6 +229,18 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     setBuilderLogoUrl(url);
     setUpl("logo", false);
     toast.success("Logo uploaded!");
+  };
+
+  const handleMasterPlanFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUpl("master-plan", true);
+    try {
+      const url = await uploadFile(file, "projects", "master-plans");
+      setMasterPlanUrl(url);
+      toast.success("Master Plan uploaded!");
+    } catch {}
+    setUpl("master-plan", false);
   };
 
   const handleBrochureFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -478,6 +491,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       videoUrl: videoUrl.trim() || undefined,
       videoThumbnail: videoThumbnail.trim() || undefined,
       brochureUrl: brochureUrl.trim() || undefined,
+      masterPlanUrl: masterPlanUrl.trim() || undefined,
       highlights: highlights.filter(Boolean),
       facilities,
       isFeatured: displayCategory === "featured" || isFeatured,
@@ -861,6 +875,53 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
             )}
             
             <div className="space-y-4">
+              {/* Overall Master Plan / Site Layout Plan Card */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border-2 border-amber-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <LayoutTemplate className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs font-black uppercase tracking-wider text-amber-400">
+                      MASTER PLAN / SITE LAYOUT (OPTIONAL)
+                    </span>
+                  </div>
+                  {masterPlanUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setMasterPlanUrl("")}
+                      className="text-xs text-red-400 hover:text-red-300 font-bold transition-colors cursor-pointer"
+                    >
+                      ✕ Remove
+                    </button>
+                  )}
+                </div>
+
+                <p className="text-xs text-slate-300">
+                  Upload the master layout or whole project site plan. If uploaded, it will be highlighted in the project&apos;s <strong>Floor Plans &amp; Pricing</strong> section for users to zoom &amp; explore.
+                </p>
+
+                <div className="flex items-center gap-3 pt-1">
+                  {masterPlanUrl && (
+                    <div className="relative group/mp shrink-0">
+                      <img
+                        src={masterPlanUrl}
+                        alt="Master Plan Preview"
+                        className="w-14 h-14 rounded-xl object-contain bg-slate-950 border border-slate-800 p-1 shadow-sm"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleMasterPlanFile}
+                      className="h-11 bg-slate-950 border-slate-800 text-xs text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400 cursor-pointer"
+                      disabled={uploading["master-plan"]}
+                    />
+                  </div>
+                  {uploading["master-plan"] && <Loader2 className="w-4 h-4 animate-spin text-amber-500 shrink-0" />}
+                </div>
+              </div>
+
               {configOptions.map((label) => {
                 const configsForLabel = configs.filter(c => c.label === label);
                 const isSelected = configsForLabel.length > 0;
