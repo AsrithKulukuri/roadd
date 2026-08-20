@@ -74,13 +74,19 @@ export function VideoMediaManager({
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const thumbnailFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync mode if videoUrl changes externally
+  // Sync mode and inputs if videoUrl changes externally
   useEffect(() => {
     if (videoUrl) {
       const isYt = videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be") || videoUrl.includes("vimeo.com");
       if (isYt) {
         setRawYoutubeInput(videoUrl);
+        setMode("youtube");
+      } else {
+        setRawYoutubeInput("");
+        setMode("upload");
       }
+    } else {
+      setRawYoutubeInput("");
     }
   }, [videoUrl]);
 
@@ -165,6 +171,8 @@ export function VideoMediaManager({
         throw new Error(result.error || "Failed to upload video to S3");
       }
 
+      setMode("upload");
+      setRawYoutubeInput("");
       toast.success(`Video uploaded successfully (${initialTotalMB} MB)!`);
       onChange({
         videoUrl: result.fileUrl,
@@ -238,12 +246,7 @@ export function VideoMediaManager({
           <button
             type="button"
             onClick={() => {
-              if (mode !== "youtube") {
-                setMode("youtube");
-                if (isUploadedVideo) {
-                  onChange({ videoUrl: "", videoThumbnail: "" });
-                }
-              }
+              setMode("youtube");
             }}
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
@@ -258,13 +261,7 @@ export function VideoMediaManager({
           <button
             type="button"
             onClick={() => {
-              if (mode !== "upload") {
-                setMode("upload");
-                if (!isUploadedVideo && videoUrl) {
-                  onChange({ videoUrl: "", videoThumbnail: "" });
-                  setRawYoutubeInput("");
-                }
-              }
+              setMode("upload");
             }}
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
