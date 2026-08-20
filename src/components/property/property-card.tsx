@@ -172,7 +172,7 @@ export function PropertyCard({
                 </span>
               </div>
 
-              {/* Actions: WhatsApp, Share & Heart */}
+              {/* Actions: WhatsApp & Heart */}
               <div className="absolute top-1.5 right-1.5 flex items-center gap-1 z-10">
                 <button
                   type="button"
@@ -185,18 +185,6 @@ export function PropertyCard({
                   className="w-6 h-6 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
                 >
                   <WhatsAppIcon className="w-3 h-3 fill-emerald-400/20" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    shareItem({ item: property, type: "property" });
-                  }}
-                  title="Share property"
-                  className="w-6 h-6 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-white hover:text-amber-400 transition-colors cursor-pointer"
-                >
-                  <Share2 className="w-3 h-3" />
                 </button>
                 <button
                   type="button"
@@ -338,7 +326,7 @@ export function PropertyCard({
                 )}
               </div>
 
-              {/* Actions: WhatsApp, Share & Heart */}
+              {/* Actions: WhatsApp & Heart */}
               <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
                 <motion.button
                   type="button"
@@ -355,22 +343,6 @@ export function PropertyCard({
                   aria-label="Share on WhatsApp"
                 >
                   <WhatsAppIcon className="h-4 w-4 fill-emerald-500/20" />
-                </motion.button>
-                <motion.button
-                  type="button"
-                  whileTap={{ scale: 0.8 }}
-                  whileHover={{ scale: 1.12 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  className="w-9 h-9 rounded-full bg-white/95 dark:bg-slate-900/90 hover:bg-white text-slate-800 dark:text-white shadow-lg flex items-center justify-center cursor-pointer border border-white/20 backdrop-blur-sm active:scale-90"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    shareItem({ item: property, type: "property" });
-                  }}
-                  title="Share property"
-                  aria-label="Share property"
-                >
-                  <Share2 className="h-4 w-4 text-slate-700 dark:text-slate-200" />
                 </motion.button>
                 <motion.button
                   type="button"
@@ -634,7 +606,7 @@ export function PropertyCard({
               </span>
             </div>
 
-            {/* Actions: WhatsApp, Share & Heart Button Bottom Right */}
+            {/* Actions: WhatsApp & Heart Button Bottom Right */}
             {!actionMenu && !selectable && (
               <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5">
                 <button
@@ -649,19 +621,6 @@ export function PropertyCard({
                   aria-label="Share on WhatsApp"
                 >
                   <WhatsAppIcon className="h-3.5 w-3.5 fill-emerald-500/20" />
-                </button>
-                <button
-                  type="button"
-                  className="w-8 h-8 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-110 active:scale-90 cursor-pointer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    shareItem({ item: property, type: "property" });
-                  }}
-                  title="Share property"
-                  aria-label="Share property"
-                >
-                  <Share2 className="h-3.5 w-3.5 text-slate-700 hover:text-amber-500 transition-colors" />
                 </button>
                 <button
                   type="button"

@@ -70,18 +70,6 @@ export function PropertyActions({ propertyId, property }: PropertyActionsProps) 
         <WhatsAppIcon className="w-4 h-4 fill-emerald-500/20 stroke-[2.2]" />
       </Button>
 
-      {/* 3. General Share Button */}
-      <Button 
-        type="button"
-        variant="outline" 
-        size="icon" 
-        className="rounded-full w-10 h-10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 hover:border-amber-500 transition-all cursor-pointer shadow-xs"
-        onClick={handleShare}
-        title="Share Property"
-      >
-        <Share2 className="w-4 h-4 text-slate-900 dark:text-white stroke-[2.5]" />
-      </Button>
-
       {/* 3. Save / Heart Button */}
       <Button 
         type="button"

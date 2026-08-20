@@ -409,15 +409,6 @@ export function ProjectDetailView({ slug }: { slug: string }) {
               <WhatsAppIcon className="w-3.5 h-3.5 fill-emerald-500/20" />
               <span>WhatsApp</span>
             </button>
-            <button
-              type="button"
-              onClick={() => shareItem({ item: project, type: "project" })}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-amber-500 shadow-xs cursor-pointer active:scale-95 transition-all"
-              title="Share project"
-            >
-              <Share2 className="w-3.5 h-3.5 text-amber-500" />
-              <span>Share</span>
-            </button>
           </div>
         </div>
 
