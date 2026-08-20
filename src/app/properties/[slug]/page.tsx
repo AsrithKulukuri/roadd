@@ -57,7 +57,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const property = await getProperty(slug);
 
-  if (!property) return { title: "Property Not Found | Road Facing" };
+  if (!property) return { title: "Property Not Found | ROAD" };
 
   const priceFormatted =
     property.price >= 10000000
@@ -73,50 +73,56 @@ export async function generateMetadata({
     .filter(Boolean)
     .join(" • ");
 
-  const coverUrl = property.coverImage || property.images?.[0]?.url || "";
-
-  const ogParams = new URLSearchParams({
-    title: property.title,
-    price: priceFormatted,
-    location: locationFormatted,
-    type: (property.propertyType || "Property").replace("-", " ").toUpperCase(),
-    badge: property.reraId ? `RERA: ${property.reraId}` : "Verified Property",
-  });
-  if (specsFormatted) ogParams.set("specs", specsFormatted);
-  if (coverUrl) ogParams.set("image", coverUrl);
-
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://roadd-three.vercel.app";
-  const ogImageUrl = `${siteUrl}/api/og?${ogParams.toString()}`;
   const canonicalUrl = `${siteUrl}/properties/${property.slug}`;
 
+  // Resolve direct publicly accessible primary photo
+  let photoUrl = property.coverImage || property.images?.[0]?.url || "";
+  let finalImageUrl = "";
+  if (photoUrl && !photoUrl.startsWith("blob:") && !photoUrl.startsWith("data:")) {
+    if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://")) {
+      finalImageUrl = photoUrl;
+    } else if (photoUrl.startsWith("/")) {
+      finalImageUrl = `${siteUrl}${photoUrl}`;
+    } else {
+      finalImageUrl = `${siteUrl}/api/media/${photoUrl}`;
+    }
+  } else {
+    finalImageUrl = `${siteUrl}/images/property-placeholder.jpg`;
+  }
+
+  const pageTitle = `${property.title} — ${priceFormatted} | ROAD`;
+  const pageDescription =
+    property.description?.slice(0, 160) ||
+    `${property.title} for sale in ${locationFormatted}. ${specsFormatted ? `${specsFormatted}. ` : ""}Explore photos and verified details on ROAD.`;
+
   return {
-    title: `${property.title} in ${locationFormatted} — ${priceFormatted}`,
-    description: `${property.title} for sale in ${locationFormatted}. ${specsFormatted ? `${specsFormatted}. ` : ""}Explore photos, verified details, and price updates on Road Facing.`,
+    title: pageTitle,
+    description: pageDescription,
     alternates: {
       canonical: canonicalUrl,
     },
     openGraph: {
-      type: "article",
+      type: "website",
       locale: "en_IN",
       url: canonicalUrl,
-      title: `${property.title} — ${priceFormatted}`,
-      description: property.description || `Verified listing in ${locationFormatted}. View details on Road Facing.`,
-      siteName: "Road Facing",
+      title: pageTitle,
+      description: pageDescription,
+      siteName: "ROAD",
       images: [
         {
-          url: ogImageUrl,
+          url: finalImageUrl,
           width: 1200,
-          height: 630,
+          height: 800,
           alt: property.title,
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: `${property.title} — ${priceFormatted}`,
-      description: property.description || `Verified listing in ${locationFormatted}`,
-      images: [ogImageUrl],
-      creator: "@roadfacing",
+      title: pageTitle,
+      description: pageDescription,
+      images: [finalImageUrl],
     },
   };
 }

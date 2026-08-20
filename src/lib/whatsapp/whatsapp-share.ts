@@ -127,18 +127,17 @@ export function formatWhatsAppPropertyMessage(item: any, type?: "property" | "pr
 
   // Structured message layout matching ROAD luxury identity
   const lines: string[] = [
-    `🏠 *${title}*`,
-    `🆔 *Reference ID:* ${refId}`,
+    `🏠 *${title}* — *${priceFormatted}*`,
     `📍 *Location:* ${locationFormatted}`,
-    `💰 *Price:* ${priceFormatted}`,
+    `🆔 *Ref ID:* ${refId}`,
   ];
 
   if (specs.length > 0) {
-    lines.push(`\n${specs.join("  •  ")}`);
+    lines.push(`📐 ${specs.join("  •  ")}`);
   }
 
   if (verifiedBadge) {
-    lines.push(`\n${verifiedBadge}`);
+    lines.push(verifiedBadge);
   }
 
   if (cleanDesc) {
@@ -146,7 +145,7 @@ export function formatWhatsAppPropertyMessage(item: any, type?: "property" | "pr
   }
 
   lines.push(
-    `\n✨ *View full property details, photos & walkthrough on ROAD:*`,
+    `\n✨ *View full property details, photos & walkthrough:*`,
     propertyUrl
   );
 

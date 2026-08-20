@@ -209,31 +209,14 @@ export function AdminWhatsAppModal({
             {copied ? "Copied!" : "Copy Text"}
           </Button>
 
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleManualShare}
-              className="gap-2 text-xs border-border-default hover:border-text-primary cursor-pointer"
-            >
-              <WhatsAppIcon className="w-3.5 h-3.5" />
-              Manual Share
-            </Button>
-
-            <Button
-              type="button"
-              disabled={status === "sending" || !recipientPhone.trim()}
-              onClick={handleCloudApiSend}
-              className="gap-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer"
-            >
-              {status === "sending" ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-              {status === "failed" ? "Retry Send" : "Send via Business API"}
-            </Button>
-          </div>
+          <Button
+            type="button"
+            onClick={handleManualShare}
+            className="gap-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer shadow-md"
+          >
+            <WhatsAppIcon className="w-4 h-4 fill-white/20" />
+            <span>Open & Share on WhatsApp</span>
+          </Button>
         </div>
       </div>
     </div>

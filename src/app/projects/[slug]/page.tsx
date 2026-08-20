@@ -46,7 +46,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const project = await getProject(slug);
 
-  if (!project) return { title: "Project Not Found | Road Facing" };
+  if (!project) return { title: "Project Not Found | ROAD" };
 
   const allPrices = project.configurations?.flatMap((c) => [c.priceMin, c.priceMax]).filter(Boolean) || [];
   const min = allPrices.length > 0 ? Math.min(...allPrices) : 0;
@@ -58,57 +58,57 @@ export async function generateMetadata({
     : "Price on Request";
 
   const locationFormatted = `${project.location?.locality || ""}, ${project.location?.city || "Andhra Pradesh"}`;
-  const coverUrl = project.coverImage || project.images?.[0]?.url || "";
-
-  const ogParams = new URLSearchParams({
-    title: project.name,
-    price: priceFormatted,
-    location: locationFormatted,
-    type: (project.projectType || "Project").toUpperCase(),
-    badge: project.reraApproved ? "RERA Approved" : "Verified Project",
-  });
-  if (coverUrl) ogParams.set("image", coverUrl);
-
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://roadd-three.vercel.app";
-  const ogImageUrl = `${siteUrl}/api/og?${ogParams.toString()}`;
   const canonicalUrl = `${siteUrl}/projects/${project.slug || slug}`;
 
+  // Resolve direct publicly accessible primary photo
+  let photoUrl = project.coverImage || project.images?.[0]?.url || "";
+  let finalImageUrl = "";
+  if (photoUrl && !photoUrl.startsWith("blob:") && !photoUrl.startsWith("data:")) {
+    if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://")) {
+      finalImageUrl = photoUrl;
+    } else if (photoUrl.startsWith("/")) {
+      finalImageUrl = `${siteUrl}${photoUrl}`;
+    } else {
+      finalImageUrl = `${siteUrl}/api/media/${photoUrl}`;
+    }
+  } else {
+    finalImageUrl = `${siteUrl}/images/property-placeholder.jpg`;
+  }
+
+  const pageTitle = `${project.name} — ${priceFormatted} | ROAD`;
+  const pageDescription =
+    project.tagline ||
+    project.description?.slice(0, 160) ||
+    `Verified project in ${locationFormatted}. View floor plans, verified construction updates, and walkthrough on ROAD.`;
+
   return {
-    title: `${project.name} by ${project.builderName || "Builder"} in ${locationFormatted} — ${priceFormatted}`,
-    description:
-      project.tagline ||
-      project.description ||
-      `${project.name} in ${locationFormatted}. View floor plans, verified construction updates, and video walkthroughs on Road Facing.`,
+    title: pageTitle,
+    description: pageDescription,
     alternates: {
       canonical: canonicalUrl,
     },
     openGraph: {
-      type: "article",
+      type: "website",
       locale: "en_IN",
       url: canonicalUrl,
-      title: `${project.name} — ${priceFormatted}`,
-      description:
-        project.tagline ||
-        project.description ||
-        `Verified real estate project in ${locationFormatted}. View details on Road Facing.`,
-      siteName: "Road Facing",
+      title: pageTitle,
+      description: pageDescription,
+      siteName: "ROAD",
       images: [
         {
-          url: ogImageUrl,
+          url: finalImageUrl,
           width: 1200,
-          height: 630,
+          height: 800,
           alt: project.name,
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: `${project.name} — ${priceFormatted}`,
-      description:
-        project.tagline ||
-        project.description ||
-        `Verified real estate project in ${locationFormatted}. View details on Road Facing.`,
-      images: [ogImageUrl],
+      title: pageTitle,
+      description: pageDescription,
+      images: [finalImageUrl],
     },
   };
 }
