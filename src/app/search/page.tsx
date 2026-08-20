@@ -46,7 +46,9 @@ function UnifiedSearchPage() {
   const [viewMode, setViewMode] = useState<"grid" | "map">(
     searchParams.get("nearMe") === "true" || searchParams.get("view") === "map" ? "map" : "grid"
   );
-  const [sortBy, setSortBy] = useState<"relevant" | "price-asc" | "price-desc" | "newest">("relevant");
+  const [sortBy, setSortBy] = useState<"relevant" | "price-asc" | "price-desc" | "newest">(
+    (searchParams.get("sort") as any) || (searchParams.get("saleType") === "new" ? "newest" : "relevant")
+  );
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   
@@ -178,6 +180,10 @@ function UnifiedSearchPage() {
       setActiveTab("projects");
     } else {
       setActiveTab("all");
+    }
+    const sortParam = searchParams.get("sort");
+    if (sortParam === "newest" || searchParams.get("saleType") === "new") {
+      setSortBy("newest");
     }
   }, [searchParamsString]);
 
@@ -391,7 +397,9 @@ function UnifiedSearchPage() {
     items.sort((a, b) => {
       if (sortBy === "price-asc") return a.price - b.price;
       if (sortBy === "price-desc") return b.price - a.price;
-      if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sortBy === "newest" || (!filters.query && sortBy === "relevant")) {
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      }
       return 0;
     });
 

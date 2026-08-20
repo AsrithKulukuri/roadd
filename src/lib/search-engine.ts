@@ -435,9 +435,14 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
     if (!matchesAge) return false;
   }
 
-  // 10. Sale Type
-  if (filters.saleType && filters.saleType.length > 0 && property.saleType) {
-    if (!filters.saleType.includes(property.saleType.toLowerCase())) return false;
+  // 10. Sale Type (new vs resale)
+  if (filters.saleType && filters.saleType.length > 0) {
+    if (filters.saleType.includes("resale")) {
+      if (property.saleType && property.saleType.toLowerCase() !== "resale") return false;
+    }
+    if (filters.saleType.includes("new")) {
+      if (property.saleType && property.saleType.toLowerCase() === "resale") return false;
+    }
   }
 
   // 11. Posted By

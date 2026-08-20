@@ -781,12 +781,7 @@ export function ProjectDetailView({
                       {[...project.constructionUpdates].reverse().map((update, i) => (
                         <div
                           key={update.id || i}
-                          className={cn(
-                            "w-[85vw] sm:w-[340px] shrink-0 snap-start border rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all group",
-                            i === 0
-                              ? "bg-white dark:bg-slate-900/90 border-amber-500/60 shadow-md ring-1 ring-amber-500/20"
-                              : "bg-slate-50/80 dark:bg-bg-primary border-border-default/90 hover:border-slate-400 dark:hover:border-slate-700 hover:shadow-sm"
-                          )}
+                          className="w-[85vw] sm:w-[340px] shrink-0 snap-start bg-slate-50/80 dark:bg-bg-primary border border-border-default/90 rounded-2xl p-4 sm:p-5 flex flex-col justify-between hover:border-slate-400 dark:hover:border-slate-700 hover:shadow-sm transition-all group"
                         >
                           <div>
                             {/* Card Top: Date Badge & Status */}
@@ -794,15 +789,8 @@ export function ProjectDetailView({
                               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-800 shadow-2xs">
                                 <Calendar className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" /> {update.date}
                               </span>
-                              <div className="flex items-center gap-1.5">
-                                {i === 0 && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-slate-950 shadow-xs tracking-tight animate-pulse">
-                                    ✨ Latest
-                                  </span>
-                                )}
-                                <span className="text-[11px] font-bold text-text-tertiary">
-                                  Update #{(project.constructionUpdates?.length ?? 0) - i}
-                                </span>
+                              <div className="flex items-center gap-1 text-[11px] font-bold text-text-tertiary">
+                                <span>Update #{(project.constructionUpdates?.length ?? 0) - i}</span>
                               </div>
                             </div>
 
@@ -958,13 +946,13 @@ export function ProjectDetailView({
                   <div>
                     <div ref={cardsScrollRef} className="flex gap-4 sm:gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-1 px-1">
                     
-                    {/* Featured Master Plan Card (Only displayed if found) */}
+                    {/* Master Plan Card (Only displayed if found) */}
                     {project.masterPlanUrl && (currentLabel === "All" || currentLabel === "Master Plan") && (
-                      <div className="w-[85vw] sm:w-[350px] shrink-0 snap-start p-5 rounded-3xl border-2 border-amber-500/30 dark:border-amber-500/30 bg-amber-500/5 dark:bg-slate-900/60 shadow-sm hover:shadow-xl hover:border-amber-500/60 transition-all duration-300 flex flex-col justify-between group">
+                      <div className="w-[85vw] sm:w-[330px] shrink-0 snap-start p-5 rounded-3xl border border-border-default bg-white dark:bg-bg-card shadow-sm hover:shadow-xl hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between group">
                         <div>
                           <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-border-default/60">
                             <div>
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-500 text-slate-950 shadow-xs">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                                 <LayoutTemplate className="w-3 h-3" /> Master Plan
                               </span>
                               <div className="text-xl font-black text-text-primary mt-1">
@@ -976,15 +964,15 @@ export function ProjectDetailView({
                             </div>
 
                             <div className="text-right shrink-0">
-                              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-2xs">
-                                Master Plan
+                              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-border-default shadow-2xs">
+                                Site Plan
                               </span>
                             </div>
                           </div>
 
                           {/* Middle Preview Box */}
                           <div
-                            className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-950 border border-border-default/80 my-3 flex items-center justify-center cursor-pointer group/media shadow-inner"
+                            className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-50 dark:bg-bg-primary border border-border-default/80 my-3 flex items-center justify-center cursor-pointer group/media shadow-inner"
                             onClick={() => setFloorPlanLightbox({ url: project.masterPlanUrl!, label: `${project.name} — Master Plan` })}
                           >
                             <img
@@ -1000,13 +988,13 @@ export function ProjectDetailView({
 
                           {/* Micro-specs */}
                           <div className="grid grid-cols-2 gap-2 my-2">
-                            <div className="bg-bg-primary dark:bg-bg-card border border-border-default/60 rounded-xl px-3 py-2">
+                            <div className="bg-slate-50 dark:bg-bg-primary border border-border-default/60 rounded-xl px-3 py-2">
                               <div className="text-[10px] uppercase font-bold text-text-tertiary">Type</div>
                               <div className="text-xs font-bold text-text-primary capitalize truncate mt-0.5">
                                 {project.projectType} Layout
                               </div>
                             </div>
-                            <div className="bg-bg-primary dark:bg-bg-card border border-border-default/60 rounded-xl px-3 py-2">
+                            <div className="bg-slate-50 dark:bg-bg-primary border border-border-default/60 rounded-xl px-3 py-2">
                               <div className="text-[10px] uppercase font-bold text-text-tertiary">Total Units</div>
                               <div className="text-xs font-bold text-text-primary truncate mt-0.5">
                                 {project.totalUnits ? `${project.totalUnits} Units` : "On Request"}

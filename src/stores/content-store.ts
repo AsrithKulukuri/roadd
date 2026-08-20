@@ -43,7 +43,7 @@ const initialCategories: HomeCategory[] = [
     subtitle: "Freshly added properties",
     badge: "Last 30 days",
     badgeClass: "bg-white text-slate-900 font-bold shadow-md border border-slate-200/80 backdrop-blur-md",
-    href: "/search?type=buy&saleType=new",
+    href: "/search?type=buy&sort=newest",
     type: "apartment",
     icon: "Sparkles",
     description: "Freshly added properties",
@@ -356,6 +356,17 @@ export const useContentStore = create<ContentState>()(
     }),
     {
       name: "roadfacing-content-store-v2",
+      migrate: (persistedState: any) => {
+        if (persistedState?.homeCategories) {
+          persistedState.homeCategories = persistedState.homeCategories.map((c: any) => {
+            if (c.id === "new-listings" && (c.href?.includes("saleType=new") || !c.href)) {
+              return { ...c, href: "/search?type=buy&sort=newest" };
+            }
+            return c;
+          });
+        }
+        return persistedState;
+      }
     }
   )
 );
