@@ -93,7 +93,12 @@ export async function GET(
       console.warn("[Media Proxy Warning]:", s3Error?.message || s3Error);
     }
 
-    // If S3 fetch fails, serve placeholder
+    const rawExt = (key.split(".").pop() || "").toLowerCase();
+    if (["mp4", "webm", "mov", "mkv", "pdf"].includes(rawExt)) {
+      return new NextResponse("Media file not found", { status: 404 });
+    }
+
+    // If S3 image fetch fails, serve placeholder SVG
     return new NextResponse(FALLBACK_SVG, {
       status: 200,
       headers: {

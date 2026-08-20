@@ -168,11 +168,14 @@ export function ProjectDetailView({
   const [galleryIdx, setGalleryIdx] = useState<number | null>(null);
   const [activeConfigLabel, setActiveConfigLabel] = useState<string>("All");
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
-  const [isVideoLoading, setIsVideoLoading] = useState(true);
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
   const openVideo = (url: string | null | undefined) => {
     if (!url) return;
     setIsVideoLoading(true);
     setActiveVideoUrl(url);
+    setTimeout(() => {
+      setIsVideoLoading(false);
+    }, 2000);
   };
   const [floorPlanLightbox, setFloorPlanLightbox] = useState<{ url: string; label: string } | null>(null);
   const [activeMedia, setActiveMedia] = useState<Record<string, 'image' | 'video'>>({});
@@ -388,10 +391,13 @@ export function ProjectDetailView({
                   controls
                   autoPlay
                   playsInline
+                  preload="auto"
                   poster={project.videoThumbnail ? resolveMediaUrl(project.videoThumbnail) : undefined}
                   className="w-full h-full max-h-full object-contain"
                   onLoadedData={() => setIsVideoLoading(false)}
                   onCanPlay={() => setIsVideoLoading(false)}
+                  onPlaying={() => setIsVideoLoading(false)}
+                  onError={() => setIsVideoLoading(false)}
                 />
               )}
             </div>
