@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useProjectsStore } from "@/stores/projects-store";
-import { getYoutubeEmbedUrl, isYoutubeShort } from "@/lib/utils";
+import { getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import {
   MapPin, CheckCircle2, Phone, MessageCircle, Download, FileText, ExternalLink,
@@ -781,7 +781,12 @@ export function ProjectDetailView({
                       {[...project.constructionUpdates].reverse().map((update, i) => (
                         <div
                           key={update.id || i}
-                          className="w-[85vw] sm:w-[340px] shrink-0 snap-start bg-slate-50/80 dark:bg-bg-primary border border-border-default/90 rounded-2xl p-4 sm:p-5 flex flex-col justify-between hover:border-slate-400 dark:hover:border-slate-700 hover:shadow-sm transition-all group"
+                          className={cn(
+                            "w-[85vw] sm:w-[340px] shrink-0 snap-start border rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all group",
+                            i === 0
+                              ? "bg-white dark:bg-slate-900/90 border-amber-500/60 shadow-md ring-1 ring-amber-500/20"
+                              : "bg-slate-50/80 dark:bg-bg-primary border-border-default/90 hover:border-slate-400 dark:hover:border-slate-700 hover:shadow-sm"
+                          )}
                         >
                           <div>
                             {/* Card Top: Date Badge & Status */}
@@ -789,8 +794,15 @@ export function ProjectDetailView({
                               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-800 shadow-2xs">
                                 <Calendar className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" /> {update.date}
                               </span>
-                              <div className="flex items-center gap-1 text-[11px] font-bold text-text-tertiary">
-                                <span>Update #{(project.constructionUpdates?.length ?? 0) - i}</span>
+                              <div className="flex items-center gap-1.5">
+                                {i === 0 && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-slate-950 shadow-xs tracking-tight animate-pulse">
+                                    ✨ Latest
+                                  </span>
+                                )}
+                                <span className="text-[11px] font-bold text-text-tertiary">
+                                  Update #{(project.constructionUpdates?.length ?? 0) - i}
+                                </span>
                               </div>
                             </div>
 
