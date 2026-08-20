@@ -235,85 +235,40 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
           {/* Subtle Shimmer Light Reflection on Hover */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
-          {/* Top Bar Header Overlay (Clean luxury non-overlapping flex layout) */}
-          <div className="absolute top-2.5 left-2.5 right-2.5 z-10 flex items-start justify-between gap-2 pointer-events-none">
-            {/* Left: Ultra-Luxury Monochromatic Pill Badges */}
-            <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
-                <Icon className="w-3.5 h-3.5 text-slate-900 shrink-0" />
-                <span>{TC.label}</span>
-              </span>
-
-              {(project.displayCategory === "featured" || project.isFeatured) && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
-                  <Sparkles className="w-3.5 h-3.5 text-slate-900 shrink-0" />
-                  <span>Featured</span>
-                </span>
-              )}
-
-              {project.displayCategory === "recommended" && !project.isFeatured && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
-                  <Award className="w-3.5 h-3.5 text-slate-900 shrink-0" />
-                  <span>Recommended</span>
-                </span>
-              )}
-
-              {project.displayCategory === "budget_friendly" && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
-                  <Tag className="w-3.5 h-3.5 text-slate-900 shrink-0" />
-                  <span>Best Value</span>
-                </span>
-              )}
-
-              {project.reraApproved && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-slate-900 shrink-0" />
-                  <span>RERA</span>
-                </span>
-              )}
-
-              {project.noBrokerage && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
-                  <span>0% Brokerage</span>
-                </span>
-              )}
-            </div>
-
-            {/* Right: Actions: Share & Heart Button Overlay */}
-            <div className="flex items-center gap-1.5 shrink-0 pointer-events-auto">
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.8 }}
-                whileHover={{ scale: 1.12 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                className="w-8 h-8 rounded-full bg-white text-slate-900 shadow-md flex items-center justify-center cursor-pointer border border-slate-200/80 backdrop-blur-md active:scale-90"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  shareOnWhatsApp({ item: project, type: "project", source: "card" });
-                }}
-                title="Share project"
-                aria-label="Share project"
-              >
-                <Share2 className="h-3.5 w-3.5 text-slate-900" />
-              </motion.button>
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.8 }}
-                whileHover={{ scale: 1.12 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                className="w-8 h-8 rounded-full bg-white text-slate-900 shadow-md flex items-center justify-center cursor-pointer border border-slate-200/80 backdrop-blur-md active:scale-90"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleFavorite(project.id);
-                }}
-                title={isSaved ? "Remove from saved" : "Save project"}
-                aria-label={isSaved ? "Remove from saved" : "Save project"}
-              >
-                <Heart className={cn("h-3.5 w-3.5", isSaved ? "fill-red-500 text-red-500" : "text-slate-900")} />
-              </motion.button>
-            </div>
+          {/* Top Bar Header Overlay (Actions: Share & Heart Button Overlay) */}
+          <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 pointer-events-auto">
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.8 }}
+              whileHover={{ scale: 1.12 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              className="w-8 h-8 rounded-full bg-white text-slate-900 shadow-md flex items-center justify-center cursor-pointer border border-slate-200/80 backdrop-blur-md active:scale-90"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                shareOnWhatsApp({ item: project, type: "project", source: "card" });
+              }}
+              title="Share project"
+              aria-label="Share project"
+            >
+              <Share2 className="h-3.5 w-3.5 text-slate-900" />
+            </motion.button>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.8 }}
+              whileHover={{ scale: 1.12 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              className="w-8 h-8 rounded-full bg-white text-slate-900 shadow-md flex items-center justify-center cursor-pointer border border-slate-200/80 backdrop-blur-md active:scale-90"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFavorite(project.id);
+              }}
+              title={isSaved ? "Remove from saved" : "Save project"}
+              aria-label={isSaved ? "Remove from saved" : "Save project"}
+            >
+              <Heart className={cn("h-3.5 w-3.5", isSaved ? "fill-red-500 text-red-500" : "text-slate-900")} />
+            </motion.button>
           </div>
 
           {/* Status */}

@@ -14,8 +14,7 @@ const VALID_PROJECT_COLUMNS = new Set([
   'configurations', 'images', 'coverImage', 'videoUrl',
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
-  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory',
-  'masterPlanUrl'
+  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory'
 ]);
 
 export function toSupabaseProject(proj: Partial<Project>): any {
@@ -45,6 +44,26 @@ export function toSupabaseProject(proj: Partial<Project>): any {
     p.masterPlanUrl = p.masterPlanUrl ? p.masterPlanUrl.trim() : null;
   }
 
+  // Guaranteed persistence: embed master plan in images JSONB array so it is saved in Supabase without requiring table migration
+  if (p.masterPlanUrl) {
+    const existingImages = Array.isArray(p.images) ? [...p.images] : [];
+    const masterPlanIdx = existingImages.findIndex((img: any) => (typeof img === 'object' && (img.category === 'master-plan' || img.isMasterPlan)));
+    const masterPlanItem = {
+      url: p.masterPlanUrl,
+      alt: 'Master Plan',
+      category: 'master-plan',
+      isMasterPlan: true
+    };
+    if (masterPlanIdx >= 0) {
+      existingImages[masterPlanIdx] = masterPlanItem;
+    } else {
+      existingImages.push(masterPlanItem);
+    }
+    p.images = existingImages;
+  } else if (p.masterPlanUrl === null && Array.isArray(p.images)) {
+    p.images = p.images.filter((img: any) => !(typeof img === 'object' && (img.category === 'master-plan' || img.isMasterPlan)));
+  }
+
   if (!p.createdAt) p.createdAt = new Date().toISOString();
   if (!p.updatedAt) p.updatedAt = new Date().toISOString();
 
@@ -63,7 +82,13 @@ export function fromSupabaseProject(p: any): Project {
   const brochureUrl = p.brochureUrl && !p.brochureUrl.startsWith('blob:') ? p.brochureUrl : undefined;
   const coverImage = p.coverImage && !p.coverImage.startsWith('blob:') ? p.coverImage : (p.cover_image && !p.cover_image.startsWith('blob:') ? p.cover_image : undefined);
   const videoUrl = p.videoUrl && !p.videoUrl.startsWith('blob:') ? p.videoUrl : (p.video_url && !p.video_url.startsWith('blob:') ? p.video_url : undefined);
-  const masterPlanUrl = p.masterPlanUrl && !p.masterPlanUrl.startsWith('blob:') ? p.masterPlanUrl : undefined;
+  
+  // Reconstruct masterPlanUrl from column, snake_case, or embedded images JSONB
+  const masterPlanFromImages = Array.isArray(p.images) 
+    ? p.images.find((img: any) => typeof img === 'object' && (img.category === 'master-plan' || img.isMasterPlan))?.url 
+    : undefined;
+  const rawMasterPlan = p.masterPlanUrl || p.master_plan_url || masterPlanFromImages;
+  const masterPlanUrl = rawMasterPlan && !rawMasterPlan.startsWith('blob:') ? rawMasterPlan : undefined;
 
   return {
     ...p,
