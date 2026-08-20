@@ -57,7 +57,19 @@ export function VideoMediaManager({
   const [rawYoutubeInput, setRawYoutubeInput] = useState(isInitialYoutube ? videoUrl : "");
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStats, setUploadStats] = useState<{
+    percent: number;
+    loadedMB: number;
+    totalMB: number;
+    speedMBs: number;
+    remainingSec: number;
+  }>({
+    percent: 0,
+    loadedMB: 0,
+    totalMB: 0,
+    speedMBs: 0,
+    remainingSec: 0,
+  });
 
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const thumbnailFileInputRef = useRef<HTMLInputElement>(null);
@@ -99,7 +111,7 @@ export function VideoMediaManager({
     });
   };
 
-  // Direct 50MB Video Upload Handler
+  // Direct 50MB Video Upload Handler with Live Progress
   const handleVideoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -121,24 +133,39 @@ export function VideoMediaManager({
       return;
     }
 
+    const initialTotalMB = +(file.size / (1024 * 1024)).toFixed(1);
+    setUploadStats({
+      percent: 5,
+      loadedMB: 0,
+      totalMB: initialTotalMB,
+      speedMBs: 0,
+      remainingSec: 0,
+    });
+
     try {
       setIsUploadingVideo(true);
-      setUploadProgress(20);
 
       const result = await uploadToS3({
         file,
         folder: "videos",
         entityId,
         compress: false, // Do not compress video binary
+        onProgress: (info) => {
+          setUploadStats({
+            percent: info.percent,
+            loadedMB: +(info.loaded / (1024 * 1024)).toFixed(1),
+            totalMB: +(info.total / (1024 * 1024)).toFixed(1),
+            speedMBs: +(info.speedBytesPerSec / (1024 * 1024)).toFixed(1),
+            remainingSec: info.remainingSec,
+          });
+        },
       });
-
-      setUploadProgress(100);
 
       if (!result.success || !result.fileUrl) {
         throw new Error(result.error || "Failed to upload video to S3");
       }
 
-      toast.success(`Video uploaded successfully (${(file.size / (1024 * 1024)).toFixed(1)} MB)!`);
+      toast.success(`Video uploaded successfully (${initialTotalMB} MB)!`);
       onChange({
         videoUrl: result.fileUrl,
         videoThumbnail: videoThumbnail || "",
@@ -148,7 +175,6 @@ export function VideoMediaManager({
       toast.error(err.message || "Failed to upload video");
     } finally {
       setIsUploadingVideo(false);
-      setUploadProgress(0);
       if (videoFileInputRef.current) videoFileInputRef.current.value = "";
     }
   };
@@ -349,16 +375,53 @@ export function VideoMediaManager({
               className={cn(
                 "border-2 border-dashed rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300",
                 isUploadingVideo
-                  ? "border-amber-500 bg-amber-500/5 cursor-wait"
+                  ? "border-amber-500/60 bg-amber-500/5 cursor-wait"
                   : "border-border-default hover:border-amber-500 hover:bg-amber-500/5"
               )}
             >
               {isUploadingVideo ? (
-                <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-text-primary">Uploading Video to AWS S3...</p>
-                    <p className="text-xs text-text-secondary">Streaming directly to secure storage</p>
+                <div className="w-full max-w-md space-y-4 p-5 sm:p-6 bg-slate-900/95 rounded-2xl border border-amber-500/40 shadow-2xl backdrop-blur-md text-left animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex items-center justify-center w-9 h-9 rounded-full bg-amber-500/10 border border-amber-500/30">
+                        <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white">Uploading Video to AWS S3...</p>
+                        <p className="text-[11px] text-slate-400">Direct secure cloud transfer</p>
+                      </div>
+                    </div>
+                    <span className="text-2xl font-black text-amber-400 font-mono tracking-tight">{uploadStats.percent}%</span>
+                  </div>
+
+                  {/* Animated Glowing Progress Bar */}
+                  <div className="relative w-full h-3 bg-slate-800 rounded-full overflow-hidden border border-white/10 p-0.5">
+                    <div
+                      className="h-full bg-gradient-to-r from-amber-600 via-amber-500 to-amber-300 rounded-full transition-all duration-300 ease-out shadow-[0_0_12px_rgba(245,158,11,0.6)]"
+                      style={{ width: `${Math.max(4, uploadStats.percent)}%` }}
+                    />
+                  </div>
+
+                  {/* Live Metrics: MB Transferred, Speed, Time Remaining */}
+                  <div className="grid grid-cols-3 gap-2 pt-1 border-t border-white/10 text-center">
+                    <div className="p-2 rounded-xl bg-slate-950/70 border border-white/5">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Uploaded</span>
+                      <span className="text-xs font-black text-white font-mono">{uploadStats.loadedMB} / {uploadStats.totalMB} MB</span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-slate-950/70 border border-white/5">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Speed</span>
+                      <span className="text-xs font-black text-amber-400 font-mono">{uploadStats.speedMBs > 0 ? `${uploadStats.speedMBs} MB/s` : "Starting..."}</span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-slate-950/70 border border-white/5">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Time Left</span>
+                      <span className="text-xs font-black text-white font-mono">
+                        {uploadStats.percent >= 99
+                          ? "Finishing..."
+                          : uploadStats.remainingSec > 0
+                            ? `~${uploadStats.remainingSec}s`
+                            : "Calculating..."}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ) : (

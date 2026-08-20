@@ -9,11 +9,20 @@ export type StorageFolder =
   | "avatars"
   | "videos";
 
+export interface UploadProgressInfo {
+  percent: number;
+  loaded: number;
+  total: number;
+  speedBytesPerSec: number;
+  remainingSec: number;
+}
+
 export interface UploadOptions {
   file: File;
   folder: StorageFolder;
   entityId?: string;
   compress?: boolean;
+  onProgress?: (info: UploadProgressInfo) => void;
 }
 
 export interface UploadResult {
@@ -101,13 +110,14 @@ export function resolveMediaUrl(url?: string | null): string {
 
 /**
  * Robust Upload Function:
- * Handles mobile photos, compression, and uploads reliably to AWS S3.
+ * Handles mobile photos, compression, and uploads reliably to AWS S3 with live progress callbacks.
  */
 export async function uploadToS3({
   file,
   folder,
   entityId,
   compress = true,
+  onProgress,
 }: UploadOptions): Promise<UploadResult> {
   try {
     let fileToUpload: File | Blob = file;
@@ -129,7 +139,9 @@ export async function uploadToS3({
       }
     }
 
-    // 1. Direct Presigned PUT Upload: Bypasses Next.js server limits (essential for videos and large media)
+    const fileSize = fileToUpload.size || file.size;
+
+    // 1. Direct Presigned PUT Upload with accurate real-time progress tracking
     try {
       const presignRes = await fetch("/api/storage/upload-url", {
         method: "POST",
@@ -138,7 +150,7 @@ export async function uploadToS3({
           filename: file.name,
           contentType: effectiveMime,
           folder,
-          size: fileToUpload.size || file.size,
+          size: fileSize,
           entityId,
         }),
       });
@@ -146,26 +158,63 @@ export async function uploadToS3({
       if (presignRes.ok) {
         const presignData = await presignRes.json();
         if (presignData?.uploadUrl && presignData?.fileUrl) {
-          const s3PutRes = await fetch(presignData.uploadUrl, {
-            method: "PUT",
-            headers: {
-              "Content-Type": effectiveMime,
-            },
-            body: fileToUpload,
+          await new Promise<void>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            const startTime = Date.now();
+
+            xhr.open("PUT", presignData.uploadUrl, true);
+            xhr.setRequestHeader("Content-Type", effectiveMime);
+
+            xhr.upload.onprogress = (evt) => {
+              if (evt.lengthComputable && onProgress) {
+                const percent = Math.min(99, Math.round((evt.loaded / evt.total) * 100));
+                const elapsedSec = Math.max(0.1, (Date.now() - startTime) / 1000);
+                const speed = evt.loaded / elapsedSec; // bytes per second
+                const remainingBytes = Math.max(0, evt.total - evt.loaded);
+                const remainingSec = speed > 0 ? Math.round(remainingBytes / speed) : 0;
+
+                onProgress({
+                  percent,
+                  loaded: evt.loaded,
+                  total: evt.total,
+                  speedBytesPerSec: speed,
+                  remainingSec,
+                });
+              }
+            };
+
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                if (onProgress) {
+                  onProgress({
+                    percent: 100,
+                    loaded: fileSize,
+                    total: fileSize,
+                    speedBytesPerSec: 0,
+                    remainingSec: 0,
+                  });
+                }
+                resolve();
+              } else {
+                reject(new Error(`S3 upload failed with status ${xhr.status}`));
+              }
+            };
+
+            xhr.onerror = () => reject(new Error("Network error during upload to S3"));
+            xhr.ontimeout = () => reject(new Error("Upload to S3 timed out"));
+
+            xhr.send(fileToUpload);
           });
 
-          if (s3PutRes.ok) {
-            return {
-              key: presignData.key,
-              fileUrl: presignData.fileUrl,
-              success: true,
-            };
-          }
-          console.warn("[S3 Storage Direct Presign failed with status]:", s3PutRes.status);
+          return {
+            key: presignData.key,
+            fileUrl: presignData.fileUrl,
+            success: true,
+          };
         }
       }
     } catch (presignErr) {
-      console.warn("[S3 Storage Presign attempt warning]:", presignErr);
+      console.warn("[S3 Storage Direct Presign warning, falling back to proxy]:", presignErr);
     }
 
     // 2. Fallback: Upload via multipart FormData through Next.js server API
@@ -192,6 +241,16 @@ export async function uploadToS3({
 
     if (!data.fileUrl) {
       throw new Error("No media URL returned by server");
+    }
+
+    if (onProgress) {
+      onProgress({
+        percent: 100,
+        loaded: fileSize,
+        total: fileSize,
+        speedBytesPerSec: 0,
+        remainingSec: 0,
+      });
     }
 
     return {
