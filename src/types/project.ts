@@ -97,6 +97,9 @@ export interface Project {
   builderLogoUrl?: string;
   builderPhone?: string;
   builderWhatsapp?: string;
+  builderDescription?: string;
+  builderExperience?: string;
+  builderProjectsCount?: string;
 
   // Location
   location: {

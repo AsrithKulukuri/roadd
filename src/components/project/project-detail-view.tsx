@@ -1208,26 +1208,54 @@ export function ProjectDetailView({
               </ScrollReveal>
 
               <ScrollReveal id="builder" className="scroll-mt-32">
-                <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm">
-                  <h2 className="text-xl font-bold text-text-primary mb-4">About the Builder</h2>
-                  <div className="flex items-center gap-4">
-                    {project.builderLogoUrl && (
-                      <img src={project.builderLogoUrl} alt={project.builderName} className="h-16 object-contain border border-border-default rounded-xl p-2" />
-                    )}
-                    <div>
-                      <p className="font-bold text-xl text-text-primary">{project.builderName}</p>
-                      <p className="text-sm text-text-secondary">Developed By</p>
+                <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+                  <h2 className="text-xl font-bold text-text-primary">About the Builder</h2>
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border-default/60">
+                    <div className="flex items-center gap-4">
+                      {project.builderLogoUrl && (
+                        <div className="w-16 h-16 rounded-2xl bg-white border border-border-default p-2 flex items-center justify-center shrink-0 shadow-2xs">
+                          <img src={project.builderLogoUrl} alt={project.builderName} className="w-full h-full object-contain" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-black text-xl text-text-primary">{project.builderName}</p>
+                        <p className="text-xs text-text-secondary font-medium">Developed By</p>
+                      </div>
+                    </div>
+
+                    {/* Builder Stats Badges */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {project.builderExperience && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                          🏆 {project.builderExperience}
+                        </span>
+                      )}
+                      {project.builderProjectsCount && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                          🏢 {project.builderProjectsCount}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-3 mt-5">
+
+                  {/* Optional Builder Bio / Description */}
+                  {project.builderDescription && (
+                    <p className="text-xs sm:text-sm text-text-secondary leading-relaxed pt-1">
+                      {project.builderDescription}
+                    </p>
+                  )}
+
+                  {/* Direct Contact Buttons */}
+                  <div className="flex flex-wrap gap-3 pt-2">
                     {phone && (
-                      <a href={phone} className="flex items-center gap-2 px-5 py-3 rounded-xl border border-border-default text-text-primary font-semibold hover:border-amber-primary transition-colors whitespace-nowrap">
-                        <Phone className="w-4 h-4 shrink-0" /> Call Builder
+                      <a href={phone} className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border-default bg-slate-50 dark:bg-slate-900 text-text-primary font-bold text-xs sm:text-sm hover:border-slate-400 transition-colors whitespace-nowrap shadow-2xs active:scale-95">
+                        <Phone className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" /> Call Builder
                       </a>
                     )}
                     {whatsapp && (
                       <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors whitespace-nowrap">
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm transition-colors whitespace-nowrap shadow-xs active:scale-95">
                         <MessageCircle className="w-4 h-4 shrink-0" /> WhatsApp
                       </a>
                     )}

@@ -169,12 +169,15 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const [projectType, setProjectType]         = useState<ProjectType>(initialData?.projectType ?? "apartment");
   const [name, setName]                       = useState(initialData?.name ?? "");
   const [refId, setRefId]                     = useState(initialData?.refId ?? `REF${Math.floor(100 + Math.random() * 900)}`);
-  const [tagline, setTagline]                 = useState(initialData?.tagline ?? "");
-  const [description, setDescription]         = useState(initialData?.description ?? "");
-  const [builderName, setBuilderName]         = useState(initialData?.builderName ?? "");
-  const [builderLogoUrl, setBuilderLogoUrl]   = useState(initialData?.builderLogoUrl ?? "");
-  const [builderPhone, setBuilderPhone]       = useState(initialData?.builderPhone ?? "");
-  const [builderWhatsapp, setBuilderWhatsapp] = useState(initialData?.builderWhatsapp ?? "");
+  const [tagline, setTagline]                         = useState(initialData?.tagline ?? "");
+  const [description, setDescription]                 = useState(initialData?.description ?? "");
+  const [builderName, setBuilderName]                 = useState(initialData?.builderName ?? "");
+  const [builderLogoUrl, setBuilderLogoUrl]           = useState(initialData?.builderLogoUrl ?? "");
+  const [builderPhone, setBuilderPhone]               = useState(initialData?.builderPhone ?? "");
+  const [builderWhatsapp, setBuilderWhatsapp]         = useState(initialData?.builderWhatsapp ?? "");
+  const [builderDescription, setBuilderDescription]   = useState(initialData?.builderDescription ?? "");
+  const [builderExperience, setBuilderExperience]     = useState(initialData?.builderExperience ?? "");
+  const [builderProjectsCount, setBuilderProjectsCount] = useState(initialData?.builderProjectsCount ?? "");
   const [reraId, setReraId]                   = useState(initialData?.reraId ?? "");
   const [reraApproved, setReraApproved]       = useState(initialData?.reraApproved ?? false);
   const [crdaApproved, setCrdaApproved]       = useState(initialData?.crdaApproved ?? false);
@@ -476,6 +479,9 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       builderLogoUrl: builderLogoUrl.trim() || undefined,
       builderPhone: builderPhone.trim() || undefined,
       builderWhatsapp: builderWhatsapp.trim() || undefined,
+      builderDescription: builderDescription.trim() || undefined,
+      builderExperience: builderExperience.trim() || undefined,
+      builderProjectsCount: builderProjectsCount.trim() || undefined,
       location: { address: address.trim(), locality: locality.trim(), city: city.trim(), state: locState.trim(), pincode: pincode.trim() || undefined, latitude: lat, longitude: lng },
       reraId: reraId.trim() || undefined,
       reraApproved, crdaApproved, noBrokerage,
@@ -689,7 +695,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                   </div>
                   
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-300">Builder Phone</label>
+                    <label className="text-xs font-bold text-slate-300">Builder Phone (Call Button)</label>
                     <Input
                       value={builderPhone}
                       onChange={(e) => setBuilderPhone(e.target.value)}
@@ -699,7 +705,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-300">Builder WhatsApp</label>
+                    <label className="text-xs font-bold text-slate-300">Builder WhatsApp (WhatsApp Button)</label>
                     <Input
                       value={builderWhatsapp}
                       onChange={(e) => setBuilderWhatsapp(e.target.value)}
@@ -721,6 +727,37 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                         className="h-11 bg-slate-950 border-slate-800 text-xs text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400 cursor-pointer"
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300">Experience / Established (Optional)</label>
+                    <Input
+                      value={builderExperience}
+                      onChange={(e) => setBuilderExperience(e.target.value)}
+                      placeholder="e.g. 15+ Years Experience"
+                      className="w-full h-11 rounded-xl bg-slate-950 border border-slate-800 px-3 text-xs text-white placeholder:text-slate-500 focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300">Projects Delivered (Optional)</label>
+                    <Input
+                      value={builderProjectsCount}
+                      onChange={(e) => setBuilderProjectsCount(e.target.value)}
+                      placeholder="e.g. 25+ Completed Projects"
+                      className="w-full h-11 rounded-xl bg-slate-950 border border-slate-800 px-3 text-xs text-white placeholder:text-slate-500 focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2 space-y-1">
+                    <label className="text-xs font-bold text-slate-300">About the Builder / Bio (Optional)</label>
+                    <textarea
+                      value={builderDescription}
+                      onChange={(e) => setBuilderDescription(e.target.value)}
+                      rows={3}
+                      placeholder="Enter brief background about the developer, their legacy, quality standards, and vision..."
+                      className="w-full rounded-xl bg-slate-950 border border-slate-800 p-3 text-xs text-white placeholder:text-slate-500 focus:border-amber-500 focus:outline-none leading-relaxed"
+                    />
                   </div>
                 </div>
               </div>
