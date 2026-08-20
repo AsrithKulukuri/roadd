@@ -54,9 +54,16 @@ export async function shareItem({ item, type }: ShareItemOptions) {
   }
   const specsStr = specs.join(" • ");
 
-  // Direct redirect URL to our website
+  // Direct redirect URL to our website: Always use production domain when on localhost so WhatsApp / Social media can fetch the Open Graph card preview
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname.startsWith("192.168.") ||
+      window.location.hostname.startsWith("10."));
+
   const origin =
-    typeof window !== "undefined" && window.location.origin
+    !isLocalhost && typeof window !== "undefined" && window.location.origin
       ? window.location.origin
       : "https://www.roadfacing.com";
 
@@ -67,14 +74,14 @@ export async function shareItem({ item, type }: ShareItemOptions) {
 
   // Formatted share text for WhatsApp, Telegram, SMS, Social Media
   const shareTitle = `${refId}: ${title}`;
-  const shareText = `🏡 *${title}*\n🆔 Reference ID: *${refId}*${priceStr ? `\n💰 Price: *${priceStr}*` : ""}${locationStr ? `\n📍 Location: ${locationStr}` : ""}${specsStr ? `\n📐 Specs: ${specsStr}` : ""}\n\n✨ View verified details, photos & video on Road Facing:\n👉 ${shareUrl}`;
+  const shareSummaryText = `🏡 *${title}*\n🆔 Reference ID: *${refId}*${priceStr ? `\n💰 Price: *${priceStr}*` : ""}${locationStr ? `\n📍 Location: ${locationStr}` : ""}${specsStr ? `\n📐 Specs: ${specsStr}` : ""}\n\n✨ View verified details, photos & video on Road Facing:`;
 
   // Try native Web Share API
   if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
     try {
       await navigator.share({
         title: shareTitle,
-        text: shareText,
+        text: shareSummaryText,
         url: shareUrl,
       });
       toast.success(`Shared ${refId} (${title})`);
@@ -89,7 +96,7 @@ export async function shareItem({ item, type }: ShareItemOptions) {
   // Fallback: Copy formatted text and link to clipboard
   if (typeof navigator !== "undefined" && navigator.clipboard) {
     try {
-      await navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(`${shareSummaryText}\n${shareUrl}`);
       toast.success(`📋 Copied ${refId} link to clipboard!`);
     } catch {
       toast.error("Failed to copy link");
