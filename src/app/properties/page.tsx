@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { PropertyCard } from "@/components/property/property-card";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { SearchFiltersModal, initialFilterState, type FilterState } from "@/components/search/search-filters";
 import { RealtorSearchHeader } from "@/components/search/realtor-search-header";
 import { LocationCarousels } from "@/components/search/location-carousels";
@@ -14,9 +15,24 @@ import { cn } from "@/lib/utils";
 import { matchesPropertySearch } from "@/lib/search-engine";
 import { toast } from "sonner";
 
+function PropertiesPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-20 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        <div className="h-10 w-64 bg-slate-200/80 dark:bg-slate-800 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <SkeletonCard key={`prop-skel-${i}`} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PropertiesPageWrapper() {
   return (
-    <Suspense fallback={<div className="min-h-screen pt-24 pb-16 bg-slate-50 flex items-center justify-center font-medium text-slate-600">Loading properties...</div>}>
+    <Suspense fallback={<PropertiesPageSkeleton />}>
       <PropertiesPage />
     </Suspense>
   );

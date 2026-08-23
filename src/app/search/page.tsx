@@ -28,9 +28,37 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
   return R * c;
 }
 
+function SearchPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      {/* Header Skeleton Bar */}
+      <div className="w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-3 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="h-10 w-full max-w-md bg-slate-100 dark:bg-slate-800 rounded-full animate-pulse" />
+          <div className="h-9 w-28 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse hidden sm:block" />
+        </div>
+      </div>
+
+      {/* Grid Content Skeleton */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-9 w-64 bg-slate-200/70 dark:bg-slate-800 rounded-xl animate-pulse" />
+          <div className="h-9 w-40 bg-slate-200/70 dark:bg-slate-800 rounded-xl animate-pulse hidden sm:block" />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <SkeletonCard key={`suspense-skel-${i}`} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function UnifiedSearchPageWrapper() {
   return (
-    <Suspense fallback={<div className="min-h-screen pt-24 pb-16 bg-slate-50 flex items-center justify-center font-medium text-slate-600">Loading search...</div>}>
+    <Suspense fallback={<SearchPageSkeleton />}>
       <UnifiedSearchPage />
     </Suspense>
   );

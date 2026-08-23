@@ -211,6 +211,8 @@ export function HeroSection() {
 
   const handleSearchSubmit = (e?: React.FormEvent, customBudget?: [number, number]) => {
     if (e) e.preventDefault();
+    setIsNavigating(true);
+
     if (activeTab === "sell") {
       router.push("/list-with-us");
       return;
@@ -830,7 +832,13 @@ export function HeroSection() {
 
           {/* Input text wrapper */}
           <div 
-            onClick={() => router.push(`/search?type=${activeTab}&focus=search`)}
+            onMouseEnter={() => {
+              try { router.prefetch(`/search?type=${activeTab}&focus=search`); } catch (e) {}
+            }}
+            onClick={() => {
+              setIsNavigating(true);
+              router.push(`/search?type=${activeTab}&focus=search`);
+            }}
             className="relative flex-1 min-w-0 h-full flex items-center cursor-pointer"
           >
             {!searchQuery && (
@@ -847,25 +855,34 @@ export function HeroSection() {
               type="text"
               value={searchQuery}
               readOnly
-              onClick={() => router.push(`/search?type=${activeTab}&focus=search`)}
+              onClick={() => {
+                setIsNavigating(true);
+                router.push(`/search?type=${activeTab}&focus=search`);
+              }}
               placeholder=""
               style={{ outline: "none", boxShadow: "none", border: "none" }}
               className="w-full h-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-transparent font-medium border-none outline-none focus:outline-none focus:ring-0 shadow-none px-0 cursor-pointer"
             />
           </div>
 
-          {/* Right: Search Action Icon in Logo Color (Amber #f59e0b) */}
+          {/* Right: Search Action Icon in Logo Color (Amber #f59e0b) with Loading Indicator */}
           <button
             type="submit"
+            disabled={isNavigating}
             onClick={(e) => {
               e.stopPropagation();
+              setIsNavigating(true);
               router.push(`/search?type=${activeTab}&focus=search`);
             }}
-            aria-label="Search"
+            aria-label="Search properties"
             title="Search"
             className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-[#f59e0b] hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all active:scale-90 cursor-pointer shrink-0 ml-1"
           >
-            <Search className="w-5 h-5 sm:w-5.5 sm:h-5.5 stroke-[2.5]" />
+            {isNavigating ? (
+              <Loader2 className="w-5 h-5 sm:w-5.5 sm:h-5.5 animate-spin text-[#f59e0b]" />
+            ) : (
+              <Search className="w-5 h-5 sm:w-5.5 sm:h-5.5 stroke-[2.5]" />
+            )}
           </button>
 
           {/* LIVE AUTO-SUGGESTIONS POPUP */}

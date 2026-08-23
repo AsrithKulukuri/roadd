@@ -22,6 +22,7 @@ import {
   Mic,
   ArrowRight,
   Hash,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -69,12 +70,14 @@ export function RealtorSearchHeader({
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [openDropdown, setOpenDropdown] = useState<"price" | "rooms" | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setSearchInput(filters.query || "");
+    setIsSubmitting(false);
   }, [filters.query]);
 
   // Autofocus input when requested from URL
@@ -145,8 +148,10 @@ export function RealtorSearchHeader({
       router.push(refMatch.url);
       return;
     }
+    setIsSubmitting(true);
     setIsFocused(false);
     onFilterChange({ ...filters, query: searchInput });
+    setTimeout(() => setIsSubmitting(false), 400);
   };
 
   // Web Speech API Voice Search Handler
@@ -286,10 +291,15 @@ export function RealtorSearchHeader({
                 {/* Search Icon Submit Button */}
                 <button
                   type="submit"
+                  disabled={isSubmitting}
                   title="Search"
                   className="p-1 sm:p-1.5 text-slate-500 hover:text-amber-500 dark:text-slate-400 dark:hover:text-amber-400 active:scale-95 transition-all cursor-pointer shrink-0"
                 >
-                  <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                  {isSubmitting ? (
+                    <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin text-amber-500" />
+                  ) : (
+                    <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                  )}
                 </button>
               </div>
 

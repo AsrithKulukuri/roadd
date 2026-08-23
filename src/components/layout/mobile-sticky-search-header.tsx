@@ -31,11 +31,15 @@ export function MobileStickySearchHeader() {
 
   // Cycle placeholder suggestions
   useEffect(() => {
+    try {
+      router.prefetch("/search");
+    } catch (e) {}
+
     const interval = setInterval(() => {
       setPlaceholderIndex((prev) => (prev + 1) % SEARCH_PLACEHOLDERS.length);
     }, 3500);
     return () => clearInterval(interval);
-  }, []);
+  }, [router]);
 
   // Detect scroll position
   useEffect(() => {

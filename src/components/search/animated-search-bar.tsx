@@ -72,8 +72,11 @@ export function AnimatedSearchBar({
     return () => clearTimeout(timeout);
   }, [displayText, isDeleting, suggestionIndex]);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     if (onSearch) {
       onSearch(query.trim());
     }
@@ -142,6 +145,7 @@ export function AnimatedSearchBar({
 
       <motion.button
         type={isExpanded ? "submit" : "button"}
+        disabled={isSubmitting}
         onClick={(e) => {
           if (!isExpanded && onExpand) {
             e.preventDefault();
@@ -150,9 +154,12 @@ export function AnimatedSearchBar({
         }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="ml-2 sm:ml-4 bg-amber-primary text-bg-primary shadow-amber-glow rounded-full px-4 sm:px-6 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-amber-primary/50 focus:ring-offset-2 flex-shrink-0"
+        className="ml-2 sm:ml-4 bg-amber-primary text-bg-primary shadow-amber-glow rounded-full px-4 sm:px-6 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-amber-primary/50 focus:ring-offset-2 flex-shrink-0 flex items-center gap-1.5"
       >
-        Search
+        {isSubmitting ? (
+          <span className="inline-block w-4 h-4 rounded-full border-2 border-slate-900 border-t-transparent animate-spin" />
+        ) : null}
+        <span>Search</span>
       </motion.button>
     </motion.form>
   );
