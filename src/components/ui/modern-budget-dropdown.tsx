@@ -54,6 +54,20 @@ export function ModernBudgetDropdown({
 
   return (
     <div ref={containerRef} className={cn("relative flex-1", className)}>
+      {/* Mobile: Native Select Overlay (zero overlay collision, uses native system picker) */}
+      <select
+        value={value}
+        onChange={(e) => onChange(parseInt(e.target.value, 10))}
+        className="md:hidden absolute inset-0 w-full h-full opacity-0 z-30 cursor-pointer"
+        aria-label={placeholder || "Select budget"}
+      >
+        {options.map((opt, i) => (
+          <option key={`mob-opt-${opt.label}-${opt.value}-${i}`} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+
       {/* Pill Trigger */}
       <button
         type="button"
@@ -74,46 +88,48 @@ export function ModernBudgetDropdown({
         />
       </button>
 
-      {/* Modern Popover List (No emojis, no icons, pure clean typography) */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className={cn(
-              "absolute top-full mt-1.5 z-[500] min-w-[130px] w-full max-h-56 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl overflow-y-auto p-1.5 space-y-0.5 no-scrollbar",
-              align === "right" ? "right-0" : "left-0"
-            )}
-          >
-            {options.map((opt, i) => {
-              const isSelected = opt.value === value;
-              return (
-                <button
-                  key={`${opt.label}-${opt.value}-${i}`}
-                  type="button"
-                  onClick={() => {
-                    onChange(opt.value);
-                    setIsOpen(false);
-                  }}
-                  className={cn(
-                    "w-full text-left px-3 py-2 rounded-xl text-xs transition-all cursor-pointer select-none flex items-center justify-between",
-                    isSelected
-                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
-                      : "text-slate-200 hover:text-white hover:bg-slate-900 font-semibold active:scale-98"
-                  )}
-                >
-                  <span className="truncate">{opt.label}</span>
-                  {isSelected && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-950 shrink-0 ml-2" />
-                  )}
-                </button>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Desktop Popover List */}
+      <div className="hidden md:block">
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -4, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className={cn(
+                "absolute top-full mt-1.5 z-[500] min-w-[130px] w-full max-h-56 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl overflow-y-auto p-1.5 space-y-0.5 no-scrollbar",
+                align === "right" ? "right-0" : "left-0"
+              )}
+            >
+              {options.map((opt, i) => {
+                const isSelected = opt.value === value;
+                return (
+                  <button
+                    key={`${opt.label}-${opt.value}-${i}`}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={cn(
+                      "w-full text-left px-3 py-2 rounded-xl text-xs transition-all cursor-pointer select-none flex items-center justify-between",
+                      isSelected
+                        ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                        : "text-slate-200 hover:text-white hover:bg-slate-900 font-semibold active:scale-98"
+                    )}
+                  >
+                    <span className="truncate">{opt.label}</span>
+                    {isSelected && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-950 shrink-0 ml-2" />
+                    )}
+                  </button>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

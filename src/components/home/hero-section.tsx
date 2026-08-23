@@ -1003,9 +1003,9 @@ export function HeroSection() {
 
               return (
                 <>
-                  {/* Click-outside dismissal backdrop */}
+                  {/* Click-outside dismissal backdrop (Desktop only) */}
                   <div 
-                    className="fixed inset-0 z-[95]" 
+                    className="hidden sm:block fixed inset-0 z-[95]" 
                     onClick={() => {
                       setOpenLocationTab(null);
                       setSublocationSearch("");
@@ -1014,11 +1014,11 @@ export function HeroSection() {
 
                   <motion.div
                     key={activeCity.id}
-                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                    transition={{ duration: 0.16, ease: "easeOut" }}
-                    className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 w-[92vw] max-w-[340px] sm:max-w-[360px] bg-slate-950/98 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-[100] max-h-[380px] flex flex-col"
+                    initial={{ opacity: 0, height: 0, y: -4 }}
+                    animate={{ opacity: 1, height: "auto", y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -4 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="relative w-full mt-2 sm:absolute sm:top-full sm:mt-1.5 sm:left-1/2 sm:-translate-x-1/2 sm:w-[92vw] sm:max-w-[360px] bg-slate-950/98 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-[100] max-h-[380px] flex flex-col"
                   >
                     {/* Header */}
                     <div className="px-4 py-2.5 border-b border-slate-800/80 text-[11px] uppercase font-black tracking-wider text-amber-400 flex items-center justify-between gap-3 sticky top-0 bg-slate-950 z-10 shrink-0">
@@ -1133,7 +1133,7 @@ export function HeroSection() {
         </div>
 
         {/* ── Budget Filter Card (Compact & Modern Design) ── */}
-        <div className="relative z-30 w-full max-w-[760px] mx-auto mt-2 sm:mt-3 text-left">
+        <div className="relative z-20 w-full max-w-[760px] mx-auto mt-2 sm:mt-3 text-left">
           <div className="bg-white/95 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-3 sm:p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.05)] space-y-2.5">
             
             {/* Row 1: BUDGET: [ ₹ 10 L ⌄ ] TO [ Any Price ⌄ ] */}
