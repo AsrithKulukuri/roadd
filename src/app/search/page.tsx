@@ -570,28 +570,7 @@ function UnifiedSearchPage() {
             )}
           >
             
-            {/* Live map-sync banner — Realtor style (Desktop) */}
-            {viewMode === "map" && visibleMapIds !== null && (
-              <div className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-300",
-                listUpdating
-                  ? "bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 animate-pulse"
-                  : "bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
-              )}>
-                <span className={cn("w-2 h-2 rounded-full flex-shrink-0", listUpdating ? "bg-amber-500 animate-ping" : "bg-amber-500")} />
-                <span>
-                  {listUpdating ? "Updating listings…" : `${combinedResults.length} homes in map area`}
-                </span>
-                {!listUpdating && (
-                  <button
-                    onClick={() => setVisibleMapIds(null)}
-                    className="ml-auto text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-semibold text-[10px] underline-offset-2 hover:underline"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-            )}
+
 
             {/* Controls Bar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
