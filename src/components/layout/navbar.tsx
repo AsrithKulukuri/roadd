@@ -168,7 +168,8 @@ export function Navbar() {
           "fixed top-0 left-0 right-0 z-[100] h-16 flex items-center transition-all duration-300",
           isTransparent
             ? "bg-transparent border-transparent"
-            : "bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 shadow-xs"
+            : "bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 shadow-xs",
+          pathname !== "/search" && isScrolled && "max-lg:opacity-0 max-lg:pointer-events-none"
         )}
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-6 w-full">

@@ -41,6 +41,7 @@ interface RealtorSearchHeaderProps {
   onViewModeChange: (mode: "grid" | "map") => void;
   onOpenAllFilters: () => void;
   totalResults: number;
+  autoFocus?: boolean;
 }
 
 const CAROUSEL_SUGGESTIONS = [
@@ -61,6 +62,7 @@ export function RealtorSearchHeader({
   onViewModeChange,
   onOpenAllFilters,
   totalResults,
+  autoFocus = false,
 }: RealtorSearchHeaderProps) {
   const [searchInput, setSearchInput] = useState(filters.query || "");
   const [isFocused, setIsFocused] = useState(false);
@@ -74,6 +76,14 @@ export function RealtorSearchHeader({
   useEffect(() => {
     setSearchInput(filters.query || "");
   }, [filters.query]);
+
+  // Autofocus input when requested from URL
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      inputRef.current.focus();
+      setIsFocused(true);
+    }
+  }, [autoFocus]);
 
   // Text Carousel Interval - rotate phrase every 3.2 seconds
   useEffect(() => {

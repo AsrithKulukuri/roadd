@@ -573,6 +573,13 @@ function UnifiedSearchPage() {
     };
   }, [viewMode, visibleMapIds, filteredProperties, filteredProjects]);
 
+  // Auto-open filters modal if requested via URL
+  useEffect(() => {
+    if (searchParams.get("openFilters") === "true") {
+      setIsFilterModalOpen(true);
+    }
+  }, [searchParams]);
+
   if (!mounted) return null;
 
   return (
@@ -595,6 +602,7 @@ function UnifiedSearchPage() {
         }}
         onOpenAllFilters={() => setIsFilterModalOpen(true)}
         totalResults={allCount}
+        autoFocus={searchParams.get("focus") === "search"}
       />
 
       <main className={cn(

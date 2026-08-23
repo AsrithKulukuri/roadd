@@ -8,6 +8,7 @@ import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 
 
+import { MobileStickySearchHeader } from "@/components/layout/mobile-sticky-search-header";
 import dynamic from "next/dynamic";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { SmartPageLoader } from "@/components/shared/smart-page-loader";
@@ -36,9 +37,14 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
     <>
       <SmartPageLoader />
       {!isAdmin && (
-        <Suspense fallback={<div className="h-[72px]" />}>
-          <Navbar />
-        </Suspense>
+        <>
+          <Suspense fallback={<div className="h-[72px]" />}>
+            <Navbar />
+          </Suspense>
+          <Suspense fallback={null}>
+            <MobileStickySearchHeader />
+          </Suspense>
+        </>
       )}
       <main className={`flex-1 ${isDetailPage ? "pb-0" : "pb-16 sm:pb-0"}`}>{children}</main>
       {!isAdmin && (
