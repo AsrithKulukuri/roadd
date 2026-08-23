@@ -187,6 +187,8 @@ function UnifiedSearchPage() {
     const typeStr = searchParams.get("type");
     if (typeStr === "projects") {
       setActiveTab("projects");
+    } else if (typeStr === "properties") {
+      setActiveTab("properties");
     } else {
       setActiveTab("all");
     }
@@ -486,12 +488,12 @@ function UnifiedSearchPage() {
     return combinedResults.slice(0, visibleCount);
   }, [combinedResults, visibleCount]);
 
-  // Map items: pass active filtered properties/projects to the map so markers respect budget & other filters.
+  // Map items: pass active filtered properties & projects to the map so all matching markers render.
   const mapItems = useMemo(() => {
-    const propItems = (activeTab !== "projects" ? filteredProperties : [])
+    const propItems = filteredProperties
       .filter((p) => p.location?.latitude && p.location?.longitude);
 
-    const projItems = (activeTab !== "properties" ? filteredProjects : [])
+    const projItems = filteredProjects
       .filter((p) => p.isPublished && p.location?.latitude && p.location?.longitude)
       .map((p) => ({
         id: p.id,
@@ -518,7 +520,20 @@ function UnifiedSearchPage() {
       }));
 
     return [...propItems, ...projItems];
-  }, [filteredProperties, filteredProjects, activeTab]);
+  }, [filteredProperties, filteredProjects]);
+
+  // Tab change handler that keeps URL and state in sync
+  const handleTabChange = (tab: "all" | "properties" | "projects") => {
+    setActiveTab(tab);
+    const newParams = new URLSearchParams(searchParams.toString());
+    if (tab === "all") {
+      newParams.delete("type");
+    } else {
+      newParams.set("type", tab);
+    }
+    const queryStr = newParams.toString();
+    router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
+  };
 
   // Active counts for the 3 smart filter buttons:
   // In Map View with active viewport, count items in map viewport that match filters.
@@ -597,10 +612,40 @@ function UnifiedSearchPage() {
 
             {/* Controls Bar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
-                <button onClick={() => setActiveTab("all")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "all" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>All ({allCount})</button>
-                <button onClick={() => setActiveTab("properties")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "properties" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Properties ({propCount})</button>
-                <button onClick={() => setActiveTab("projects")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "projects" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Projects ({projCount})</button>
+              <div className="flex bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200 dark:border-slate-800 shadow-xs">
+                <button
+                  onClick={() => handleTabChange("all")}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer",
+                    activeTab === "all"
+                      ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  )}
+                >
+                  All ({allCount})
+                </button>
+                <button
+                  onClick={() => handleTabChange("properties")}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer",
+                    activeTab === "properties"
+                      ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  )}
+                >
+                  Properties ({propCount})
+                </button>
+                <button
+                  onClick={() => handleTabChange("projects")}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer",
+                    activeTab === "projects"
+                      ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  )}
+                >
+                  Projects ({projCount})
+                </button>
               </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
