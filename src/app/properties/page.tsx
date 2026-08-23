@@ -12,6 +12,7 @@ import { MapWrapper } from "@/components/map/map-wrapper";
 import { Building2, ChevronDown, Heart, HelpCircle, ArrowLeft, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { matchesPropertySearch } from "@/lib/search-engine";
+import { toast } from "sonner";
 
 export default function PropertiesPageWrapper() {
   return (
@@ -352,7 +353,7 @@ function PropertiesPage() {
                   <span>How much home can I afford?</span>
                 </Link>
                 <button
-                  onClick={() => alert("Search saved to your favorites!")}
+                  onClick={() => toast.success("Search saved to your favorites!")}
                   className="flex items-center gap-1.5 text-slate-700 hover:text-amber-600 font-semibold text-xs sm:hidden"
                 >
                   <Heart className="w-4 h-4" /> Save search

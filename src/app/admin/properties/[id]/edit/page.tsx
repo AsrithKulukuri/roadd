@@ -12,7 +12,7 @@ import {
   ArrowLeft, Save, Upload, X, MapPin, 
   Video, Info, Phone, Search, 
   CheckCircle2, Image as ImageIcon,
-  Building2, Trees, Shield, Car, Waves, Zap, Trash2, Sparkles
+  Building2, Trees, Shield, Car, Waves, Zap, Trash2, Sparkles, Eye
 } from "lucide-react";
 import Link from "next/link";
 import { Property } from "@/types/property";
@@ -372,7 +372,15 @@ export default function EditPropertyPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 flex-wrap">
+            {targetProperty && (
+              <Button variant="outline" size="sm" asChild className="h-10 text-xs font-semibold">
+                <Link href={`/properties/${targetProperty.slug || targetProperty.id}`} target="_blank">
+                  <Eye className="w-4 h-4 mr-1.5 text-amber-500" />
+                  Preview
+                </Link>
+              </Button>
+            )}
             <Button variant="outline" size="sm" type="button" onClick={(e) => handleSubmit(e, "draft")} disabled={isSubmitting || isUploading} className="flex-1 sm:flex-none h-10 text-xs font-semibold">
               Save Draft
             </Button>

@@ -14,7 +14,7 @@ import {
   Check, X, Upload, Link as LinkIcon,
   Image as ImageIcon, FileText, MapPin, Save,
   CheckCircle2, Loader2, Map, Info, Video, CheckSquare, Square,
-  Settings, AlertCircle, ChevronDown, Sparkles, Plus, Trash2, Calendar, ListChecks, LayoutTemplate
+  Settings, AlertCircle, ChevronDown, Sparkles, Plus, Trash2, Calendar, ListChecks, LayoutTemplate, Eye
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -548,6 +548,17 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
               {mode === "new" ? "Create a new builder project" : "Update project details"}
             </p>
           </div>
+
+          {initialData && (
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" asChild className="h-10 text-xs font-semibold">
+                <Link href={`/projects/${initialData.slug || initialData.id}`} target="_blank">
+                  <Eye className="w-4 h-4 mr-1.5 text-amber-500" />
+                  Preview Live Page
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
 
         <form className="space-y-8">

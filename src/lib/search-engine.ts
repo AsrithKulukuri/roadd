@@ -360,6 +360,9 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
       const rt = reqType.toLowerCase();
       if (rt === pType || rt === pSubtype || rt === pCategory) return true;
       
+      // Gated Community matches
+      if (rt === "gated-community" && ((property as any).gatedCommunity || (property as any).isGatedCommunity || (property.amenities as any)?.some((a: any) => a.id === "gated-security" || a.name?.toLowerCase().includes("gated")) || ["apartment", "villa"].includes(pType))) return true;
+
       // Apartment matches
       if (rt === "apartment" && (pType.includes("apartment") || pSubtype === "flat" || pSubtype === "pent-house" || pSubtype === "duplex-flat")) return true;
       
@@ -367,10 +370,10 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
       if ((rt === "villa" || rt === "independent-house") && (pType.includes("villa") || pType.includes("independent-house") || pSubtype === "villa" || pSubtype === "house")) return true;
       
       // Land & Plot matches
-      if ((rt === "residential-land" || rt === "plot" || rt === "venture") && (pType.includes("land") || pType.includes("plot") || pType === "venture" || pSubtype === "venture-plot" || pSubtype === "land")) return true;
+      if ((rt === "residential-land" || rt === "plot" || rt === "venture" || rt === "residential-plot") && (pType.includes("land") || pType.includes("plot") || pType === "venture" || pSubtype === "venture-plot" || pSubtype === "land")) return true;
       
       // Commercial matches
-      if ((rt === "commercial-spaces" || rt === "commercial" || rt === "shops" || rt === "buildings") && (pCategory === "commercial" || pType.includes("commercial") || pType === "shops" || pType === "buildings" || pSubtype === "shop" || pSubtype === "building")) return true;
+      if ((rt === "commercial-spaces" || rt === "commercial" || rt === "shops" || rt === "buildings" || rt === "commercial-lands" || rt === "industrial-lands") && (pCategory === "commercial" || pType.includes("commercial") || pType === "shops" || pType === "buildings" || pSubtype === "shop" || pSubtype === "building")) return true;
       
       // PG & Co-living matches
       if ((rt === "pg" || rt === "pg-coliving") && (pType === "pg-coliving" || pType === "pg" || property.listingType === "pg")) return true;

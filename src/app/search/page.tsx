@@ -143,9 +143,23 @@ function UnifiedSearchPage() {
     // Parse propertyType
     const propTypeStr = searchParams.get("propertyType");
     let propertyType: string[] = [];
+    let gatedCommunity = false;
     if (propTypeStr) {
       propertyType = propTypeStr.split(",");
+      if (propertyType.includes("gated-community")) {
+        gatedCommunity = true;
+      }
     }
+
+    // Parse city / cities
+    const cityParam = searchParams.get("city") || searchParams.get("cities");
+    let cities: string[] = [];
+    if (cityParam) {
+      cities = cityParam.split(",").map(c => c.trim()).filter(Boolean);
+    }
+
+    // Parse reraApproved
+    const reraParam = searchParams.get("reraApproved") === "true" || searchParams.get("rera") === "true";
 
     // Parse saleType (resale filters specifically for resale; 'new' indicates recent listings)
     const saleTypeStr = searchParams.get("saleType");
@@ -170,6 +184,9 @@ function UnifiedSearchPage() {
       listingType,
       propertyType,
       saleType,
+      cities,
+      gatedCommunity,
+      reraApproved: reraParam,
       displayCategory: categoryParam,
       sortBy: sortParam,
       postedSince,
