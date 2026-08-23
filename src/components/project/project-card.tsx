@@ -377,7 +377,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
                     {getRefId(project)}
                   </span>
                 </div>
-                <p className="font-black text-slate-900 dark:text-white text-xs sm:text-sm leading-tight truncate">
+                <p className="font-extrabold text-text-primary text-sm sm:text-base leading-tight truncate">
                   {priceLabel}
                 </p>
                 {pricePerUnit && pricePerUnit !== priceLabel && (

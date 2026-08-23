@@ -23,34 +23,35 @@ export function formatINR(amount: number): string {
 }
 
 /**
- * Formats price in compact Indian notation using full words (Lakhs / Crore).
+ * Formats price in compact Indian notation (Lakhs / Crore).
  * Examples:
- *   formatPriceCompact(8500000)  => "₹85 Lakhs"
- *   formatPriceCompact(15000000) => "₹1.5 Crore"
- *   formatPriceCompact(250000000)=> "₹25 Crore"
+ *   formatPriceCompact(8500000)  => "₹85 L"
+ *   formatPriceCompact(15000000) => "₹1.5 Cr"
  */
-export function formatPriceCompact(amount: number): string {
-  if (amount >= 10000000) {
-    const crore = amount / 10000000;
+export function formatPriceCompact(amount: number | string | undefined | null): string {
+  const num = typeof amount === "number" ? amount : Number(amount) || 0;
+  if (!num && num !== 0) return "Price on Request";
+  if (num >= 10000000) {
+    const crore = num / 10000000;
     const formatted =
-      crore % 1 === 0 ? crore.toFixed(0) : crore.toFixed(1).replace(/\.0$/, "");
-    return `₹${formatted} Crore`;
+      crore % 1 === 0 ? crore.toFixed(0) : crore.toFixed(2).replace(/\.?0+$/, "");
+    return `₹${formatted} Cr`;
   }
-  if (amount >= 100000) {
-    const lakh = amount / 100000;
+  if (num >= 100000) {
+    const lakh = num / 100000;
     const formatted =
-      lakh % 1 === 0 ? lakh.toFixed(0) : lakh.toFixed(1).replace(/\.0$/, "");
-    return `₹${formatted} Lakhs`;
+      lakh % 1 === 0 ? lakh.toFixed(0) : lakh.toFixed(2).replace(/\.?0+$/, "");
+    return `₹${formatted} L`;
   }
-  if (amount >= 1000) {
-    const thousands = amount / 1000;
+  if (num >= 1000) {
+    const thousands = num / 1000;
     const formatted =
       thousands % 1 === 0
         ? thousands.toFixed(0)
         : thousands.toFixed(1).replace(/\.0$/, "");
     return `₹${formatted}K`;
   }
-  return `₹${amount}`;
+  return `₹${num.toLocaleString("en-IN")}`;
 }
 
 /**
