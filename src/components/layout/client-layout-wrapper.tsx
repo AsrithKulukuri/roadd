@@ -21,8 +21,6 @@ const AiAssistantWidget = dynamic(
 export function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
-  const isLaunchPage = pathname === "/";
-  const showPublicChrome = !isAdmin && !isLaunchPage;
   const isDetailPage = 
     (pathname.startsWith("/properties/") && pathname !== "/properties" && pathname !== "/properties/map" && pathname !== "/properties/compare") ||
     (pathname.startsWith("/projects/") && pathname !== "/projects");
@@ -31,20 +29,16 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
   const fetchProjects   = useProjectsStore((state) => state.fetchProjects);
 
   useEffect(() => {
-    if (isLaunchPage) return;
-
     fetchProperties();
     fetchProjects();
-  }, [fetchProperties, fetchProjects, isLaunchPage]);
+  }, [fetchProperties, fetchProjects]);
 
   return (
     <>
-      {!isLaunchPage && (
-        <Suspense fallback={null}>
-          <SmartPageLoader />
-        </Suspense>
-      )}
-      {showPublicChrome && (
+      <Suspense fallback={null}>
+        <SmartPageLoader />
+      </Suspense>
+      {!isAdmin && (
         <>
           <Suspense fallback={<div className="h-[72px]" />}>
             <Navbar />
@@ -54,8 +48,8 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
           </Suspense>
         </>
       )}
-      <main className={`flex-1 ${isLaunchPage || isDetailPage ? "pb-0" : "pb-16 sm:pb-0"}`}>{children}</main>
-      {showPublicChrome && (
+      <main className={`flex-1 ${isDetailPage ? "pb-0" : "pb-16 sm:pb-0"}`}>{children}</main>
+      {!isAdmin && (
         <>
           <Footer />
           <Suspense fallback={null}>
