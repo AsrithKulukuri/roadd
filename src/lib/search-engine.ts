@@ -324,26 +324,23 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
     if (!propLocationCorpus.includes(locTarget)) return false;
   }
 
-  // General text query fallback
-  if (filters.query && typeof filters.query === "string" && filters.query.trim()) {
-    const q = filters.query.toLowerCase().trim();
-    if (!propLocationCorpus.includes(q)) {
-      const tagsText = `${(property.amenities || []).map((a: any) => typeof a === "string" ? a : a.name || "").join(" ")}`.toLowerCase();
-      if (!tagsText.includes(q) && !(property.propertyType || "").toLowerCase().includes(q)) {
-        return false;
-      }
-    }
-  }
-
   // 1. Transaction Type / Listing Type
   if (filters.transactionType && filters.transactionType !== "all") {
     if (filters.transactionType === "rent" && property.listingType !== "rent") return false;
     if (filters.transactionType === "buy" && property.listingType !== "sale") return false;
-    if (filters.transactionType === "commercial" && !["commercial-spaces", "shops", "buildings", "warehouse"].includes(property.propertyType)) return false;
-    if (filters.transactionType === "pg" && property.propertyType !== "pg-coliving") return false;
+    if (filters.transactionType === "commercial" && !["commercial-spaces", "shops", "buildings", "commercial-lands", "industrial-lands"].includes(property.propertyType) && property.category !== "commercial") return false;
+    if (filters.transactionType === "pg" && property.propertyType !== "pg-coliving" && property.listingType !== "pg") return false;
   }
   if (filters.listingType && filters.listingType.length > 0) {
-    if (!filters.listingType.includes(property.listingType)) return false;
+    const lType = (property.listingType || "").toLowerCase();
+    const hasListingMatch = filters.listingType.some((lt: string) => {
+      const req = lt.toLowerCase();
+      if (req === lType) return true;
+      if (req === "buy" && lType === "sale") return true;
+      if (req === "sale" && lType === "buy") return true;
+      return false;
+    });
+    if (!hasListingMatch) return false;
   }
 
   // 2. Budget (Min / Max)
@@ -356,13 +353,31 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   // 3. Property Category / Type
   if (filters.propertyType && filters.propertyType.length > 0) {
     const pType = (property.propertyType || "").toLowerCase();
+    const pCategory = (property.category || "").toLowerCase();
+    const pSubtype = (property.subtype || "").toLowerCase();
+
     const hasMatch = filters.propertyType.some((reqType: string) => {
       const rt = reqType.toLowerCase();
-      if (rt === pType) return true;
-      if (rt === "apartment" && pType.includes("apartment")) return true;
-      if (rt === "villa" && (pType.includes("villa") || pType.includes("independent-house"))) return true;
-      if (rt === "residential-land" && (pType.includes("land") || pType.includes("plot") || pType === "venture")) return true;
-      if (rt === "commercial-spaces" && (pType.includes("commercial") || pType.includes("shop") || pType.includes("building"))) return true;
+      if (rt === pType || rt === pSubtype || rt === pCategory) return true;
+      
+      // Apartment matches
+      if (rt === "apartment" && (pType.includes("apartment") || pSubtype === "flat" || pSubtype === "pent-house" || pSubtype === "duplex-flat")) return true;
+      
+      // Villa & House matches
+      if ((rt === "villa" || rt === "independent-house") && (pType.includes("villa") || pType.includes("independent-house") || pSubtype === "villa" || pSubtype === "house")) return true;
+      
+      // Land & Plot matches
+      if ((rt === "residential-land" || rt === "plot" || rt === "venture") && (pType.includes("land") || pType.includes("plot") || pType === "venture" || pSubtype === "venture-plot" || pSubtype === "land")) return true;
+      
+      // Commercial matches
+      if ((rt === "commercial-spaces" || rt === "commercial" || rt === "shops" || rt === "buildings") && (pCategory === "commercial" || pType.includes("commercial") || pType === "shops" || pType === "buildings" || pSubtype === "shop" || pSubtype === "building")) return true;
+      
+      // PG & Co-living matches
+      if ((rt === "pg" || rt === "pg-coliving") && (pType === "pg-coliving" || pType === "pg" || property.listingType === "pg")) return true;
+      
+      // Farmhouse & Agricultural matches
+      if ((rt === "farmhouse" || rt === "agricultural-lands" || rt === "agricultural-land" || rt === "agricultural") && (pType === "farmhouse" || pType === "agricultural-lands" || pCategory === "agricultural" || pSubtype === "farm-house" || pSubtype === "land")) return true;
+
       return false;
     });
     if (!hasMatch) return false;
@@ -409,13 +424,13 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
     }
   }
 
-  // 8. Possession Status
-  if (filters.possessionStatus && filters.possessionStatus.length > 0) {
+  // 8. Possession Status & Availability
+  const possessionFilters = [...(filters.possessionStatus || []), ...(filters.availability || [])];
+  if (possessionFilters.length > 0) {
     const isReady = property.isReadyToMove;
-    const matchesPossession = filters.possessionStatus.some((ps: string) => {
-      if (ps === "ready") return isReady;
-      if (ps === "under-construction") return !isReady;
-      if (ps === "immediate") return isReady;
+    const matchesPossession = possessionFilters.some((ps: string) => {
+      if (ps === "ready" || ps === "immediate") return isReady || property.possessionDate?.toLowerCase().includes("ready") || property.possessionDate?.toLowerCase().includes("immediate") || (property.ageOfProperty || 0) === 0;
+      if (ps === "under-construction") return !isReady || property.possessionDate?.toLowerCase().includes("2026") || property.possessionDate?.toLowerCase().includes("2027");
       return true;
     });
     if (!matchesPossession) return false;
@@ -445,21 +460,32 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
     }
   }
 
-  // 11. Posted By
-  if (filters.postedBy && filters.postedBy.length > 0 && property.postedBy) {
-    if (!filters.postedBy.includes(property.postedBy.toLowerCase())) return false;
+  // 11. Posted By / Owner Type
+  if (filters.postedBy && filters.postedBy.length > 0) {
+    const poster = (property.ownerType || property.postedBy || "").toLowerCase();
+    const hasPosterMatch = filters.postedBy.some((req: string) => {
+      const r = req.toLowerCase();
+      if (r === poster) return true;
+      if (r === "developer" && poster === "builder") return true;
+      if (r === "builder" && poster === "developer") return true;
+      return false;
+    });
+    if (!hasPosterMatch && poster) return false;
   }
 
   // 12. Furnishing
   if (filters.furnished && filters.furnished.length > 0 && property.furnishing) {
-    if (!filters.furnished.includes(property.furnishing.toLowerCase())) return false;
+    const furn = property.furnishing.toLowerCase();
+    if (!filters.furnished.some((f: string) => furn.includes(f.toLowerCase()))) return false;
   }
 
   // 13. Facing & Vastu
   if (filters.facing && filters.facing.length > 0 && property.facing) {
-    if (!filters.facing.includes(property.facing.toLowerCase())) return false;
+    const propFacing = property.facing.toLowerCase();
+    if (!filters.facing.some((f: string) => propFacing.includes(f.toLowerCase()))) return false;
   }
   if (filters.vastuCompliant && !property.vastuCompliant) return false;
+  if (filters.gatedCommunity && !property.gatedSecurity && property.propertyType !== "villa" && property.propertyType !== "apartment") return false;
 
   // 14. Ownership
   if (filters.ownership && filters.ownership.length > 0 && property.ownership) {
@@ -481,10 +507,10 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   if (filters.verifiedBadges && filters.verifiedBadges.length > 0) {
     if (filters.verifiedBadges.includes("rera") && !property.reraId) return false;
     if (filters.verifiedBadges.includes("video_verified") && !property.videoUrl) return false;
-    if (filters.verifiedBadges.includes("zero_brokerage") && property.postedBy !== "owner") return false;
+    if (filters.verifiedBadges.includes("zero_brokerage") && (property.ownerType || property.postedBy) !== "owner" && (property.ownerType || property.postedBy) !== "builder") return false;
     if (filters.verifiedBadges.includes("owner_verified") && !property.isOwnerVerified) return false;
   }
-  if (filters.reraApproved && !property.reraId) return false;
+  if ((filters.reraApproved || filters.reraRegisteredProperties) && !property.reraId) return false;
 
   // 17. Media (Photos / Video / Floorplan)
   if (filters.mediaTypes && filters.mediaTypes.length > 0) {
@@ -508,7 +534,7 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
     if (cat === "recommended" && !(property.displayCategory === "recommended" || property.isRecommended)) {
       return false;
     }
-    if ((cat === "budget" || cat === "budget_friendly") && property.displayCategory !== "budget_friendly") {
+    if ((cat === "budget" || cat === "budget_friendly") && !(property.displayCategory === "budget_friendly" || property.price <= 4500000)) {
       return false;
     }
   }

@@ -231,6 +231,28 @@ function UnifiedSearchPage() {
         return false;
       }
 
+      // 1b. Location & Geography (Cities, Localities)
+      const projCity = (project.location?.city || "").toLowerCase();
+      const projLocality = (project.location?.locality || "").toLowerCase();
+      const projAddress = (project.location?.address || "").toLowerCase();
+      const projCorpus = `${projCity} ${projLocality} ${projAddress} ${(project.name || "").toLowerCase()}`;
+
+      if (filters.cities && filters.cities.length > 0) {
+        const matchesCity = filters.cities.some((c: string) => {
+          const target = c.toLowerCase().trim();
+          return projCity.includes(target) || projLocality.includes(target) || projCorpus.includes(target);
+        });
+        if (!matchesCity) return false;
+      }
+
+      if (filters.localities && filters.localities.length > 0) {
+        const matchesLoc = filters.localities.some((l: string) => {
+          const target = l.toLowerCase().trim();
+          return projLocality.includes(target) || projAddress.includes(target) || projCorpus.includes(target);
+        });
+        if (!matchesLoc) return false;
+      }
+
       // 2. Display Category (Featured / Recommended / Budget Friendly)
       if (filters.displayCategory && filters.displayCategory !== "all") {
         const cat = filters.displayCategory.toLowerCase();
