@@ -160,6 +160,9 @@ function UnifiedSearchPage() {
     // Parse sort parameter
     const sortParam = (searchParams.get("sort") as any) || (searchParams.get("saleType") === "new" ? "newest" : "relevant");
 
+    // Parse postedSince parameter
+    const postedSince = searchParams.get("postedSince") || "any";
+
     return {
       ...initialFilterState,
       query: loc,
@@ -169,6 +172,7 @@ function UnifiedSearchPage() {
       saleType,
       displayCategory: categoryParam,
       sortBy: sortParam,
+      postedSince,
     };
   };
 
@@ -390,6 +394,26 @@ function UnifiedSearchPage() {
           project.location.longitude
         );
         if (distance > 20) return false; // 20km radius
+      }
+
+      // 15. Posted Since
+      if (filters.postedSince && filters.postedSince !== "any" && filters.postedSince !== "") {
+        const projDateStr = project.createdAt || project.updatedAt;
+        if (projDateStr) {
+          const projTime = new Date(projDateStr).getTime();
+          const now = Date.now();
+          const ps = filters.postedSince.toLowerCase();
+          let maxAgeMs = 0;
+          if (ps === "1day" || ps === "yesterday" || ps === "1d") maxAgeMs = 1 * 24 * 60 * 60 * 1000;
+          else if (ps === "3days" || ps === "3d") maxAgeMs = 3 * 24 * 60 * 60 * 1000;
+          else if (ps === "7days" || ps === "1week" || ps === "7d") maxAgeMs = 7 * 24 * 60 * 60 * 1000;
+          else if (ps === "15days" || ps === "2weeks" || ps === "15d") maxAgeMs = 15 * 24 * 60 * 60 * 1000;
+          else if (ps === "30days" || ps === "1month" || ps === "30d") maxAgeMs = 30 * 24 * 60 * 60 * 1000;
+          else if (ps === "60days" || ps === "2months" || ps === "60d") maxAgeMs = 60 * 24 * 60 * 60 * 1000;
+          else if (ps === "90days" || ps === "3months" || ps === "90d") maxAgeMs = 90 * 24 * 60 * 60 * 1000;
+
+          if (maxAgeMs > 0 && (now - projTime) > maxAgeMs) return false;
+        }
       }
 
       return true;
