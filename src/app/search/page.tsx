@@ -691,7 +691,12 @@ function UnifiedSearchPage() {
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
         filters={filters}
-        onApplyFilters={setFilters}
+        onApplyFilters={(newFilters, targetTab) => {
+          setFilters(newFilters);
+          if (targetTab) {
+            setActiveTab(targetTab);
+          }
+        }}
         totalResults={combinedResults.length}
       />
     </div>

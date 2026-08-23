@@ -152,7 +152,7 @@ interface SearchFiltersModalProps {
   isOpen: boolean;
   onClose: () => void;
   filters: FilterState;
-  onApplyFilters: (newFilters: FilterState) => void;
+  onApplyFilters: (newFilters: FilterState, targetTab?: "all" | "properties" | "projects") => void;
   totalResults: number;
 }
 
@@ -386,7 +386,7 @@ export function SearchFiltersModal({
   }, [isOpen]);
 
   // Real-time matching property and project count calculated dynamically from active localFilters
-  const liveMatchingCount = useMemo(() => {
+  const { totalCount, propCount, projCount } = useMemo(() => {
     const propMatches = (properties || []).filter((p) => evaluatePropertyFilters(p, localFilters));
     
     const projMatches = (projects || []).filter((proj) => {
@@ -449,7 +449,11 @@ export function SearchFiltersModal({
       return true;
     });
 
-    return propMatches.length + projMatches.length;
+    return {
+      totalCount: propMatches.length + projMatches.length,
+      propCount: propMatches.length,
+      projCount: projMatches.length,
+    };
   }, [properties, projects, localFilters]);
 
   // Calculate dynamic active filter count matching screenshot (Hook called unconditionally)
@@ -493,8 +497,8 @@ export function SearchFiltersModal({
     setLocalFilters({ ...initialFilterState });
   };
 
-  const handleApply = () => {
-    onApplyFilters(localFilters);
+  const handleApply = (targetTab?: "all" | "properties" | "projects") => {
+    onApplyFilters(localFilters, targetTab);
     onClose();
   };
 
@@ -1067,14 +1071,37 @@ export function SearchFiltersModal({
 
         </div>
 
-        {/* 3. Sticky Bottom CTA matching ROAD website brand button */}
-        <div className="p-4 bg-white border-t border-slate-100 fixed bottom-0 left-0 right-0 z-30 shadow-lg">
+        {/* 3. Sticky Bottom CTA — 3 Smart Count Buttons */}
+        <div className="p-3 bg-white border-t border-slate-100 fixed bottom-0 left-0 right-0 z-30 shadow-2xl flex items-center gap-1.5">
           <button
             type="button"
-            onClick={handleApply}
-            className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 active:scale-98 text-slate-950 font-black text-sm rounded-full shadow-lg transition-all cursor-pointer text-center"
+            onClick={() => handleApply("all")}
+            className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-98 text-slate-950 font-black text-xs rounded-full shadow-sm transition-all cursor-pointer text-center flex items-center justify-center gap-1"
           >
-            View {liveMatchingCount} Properties
+            <span>All</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-slate-950/15 text-slate-950 font-black text-[11px]">
+              {totalCount}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleApply("properties")}
+            className="flex-1 py-2.5 bg-slate-950 hover:bg-slate-900 active:scale-98 text-white font-black text-xs rounded-full shadow-sm transition-all cursor-pointer text-center flex items-center justify-center gap-1"
+          >
+            <span>Properties</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-white font-black text-[11px]">
+              {propCount}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleApply("projects")}
+            className="flex-1 py-2.5 bg-slate-950 hover:bg-slate-900 active:scale-98 text-white font-black text-xs rounded-full shadow-sm transition-all cursor-pointer text-center flex items-center justify-center gap-1"
+          >
+            <span>Projects</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-white font-black text-[11px]">
+              {projCount}
+            </span>
           </button>
         </div>
       </div>
@@ -1636,17 +1663,42 @@ export function SearchFiltersModal({
           <button
             type="button"
             onClick={handleReset}
-            className="text-xs font-semibold text-slate-600 hover:text-amber-600 transition-colors cursor-pointer"
+            className="text-xs font-bold text-slate-600 hover:text-amber-600 transition-colors cursor-pointer"
           >
             Clear All
           </button>
-          <button
-            type="button"
-            onClick={handleApply}
-            className="py-2.5 px-7 bg-amber-500 hover:bg-amber-600 active:scale-98 text-slate-950 font-black text-xs rounded-full shadow-sm hover:shadow-md transition-all cursor-pointer"
-          >
-            View {liveMatchingCount} Properties
-          </button>
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => handleApply("all")}
+              className="py-2.5 px-5 bg-amber-500 hover:bg-amber-600 active:scale-98 text-slate-950 font-black text-xs rounded-full shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span>All</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-950/15 text-slate-950 font-black text-[11px]">
+                {totalCount}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApply("properties")}
+              className="py-2.5 px-5 bg-slate-950 hover:bg-slate-900 active:scale-98 text-white font-black text-xs rounded-full shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Properties</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-white font-black text-[11px]">
+                {propCount}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApply("projects")}
+              className="py-2.5 px-5 bg-slate-950 hover:bg-slate-900 active:scale-98 text-white font-black text-xs rounded-full shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Projects</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-white font-black text-[11px]">
+                {projCount}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
