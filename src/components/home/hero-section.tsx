@@ -65,11 +65,11 @@ const HERO_BUDGET_MAX_OPTS = [
   { label: "₹ 7.5 Cr", value: 75000000 },
 ];
 
-// Search Tabs: Buy, Projects, New Launch and Near me
+// Search Tabs: Buy, Projects, New Launches and Near me
 const tabs = [
   { id: "buy", label: "Buy" },
   { id: "projects", label: "Projects" },
-  { id: "new-launch", label: "New Launch" },
+  { id: "new-launch", label: "New Launches" },
   { id: "nearme", label: "Near me" },
 ];
 
@@ -434,7 +434,7 @@ export function HeroSection() {
                         fill
                         priority
                         unoptimized
-                        className="object-cover"
+                        className="object-cover object-[center_32%]"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           if (desktopImg && !target.src.includes(desktopImg)) {
@@ -465,9 +465,9 @@ export function HeroSection() {
                 );
               })()}
 
-              {/* Balanced Gradient overlay for contrast and crisp image details (lightened ~15%) */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-black/10" />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/25 pointer-events-none" />
+              {/* Directional Gradient: Darker behind headline/nav, light and clear over architecture */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/20 pointer-events-none" />
               
               {/* Banner Content (SAFE IN BETWEEN ARROWS WITH GENEROUS HORIZONTAL PADDING) */}
               <div className="absolute inset-0 flex flex-col justify-center items-start text-left pt-16 sm:pt-20 md:pt-24">
@@ -976,10 +976,10 @@ export function HeroSection() {
                     }
                   }}
                   className={cn(
-                    "h-[36px] sm:h-[42px] px-1 sm:px-3 rounded-full text-[11px] xs:text-xs sm:text-sm flex items-center justify-center gap-0.5 sm:gap-1.5 transition-all duration-200 cursor-pointer shadow-xs border w-full text-center whitespace-nowrap",
+                    "h-[34px] sm:h-[40px] px-2 sm:px-3.5 rounded-full text-[11px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 transition-all duration-200 cursor-pointer shadow-2xs border w-full text-center whitespace-nowrap",
                     isOpen
-                      ? "bg-slate-950 border-amber-400 text-white font-bold shadow-md"
-                      : "bg-slate-900 border-slate-800 text-white font-semibold hover:bg-slate-800"
+                      ? "bg-slate-950 border-amber-400 text-white font-extrabold shadow-md ring-2 ring-amber-500/20"
+                      : "bg-slate-900/90 hover:bg-slate-900 border-slate-700/60 text-slate-100 font-semibold"
                   )}
                 >
                   <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
@@ -1140,7 +1140,7 @@ export function HeroSection() {
 
         {/* ── Budget Filter Card (Compact & Modern Design) ── */}
         <div className="relative z-20 w-full max-w-[760px] mx-auto mt-2 sm:mt-3 text-left">
-          <div className="bg-white/95 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-3 sm:p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.05)] space-y-2.5">
+          <div className="bg-white/95 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-2.5 sm:p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.05)] space-y-2 sm:space-y-2.5">
             
             {/* Row 1: BUDGET: [ ₹ 10 L ⌄ ] TO [ Any Price ⌄ ] */}
             <div className="flex items-center gap-2 sm:gap-2.5">
@@ -1174,8 +1174,8 @@ export function HeroSection() {
                   background: #0f172a !important;
                   border: 2px solid #ffffff !important;
                   box-shadow: 0 1px 5px rgba(15, 23, 42, 0.35);
-                  width: 15px !important;
-                  height: 15px !important;
+                  width: 14px !important;
+                  height: 14px !important;
                   transition: transform 0.15s ease;
                 }
                 .budget-slider [role="slider"]:hover {
@@ -1204,7 +1204,7 @@ export function HeroSection() {
             <button
               type="button"
               onClick={() => handleSearchSubmit()}
-              className="w-full h-8.5 sm:h-9 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs rounded-full flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all active:scale-98 cursor-pointer"
+              className="w-full h-8 sm:h-9 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs rounded-full flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all active:scale-98 cursor-pointer"
             >
               <span>Apply</span>
               <span className="px-1.5 py-0.2 min-w-[18px] h-[18px] rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-2xs">
@@ -1274,7 +1274,7 @@ export function HeroSection() {
           </div>
 
           {/* Mobile View All Categories Expand Button */}
-          <div className="sm:hidden pt-1">
+          <div className="sm:hidden pt-1 pb-4">
             <button
               type="button"
               onClick={() => setShowAllCategoriesMobile(!showAllCategoriesMobile)}
