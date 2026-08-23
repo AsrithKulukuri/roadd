@@ -520,6 +520,27 @@ function UnifiedSearchPage() {
     return [...propItems, ...projItems];
   }, [filteredProperties, filteredProjects, activeTab]);
 
+  // Active counts for the 3 smart filter buttons:
+  // In Map View with active viewport, count items in map viewport that match filters.
+  // In Grid View, count all items that match filters.
+  const { allCount, propCount, projCount } = useMemo(() => {
+    if (viewMode === "map" && visibleMapIds !== null) {
+      const visibleSet = new Set(visibleMapIds);
+      const visibleProps = filteredProperties.filter((p) => visibleSet.has(p.id));
+      const visibleProjs = filteredProjects.filter((p) => visibleSet.has(p.id));
+      return {
+        allCount: visibleProps.length + visibleProjs.length,
+        propCount: visibleProps.length,
+        projCount: visibleProjs.length,
+      };
+    }
+    return {
+      allCount: filteredProperties.length + filteredProjects.length,
+      propCount: filteredProperties.length,
+      projCount: filteredProjects.length,
+    };
+  }, [viewMode, visibleMapIds, filteredProperties, filteredProjects]);
+
   if (!mounted) return null;
 
   return (
@@ -541,7 +562,7 @@ function UnifiedSearchPage() {
           router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
         }}
         onOpenAllFilters={() => setIsFilterModalOpen(true)}
-        totalResults={combinedResults.length}
+        totalResults={allCount}
       />
 
       <main className={cn(
@@ -577,9 +598,9 @@ function UnifiedSearchPage() {
             {/* Controls Bar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
-                <button onClick={() => setActiveTab("all")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "all" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>All ({filteredProperties.length + filteredProjects.length})</button>
-                <button onClick={() => setActiveTab("properties")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "properties" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Properties ({filteredProperties.length})</button>
-                <button onClick={() => setActiveTab("projects")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "projects" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Projects ({filteredProjects.length})</button>
+                <button onClick={() => setActiveTab("all")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "all" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>All ({allCount})</button>
+                <button onClick={() => setActiveTab("properties")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "properties" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Properties ({propCount})</button>
+                <button onClick={() => setActiveTab("projects")} className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === "projects" ? "bg-white dark:bg-slate-900 shadow-sm text-amber-600 dark:text-amber-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200")}>Projects ({projCount})</button>
               </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
