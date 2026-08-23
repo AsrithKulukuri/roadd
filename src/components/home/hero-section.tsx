@@ -103,7 +103,7 @@ export function HeroSection() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  const [heroBudget, setHeroBudget] = useState<[number, number]>([1000000, 30000000]);
+  const [heroBudget, setHeroBudget] = useState<[number, number]>([1000000, 100000000]);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -1118,7 +1118,7 @@ export function HeroSection() {
                   onChange={(e) => setHeroBudget([Number(e.target.value), Math.max(Number(e.target.value), heroBudget[1])])}
                   className="w-full h-8 px-3 pr-7 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/90 hover:border-slate-300 rounded-full text-xs font-bold text-slate-900 appearance-none outline-none cursor-pointer transition-colors shadow-2xs"
                 >
-                  {![1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000, 30000000].includes(heroBudget[0]) && (
+                  {![1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000, 30000000, 50000000, 100000000].includes(heroBudget[0]) && (
                     <option value={heroBudget[0]}>{formatINRWords(heroBudget[0])}</option>
                   )}
                   <option value={1000000}>₹ 10 L</option>
@@ -1130,6 +1130,8 @@ export function HeroSection() {
                   <option value={15000000}>₹ 1.5 Cr</option>
                   <option value={20000000}>₹ 2 Cr</option>
                   <option value={30000000}>₹ 3 Cr</option>
+                  <option value={50000000}>₹ 5 Cr</option>
+                  <option value={100000000}>₹ 10 Cr</option>
                 </select>
                 <ChevronDown className="w-3 h-3 text-slate-600 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[2.5]" />
               </div>
@@ -1142,10 +1144,10 @@ export function HeroSection() {
                   onChange={(e) => setHeroBudget([Math.min(heroBudget[0], Number(e.target.value)), Number(e.target.value)])}
                   className="w-full h-8 px-3 pr-7 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/90 hover:border-slate-300 rounded-full text-xs font-bold text-slate-900 appearance-none outline-none cursor-pointer transition-colors shadow-2xs"
                 >
-                  {![30000000, 1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000].includes(heroBudget[1]) && (
-                    <option value={heroBudget[1]}>{heroBudget[1] >= 30000000 ? "Any Price" : formatINRWords(heroBudget[1], true)}</option>
+                  {![100000000, 1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000, 30000000, 50000000].includes(heroBudget[1]) && (
+                    <option value={heroBudget[1]}>{heroBudget[1] >= 100000000 ? "Any Price" : formatINRWords(heroBudget[1], true)}</option>
                   )}
-                  <option value={30000000}>Any Price</option>
+                  <option value={100000000}>Any Price</option>
                   <option value={1000000}>₹ 10 L</option>
                   <option value={2000000}>₹ 20 L</option>
                   <option value={3000000}>₹ 30 L</option>
@@ -1155,6 +1157,8 @@ export function HeroSection() {
                   <option value={15000000}>₹ 1.5 Cr</option>
                   <option value={20000000}>₹ 2 Cr</option>
                   <option value={30000000}>₹ 3 Cr</option>
+                  <option value={50000000}>₹ 5 Cr</option>
+                  <option value={100000000}>₹ 10 Cr</option>
                 </select>
                 <ChevronDown className="w-3 h-3 text-slate-600 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[2.5]" />
               </div>
@@ -1185,8 +1189,8 @@ export function HeroSection() {
               `}</style>
               <Slider
                 min={1000000}
-                max={30000000}
-                step={250000}
+                max={100000000}
+                step={500000}
                 value={heroBudget}
                 onValueChange={(val) => setHeroBudget(val as [number, number])}
                 className="w-full budget-slider cursor-pointer"
