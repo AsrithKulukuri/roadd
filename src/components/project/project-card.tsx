@@ -42,8 +42,16 @@ const STATUS_LABELS: Record<string, string> = {
 // ─── Formatting ──────────────────────────────────────────────────────────────
 function formatINRCrore(amount: number): string {
   if (!amount) return "";
-  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
-  if (amount >= 100000)   return `₹${(amount / 100000).toFixed(1)} L`;
+  if (amount >= 10000000) {
+    const val = amount / 10000000;
+    const formatted = val % 1 === 0 ? val.toString() : val.toFixed(2).replace(/\.?0+$/, "");
+    return `₹${formatted} Cr`;
+  }
+  if (amount >= 100000) {
+    const val = amount / 100000;
+    const formatted = val % 1 === 0 ? val.toString() : val.toFixed(2).replace(/\.?0+$/, "");
+    return `₹${formatted} L`;
+  }
   return `₹${amount.toLocaleString("en-IN")}`;
 }
 
@@ -359,7 +367,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
                     {getRefId(project)}
                   </span>
                 </div>
-                <p className="font-black text-amber-primary text-base sm:text-lg leading-tight truncate">
+                <p className="font-black text-slate-900 dark:text-white text-xs sm:text-sm leading-tight truncate">
                   {priceLabel}
                 </p>
                 {pricePerUnit && (

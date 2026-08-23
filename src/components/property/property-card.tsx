@@ -679,7 +679,7 @@ export function PropertyCard({
                     {getRefId(property)}
                   </span>
                 </div>
-                  <p className="font-black text-amber-primary text-base sm:text-lg leading-tight truncate">
+                  <p className="font-black text-slate-900 dark:text-white text-xs sm:text-sm leading-tight truncate">
                     {property.listingType === "rent" || property.listingType === "pg"
                       ? `${formatINR(property.price)}/mo`
                       : formatPriceCompact(property.price)}
