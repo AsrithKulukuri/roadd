@@ -802,17 +802,23 @@ export function HeroSection() {
         {/* Realtor.com Search Input Bar */}
         <form
           onSubmit={handleSearchSubmit}
-          className="relative w-full max-w-[760px] h-[54px] sm:h-[64px] mx-auto flex items-center bg-white border border-slate-200 focus-within:border-amber-500 focus-within:shadow-[0_8px_30px_rgba(245,158,11,0.22)] rounded-full pl-3.5 sm:pl-4 pr-1.5 sm:pr-2 shadow-xl transition-all duration-300"
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.tagName !== "BUTTON" && !target.closest("button")) {
+              router.push(`/search?type=${activeTab}&focus=search`);
+            }
+          }}
+          className="relative w-full max-w-[760px] h-[54px] sm:h-[64px] mx-auto flex items-center bg-white border border-slate-200 focus-within:border-amber-500 focus-within:shadow-[0_8px_30px_rgba(245,158,11,0.22)] rounded-full pl-3.5 sm:pl-4 pr-1.5 sm:pr-2 shadow-xl transition-all duration-300 cursor-pointer group"
         >
-          <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-2 sm:mr-3 shrink-0 pointer-events-none" />
+          <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-2 sm:mr-3 shrink-0 pointer-events-none group-hover:text-amber-500 transition-colors" />
 
           {/* Input text wrapper occupying available width */}
-          <div className="relative flex-1 min-w-0 h-full flex items-center">
-            {!searchQuery && !isFocused && (
-              <div
-                onClick={() => inputRef.current?.focus()}
-                className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left"
-              >
+          <div 
+            onClick={() => router.push(`/search?type=${activeTab}&focus=search`)}
+            className="relative flex-1 min-w-0 h-full flex items-center cursor-pointer"
+          >
+            {!searchQuery && (
+              <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
                 <span className="text-xs sm:text-base text-slate-500 font-semibold truncate select-none flex items-center w-full">
                   <span>{typedText}</span>
                   <span className="inline-block w-[2px] h-[14px] sm:h-[18px] bg-amber-500 ml-0.5 animate-pulse" />
@@ -824,28 +830,20 @@ export function HeroSection() {
               ref={inputRef}
               type="text"
               value={searchQuery}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={isFocused && !searchQuery ? "Search city, locality, builder or project..." : ""}
+              readOnly
+              onClick={() => router.push(`/search?type=${activeTab}&focus=search`)}
+              placeholder="Search city, locality, builder or project..."
               style={{ outline: "none", boxShadow: "none", border: "none" }}
-              className="w-full h-full bg-transparent text-xs sm:text-base text-slate-900 placeholder-slate-400 font-bold border-none outline-none focus:outline-none focus:ring-0 shadow-none px-0"
+              className="w-full h-full bg-transparent text-xs sm:text-base text-slate-900 placeholder-transparent font-bold border-none outline-none focus:outline-none focus:ring-0 shadow-none px-0 cursor-pointer"
             />
           </div>
 
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="p-1 sm:p-1.5 mx-1 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
-              aria-label="Clear search"
-            >
-              <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
-          )}
-
           <button
             type="submit"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/search?type=${activeTab}&focus=search`);
+            }}
             className="h-[40px] sm:h-[48px] px-4 sm:px-6 bg-slate-950 hover:bg-slate-900 text-white font-black text-xs sm:text-sm rounded-full transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ml-1"
             aria-label="Search"
           >

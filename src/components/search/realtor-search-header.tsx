@@ -82,6 +82,11 @@ export function RealtorSearchHeader({
     if (autoFocus && inputRef.current) {
       inputRef.current.focus();
       setIsFocused(true);
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+        setIsFocused(true);
+      }, 120);
+      return () => clearTimeout(timer);
     }
   }, [autoFocus]);
 
