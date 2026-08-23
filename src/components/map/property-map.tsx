@@ -229,14 +229,8 @@ function getLandmarkIcon(type: string) {
   });
 }
 
-const pricePillIconCache = new Map<string, L.DivIcon>();
-
 function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean, isBlinking: boolean = false) {
   if (typeof window === "undefined" || !L || !L.divIcon) return undefined;
-  
-  const cacheKey = `${price}_${isSelected ? 1 : 0}_${hasSearch ? 1 : 0}_${isBlinking ? 1 : 0}`;
-  const cached = pricePillIconCache.get(cacheKey);
-  if (cached) return cached;
 
   const priceText = formatPriceCompact(price);
 
@@ -252,7 +246,7 @@ function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean
 
   const blinkClass = isBlinking ? 'animate-pulse ring-4 ring-amber-500 shadow-2xl' : '';
 
-  const icon = L.divIcon({
+  return L.divIcon({
     className: `realtor-price-pill-marker ${blinkClass}`,
     html: `
       <div class="${hasSearch ? 'pulse-inner-pill' : ''}" style="
@@ -280,9 +274,6 @@ function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean
     iconSize: [68, 30],
     iconAnchor: [34, 15],
   });
-
-  pricePillIconCache.set(cacheKey, icon);
-  return icon;
 }
 
 function LocationMarker({
