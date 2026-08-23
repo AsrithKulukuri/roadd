@@ -470,9 +470,7 @@ export function SearchFiltersModal({
     if (localFilters.facing.length > 0) count += localFilters.facing.length;
     if (localFilters.mediaTypes.length > 0) count += localFilters.mediaTypes.length;
     if (localFilters.postedSince && localFilters.postedSince !== "any") count += 1;
-    if (localFilters.propertiesWithOffers) count += 1;
     if (localFilters.roadExclusive) count += 1;
-    if (localFilters.certifiedAgentsOnly) count += 1;
     if (localFilters.reraRegisteredProperties) count += 1;
     if (localFilters.reraRegisteredAgents) count += 1;
     if (localFilters.vastuCompliant) count += 1;
@@ -1053,18 +1051,8 @@ export function SearchFiltersModal({
             </div>
           </CollapsibleSection>
 
-          {/* Feature Toggle Switches matching screenshot */}
+          {/* Feature Toggle Switches */}
           <div className="divide-y divide-slate-100 py-1">
-            <ToggleSwitch
-              label="Properties with Offers"
-              checked={localFilters.propertiesWithOffers}
-              onChange={(val) => setLocalFilters({ ...localFilters, propertiesWithOffers: val })}
-            />
-            <ToggleSwitch
-              label="Posted By Certified Agents"
-              checked={localFilters.certifiedAgentsOnly}
-              onChange={(val) => setLocalFilters({ ...localFilters, certifiedAgentsOnly: val })}
-            />
             <ToggleSwitch
               label="RERA Registered Properties"
               checked={localFilters.reraRegisteredProperties}
@@ -1204,19 +1192,9 @@ export function SearchFiltersModal({
                 {/* Quick Toggle Switches */}
                 <div className="divide-y divide-slate-100 pt-3 border-t border-slate-100">
                   <ToggleSwitch
-                    label="Properties with Offers"
-                    checked={localFilters.propertiesWithOffers}
-                    onChange={(val) => setLocalFilters({ ...localFilters, propertiesWithOffers: val })}
-                  />
-                  <ToggleSwitch
                     label="ROAD Exclusive Properties"
                     checked={localFilters.roadExclusive}
                     onChange={(val) => setLocalFilters({ ...localFilters, roadExclusive: val })}
-                  />
-                  <ToggleSwitch
-                    label="Posted By Certified Agents"
-                    checked={localFilters.certifiedAgentsOnly}
-                    onChange={(val) => setLocalFilters({ ...localFilters, certifiedAgentsOnly: val })}
                   />
                   <ToggleSwitch
                     label="RERA Registered Properties"
@@ -1589,11 +1567,6 @@ export function SearchFiltersModal({
                     label="ROAD Exclusive Properties"
                     checked={localFilters.roadExclusive}
                     onChange={(val) => setLocalFilters({ ...localFilters, roadExclusive: val })}
-                  />
-                  <ToggleSwitch
-                    label="Properties with Offers"
-                    checked={localFilters.propertiesWithOffers}
-                    onChange={(val) => setLocalFilters({ ...localFilters, propertiesWithOffers: val })}
                   />
                 </div>
               </div>
