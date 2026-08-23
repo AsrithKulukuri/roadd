@@ -30,6 +30,7 @@ import { useProjectsStore } from "@/stores/projects-store";
 import { findItemByRefId, getRefId } from "@/lib/ref-id";
 import { matchesPropertySearch, matchesProjectSearch } from "@/lib/search-engine";
 import { toast } from "sonner";
+import { haptic } from "@/lib/haptics";
 import type { FilterState } from "./search-filters";
 import { RealtorFilterBar } from "./realtor-filter-bar";
 
@@ -406,9 +407,21 @@ export function RealtorSearchHeader({
           <div className="mt-2.5 flex items-center gap-2 w-full">
             <button
               type="button"
-              onClick={() => router.back()}
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-white hover:bg-slate-50 text-slate-700 transition-colors shrink-0 border border-slate-300 shadow-sm"
-              title="Go Back"
+              onClick={() => {
+                haptic.light();
+                if (viewMode === "map") {
+                  onViewModeChange?.("grid");
+                  return;
+                }
+                if (typeof window !== "undefined" && window.history.length > 1) {
+                  router.back();
+                } else {
+                  router.push("/");
+                }
+              }}
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-white hover:bg-slate-50 text-slate-700 transition-colors shrink-0 border border-slate-300 shadow-sm active:scale-95 cursor-pointer"
+              title={viewMode === "map" ? "Switch to List View" : "Go Back"}
+              aria-label={viewMode === "map" ? "Switch to List View" : "Go Back"}
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
