@@ -157,6 +157,9 @@ function UnifiedSearchPage() {
     // Parse displayCategory (featured / recommended / budget)
     const categoryParam = searchParams.get("category") || searchParams.get("displayCategory") || "all";
 
+    // Parse sort parameter
+    const sortParam = (searchParams.get("sort") as any) || (searchParams.get("saleType") === "new" ? "newest" : "relevant");
+
     return {
       ...initialFilterState,
       query: loc,
@@ -165,6 +168,7 @@ function UnifiedSearchPage() {
       propertyType,
       saleType,
       displayCategory: categoryParam,
+      sortBy: sortParam,
     };
   };
 
@@ -172,18 +176,23 @@ function UnifiedSearchPage() {
 
   const searchParamsString = searchParams.toString();
 
-  // Keep filters in sync with URL searchParams if they actually change
+  // Keep filters and sort in sync with URL searchParams if they actually change
   useEffect(() => {
-    setFilters(parseInitialParams());
+    const initial = parseInitialParams();
+    setFilters(initial);
     const typeStr = searchParams.get("type");
     if (typeStr === "projects") {
       setActiveTab("projects");
     } else {
       setActiveTab("all");
     }
-    const sortParam = searchParams.get("sort");
-    if (sortParam === "newest" || searchParams.get("saleType") === "new") {
+    const sortParam = searchParams.get("sort") as any;
+    if (sortParam) {
+      setSortBy(sortParam);
+    } else if (searchParams.get("saleType") === "new") {
       setSortBy("newest");
+    } else {
+      setSortBy("relevant");
     }
   }, [searchParamsString]);
 
@@ -416,17 +425,30 @@ function UnifiedSearchPage() {
       ];
     }
 
+    const activeSort = (filters.sortBy || sortBy || "relevant").toLowerCase();
     items.sort((a, b) => {
-      if (sortBy === "price-asc") return a.price - b.price;
-      if (sortBy === "price-desc") return b.price - a.price;
-      if (sortBy === "newest" || (!filters.query && sortBy === "relevant")) {
+      if (activeSort === "price-asc" || activeSort === "price_asc" || activeSort === "price_low" || activeSort === "low_to_high") {
+        return a.price - b.price;
+      }
+      if (activeSort === "price-desc" || activeSort === "price_desc" || activeSort === "price_high" || activeSort === "high_to_low") {
+        return b.price - a.price;
+      }
+      if (activeSort === "newest" || activeSort === "recent" || activeSort === "date-desc") {
         return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
       }
-      return 0;
+      if (activeSort === "oldest" || activeSort === "date-asc") {
+        return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+      }
+      // Relevance default
+      if (filters.query) return 0;
+      const scoreA = (a.data?.isFeatured ? 2 : 0) + (a.data?.isRecommended ? 1 : 0);
+      const scoreB = (b.data?.isFeatured ? 2 : 0) + (b.data?.isRecommended ? 1 : 0);
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
 
     return items;
-  }, [filteredProperties, filteredProjects, properties, projects, sortBy, viewMode, visibleMapIds]);
+  }, [filteredProperties, filteredProjects, properties, projects, sortBy, filters.sortBy, filters.query, viewMode, visibleMapIds]);
 
   // 12 properties / projects initial load with Load More
   const pageSize = 12;
@@ -557,9 +579,25 @@ function UnifiedSearchPage() {
               </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-border-default bg-white dark:bg-bg-card text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-primary/30">
-                  <option value="relevant">Relevant</option>
-                  <option value="newest">Newest First</option>
+                <select
+                  value={sortBy}
+                  onChange={(e) => {
+                    const newSort = e.target.value as any;
+                    setSortBy(newSort);
+                    setFilters(prev => ({ ...prev, sortBy: newSort }));
+                    const newParams = new URLSearchParams(searchParams.toString());
+                    if (newSort === "relevant") {
+                      newParams.delete("sort");
+                    } else {
+                      newParams.set("sort", newSort);
+                    }
+                    const queryStr = newParams.toString();
+                    router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
+                  }}
+                  className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-border-default bg-white dark:bg-bg-card text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-primary/30 cursor-pointer"
+                >
+                  <option value="relevant">Relevant / Best Match</option>
+                  <option value="newest">Newest Listed First</option>
                   <option value="price-asc">Price: Low to High</option>
                   <option value="price-desc">Price: High to Low</option>
                 </select>

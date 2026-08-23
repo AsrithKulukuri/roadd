@@ -12,6 +12,9 @@ export type PropertyType =
   | "commercial-spaces"
   | "commercial-lands"
   | "industrial-lands"
+  // Agricultural
+  | "agricultural-lands";
+
 export type PropertyCategory = "residential" | "commercial" | "industrial" | "agricultural";
 
 export type PropertySubtype =
