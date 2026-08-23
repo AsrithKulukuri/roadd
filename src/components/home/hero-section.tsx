@@ -21,6 +21,8 @@ import {
   Flame,
   IndianRupee,
   X,
+  Loader2,
+  Mic,
 } from "lucide-react";
 import { cn, formatINR, formatINRWords, formatPriceCompact } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,29 +42,28 @@ const HERO_BUDGET_MIN_OPTS = [
   { label: "₹ 10 L", value: 1000000 },
   { label: "₹ 20 L", value: 2000000 },
   { label: "₹ 30 L", value: 3000000 },
+  { label: "₹ 40 L", value: 4000000 },
   { label: "₹ 50 L", value: 5000000 },
   { label: "₹ 75 L", value: 7500000 },
   { label: "₹ 1 Cr", value: 10000000 },
   { label: "₹ 1.5 Cr", value: 15000000 },
   { label: "₹ 2 Cr", value: 20000000 },
+  { label: "₹ 2.5 Cr", value: 25000000 },
   { label: "₹ 3 Cr", value: 30000000 },
-  { label: "₹ 5 Cr", value: 50000000 },
-  { label: "₹ 10 Cr", value: 100000000 },
 ];
 
 const HERO_BUDGET_MAX_OPTS = [
-  { label: "Any Price", value: 100000000 },
-  { label: "₹ 10 L", value: 1000000 },
+  { label: "Any Price", value: 30000000 },
   { label: "₹ 20 L", value: 2000000 },
   { label: "₹ 30 L", value: 3000000 },
+  { label: "₹ 40 L", value: 4000000 },
   { label: "₹ 50 L", value: 5000000 },
   { label: "₹ 75 L", value: 7500000 },
   { label: "₹ 1 Cr", value: 10000000 },
   { label: "₹ 1.5 Cr", value: 15000000 },
   { label: "₹ 2 Cr", value: 20000000 },
+  { label: "₹ 2.5 Cr", value: 25000000 },
   { label: "₹ 3 Cr", value: 30000000 },
-  { label: "₹ 5 Cr", value: 50000000 },
-  { label: "₹ 7.5 Cr", value: 75000000 },
 ];
 
 // Search Tabs: Buy, Projects, New Launches and Near me
@@ -74,12 +75,14 @@ const tabs = [
 ];
 
 const CAROUSEL_SUGGESTIONS = [
-  "Benz Circle, 3BHK flat, Vijayawada",
-  "Gorantla, 2BHK under ₹50L, Guntur",
-  "Poranki, Luxury Villa, Vijayawada",
-  "Amaravati Road, Residential Plot, Guntur",
-  "Kanuru, Ready to move 3BHK, Vijayawada",
-  "Tadepalli, Capital view flat",
+  "Vijayawada",
+  "Guntur",
+  "Benz Circle",
+  "Amaravati Road",
+  "Poranki",
+  "Gorantla",
+  "Kanuru",
+  "Tadepalli",
 ];
 
 const trendingHotspots = [
@@ -133,9 +136,17 @@ export function HeroSection() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  const [heroBudget, setHeroBudget] = useState<[number, number]>([1000000, 100000000]);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [heroBudget, setHeroBudget] = useState<[number, number]>([1000000, 30000000]);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Prefetch search route for instant transitions
+  useEffect(() => {
+    try {
+      router.prefetch("/search");
+    } catch (e) {}
+  }, [router]);
 
   // ── Typewriter / Typing Effect State & Logic ──
   const [typedText, setTypedText] = useState("");
@@ -235,8 +246,9 @@ export function HeroSection() {
     } else {
       params.set("focus", "search");
     }
-    if (b[0] > 0 || b[1] < 30000000) {
-      params.set("budget", `${b[0]},${b[1]}`);
+    const isAnyMax = b[1] >= 30000000;
+    if (b[0] > 1000000 || !isAnyMax) {
+      params.set("budget", `${b[0]},${isAnyMax ? 100000000 : b[1]}`);
     }
 
     router.push(`/search?${params.toString()}`);
@@ -267,10 +279,11 @@ export function HeroSection() {
 
   const matchingCount = useMemo(() => {
     let count = 0;
+    const isAnyMax = heroBudget[1] >= 30000000;
     if (activeTab !== "projects") {
       count = properties.filter((p) => {
         if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
-        return p.price >= heroBudget[0] && p.price <= heroBudget[1];
+        return p.price >= heroBudget[0] && (isAnyMax || p.price <= heroBudget[1]);
       }).length;
     }
 
@@ -280,7 +293,7 @@ export function HeroSection() {
       return p.configurations.some((cfg) => {
         const pMin = cfg.priceMin || 0;
         const pMax = cfg.priceMax || pMin;
-        return pMin <= heroBudget[1] && pMax >= heroBudget[0];
+        return (isAnyMax || pMin <= heroBudget[1]) && pMax >= heroBudget[0];
       });
     }).length;
 
@@ -321,12 +334,13 @@ export function HeroSection() {
     const counts: Record<string, number> = {};
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const isAnyMax = heroBudget[1] >= 30000000;
 
     for (const cat of homeCategories) {
       const types = CATEGORY_TYPE_MAP[cat.id];
       let propCount = activeTab === "projects" ? 0 : properties.filter((p) => {
         if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
-        const inBudget = p.price >= heroBudget[0] && p.price <= heroBudget[1];
+        const inBudget = p.price >= heroBudget[0] && (isAnyMax || p.price <= heroBudget[1]);
         if (!inBudget) return false;
         
         if (cat.id === "new-listings") {
@@ -351,7 +365,7 @@ export function HeroSection() {
         const hasBudgetOverlap = p.configurations?.some((cfg) => {
           const pMin = cfg.priceMin || 0;
           const pMax = cfg.priceMax || pMin;
-          return pMin <= heroBudget[1] && pMax >= heroBudget[0];
+          return (isAnyMax || pMin <= heroBudget[1]) && pMax >= heroBudget[0];
         });
         if (!hasBudgetOverlap) return false;
 
@@ -400,7 +414,8 @@ export function HeroSection() {
   const getCatHref = (baseHref: string) => {
     if (!budgetActive) return baseHref;
     const url = new URL(baseHref, "http://x");
-    url.searchParams.set("budget", `${heroBudget[0]},${heroBudget[1]}`);
+    const isAnyMax = heroBudget[1] >= 30000000;
+    url.searchParams.set("budget", `${heroBudget[0]},${isAnyMax ? 100000000 : heroBudget[1]}`);
     return url.pathname + "?" + url.searchParams.toString();
   };
 
@@ -799,7 +814,7 @@ export function HeroSection() {
           })}
         </div>
 
-        {/* Realtor.com Search Input Bar */}
+        {/* Clean Modern Search Input Bar (Rectangular with subtle rounded edges & voice search) */}
         <form
           onSubmit={handleSearchSubmit}
           onClick={(e) => {
@@ -808,20 +823,21 @@ export function HeroSection() {
               router.push(`/search?type=${activeTab}&focus=search`);
             }
           }}
-          className="relative w-full max-w-[760px] h-[54px] sm:h-[64px] mx-auto flex items-center bg-white border border-slate-200 focus-within:border-amber-500 focus-within:shadow-[0_8px_30px_rgba(245,158,11,0.22)] rounded-full pl-3.5 sm:pl-4 pr-1.5 sm:pr-2 shadow-xl transition-all duration-300 cursor-pointer group"
+          className="relative w-full max-w-[760px] h-[52px] sm:h-[58px] mx-auto flex items-center bg-white border border-slate-200/90 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 rounded-xl sm:rounded-2xl px-4 shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] transition-all duration-200 cursor-pointer group"
         >
-          <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-2 sm:mr-3 shrink-0 pointer-events-none group-hover:text-amber-500 transition-colors" />
+          {/* Left: Outline Search Icon */}
+          <Search className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-slate-500 mr-3 shrink-0 pointer-events-none group-hover:text-slate-800 transition-colors stroke-[2]" />
 
-          {/* Input text wrapper occupying available width */}
+          {/* Input text wrapper */}
           <div 
             onClick={() => router.push(`/search?type=${activeTab}&focus=search`)}
             className="relative flex-1 min-w-0 h-full flex items-center cursor-pointer"
           >
             {!searchQuery && (
               <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
-                <span className="text-xs sm:text-base text-slate-500 font-semibold truncate select-none flex items-center w-full">
-                  <span>{typedText}</span>
-                  <span className="inline-block w-[2px] h-[14px] sm:h-[18px] bg-amber-500 ml-0.5 animate-pulse" />
+                <span className="text-sm sm:text-base text-slate-800 font-medium truncate select-none flex items-center w-full">
+                  <span>Search &ldquo;{typedText}&rdquo;</span>
+                  <span className="inline-block w-[2px] h-[16px] sm:h-[18px] bg-slate-700 ml-1 animate-pulse" />
                 </span>
               </div>
             )}
@@ -832,23 +848,24 @@ export function HeroSection() {
               value={searchQuery}
               readOnly
               onClick={() => router.push(`/search?type=${activeTab}&focus=search`)}
-              placeholder="Search city, locality, builder or project..."
+              placeholder=""
               style={{ outline: "none", boxShadow: "none", border: "none" }}
-              className="w-full h-full bg-transparent text-xs sm:text-base text-slate-900 placeholder-transparent font-bold border-none outline-none focus:outline-none focus:ring-0 shadow-none px-0 cursor-pointer"
+              className="w-full h-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-transparent font-medium border-none outline-none focus:outline-none focus:ring-0 shadow-none px-0 cursor-pointer"
             />
           </div>
 
+          {/* Right: Search Action Icon in Logo Color (Amber #f59e0b) */}
           <button
             type="submit"
             onClick={(e) => {
               e.stopPropagation();
               router.push(`/search?type=${activeTab}&focus=search`);
             }}
-            className="h-[40px] sm:h-[48px] px-4 sm:px-6 bg-slate-950 hover:bg-slate-900 text-white font-black text-xs sm:text-sm rounded-full transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ml-1"
             aria-label="Search"
+            title="Search"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-[#f59e0b] hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all active:scale-90 cursor-pointer shrink-0 ml-1"
           >
-            <span>Search</span>
-            <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3] text-amber-400" />
+            <Search className="w-5 h-5 sm:w-5.5 sm:h-5.5 stroke-[2.5]" />
           </button>
 
           {/* LIVE AUTO-SUGGESTIONS POPUP */}
@@ -1192,7 +1209,7 @@ export function HeroSection() {
               `}</style>
               <Slider
                 min={1000000}
-                max={100000000}
+                max={30000000}
                 step={500000}
                 value={heroBudget}
                 onValueChange={(val) => setHeroBudget(val as [number, number])}

@@ -18,6 +18,7 @@ import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import { getRefId } from "@/lib/ref-id";
 import Link from "next/link";
 import { Logo } from "@/components/shared/logo";
+import { WatermarkOverlay } from "@/components/shared/watermark-overlay";
 import type { Property } from "@/types/property";
 import type { Metadata } from "next";
 
@@ -361,12 +362,15 @@ export default async function PropertyDetailPage({
                       allowFullScreen
                     />
                   ) : (
-                    <video
-                      src={resolveMediaUrl(property.videoUrl)}
-                      controls
-                      poster={property.videoThumbnail ? resolveMediaUrl(property.videoThumbnail) : undefined}
-                      className="w-full h-full object-contain"
-                    />
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      <video
+                        src={resolveMediaUrl(property.videoUrl)}
+                        controls
+                        poster={property.videoThumbnail ? resolveMediaUrl(property.videoThumbnail) : undefined}
+                        className="w-full h-full object-contain"
+                      />
+                      <WatermarkOverlay position="left-middle" />
+                    </div>
                   )}
                 </div>
               </div>

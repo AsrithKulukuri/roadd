@@ -505,28 +505,64 @@ function UnifiedSearchPage() {
     return combinedResults.slice(0, visibleCount);
   }, [combinedResults, visibleCount]);
 
+  const handleFilterChange = (newFilters: FilterState) => {
+    setFilters(newFilters);
+    const newParams = new URLSearchParams(searchParams.toString());
+    
+    // 1. Budget
+    if (newFilters.budget && (newFilters.budget[0] > 0 || newFilters.budget[1] < 100000000)) {
+      newParams.set("budget", `${newFilters.budget[0]},${newFilters.budget[1]}`);
+    } else {
+      newParams.delete("budget");
+    }
+
+    // 2. Query
+    if (newFilters.query) {
+      newParams.set("location", newFilters.query);
+    } else {
+      newParams.delete("location");
+    }
+
+    // 3. PropertyType
+    if (newFilters.propertyType && newFilters.propertyType.length > 0) {
+      newParams.set("propertyType", newFilters.propertyType.join(","));
+    } else {
+      newParams.delete("propertyType");
+    }
+
+    // 4. Cities
+    if (newFilters.cities && newFilters.cities.length > 0) {
+      newParams.set("city", newFilters.cities.join(","));
+    } else {
+      newParams.delete("city");
+    }
+
+    const queryStr = newParams.toString();
+    router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
+  };
+
   // Map items: pass active filtered properties & projects to the map so all matching markers render.
   const mapItems = useMemo(() => {
     const propItems = filteredProperties
-      .filter((p) => p.location?.latitude && p.location?.longitude);
+      .filter((p) => p.showOnMap !== false && p.status !== 'sold');
 
     const projItems = filteredProjects
-      .filter((p) => p.isPublished && p.location?.latitude && p.location?.longitude)
+      .filter((p) => p.isPublished !== false)
       .map((p) => ({
         id: p.id,
         slug: p.slug,
         title: p.name,
         price: p.configurations?.[0]?.priceMin || 0,
-        propertyType: p.projectType,
+        propertyType: p.projectType || "Project",
         listingType: "project",
         status: "active",
         location: {
-          address: p.location.address,
-          locality: p.location.locality,
-          city: p.location.city,
-          state: p.location.state,
-          latitude: p.location.latitude,
-          longitude: p.location.longitude,
+          address: p.location?.address || "",
+          locality: p.location?.locality || "",
+          city: p.location?.city || "",
+          state: p.location?.state || "",
+          latitude: p.location?.latitude,
+          longitude: p.location?.longitude,
         },
         coverImage: p.coverImage,
         images: p.images?.map((img: any) => img.url || img) || [],
@@ -586,7 +622,7 @@ function UnifiedSearchPage() {
     <div className={cn("bg-bg-primary pt-16 flex flex-col", viewMode === "map" ? "h-screen overflow-hidden" : "min-h-screen")}>
       <RealtorSearchHeader 
         filters={filters}
-        onFilterChange={setFilters}
+        onFilterChange={handleFilterChange}
         viewMode={viewMode}
         onViewModeChange={(mode) => {
           const nextMode = mode as "grid" | "map";
@@ -601,7 +637,7 @@ function UnifiedSearchPage() {
           router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
         }}
         onOpenAllFilters={() => setIsFilterModalOpen(true)}
-        totalResults={allCount}
+        totalResults={filteredProperties.length + filteredProjects.length}
         autoFocus={searchParams.get("focus") === "search"}
       />
 
@@ -763,9 +799,9 @@ function UnifiedSearchPage() {
         onClose={() => setIsFilterModalOpen(false)}
         filters={filters}
         onApplyFilters={(newFilters, targetTab) => {
-          setFilters(newFilters);
+          handleFilterChange(newFilters);
           if (targetTab) {
-            setActiveTab(targetTab);
+            handleTabChange(targetTab);
           }
         }}
         totalResults={combinedResults.length}

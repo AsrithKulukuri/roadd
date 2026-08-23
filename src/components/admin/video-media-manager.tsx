@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import { uploadToS3, resolveMediaUrl } from "@/lib/aws/storage-utils";
 import { getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
+import { WatermarkOverlay } from "@/components/shared/watermark-overlay";
 
 function YoutubeIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -443,13 +444,14 @@ export function VideoMediaManager({
           ) : (
             /* Uploaded Video Player & Actions */
             <div className="p-4 bg-bg-primary rounded-xl border border-border-default flex flex-col sm:flex-row gap-4 items-start">
-              <div className="w-full sm:w-64 aspect-video bg-black rounded-lg overflow-hidden border border-slate-800 shrink-0">
+              <div className="relative w-full sm:w-64 aspect-video bg-black rounded-lg overflow-hidden border border-slate-800 shrink-0">
                 <video
                   src={resolveMediaUrl(videoUrl)}
                   controls
                   className="w-full h-full object-contain"
                   poster={videoThumbnail ? resolveMediaUrl(videoThumbnail) : undefined}
                 />
+                <WatermarkOverlay position="left-middle" />
               </div>
 
               <div className="space-y-2 flex-1">

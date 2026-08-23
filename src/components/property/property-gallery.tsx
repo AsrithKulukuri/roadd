@@ -15,6 +15,7 @@ import type { PropertyImage } from "@/types/property";
 import { getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import { ZoomableImageModal } from "@/components/ui/zoomable-image-modal";
+import { WatermarkOverlay } from "@/components/shared/watermark-overlay";
 
 interface PropertyGalleryProps {
   images: PropertyImage[];
@@ -219,15 +220,18 @@ export function PropertyGallery({
                   onLoad={() => setIsVideoLoading(false)}
                 />
               ) : (
-                <video
-                  src={resolveMediaUrl(videoUrl)}
-                  controls
-                  autoPlay
-                  poster={videoThumbnail ? resolveMediaUrl(videoThumbnail) : undefined}
-                  className="w-full h-full object-contain"
-                  onLoadedData={() => setIsVideoLoading(false)}
-                  onCanPlay={() => setIsVideoLoading(false)}
-                />
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <video
+                    src={resolveMediaUrl(videoUrl)}
+                    controls
+                    autoPlay
+                    poster={videoThumbnail ? resolveMediaUrl(videoThumbnail) : undefined}
+                    className="w-full h-full object-contain"
+                    onLoadedData={() => setIsVideoLoading(false)}
+                    onCanPlay={() => setIsVideoLoading(false)}
+                  />
+                  <WatermarkOverlay position="left-middle" />
+                </div>
               )}
             </div>
           </DialogContent>

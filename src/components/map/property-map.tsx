@@ -828,6 +828,18 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   const initialQuery = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
   const initialType = searchParams.get("type") || searchParams.get("category") || null;
   const initialBhk = searchParams.get("bhk") || null;
+  const budgetParam = searchParams.get("budget");
+
+  const parsedBudget = useMemo((): [number, number] | null => {
+    if (!budgetParam) return null;
+    const parts = budgetParam.split(",");
+    if (parts.length === 2) {
+      const min = parseInt(parts[0], 10);
+      const max = parseInt(parts[1], 10);
+      if (!isNaN(min) && !isNaN(max)) return [min, max];
+    }
+    return null;
+  }, [budgetParam]);
   
   const properties = usePropertiesStore((state) => state.properties);
   const projects = useProjectsStore((state) => state.projects);
@@ -1008,6 +1020,14 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
       source = source.filter((p) => {
         const propLatLng = L.latLng(p.location.latitude, p.location.longitude);
         return userLatLng.distanceTo(propLatLng) <= maxMeters;
+      });
+    }
+
+    // Budget Filter when loaded via direct URL or standalone without filteredItems
+    if (parsedBudget && !filteredItems) {
+      source = source.filter((p) => {
+        const price = Number(p.price || 0);
+        return price >= parsedBudget[0] && price <= parsedBudget[1];
       });
     }
 
@@ -1754,8 +1774,16 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                 onClick={() => setShowPropertiesTray(!showPropertiesTray)}
                 className="px-4 py-2 rounded-full bg-slate-950/95 text-white border-2 border-amber-500 shadow-2xl backdrop-blur-xl font-extrabold text-xs flex items-center gap-2 transition-all active:scale-95 cursor-pointer hover:bg-slate-900"
               >
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-                <span>{displayedPropertiesFiltered.length} {displayedPropertiesFiltered.length === 1 ? ((displayedPropertiesFiltered[0] as any)?._isProject ? "Project" : "Property") : ((displayedPropertiesFiltered[0] as any)?._isProject ? "Projects" : "Properties")} Found</span>
+                {(() => {
+                  const hasProj = displayedPropertiesFiltered.some((p: any) => p._isProject);
+                  const hasProp = displayedPropertiesFiltered.some((p: any) => !p._isProject);
+                  const entityLabel = hasProj && hasProp
+                    ? "Properties & Projects"
+                    : hasProj
+                    ? (displayedPropertiesFiltered.length === 1 ? "Project" : "Projects")
+                    : (displayedPropertiesFiltered.length === 1 ? "Property" : "Properties");
+                  return <span>{displayedPropertiesFiltered.length} {entityLabel} Found</span>;
+                })()}
                 {drawPolygonPoints.length >= 3 && (
                   <span className="bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded text-[10px] font-black">In Drawn Area</span>
                 )}

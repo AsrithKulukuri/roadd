@@ -12,6 +12,25 @@ export interface BudgetOption {
   value: number;
 }
 
+function formatDropdownPrice(val: number, isMax: boolean, placeholder?: string, maxCap = 30000000): string {
+  if (isMax && val >= maxCap) return "Any Price";
+  if (!isMax && val <= 0) return placeholder || "₹ 0";
+  if (val >= 10000000) {
+    const cr = val / 10000000;
+    const formatted = cr % 1 === 0 ? cr.toFixed(0) : cr.toFixed(2).replace(/\.?0+$/, "");
+    return `₹ ${formatted} Cr`;
+  }
+  if (val >= 100000) {
+    const l = val / 100000;
+    const formatted = l % 1 === 0 ? l.toFixed(0) : l.toFixed(2).replace(/\.?0+$/, "");
+    return `₹ ${formatted} L`;
+  }
+  if (val >= 1000) {
+    return `₹ ${(val / 1000).toFixed(0)}K`;
+  }
+  return `₹ ${val.toLocaleString("en-IN")}`;
+}
+
 interface ModernBudgetDropdownProps {
   value: number;
   options: BudgetOption[];
@@ -20,6 +39,7 @@ interface ModernBudgetDropdownProps {
   className?: string;
   align?: "left" | "right";
   isMax?: boolean;
+  maxCap?: number;
 }
 
 export function ModernBudgetDropdown({
@@ -30,6 +50,7 @@ export function ModernBudgetDropdown({
   className,
   align = "left",
   isMax = false,
+  maxCap = 30000000,
 }: ModernBudgetDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -63,12 +84,19 @@ export function ModernBudgetDropdown({
     }
   }, [isOpen]);
 
-  const selectedOption = options.find((opt) => opt.value === value);
+  // Dynamic options that always includes the active value if not already in options
+  const displayOptions = (options.some((opt) => opt.value === value))
+    ? options
+    : (() => {
+        const customLabel = formatDropdownPrice(value, isMax, placeholder, maxCap);
+        const customOpt: BudgetOption = { label: customLabel, value };
+        return [...options, customOpt].sort((a, b) => a.value - b.value);
+      })();
+
+  const selectedOption = displayOptions.find((opt) => opt.value === value);
   const displayLabel = selectedOption
     ? selectedOption.label
-    : isMax && value >= 100000000
-    ? "Any Price"
-    : placeholder || `${value}`;
+    : formatDropdownPrice(value, isMax, placeholder, maxCap);
 
   const handleSelect = (val: number) => {
     haptic.selection();
@@ -157,7 +185,7 @@ export function ModernBudgetDropdown({
 
                 {/* Options List */}
                 <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 no-scrollbar bg-slate-950">
-                  {options.map((opt, i) => {
+                  {displayOptions.map((opt, i) => {
                     const isSelected = opt.value === value;
                     return (
                       <button
@@ -214,7 +242,7 @@ export function ModernBudgetDropdown({
                 align === "right" ? "right-0" : "left-0"
               )}
             >
-              {options.map((opt, i) => {
+              {displayOptions.map((opt, i) => {
                 const isSelected = opt.value === value;
                 return (
                   <button

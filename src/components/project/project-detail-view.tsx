@@ -22,6 +22,7 @@ import { shareItem } from "@/lib/share-utils";
 import { shareOnWhatsApp } from "@/lib/whatsapp/whatsapp-share";
 import { WhatsAppIcon } from "@/components/property/whatsapp-share-button";
 import { toast } from "sonner";
+import { WatermarkOverlay } from "@/components/shared/watermark-overlay";
 
 // ─── Lazy map (SSR unsafe) ─────────────────────────────────────────────────────
 const ProjectMapView = dynamic(
@@ -328,19 +329,22 @@ export function ProjectDetailView({
                   onLoad={() => setIsVideoLoading(false)}
                 />
               ) : (
-                <video
-                  src={resolveMediaUrl(activeVideoUrl)}
-                  controls
-                  autoPlay
-                  playsInline
-                  preload="auto"
-                  poster={project.videoThumbnail ? resolveMediaUrl(project.videoThumbnail) : undefined}
-                  className="w-full h-full max-h-full object-contain"
-                  onLoadedData={() => setIsVideoLoading(false)}
-                  onCanPlay={() => setIsVideoLoading(false)}
-                  onPlaying={() => setIsVideoLoading(false)}
-                  onError={() => setIsVideoLoading(false)}
-                />
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <video
+                    src={resolveMediaUrl(activeVideoUrl)}
+                    controls
+                    autoPlay
+                    playsInline
+                    preload="auto"
+                    poster={project.videoThumbnail ? resolveMediaUrl(project.videoThumbnail) : undefined}
+                    className="w-full h-full max-h-full object-contain"
+                    onLoadedData={() => setIsVideoLoading(false)}
+                    onCanPlay={() => setIsVideoLoading(false)}
+                    onPlaying={() => setIsVideoLoading(false)}
+                    onError={() => setIsVideoLoading(false)}
+                  />
+                  <WatermarkOverlay position="left-middle" />
+                </div>
               )}
             </div>
           </div>

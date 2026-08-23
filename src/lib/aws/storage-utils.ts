@@ -1,4 +1,5 @@
 import imageCompression from "browser-image-compression";
+import { addWatermarkToImage } from "@/lib/watermark-utils";
 
 export type StorageFolder =
   | "properties"
@@ -22,6 +23,7 @@ export interface UploadOptions {
   folder: StorageFolder;
   entityId?: string;
   compress?: boolean;
+  watermark?: boolean;
   onProgress?: (info: UploadProgressInfo) => void;
 }
 
@@ -117,17 +119,31 @@ export async function uploadToS3({
   folder,
   entityId,
   compress = true,
+  watermark = true,
   onProgress,
 }: UploadOptions): Promise<UploadResult> {
   try {
     let fileToUpload: File | Blob = file;
     const effectiveMime = detectMimeType(file.name, file.type);
 
-    // Compress images on client if supported
+    // 1. Watermark images automatically with roadfacing.com (left side in middle)
     const isImage = effectiveMime.startsWith("image/") && !effectiveMime.includes("svg");
+    const shouldWatermark = watermark !== false && isImage && folder !== "avatars" && folder !== "brochures";
+    if (shouldWatermark) {
+      try {
+        fileToUpload = await addWatermarkToImage(fileToUpload, {
+          text: "roadfacing.com",
+          position: "left-middle",
+        });
+      } catch (wmErr) {
+        console.warn("[S3 Storage] Watermark application skipped:", wmErr);
+      }
+    }
+
+    // 2. Compress images on client if supported
     if (compress && isImage) {
       try {
-        const compressedBlob = await imageCompression(file, {
+        const compressedBlob = await imageCompression(fileToUpload as File, {
           maxSizeMB: 1.5,
           maxWidthOrHeight: 1920,
           useWebWorker: typeof window !== "undefined" && typeof Worker !== "undefined",
@@ -135,7 +151,6 @@ export async function uploadToS3({
         fileToUpload = compressedBlob;
       } catch (compErr) {
         console.warn("[S3 Storage] Compression skipped, uploading original:", compErr);
-        fileToUpload = file;
       }
     }
 

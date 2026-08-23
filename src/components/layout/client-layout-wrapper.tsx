@@ -35,7 +35,9 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
 
   return (
     <>
-      <SmartPageLoader />
+      <Suspense fallback={null}>
+        <SmartPageLoader />
+      </Suspense>
       {!isAdmin && (
         <>
           <Suspense fallback={<div className="h-[72px]" />}>
@@ -50,7 +52,9 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
       {!isAdmin && (
         <>
           <Footer />
-          <AiAssistantWidget />
+          <Suspense fallback={null}>
+            <AiAssistantWidget />
+          </Suspense>
           <Suspense fallback={null}>
             <MobileBottomNav />
           </Suspense>

@@ -91,7 +91,7 @@ export function MobileStickySearchHeader() {
               role="button"
               tabIndex={0}
               aria-label="Search properties and projects"
-              className="flex-1 min-w-0 h-9.5 rounded-full bg-slate-100 dark:bg-slate-900/90 hover:bg-slate-200/70 dark:hover:bg-slate-800 border border-slate-300/80 dark:border-slate-700/80 flex items-center px-3 gap-2 transition-all cursor-pointer shadow-2xs group"
+              className="flex-1 min-w-0 h-9.5 rounded-xl bg-slate-100 dark:bg-slate-900/90 hover:bg-slate-200/70 dark:hover:bg-slate-800 border border-slate-300/80 dark:border-slate-700/80 flex items-center px-3 gap-2 transition-all cursor-pointer shadow-2xs group"
             >
               {/* Left Search Icon */}
               <Search className="w-3.5 h-3.5 text-amber-500 shrink-0 group-hover:scale-110 transition-transform" />
