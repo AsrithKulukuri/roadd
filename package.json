@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:db": "tsx scripts/seed-complete-database.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1106.0",

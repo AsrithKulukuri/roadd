@@ -13,11 +13,13 @@ import type {
   Review,
 } from "@/types/user";
 
+import { seededMockProperties } from "./seeded-dataset";
+
 // ============================================================================
-// PROPERTIES (EMPTY)
+// PROPERTIES (POPULATED 88 VIJAYAWADA & GUNTUR PROPERTIES)
 // ============================================================================
 
-export const mockProperties: Property[] = [];
+export const mockProperties: Property[] = seededMockProperties;
 
 // ============================================================================
 // MOCK PROPERTY IMAGES (Unsplash real estate photography)

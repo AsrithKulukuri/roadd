@@ -1102,13 +1102,13 @@ export function HeroSection() {
           </AnimatePresence>
         </div>
 
-        {/* ── Budget Filter Card (White Box with Pill Selects, Teal Slider & Black Apply Button) ── */}
-        <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-4 text-left">
-          <div className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3.5">
+        {/* ── Budget Filter Card (Compact & Modern Design) ── */}
+        <div className="w-full max-w-[760px] mx-auto mt-2 sm:mt-3 text-left">
+          <div className="bg-white/95 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-3 sm:p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.05)] space-y-2.5">
             
             {/* Row 1: BUDGET: [ ₹ 10 L ⌄ ] TO [ Any Price ⌄ ] */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              <span className="text-xs font-black text-slate-800 uppercase tracking-wider shrink-0">
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider shrink-0 flex items-center gap-1">
                 BUDGET:
               </span>
               
@@ -1116,7 +1116,7 @@ export function HeroSection() {
                 <select
                   value={heroBudget[0]}
                   onChange={(e) => setHeroBudget([Number(e.target.value), Math.max(Number(e.target.value), heroBudget[1])])}
-                  className="w-full h-9 px-3.5 pr-8 bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200 hover:border-slate-400 rounded-full text-xs font-extrabold text-slate-900 appearance-none outline-none cursor-pointer transition-colors shadow-2xs"
+                  className="w-full h-8 px-3 pr-7 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/90 hover:border-slate-300 rounded-full text-xs font-bold text-slate-900 appearance-none outline-none cursor-pointer transition-colors shadow-2xs"
                 >
                   {![1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000, 30000000].includes(heroBudget[0]) && (
                     <option value={heroBudget[0]}>{formatINRWords(heroBudget[0])}</option>
@@ -1131,16 +1131,16 @@ export function HeroSection() {
                   <option value={20000000}>₹ 2 Cr</option>
                   <option value={30000000}>₹ 3 Cr</option>
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-700 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none stroke-[2.5]" />
+                <ChevronDown className="w-3 h-3 text-slate-600 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[2.5]" />
               </div>
 
-              <span className="text-slate-400 font-black text-[10px] sm:text-[11px] uppercase tracking-wider">TO</span>
+              <span className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider shrink-0">TO</span>
 
               <div className="relative flex-1">
                 <select
                   value={heroBudget[1]}
                   onChange={(e) => setHeroBudget([Math.min(heroBudget[0], Number(e.target.value)), Number(e.target.value)])}
-                  className="w-full h-9 px-3.5 pr-8 bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200 hover:border-slate-400 rounded-full text-xs font-extrabold text-slate-900 appearance-none outline-none cursor-pointer transition-colors shadow-2xs"
+                  className="w-full h-8 px-3 pr-7 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/90 hover:border-slate-300 rounded-full text-xs font-bold text-slate-900 appearance-none outline-none cursor-pointer transition-colors shadow-2xs"
                 >
                   {![30000000, 1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000].includes(heroBudget[1]) && (
                     <option value={heroBudget[1]}>{heroBudget[1] >= 30000000 ? "Any Price" : formatINRWords(heroBudget[1], true)}</option>
@@ -1156,23 +1156,23 @@ export function HeroSection() {
                   <option value={20000000}>₹ 2 Cr</option>
                   <option value={30000000}>₹ 3 Cr</option>
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-700 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none stroke-[2.5]" />
+                <ChevronDown className="w-3 h-3 text-slate-600 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[2.5]" />
               </div>
             </div>
 
-            {/* Row 2: Range Slider (Emerald/Teal Track with Dark Navy Knobs) */}
-            <div className="px-1 py-1">
+            {/* Row 2: Range Slider (Teal Accent Track with Refined Knobs) */}
+            <div className="px-1 py-0.5">
               <style>{`
                 .budget-slider [role="slider"] {
                   background: #0f172a !important;
                   border: 2px solid #ffffff !important;
-                  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.4);
-                  width: 18px !important;
-                  height: 18px !important;
-                  transition: transform 0.2s;
+                  box-shadow: 0 1px 5px rgba(15, 23, 42, 0.35);
+                  width: 15px !important;
+                  height: 15px !important;
+                  transition: transform 0.15s ease;
                 }
                 .budget-slider [role="slider"]:hover {
-                  transform: scale(1.18);
+                  transform: scale(1.2);
                 }
                 .budget-slider [data-orientation="horizontal"] .radix-slider-track {
                   height: 4px !important;
@@ -1193,14 +1193,14 @@ export function HeroSection() {
               />
             </div>
 
-            {/* Row 3: Solid Black Pill Apply Button */}
+            {/* Row 3: Compact Apply Button */}
             <button
               type="button"
               onClick={() => handleSearchSubmit()}
-              className="w-full h-11 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs sm:text-sm rounded-full flex items-center justify-center gap-2 shadow-md transition-all active:scale-98 cursor-pointer"
+              className="w-full h-8.5 sm:h-9 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs rounded-full flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all active:scale-98 cursor-pointer"
             >
               <span>Apply</span>
-              <span className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-xs">
+              <span className="px-1.5 py-0.2 min-w-[18px] h-[18px] rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-2xs">
                 {matchingCount}
               </span>
             </button>
