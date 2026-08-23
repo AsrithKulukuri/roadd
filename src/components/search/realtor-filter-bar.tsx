@@ -19,11 +19,14 @@ import {
   Star,
   ThumbsUp,
   Sparkles,
+  MapPin,
+  Search,
 } from "lucide-react";
 import { cn, formatINR, formatINRWords } from "@/lib/utils";
 import type { FilterState } from "./search-filters";
 import { Slider } from "@/components/ui/slider";
 import { ModernBudgetDropdown } from "@/components/ui/modern-budget-dropdown";
+import { useLocationsStore } from "@/stores/locations-store";
 
 interface RealtorFilterBarProps {
   filters: FilterState;
@@ -38,10 +41,26 @@ export function RealtorFilterBar({
   onOpenAllFilters,
   totalResults,
 }: RealtorFilterBarProps) {
-  // Track open dropdown popover/sheet: "propertyType" | "price" | "postedBy" | "category" | null
+  // Track open dropdown popover/sheet: "propertyType" | "price" | "postedBy" | "location" | null
   const [openDropdown, setOpenDropdown] = useState<
-    "propertyType" | "price" | "postedBy" | "category" | null
+    "propertyType" | "price" | "postedBy" | "location" | null
   >(null);
+
+  const { cities, fetchLocations } = useLocationsStore();
+  const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
+  const [localitySearch, setLocalitySearch] = useState("");
+
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
+
+  // Default active city tab to first city or the one selected in filters.cities
+  useEffect(() => {
+    if (cities.length > 0 && !selectedCityId) {
+      const match = cities.find((c) => (filters.cities || []).includes(c.name));
+      setSelectedCityId(match ? match.id : cities[0].id);
+    }
+  }, [cities, filters.cities, selectedCityId]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
@@ -108,6 +127,7 @@ export function RealtorFilterBar({
 
   // Active filter counter
   const activeFilterCount =
+    ((filters.cities?.length || 0) > 0 || (filters.localities?.length || 0) > 0 ? 1 : 0) +
     (filters.listingType.length > 0 ? 1 : 0) +
     (filters.propertyType.length > 0 ? 1 : 0) +
     (filters.bhk.length > 0 ? 1 : 0) +
@@ -117,8 +137,18 @@ export function RealtorFilterBar({
     (filters.facing.length > 0 ? 1 : 0) +
     (filters.vastuCompliant ? 1 : 0) +
     (filters.gatedCommunity ? 1 : 0) +
-    (filters.reraApproved ? 1 : 0) +
-    (filters.displayCategory && filters.displayCategory !== "all" ? 1 : 0);
+    (filters.reraApproved ? 1 : 0);
+
+  // Location summary label
+  const getLocationLabel = () => {
+    const cityCount = filters.cities?.length || 0;
+    const locCount = filters.localities?.length || 0;
+    const total = cityCount + locCount;
+    if (total === 0) return "Location";
+    if (cityCount === 1 && locCount === 0) return filters.cities[0];
+    if (locCount === 1 && cityCount === 0) return filters.localities[0];
+    return `Location (${total})`;
+  };
 
   // Indian Price presets (INR) — Concise, clean brackets
   const pricePresets = [
@@ -203,21 +233,6 @@ export function RealtorFilterBar({
     { label: "Agricultural Land", value: "agricultural-lands", icon: Compass },
   ];
 
-  // Category options
-  const categoryOptions = [
-    { label: "All Listings", value: "all", icon: Sparkles },
-    { label: "⭐ Featured", value: "featured", icon: Star },
-    { label: "👍 Recommended", value: "recommended", icon: ThumbsUp },
-    { label: "💰 Budget Friendly", value: "budget_friendly", icon: IndianRupee },
-  ];
-
-  // Category summary label
-  const getCategoryLabel = () => {
-    if (!filters.displayCategory || filters.displayCategory === "all") return "Category";
-    const match = categoryOptions.find((c) => c.value === filters.displayCategory);
-    return match ? match.label : "Category";
-  };
-
   // Posted By options
   const postedByOptions = [
     { label: "Direct Owner", value: "owner", icon: UserCheck },
@@ -289,25 +304,25 @@ export function RealtorFilterBar({
           )}
         </button>
 
-        {/* 2. CATEGORY FILTER BUTTON */}
+        {/* 2. LOCATION & LOCALITIES FILTER BUTTON */}
         <button
           type="button"
           onClick={() =>
-            setOpenDropdown(openDropdown === "category" ? null : "category")
+            setOpenDropdown(openDropdown === "location" ? null : "location")
           }
           className={cn(
             "h-9 px-3.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95",
-            (filters.displayCategory && filters.displayCategory !== "all") || openDropdown === "category"
+            (filters.cities?.length || 0) > 0 || (filters.localities?.length || 0) > 0 || openDropdown === "location"
               ? "bg-[#f1a010] text-slate-950 font-bold border-[#f1a010] shadow-xs"
               : "bg-white text-slate-800 border-slate-300 hover:border-slate-400"
           )}
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>{getCategoryLabel()}</span>
+          <MapPin className="w-3.5 h-3.5" />
+          <span>{getLocationLabel()}</span>
           <ChevronDown
             className={cn(
               "w-3.5 h-3.5 transition-transform duration-200",
-              openDropdown === "category" && "rotate-180"
+              openDropdown === "location" && "rotate-180"
             )}
           />
         </button>
@@ -430,8 +445,8 @@ export function RealtorFilterBar({
                   <h3 className="text-base font-extrabold text-slate-900 dark:text-white capitalize">
                     {openDropdown === "price"
                       ? "Select Budget"
-                      : openDropdown === "category"
-                      ? "Select Category"
+                      : openDropdown === "location"
+                      ? "Location & Localities"
                       : openDropdown === "propertyType"
                       ? "Home Type"
                       : "Posted By"}
@@ -593,35 +608,144 @@ export function RealtorFilterBar({
                 </div>
               )}
 
-              {/* 4. CATEGORY CONTENT */}
-              {openDropdown === "category" && (
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    {categoryOptions.map((opt) => {
-                      const isSelected =
-                        opt.value === "all"
-                          ? !filters.displayCategory || filters.displayCategory === "all"
-                          : filters.displayCategory === opt.value;
+              {/* 4. LOCATION & LOCALITIES CONTENT */}
+              {openDropdown === "location" && (
+                <div className="space-y-4">
+                  {/* Cities Row */}
+                  <div>
+                    <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2 px-0.5">
+                      Select City / Region
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {cities.map((city) => {
+                        const isSelected = (filters.cities || []).includes(city.name);
+                        const isTabActive = selectedCityId === city.id;
+
+                        return (
+                          <button
+                            key={`mob-city-${city.id}`}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCityId(city.id);
+                              toggleArrayItem("cities", city.name);
+                            }}
+                            className={cn(
+                              "px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs",
+                              isSelected
+                                ? "bg-amber-500 text-slate-950 font-black"
+                                : isTabActive
+                                ? "bg-slate-950 text-white dark:bg-slate-800"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200"
+                            )}
+                          >
+                            <MapPin className="w-3 h-3" />
+                            <span>{city.name}</span>
+                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Sublocations / Localities for Active City */}
+                  {(() => {
+                    const activeCity = cities.find((c) => c.id === selectedCityId) || cities[0];
+                    if (!activeCity) return null;
+
+                    const sublocations = activeCity.sublocations || [];
+                    const filteredSublocations = sublocations.filter((sub) => {
+                      const q = localitySearch.trim().toLowerCase();
+                      if (!q) return true;
                       return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => {
-                            onFilterChange({ ...filters, displayCategory: opt.value });
-                            setOpenDropdown(null);
-                          }}
-                          className={cn(
-                            "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
-                            isSelected
-                              ? "bg-amber-500 text-slate-950 font-bold"
-                              : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                          )}
-                        >
-                          <span>{opt.label}</span>
-                          {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
-                        </button>
+                        sub.name.toLowerCase().includes(q) ||
+                        (sub.tagline && sub.tagline.toLowerCase().includes(q))
                       );
-                    })}
+                    });
+
+                    return (
+                      <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center justify-between px-0.5">
+                          <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            {activeCity.name} Localities
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            {sublocations.length} areas
+                          </span>
+                        </div>
+
+                        {/* Search Localities */}
+                        {sublocations.length > 4 && (
+                          <div className="relative">
+                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                            <input
+                              type="text"
+                              value={localitySearch}
+                              onChange={(e) => setLocalitySearch(e.target.value)}
+                              placeholder={`Search ${activeCity.name} areas...`}
+                              className="w-full h-8 pl-8 pr-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-amber-500 text-slate-900 dark:text-white"
+                            />
+                            {localitySearch && (
+                              <button
+                                type="button"
+                                onClick={() => setLocalitySearch("")}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Localities Chips */}
+                        <div className="max-h-52 overflow-y-auto pr-1 flex flex-wrap gap-1.5 no-scrollbar">
+                          {filteredSublocations.length > 0 ? (
+                            filteredSublocations.map((sub) => {
+                              const isSelected = (filters.localities || []).includes(sub.name);
+                              return (
+                                <button
+                                  key={`mob-sub-${sub.id || sub.name}`}
+                                  type="button"
+                                  onClick={() => toggleArrayItem("localities", sub.name)}
+                                  className={cn(
+                                    "px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 active:scale-95",
+                                    isSelected
+                                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                                      : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                  )}
+                                >
+                                  <span>{sub.name}</span>
+                                  {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <div className="text-xs text-slate-400 py-3 text-center w-full">
+                              No matching localities in {activeCity.name}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Reset / Apply Bar */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onFilterChange({ ...filters, cities: [], localities: [] });
+                      }}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Reset
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOpenDropdown(null)}
+                      className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                    >
+                      Apply ({(filters.cities?.length || 0) + (filters.localities?.length || 0)})
+                    </button>
                   </div>
                 </div>
               )}
@@ -636,7 +760,7 @@ export function RealtorFilterBar({
         <div
           className="hidden md:block absolute top-full left-0 mt-2 z-[100] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-4 animate-in fade-in zoom-in-95 duration-150"
           style={{
-            width: openDropdown === "price" ? "340px" : "280px",
+            width: openDropdown === "price" ? "340px" : openDropdown === "location" ? "360px" : "280px",
           }}
         >
           {/* 1. PRICE DROPDOWN CONTENT — Exact Home Budget Style (Screenshot 2 Match) */}
@@ -795,38 +919,144 @@ export function RealtorFilterBar({
             </div>
           )}
 
-          {/* 4. CATEGORY DROPDOWN CONTENT (DESKTOP) */}
-          {openDropdown === "category" && (
-            <div className="space-y-3">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
-                Display Category
+          {/* 4. LOCATION & LOCALITIES DROPDOWN CONTENT (DESKTOP) */}
+          {openDropdown === "location" && (
+            <div className="space-y-4">
+              {/* Cities Row */}
+              <div>
+                <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2 px-0.5">
+                  Select City / Region
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {cities.map((city) => {
+                    const isSelected = (filters.cities || []).includes(city.name);
+                    const isTabActive = selectedCityId === city.id;
+
+                    return (
+                      <button
+                        key={`desk-city-${city.id}`}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCityId(city.id);
+                          toggleArrayItem("cities", city.name);
+                        }}
+                        className={cn(
+                          "px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs",
+                          isSelected
+                            ? "bg-amber-500 text-slate-950 font-black"
+                            : isTabActive
+                            ? "bg-slate-950 text-white dark:bg-slate-800"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200"
+                        )}
+                      >
+                        <MapPin className="w-3 h-3" />
+                        <span>{city.name}</span>
+                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="space-y-1">
-                {categoryOptions.map((opt) => {
-                  const isSelected =
-                    opt.value === "all"
-                      ? !filters.displayCategory || filters.displayCategory === "all"
-                      : filters.displayCategory === opt.value;
+
+              {/* Sublocations / Localities for Active City */}
+              {(() => {
+                const activeCity = cities.find((c) => c.id === selectedCityId) || cities[0];
+                if (!activeCity) return null;
+
+                const sublocations = activeCity.sublocations || [];
+                const filteredSublocations = sublocations.filter((sub) => {
+                  const q = localitySearch.trim().toLowerCase();
+                  if (!q) return true;
                   return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        onFilterChange({ ...filters, displayCategory: opt.value });
-                        setOpenDropdown(null);
-                      }}
-                      className={cn(
-                        "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
-                        isSelected
-                          ? "bg-amber-500 text-slate-950 font-bold"
-                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                      )}
-                    >
-                      <span>{opt.label}</span>
-                      {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
-                    </button>
+                    sub.name.toLowerCase().includes(q) ||
+                    (sub.tagline && sub.tagline.toLowerCase().includes(q))
                   );
-                })}
+                });
+
+                return (
+                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between px-0.5">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        {activeCity.name} Localities
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {sublocations.length} areas
+                      </span>
+                    </div>
+
+                    {/* Search Localities */}
+                    {sublocations.length > 4 && (
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={localitySearch}
+                          onChange={(e) => setLocalitySearch(e.target.value)}
+                          placeholder={`Search ${activeCity.name} areas...`}
+                          className="w-full h-8 pl-8 pr-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-amber-500 text-slate-900 dark:text-white"
+                        />
+                        {localitySearch && (
+                          <button
+                            type="button"
+                            onClick={() => setLocalitySearch("")}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Localities Chips */}
+                    <div className="max-h-52 overflow-y-auto pr-1 flex flex-wrap gap-1.5 no-scrollbar">
+                      {filteredSublocations.length > 0 ? (
+                        filteredSublocations.map((sub) => {
+                          const isSelected = (filters.localities || []).includes(sub.name);
+                          return (
+                            <button
+                              key={`desk-sub-${sub.id || sub.name}`}
+                              type="button"
+                              onClick={() => toggleArrayItem("localities", sub.name)}
+                              className={cn(
+                                "px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 active:scale-95",
+                                isSelected
+                                  ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                              )}
+                            >
+                              <span>{sub.name}</span>
+                              {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="text-xs text-slate-400 py-3 text-center w-full">
+                          No matching localities in {activeCity.name}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Reset / Apply Bar */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onFilterChange({ ...filters, cities: [], localities: [] });
+                  }}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" /> Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(null)}
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
+                >
+                  Apply ({(filters.cities?.length || 0) + (filters.localities?.length || 0)})
+                </button>
               </div>
             </div>
           )}
