@@ -62,7 +62,7 @@ const HERO_BUDGET_MAX_OPTS = [
   { label: "₹ 2 Cr", value: 20000000 },
   { label: "₹ 3 Cr", value: 30000000 },
   { label: "₹ 5 Cr", value: 50000000 },
-  { label: "₹ 10 Cr", value: 100000000 },
+  { label: "₹ 7.5 Cr", value: 75000000 },
 ];
 
 // Search Tabs: Buy, Projects, New Launch and Near me
