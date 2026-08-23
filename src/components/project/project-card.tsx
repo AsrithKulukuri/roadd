@@ -4,7 +4,7 @@ import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, formatPriceCompact } from "@/lib/utils";
 import type { Project, ProjectType } from "@/types/project";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { getRefId } from "@/lib/ref-id";
@@ -40,37 +40,37 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 // ─── Formatting ──────────────────────────────────────────────────────────────
-function formatINRCrore(amount: number): string {
-  if (!amount) return "";
-  if (amount >= 10000000) {
-    const val = amount / 10000000;
-    const formatted = val % 1 === 0 ? val.toString() : val.toFixed(2).replace(/\.?0+$/, "");
-    return `₹${formatted} Cr`;
-  }
-  if (amount >= 100000) {
-    const val = amount / 100000;
-    const formatted = val % 1 === 0 ? val.toString() : val.toFixed(2).replace(/\.?0+$/, "");
-    return `₹${formatted} L`;
-  }
-  return `₹${amount.toLocaleString("en-IN")}`;
-}
-
 function getPriceLabel(project: Project): string {
+  const isVenture = project.projectType === "venture" || (project.projectType as string) === "residential-land";
   const allPrices = project.configurations?.flatMap((c) => [c.priceMin, c.priceMax]).filter(Boolean) || [];
+
+  if (isVenture) {
+    if (allPrices.length) {
+      const min = Math.min(...allPrices);
+      return formatPriceCompact(min);
+    }
+    const unitPrices = project.configurations?.map((c) => c.pricePerUnit).filter(Boolean) as number[];
+    if (unitPrices && unitPrices.length) {
+      const uMin = Math.min(...unitPrices);
+      return `₹${uMin.toLocaleString("en-IN")}/sq.yd`;
+    }
+    return "Price on request";
+  }
+
   if (!allPrices.length) {
     if (project.configurations?.length) {
       const unitPrices = project.configurations.map((c) => c.pricePerUnit).filter(Boolean) as number[];
       if (unitPrices.length) {
         const uMin = Math.min(...unitPrices);
         const uMax = Math.max(...unitPrices);
-        return uMin === uMax ? `₹${uMin.toLocaleString("en-IN")}/sq.yd` : `₹${uMin.toLocaleString("en-IN")} – ₹${uMax.toLocaleString("en-IN")}/sq.yd`;
+        return uMin === uMax ? `₹${uMin.toLocaleString("en-IN")}/sq.yd` : `₹${uMin.toLocaleString("en-IN")}–₹${uMax.toLocaleString("en-IN")}/sq.yd`;
       }
     }
     return "Price on request";
   }
   const min = Math.min(...allPrices);
   const max = Math.max(...allPrices);
-  return min === max ? formatINRCrore(min) : `${formatINRCrore(min)} – ${formatINRCrore(max)}`;
+  return min === max ? formatPriceCompact(min) : `${formatPriceCompact(min)} – ${formatPriceCompact(max)}`;
 }
 
 function getVenturePricePerUnit(project: Project): string | null {
@@ -339,9 +339,9 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
         </div>
 
         {/* Details Section */}
-        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+        <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-2.5 sm:space-y-3">
 
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             {/* Title (2 lines clamp) & Locality */}
             <div>
               <h3 className="font-bold text-text-primary text-sm sm:text-base leading-snug group-hover:text-amber-primary transition-colors line-clamp-2 min-h-[38px] sm:min-h-[42px]">
@@ -354,29 +354,29 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
             </div>
 
             {/* Clean 1-Row Config Pills */}
-            <div className="h-[26px] flex items-center gap-1.5 overflow-hidden">
+            <div className="h-[24px] flex items-center gap-1.5 overflow-hidden">
               {configLabels.length > 0 ? (
                 <>
                   {configLabels.slice(0, 2).map((label) => (
-                    <span key={label} className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap truncate max-w-[130px]">
+                    <span key={label} className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap truncate max-w-[120px]">
                       {label}
                     </span>
                   ))}
                   {configLabels.length > 2 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 whitespace-nowrap shrink-0">
-                      +{configLabels.length - 2} more
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 whitespace-nowrap shrink-0">
+                      +{configLabels.length - 2}
                     </span>
                   )}
                 </>
               ) : (
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-bg-primary border border-border-default text-text-tertiary">
+                <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-bg-primary border border-border-default text-text-tertiary">
                   {TC.label} Project
                 </span>
               )}
             </div>
 
             {/* Area Row */}
-            <div className="h-[20px] flex items-center gap-1.5 text-xs text-text-secondary">
+            <div className="h-[18px] flex items-center gap-1.5 text-xs text-text-secondary">
               {builtUpRange ? (
                 <>
                   <Maximize2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -399,26 +399,29 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
           </div>
 
           {/* Locked Bottom Price & Builder Row */}
-          <div className="mt-auto pt-3 border-t border-border-default">
+          <div className="mt-auto pt-2.5 sm:pt-3 border-t border-border-default">
+            {/* Top Sub-row: Category label on left, Ref ID on right so it doesn't steal price width */}
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <p className="text-[9.5px] text-text-tertiary uppercase tracking-wider font-extrabold truncate">
+                {isVenture ? "Starting Price" : "Price Range"}
+              </p>
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                {getRefId(project)}
+              </span>
+            </div>
+
+            {/* Main Row: Big Bold Price (Left, broad) + Builder (Right, compact) */}
             <div className="flex items-end justify-between gap-3">
               <div className="flex-1 min-w-0 pr-1">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <p className="text-[9.5px] text-text-tertiary uppercase tracking-wider font-extrabold">
-                    {isVenture ? "Starting Price" : "Price Range"}
-                  </p>
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                    {getRefId(project)}
-                  </span>
-                </div>
-                <p className="font-black text-text-primary text-base sm:text-lg leading-tight tracking-tight truncate">
+                <p className="font-black text-text-primary text-base sm:text-lg leading-snug tracking-tight break-words">
                   {priceLabel}
                 </p>
-                {pricePerUnit && pricePerUnit !== priceLabel && (
+                {pricePerUnit && !isVenture && pricePerUnit !== priceLabel && (
                   <p className="text-[10px] text-text-secondary font-semibold truncate mt-0.5">{pricePerUnit}</p>
                 )}
               </div>
-              <div className="text-right shrink-0 max-w-[115px] sm:max-w-[135px]">
-                <p className="text-[9px] text-text-tertiary uppercase tracking-wider font-extrabold">BUILDER</p>
+              <div className="text-right shrink-0 max-w-[105px] sm:max-w-[125px]">
+                <p className="text-[9px] text-text-tertiary uppercase tracking-wider font-extrabold truncate">BUILDER</p>
                 <p className="text-xs font-semibold text-text-secondary truncate flex items-center justify-end gap-1 mt-0.5">
                   <span className="truncate">{project.builderName}</span>
                 </p>

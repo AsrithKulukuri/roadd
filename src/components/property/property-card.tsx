@@ -644,8 +644,8 @@ export function PropertyCard({
           </div>
 
           {/* Details Section */}
-          <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-            <div className="space-y-2">
+          <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-2.5 sm:space-y-3">
+            <div className="space-y-1.5 sm:space-y-2">
               {/* Title (2 lines clamp) & Location */}
               <div>
                 <h3 className="font-bold text-text-primary text-sm sm:text-base leading-snug group-hover:text-amber-primary transition-colors line-clamp-2 min-h-[38px] sm:min-h-[42px]">
@@ -660,26 +660,26 @@ export function PropertyCard({
               </div>
 
               {/* Clean 1-Row Specs Pills */}
-              <div className="h-[26px] flex items-center gap-1.5 overflow-hidden">
+              <div className="h-[24px] flex items-center gap-1.5 overflow-hidden">
                 {property.bedrooms > 0 && (
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap">
+                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap">
                     {property.bedrooms} BHK
                   </span>
                 )}
                 {property.furnishing && property.furnishing !== "unfurnished" && (
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap capitalize">
+                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap capitalize">
                     {property.furnishing.replace("-", " ")}
                   </span>
                 )}
                 {property.facing && (
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap capitalize">
+                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap capitalize">
                     {property.facing} Facing
                   </span>
                 )}
               </div>
 
               {/* Area Row */}
-              <div className="h-[20px] flex items-center gap-1.5 text-xs text-text-secondary">
+              <div className="h-[18px] flex items-center gap-1.5 text-xs text-text-secondary">
                 {property.area || property.builtUpArea || property.carpetArea ? (
                   <>
                     <Maximize2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -694,27 +694,30 @@ export function PropertyCard({
             </div>
 
             {/* Locked Bottom Price & Owner Row */}
-            <div className="mt-auto pt-3 border-t border-border-default">
+            <div className="mt-auto pt-2.5 sm:pt-3 border-t border-border-default">
+              {/* Top Sub-row: Category label on left, Ref ID on right so it doesn't steal price width */}
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <p className="text-[9.5px] text-text-tertiary uppercase tracking-wider font-extrabold truncate">
+                  {property.listingType === "rent" || property.listingType === "pg"
+                    ? "Monthly Rent"
+                    : "Price"}
+                </p>
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                  {getRefId(property)}
+                </span>
+              </div>
+
+              {/* Main Row: Big Bold Price (Left, broad) + Owner (Right, compact) */}
               <div className="flex items-end justify-between gap-3">
                 <div className="flex-1 min-w-0 pr-1">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <p className="text-[9.5px] text-text-tertiary uppercase tracking-wider font-extrabold">
-                      {property.listingType === "rent" || property.listingType === "pg"
-                        ? "Rent"
-                        : "Price"}
-                    </p>
-                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                      {getRefId(property)}
-                    </span>
-                  </div>
-                  <p className="font-black text-text-primary text-base sm:text-lg leading-tight tracking-tight truncate">
+                  <p className="font-black text-text-primary text-base sm:text-lg leading-snug tracking-tight break-words">
                     {property.listingType === "rent" || property.listingType === "pg"
                       ? `${formatINR(property.price)}/mo`
                       : formatPriceCompact(property.price)}
                   </p>
                 </div>
-                <div className="text-right shrink-0 max-w-[115px] sm:max-w-[135px]">
-                  <p className="text-[9px] text-text-tertiary uppercase tracking-wider font-extrabold">
+                <div className="text-right shrink-0 max-w-[105px] sm:max-w-[125px]">
+                  <p className="text-[9px] text-text-tertiary uppercase tracking-wider font-extrabold truncate">
                     {property.ownerType ? property.ownerType.toUpperCase() : "OWNER"}
                   </p>
                   <p className="text-xs font-semibold text-text-secondary truncate flex items-center justify-end gap-1 mt-0.5">
