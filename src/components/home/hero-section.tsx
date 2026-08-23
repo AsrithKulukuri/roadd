@@ -34,6 +34,36 @@ import { findItemByRefId, getRefId } from "@/lib/ref-id";
 import { matchesPropertySearch, matchesProjectSearch } from "@/lib/search-engine";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
+import { ModernBudgetDropdown } from "@/components/ui/modern-budget-dropdown";
+
+const HERO_BUDGET_MIN_OPTS = [
+  { label: "₹ 10 L", value: 1000000 },
+  { label: "₹ 20 L", value: 2000000 },
+  { label: "₹ 30 L", value: 3000000 },
+  { label: "₹ 50 L", value: 5000000 },
+  { label: "₹ 75 L", value: 7500000 },
+  { label: "₹ 1 Cr", value: 10000000 },
+  { label: "₹ 1.5 Cr", value: 15000000 },
+  { label: "₹ 2 Cr", value: 20000000 },
+  { label: "₹ 3 Cr", value: 30000000 },
+  { label: "₹ 5 Cr", value: 50000000 },
+  { label: "₹ 10 Cr", value: 100000000 },
+];
+
+const HERO_BUDGET_MAX_OPTS = [
+  { label: "Any Price", value: 100000000 },
+  { label: "₹ 10 L", value: 1000000 },
+  { label: "₹ 20 L", value: 2000000 },
+  { label: "₹ 30 L", value: 3000000 },
+  { label: "₹ 50 L", value: 5000000 },
+  { label: "₹ 75 L", value: 7500000 },
+  { label: "₹ 1 Cr", value: 10000000 },
+  { label: "₹ 1.5 Cr", value: 15000000 },
+  { label: "₹ 2 Cr", value: 20000000 },
+  { label: "₹ 3 Cr", value: 30000000 },
+  { label: "₹ 5 Cr", value: 50000000 },
+  { label: "₹ 10 Cr", value: 100000000 },
+];
 
 // Search Tabs: Buy, Projects, New Launch and Near me
 const tabs = [
@@ -1108,60 +1138,27 @@ export function HeroSection() {
             
             {/* Row 1: BUDGET: [ ₹ 10 L ⌄ ] TO [ Any Price ⌄ ] */}
             <div className="flex items-center gap-2 sm:gap-2.5">
-              <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider shrink-0 flex items-center gap-1">
+              <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider shrink-0">
                 BUDGET:
               </span>
               
-              <div className="relative flex-1">
-                <select
-                  value={heroBudget[0]}
-                  onChange={(e) => setHeroBudget([Number(e.target.value), Math.max(Number(e.target.value), heroBudget[1])])}
-                  className="w-full h-8 px-3 pr-7 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/90 hover:border-slate-300 rounded-full text-xs font-bold text-slate-900 appearance-none outline-none cursor-pointer transition-colors shadow-2xs"
-                >
-                  {![1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000, 30000000, 50000000, 100000000].includes(heroBudget[0]) && (
-                    <option value={heroBudget[0]}>{formatINRWords(heroBudget[0])}</option>
-                  )}
-                  <option value={1000000}>₹ 10 L</option>
-                  <option value={2000000}>₹ 20 L</option>
-                  <option value={3000000}>₹ 30 L</option>
-                  <option value={5000000}>₹ 50 L</option>
-                  <option value={7500000}>₹ 75 L</option>
-                  <option value={10000000}>₹ 1 Cr</option>
-                  <option value={15000000}>₹ 1.5 Cr</option>
-                  <option value={20000000}>₹ 2 Cr</option>
-                  <option value={30000000}>₹ 3 Cr</option>
-                  <option value={50000000}>₹ 5 Cr</option>
-                  <option value={100000000}>₹ 10 Cr</option>
-                </select>
-                <ChevronDown className="w-3 h-3 text-slate-600 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[2.5]" />
-              </div>
+              <ModernBudgetDropdown
+                value={heroBudget[0]}
+                options={HERO_BUDGET_MIN_OPTS}
+                onChange={(val) => setHeroBudget([val, Math.max(val, heroBudget[1])])}
+                placeholder="Min Price"
+              />
 
               <span className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider shrink-0">TO</span>
 
-              <div className="relative flex-1">
-                <select
-                  value={heroBudget[1]}
-                  onChange={(e) => setHeroBudget([Math.min(heroBudget[0], Number(e.target.value)), Number(e.target.value)])}
-                  className="w-full h-8 px-3 pr-7 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/90 hover:border-slate-300 rounded-full text-xs font-bold text-slate-900 appearance-none outline-none cursor-pointer transition-colors shadow-2xs"
-                >
-                  {![100000000, 1000000, 2000000, 3000000, 5000000, 7500000, 10000000, 15000000, 20000000, 30000000, 50000000].includes(heroBudget[1]) && (
-                    <option value={heroBudget[1]}>{heroBudget[1] >= 100000000 ? "Any Price" : formatINRWords(heroBudget[1], true)}</option>
-                  )}
-                  <option value={100000000}>Any Price</option>
-                  <option value={1000000}>₹ 10 L</option>
-                  <option value={2000000}>₹ 20 L</option>
-                  <option value={3000000}>₹ 30 L</option>
-                  <option value={5000000}>₹ 50 L</option>
-                  <option value={7500000}>₹ 75 L</option>
-                  <option value={10000000}>₹ 1 Cr</option>
-                  <option value={15000000}>₹ 1.5 Cr</option>
-                  <option value={20000000}>₹ 2 Cr</option>
-                  <option value={30000000}>₹ 3 Cr</option>
-                  <option value={50000000}>₹ 5 Cr</option>
-                  <option value={100000000}>₹ 10 Cr</option>
-                </select>
-                <ChevronDown className="w-3 h-3 text-slate-600 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none stroke-[2.5]" />
-              </div>
+              <ModernBudgetDropdown
+                value={heroBudget[1]}
+                options={HERO_BUDGET_MAX_OPTS}
+                onChange={(val) => setHeroBudget([Math.min(heroBudget[0], val), val])}
+                placeholder="Any Price"
+                align="right"
+                isMax
+              />
             </div>
 
             {/* Row 2: Range Slider (Teal Accent Track with Refined Knobs) */}

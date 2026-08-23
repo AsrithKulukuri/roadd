@@ -23,6 +23,7 @@ import {
 import { cn, formatINR, formatINRWords } from "@/lib/utils";
 import type { FilterState } from "./search-filters";
 import { Slider } from "@/components/ui/slider";
+import { ModernBudgetDropdown } from "@/components/ui/modern-budget-dropdown";
 
 interface RealtorFilterBarProps {
   filters: FilterState;
@@ -455,37 +456,25 @@ export function RealtorFilterBar({
                       BUDGET:
                     </span>
                     
-                    <div className="relative flex-1 min-w-0 max-w-[110px]">
-                      <select
-                        value={filters.budget[0]}
-                        onChange={(e) => onFilterChange({ ...filters, budget: [Number(e.target.value), Math.max(Number(e.target.value), filters.budget[1])] })}
-                        className="w-full h-9 pl-2.5 pr-6 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white text-center appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
-                      >
-                        {getBudgetOpts(BUDGET_MIN_OPTIONS, filters.budget[0]).map((opt) => (
-                          <option key={`mob-min-${opt.value}`} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
+                    <ModernBudgetDropdown
+                      value={filters.budget[0]}
+                      options={getBudgetOpts(BUDGET_MIN_OPTIONS, filters.budget[0])}
+                      onChange={(val) => onFilterChange({ ...filters, budget: [val, Math.max(val, filters.budget[1])] })}
+                      placeholder="Min Price"
+                      className="max-w-[125px]"
+                    />
 
                     <span className="text-slate-400 font-black text-[10px] uppercase shrink-0 px-0.5">TO</span>
 
-                    <div className="relative flex-1 min-w-0 max-w-[110px]">
-                      <select
-                        value={filters.budget[1]}
-                        onChange={(e) => onFilterChange({ ...filters, budget: [Math.min(filters.budget[0], Number(e.target.value)), Number(e.target.value)] })}
-                        className="w-full h-9 pl-2.5 pr-6 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white text-center appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
-                      >
-                        {getBudgetOpts(BUDGET_MAX_OPTIONS, filters.budget[1], true).map((opt) => (
-                          <option key={`mob-max-${opt.value}`} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
+                    <ModernBudgetDropdown
+                      value={filters.budget[1]}
+                      options={getBudgetOpts(BUDGET_MAX_OPTIONS, filters.budget[1], true)}
+                      onChange={(val) => onFilterChange({ ...filters, budget: [Math.min(filters.budget[0], val), val] })}
+                      placeholder="Any Price"
+                      align="right"
+                      isMax
+                      className="max-w-[125px]"
+                    />
                   </div>
 
                   {/* Row 2: Dual Slider */}
@@ -659,37 +648,25 @@ export function RealtorFilterBar({
                   BUDGET:
                 </span>
                 
-                <div className="relative flex-1 min-w-0 max-w-[110px]">
-                  <select
-                    value={filters.budget[0]}
-                    onChange={(e) => onFilterChange({ ...filters, budget: [Number(e.target.value), Math.max(Number(e.target.value), filters.budget[1])] })}
-                    className="w-full h-9 pl-2.5 pr-6 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white text-center appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
-                  >
-                    {getBudgetOpts(BUDGET_MIN_OPTIONS, filters.budget[0]).map((opt) => (
-                      <option key={`desk-pop-min-${opt.value}`} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
+                <ModernBudgetDropdown
+                  value={filters.budget[0]}
+                  options={getBudgetOpts(BUDGET_MIN_OPTIONS, filters.budget[0])}
+                  onChange={(val) => onFilterChange({ ...filters, budget: [val, Math.max(val, filters.budget[1])] })}
+                  placeholder="Min Price"
+                  className="max-w-[125px]"
+                />
 
                 <span className="text-slate-400 font-black text-[10px] uppercase shrink-0 px-0.5">TO</span>
 
-                <div className="relative flex-1 min-w-0 max-w-[110px]">
-                  <select
-                    value={filters.budget[1]}
-                    onChange={(e) => onFilterChange({ ...filters, budget: [Math.min(filters.budget[0], Number(e.target.value)), Number(e.target.value)] })}
-                    className="w-full h-9 pl-2.5 pr-6 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-black text-slate-900 dark:text-white text-center appearance-none outline-none cursor-pointer hover:border-amber-400 transition-colors shadow-2xs"
-                  >
-                    {getBudgetOpts(BUDGET_MAX_OPTIONS, filters.budget[1], true).map((opt) => (
-                      <option key={`desk-pop-max-${opt.value}`} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
+                <ModernBudgetDropdown
+                  value={filters.budget[1]}
+                  options={getBudgetOpts(BUDGET_MAX_OPTIONS, filters.budget[1], true)}
+                  onChange={(val) => onFilterChange({ ...filters, budget: [Math.min(filters.budget[0], val), val] })}
+                  placeholder="Any Price"
+                  align="right"
+                  isMax
+                  className="max-w-[125px]"
+                />
               </div>
 
               {/* Row 2: Dual Slider */}
