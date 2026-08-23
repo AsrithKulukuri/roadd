@@ -1133,7 +1133,7 @@ export function HeroSection() {
         </div>
 
         {/* ── Budget Filter Card (Compact & Modern Design) ── */}
-        <div className="w-full max-w-[760px] mx-auto mt-2 sm:mt-3 text-left">
+        <div className="relative z-30 w-full max-w-[760px] mx-auto mt-2 sm:mt-3 text-left">
           <div className="bg-white/95 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-3 sm:p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.05)] space-y-2.5">
             
             {/* Row 1: BUDGET: [ ₹ 10 L ⌄ ] TO [ Any Price ⌄ ] */}
