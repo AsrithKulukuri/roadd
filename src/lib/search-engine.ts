@@ -487,12 +487,7 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   if (filters.vastuCompliant && !property.vastuCompliant) return false;
   if (filters.gatedCommunity && !property.gatedSecurity && property.propertyType !== "villa" && property.propertyType !== "apartment") return false;
 
-  // 14. Ownership
-  if (filters.ownership && filters.ownership.length > 0 && property.ownership) {
-    if (!filters.ownership.includes(property.ownership.toLowerCase())) return false;
-  }
-
-  // 15. Amenities
+  // 14. Amenities
   if (filters.amenities && filters.amenities.length > 0) {
     const propAmenities = (property.amenities || []).map((a: any) =>
       typeof a === "string" ? a.toLowerCase() : (a.name || a.label || "").toLowerCase()

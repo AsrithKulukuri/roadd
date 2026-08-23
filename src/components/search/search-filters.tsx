@@ -168,13 +168,11 @@ const DESKTOP_CATEGORY_TABS = [
   { id: "saleType", label: "Sale Type" },
   { id: "postedSince", label: "Posted Since" },
   { id: "postedBy", label: "Posted By" },
-  { id: "ownership", label: "Ownership" },
   { id: "furnishing", label: "Furnishing" },
   { id: "amenities", label: "Amenities" },
   { id: "verified", label: "Verified Properties" },
   { id: "media", label: "Photos & Videos" },
   { id: "facing", label: "Facing" },
-  { id: "floor", label: "Floor Selection" },
   { id: "agriculture", label: "Water & Agriculture" },
 ] as const;
 
@@ -467,11 +465,9 @@ export function SearchFiltersModal({
     if (localFilters.possessionStatus.length > 0) count += localFilters.possessionStatus.length;
     if (localFilters.saleType.length > 0) count += localFilters.saleType.length;
     if (localFilters.postedBy.length > 0) count += localFilters.postedBy.length;
-    if (localFilters.ownership.length > 0) count += localFilters.ownership.length;
     if (localFilters.furnished.length > 0) count += localFilters.furnished.length;
     if (localFilters.amenities.length > 0) count += localFilters.amenities.length;
     if (localFilters.facing.length > 0) count += localFilters.facing.length;
-    if (localFilters.floorRange.length > 0) count += localFilters.floorRange.length;
     if (localFilters.mediaTypes.length > 0) count += localFilters.mediaTypes.length;
     if (localFilters.postedSince && localFilters.postedSince !== "any") count += 1;
     if (localFilters.propertiesWithOffers) count += 1;
@@ -940,29 +936,6 @@ export function SearchFiltersModal({
             </div>
           </CollapsibleSection>
 
-          {/* Ownership */}
-          <CollapsibleSection title="Ownership">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
-              {[
-                { label: "Freehold", val: "freehold" },
-                { label: "Leasehold", val: "leasehold" },
-                { label: "Power Of Attorney", val: "poa" },
-                { label: "Co-operative Society", val: "society" },
-                { label: "Other", val: "other" },
-              ].map((o) => {
-                const isSelected = localFilters.ownership.includes(o.val);
-                return (
-                  <PillTag
-                    key={o.val}
-                    label={o.label}
-                    isSelected={isSelected}
-                    onClick={() => toggleArrayFilter("ownership", o.val)}
-                  />
-                );
-              })}
-            </div>
-          </CollapsibleSection>
-
           {/* Furnishing */}
           <CollapsibleSection title="Furnishing">
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
@@ -1057,23 +1030,6 @@ export function SearchFiltersModal({
                     label={face}
                     isSelected={isSelected}
                     onClick={() => toggleArrayFilter("facing", clean)}
-                  />
-                );
-              })}
-            </div>
-          </CollapsibleSection>
-
-          {/* Floor */}
-          <CollapsibleSection title="Floor">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
-              {["Basement", "Ground", "1-4", "5-8", "9-12", "13-16", "16+"].map((fl) => {
-                const isSelected = localFilters.floorRange.includes(fl.toLowerCase());
-                return (
-                  <PillTag
-                    key={fl}
-                    label={fl}
-                    isSelected={isSelected}
-                    onClick={() => toggleArrayFilter("floorRange", fl.toLowerCase())}
                   />
                 );
               })}
@@ -1570,28 +1526,6 @@ export function SearchFiltersModal({
               </div>
             )}
 
-            {/* 11. Ownership Tab */}
-            {activeDesktopTab === "ownership" && (
-              <div className="space-y-4">
-                <label className="text-[13px] font-semibold text-slate-900 block">Ownership Title</label>
-                <div className="flex flex-wrap gap-2.5">
-                  {[
-                    { label: "Freehold", val: "freehold" },
-                    { label: "Leasehold", val: "leasehold" },
-                    { label: "Co-operative Society", val: "society" },
-                    { label: "Power of Attorney", val: "poa" },
-                  ].map((o) => (
-                    <PillTag
-                      key={o.val}
-                      label={o.label}
-                      isSelected={localFilters.ownership.includes(o.val)}
-                      onClick={() => toggleArrayFilter("ownership", o.val)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* 12. Furnishing Tab */}
             {activeDesktopTab === "furnishing" && (
               <div className="space-y-4">
@@ -1701,29 +1635,6 @@ export function SearchFiltersModal({
                       />
                     );
                   })}
-                </div>
-              </div>
-            )}
-
-            {/* 17. Floor Selection Tab */}
-            {activeDesktopTab === "floor" && (
-              <div className="space-y-4">
-                <label className="text-[13px] font-semibold text-slate-900 block">Floor Selection</label>
-                <div className="flex flex-wrap gap-2.5">
-                  {[
-                    { label: "Ground Floor", val: "ground" },
-                    { label: "1st – 4th Floor", val: "1-4" },
-                    { label: "5th – 10th Floor", val: "5-10" },
-                    { label: "11th – 20th Floor", val: "11-20" },
-                    { label: "20th+ Floor", val: "20+" },
-                  ].map((fl) => (
-                    <PillTag
-                      key={fl.val}
-                      label={fl.label}
-                      isSelected={localFilters.floorRange.includes(fl.val)}
-                      onClick={() => toggleArrayFilter("floorRange", fl.val)}
-                    />
-                  ))}
                 </div>
               </div>
             )}
