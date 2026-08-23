@@ -1008,10 +1008,10 @@ export function HeroSection() {
                             setOpenLocationTab(null);
                             setSublocationSearch("");
                           }}
-                          className="w-5 h-5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                          className="w-6 h-6 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-90 shadow-2xs"
                           aria-label="Close"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-3.5 h-3.5 stroke-[2.5]" />
                         </button>
                       </div>
                     </div>

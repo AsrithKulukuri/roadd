@@ -295,14 +295,16 @@ export function MobileBottomNav() {
             >
               <div>
                 {/* Drag handle & Header Close Row */}
-                <div className="flex items-center justify-between pb-2">
-                  <div className="w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto ml-auto pl-10" />
+                <div className="relative flex items-center justify-between pb-3 mb-1">
+                  <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full pointer-events-none" />
+                  <div className="flex-1" />
                   <button
                     type="button"
                     onClick={() => setIsMenuOpen(false)}
-                    className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                    aria-label="Close"
+                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-100 flex items-center justify-center transition-all cursor-pointer shrink-0 z-10 active:scale-95 shadow-xs"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-4 h-4 stroke-[2.5]" />
                   </button>
                 </div>
 
