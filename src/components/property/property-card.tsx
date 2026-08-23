@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, formatPriceCompact, formatArea, formatINR } from "@/lib/utils";
+import { cn, formatPriceCompact, formatArea, formatINR, formatPropertyType } from "@/lib/utils";
 import { getYoutubeEmbedUrl } from "@/lib/utils";
 import { getRefId } from "@/lib/ref-id";
 import { shareItem } from "@/lib/share-utils";
@@ -554,37 +554,41 @@ export function PropertyCard({
             )}
 
             {/* Top Badges */}
-            <div className="absolute top-2.5 left-2.5 flex gap-1.5 flex-wrap z-10">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md capitalize tracking-tight">
-                {property.propertyType || "Residential"}
+            <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-10">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight">
+                {formatPropertyType(property.propertyType)}
               </span>
-              {property.reraId && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
-                  <Shield className="w-3.5 h-3.5 text-slate-900" /> RERA
+              {(property.reraId || (property as any).reraApproved) && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight">
+                  <Shield className="w-3.5 h-3.5 text-amber-500" /> RERA
                 </span>
               )}
               {property.isFeatured && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
-                  <Sparkles className="w-3.5 h-3.5 text-slate-900" /> Featured
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Featured
                 </span>
               )}
             </div>
 
             {/* Status Bottom Left */}
             <div className="absolute bottom-3 left-3 z-10">
-              <span
-                className="px-2.5 py-0.5 rounded-full text-[11px] font-bold backdrop-blur-md border border-white/10 bg-slate-950/85 text-amber-400 shadow-sm"
-              >
-                {property.isReadyToMove ? "Ready to Move" : "Under Construction"}
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold backdrop-blur-md border border-white/10 bg-slate-950/85 text-amber-400 shadow-sm">
+                {property.listingType === "rent" || property.listingType === "pg"
+                  ? "For Rent"
+                  : property.saleType === "resale"
+                  ? "Resale"
+                  : property.isReadyToMove
+                  ? "Ready to Move"
+                  : "New Construction"}
               </span>
             </div>
 
             {/* Actions: Share & Heart Button Bottom Right */}
             {!actionMenu && !selectable && (
-              <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5">
+              <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 pointer-events-auto">
                 <button
                   type="button"
-                  className="w-8 h-8 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-110 active:scale-90 cursor-pointer"
+                  className="w-8 h-8 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -593,21 +597,21 @@ export function PropertyCard({
                   title="Share property"
                   aria-label="Share property"
                 >
-                  <Share2 className="h-3.5 w-3.5 text-slate-700 hover:text-amber-500 transition-colors" />
+                  <Share2 className="h-3.5 w-3.5 text-slate-800 hover:text-amber-500 transition-colors" />
                 </button>
                 <button
                   type="button"
-                  className="w-8 h-8 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-110 active:scale-90 cursor-pointer"
+                  className="w-8 h-8 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
                   onClick={toggleSave}
                   aria-label={isSaved ? "Remove from saved" : "Save property"}
                   title={isSaved ? "Remove from saved" : "Save property"}
                 >
                   <Heart
                     className={cn(
-                      "h-4 w-4 transition-all",
+                      "h-3.5 w-3.5 transition-all",
                       isSaved
                         ? "fill-red-600 text-red-600 scale-110"
-                        : "text-slate-700",
+                        : "text-slate-800",
                     )}
                   />
                 </button>
@@ -617,13 +621,13 @@ export function PropertyCard({
 
           {/* Details Section */}
           <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-            <div className="space-y-2.5">
-              {/* Title & Location */}
+            <div className="space-y-2">
+              {/* Title (2 lines clamp) & Location */}
               <div>
-                <h3 className="font-bold text-text-primary text-base sm:text-lg leading-tight group-hover:text-amber-primary transition-colors line-clamp-1">
+                <h3 className="font-bold text-text-primary text-sm sm:text-base leading-snug group-hover:text-amber-primary transition-colors line-clamp-2 min-h-[38px] sm:min-h-[42px]">
                   {property.title}
                 </h3>
-                <div className="flex items-center gap-1.5 text-text-secondary text-xs sm:text-sm mt-1 truncate">
+                <div className="flex items-center gap-1.5 text-text-secondary text-xs mt-1 truncate">
                   <MapPin className="w-3.5 h-3.5 shrink-0 text-amber-primary" />
                   <span className="truncate">
                     {property.location.locality}, {property.location.city}
@@ -631,8 +635,8 @@ export function PropertyCard({
                 </div>
               </div>
 
-              {/* Clean 1-Row Specs Pills (Guaranteed uniform height across all cards) */}
-              <div className="h-[28px] flex items-center gap-1.5 overflow-hidden">
+              {/* Clean 1-Row Specs Pills */}
+              <div className="h-[26px] flex items-center gap-1.5 overflow-hidden">
                 {property.bedrooms > 0 && (
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap">
                     {property.bedrooms} BHK
@@ -655,8 +659,8 @@ export function PropertyCard({
                 {property.area || property.builtUpArea || property.carpetArea ? (
                   <>
                     <Maximize2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    <span className="truncate">
-                      {formatArea(property.area || property.builtUpArea || property.carpetArea || 0)}
+                    <span className="truncate font-medium">
+                      {formatArea(property.area || property.builtUpArea || property.carpetArea || 0, (property as any).areaUnit, property.propertyType)}
                     </span>
                   </>
                 ) : (
@@ -665,32 +669,32 @@ export function PropertyCard({
               </div>
             </div>
 
-            {/* Locked Bottom Price & Broker Row */}
+            {/* Locked Bottom Price & Owner Row */}
             <div className="mt-auto pt-3 border-t border-border-default">
               <div className="flex items-end justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold">
-                    {property.listingType === "rent" || property.listingType === "pg"
-                      ? "Monthly Rent"
-                      : "Price"}
-                  </p>
-                  <span className="text-[9px] font-mono font-black px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                    {getRefId(property)}
-                  </span>
-                </div>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-extrabold">
+                      {property.listingType === "rent" || property.listingType === "pg"
+                        ? "Rent"
+                        : "Price"}
+                    </p>
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      {getRefId(property)}
+                    </span>
+                  </div>
                   <p className="font-extrabold text-text-primary text-sm sm:text-base leading-tight truncate">
                     {property.listingType === "rent" || property.listingType === "pg"
                       ? `${formatINR(property.price)}/mo`
                       : formatPriceCompact(property.price)}
                   </p>
                 </div>
-                <div className="text-right shrink-0 max-w-[130px]">
-                  <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold">
-                    By
+                <div className="text-right shrink-0 max-w-[130px] sm:max-w-[150px]">
+                  <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-extrabold">
+                    {property.ownerType ? property.ownerType.toUpperCase() : "OWNER"}
                   </p>
                   <p className="text-xs sm:text-sm font-bold text-text-primary truncate flex items-center justify-end gap-1">
-                    {brokerName}
+                    <span className="truncate">{brokerName}</span>
                     {property.isOwnerVerified && (
                       <BadgeCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                     )}

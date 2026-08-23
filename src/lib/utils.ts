@@ -87,10 +87,62 @@ export function formatINRWords(amount: number, isMax = false): string {
 
 
 /**
- * Formats area with unit label.
- * @param sqft - Area in square feet
- * @param unit - Display unit (sqft or sqm)
+ * Formats property type cleanly for UI display.
+ * Examples:
+ *   formatPropertyType("residential-land") => "Residential Land"
+ *   formatPropertyType("commercial-spaces") => "Commercial Space"
+ *   formatPropertyType("agricultural-lands") => "Agricultural Land"
  */
+export function formatPropertyType(type?: string): string {
+  if (!type) return "Property";
+  const normalized = type.toLowerCase().trim();
+  const map: Record<string, string> = {
+    "residential-land": "Residential Land",
+    "residential-plot": "Residential Plot",
+    "plot": "Residential Plot",
+    "land": "Plot / Land",
+    "apartment": "Apartment",
+    "villa": "Villa",
+    "independent-house": "Independent House",
+    "house": "Independent House",
+    "commercial": "Commercial Space",
+    "commercial-spaces": "Commercial Space",
+    "commercial-lands": "Commercial Land",
+    "shops": "Commercial Shop",
+    "buildings": "Commercial Building",
+    "industrial-lands": "Industrial Land",
+    "agricultural-lands": "Agricultural Land",
+    "agricultural-land": "Agricultural Land",
+    "agricultural": "Agricultural Land",
+    "farmhouse": "Farmhouse",
+    "pg": "PG / Co-Living",
+    "pg-coliving": "PG / Co-Living",
+    "venture": "Gated Venture",
+  };
+  if (map[normalized]) return map[normalized];
+  return normalized
+    .split(/[-_]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+/**
+ * Formats area with proper units.
+ */
+export function formatArea(area: number | string, unit?: string, propertyType?: string): string {
+  const num = typeof area === "number" ? area : Number(area) || 0;
+  if (!num) return "";
+  const pType = (propertyType || "").toLowerCase();
+  const isLand = pType.includes("land") || pType.includes("plot") || pType.includes("venture") || pType.includes("agricultural");
+  
+  if (unit) {
+    return `${num.toLocaleString("en-IN")} ${unit}`;
+  }
+  if (isLand) {
+    return `${num.toLocaleString("en-IN")} sq.yds`;
+  }
+  return `${num.toLocaleString("en-IN")} sq.ft`;
+}
 
 /**
  * Extracts and formats YouTube video embed URLs from any format:
@@ -185,13 +237,7 @@ export function parseGoogleMapsUrl(url?: string): { latitude: number; longitude:
 
   return null;
 }
-export function formatArea(sqft: number, unit: "sqft" | "sqm" = "sqft"): string {
-  if (unit === "sqm") {
-    const sqm = Math.round(sqft * 0.092903);
-    return `${new Intl.NumberFormat("en-IN").format(sqm)} sq.m`;
-  }
-  return `${new Intl.NumberFormat("en-IN").format(sqft)} sq.ft`;
-}
+
 
 /**
  * Formats area in acres (for plots/land).
