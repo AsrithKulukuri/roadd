@@ -418,35 +418,35 @@ function UnifiedSearchPage() {
 
   // Combine and Sort
   const combinedResults = useMemo(() => {
-    let items: { type: 'property' | 'project'; data: any; price: number; createdAt: string }[];
+    let propList = activeTab !== "projects" ? filteredProperties : [];
+    let projList = activeTab !== "properties" ? filteredProjects : [];
 
     // In map mode with a visible-ids set, drive the list from the MAP's viewport
-    // (which uses fuzzy matching on ALL store items) rather than the strict search-page filter.
+    // while keeping all search/budget filters active
     if (viewMode === "map" && visibleMapIds !== null) {
-      const propById = new Map(properties.map(p => [p.id, p]));
-      const projById = new Map(projects.map(p => [p.id, p]));
-      items = visibleMapIds.flatMap((id): { type: 'property' | 'project'; data: any; price: number; createdAt: string }[] => {
-        const prop = propById.get(id);
-        if (prop) return [{ type: 'property', data: prop, price: prop.price, createdAt: prop.createdAt }];
-        const proj = projById.get(id);
-        if (proj) {
-          const minPrice = proj.configurations?.[0]?.priceMin || 0;
-          return [{ type: 'project', data: proj, price: minPrice, createdAt: proj.createdAt }];
-        }
-        return [];
-      });
-    } else {
-      const propItems = activeTab !== "projects"
-        ? filteredProperties.map(p => ({ type: 'property' as const, data: p, price: p.price, createdAt: p.createdAt }))
-        : [];
-      const projItems = activeTab !== "properties"
-        ? filteredProjects.map(p => {
-            const minPrice = p.configurations?.[0]?.priceMin || 0;
-            return { type: 'project' as const, data: p, price: minPrice, createdAt: p.createdAt };
-          })
-        : [];
-      items = [...propItems, ...projItems];
+      const visibleSet = new Set(visibleMapIds);
+      propList = propList.filter((p) => visibleSet.has(p.id));
+      projList = projList.filter((p) => visibleSet.has(p.id));
     }
+
+    const propItems = propList.map((p) => ({
+      type: "property" as const,
+      data: p,
+      price: p.price,
+      createdAt: p.createdAt,
+    }));
+
+    const projItems = projList.map((p) => {
+      const minPrice = p.configurations?.[0]?.priceMin || 0;
+      return {
+        type: "project" as const,
+        data: p,
+        price: minPrice,
+        createdAt: p.createdAt,
+      };
+    });
+
+    const items = [...propItems, ...projItems];
 
     const activeSort = (filters.sortBy || sortBy || "relevant").toLowerCase();
     items.sort((a, b) => {
@@ -464,14 +464,14 @@ function UnifiedSearchPage() {
       }
       // Relevance default
       if (filters.query) return 0;
-      const scoreA = (a.data?.isFeatured ? 2 : 0) + (a.data?.isRecommended ? 1 : 0);
-      const scoreB = (b.data?.isFeatured ? 2 : 0) + (b.data?.isRecommended ? 1 : 0);
+      const scoreA = (a.data?.isFeatured ? 2 : 0) + ((a.data as any)?.isRecommended ? 1 : 0);
+      const scoreB = (b.data?.isFeatured ? 2 : 0) + ((b.data as any)?.isRecommended ? 1 : 0);
       if (scoreA !== scoreB) return scoreB - scoreA;
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
 
     return items;
-  }, [filteredProperties, filteredProjects, properties, projects, sortBy, filters.sortBy, filters.query, viewMode, visibleMapIds, activeTab]);
+  }, [filteredProperties, filteredProjects, sortBy, filters.sortBy, filters.query, viewMode, visibleMapIds, activeTab]);
 
   // 12 properties / projects initial load with Load More
   const pageSize = 12;
@@ -486,13 +486,14 @@ function UnifiedSearchPage() {
     return combinedResults.slice(0, visibleCount);
   }, [combinedResults, visibleCount]);
 
-  // Map items: pass ALL store properties/projects to the map so it can fuzzy-filter internally.
-  // The list syncs back via visibleMapIds from the map viewport listener.
+  // Map items: pass active filtered properties/projects to the map so markers respect budget & other filters.
   const mapItems = useMemo(() => {
-    const propItems = properties as any[];
-    const projItems = projects
-      .filter(p => p.isPublished && p.location?.latitude && p.location?.longitude)
-      .map(p => ({
+    const propItems = (activeTab !== "projects" ? filteredProperties : [])
+      .filter((p) => p.location?.latitude && p.location?.longitude);
+
+    const projItems = (activeTab !== "properties" ? filteredProjects : [])
+      .filter((p) => p.isPublished && p.location?.latitude && p.location?.longitude)
+      .map((p) => ({
         id: p.id,
         slug: p.slug,
         title: p.name,
@@ -515,8 +516,9 @@ function UnifiedSearchPage() {
         _isProject: true,
         _originalProjectData: p,
       }));
+
     return [...propItems, ...projItems];
-  }, [properties, projects]);
+  }, [filteredProperties, filteredProjects, activeTab]);
 
   if (!mounted) return null;
 

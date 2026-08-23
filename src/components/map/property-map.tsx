@@ -864,7 +864,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   }, [properties, projects]);
 
   const mapProperties = useMemo(() => {
-    if (filteredItems && Array.isArray(filteredItems) && filteredItems.length > 0) {
+    if (filteredItems && Array.isArray(filteredItems)) {
       return filteredItems;
     }
     return defaultAllItems;
@@ -988,10 +988,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   }, [activeLocalityBoundary]);
 
   const displayedProperties = useMemo(() => {
-    let source = mapProperties;
-    if (filteredItems && Array.isArray(filteredItems) && filteredItems.length > 0) {
-      source = filteredItems;
-    }
+    let source = filteredItems && Array.isArray(filteredItems) ? filteredItems : mapProperties;
 
     // Polygon Area Draw Filter
     if (drawPolygonPoints.length >= 3) {
