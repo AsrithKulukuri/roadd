@@ -217,7 +217,7 @@ export const amenitiesList = [
 
 export const navigationLinks = {
   main: [
-    { label: "New projects", href: "/search?type=projects" },
+    { label: "New Projects", href: "/search?type=projects" },
     { label: "Gated Communities", href: "/search?type=buy&propertyType=gated-community" },
     { label: "Commercial", href: "/search?type=buy&propertyType=commercial" },
     { label: "Agriculture", href: "/search?type=buy&propertyType=agricultural-land" },

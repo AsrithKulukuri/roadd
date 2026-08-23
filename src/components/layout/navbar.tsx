@@ -226,7 +226,7 @@ export function Navbar() {
             </nav>
 
             {/* Right Action Icons & Controls */}
-            <div className="flex items-center gap-1.5 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-2.5">
               <div className="hidden sm:block">
                 <ThemeToggle />
               </div>
@@ -237,38 +237,64 @@ export function Navbar() {
                 className={cn(
                   "hidden sm:inline-flex p-2 rounded-xl transition-colors",
                   isTransparent
-                    ? "text-white hover:bg-white/10"
+                    ? "text-white hover:bg-white/15"
                     : "text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                 )}
                 aria-label="Saved properties"
               >
-                <Heart className="h-5 w-5 stroke-[2.5]" />
+                <Heart className="h-4.5 w-4.5 stroke-[2.5]" />
               </Link>
 
               {user ? (
-                /* User Menu for Desktop */
-                <div className="hidden sm:flex items-center gap-2">
-                  <Link href="/dashboard">
-                    <Button variant="outline" size="sm" className="bg-slate-900 border-slate-800 text-white font-extrabold hover:bg-slate-800 shadow-xs">
-                      Dashboard
-                    </Button>
-                  </Link>
-                  <Button
-                    onClick={handleSignOut}
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs text-white font-extrabold hover:bg-slate-800"
+                /* Compact User Account Dropdown for Desktop */
+                <div className="hidden sm:block relative group">
+                  <Link
+                    href="/dashboard"
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border",
+                      isTransparent
+                        ? "bg-black/35 text-white hover:bg-black/55 border-white/20 backdrop-blur-md"
+                        : "bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700"
+                    )}
                   >
-                    Sign Out
-                  </Button>
+                    <User className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="max-w-[75px] truncate">{user.name || "Account"}</span>
+                    <ChevronDown className="w-3 h-3 opacity-60 group-hover:rotate-180 transition-transform" />
+                  </Link>
+
+                  {/* Dropdown Menu */}
+                  <div className="absolute top-full right-0 pt-2 w-44 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-1 divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                      <Link href="/dashboard" className="flex items-center gap-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold transition-colors">
+                        <User className="w-3.5 h-3.5 text-amber-500" /> Dashboard
+                      </Link>
+                      <Link href="/dashboard/listings" className="flex items-center gap-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold transition-colors">
+                        <Building2 className="w-3.5 h-3.5 text-amber-500" /> My Listings
+                      </Link>
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full text-left flex items-center gap-2 px-3.5 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 font-semibold cursor-pointer transition-colors"
+                      >
+                        <LogOut className="w-3.5 h-3.5" /> Sign Out
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                /* Auth Buttons for Desktop */
-                <div className="hidden sm:flex items-center gap-2">
+                /* Auth Login Link for Desktop */
+                <div className="hidden sm:flex items-center">
                   <Link href="/login">
-                    <Button variant="default" size="sm" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-5">
+                    <button
+                      type="button"
+                      className={cn(
+                        "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer",
+                        isTransparent
+                          ? "text-white hover:bg-white/15"
+                          : "text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
+                    >
                       Log in
-                    </Button>
+                    </button>
                   </Link>
                 </div>
               )}
@@ -276,16 +302,21 @@ export function Navbar() {
               {/* Post Requirement CTA Button */}
               <button
                 onClick={() => setIsRequirementModalOpen(true)}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-slate-950 hover:bg-slate-900 text-white shadow-xs border border-white/15 active:scale-95 transition-all cursor-pointer shrink-0"
+                className={cn(
+                  "hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 border",
+                  isTransparent
+                    ? "bg-slate-950/90 hover:bg-slate-900 text-white border-white/25 backdrop-blur-md hover:border-amber-400"
+                    : "bg-slate-950 hover:bg-slate-900 text-white border-slate-800 hover:border-amber-400"
+                )}
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20 shrink-0" />
                 <span className="whitespace-nowrap">Post Requirement</span>
               </button>
 
               {/* List Property CTA Button */}
               <Link href="/list-with-us" className="hidden md:block">
-                <Button size="sm" className="gap-1.5 bg-slate-900 text-white hover:bg-slate-800 font-bold shadow-xs border border-slate-800">
-                  <Plus className="h-4 w-4 text-amber-400" />
+                <Button size="sm" className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-full shadow-xs px-4 h-8 text-xs border-0">
+                  <Plus className="h-3.5 w-3.5 stroke-[3]" />
                   List Property
                 </Button>
               </Link>

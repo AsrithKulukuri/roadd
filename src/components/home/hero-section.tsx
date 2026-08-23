@@ -232,6 +232,8 @@ export function HeroSection() {
 
     if (searchQuery.trim()) {
       params.set("location", searchQuery.trim());
+    } else {
+      params.set("focus", "search");
     }
     if (b[0] > 0 || b[1] < 30000000) {
       params.set("budget", `${b[0]},${b[1]}`);
@@ -403,10 +405,10 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative w-full overflow-hidden text-slate-900 pt-24 sm:pt-28 md:pt-32 pb-16 md:pb-20 min-h-[500px]">
+    <section className="relative w-full text-slate-900 pt-20 sm:pt-24 md:pt-28 pb-12 md:pb-16 min-h-[480px]">
       {/* Full-Width Dynamic Banners Block */}
       {banners.length > 0 && (
-        <div className="relative z-10 w-full -mt-24 sm:-mt-28 md:-mt-32 mb-3 sm:mb-6 shadow-2xl h-[260px] sm:h-[360px] md:h-[460px] overflow-hidden">
+        <div className="relative z-10 w-full -mt-20 sm:-mt-24 md:-mt-28 mb-2 sm:mb-4 shadow-2xl h-[250px] sm:h-[350px] md:h-[430px] overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentBanner?.id || 'banner-fallback'}
@@ -463,17 +465,23 @@ export function HeroSection() {
                 );
               })()}
 
-              {/* Gradient overlay for contrast */}
-              <div className="absolute inset-0 bg-black/40 bg-gradient-to-r from-black/80 via-black/45 to-transparent" />
+              {/* Balanced Gradient overlay for contrast and crisp image details (lightened ~15%) */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-black/10" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/25 pointer-events-none" />
               
               {/* Banner Content (SAFE IN BETWEEN ARROWS WITH GENEROUS HORIZONTAL PADDING) */}
-              <div className="absolute inset-0 flex flex-col justify-center items-start text-left pt-20 sm:pt-24 md:pt-28">
+              <div className="absolute inset-0 flex flex-col justify-center items-start text-left pt-16 sm:pt-20 md:pt-24">
                 <div className="w-full max-w-7xl mx-auto px-14 sm:px-20 md:px-24">
-                  {currentBanner?.title && (
-                    <h2 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-2 sm:mb-3 drop-shadow-xl max-w-[85%] sm:max-w-[70%] leading-tight tracking-tight">
-                      {currentBanner.title}
-                    </h2>
-                  )}
+                  {(() => {
+                    const rawTitle = currentBanner?.title || "";
+                    const cleanTitle = rawTitle.replace(/\bVillaments\b/gi, "Villas");
+                    if (!cleanTitle) return null;
+                    return (
+                      <h2 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-2 sm:mb-3 drop-shadow-xl max-w-[85%] sm:max-w-[70%] leading-tight tracking-tight">
+                        {cleanTitle}
+                      </h2>
+                    );
+                  })()}
                   {currentBanner?.subtitle && (
                     <p className="text-xs sm:text-base md:text-lg text-slate-200 font-medium mb-3 sm:mb-5 max-w-[85%] sm:max-w-[65%] line-clamp-2 drop-shadow-md">
                       {currentBanner.subtitle}
@@ -541,7 +549,7 @@ export function HeroSection() {
         )}
 
         {/* Realtor.com Search Options Bar */}
-        <div className="flex items-center justify-center gap-2 sm:gap-8 mb-5 px-1 max-w-full relative z-50 overflow-visible">
+        <div className="flex items-center justify-center gap-2 sm:gap-8 mb-3.5 sm:mb-4.5 px-1 max-w-full relative z-50 overflow-visible">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
