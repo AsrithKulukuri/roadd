@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Check, X, IndianRupee, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,7 +32,12 @@ export function ModernBudgetDropdown({
   isMax = false,
 }: ModernBudgetDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close desktop dropdown on outside click
   useEffect(() => {
@@ -48,14 +54,13 @@ export function ModernBudgetDropdown({
 
   // Lock body scroll on mobile bottom sheet open
   useEffect(() => {
-    if (isOpen && typeof window !== "undefined" && window.innerWidth < 640) {
+    if (isOpen && typeof window !== "undefined") {
+      const prevOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
   }, [isOpen]);
 
   const selectedOption = options.find((opt) => opt.value === value);
@@ -96,107 +101,104 @@ export function ModernBudgetDropdown({
         />
       </button>
 
-      {/* ── Mobile Custom Luxury Bottom Sheet (Zero ugly native select!) ── */}
-      <AnimatePresence>
-        {isOpen && (
-          <div className="sm:hidden fixed inset-0 z-[200]">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setIsOpen(false)}
-              className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm"
-            />
+      {/* ── Mobile Portal-based Luxury Bottom Sheet ── */}
+      {mounted && typeof document !== "undefined" && createPortal(
+        <AnimatePresence>
+          {isOpen && (
+            <div className="sm:hidden fixed inset-0 z-[99999]">
+              {/* Solid Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setIsOpen(false)}
+                className="fixed inset-0 bg-black/85 backdrop-blur-md"
+              />
 
-            {/* Bottom Sheet Modal */}
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 28, stiffness: 320 }}
-              className="absolute bottom-0 left-0 right-0 max-h-[82vh] bg-slate-950 border-t border-slate-800 rounded-t-3xl shadow-2xl flex flex-col overflow-hidden pb-8 safe-bottom"
-            >
-              {/* Sheet Drag Handle */}
-              <div className="pt-3 pb-1 flex justify-center">
-                <div className="w-12 h-1.5 rounded-full bg-slate-800" />
-              </div>
-
-              {/* Sheet Header */}
-              <div className="px-5 py-3 border-b border-slate-800/80 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                    <IndianRupee className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-white tracking-tight">
-                      {isMax ? "Maximum Budget" : "Minimum Budget"}
-                    </h3>
-                    <p className="text-[10px] text-slate-400 font-medium">
-                      Select price range in Indian Rupees (₹)
-                    </p>
-                  </div>
+              {/* Bottom Sheet Drawer */}
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 28, stiffness: 320 }}
+                className="fixed bottom-0 left-0 right-0 z-[100000] max-h-[75vh] bg-slate-950 border-t border-slate-800 rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden pb-6 safe-bottom"
+              >
+                {/* Drag Handle */}
+                <div className="pt-3 pb-1.5 flex justify-center shrink-0">
+                  <div className="w-10 h-1 rounded-full bg-slate-700" />
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  className="w-7 h-7 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer active:scale-95"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+                {/* Header */}
+                <div className="px-5 py-3 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-950">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                      <IndianRupee className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-white tracking-tight">
+                        {isMax ? "Select Maximum Budget" : "Select Minimum Budget"}
+                      </h3>
+                      <p className="text-[10px] text-slate-400 font-medium">
+                        Indian Rupees (₹)
+                      </p>
+                    </div>
+                  </div>
 
-              {/* Options Grid / List */}
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1.5 no-scrollbar">
-                {options.map((opt, i) => {
-                  const isSelected = opt.value === value;
-                  return (
-                    <button
-                      key={`mob-sheet-opt-${opt.label}-${opt.value}-${i}`}
-                      type="button"
-                      onClick={() => handleSelect(opt.value)}
-                      className={cn(
-                        "w-full text-left px-4 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-between border",
-                        isSelected
-                          ? "bg-amber-500 text-slate-950 border-amber-400 shadow-md ring-2 ring-amber-500/20 font-black"
-                          : "bg-slate-900/90 text-slate-200 hover:text-white hover:bg-slate-850 border-slate-800/80"
-                      )}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className={cn(
-                          "w-2 h-2 rounded-full",
-                          isSelected ? "bg-slate-950" : "bg-amber-400/80"
-                        )} />
-                        <span className="text-sm font-extrabold">{opt.label}</span>
-                      </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer active:scale-90"
+                    aria-label="Close"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
 
-                      {isSelected && (
-                        <div className="w-5 h-5 rounded-full bg-slate-950 text-amber-400 flex items-center justify-center shadow-xs">
-                          <Check className="w-3 h-3 stroke-[3]" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                {/* Options List */}
+                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 no-scrollbar bg-slate-950">
+                  {options.map((opt, i) => {
+                    const isSelected = opt.value === value;
+                    return (
+                      <button
+                        key={`mob-portal-opt-${opt.label}-${opt.value}-${i}`}
+                        type="button"
+                        onClick={() => handleSelect(opt.value)}
+                        className={cn(
+                          "w-full text-left h-12 px-4 rounded-2xl text-xs transition-all cursor-pointer select-none flex items-center justify-between border",
+                          isSelected
+                            ? "bg-amber-500 text-slate-950 border-amber-400 font-black shadow-md ring-2 ring-amber-500/20"
+                            : "bg-slate-900 text-slate-100 font-bold border-slate-800 hover:bg-slate-850 hover:border-slate-700"
+                        )}
+                      >
+                        <span className="text-sm tracking-tight">{opt.label}</span>
+                        {isSelected && (
+                          <div className="w-5 h-5 rounded-full bg-slate-950 text-amber-400 flex items-center justify-center shadow-xs">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
 
-              {/* Done Action Button */}
-              <div className="px-4 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  className="w-full h-11 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-amber-500/40 rounded-full font-black text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-98 cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Done</span>
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                {/* Bottom Done CTA */}
+                <div className="px-4 pt-2.5 shrink-0 bg-slate-950">
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full h-11 bg-slate-900 hover:bg-slate-850 text-amber-400 border border-amber-500/40 rounded-full font-black text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-98 cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Done</span>
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* ── Desktop Floating Luxury Popover List ── */}
       <div className="hidden sm:block">
