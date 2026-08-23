@@ -229,9 +229,15 @@ function getLandmarkIcon(type: string) {
   });
 }
 
+const pricePillIconCache = new Map<string, L.DivIcon>();
+
 function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean, isBlinking: boolean = false) {
   if (typeof window === "undefined" || !L || !L.divIcon) return undefined;
   
+  const cacheKey = `${price}_${isSelected ? 1 : 0}_${hasSearch ? 1 : 0}_${isBlinking ? 1 : 0}`;
+  const cached = pricePillIconCache.get(cacheKey);
+  if (cached) return cached;
+
   const priceText = formatPriceCompact(price);
 
   const bg = isSelected || hasSearch ? '#F5A623' : '#0F172A';
@@ -246,7 +252,7 @@ function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean
 
   const blinkClass = isBlinking ? 'animate-pulse ring-4 ring-amber-500 shadow-2xl' : '';
 
-  return L.divIcon({
+  const icon = L.divIcon({
     className: `realtor-price-pill-marker ${blinkClass}`,
     html: `
       <div class="${hasSearch ? 'pulse-inner-pill' : ''}" style="
@@ -264,7 +270,7 @@ function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean
         align-items: center;
         justify-content: center;
         transform: ${scale};
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform 0.2s ease;
         z-index: ${isSelected || isBlinking ? 9999 : 1};
       ">
         ${hasSearch ? '<span style="font-size: 11px;">⭐</span>' : `<span style="color: ${isSelected || hasSearch ? '#020617' : '#F5A623'}; font-weight: 900;">₹</span>`}
@@ -274,6 +280,9 @@ function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean
     iconSize: [68, 30],
     iconAnchor: [34, 15],
   });
+
+  pricePillIconCache.set(cacheKey, icon);
+  return icon;
 }
 
 function LocationMarker({
@@ -777,7 +786,7 @@ function MapViewportListener({
   return null;
 }
 
-// Debounced version of the viewport listener
+// Debounced version of the viewport listener with change detection
 function MapViewportListenerDebounced({
   mapProperties,
   onVisibleItemsChange,
@@ -786,16 +795,17 @@ function MapViewportListenerDebounced({
   onVisibleItemsChange?: (visibleIds: string[]) => void;
 }) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastVisibleKeyRef = useRef<string>("");
+
   const map = useMapEvents({
     moveend: () => scheduleUpdate(),
     zoomend: () => scheduleUpdate(),
-    zoom: () => scheduleUpdate(),
   });
 
   const scheduleUpdate = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      if (!onVisibleItemsChange) return;
+      if (!onVisibleItemsChange || !map) return;
       const bounds = map.getBounds();
       const visibleIds = mapProperties
         .filter((p) => {
@@ -804,8 +814,13 @@ function MapViewportListenerDebounced({
           return bounds.contains(latLng);
         })
         .map((p) => p.id);
-      onVisibleItemsChange(visibleIds);
-    }, 300);
+      
+      const nextKey = visibleIds.join(",");
+      if (nextKey !== lastVisibleKeyRef.current) {
+        lastVisibleKeyRef.current = nextKey;
+        onVisibleItemsChange(visibleIds);
+      }
+    }, 250);
   }, [map, mapProperties, onVisibleItemsChange]);
 
   // Initial trigger
@@ -1943,6 +1958,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
             center={position ? [position.lat, position.lng] : [16.5062, 80.6480]}
             zoom={12}
             maxZoom={18}
+            preferCanvas={true}
             zoomControl={false}
             scrollWheelZoom={false}
             dragging={true}
@@ -1978,6 +1994,8 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                 url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                 maxNativeZoom={19}
                 maxZoom={20}
+                updateWhenIdle={true}
+                keepBuffer={4}
               />
             ) : mapLayerType === "terrain" ? (
               <TileLayer
@@ -1985,6 +2003,8 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
                 maxNativeZoom={18}
                 maxZoom={19}
+                updateWhenIdle={true}
+                keepBuffer={4}
               />
             ) : (
               <>
@@ -1993,6 +2013,8 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                   url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                   maxNativeZoom={18}
                   maxZoom={19}
+                  updateWhenIdle={true}
+                  keepBuffer={4}
                 />
                 {/* Place names labels overlay on satellite */}
                 <TileLayer
@@ -2000,6 +2022,8 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                   maxNativeZoom={19}
                   maxZoom={20}
                   opacity={0.9}
+                  updateWhenIdle={true}
+                  keepBuffer={4}
                 />
               </>
             )}
@@ -2084,22 +2108,6 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                   fillColor: "#EF4444",
                   fillOpacity: 0.15,
                   weight: 3.5,
-                }}
-              />
-            )}
-
-            {/* Animated Glowing Radar Line from User Location to Selected Property */}
-            {position && selectedProperty && selectedProperty.location?.latitude && selectedProperty.location?.longitude && (
-              <Polyline
-                positions={[
-                  [position.lat, position.lng],
-                  [selectedProperty.location.latitude, selectedProperty.location.longitude],
-                ]}
-                pathOptions={{
-                  color: "#F5A623",
-                  weight: 4,
-                  dashArray: "10, 12",
-                  className: "animated-radar-line",
                 }}
               />
             )}
