@@ -193,9 +193,6 @@ export default function HomePage() {
               />
               <div>
                 <p className="text-base font-black leading-none text-white sm:text-lg">Road Facing</p>
-                <p className="mt-1 max-w-[210px] text-[10px] font-semibold leading-tight text-amber-300 sm:max-w-none sm:text-xs">
-                  Real Projects. Real People. Real Updates.
-                </p>
               </div>
             </div>
             <a
@@ -220,8 +217,8 @@ export default function HomePage() {
               <p className="launch-reveal mt-4 max-w-2xl text-2xl font-black leading-tight text-amber-300 sm:mt-5 sm:text-4xl [animation-delay:0.24s]">
                 Launching soon.
               </p>
-              <p className="launch-reveal mx-auto mt-4 max-w-2xl text-sm font-medium leading-6 text-white/[0.72] sm:mt-5 sm:text-lg sm:leading-7 lg:mx-0 [animation-delay:0.32s]">
-                A sharper way to discover verified properties, new projects, and real on-ground updates across Vijayawada, Guntur, Amaravati, Mangalagiri, and Tadepalli.
+              <p className="launch-reveal mx-auto mt-4 max-w-md text-xs font-medium leading-5 text-white/60 sm:mt-5 sm:text-sm lg:mx-0 [animation-delay:0.32s]">
+                Verified property updates across the AP capital region.
               </p>
 
               <div className="launch-reveal mx-auto mt-6 max-w-xl sm:mt-8 lg:mx-0 [animation-delay:0.4s]">
