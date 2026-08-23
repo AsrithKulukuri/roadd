@@ -553,26 +553,85 @@ export function PropertyCard({
               </>
             )}
 
-            {/* Top Badges */}
-            <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-10">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight">
-                {formatPropertyType(property.propertyType)}
-              </span>
-              {(property.reraId || (property as any).reraApproved) && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight">
-                  <Shield className="w-3.5 h-3.5 text-amber-500" /> RERA
+            {/* Top Image Badges (Max 2 badges + '+N' chip, with dedicated margin so it never collides with actions) */}
+            {(() => {
+              const badges: React.ReactNode[] = [];
+              badges.push(
+                <span key="type" className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight truncate max-w-[120px]">
+                  {formatPropertyType(property.propertyType)}
                 </span>
-              )}
-              {property.isFeatured && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Featured
-                </span>
-              )}
-            </div>
+              );
+              if (property.reraId || (property as any).reraApproved) {
+                badges.push(
+                  <span key="rera" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight shrink-0">
+                    <Shield className="w-3 h-3 text-amber-500" /> RERA
+                  </span>
+                );
+              }
+              if (property.isFeatured) {
+                badges.push(
+                  <span key="feat" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight shrink-0">
+                    <Sparkles className="w-3 h-3 text-amber-500" /> Featured
+                  </span>
+                );
+              }
+
+              const visibleBadges = badges.slice(0, 2);
+              const extraCount = badges.length - 2;
+
+              return (
+                <div className="absolute top-2.5 left-2.5 max-w-[calc(100%-74px)] flex items-center gap-1 overflow-hidden z-10">
+                  {visibleBadges}
+                  {extraCount > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md shrink-0">
+                      +{extraCount}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Top Right Action Buttons (Share & Save) */}
+            {!actionMenu && !selectable && (
+              <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 pointer-events-auto">
+                <button
+                  type="button"
+                  className="w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    shareOnWhatsApp({ item: property, type: "property", source: "card" });
+                  }}
+                  title="Share property"
+                  aria-label="Share property"
+                >
+                  <Share2 className="h-3 w-3 text-slate-800 hover:text-amber-500 transition-colors" />
+                </button>
+                <button
+                  type="button"
+                  className="w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
+                  onClick={toggleSave}
+                  aria-label={isSaved ? "Remove from saved" : "Save property"}
+                  title={isSaved ? "Remove from saved" : "Save property"}
+                >
+                  <Heart
+                    className={cn(
+                      "h-3 w-3 transition-all",
+                      isSaved
+                        ? "fill-red-600 text-red-600 scale-110"
+                        : "text-slate-800",
+                    )}
+                  />
+                </button>
+              </div>
+            )}
+
+            {/* Subtle Bottom Gradient for Status readability (no dark overlay on top/middle) */}
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
 
             {/* Status Bottom Left */}
-            <div className="absolute bottom-3 left-3 z-10">
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold backdrop-blur-md border border-white/10 bg-slate-950/85 text-amber-400 shadow-sm">
+            <div className="absolute bottom-2.5 left-2.5 z-10">
+              <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold backdrop-blur-md border border-white/10 bg-slate-950/85 text-amber-400 shadow-sm">
                 {property.listingType === "rent" || property.listingType === "pg"
                   ? "For Rent"
                   : property.saleType === "resale"
@@ -582,41 +641,6 @@ export function PropertyCard({
                   : "New Construction"}
               </span>
             </div>
-
-            {/* Actions: Share & Heart Button Bottom Right */}
-            {!actionMenu && !selectable && (
-              <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 pointer-events-auto">
-                <button
-                  type="button"
-                  className="w-8 h-8 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    shareOnWhatsApp({ item: property, type: "property", source: "card" });
-                  }}
-                  title="Share property"
-                  aria-label="Share property"
-                >
-                  <Share2 className="h-3.5 w-3.5 text-slate-800 hover:text-amber-500 transition-colors" />
-                </button>
-                <button
-                  type="button"
-                  className="w-8 h-8 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
-                  onClick={toggleSave}
-                  aria-label={isSaved ? "Remove from saved" : "Save property"}
-                  title={isSaved ? "Remove from saved" : "Save property"}
-                >
-                  <Heart
-                    className={cn(
-                      "h-3.5 w-3.5 transition-all",
-                      isSaved
-                        ? "fill-red-600 text-red-600 scale-110"
-                        : "text-slate-800",
-                    )}
-                  />
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Details Section */}
@@ -671,10 +695,10 @@ export function PropertyCard({
 
             {/* Locked Bottom Price & Owner Row */}
             <div className="mt-auto pt-3 border-t border-border-default">
-              <div className="flex items-end justify-between gap-2">
-                <div className="flex-1 min-w-0">
+              <div className="flex items-end justify-between gap-3">
+                <div className="flex-1 min-w-0 pr-1">
                   <div className="flex items-center gap-1.5 mb-0.5">
-                    <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-extrabold">
+                    <p className="text-[9.5px] text-text-tertiary uppercase tracking-wider font-extrabold">
                       {property.listingType === "rent" || property.listingType === "pg"
                         ? "Rent"
                         : "Price"}
@@ -683,17 +707,17 @@ export function PropertyCard({
                       {getRefId(property)}
                     </span>
                   </div>
-                  <p className="font-extrabold text-text-primary text-sm sm:text-base leading-tight truncate">
+                  <p className="font-black text-text-primary text-base sm:text-lg leading-tight tracking-tight truncate">
                     {property.listingType === "rent" || property.listingType === "pg"
                       ? `${formatINR(property.price)}/mo`
                       : formatPriceCompact(property.price)}
                   </p>
                 </div>
-                <div className="text-right shrink-0 max-w-[130px] sm:max-w-[150px]">
-                  <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-extrabold">
+                <div className="text-right shrink-0 max-w-[115px] sm:max-w-[135px]">
+                  <p className="text-[9px] text-text-tertiary uppercase tracking-wider font-extrabold">
                     {property.ownerType ? property.ownerType.toUpperCase() : "OWNER"}
                   </p>
-                  <p className="text-xs sm:text-sm font-bold text-text-primary truncate flex items-center justify-end gap-1">
+                  <p className="text-xs font-semibold text-text-secondary truncate flex items-center justify-end gap-1 mt-0.5">
                     <span className="truncate">{brokerName}</span>
                     {property.isOwnerVerified && (
                       <BadgeCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />

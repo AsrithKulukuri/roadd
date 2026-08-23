@@ -250,31 +250,49 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
             </div>
           )}
 
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent pointer-events-none" />
+          {/* Top Badges (Max 2 badges + '+N' chip, with dedicated margin so it never collides with actions) */}
+          {(() => {
+            const badges: React.ReactNode[] = [];
+            badges.push(
+              <span key="type" className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight truncate max-w-[120px]">
+                {TC.label}
+              </span>
+            );
+            if (project.reraApproved || (project as any).reraId) {
+              badges.push(
+                <span key="rera" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight shrink-0">
+                  <Shield className="w-3 h-3 text-amber-500" /> RERA
+                </span>
+              );
+            }
+            if (project.isFeatured) {
+              badges.push(
+                <span key="feat" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight shrink-0">
+                  <Sparkles className="w-3 h-3 text-amber-500" /> Featured
+                </span>
+              );
+            }
 
-          {/* Top Badges */}
-          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-10">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight">
-              {TC.label}
-            </span>
-            {(project.reraApproved || (project as any).reraId) && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight">
-                <Shield className="w-3.5 h-3.5 text-amber-500" /> RERA
-              </span>
-            )}
-            {project.isFeatured && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Featured
-              </span>
-            )}
-          </div>
+            const visibleBadges = badges.slice(0, 2);
+            const extraCount = badges.length - 2;
+
+            return (
+              <div className="absolute top-2.5 left-2.5 max-w-[calc(100%-74px)] flex items-center gap-1 overflow-hidden z-10">
+                {visibleBadges}
+                {extraCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md shrink-0">
+                    +{extraCount}
+                  </span>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Top Right Action Buttons (Share & Save) */}
-          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 pointer-events-auto">
+          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 pointer-events-auto">
             <button
               type="button"
-              className="w-8 h-8 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
+              className="w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -283,11 +301,11 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
               title="Share project"
               aria-label="Share project"
             >
-              <Share2 className="h-3.5 w-3.5 text-slate-800 hover:text-amber-500 transition-colors" />
+              <Share2 className="h-3 w-3 text-slate-800 hover:text-amber-500 transition-colors" />
             </button>
             <button
               type="button"
-              className="w-8 h-8 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
+              className="w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -296,20 +314,23 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
               title={isSaved ? "Remove from saved" : "Save project"}
               aria-label={isSaved ? "Remove from saved" : "Save project"}
             >
-              <Heart className={cn("h-3.5 w-3.5 transition-all", isSaved ? "fill-red-500 text-red-500 scale-110" : "text-slate-800")} />
+              <Heart className={cn("h-3 w-3 transition-all", isSaved ? "fill-red-500 text-red-500 scale-110" : "text-slate-800")} />
             </button>
           </div>
 
+          {/* Subtle Bottom Gradient for Status/Media readability (no dark overlay on top/middle) */}
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+
           {/* Bottom Left Status */}
-          <div className="absolute bottom-3 left-3 z-10">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold backdrop-blur-md border border-white/10 bg-slate-950/85 text-amber-400 shadow-sm">
+          <div className="absolute bottom-2.5 left-2.5 z-10">
+            <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold backdrop-blur-md border border-white/10 bg-slate-950/85 text-amber-400 shadow-sm">
               {STATUS_LABELS[project.constructionStatus] || "New Launch"}
             </span>
           </div>
 
           {/* Bottom Right Media Indicator */}
           {project.images && project.images.length > 1 && (
-            <div className="absolute bottom-3 right-3 z-10">
+            <div className="absolute bottom-2.5 right-2.5 z-10">
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-950/80 text-white backdrop-blur-md border border-white/10 flex items-center gap-1 shadow-sm">
                 <ImageIcon className="w-3 h-3 text-amber-400" /> {project.images.length}
               </span>
@@ -379,30 +400,30 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
 
           {/* Locked Bottom Price & Builder Row */}
           <div className="mt-auto pt-3 border-t border-border-default">
-            <div className="flex items-end justify-between gap-2">
-              <div className="flex-1 min-w-0">
+            <div className="flex items-end justify-between gap-3">
+              <div className="flex-1 min-w-0 pr-1">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-extrabold">
+                  <p className="text-[9.5px] text-text-tertiary uppercase tracking-wider font-extrabold">
                     {isVenture ? "Starting Price" : "Price Range"}
                   </p>
                   <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                     {getRefId(project)}
                   </span>
                 </div>
-                <p className="font-extrabold text-text-primary text-sm sm:text-base leading-tight truncate">
+                <p className="font-black text-text-primary text-base sm:text-lg leading-tight tracking-tight truncate">
                   {priceLabel}
                 </p>
                 {pricePerUnit && pricePerUnit !== priceLabel && (
-                  <p className="text-[10px] text-text-secondary font-medium truncate mt-0.5">{pricePerUnit}</p>
+                  <p className="text-[10px] text-text-secondary font-semibold truncate mt-0.5">{pricePerUnit}</p>
                 )}
               </div>
-              <div className="text-right shrink-0 max-w-[130px] sm:max-w-[150px]">
-                <p className="text-[10px] text-text-tertiary uppercase tracking-wider font-extrabold">BUILDER</p>
-                <p className="text-xs sm:text-sm font-bold text-text-primary truncate flex items-center justify-end gap-1">
+              <div className="text-right shrink-0 max-w-[115px] sm:max-w-[135px]">
+                <p className="text-[9px] text-text-tertiary uppercase tracking-wider font-extrabold">BUILDER</p>
+                <p className="text-xs font-semibold text-text-secondary truncate flex items-center justify-end gap-1 mt-0.5">
                   <span className="truncate">{project.builderName}</span>
                 </p>
                 {totalLabel && !isVenture && (
-                  <p className="text-[10px] text-text-secondary truncate mt-0.5">{totalLabel}</p>
+                  <p className="text-[10px] text-text-tertiary truncate mt-0.5">{totalLabel}</p>
                 )}
               </div>
             </div>
