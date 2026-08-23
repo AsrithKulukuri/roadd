@@ -202,8 +202,6 @@ function UnifiedSearchPage() {
 
   // Unified filtering logic
   const filteredProperties = useMemo(() => {
-    if (activeTab === "projects") return [];
-    
     const parsedIntent = filters.query ? parseSearchIntent(filters.query) : null;
 
     return properties.filter((property) => {
@@ -231,11 +229,9 @@ function UnifiedSearchPage() {
 
       return true;
     });
-  }, [properties, filters, activeTab, searchParamsString, userLocation]);
+  }, [properties, filters, searchParamsString, userLocation]);
 
   const filteredProjects = useMemo(() => {
-    if (activeTab === "properties") return [];
-    
     const parsedIntent = filters.query ? parseSearchIntent(filters.query) : null;
 
     return projects.filter((project) => {
@@ -440,13 +436,16 @@ function UnifiedSearchPage() {
         return [];
       });
     } else {
-      items = [
-        ...filteredProperties.map(p => ({ type: 'property' as const, data: p, price: p.price, createdAt: p.createdAt })),
-        ...filteredProjects.map(p => {
-          const minPrice = p.configurations?.[0]?.priceMin || 0;
-          return { type: 'project' as const, data: p, price: minPrice, createdAt: p.createdAt };
-        })
-      ];
+      const propItems = activeTab !== "projects"
+        ? filteredProperties.map(p => ({ type: 'property' as const, data: p, price: p.price, createdAt: p.createdAt }))
+        : [];
+      const projItems = activeTab !== "properties"
+        ? filteredProjects.map(p => {
+            const minPrice = p.configurations?.[0]?.priceMin || 0;
+            return { type: 'project' as const, data: p, price: minPrice, createdAt: p.createdAt };
+          })
+        : [];
+      items = [...propItems, ...projItems];
     }
 
     const activeSort = (filters.sortBy || sortBy || "relevant").toLowerCase();
@@ -472,7 +471,7 @@ function UnifiedSearchPage() {
     });
 
     return items;
-  }, [filteredProperties, filteredProjects, properties, projects, sortBy, filters.sortBy, filters.query, viewMode, visibleMapIds]);
+  }, [filteredProperties, filteredProjects, properties, projects, sortBy, filters.sortBy, filters.query, viewMode, visibleMapIds, activeTab]);
 
   // 12 properties / projects initial load with Load More
   const pageSize = 12;
