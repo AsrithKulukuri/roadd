@@ -33,6 +33,22 @@ export function MobileBottomNav() {
   const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
   const [user, setUser] = useState<{ name: string } | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [showMapTooltip, setShowMapTooltip] = useState(false);
+
+  useEffect(() => {
+    // Show map discovery tooltip once for 3 seconds on initial home visit
+    try {
+      const hasSeen = sessionStorage.getItem("road_map_tooltip_seen");
+      if (!hasSeen && pathname === "/") {
+        setShowMapTooltip(true);
+        sessionStorage.setItem("road_map_tooltip_seen", "true");
+        const timer = setTimeout(() => {
+          setShowMapTooltip(false);
+        }, 3200);
+        return () => clearTimeout(timer);
+      }
+    } catch (e) {}
+  }, [pathname]);
 
   useEffect(() => {
     setMounted(true);
@@ -175,7 +191,7 @@ export function MobileBottomNav() {
   ];
 
   const menuLinks = [
-    { label: "New projects", href: "/search?type=projects" },
+    { label: "New Projects", href: "/search?type=projects" },
     { label: "Gated Communities", href: "/search?type=buy&propertyType=gated-community" },
     { label: "Commercial", href: "/search?type=buy&propertyType=commercial" },
     { label: "Agriculture", href: "/search?type=buy&propertyType=agricultural-land" },
@@ -186,11 +202,77 @@ export function MobileBottomNav() {
       {/* ── Fixed Mobile Bottom Nav Bar ── */}
       <nav 
         aria-label="Mobile Navigation"
-        className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-white/92 dark:bg-slate-950/92 backdrop-blur-2xl border-t border-slate-200/80 dark:border-slate-800/80 shadow-[0_-8px_30px_rgba(0,0,0,0.1)] py-1.5 px-3"
+        className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl border-t border-slate-200/80 dark:border-slate-800/80 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] py-1.5 px-3 safe-bottom"
       >
         <div className="grid grid-cols-5 items-center justify-around max-w-md mx-auto relative">
           {navItems.map((item) => {
             const Icon = item.icon;
+
+            // Highlighted Raised Center Map Action
+            if (item.id === "map") {
+              return (
+                <div key={item.id} className="relative flex justify-center items-center">
+                  {/* First-visit Map Tooltip */}
+                  <AnimatePresence>
+                    {showMapTooltip && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 6, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 6, scale: 0.9 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full bg-slate-950 text-white border border-amber-400/60 shadow-xl text-[9px] font-extrabold whitespace-nowrap z-50 flex items-center gap-1 pointer-events-none"
+                      >
+                        <Sparkles className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
+                        <span>Explore on map</span>
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-950" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <Link
+                    href={item.href || "/search?view=map"}
+                    onClick={() => haptic.medium()}
+                    className="flex flex-col items-center justify-center -mt-3.5 group cursor-pointer"
+                  >
+                    <motion.div
+                      whileTap={{ scale: 0.9 }}
+                      className={cn(
+                        "w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 relative border shadow-md",
+                        item.isActive
+                          ? "bg-amber-500 border-amber-300 text-slate-950 shadow-[0_4px_16px_rgba(245,158,11,0.45)] ring-2 ring-amber-500/30"
+                          : "bg-slate-900 border-amber-500/50 text-amber-400 shadow-[0_3px_12px_rgba(0,0,0,0.25)] hover:border-amber-400 hover:scale-105"
+                      )}
+                    >
+                      <MapPin
+                        className={cn(
+                          "w-5 h-5 transition-transform duration-200",
+                          item.isActive ? "stroke-[2.5] scale-110" : "stroke-[2.2]"
+                        )}
+                      />
+                      {/* Subtle location accent dot */}
+                      <span
+                        className={cn(
+                          "absolute top-2 right-2 w-1.5 h-1.5 rounded-full",
+                          item.isActive ? "bg-slate-950" : "bg-amber-400 ring-1 ring-slate-900"
+                        )}
+                      />
+                    </motion.div>
+
+                    <span
+                      className={cn(
+                        "text-[10px] tracking-tight mt-0.5 leading-tight font-extrabold",
+                        item.isActive
+                          ? "text-amber-500 dark:text-amber-400 font-black"
+                          : "text-slate-700 dark:text-slate-200"
+                      )}
+                    >
+                      {item.label}
+                    </span>
+                  </Link>
+                </div>
+              );
+            }
+
             const content = (
               <motion.div
                 whileTap={{ scale: 0.92 }}
