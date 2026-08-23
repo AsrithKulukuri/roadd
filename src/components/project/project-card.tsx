@@ -56,8 +56,18 @@ function formatINRCrore(amount: number): string {
 }
 
 function getPriceLabel(project: Project): string {
-  const allPrices = project.configurations.flatMap((c) => [c.priceMin, c.priceMax]).filter(Boolean);
-  if (!allPrices.length) return "Price on request";
+  const allPrices = project.configurations?.flatMap((c) => [c.priceMin, c.priceMax]).filter(Boolean) || [];
+  if (!allPrices.length) {
+    if (project.configurations?.length) {
+      const unitPrices = project.configurations.map((c) => c.pricePerUnit).filter(Boolean) as number[];
+      if (unitPrices.length) {
+        const uMin = Math.min(...unitPrices);
+        const uMax = Math.max(...unitPrices);
+        return uMin === uMax ? `₹${uMin.toLocaleString("en-IN")}/sq.yd` : `₹${uMin.toLocaleString("en-IN")} – ₹${uMax.toLocaleString("en-IN")}/sq.yd`;
+      }
+    }
+    return "Price on request";
+  }
   const min = Math.min(...allPrices);
   const max = Math.max(...allPrices);
   return min === max ? formatINRCrore(min) : `${formatINRCrore(min)} – ${formatINRCrore(max)}`;
@@ -370,7 +380,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
                 <p className="font-black text-slate-900 dark:text-white text-xs sm:text-sm leading-tight truncate">
                   {priceLabel}
                 </p>
-                {pricePerUnit && (
+                {pricePerUnit && pricePerUnit !== priceLabel && (
                   <p className="text-[10px] text-text-secondary font-medium truncate">{pricePerUnit}</p>
                 )}
               </div>
