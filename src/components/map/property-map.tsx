@@ -1689,12 +1689,18 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
           </div>
 
           {/* FLOATING BOTTOM CENTER: Search This Area + Search As I Move */}
-          <div className={cn("absolute bottom-4 left-1/2 -translate-x-1/2 z-[550] flex-col items-center gap-2 pointer-events-auto", showMapExplorer ? "hidden md:flex" : "flex")}>
+          <div
+            className={cn(
+              "absolute left-1/2 -translate-x-1/2 z-[520] flex-col items-center gap-2 pointer-events-auto transition-all duration-300",
+              showMapExplorer ? "hidden md:flex" : "flex",
+              showPropertiesTray ? "bottom-[340px] md:bottom-8" : "bottom-14 md:bottom-6"
+            )}
+          >
             {showSearchThisArea && (
               <button
                 type="button"
                 onClick={() => { setShowSearchThisArea(false); setMapSearchInput(mapSearchInput + ""); }}
-                className="px-5 py-2.5 bg-slate-950 text-white rounded-full text-xs font-extrabold flex items-center gap-2 shadow-2xl border border-[#f1a010] animate-in fade-in slide-in-from-bottom-2 duration-200 hover:bg-[#f1a010] hover:text-slate-950 transition-all active:scale-95 cursor-pointer"
+                className="px-5 py-2.5 bg-slate-950/95 text-white rounded-full text-xs font-extrabold flex items-center gap-2 shadow-2xl border border-[#f1a010] animate-in fade-in slide-in-from-bottom-2 duration-200 hover:bg-[#f1a010] hover:text-slate-950 transition-all active:scale-95 cursor-pointer backdrop-blur-md"
               >
                 <Search className="w-3.5 h-3.5" /> Search this area
               </button>
@@ -1703,10 +1709,10 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
               type="button"
               onClick={() => setSearchAsMove(!searchAsMove)}
               className={cn(
-                "px-4 py-2 rounded-full text-xs font-extrabold flex items-center gap-2 transition-all shadow-xl border active:scale-95 cursor-pointer",
+                "px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-extrabold flex items-center gap-2 transition-all shadow-xl border active:scale-95 cursor-pointer backdrop-blur-md",
                 searchAsMove
-                  ? "bg-slate-950 text-white border-[#f1a010]/80"
-                  : "bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-white"
+                  ? "bg-slate-950/95 text-white border-[#f1a010]/80"
+                  : "bg-white/95 text-slate-900 border-slate-300 dark:bg-slate-900/95 dark:text-white"
               )}
             >
               <div className={cn("w-2 h-2 rounded-full", searchAsMove ? "bg-[#f1a010] animate-pulse" : "bg-slate-400")} />
@@ -1898,21 +1904,27 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
           )}
 
           {/* FLOATING ZOOM + MY LOCATION CONTROLS (BOTTOM-RIGHT) */}
-          <div className={cn("absolute bottom-6 right-3 z-[500] flex-col gap-1 pointer-events-auto", showMapExplorer ? "hidden md:flex" : "flex")}>
+          <div
+            className={cn(
+              "absolute right-3 md:right-4 z-[500] flex-col gap-1.5 pointer-events-auto transition-all duration-300",
+              showMapExplorer ? "hidden md:flex" : "flex",
+              showPropertiesTray ? "bottom-[340px] md:bottom-8" : "bottom-16 md:bottom-8"
+            )}
+          >
             <button
               type="button"
               onClick={handleGetLocation}
               disabled={isLocating}
               title="My Location"
-              className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center hover:bg-[#f1a010] hover:text-slate-950 hover:border-[#f1a010] transition-colors active:scale-95 cursor-pointer mb-1 disabled:opacity-60"
+              className="w-10 h-10 md:w-9 md:h-9 rounded-xl bg-white/95 dark:bg-slate-900/95 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center hover:bg-[#f1a010] hover:text-slate-950 hover:border-[#f1a010] transition-all active:scale-95 cursor-pointer mb-1 disabled:opacity-60 backdrop-blur-md"
             >
-              <Navigation className={`w-4 h-4 ${isLocating ? "animate-spin" : ""}`} />
+              <Navigation className={`w-4 h-4 md:w-4 md:h-4 ${isLocating ? "animate-spin text-[#f1a010]" : ""}`} />
             </button>
             <button
               type="button"
               onClick={() => mapRef.current?.zoomIn()}
               title="Zoom In"
-              className="w-9 h-9 rounded-t-xl rounded-b-none bg-white dark:bg-slate-900 text-slate-700 dark:text-white border border-b-0 border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center font-bold text-lg hover:bg-[#f1a010] hover:text-slate-950 transition-colors active:scale-95 cursor-pointer"
+              className="w-10 h-10 md:w-9 md:h-9 rounded-t-xl rounded-b-none bg-white/95 dark:bg-slate-900/95 text-slate-800 dark:text-white border border-b-0 border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center font-black text-lg hover:bg-[#f1a010] hover:text-slate-950 transition-all active:scale-95 cursor-pointer backdrop-blur-md select-none"
             >
               +
             </button>
@@ -1920,7 +1932,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
               type="button"
               onClick={() => mapRef.current?.zoomOut()}
               title="Zoom Out"
-              className="w-9 h-9 rounded-b-xl rounded-t-none bg-white dark:bg-slate-900 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center font-bold text-lg hover:bg-[#f1a010] hover:text-slate-950 transition-colors active:scale-95 cursor-pointer"
+              className="w-10 h-10 md:w-9 md:h-9 rounded-b-xl rounded-t-none bg-white/95 dark:bg-slate-900/95 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center font-black text-lg hover:bg-[#f1a010] hover:text-slate-950 transition-all active:scale-95 cursor-pointer backdrop-blur-md select-none"
             >
               −
             </button>

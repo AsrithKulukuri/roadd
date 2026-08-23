@@ -129,7 +129,7 @@ export function AiAssistantWidget() {
             aria-label="Open AI Assistant"
             className={cn(
               "fixed left-4 lg:bottom-6 lg:left-auto lg:right-6 w-12 h-12 lg:w-14 lg:h-14 bg-slate-950 hover:bg-slate-900 rounded-full shadow-2xl flex items-center justify-center z-[45] text-white border border-white/20 ring-2 ring-white/10 cursor-pointer transition-all active:scale-95",
-              isNavHidden ? "bottom-6" : "bottom-20"
+              isMapView ? "bottom-16 left-3 sm:bottom-6 sm:left-4" : isNavHidden ? "bottom-6" : "bottom-20"
             )}
           >
             <div className="relative flex items-center justify-center">
