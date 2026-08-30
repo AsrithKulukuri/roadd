@@ -7,7 +7,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { useAuthSession } from "@/hooks/use-auth-session";
 
 // Fix for default marker icons in Leaflet with Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -54,45 +54,12 @@ interface PropertyLocationMapProps {
 
 export default function PropertyLocationMap({ latitude, longitude, title }: PropertyLocationMapProps) {
   const router = useRouter();
+  const { isLoggedIn, getLoginUrl } = useAuthSession();
   const [userLocation, setUserLocation] = useState<L.LatLng | null>(null);
   const [distance, setDistance] = useState<string | null>(null);
   const [loadingLoc, setLoadingLoc] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   const propertyPos = new L.LatLng(latitude, longitude);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      // 1. Check local storage session (WhatsApp OTP / Unified Login)
-      if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("road_user");
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            if (parsed.isLoggedIn) {
-              setIsLoggedIn(true);
-              return;
-            }
-          } catch (e) {}
-        }
-      }
-
-      // 2. Fallback to Supabase auth session
-      if (isSupabaseConfigured()) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            setIsLoggedIn(true);
-            return;
-          }
-        } catch (e) {}
-      }
-
-      setIsLoggedIn(false);
-    };
-
-    checkAuth();
-  }, []);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {

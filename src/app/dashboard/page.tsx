@@ -36,6 +36,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { logoutUser } from "@/hooks/use-auth-session";
 
 const countryCodes = [
   { code: "+91", country: "India", flag: "🇮🇳" },
@@ -345,14 +346,11 @@ export default function DashboardPage() {
   };
 
   const handleSignOut = async () => {
-    if (isSupabaseConfigured()) {
-      await supabase.auth.signOut();
-    }
-    localStorage.removeItem("road_user");
+    await logoutUser();
     setUser(null);
     setIsModalOpen(false);
     toast.success("Signed out successfully.");
-    router.push("/login");
+    window.location.href = "/login";
   };
 
   const stats = [

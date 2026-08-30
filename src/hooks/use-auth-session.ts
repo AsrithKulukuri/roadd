@@ -12,17 +12,54 @@ export interface SessionUser {
   isLoggedIn?: boolean;
 }
 
+function isValidSessionUser(data: unknown): data is SessionUser {
+  if (!data || typeof data !== "object") return false;
+  const user = data as Record<string, unknown>;
+  if (user.isLoggedIn !== true) return false;
+
+  const hasPhone = typeof user.phone === "string" && user.phone.trim().length >= 8;
+  const hasEmail = typeof user.email === "string" && user.email.includes("@");
+  const hasId =
+    typeof user.id === "string" &&
+    user.id.trim().length > 0 &&
+    user.id !== "undefined" &&
+    user.id !== "null";
+
+  return Boolean(hasPhone || hasEmail || hasId);
+}
+
+export async function logoutUser() {
+  if (isSupabaseConfigured()) {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("Supabase sign out error:", e);
+    }
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem("road_user");
+      // Clear cookie session flags
+      document.cookie = "road_user=; Max-Age=0; path=/; SameSite=Lax";
+    } catch {}
+
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new CustomEvent("road_auth_changed"));
+  }
+}
+
 export function useAuthSession() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const checkAuth = useCallback(async () => {
-    // 1. Check Supabase Auth session first
+    // 1. Check active Supabase Auth session first
     if (isSupabaseConfigured()) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
+        if (session?.user?.id) {
           const u = session.user;
           const sessionUser: SessionUser = {
             id: u.id,
@@ -42,38 +79,19 @@ export function useAuthSession() {
       }
     }
 
-    // 2. Check localStorage session (WhatsApp OTP / unified login / dev session)
+    // 2. Check localStorage fallback (WhatsApp OTP / verified local session)
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem("road_user");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed.isLoggedIn) {
+        const raw = localStorage.getItem("road_user");
+        if (raw && raw !== "true" && raw !== "null" && raw !== "undefined") {
+          const parsed = JSON.parse(raw);
+          if (isValidSessionUser(parsed)) {
             setUser({
               id: parsed.id,
               name: parsed.name || "User",
               email: parsed.email || "",
               phone: parsed.phone || "",
               role: parsed.role || "buyer",
-              isLoggedIn: true,
-            });
-            setIsLoggedIn(true);
-            setIsLoading(false);
-            return;
-          }
-        }
-
-        // 3. Check intentional admin bypass session
-        const adminStored = localStorage.getItem("road_admin_user");
-        if (adminStored) {
-          const parsedAdmin = JSON.parse(adminStored);
-          if (parsedAdmin.isLoggedIn || parsedAdmin.isAdmin || parsedAdmin.role === "admin") {
-            setUser({
-              id: parsedAdmin.id || "admin",
-              name: parsedAdmin.name || "Admin",
-              email: parsedAdmin.email || "admin@road.com",
-              phone: parsedAdmin.phone || "",
-              role: "admin",
               isLoggedIn: true,
             });
             setIsLoggedIn(true);
@@ -94,19 +112,24 @@ export function useAuthSession() {
   useEffect(() => {
     checkAuth();
 
-    // Listen for storage events (e.g. login in another tab or modal)
+    // Listen for storage events (e.g. login/logout in another tab or window)
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === "road_user" || e.key === "road_admin_user") {
+      if (e.key === "road_user" || !e.key) {
         checkAuth();
       }
     };
-    window.addEventListener("storage", handleStorage);
+    const handleCustomAuth = () => {
+      checkAuth();
+    };
 
-    // Listen for Supabase auth state changes if configured
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("road_auth_changed", handleCustomAuth);
+
+    // Listen for Supabase auth state changes
     let unsubscribeSupabase: (() => void) | undefined;
     if (isSupabaseConfigured()) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (session?.user) {
+        if (session?.user?.id) {
           const u = session.user;
           setUser({
             id: u.id,
@@ -119,11 +142,25 @@ export function useAuthSession() {
           setIsLoggedIn(true);
           setIsLoading(false);
         } else {
-          // If Supabase signed out, verify if local storage still has session
-          const stored = typeof window !== "undefined" ? localStorage.getItem("road_user") : null;
-          if (!stored) {
+          // If Supabase signed out, verify if local storage still has verified session
+          const raw = typeof window !== "undefined" ? localStorage.getItem("road_user") : null;
+          if (!raw) {
             setUser(null);
             setIsLoggedIn(false);
+            setIsLoading(false);
+          } else {
+            try {
+              const parsed = JSON.parse(raw);
+              if (!isValidSessionUser(parsed)) {
+                setUser(null);
+                setIsLoggedIn(false);
+                setIsLoading(false);
+              }
+            } catch {
+              setUser(null);
+              setIsLoggedIn(false);
+              setIsLoading(false);
+            }
           }
         }
       });
@@ -132,12 +169,13 @@ export function useAuthSession() {
 
     return () => {
       window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("road_auth_changed", handleCustomAuth);
       if (unsubscribeSupabase) unsubscribeSupabase();
     };
   }, [checkAuth]);
 
   /**
-   * Helper to construct login redirect URL
+   * Helper to construct login redirect URL preserving return destination
    */
   const getLoginUrl = useCallback((returnPath?: string) => {
     const target = returnPath || (typeof window !== "undefined" ? (window.location.pathname + window.location.search) : "/");
@@ -152,3 +190,4 @@ export function useAuthSession() {
     refreshAuth: checkAuth,
   };
 }
+

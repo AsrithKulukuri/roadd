@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { navigationLinks } from "@/config/site";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
+import { logoutUser } from "@/hooks/use-auth-session";
 import { PostRequirementModal } from "@/components/shared/post-requirement-modal";
 import { haptic } from "@/lib/haptics";
 
@@ -141,10 +142,7 @@ export function MobileBottomNav() {
   }
 
   const handleSignOut = async () => {
-    if (isSupabaseConfigured()) {
-      await supabase.auth.signOut();
-    }
-    localStorage.removeItem("road_user");
+    await logoutUser();
     setUser(null);
     toast.success("Signed out successfully");
     setIsMenuOpen(false);

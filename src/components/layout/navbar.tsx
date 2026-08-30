@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { navigationLinks } from "@/config/site";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
+import { logoutUser } from "@/hooks/use-auth-session";
 import { PostRequirementModal } from "@/components/shared/post-requirement-modal";
 
 export function Navbar() {
@@ -118,14 +119,7 @@ export function Navbar() {
   }, []);
 
   const handleSignOut = async () => {
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.auth.signOut();
-      } catch (err) {
-        console.error("Supabase signout failed:", err);
-      }
-    }
-    localStorage.removeItem("road_user");
+    await logoutUser();
     setUser(null);
     toast.success("Signed out successfully");
     window.location.href = "/";

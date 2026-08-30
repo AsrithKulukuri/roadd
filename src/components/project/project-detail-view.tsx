@@ -1295,10 +1295,10 @@ export function ProjectDetailView({
                         </div>
                         <div>
                           <h4 className="font-heading font-black text-slate-900 dark:text-white text-sm sm:text-base">
-                            Log in to view builder contact details
+                            Log in to view builder contact
                           </h4>
                           <p className="text-xs text-slate-600 dark:text-slate-300">
-                            Sign in to connect directly on WhatsApp, view direct phone numbers, and get payment schedules.
+                            Sign in to call or WhatsApp builder
                           </p>
                         </div>
                       </div>
@@ -1315,7 +1315,7 @@ export function ProjectDetailView({
                     <div className="space-y-3 pt-2">
                       <div className="flex items-center gap-2">
                         <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                          <CheckCircle2 className="w-3 h-3" /> Builder Contact Unlocked
+                          <CheckCircle2 className="w-3 h-3" /> BUILDER CONTACT UNLOCKED
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-3">
@@ -1373,14 +1373,14 @@ export function ProjectDetailView({
                   <h3 className="font-bold text-text-primary">Contact Builder</h3>
                   {isLoggedIn && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                      <CheckCircle2 className="w-3 h-3" /> Unlocked
+                      <CheckCircle2 className="w-3 h-3" /> BUILDER CONTACT UNLOCKED
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-text-tertiary mb-4">
                   {isLoggedIn
                     ? "Get exact pricing, payment plans & site visit"
-                    : "Sign in to view direct phone numbers, WhatsApp, and get exact pricing & payment plans"}
+                    : "Sign in to call or WhatsApp builder"}
                 </p>
 
                 <div className="space-y-3">
@@ -1398,13 +1398,14 @@ export function ProjectDetailView({
                       {phone && (
                         <a href={phone} className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-sm active:scale-98">
                           <Phone className="w-4 h-4 text-amber-500 shrink-0" />
-                          <span>Call Builder ({project.builderPhone})</span>
+                          <span>Call Builder {project.builderPhone ? `(${project.builderPhone})` : ""}</span>
                         </a>
                       )}
                       {whatsapp && (
                         <a href={whatsapp} target="_blank" rel="noopener noreferrer"
                           className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm transition-all shadow-sm active:scale-98">
-                          <MessageCircle className="w-4 h-4 shrink-0" /> WhatsApp
+                          <MessageCircle className="w-4 h-4 shrink-0" />
+                          <span>WhatsApp Builder</span>
                         </a>
                       )}
                     </>

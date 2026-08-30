@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
+import { logoutUser } from "@/hooks/use-auth-session";
 
 const sidebarLinks = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -85,18 +86,9 @@ export default function DashboardLayout({
   }, []);
 
   const handleSignOut = async () => {
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-      } catch (err: any) {
-        console.error("Error signing out via Supabase:", err);
-      }
-    }
-    
-    localStorage.removeItem("road_user");
+    await logoutUser();
     toast.success("Signed out successfully");
-    router.push("/login");
+    window.location.href = "/login";
   };
 
   const isProfileIncomplete = user && !user.isProfileComplete && user.role !== "admin";
