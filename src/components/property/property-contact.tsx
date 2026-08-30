@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TourBookingModal } from "@/components/property/tour-booking-modal";
 import { useAuthSession } from "@/hooks/use-auth-session";
+import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
 import type { Property } from "@/types/property";
 
 interface PropertyContactProps {
@@ -55,7 +56,7 @@ export function PropertyContact({ property }: PropertyContactProps) {
     );
 
     // TODO: For future production hardening, strip private owner contact fields from unauthenticated public Supabase queries / API responses
-    const targetPhone = (property.ownerPhone || "918977311418").replace(/\D/g, "");
+    const targetPhone = formatWhatsAppPhone(property.ownerPhone || "918977311418");
 
     setTimeout(() => {
       setIsSubmitting(false);

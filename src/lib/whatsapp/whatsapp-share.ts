@@ -161,6 +161,29 @@ export async function trackWhatsAppShare(propertyId: string, refId: string, sour
 }
 
 /**
+ * Formats any phone number into standard international format for WhatsApp wa.me links
+ * e.g., "8885005567" -> "918885005567"
+ *       "+91 88850 05567" -> "918885005567"
+ *       "08885005567" -> "918885005567"
+ */
+export function formatWhatsAppPhone(phone?: string | null): string {
+  if (!phone) return "";
+  let digits = String(phone).replace(/\D/g, "");
+  
+  // Strip leading zero if 11 digits (e.g. 08885005567)
+  if (digits.startsWith("0") && digits.length === 11) {
+    digits = digits.slice(1);
+  }
+  
+  // Standard 10-digit Indian numbers default to country code 91
+  if (digits.length === 10) {
+    digits = `91${digits}`;
+  }
+  
+  return digits;
+}
+
+/**
  * Mode 1: Opens WhatsApp share with encoded message or direct recipient phone
  */
 export function shareOnWhatsApp({
@@ -178,7 +201,7 @@ export function shareOnWhatsApp({
 
   let whatsappUrl = "";
   if (recipientPhone && recipientPhone.trim()) {
-    const cleanPhone = recipientPhone.replace(/\D/g, "");
+    const cleanPhone = formatWhatsAppPhone(recipientPhone);
     whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedText}`;
   } else {
     // Standard WhatsApp Share deep link

@@ -20,7 +20,7 @@ import { ProjectFacilitiesGrid } from "@/components/project/project-facilities-g
 import { ZoomableImageModal } from "@/components/ui/zoomable-image-modal";
 import { getRefId } from "@/lib/ref-id";
 import { shareItem } from "@/lib/share-utils";
-import { shareOnWhatsApp } from "@/lib/whatsapp/whatsapp-share";
+import { shareOnWhatsApp, formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
 import { WhatsAppIcon } from "@/components/property/whatsapp-share-button";
 import { toast } from "sonner";
 import { WatermarkOverlay } from "@/components/shared/watermark-overlay";
@@ -199,8 +199,10 @@ export function ProjectDetailView({
   const sideImages = galleryAll.filter((i) => i.url !== heroImage);
 
   // WhatsApp URL & Phone (TODO: production hardening query stripping)
-  const whatsapp = project.builderWhatsapp
-    ? `https://wa.me/${project.builderWhatsapp.replace(/\D/g, "")}?text=Hi, I am interested in ${project.name}`
+  const rawWhatsapp = project.builderWhatsapp || project.builderPhone;
+  const cleanWhatsappNumber = rawWhatsapp ? formatWhatsAppPhone(rawWhatsapp) : null;
+  const whatsapp = cleanWhatsappNumber
+    ? `https://wa.me/${cleanWhatsappNumber}?text=${encodeURIComponent(`Hi, I am interested in ${project.name}`)}`
     : null;
   const phone = project.builderPhone ? `tel:${project.builderPhone.replace(/\s/g, "")}` : null;
   const targetRedirect = `/projects/${project.slug || slug}`;
