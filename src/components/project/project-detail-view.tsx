@@ -25,6 +25,7 @@ import { WhatsAppIcon } from "@/components/property/whatsapp-share-button";
 import { toast } from "sonner";
 import { WatermarkOverlay } from "@/components/shared/watermark-overlay";
 import { useAuthSession } from "@/hooks/use-auth-session";
+import { triggerProjectViewNotification } from "@/lib/project-notifications";
 
 // ─── Lazy map (SSR unsafe) ─────────────────────────────────────────────────────
 const ProjectMapView = dynamic(
@@ -164,42 +165,12 @@ export function ProjectDetailView({
     }
   }, [isLoading, isLoggedIn, project?.slug, slug, getLoginUrl, router]);
 
-  // Dispatch background Wasender notification to Builder once per session
+  // Detail-page fallback: Send notification on landing if not already triggered at click-time
   useEffect(() => {
-    if (!isLoggedIn || !user || !project?.id) return;
-    const viewerPhone = (user.phone || "").trim();
-    const viewerName = (user.name || "").trim();
-    if (!viewerPhone || !viewerName) return;
-
-    const dedupeKey = `road_project_view_notified:${project.id}:${viewerPhone}`;
-    if (typeof window !== "undefined" && window.sessionStorage) {
-      const alreadyNotified = sessionStorage.getItem(dedupeKey);
-      if (alreadyNotified) return;
-
-      sessionStorage.setItem(dedupeKey, "1");
-
-      // Non-blocking background notification dispatch
-      fetch("/api/projects/view-notification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: project.id,
-          projectSlug: project.slug || slug,
-          projectName: project.name,
-          projectRefId: getRefId(project),
-          builderPhone: project.builderPhone,
-          builderWhatsapp: project.builderWhatsapp,
-          viewer: {
-            name: viewerName,
-            phone: viewerPhone,
-            email: user.email || "",
-          },
-        }),
-      }).catch((err) => {
-        console.warn("[PROJECT VIEW NOTIFICATION CLIENT ERROR]:", err);
-      });
+    if (isLoggedIn && user && project) {
+      triggerProjectViewNotification(project, user);
     }
-  }, [isLoggedIn, user, project?.id, project?.slug, project?.name, project?.builderPhone, project?.builderWhatsapp, slug]);
+  }, [isLoggedIn, user, project]);
 
   useEffect(() => {
     if (!project) return;

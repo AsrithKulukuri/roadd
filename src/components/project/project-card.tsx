@@ -10,6 +10,7 @@ import { cn, formatPriceCompact } from "@/lib/utils";
 import type { Project, ProjectType } from "@/types/project";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { useAuthSession } from "@/hooks/use-auth-session";
+import { triggerProjectViewNotification } from "@/lib/project-notifications";
 import { getRefId } from "@/lib/ref-id";
 import { shareItem } from "@/lib/share-utils";
 import { shareOnWhatsApp } from "@/lib/whatsapp/whatsapp-share";
@@ -135,14 +136,20 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
     : null;
 
   const router = useRouter();
-  const { isLoggedIn, getLoginUrl } = useAuthSession();
+  const { isLoggedIn, isLoading, user, getLoginUrl } = useAuthSession();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleCardClick = (e: React.MouseEvent) => {
-    if (!isLoggedIn) {
+    if (!isLoggedIn && !isLoading) {
       e.preventDefault();
       toast.info("Please log in to view project details");
       router.push(getLoginUrl(`/projects/${project.slug}`));
+      return;
+    }
+
+    if (isLoggedIn && user) {
+      // Fire notification immediately at click-time
+      triggerProjectViewNotification(project, user);
     }
   };
 
@@ -218,10 +225,13 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
         transition={{ duration: 0.3, delay: index * 0.05 }}
         onClick={(e) => {
           e.preventDefault();
-          if (!isLoggedIn) {
+          if (!isLoggedIn && !isLoading) {
             toast.info("Please log in to view project details");
             router.push(getLoginUrl(`/projects/${project.slug}`));
             return;
+          }
+          if (isLoggedIn && user) {
+            triggerProjectViewNotification(project, user);
           }
           setIsExpanded(true);
         }}
