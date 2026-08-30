@@ -111,6 +111,10 @@ export class WasenderService {
     const endpoints = getEndpointUrls();
     let lastError = "";
 
+    // Mimic human pacing with randomized delay (800ms - 2000ms) to maintain high account health
+    const jitterMs = Math.floor(Math.random() * 1200) + 800;
+    await new Promise((resolve) => setTimeout(resolve, jitterMs));
+
     for (const endpoint of endpoints) {
       try {
         const response = await axios.post<WasenderAPIResponse>(

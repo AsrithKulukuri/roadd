@@ -93,11 +93,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // In-memory recipient throttle cache to avoid sending >1 alert per 30s per builder number
+    const globalThrottle = (globalThis as any).__wasender_recipient_throttle || new Map<string, number>();
+    (globalThis as any).__wasender_recipient_throttle = globalThrottle;
+
+    const lastSentTime = globalThrottle.get(cleanRecipientPhone);
+    const nowMs = Date.now();
+
+    if (lastSentTime && nowMs - lastSentTime < 30000) {
+      console.log(`[PROJECT VIEW NOTIFICATION] Throttled (${Math.round((30000 - (nowMs - lastSentTime)) / 1000)}s) to protect WhatsApp quality rating`);
+      return NextResponse.json({
+        success: true,
+        message: "Message queued / throttled for recipient protection",
+        throttled: true,
+      });
+    }
+    globalThrottle.set(cleanRecipientPhone, nowMs);
+
     // 4. Construct project URL
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://roadd-three.vercel.app";
     const projectUrl = `${siteUrl}/projects/${resolvedSlug || projectId}`;
 
-    // 5. Format formatted timestamp (IST)
+    // 5. Format timestamp (IST)
     const now = new Date();
     const formattedDate = now.toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
@@ -105,23 +122,33 @@ export async function POST(req: NextRequest) {
       timeStyle: "short",
     });
 
-    // 6. Build concise WhatsApp message
-    const message = [
-      `*New project view on ROAD FACING*`,
-      ``,
-      `*Project:* ${resolvedName}`,
-      `*Ref:* ${resolvedRef}`,
-      `*Viewer:* ${viewerName}`,
-      `*Phone:* ${viewerPhone}`,
-      `*Email:* ${viewerEmail}`,
-      `*Viewed at:* ${formattedDate} IST`,
-      ``,
-      `This user viewed your project details and may be interested.`,
-      ``,
-      `*Project link:* ${projectUrl}`,
-    ].join("\n");
+    // 6. Natural greeting variations to avoid repetitive spam classification
+    const greetings = [
+      `*New Buyer Interest on ROAD FACING* 🏢`,
+      `*Verified Buyer Inquiry — ROAD FACING* ✨`,
+      `*Project Lead Alert — ROAD FACING* 📍`,
+    ];
+    const headerGreeting = greetings[Math.floor(Math.random() * greetings.length)];
 
-    // 7. Dispatch via Wasender
+    // 7. Build compliant, personalized message with interactive question & opt-out footer
+    const message = [
+      headerGreeting,
+      ``,
+      `Hello! A verified buyer is actively exploring *${resolvedName}* (Ref: ${resolvedRef}).`,
+      ``,
+      `👤 *Buyer Name:* ${viewerName}`,
+      `📞 *Phone Number:* ${viewerPhone}`,
+      viewerEmail && viewerEmail !== "Not provided" ? `✉️ *Email:* ${viewerEmail}` : null,
+      `🕒 *Time:* ${formattedDate} IST`,
+      ``,
+      `🔗 *View Project:* ${projectUrl}`,
+      ``,
+      `💬 *Would you like us to schedule a site visit with this buyer?* Reply *YES* or call them directly at ${viewerPhone}.`,
+      ``,
+      `_Reply 'STOP' to unsubscribe from view alerts._`,
+    ].filter(Boolean).join("\n");
+
+    // 8. Dispatch via Wasender (with human jitter delay)
     const sendResult = await WasenderService.sendTextMessage(cleanRecipientPhone, message);
 
     return NextResponse.json({
