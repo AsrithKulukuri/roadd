@@ -167,7 +167,7 @@ export function ProjectDetailView({
 
   // Detail-page fallback: Send notification on landing if not already triggered at click-time
   useEffect(() => {
-    if (isLoggedIn && user && project) {
+    if (isLoggedIn && project) {
       triggerProjectViewNotification(project, user);
     }
   }, [isLoggedIn, user, project]);

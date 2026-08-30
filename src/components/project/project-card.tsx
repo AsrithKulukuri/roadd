@@ -147,7 +147,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
       return;
     }
 
-    if (isLoggedIn && user) {
+    if (isLoggedIn) {
       // Fire notification immediately at click-time
       triggerProjectViewNotification(project, user);
     }
@@ -230,7 +230,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
             router.push(getLoginUrl(`/projects/${project.slug}`));
             return;
           }
-          if (isLoggedIn && user) {
+          if (isLoggedIn) {
             triggerProjectViewNotification(project, user);
           }
           setIsExpanded(true);

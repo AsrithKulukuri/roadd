@@ -26,13 +26,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const viewerName = (viewer.name || "").trim();
+    const viewerName = (viewer.name || "").trim() || "Interested Buyer";
     const viewerPhone = (viewer.phone || "").trim();
     const viewerEmail = (viewer.email || "").trim() || "Not provided";
 
-    if (!viewerName || !viewerPhone) {
+    if (!viewerPhone || viewerPhone.length < 8) {
       return NextResponse.json(
-        { success: false, reason: "Viewer name and phone are required" },
+        { success: false, reason: "Viewer phone is required" },
         { status: 200 }
       );
     }
@@ -41,7 +41,12 @@ export async function POST(req: NextRequest) {
     let resolvedName = projectName || "ROAD Project";
     let resolvedRef = projectRefId || "";
     let resolvedSlug = projectSlug || "";
-    let resolvedBuilderPhone = builderWhatsapp || builderPhone || "";
+    let resolvedBuilderPhone =
+      builderWhatsapp ||
+      builderPhone ||
+      body.builder?.whatsapp ||
+      body.builder?.phone ||
+      "";
 
     // Server-side verification via Supabase if possible
     const supabase = getSupabaseClient();
@@ -59,11 +64,14 @@ export async function POST(req: NextRequest) {
           resolvedSlug = dbProject.slug || resolvedSlug;
           resolvedRef = resolvedRef || getRefId(dbProject);
           resolvedBuilderPhone =
+            resolvedBuilderPhone ||
             dbProject.builder_whatsapp ||
             dbProject.builderWhatsapp ||
             dbProject.builder_phone ||
             dbProject.builderPhone ||
-            resolvedBuilderPhone;
+            dbProject.builder?.whatsapp ||
+            dbProject.builder?.phone ||
+            "";
         }
       } catch (dbErr) {
         console.warn("[PROJECT VIEW NOTIFICATION] Could not fetch project from DB:", dbErr);
@@ -74,12 +82,13 @@ export async function POST(req: NextRequest) {
       resolvedRef = `PRJ-${String(projectId || resolvedSlug || "ROAD").slice(0, 6).toUpperCase()}`;
     }
 
-    // 3. Resolve recipient phone number
-    const cleanRecipientPhone = formatWhatsAppPhone(resolvedBuilderPhone);
+    // 3. Resolve recipient phone number (with verified platform fallback if project has no builder contact)
+    const DEFAULT_BUILDER_PHONE = "918885005567";
+    const cleanRecipientPhone = formatWhatsAppPhone(resolvedBuilderPhone || DEFAULT_BUILDER_PHONE);
     if (!cleanRecipientPhone || cleanRecipientPhone.length < 10) {
-      console.log(`[PROJECT VIEW NOTIFICATION] Skipped: No valid builder contact for ${resolvedName}`);
+      console.log(`[PROJECT VIEW NOTIFICATION] Skipped: Invalid recipient phone for ${resolvedName}`);
       return NextResponse.json(
-        { success: false, reason: "No valid builder phone/WhatsApp found for this project" },
+        { success: false, reason: "Invalid builder phone number" },
         { status: 200 }
       );
     }
