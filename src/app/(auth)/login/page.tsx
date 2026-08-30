@@ -8,7 +8,7 @@ import { PhoneInput } from "@/components/auth/phone-input";
 import { OTPInput } from "@/components/auth/otp-input";
 import { CompleteProfileStep } from "@/components/auth/complete-profile-step";
 import { useWhatsAppAuth } from "@/hooks/useWhatsAppAuth";
-import { MessageSquare, Lock, UserCheck } from "lucide-react";
+import { MessageSquare, Lock, UserCheck, ShieldCheck } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
@@ -151,6 +151,16 @@ function LoginForm() {
             {activeStep === "profile" && "Please enter your name and email to complete your account."}
           </p>
         </div>
+
+        {/* Project View Privacy Notice (Only when redirecting to a project) */}
+        {redirectTarget.startsWith("/projects") && (
+          <div className="mb-6 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-2.5 shadow-xs">
+            <ShieldCheck className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              <strong className="font-semibold text-amber-950 dark:text-amber-200">Project Privacy Notice:</strong> By viewing project details, your name and phone may be shared with the builder for follow-up.
+            </p>
+          </div>
+        )}
 
         {/* Step 1: Phone Input */}
         {activeStep === "phone" && (

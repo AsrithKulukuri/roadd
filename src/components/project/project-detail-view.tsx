@@ -124,7 +124,7 @@ export function ProjectDetailView({
   initialProject?: Project | null;
 }) {
   const router = useRouter();
-  const { isLoggedIn, getLoginUrl } = useAuthSession();
+  const { isLoggedIn, isLoading, user, getLoginUrl } = useAuthSession();
   const { projects, fetchProjects } = useProjectsStore();
 
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
@@ -156,6 +156,51 @@ export function ProjectDetailView({
 
   const project = projects.find((p) => (p.slug === slug || p.id === slug) && (p.isPublished || true)) || initialProject;
 
+  // Auto-redirect unauthenticated users to login
+  useEffect(() => {
+    if (!isLoading && !isLoggedIn) {
+      const targetUrl = getLoginUrl(`/projects/${project?.slug || slug}`);
+      router.replace(targetUrl);
+    }
+  }, [isLoading, isLoggedIn, project?.slug, slug, getLoginUrl, router]);
+
+  // Dispatch background Wasender notification to Builder once per session
+  useEffect(() => {
+    if (!isLoggedIn || !user || !project?.id) return;
+    const viewerPhone = (user.phone || "").trim();
+    const viewerName = (user.name || "").trim();
+    if (!viewerPhone || !viewerName) return;
+
+    const dedupeKey = `road_project_view_notified:${project.id}:${viewerPhone}`;
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      const alreadyNotified = sessionStorage.getItem(dedupeKey);
+      if (alreadyNotified) return;
+
+      sessionStorage.setItem(dedupeKey, "1");
+
+      // Non-blocking background notification dispatch
+      fetch("/api/projects/view-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: project.id,
+          projectSlug: project.slug || slug,
+          projectName: project.name,
+          projectRefId: getRefId(project),
+          builderPhone: project.builderPhone,
+          builderWhatsapp: project.builderWhatsapp,
+          viewer: {
+            name: viewerName,
+            phone: viewerPhone,
+            email: user.email || "",
+          },
+        }),
+      }).catch((err) => {
+        console.warn("[PROJECT VIEW NOTIFICATION CLIENT ERROR]:", err);
+      });
+    }
+  }, [isLoggedIn, user, project?.id, project?.slug, project?.name, project?.builderPhone, project?.builderWhatsapp, slug]);
+
   useEffect(() => {
     if (!project) return;
     const observer = new IntersectionObserver(
@@ -179,6 +224,44 @@ export function ProjectDetailView({
 
     return () => observer.disconnect();
   }, [project?.id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pt-28 pb-16 flex flex-col items-center justify-center gap-4 bg-bg-primary">
+        <div className="w-10 h-10 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
+        <p className="text-sm font-semibold text-text-secondary">Loading project details...</p>
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    const loginUrl = getLoginUrl(`/projects/${project?.slug || slug}`);
+    return (
+      <div className="min-h-screen pt-28 pb-16 px-4 flex flex-col items-center justify-center bg-bg-primary text-center">
+        <div className="w-full max-w-md p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col items-center">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 mb-5 shadow-inner">
+            <Lock className="w-7 h-7" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Login Required</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 mb-4 leading-relaxed">
+            Please sign in to view full project specifications, layouts, and builder information.
+          </p>
+
+          <div className="p-3 mb-6 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 text-left text-xs text-amber-900 dark:text-amber-300">
+            <p className="font-semibold mb-0.5">Privacy Notice:</p>
+            <p className="opacity-90">By viewing project details, your name and phone may be shared with the builder for follow-up.</p>
+          </div>
+
+          <Link
+            href={loginUrl}
+            className="w-full py-3.5 px-6 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
+          >
+            <span>Sign In with WhatsApp</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (!project) {
     return (

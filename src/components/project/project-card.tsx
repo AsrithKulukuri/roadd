@@ -4,9 +4,12 @@ import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { cn, formatPriceCompact } from "@/lib/utils";
 import type { Project, ProjectType } from "@/types/project";
 import { useFavoritesStore } from "@/stores/favorites-store";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import { getRefId } from "@/lib/ref-id";
 import { shareItem } from "@/lib/share-utils";
 import { shareOnWhatsApp } from "@/lib/whatsapp/whatsapp-share";
@@ -131,7 +134,17 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
     ? `${project.totalUnits} ${isVilla ? "Villas" : "Units"}`
     : null;
 
+  const router = useRouter();
+  const { isLoggedIn, getLoginUrl } = useAuthSession();
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (!isLoggedIn) {
+      e.preventDefault();
+      toast.info("Please log in to view project details");
+      router.push(getLoginUrl(`/projects/${project.slug}`));
+    }
+  };
 
   if (variant === "compact") {
     return (
@@ -143,6 +156,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
       >
         <Link
           href={`/projects/${project.slug}`}
+          onClick={handleCardClick}
           className="block h-full group"
         >
           <div
@@ -204,6 +218,11 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
         transition={{ duration: 0.3, delay: index * 0.05 }}
         onClick={(e) => {
           e.preventDefault();
+          if (!isLoggedIn) {
+            toast.info("Please log in to view project details");
+            router.push(getLoginUrl(`/projects/${project.slug}`));
+            return;
+          }
           setIsExpanded(true);
         }}
         className="w-[160px] h-[160px] sm:w-[220px] sm:h-[220px] rounded-2xl relative overflow-hidden group cursor-pointer border border-border-default shadow-sm shrink-0"
@@ -232,7 +251,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
   }
 
   return (
-    <Link href={`/projects/${project.slug}`} className="group block h-full">
+    <Link href={`/projects/${project.slug}`} onClick={handleCardClick} className="group block h-full">
       <div className="relative h-full flex flex-col justify-between bg-white dark:bg-bg-card border border-border-default rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
 
         {/* Image with 16/10 uniform aspect ratio */}

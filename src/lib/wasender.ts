@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { WasenderAPIResponse } from "@/types/auth";
+import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
 
 const DEFAULT_API_KEY = "0f8bd77ed11f256a99c96d8bfc8267d9946996cf01733f547f6a586011961e89";
 const WASENDER_API_KEY = (process.env.WASENDER_API_KEY || DEFAULT_API_KEY).trim();
@@ -27,7 +28,7 @@ function getEndpointUrls(): string[] {
 
 /**
  * WasenderAPI Service
- * Sends WhatsApp OTP messages using Axios.
+ * Sends WhatsApp OTP and generic notifications using Axios.
  */
 export class WasenderService {
   /**
@@ -38,7 +39,7 @@ export class WasenderService {
    */
   static async sendOTPMessage(phone: string, otp: string): Promise<WasenderAPIResponse> {
     const formattedMessage = `ROAD Verification\n\nYour OTP is:\n${otp}\n\nValid for 5 minutes.\nNever share this code with anyone.`;
-    const cleanPhone = phone.replace(/\D/g, "");
+    const cleanPhone = formatWhatsAppPhone(phone);
 
     const endpoints = getEndpointUrls();
     let lastError = "";
@@ -91,4 +92,70 @@ export class WasenderService {
       error: `Failed to send WhatsApp message: ${lastError || "All WasenderAPI endpoints failed"}`,
     };
   }
+
+  /**
+   * Send Generic Text Message via WasenderAPI (for Builder view notifications)
+   * 
+   * @param phone - Recipient phone number (normalized to E.164 international standard)
+   * @param message - Message body to send
+   */
+  static async sendTextMessage(phone: string, message: string): Promise<WasenderAPIResponse> {
+    const cleanPhone = formatWhatsAppPhone(phone);
+    if (!cleanPhone || cleanPhone.length < 10) {
+      return {
+        success: false,
+        error: "Invalid recipient phone number",
+      };
+    }
+
+    const endpoints = getEndpointUrls();
+    let lastError = "";
+
+    for (const endpoint of endpoints) {
+      try {
+        const response = await axios.post<WasenderAPIResponse>(
+          endpoint,
+          {
+            to: cleanPhone,
+            text: message,
+            message: message,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${WASENDER_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            timeout: 12000,
+          }
+        );
+
+        console.log(`[WASENDER SUCCESS] Notification sent to ${cleanPhone}`);
+        return {
+          success: true,
+          message: response.data.message || "WhatsApp notification sent successfully",
+          id: response.data.id,
+        };
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+          const axiosErr = err as AxiosError<any>;
+          const status = axiosErr.response?.status;
+          const msg = axiosErr.response?.data?.message || axiosErr.response?.data?.error || axiosErr.message;
+          console.warn(`[WASENDER NOTIFICATION FAIL] ${endpoint} status ${status}: ${msg}`);
+          lastError = `Status ${status}: ${msg}`;
+
+          if (status === 404) {
+            continue;
+          }
+        } else {
+          console.warn(`[WASENDER UNKNOWN FAIL] ${endpoint}:`, err);
+        }
+      }
+    }
+
+    return {
+      success: false,
+      error: `Failed to send WhatsApp notification: ${lastError || "All WasenderAPI endpoints failed"}`,
+    };
+  }
 }
+
