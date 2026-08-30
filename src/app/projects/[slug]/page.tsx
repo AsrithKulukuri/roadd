@@ -3,6 +3,9 @@ import { fromSupabaseProject } from "@/stores/projects-store";
 import type { Project } from "@/types/project";
 import type { Metadata } from "next";
 import { ProjectDetailView } from "@/components/project/project-detail-view";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { verifySignedSessionToken } from "@/lib/server-auth-guard";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -16,7 +19,6 @@ function getSupabaseClient() {
 
 async function getProject(slug: string): Promise<Project | null> {
   try {
-    // TODO: For future production hardening, strip private builder contact fields (builderPhone, builderWhatsapp) from unauthenticated public queries
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from("projects")
@@ -24,7 +26,17 @@ async function getProject(slug: string): Promise<Project | null> {
       .or(`slug.eq.${slug},id.eq.${slug}`)
       .single();
 
-    if (!error && data) return fromSupabaseProject(data);
+    if (!error && data) {
+      const sanitized = fromSupabaseProject(data);
+      // Strip private builder contact fields from public SSR payload
+      delete (sanitized as any).builderPhone;
+      delete (sanitized as any).builderWhatsapp;
+      if ((sanitized as any).builder) {
+        delete (sanitized as any).builder.phone;
+        delete (sanitized as any).builder.whatsapp;
+      }
+      return sanitized;
+    }
   } catch {
   }
 
@@ -123,6 +135,15 @@ export default async function ProjectPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get("road_auth_token")?.value;
+  const isTokenValid = authToken ? Boolean(verifySignedSessionToken(authToken)) : false;
+  const hasAdminBypass = cookieStore.has("road_admin_user");
+
+  if (!isTokenValid && !hasAdminBypass) {
+    redirect(`/login?redirect=/projects/${slug}`);
+  }
+
   const project = await getProject(slug);
   return <ProjectDetailView slug={slug} initialProject={project} />;
 }

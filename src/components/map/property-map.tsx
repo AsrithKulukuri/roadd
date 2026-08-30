@@ -20,10 +20,11 @@ import { PropertyCard } from "@/components/property/property-card";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { formatPriceCompact, formatINR, cn } from "@/lib/utils";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { shareItem } from "@/lib/share-utils";
+import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
 import { toast } from "sonner";
 
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -824,6 +825,8 @@ function MapViewportListenerDebounced({
 }
 
 export default function PropertyMap({ filteredItems, userLocation: externalUserLocation, onVisibleItemsChange, containerHeight }: PropertyMapProps = {}) {
+  const router = useRouter();
+  const { openProject } = useProjectOpenGuard();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
   const initialType = searchParams.get("type") || searchParams.get("category") || null;
@@ -1895,14 +1898,20 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                                     <MapPin className="w-3 h-3 text-[#f1a010]" />
                                     <span>View on Map</span>
                                   </button>
-                                  <Link
-                                    href={(prop as any)._isProject ? `/projects/${prop.slug}` : `/properties/${prop.slug || prop.id}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="px-2.5 py-1 bg-[#f1a010] hover:bg-[#d88c0a] text-slate-950 font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shadow-xs"
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if ((prop as any)._isProject) {
+                                        openProject(prop, e);
+                                      } else {
+                                        router.push(`/properties/${prop.slug || prop.id}`);
+                                      }
+                                    }}
+                                    className="px-2.5 py-1 bg-[#f1a010] hover:bg-[#d88c0a] text-slate-950 font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shadow-xs cursor-pointer"
                                   >
                                     <span>View</span>
                                     <ArrowRight className="w-3 h-3" />
-                                  </Link>
+                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -2179,14 +2188,23 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                       
                       return (
                         <div className="relative w-[260px] h-[190px] rounded-2xl overflow-hidden shadow-2xl group cursor-pointer bg-slate-900">
-                          <Link href={linkUrl} className="absolute inset-0 z-0">
+                          <div
+                            onClick={(e) => {
+                              if (isProj) {
+                                openProject(property, e);
+                              } else {
+                                router.push(linkUrl);
+                              }
+                            }}
+                            className="absolute inset-0 z-0 cursor-pointer"
+                          >
                             <img
                               src={coverImg}
                               alt={property.title}
                               className="w-full h-full object-cover"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                          </Link>
+                          </div>
 
                           {/* Custom Close Button */}
                           <button
@@ -2227,7 +2245,16 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                             </button>
                           </div>
 
-                          <Link href={linkUrl} className="absolute bottom-3 left-3 right-24 text-white z-0 flex flex-col items-start">
+                          <div
+                            onClick={(e) => {
+                              if (isProj) {
+                                openProject(property, e);
+                              } else {
+                                router.push(linkUrl);
+                              }
+                            }}
+                            className="absolute bottom-3 left-3 right-24 text-white z-0 flex flex-col items-start cursor-pointer"
+                          >
                             <div className="text-[28px] font-black drop-shadow-md leading-none mb-1 text-white tracking-tight">
                               {formatPriceCompact(property.price)}
                             </div>
@@ -2260,7 +2287,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                                 {getDistanceFromLatLonInKm(activeUserLocation.lat, activeUserLocation.lng, coords.lat, coords.lng).toFixed(1)} km away from you
                               </div>
                             )}
-                          </Link>
+                          </div>
                         </div>
                       );
                     })()}

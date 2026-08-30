@@ -2,8 +2,7 @@ import axios, { AxiosError } from "axios";
 import { WasenderAPIResponse } from "@/types/auth";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
 
-const DEFAULT_API_KEY = "0f8bd77ed11f256a99c96d8bfc8267d9946996cf01733f547f6a586011961e89";
-const WASENDER_API_KEY = (process.env.WASENDER_API_KEY || DEFAULT_API_KEY).trim();
+const WASENDER_API_KEY = (process.env.WASENDER_API_KEY || "").trim();
 
 // Normalize base URL to prevent duplicate /send-message or trailing slash 404 errors on Vercel
 function getEndpointUrls(): string[] {

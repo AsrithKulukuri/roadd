@@ -19,10 +19,10 @@ export interface ProjectNotificationData {
 
 /**
  * Triggers an immediate, non-blocking WhatsApp notification to the project builder via Wasender.
- * - Resolves user from argument or localStorage directly
- * - Resolves builder phone from top-level or nested builder object
- * - Uses 60-second per-project throttle to prevent double-sends on navigation mount while allowing all projects to trigger
- * - Uses keepalive: true to ensure fetch completes during page transitions
+ * - Authenticates automatically via secure same-origin HTTP-only cookie
+ * - Uses stable dedupe key road_project_view_notified:{projectKey}:{viewerPhone}
+ * - Uses an in-flight pending lock and commits 24h dedupe ONLY when API JSON returns success: true
+ * - Clears pending lock on failure so detail page mount or subsequent navigation can safely retry
  */
 export function triggerProjectViewNotification(
   project: ProjectNotificationData | null | undefined,
@@ -30,77 +30,81 @@ export function triggerProjectViewNotification(
 ): boolean {
   if (!project) return false;
 
-  // 1. Resolve logged-in user from prop or directly from localStorage
+  // 1. Resolve logged-in user from prop or directly from localStorage UI state
   let currentUser: SessionUser | null = user || null;
-  if ((!currentUser || !currentUser.phone) && typeof window !== "undefined") {
+
+  if (typeof window !== "undefined") {
     try {
-      const stored = localStorage.getItem("road_user");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && (parsed.isLoggedIn === true || parsed.phone)) {
-          currentUser = {
-            id: parsed.id,
-            name: parsed.name || "Interested Buyer",
-            phone: parsed.phone,
-            email: parsed.email || "",
-            isLoggedIn: true,
-          };
+      if (!currentUser || !currentUser.phone) {
+        const stored = localStorage.getItem("road_user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && (parsed.isLoggedIn === true || parsed.phone)) {
+            currentUser = {
+              id: parsed.id,
+              name: parsed.name || "",
+              phone: parsed.phone,
+              email: parsed.email || "",
+              isLoggedIn: true,
+            };
+          }
         }
       }
     } catch {}
   }
 
   if (!currentUser || !currentUser.isLoggedIn) {
-    console.log("[ProjectViewNotify] skipped: user not logged in");
     return false;
   }
 
-  const viewerName = (currentUser.name || "").trim() || "Interested Buyer";
   const viewerPhone = (currentUser.phone || "").trim();
+  const viewerName = (currentUser.name || "").trim();
 
   if (!viewerPhone || viewerPhone.length < 8) {
-    console.log("[ProjectViewNotify] skipped: invalid viewer phone");
     return false;
   }
 
-  const projectKey = project.id || project.slug || project.name;
+  const projectKey = String(project.id || project.slug || project.name || "").trim();
   if (!projectKey) return false;
 
-  // 2. 60-second deduplication throttle per project to prevent double-firing on click + mount
-  const dedupeKey = `road_project_view_ts_${projectKey}_${viewerPhone.replace(/\D/g, "")}`;
-  if (typeof window !== "undefined" && window.sessionStorage) {
-    const lastSentStr = sessionStorage.getItem(dedupeKey);
-    if (lastSentStr) {
-      const lastSentTime = parseInt(lastSentStr, 10);
-      if (!isNaN(lastSentTime) && Date.now() - lastSentTime < 60000) {
-        console.log(`[ProjectViewNotify] already sent for ${projectKey} within last 60s (throttled)`);
-        return false;
+  const cleanViewerPhone = viewerPhone.replace(/\D/g, "");
+  const dedupeKey = `road_project_view_notified:${projectKey}:${cleanViewerPhone}`;
+  const pendingKey = `${dedupeKey}:pending`;
+
+  if (typeof window !== "undefined") {
+    try {
+      // Check if already permanently confirmed in last 24h
+      const sessionSent = window.sessionStorage?.getItem(dedupeKey);
+      const localSent = window.localStorage?.getItem(dedupeKey);
+      const lastSentStr = sessionSent || localSent;
+
+      if (lastSentStr) {
+        const lastSentTime = parseInt(lastSentStr, 10);
+        if (!isNaN(lastSentTime) && Date.now() - lastSentTime < 86400000) {
+          return false;
+        }
       }
-    }
-    sessionStorage.setItem(dedupeKey, String(Date.now()));
+
+      // Check if a request is already in-flight (within last 15s)
+      const pendingStr = window.sessionStorage?.getItem(pendingKey);
+      if (pendingStr) {
+        const pendingTime = parseInt(pendingStr, 10);
+        if (!isNaN(pendingTime) && Date.now() - pendingTime < 15000) {
+          return false;
+        }
+      }
+
+      window.sessionStorage?.setItem(pendingKey, String(Date.now()));
+    } catch {}
   }
 
-  // 3. Resolve all builder contact fields
-  const resolvedBuilderPhone =
-    project.builderWhatsapp ||
-    project.builderPhone ||
-    project.builder?.whatsapp ||
-    project.builder?.phone ||
-    project.builder_whatsapp ||
-    project.builder_phone ||
-    "8885005567";
-
-  console.log(`[ProjectViewNotify] Dispatching WhatsApp view notification for "${project.name || projectKey}"`);
-
-  // 4. Fire-and-forget API request with keepalive
+  // 2. Dispatch API Request with keepalive (Cookie sent automatically)
   try {
     const payload = JSON.stringify({
       projectId: project.id,
       projectSlug: project.slug,
       projectName: project.name,
       projectRefId: getRefId(project),
-      builderPhone: resolvedBuilderPhone,
-      builderWhatsapp: project.builderWhatsapp || project.builder?.whatsapp,
       viewer: {
         name: viewerName,
         phone: viewerPhone,
@@ -114,14 +118,40 @@ export function triggerProjectViewNotification(
         headers: { "Content-Type": "application/json" },
         body: payload,
         keepalive: true,
-      }).catch((err) => {
-        console.warn("[ProjectViewNotify] POST failed:", err);
-      });
+      })
+        .then(async (res) => {
+          if (typeof window !== "undefined") {
+            window.sessionStorage?.removeItem(pendingKey);
+            if (res.ok) {
+              const data = await res.json().catch(() => ({}));
+              // Only confirm permanent 24h dedupe when API confirms real dispatch/record
+              if (
+                data &&
+                data.success === true &&
+                (data.mode === "single_instant" ||
+                  data.mode === "surge_alert" ||
+                  data.mode === "surge_silent_record")
+              ) {
+                const nowStr = String(Date.now());
+                window.sessionStorage?.setItem(dedupeKey, nowStr);
+                window.localStorage?.setItem(dedupeKey, nowStr);
+              }
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn("[ProjectViewNotify] POST failed:", err);
+          if (typeof window !== "undefined") {
+            window.sessionStorage?.removeItem(pendingKey);
+          }
+        });
     }
     return true;
   } catch (err) {
     console.warn("[ProjectViewNotify] exception:", err);
+    if (typeof window !== "undefined") {
+      window.sessionStorage?.removeItem(pendingKey);
+    }
     return false;
   }
 }
-

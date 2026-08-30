@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { getClient, getBucketName } from "@/lib/aws/s3";
+import { requireAdmin } from "@/lib/server-auth-guard";
 
 const ALLOWED_PREFIXES = [
   "properties/",
@@ -14,6 +15,12 @@ const ALLOWED_PREFIXES = [
 
 export async function POST(request: Request) {
   try {
+    // 1. Strict Server Admin Guard
+    const { errorResponse } = await requireAdmin(request);
+    if (errorResponse) {
+      return errorResponse;
+    }
+
     const body = await request.json();
     const { keys } = body;
 

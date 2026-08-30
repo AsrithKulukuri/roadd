@@ -17,6 +17,18 @@ const VALID_PROJECT_COLUMNS = new Set([
   'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory'
 ]);
 
+// Public projection columns excluding private builder contact numbers
+const PUBLIC_PROJECT_SELECT = [
+  'id', 'slug', 'name', 'tagline', 'description', 'projectType',
+  'builderName', 'builderLogoUrl',
+  'location', 'reraId', 'reraApproved', 'noBrokerage',
+  'constructionStatus', 'totalUnits', 'totalArea', 'phases',
+  'configurations', 'images', 'coverImage', 'videoUrl',
+  'brochureUrl', 'highlights', 'facilities', 'isFeatured',
+  'isPublished', 'viewCount', 'createdAt', 'updatedAt',
+  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory'
+].join(',');
+
 export function toSupabaseProject(proj: Partial<Project>): any {
   const p: any = { ...proj };
   
@@ -90,8 +102,14 @@ export function fromSupabaseProject(p: any): Project {
   const rawMasterPlan = p.masterPlanUrl || p.master_plan_url || masterPlanFromImages;
   const masterPlanUrl = rawMasterPlan && !rawMasterPlan.startsWith('blob:') ? rawMasterPlan : undefined;
 
+  const cleanObj = { ...p };
+  delete cleanObj.builderPhone;
+  delete cleanObj.builderWhatsapp;
+  delete cleanObj.builder_phone;
+  delete cleanObj.builder_whatsapp;
+
   return {
-    ...p,
+    ...cleanObj,
     refId: p.refId || (p.id ? `REF${(p.id.replace(/\D/g, "") || "100").padStart(3, "0").slice(0, 5)}` : undefined),
     brochureUrl,
     coverImage,
@@ -101,8 +119,8 @@ export function fromSupabaseProject(p: any): Project {
     builder: {
       name: p.builderName || (p.builder?.name ?? 'Independent Developer'),
       logoUrl: p.builderLogoUrl || (p.builder?.logoUrl ?? null),
-      phone: p.builderPhone || (p.builder?.phone ?? null),
-      whatsapp: p.builderWhatsapp || (p.builder?.whatsapp ?? null),
+      phone: null,
+      whatsapp: null,
     },
     displayCategory: p.displayCategory || (p.isFeatured ? "featured" : "none")
   };
@@ -136,7 +154,7 @@ export const useProjectsStore = create<ProjectsState>()(
         try {
           const { data, error } = await supabase
             .from('projects')
-            .select('*')
+            .select(PUBLIC_PROJECT_SELECT)
             .order('id', { ascending: false });
 
           if (error) {

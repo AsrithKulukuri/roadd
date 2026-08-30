@@ -37,6 +37,7 @@ import { matchesPropertySearch, matchesProjectSearch } from "@/lib/search-engine
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 import { ModernBudgetDropdown } from "@/components/ui/modern-budget-dropdown";
+import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
 
 const HERO_BUDGET_MIN_OPTS = [
   { label: "₹ 10 L", value: 1000000 },
@@ -124,6 +125,7 @@ const popularQuickFilters = [
 
 export function HeroSection() {
   const router = useRouter();
+  const { openProject } = useProjectOpenGuard();
   const [activeTab, setActiveTab] = useState("buy");
   const [locationTab, setLocationTab] = useState<"trending" | "vijayawada" | "guntur" | "popular" | "nearyou">("trending");
   const [showBuyMenu, setShowBuyMenu] = useState(false);
@@ -228,7 +230,11 @@ export function HeroSection() {
       const refMatch = findItemByRefId(searchQuery, properties, projects);
       if (refMatch) {
         toast.success(`🎯 Direct match for Reference ID ${refMatch.refId} (${refMatch.title})! Opening...`);
-        router.push(refMatch.url);
+        if (refMatch.type === "project") {
+          openProject(refMatch.item);
+        } else {
+          router.push(refMatch.url);
+        }
         return;
       }
     }
@@ -894,9 +900,14 @@ export function HeroSection() {
               {/* Direct Ref ID Match Card */}
               {liveHeroSuggestions.directRefMatch && (
                 <div
-                  onClick={() => {
+                  onClick={(e) => {
                     setIsFocused(false);
-                    router.push(liveHeroSuggestions.directRefMatch!.url);
+                    const match = liveHeroSuggestions.directRefMatch!;
+                    if (match.type === "project") {
+                      openProject(match.item, e);
+                    } else {
+                      router.push(match.url);
+                    }
                   }}
                   className="px-4 py-3 bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent hover:from-amber-500/30 cursor-pointer flex items-center justify-between gap-3 border-b border-amber-500/30 transition-all"
                 >
@@ -936,9 +947,9 @@ export function HeroSection() {
                   {liveHeroSuggestions.projects.map((p) => (
                     <div
                       key={`hero-proj-${p.id}`}
-                      onClick={() => {
+                      onClick={(e) => {
                         setIsFocused(false);
-                        router.push(`/projects/${p.slug || p.id}`);
+                        openProject(p, e);
                       }}
                       className="px-2.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
                     >

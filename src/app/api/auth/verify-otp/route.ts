@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyOTPSchema } from "@/lib/validations/auth";
 import { OTPCryptoService } from "@/lib/otp";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { signSessionPayload } from "@/lib/server-auth-guard";
 import { logger } from "@/lib/logger";
 
 const MAX_ATTEMPTS = 5;
@@ -16,26 +17,27 @@ export async function POST(request: Request) {
       const errorMessage = validationResult.error.issues[0]?.message || "Invalid payload format";
       return NextResponse.json(
         { success: false, error: errorMessage },
-        { status: 400 } // 400 Bad Request
+        { status: 400 }
       );
     }
 
     const { phone, otp } = validationResult.data;
+    const cleanPhone = phone.trim();
 
     // 2. Fetch active OTP record for phone number
     const { data: otpRecords, error: fetchError } = await supabaseAdmin
       .from("phone_otps")
       .select("*")
-      .eq("phone", phone)
+      .eq("phone", cleanPhone)
       .eq("verified", false)
       .order("created_at", { ascending: false })
       .limit(1);
 
     if (fetchError || !otpRecords || otpRecords.length === 0) {
-      logger.security("VERIFY_OTP_NOT_FOUND", phone, false);
+      logger.security("VERIFY_OTP_NOT_FOUND", cleanPhone, false);
       return NextResponse.json(
         { success: false, error: "No active OTP request found for this phone number. Please request a new code." },
-        { status: 404 } // 404 Not Found
+        { status: 404 }
       );
     }
 
@@ -45,21 +47,21 @@ export async function POST(request: Request) {
 
     // 3. Check Expiry (5 minute window)
     if (now > expiresAt) {
-      logger.security("VERIFY_OTP_EXPIRED", phone, false);
+      logger.security("VERIFY_OTP_EXPIRED", cleanPhone, false);
       await supabaseAdmin.from("phone_otps").delete().eq("id", record.id);
       return NextResponse.json(
         { success: false, error: "OTP has expired. Please request a new verification code." },
-        { status: 400 } // 400 Bad Request
+        { status: 400 }
       );
     }
 
     // 4. Check Maximum Failed Verification Attempts (Max 5 attempts)
     if (record.attempts >= MAX_ATTEMPTS) {
-      logger.security("VERIFY_OTP_MAX_ATTEMPTS_EXCEEDED", phone, false, { attempts: record.attempts });
+      logger.security("VERIFY_OTP_MAX_ATTEMPTS_EXCEEDED", cleanPhone, false, { attempts: record.attempts });
       await supabaseAdmin.from("phone_otps").delete().eq("id", record.id);
       return NextResponse.json(
         { success: false, error: "Maximum verification attempts exceeded (5/5). Please request a new OTP." },
-        { status: 403 } // 403 Forbidden
+        { status: 403 }
       );
     }
 
@@ -74,96 +76,113 @@ export async function POST(request: Request) {
         .eq("id", record.id);
 
       const remaining = MAX_ATTEMPTS - newAttempts;
-      logger.security("VERIFY_OTP_FAILED", phone, false, { remainingAttempts: remaining });
+      logger.security("VERIFY_OTP_FAILED", cleanPhone, false, { remainingAttempts: remaining });
 
       return NextResponse.json(
         {
           success: false,
           error: `Invalid OTP code. ${remaining > 0 ? `${remaining} attempts remaining.` : "Please request a new OTP."}`,
         },
-        { status: 401 } // 401 Unauthorized
+        { status: 401 }
       );
     }
 
     // 6. Delete OTP Record Immediately (Prevent Replay Attacks)
     await supabaseAdmin.from("phone_otps").delete().eq("id", record.id);
 
-    // 7. Find or Automatically Create User in Supabase Auth
-    let user;
-    const { data: usersData, error: listUsersError } = await supabaseAdmin.auth.admin.listUsers();
-    
-    if (!listUsersError && usersData?.users) {
-      user = usersData.users.find(
-        (u) => u.phone === phone || u.user_metadata?.phone === phone || u.phone === phone.replace("+", "")
-      );
-    }
+    // 7. High-Speed Indexed User Lookup (Replaced slow listUsers)
+    let userPayload: any = null;
+    let userId: string | null = null;
+    let existingProfile: any = null;
 
-    // Create user if not existing
-    if (!user) {
-      logger.info(`Auto-creating new user for WhatsApp authenticated phone: ${phone}`);
-      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        phone: phone,
-        phone_confirm: true,
-        user_metadata: {
-          phone: phone,
-          role: "buyer",
-          auth_provider: "whatsapp",
-          created_via: "ROAD_WhatsApp_OTP",
-        },
-      });
-
-      if (createError) {
-        logger.error("Failed to auto-create user in Supabase Auth", { phone, error: createError.message });
-        // Fallback: Create dummy user object for application session
-        user = {
-          id: `wa_${phone.replace(/\D/g, "")}`,
-          phone: phone,
-          user_metadata: { role: "buyer" },
-        } as any;
-      } else {
-        user = newUser.user;
-      }
-    }
-
-    // 8. Fetch Profile Details and Check Completion
-    let profileData: any = null;
     try {
       const { data: profile } = await supabaseAdmin
         .from("profiles")
-        .select("full_name, email, role")
-        .eq("id", user.id)
+        .select("id, full_name, email, role, phone")
+        .or(`phone.eq.${cleanPhone},phone.eq.${cleanPhone.replace(/\D/g, "")}`)
         .maybeSingle();
-      if (profile) profileData = profile;
-    } catch (e) {}
 
-    const existingName = profileData?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || "";
-    const rawEmail = profileData?.email || user.email || "";
+      if (profile) {
+        existingProfile = profile;
+        userId = profile.id;
+      }
+    } catch (profileErr) {
+      console.warn("[VERIFY OTP] Profile lookup warn:", profileErr);
+    }
+
+    // If profile not found, ensure Supabase Auth user exists
+    if (!userId) {
+      try {
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          phone: cleanPhone,
+          phone_confirm: true,
+          user_metadata: {
+            phone: cleanPhone,
+            role: "buyer",
+            auth_provider: "whatsapp",
+            created_via: "ROAD_WhatsApp_OTP",
+          },
+        });
+
+        if (!createError && newUser?.user) {
+          userId = newUser.user.id;
+        } else {
+          // If already exists or error, assign deterministic ID
+          userId = `wa_${cleanPhone.replace(/\D/g, "")}`;
+        }
+      } catch (authErr) {
+        userId = `wa_${cleanPhone.replace(/\D/g, "")}`;
+      }
+    }
+
+    const existingName = existingProfile?.full_name || "";
+    const rawEmail = existingProfile?.email || "";
     const isInternalEmail = rawEmail.endsWith("@road.internal");
     const cleanEmail = isInternalEmail ? "" : rawEmail;
-
+    const userRole = existingProfile?.role || "buyer";
     const isProfileComplete = Boolean(existingName.length >= 2 && cleanEmail && cleanEmail.includes("@"));
-    const userRole = profileData?.role || user?.user_metadata?.role || "buyer";
 
-    const userPayload = {
-      id: user.id,
-      phone: user.phone || phone,
+    userPayload = {
+      id: userId,
+      phone: cleanPhone,
       name: existingName,
       email: cleanEmail,
       role: userRole,
     };
 
-    logger.security("VERIFY_OTP_SUCCESS", phone, true, { userId: user.id, role: userRole, isProfileComplete });
+    const authToken = signSessionPayload(userPayload);
 
-    // 9. Return Authenticated Session Response
-    return NextResponse.json(
+    logger.security("VERIFY_OTP_SUCCESS", cleanPhone, true, { userId, role: userRole, isProfileComplete });
+
+    // 8. Return Authenticated Session Response with cookie
+    const response = NextResponse.json(
       {
         success: true,
         isProfileComplete,
         message: "WhatsApp OTP verified successfully.",
         user: userPayload,
+        token: authToken,
       },
       { status: 200 }
     );
+
+    // Set server-verifiable HTTP-only session cookie
+    response.cookies.set("road_auth_token", authToken, {
+      path: "/",
+      maxAge: 30 * 24 * 3600, // 30 days
+      sameSite: "lax",
+      httpOnly: true, // HTTP-only to protect against XSS
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    response.cookies.set("road_user", "true", {
+      path: "/",
+      maxAge: 30 * 24 * 3600,
+      sameSite: "lax",
+      httpOnly: false,
+    });
+
+    return response;
   } catch (err: any) {
     logger.error("Unhandled Exception in POST /api/auth/verify-otp", { error: err?.message || err });
     return NextResponse.json(

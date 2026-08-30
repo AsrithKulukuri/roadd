@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getClient, getBucketName } from "@/lib/aws/s3";
 import { getPublicUrl } from "@/lib/aws/presign";
+import { authenticateServerRequest } from "@/lib/server-auth-guard";
 
 const ALLOWED_FOLDERS = [
   "properties",
@@ -13,10 +14,34 @@ const ALLOWED_FOLDERS = [
   "videos",
 ];
 
+const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "pdf", "mp4", "mov", "webm"]);
+const ALLOWED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+  "video/mp4",
+  "video/quicktime",
+  "video/webm",
+]);
+
+const MAX_IMAGE_SIZE = 15 * 1024 * 1024; // 15MB
+const MAX_VIDEO_SIZE = 60 * 1024 * 1024; // 60MB
+
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    // 1. Authorization Guard (Require valid user session or admin)
+    const auth = await authenticateServerRequest(request);
+    // Allow upload if user is authenticated or has valid role
+    if (!auth.authorized) {
+      return NextResponse.json(
+        { error: "Authentication required to upload media files" },
+        { status: 401 }
+      );
+    }
+
     const url = new URL(request.url);
     const contentTypeHeader = request.headers.get("content-type") || "";
 
@@ -43,7 +68,6 @@ export async function POST(request: Request) {
       const bytes = await file.arrayBuffer();
       buffer = Buffer.from(bytes);
     } else {
-      // Direct raw binary stream (Bypasses Next.js FormData body parser limits!)
       const bytes = await request.arrayBuffer();
       if (!bytes || bytes.byteLength === 0) {
         return NextResponse.json({ error: "Empty upload stream" }, { status: 400 });
@@ -51,14 +75,36 @@ export async function POST(request: Request) {
       buffer = Buffer.from(bytes);
     }
 
+    // 2. Folder Sanitization
     if (!ALLOWED_FOLDERS.includes(folder)) {
       folder = "properties";
     }
 
+    // 3. Extension & MIME Validation
     const rawExt = (filename.split(".").pop() || "").toLowerCase();
     const cleanExt = rawExt.replace(/[^a-zA-Z0-9]/g, "") || "jpg";
-    const uuid = crypto.randomUUID();
 
+    if (!ALLOWED_EXTENSIONS.has(cleanExt)) {
+      return NextResponse.json(
+        { error: `Unsupported file extension .${cleanExt}. Allowed: jpg, png, webp, pdf, mp4` },
+        { status: 400 }
+      );
+    }
+
+    // 4. File Size Limits
+    const isVideo = ["mp4", "mov", "webm"].includes(cleanExt);
+    const maxAllowedSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+
+    if (buffer.length > maxAllowedSize) {
+      return NextResponse.json(
+        {
+          error: `File size (${(buffer.length / (1024 * 1024)).toFixed(1)}MB) exceeds maximum allowed limit (${maxAllowedSize / (1024 * 1024)}MB).`,
+        },
+        { status: 413 }
+      );
+    }
+
+    const uuid = crypto.randomUUID();
     let key: string;
     if (entityId && typeof entityId === "string" && entityId.trim()) {
       const cleanEntityId = entityId.replace(/[^a-zA-Z0-9_-]/g, "");

@@ -2,9 +2,43 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { mockProperties } from "@/lib/mock-data";
 
+// Rate Limiter Map for Chat (Hetzner in-memory state)
+const chatRateLimitMap: Map<string, { count: number; resetAt: number }> =
+  (globalThis as any).__chat_rate_limit_map || new Map();
+(globalThis as any).__chat_rate_limit_map = chatRateLimitMap;
+
+function checkChatRateLimit(ip: string, maxPerMin = 20): boolean {
+  const now = Date.now();
+  const entry = chatRateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    chatRateLimitMap.set(ip, { count: 1, resetAt: now + 60000 });
+    return true;
+  }
+  if (entry.count >= maxPerMin) {
+    return false;
+  }
+  entry.count += 1;
+  return true;
+}
+
 export async function POST(req: Request) {
   try {
-    const { message, history } = await req.json();
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
+    if (!checkChatRateLimit(ip, 20)) {
+      return NextResponse.json(
+        { error: "Too many messages sent. Please slow down and try again in a minute." },
+        { status: 429 }
+      );
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const { message, history } = body;
+
+    if (!message || typeof message !== "string" || !message.trim()) {
+      return NextResponse.json({ error: "Message is required" }, { status: 400 });
+    }
+
+    const cleanMessage = message.trim().slice(0, 1000);
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -17,7 +51,7 @@ export async function POST(req: Request) {
     const genAI = new GoogleGenerativeAI(apiKey);
 
     // Compress properties to save context window and focus the AI on searchable fields
-    const compressedProperties = mockProperties.map((p) => ({
+    const compressedProperties = mockProperties.slice(0, 15).map((p) => ({
       id: p.id,
       title: p.title,
       price: p.price,
@@ -61,12 +95,13 @@ Never:
       systemInstruction,
     });
 
-    // We pass the history as is, assuming it follows the { role: "user"|"model", parts: [{ text: "..." }] } format
+    const safeHistory = Array.isArray(history) ? history.slice(-6) : [];
+
     const chat = model.startChat({
-      history: history || [],
+      history: safeHistory,
     });
 
-    const result = await chat.sendMessageStream(message);
+    const result = await chat.sendMessageStream(cleanMessage);
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -80,13 +115,13 @@ Never:
           console.error("Stream error:", e);
           controller.error(e);
         }
-      }
+      },
     });
 
     return new Response(stream, {
-      headers: { 
+      headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "Transfer-Encoding": "chunked"
+        "Transfer-Encoding": "chunked",
       },
     });
   } catch (error) {

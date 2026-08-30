@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sanitizeIndianPhoneNumber } from "@/lib/validations/auth";
 import { logger } from "@/lib/logger";
+import { signSessionPayload } from "@/lib/server-auth-guard";
 
 const completeProfileSchema = z.object({
   phone: z
@@ -33,82 +34,92 @@ export async function POST(request: Request) {
     }
 
     const { phone, name, email } = validationResult.data;
+    const cleanPhone = phone.trim();
 
-    // 1. Find user in Supabase Auth by phone
-    const { data: usersData, error: listUsersError } = await supabaseAdmin.auth.admin.listUsers();
-    let targetUser = undefined;
+    // 1. Find user in Supabase profiles/auth
+    let userId: string | null = null;
+    let userRole = "buyer";
 
-    if (!listUsersError && usersData?.users) {
-      targetUser = usersData.users.find(
-        (u) => u.phone === phone || u.user_metadata?.phone === phone || u.phone === phone.replace("+", "")
-      );
+    try {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("id, role")
+        .or(`phone.eq.${cleanPhone},phone.eq.${cleanPhone.replace(/\D/g, "")}`)
+        .maybeSingle();
+
+      if (profile) {
+        userId = profile.id;
+        if (profile.role) userRole = profile.role;
+      }
+    } catch {}
+
+    if (!userId) {
+      userId = `wa_${cleanPhone.replace(/\D/g, "")}`;
     }
 
-    let userId = targetUser?.id;
-
-    // Update metadata if user exists in Supabase Auth
-    if (targetUser && userId) {
-      await supabaseAdmin.auth.admin.updateUserById(userId, {
-        email: email,
-        email_confirm: true,
-        user_metadata: {
-          ...targetUser.user_metadata,
+    // 2. Upsert profile into public.profiles table
+    try {
+      await supabaseAdmin.from("profiles").upsert(
+        {
+          id: userId,
+          phone: cleanPhone,
           full_name: name,
-          name: name,
           email: email,
-          phone: phone,
-          role: targetUser.user_metadata?.role || "buyer",
+          role: userRole,
           is_verified: true,
           is_profile_complete: true,
+          updated_at: new Date().toISOString(),
         },
-      });
-    }
-
-    // 2. Upsert profile into public.profiles table (if table exists)
-    try {
-      if (userId) {
-        await supabaseAdmin.from("profiles").upsert(
-          {
-            id: userId,
-            phone: phone,
-            full_name: name,
-            email: email,
-            role: "buyer",
-            is_verified: true,
-            is_profile_complete: true,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "id" }
-        );
-      }
+        { onConflict: "id" }
+      );
     } catch (e) {
       console.warn("Profiles table upsert warning:", e);
     }
 
     const userPayload = {
-      id: userId || `wa_${phone.replace(/\D/g, "")}`,
-      phone: phone,
+      id: userId,
+      phone: cleanPhone,
       name: name,
       email: email,
-      role: "buyer",
+      role: userRole,
       isVerified: true,
       isProfileComplete: true,
     };
 
-    logger.security("PROFILE_COMPLETED", phone, true, { userId, name, email });
+    const authToken = signSessionPayload(userPayload);
 
-    return NextResponse.json(
+    logger.security("PROFILE_COMPLETED", cleanPhone, true, { userId, name, email });
+
+    const response = NextResponse.json(
       {
         success: true,
-        message: "Profile details updated successfully",
+        message: "Profile completed successfully.",
         user: userPayload,
+        token: authToken,
       },
       { status: 200 }
     );
+
+    response.cookies.set("road_auth_token", authToken, {
+      path: "/",
+      maxAge: 30 * 24 * 3600,
+      sameSite: "lax",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    response.cookies.set("road_user", "true", {
+      path: "/",
+      maxAge: 30 * 24 * 3600,
+      sameSite: "lax",
+      httpOnly: false,
+    });
+
+    return response;
   } catch (err: any) {
     logger.error("Unhandled Exception in POST /api/auth/complete-profile", { error: err?.message || err });
     return NextResponse.json(
-      { success: false, error: "Failed to update profile details. Please try again." },
+      { success: false, error: "Failed to complete profile" },
       { status: 500 }
     );
   }

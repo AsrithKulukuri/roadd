@@ -31,6 +31,7 @@ import { useProjectsStore } from "@/stores/projects-store";
 import { findItemByRefId, getRefId } from "@/lib/ref-id";
 import { matchesPropertySearch, matchesProjectSearch } from "@/lib/search-engine";
 import { toast } from "sonner";
+import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
 import { haptic } from "@/lib/haptics";
 import type { FilterState } from "./search-filters";
 import { RealtorFilterBar } from "./realtor-filter-bar";
@@ -65,6 +66,7 @@ export function RealtorSearchHeader({
   totalResults,
   autoFocus = false,
 }: RealtorSearchHeaderProps) {
+  const { openProject } = useProjectOpenGuard();
   const [searchInput, setSearchInput] = useState(filters.query || "");
   const [isFocused, setIsFocused] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
@@ -145,7 +147,11 @@ export function RealtorSearchHeader({
     if (e) e.preventDefault();
     if (refMatch) {
       toast.success(`🎯 Direct match for Reference ID ${refMatch.refId} (${refMatch.title})! Opening...`);
-      router.push(refMatch.url);
+      if (refMatch.type === "project") {
+        openProject(refMatch.item);
+      } else {
+        router.push(refMatch.url);
+      }
       return;
     }
     setIsSubmitting(true);
@@ -307,9 +313,13 @@ export function RealtorSearchHeader({
               {/* DIRECT REFERENCE ID MATCH POPUP BANNER */}
               {refMatch && (
                 <div
-                  onClick={() => {
+                  onClick={(e) => {
                     toast.success(`🎯 Direct match for Reference ID ${refMatch.refId} (${refMatch.title})! Opening...`);
-                    router.push(refMatch.url);
+                    if (refMatch.type === "project") {
+                      openProject(refMatch.item, e);
+                    } else {
+                      router.push(refMatch.url);
+                    }
                   }}
                   className="absolute left-0 right-0 top-full mt-2 z-[120] bg-amber-500 text-slate-950 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center justify-between font-extrabold text-xs cursor-pointer border-2 border-slate-950 animate-in fade-in zoom-in-95"
                 >
@@ -351,9 +361,9 @@ export function RealtorSearchHeader({
                       {liveSuggestions.projects.map((p) => (
                         <div
                           key={`sugg-proj-${p.id}`}
-                          onClick={() => {
+                          onClick={(e) => {
                             setIsFocused(false);
-                            router.push(`/projects/${p.slug || p.id}`);
+                            openProject(p, e);
                           }}
                           className="px-2.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
                         >

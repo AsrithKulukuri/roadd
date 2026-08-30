@@ -110,6 +110,8 @@ interface ProjectCardProps {
   variant?: "default" | "compact" | "horizontal" | "category-style";
 }
 
+import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
+
 export function ProjectCard({ project, index = 0, variant = "default" }: ProjectCardProps) {
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const isSaved = isFavorite(project.id);
@@ -135,22 +137,11 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
     ? `${project.totalUnits} ${isVilla ? "Villas" : "Units"}`
     : null;
 
-  const router = useRouter();
-  const { isLoggedIn, isLoading, user, getLoginUrl } = useAuthSession();
+  const { openProject } = useProjectOpenGuard();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleCardClick = (e: React.MouseEvent) => {
-    if (!isLoggedIn && !isLoading) {
-      e.preventDefault();
-      toast.info("Please log in to view project details");
-      router.push(getLoginUrl(`/projects/${project.slug}`));
-      return;
-    }
-
-    if (isLoggedIn) {
-      // Fire notification immediately at click-time
-      triggerProjectViewNotification(project, user);
-    }
+    openProject(project, e);
   };
 
   if (variant === "compact") {
@@ -224,16 +215,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3, delay: index * 0.05 }}
         onClick={(e) => {
-          e.preventDefault();
-          if (!isLoggedIn && !isLoading) {
-            toast.info("Please log in to view project details");
-            router.push(getLoginUrl(`/projects/${project.slug}`));
-            return;
-          }
-          if (isLoggedIn) {
-            triggerProjectViewNotification(project, user);
-          }
-          setIsExpanded(true);
+          openProject(project, e);
         }}
         className="w-[160px] h-[160px] sm:w-[220px] sm:h-[220px] rounded-2xl relative overflow-hidden group cursor-pointer border border-border-default shadow-sm shrink-0"
       >

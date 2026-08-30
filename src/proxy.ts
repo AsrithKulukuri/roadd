@@ -1,10 +1,24 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { verifySignedSessionToken } from "@/lib/server-auth-guard";
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
+
+  // Apply OWASP Security Headers to all responses
+  supabaseResponse.headers.set("X-Content-Type-Options", "nosniff");
+  supabaseResponse.headers.set("X-Frame-Options", "DENY");
+  supabaseResponse.headers.set("X-XSS-Protection", "1; mode=block");
+  supabaseResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  supabaseResponse.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");
+  if (process.env.NODE_ENV === "production") {
+    supabaseResponse.headers.set(
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubDomains; preload"
+    );
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,8 +47,6 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-
-
   const isAdminLoginPage = pathname === "/admin/login";
 
   // Protect /admin routes (except public /admin/login)
@@ -54,7 +66,20 @@ export async function proxy(request: NextRequest) {
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);
     }
+  }
 
+  // Protect /projects/[slug] routes: enforce server-verifiable login before accessing project details
+  if (pathname.startsWith("/projects/")) {
+    const hasAdminBypass = request.cookies.has("road_admin_user");
+    const authToken = request.cookies.get("road_auth_token")?.value;
+    const isTokenValid = authToken ? Boolean(verifySignedSessionToken(authToken)) : false;
+
+    if (!user && !isTokenValid && !hasAdminBypass) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(url);
+    }
   }
 
   // Redirect logged-in users away from auth pages (/login, /register, /admin/login)

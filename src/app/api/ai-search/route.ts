@@ -1,8 +1,24 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI, Type, Schema } from '@google/genai';
 
-// Initialize SDK
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Rate Limiter Map for AI routes (Hetzner in-memory state)
+const aiRateLimitMap: Map<string, { count: number; resetAt: number }> =
+  (globalThis as any).__ai_rate_limit_map || new Map();
+(globalThis as any).__ai_rate_limit_map = aiRateLimitMap;
+
+function checkAiRateLimit(ip: string, maxPerMin = 20): boolean {
+  const now = Date.now();
+  const entry = aiRateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    aiRateLimitMap.set(ip, { count: 1, resetAt: now + 60000 });
+    return true;
+  }
+  if (entry.count >= maxPerMin) {
+    return false;
+  }
+  entry.count += 1;
+  return true;
+}
 
 const responseSchema: Schema = {
   type: Type.OBJECT,
@@ -38,6 +54,14 @@ const responseSchema: Schema = {
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
+    if (!checkAiRateLimit(ip, 25)) {
+      return NextResponse.json(
+        { error: "Too many AI search requests. Please slow down and try again in a minute." },
+        { status: 429 }
+      );
+    }
+
     if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(
         { error: "GEMINI_API_KEY is not configured in the environment." },
@@ -45,11 +69,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const { prompt, history = "" } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { prompt, history = "" } = body;
 
-    if (!prompt) {
+    if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
+
+    // Input bounds check to prevent token abuse
+    const cleanPrompt = prompt.trim().slice(0, 500);
 
     const systemPrompt = `You are an AI real estate assistant for ROAD FACING, an Indian real estate platform.
 Your job is to act as a conversational assistant while seamlessly parsing search filters when the user's intent is to find properties.
@@ -59,44 +87,50 @@ We currently have these property types available: 'apartment', 'villa', 'indepen
 If the user asks for a property type that is NOT on this list (e.g. 'castles', 'spaceships', 'islands'), inform them politely that we don't have that available right now and DO NOT set isSearch to true.
 If they ask for 'plots', map it to 'residential-land' and proceed with the search (set isSearch to true).
 
-CONVERSATION HISTORY:
-${history}
+Rules:
+1. Always parse the user query into structured filters.
+2. If they mention a location like 'Gachibowli' or 'Banjara Hills', set location to that string.
+3. If they specify BHK (e.g. '3bhk', '3 bedroom'), set bhk accordingly ('1', '2', '3', '4', '5+', or 'any').
+4. If they give a budget constraint, extract numeric [min, max] in INR.
+5. If the user is just saying 'hello', 'who are you', or asking general questions, set isSearch to false and give a helpful messageToUser introducing yourself as the ROAD FACING AI assistant.
+6. Provide a concise, warm messageToUser reflecting what you are searching for or responding to them.
+7. Consider previous conversation context when parsing intent: ${String(history).slice(0, 1000)}`;
 
-LATEST USER MESSAGE:
-"${prompt}"
-
-INSTRUCTIONS:
-1. Parse the latest user message in the context of the conversation history.
-2. If the user is just chatting or asking for something unavailable, respond politely in 'messageToUser' and set 'isSearch' to false.
-3. If they are looking for available properties, extract the filters (location, type, budget, bhk), set 'isSearch' to true, and say something like "Sure, I found some options for you!" in 'messageToUser'.`;
-
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: [
         {
           role: 'user',
-          parts: [{ text: systemPrompt }]
+          parts: [{ text: `${systemPrompt}\n\nUser Query: "${cleanPrompt}"` }]
         }
       ],
       config: {
         responseMimeType: 'application/json',
         responseSchema: responseSchema,
+        temperature: 0.1,
       }
     });
 
-    const text = response.text;
-    if (!text) {
+    const resultText = response.text;
+    if (!resultText) {
       throw new Error("No text returned from Gemini");
     }
 
-    const filters = JSON.parse(text);
-    return NextResponse.json(filters);
-    
+    const parsedData = JSON.parse(resultText);
+    return NextResponse.json(parsedData);
   } catch (error: any) {
-    console.error("AI Search Error:", error);
+    console.error("[AI Search API Error]:", error);
     return NextResponse.json(
-      { error: "Failed to process AI search." },
-      { status: 500 }
+      {
+        location: "",
+        propertyType: "any",
+        budget: [0, 100000000],
+        bhk: "any",
+        isSearch: false,
+        messageToUser: "I had trouble processing that with AI, but you can use the search filters above to find properties!",
+      },
+      { status: 200 }
     );
   }
 }
