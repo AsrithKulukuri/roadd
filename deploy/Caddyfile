@@ -1,0 +1,43 @@
+# ==============================================================================
+# ROAD FACING — Caddyfile Configuration for Hetzner Linux Deployment
+# Ultra-fast, automatic SSL (Let's Encrypt / ZeroSSL), HTTP/3 & Brotli enabled
+# ==============================================================================
+
+road.in, www.road.in {
+    # 1. Reverse proxy to PM2 Next.js Node cluster
+    reverse_proxy localhost:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # 2. Modern Compression (zstd, brotli, gzip)
+    encode zstd gzip
+
+    # 3. Static Asset Caching
+    @static {
+        path /_next/static/* /images/* /favicon.ico /robots.txt /sitemap.xml
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    # 4. Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
+        -Server
+    }
+
+    # 5. Logging
+    log {
+        output file /var/log/caddy/road_access.log {
+            roll_size 100mb
+            roll_keep 10
+            roll_keep_for 720h
+        }
+    }
+}

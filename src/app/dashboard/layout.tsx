@@ -14,6 +14,7 @@ import {
   PlusCircle,
   Lock,
   Shield,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import { logoutUser } from "@/hooks/use-auth-session";
 
 const sidebarLinks = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/leads", label: "Project Leads", icon: Users },
   { href: "/dashboard/listings", label: "My Properties", icon: Building },
   { href: "/dashboard/saved", label: "Saved Properties", icon: Heart },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
