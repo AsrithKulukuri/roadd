@@ -10,7 +10,6 @@ import { PropertyActions } from "@/components/property/property-actions";
 import { MapPin, Shield, ChevronLeft, Building2, Tag, Percent, ArrowDownRight, Sparkles, Play, Compass } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PropertyLocationWrapper } from "@/components/property/property-location-wrapper";
-import { ContactAgentBelowMap } from "@/components/property/contact-agent-below-map";
 import { BackButton } from "@/components/ui/back-button";
 import { MortgageCalculator } from "@/components/property/mortgage-calculator";
 import { formatINR, formatPriceCompact, getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
@@ -407,7 +406,6 @@ export default async function PropertyDetailPage({
                 longitude={property.location.longitude}
                 title={property.title}
               />
-              <ContactAgentBelowMap property={property} />
             </div>
 
             {/* BOX 7: Similar Properties */}
