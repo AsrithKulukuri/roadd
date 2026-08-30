@@ -1286,32 +1286,60 @@ export function ProjectDetailView({
                     </p>
                   )}
 
-                  {/* Direct Contact Buttons */}
+                  {/* Builder Contact Section (Login Gated) */}
                   {!isLoggedIn ? (
-                    <div className="pt-2">
+                    <div className="mt-4 p-5 rounded-2xl bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-500 border border-amber-500/40 flex items-center justify-center shrink-0">
+                          <Lock className="w-5 h-5 text-amber-500" />
+                        </div>
+                        <div>
+                          <h4 className="font-heading font-black text-slate-900 dark:text-white text-sm sm:text-base">
+                            Log in to view builder contact details
+                          </h4>
+                          <p className="text-xs text-slate-600 dark:text-slate-300">
+                            Sign in to connect directly on WhatsApp, view direct phone numbers, and get payment schedules.
+                          </p>
+                        </div>
+                      </div>
                       <button
                         type="button"
                         onClick={() => router.push(getLoginUrl(targetRedirect))}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs sm:text-sm transition-all shadow-xs cursor-pointer active:scale-95"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black text-sm shadow-md transition-all cursor-pointer"
                       >
                         <Lock className="w-4 h-4 fill-slate-950 text-slate-950" />
-                        <span>Sign In to Contact Builder</span>
+                        <span>Sign in to Contact Builder</span>
                       </button>
                     </div>
                   ) : (
-                    <div className="flex flex-wrap gap-3 pt-2">
-                      {phone && (
-                        <a href={phone} className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border-default bg-slate-50 dark:bg-slate-900 text-text-primary font-bold text-xs sm:text-sm hover:border-slate-400 transition-colors whitespace-nowrap shadow-2xs active:scale-95">
-                          <Phone className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
-                          <span>Call Builder ({project.builderPhone})</span>
-                        </a>
-                      )}
-                      {whatsapp && (
-                        <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm transition-colors whitespace-nowrap shadow-xs active:scale-95">
-                          <MessageCircle className="w-4 h-4 shrink-0" /> WhatsApp
-                        </a>
-                      )}
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                          <CheckCircle2 className="w-3 h-3" /> Builder Contact Unlocked
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-3">
+                        {phone && (
+                          <a
+                            href={phone}
+                            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all shadow-xs active:scale-95"
+                          >
+                            <Phone className="w-4 h-4 text-amber-500 shrink-0" />
+                            <span>Call Builder {project.builderPhone ? `(${project.builderPhone})` : ""}</span>
+                          </a>
+                        )}
+                        {whatsapp && (
+                          <a
+                            href={whatsapp}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs sm:text-sm transition-all shadow-xs active:scale-95"
+                          >
+                            <MessageCircle className="w-4 h-4 shrink-0" />
+                            <span>WhatsApp Builder</span>
+                          </a>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
