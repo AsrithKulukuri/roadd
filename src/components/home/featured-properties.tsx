@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Sparkles, MapPin, Navigation } from "lucide-react";
 import { PropertyCard } from "@/components/property/property-card";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { Button } from "@/components/ui/button";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useGeolocation } from "@/hooks/use-geolocation";
@@ -68,7 +69,23 @@ export function FeaturedProperties() {
   }
 
   if (!mounted) {
-    return <div className="h-[600px] flex items-center justify-center">Loading properties...</div>;
+    return (
+      <section className="py-12 sm:py-20 relative">
+        <div className="container-road">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-8 sm:mb-12">
+            <div className="max-w-2xl space-y-3">
+              <div className="h-6 w-36 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
+              <div className="h-8 w-64 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
   }
 
   if (featured.length === 0) return null;

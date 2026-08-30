@@ -176,10 +176,10 @@ export default async function PropertyDetailPage({
       priceCurrency: "INR",
       availability: "https://schema.org/InStock",
       validFrom: property.createdAt,
+      // TODO: For future production hardening, strip private owner contact fields (ownerPhone, ownerEmail) from unauthenticated public Supabase queries and API responses
       seller: {
         "@type": "RealEstateAgent",
         name: property.ownerName || "Road Facing Verified Partner",
-        telephone: property.ownerPhone || "+91 98765 43210",
       },
     },
   };

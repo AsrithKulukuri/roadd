@@ -16,6 +16,7 @@ function getSupabaseClient() {
 
 async function getProject(slug: string): Promise<Project | null> {
   try {
+    // TODO: For future production hardening, strip private builder contact fields (builderPhone, builderWhatsapp) from unauthenticated public queries
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from("projects")

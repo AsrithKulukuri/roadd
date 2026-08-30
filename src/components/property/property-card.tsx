@@ -22,6 +22,9 @@ import {
   Mail,
   Phone,
   Sparkles,
+  Award,
+  CheckCircle2,
+  Tag,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -271,30 +274,30 @@ export function PropertyCard({
               <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10 pointer-events-none">
                 {(property.displayCategory === "featured" || property.isFeatured) && (
                   <span
-                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-[0_0_14px_rgba(245,158,11,0.45)] border border-amber-300/40 backdrop-blur-md"
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-950 shadow-xs border border-amber-300/60 backdrop-blur-md"
                   >
-                    ⭐ Featured
+                    <Sparkles className="w-3 h-3 text-slate-950" /> Featured
                   </span>
                 )}
                 {property.displayCategory === "recommended" && !property.isFeatured && (
                   <span
-                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_12px_rgba(37,99,235,0.4)] border border-blue-400/40 backdrop-blur-md"
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white shadow-xs border border-blue-400/40 backdrop-blur-md"
                   >
-                    👍 Recommended
+                    <CheckCircle2 className="w-3 h-3 text-white" /> Recommended
                   </span>
                 )}
                 {property.displayCategory === "budget_friendly" && (
                   <span
-                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)] border border-emerald-400/40 backdrop-blur-md"
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-600 text-white shadow-xs border border-teal-400/40 backdrop-blur-md"
                   >
-                    💰 Budget Friendly
+                    <Tag className="w-3 h-3 text-white" /> Budget Friendly
                   </span>
                 )}
                 {property.reraId && (
                   <span
-                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-950/80 text-amber-400 border border-amber-400/30 backdrop-blur-md shadow-xs"
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-950/85 text-amber-400 border border-amber-400/30 backdrop-blur-md shadow-xs"
                   >
-                    RERA
+                    <Shield className="w-3 h-3 text-amber-400" /> RERA
                   </span>
                 )}
               </div>

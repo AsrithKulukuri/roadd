@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { MessageSquare, Lock } from "lucide-react";
+import { MessageSquare, Lock, ShieldCheck, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import type { Property } from "@/types/property";
 
 interface ContactAgentBelowMapProps {
@@ -13,71 +12,56 @@ interface ContactAgentBelowMapProps {
 
 export function ContactAgentBelowMap({ property }: ContactAgentBelowMapProps) {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isLoggedIn, getLoginUrl } = useAuthSession();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      // 1. Check local storage session (WhatsApp OTP / Unified Login)
-      if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("road_user");
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            if (parsed.isLoggedIn) {
-              setIsLoggedIn(true);
-              return;
-            }
-          } catch (e) {}
-        }
-      }
-
-      // 2. Fallback to Supabase auth session
-      if (isSupabaseConfigured()) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            setIsLoggedIn(true);
-            return;
-          }
-        } catch (e) {}
-      }
-
-      setIsLoggedIn(false);
-    };
-
-    checkAuth();
-  }, []);
+  const targetRedirect = `/properties/${property.slug}`;
+  // TODO: For future production hardening, strip private owner contact fields from unauthenticated public Supabase queries / API responses
+  const ownerPhone = property.ownerPhone || "+91 8977311418";
+  const cleanPhone = ownerPhone.replace(/\D/g, "");
 
   if (isLoggedIn) {
     return (
       <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 p-5 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 mt-6 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/15 flex items-center justify-center text-amber-400 shrink-0 border border-amber-500/30">
-            <MessageSquare className="w-5 h-5 text-amber-400" />
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/15 flex items-center justify-center text-amber-500 shrink-0 border border-amber-500/30">
+            <ShieldCheck className="w-6 h-6 text-amber-500" />
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-              <h4 className="font-heading font-extrabold text-text-primary text-sm sm:text-base">Owner / Verified Agent Contact Unlocked</h4>
-              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400">Verified</span>
+              <h4 className="font-heading font-extrabold text-text-primary text-sm sm:text-base">
+                Owner / Verified Agent Contact Unlocked
+              </h4>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                Verified
+              </span>
             </div>
             <p className="text-text-secondary text-xs sm:text-sm">
-              Contact: <strong className="text-amber-400 font-black">+91 8977311418</strong> • asrithkulkuri@gmail.com
+              Direct: <strong className="text-amber-600 dark:text-amber-400 font-black">{ownerPhone}</strong>
+              {property.ownerEmail && (
+                <span className="text-text-tertiary"> • {property.ownerEmail}</span>
+              )}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
-          <Button 
+          <Button
             type="button"
-            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl px-5 h-11 shrink-0 shadow-md gap-2"
+            className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black rounded-xl px-5 h-11 shrink-0 shadow-md gap-2 cursor-pointer w-full md:w-auto"
             asChild
           >
-            <a 
-              href={`https://wa.me/918977311418?text=${encodeURIComponent("Hi! I am interested in your property: " + property.title + " located at " + property.location.locality + ". Please share pricing and details.")}`}
+            <a
+              href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+                "Hi! I am interested in your property: " +
+                  property.title +
+                  " located at " +
+                  property.location.locality +
+                  ". Please share pricing and details."
+              )}`}
               target="_blank"
               rel="noopener noreferrer"
             >
-              <MessageSquare className="w-4 h-4 fill-slate-950" />
-              WhatsApp (+91 8977311418)
+              <MessageSquare className="w-4 h-4 fill-slate-950 text-slate-950" />
+              WhatsApp ({ownerPhone})
             </a>
           </Button>
         </div>
@@ -86,25 +70,29 @@ export function ContactAgentBelowMap({ property }: ContactAgentBelowMapProps) {
   }
 
   return (
-    <div className="bg-gradient-to-r from-amber-primary/10 via-amber-primary/5 to-transparent border border-amber-primary/20 p-5 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 mt-6 shadow-sm">
+    <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 p-5 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 mt-6 shadow-sm">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-2xl bg-amber-primary/10 flex items-center justify-center text-amber-primary shrink-0 border border-amber-primary/20">
-          <MessageSquare className="w-5 h-5 animate-pulse" />
+        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0 border border-amber-500/20">
+          <Lock className="w-5 h-5 text-amber-500 animate-pulse" />
         </div>
         <div className="space-y-0.5">
-          <h4 className="font-heading font-bold text-text-primary text-sm sm:text-base">Contact Agent for Details</h4>
-          <p className="text-text-secondary text-xs sm:text-sm">Sign in to unlock contact numbers, email addresses, and send direct inquiries.</p>
+          <h4 className="font-heading font-bold text-text-primary text-sm sm:text-base">
+            Contact Agent for Details
+          </h4>
+          <p className="text-text-secondary text-xs sm:text-sm">
+            Sign in to unlock verified phone numbers, email addresses, and send direct WhatsApp inquiries.
+          </p>
         </div>
       </div>
-      <Button 
+      <Button
         type="button"
-        variant="amber" 
-        onClick={() => router.push(`/login?redirect=/properties/${property.slug}`)}
-        className="rounded-xl px-5 h-11 shrink-0 font-semibold shadow-amber-glow"
+        onClick={() => router.push(getLoginUrl(targetRedirect))}
+        className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black rounded-xl px-5 h-11 shrink-0 shadow-md cursor-pointer w-full md:w-auto"
       >
-        <Lock className="w-4 h-4 mr-2" />
+        <Lock className="w-4 h-4 mr-2 fill-slate-950 text-slate-950" />
         Sign In to Contact Agent
       </Button>
     </div>
   );
 }
+

@@ -10,9 +10,10 @@ import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import {
   MapPin, CheckCircle2, Phone, MessageCircle, Download, FileText, ExternalLink,
   ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark,
-  Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate, Film, Layers, Loader2, Copy, Share2
+  Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate, Film, Layers, Loader2, Copy, Share2, Lock, ShieldCheck
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { BackButton } from "@/components/ui/back-button";
 import type { Project, ProjectConfig } from "@/types/project";
 import { ProjectFacilitiesGrid } from "@/components/project/project-facilities-grid";
@@ -23,6 +24,7 @@ import { shareOnWhatsApp } from "@/lib/whatsapp/whatsapp-share";
 import { WhatsAppIcon } from "@/components/property/whatsapp-share-button";
 import { toast } from "sonner";
 import { WatermarkOverlay } from "@/components/shared/watermark-overlay";
+import { useAuthSession } from "@/hooks/use-auth-session";
 
 // ─── Lazy map (SSR unsafe) ─────────────────────────────────────────────────────
 const ProjectMapView = dynamic(
@@ -121,6 +123,8 @@ export function ProjectDetailView({
   slug: string; 
   initialProject?: Project | null;
 }) {
+  const router = useRouter();
+  const { isLoggedIn, getLoginUrl } = useAuthSession();
   const { projects, fetchProjects } = useProjectsStore();
 
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
@@ -194,11 +198,12 @@ export function ProjectDetailView({
   const heroImage = project.coverImage || galleryAll[0]?.url;
   const sideImages = galleryAll.filter((i) => i.url !== heroImage);
 
-  // WhatsApp URL
+  // WhatsApp URL & Phone (TODO: production hardening query stripping)
   const whatsapp = project.builderWhatsapp
     ? `https://wa.me/${project.builderWhatsapp.replace(/\D/g, "")}?text=Hi, I am interested in ${project.name}`
     : null;
   const phone = project.builderPhone ? `tel:${project.builderPhone.replace(/\s/g, "")}` : null;
+  const targetRedirect = `/projects/${project.slug || slug}`;
   const hasBrochure = Boolean(project.brochureUrl && !project.brochureUrl.startsWith("blob:"));
 
   const handleDownloadBrochure = async (e: React.MouseEvent, url: string, filename: string) => {
@@ -1282,19 +1287,33 @@ export function ProjectDetailView({
                   )}
 
                   {/* Direct Contact Buttons */}
-                  <div className="flex flex-wrap gap-3 pt-2">
-                    {phone && (
-                      <a href={phone} className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border-default bg-slate-50 dark:bg-slate-900 text-text-primary font-bold text-xs sm:text-sm hover:border-slate-400 transition-colors whitespace-nowrap shadow-2xs active:scale-95">
-                        <Phone className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" /> Call Builder
-                      </a>
-                    )}
-                    {whatsapp && (
-                      <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm transition-colors whitespace-nowrap shadow-xs active:scale-95">
-                        <MessageCircle className="w-4 h-4 shrink-0" /> WhatsApp
-                      </a>
-                    )}
-                  </div>
+                  {!isLoggedIn ? (
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => router.push(getLoginUrl(targetRedirect))}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs sm:text-sm transition-all shadow-xs cursor-pointer active:scale-95"
+                      >
+                        <Lock className="w-4 h-4 fill-slate-950 text-slate-950" />
+                        <span>Sign In to Contact Builder</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-3 pt-2">
+                      {phone && (
+                        <a href={phone} className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border-default bg-slate-50 dark:bg-slate-900 text-text-primary font-bold text-xs sm:text-sm hover:border-slate-400 transition-colors whitespace-nowrap shadow-2xs active:scale-95">
+                          <Phone className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
+                          <span>Call Builder ({project.builderPhone})</span>
+                        </a>
+                      )}
+                      {whatsapp && (
+                        <a href={whatsapp} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm transition-colors whitespace-nowrap shadow-xs active:scale-95">
+                          <MessageCircle className="w-4 h-4 shrink-0" /> WhatsApp
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               </ScrollReveal>
               </div>
@@ -1322,9 +1341,47 @@ export function ProjectDetailView({
 
               {/* Quick contact — desktop only (mobile has fixed bar) */}
               <div className="hidden sm:block bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm">
-                <h3 className="font-bold text-text-primary mb-1">Contact Builder</h3>
-                <p className="text-xs text-text-tertiary mb-4">Get exact pricing, payment plans &amp; site visit</p>
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-bold text-text-primary">Contact Builder</h3>
+                  {isLoggedIn && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                      <CheckCircle2 className="w-3 h-3" /> Unlocked
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-text-tertiary mb-4">
+                  {isLoggedIn
+                    ? "Get exact pricing, payment plans & site visit"
+                    : "Sign in to view direct phone numbers, WhatsApp, and get exact pricing & payment plans"}
+                </p>
+
                 <div className="space-y-3">
+                  {!isLoggedIn ? (
+                    <button
+                      type="button"
+                      onClick={() => router.push(getLoginUrl(targetRedirect))}
+                      className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm shadow-md transition-all cursor-pointer active:scale-98"
+                    >
+                      <Lock className="w-4 h-4 fill-slate-950 text-slate-950" />
+                      <span>Sign in to Contact Builder</span>
+                    </button>
+                  ) : (
+                    <>
+                      {phone && (
+                        <a href={phone} className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-sm active:scale-98">
+                          <Phone className="w-4 h-4 text-amber-500 shrink-0" />
+                          <span>Call Builder ({project.builderPhone})</span>
+                        </a>
+                      )}
+                      {whatsapp && (
+                        <a href={whatsapp} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm transition-all shadow-sm active:scale-98">
+                          <MessageCircle className="w-4 h-4 shrink-0" /> WhatsApp
+                        </a>
+                      )}
+                    </>
+                  )}
+
                   {project.videoUrl && (
                     <button
                       onClick={() => openVideo(project.videoUrl)}
@@ -1332,17 +1389,6 @@ export function ProjectDetailView({
                     >
                       <Play className="w-4 h-4 fill-amber-500 text-amber-500" /> Watch Tour Video
                     </button>
-                  )}
-                  {phone && (
-                    <a href={phone} className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-sm active:scale-98">
-                      <Phone className="w-4 h-4 text-amber-500 shrink-0" /> View Number
-                    </a>
-                  )}
-                  {whatsapp && (
-                    <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-sm active:scale-98">
-                      <MessageCircle className="w-4 h-4 text-amber-500 shrink-0" /> WhatsApp
-                    </a>
                   )}
                   {hasBrochure && (
                     <div className="flex items-center gap-2 w-full">

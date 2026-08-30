@@ -12,10 +12,10 @@ interface LogoProps {
 }
 
 const sizeMap = {
-  sm: { iconHeight: 26, textClass: "text-base", subClass: "text-[9px]" },
-  md: { iconHeight: 32, textClass: "text-lg sm:text-xl", subClass: "text-[10px]" },
-  lg: { iconHeight: 42, textClass: "text-2xl", subClass: "text-[11px]" },
-  xl: { iconHeight: 52, textClass: "text-3xl", subClass: "text-xs" },
+  sm: { iconHeight: 26, textClass: "text-base" },
+  md: { iconHeight: 32, textClass: "text-lg sm:text-xl" },
+  lg: { iconHeight: 42, textClass: "text-2xl" },
+  xl: { iconHeight: 52, textClass: "text-3xl" },
 };
 
 export function Logo({
@@ -23,13 +23,10 @@ export function Logo({
   size = "md",
   showText = true,
   href = "/",
-  isDarkBg = false,
   textColor,
 }: LogoProps) {
-  const { iconHeight, textClass, subClass } = sizeMap[size];
-
+  const { iconHeight, textClass } = sizeMap[size];
   const resolvedTextColor = textColor || "text-white";
-  const resolvedSubtitleColor = textColor ? "text-slate-600 font-bold" : "text-slate-300";
 
   const content = (
     <div className={cn("flex items-center gap-2.5 group select-none", className)}>
@@ -59,17 +56,6 @@ export function Logo({
               FACING
             </span>
           </div>
-          {size !== "sm" && (
-            <span
-              className={cn(
-                "uppercase tracking-[0.16em] leading-none mt-1 font-bold hidden sm:block",
-                subClass,
-                resolvedSubtitleColor
-              )}
-            >
-              Real Projects. Real People. Real Updates.
-            </span>
-          )}
         </div>
       )}
     </div>

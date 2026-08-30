@@ -351,20 +351,24 @@ button, nav, a, [role="button"] {
    ======================================================================== */
 
 .hover-lift {
-  transition: transform 0.3s var(--ease-out-expo), box-shadow 0.3s var(--ease-out-expo);
+  transition: transform 0.25s var(--ease-out-expo), box-shadow 0.25s var(--ease-out-expo);
 }
 
-.hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-card-hover);
+@media (hover: hover) and (pointer: fine) {
+  .hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-card-hover);
+  }
 }
 
 .hover-glow {
-  transition: box-shadow 0.3s ease;
+  transition: box-shadow 0.25s ease;
 }
 
-.hover-glow:hover {
-  box-shadow: var(--shadow-amber-glow);
+@media (hover: hover) and (pointer: fine) {
+  .hover-glow:hover {
+    box-shadow: var(--shadow-amber-glow);
+  }
 }
 
 .amber-border-glow {
@@ -431,7 +435,8 @@ button, nav, a, [role="button"] {
    ======================================================================== */
 
 *:focus-visible {
-  outline: none;
+  outline: 2px solid var(--color-amber-primary);
+  outline-offset: 2px;
 }
 
 /* ========================================================================

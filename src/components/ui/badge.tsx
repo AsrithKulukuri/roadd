@@ -3,30 +3,38 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-lg border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-amber-primary focus:ring-offset-2",
+  "inline-flex items-center gap-1 rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-amber-primary focus:ring-offset-2 select-none",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-amber-primary text-bg-primary",
+          "border-transparent bg-slate-900 text-white dark:bg-white dark:text-slate-950",
         secondary:
-          "border-border-default bg-bg-card text-text-secondary",
+          "border-border-default bg-bg-elevated text-text-secondary",
         outline:
-          "border-border-default text-text-secondary",
+          "border-border-default text-text-secondary bg-transparent",
         success:
-          "border-transparent bg-success/15 text-success",
+          "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
         warning:
-          "border-transparent bg-warning/15 text-warning",
+          "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400",
         error:
-          "border-transparent bg-error/15 text-error",
+          "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-400",
+        info:
+          "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-400",
         amber:
-          "border-amber-primary/20 bg-amber-primary/10 text-amber-primary",
+          "border-amber-primary/30 bg-amber-primary/10 text-amber-600 dark:text-amber-400 font-bold",
         rera:
-          "border-success/30 bg-success/10 text-success font-bold",
+          "border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold",
         verified:
-          "border-amber-primary/30 bg-amber-primary/10 text-amber-primary",
+          "border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold",
+        featured:
+          "border-amber-400/40 bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold shadow-xs",
+        recommended:
+          "border-blue-500/30 bg-blue-500/15 text-blue-700 dark:text-blue-300 font-bold",
+        budget:
+          "border-teal-500/30 bg-teal-500/15 text-teal-700 dark:text-teal-300 font-bold",
         premium:
-          "border-amber-glow/30 bg-gradient-to-r from-amber-primary/15 to-amber-glow/15 text-amber-glow",
+          "border-amber-400/50 bg-gradient-to-r from-amber-500/20 to-amber-300/15 text-amber-700 dark:text-amber-300 font-bold",
       },
     },
     defaultVariants: {

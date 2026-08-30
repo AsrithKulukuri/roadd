@@ -423,11 +423,11 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <Card className="bg-gradient-to-r from-amber-primary/10 via-amber-primary/5 to-transparent border border-amber-primary/20 rounded-3xl relative overflow-hidden">
+          <Card className="bg-gradient-to-r from-amber-primary/10 via-amber-primary/5 to-transparent border border-amber-primary/20 rounded-2xl relative overflow-hidden">
             <CardContent className="p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex gap-4 items-start">
-                <div className="w-12 h-12 rounded-2xl bg-amber-primary/10 flex items-center justify-center flex-shrink-0 border border-amber-primary/30">
-                  <ShieldAlert className="h-6 w-6 text-amber-primary animate-pulse" />
+                <div className="w-12 h-12 rounded-xl bg-amber-primary/10 flex items-center justify-center flex-shrink-0 border border-amber-primary/30">
+                  <ShieldAlert className="h-6 w-6 text-amber-primary" />
                 </div>
                 <div className="space-y-1">
                   <h3 className="font-heading text-lg font-bold text-text-primary flex items-center gap-2">
@@ -447,10 +447,10 @@ export default function DashboardPage() {
               </div>
               <Button
                 variant="amber"
-                className="shadow-amber-glow h-11 rounded-xl px-6 self-start md:self-auto font-semibold flex items-center gap-1.5"
+                className="shadow-sm h-11 rounded-xl px-6 self-start md:self-auto font-semibold flex items-center gap-1.5 cursor-pointer"
                 onClick={() => setIsModalOpen(true)}
               >
-                <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: "3s" }} />
+                <Sparkles className="w-4 h-4 text-slate-950" />
                 Open Setup phases
               </Button>
             </CardContent>

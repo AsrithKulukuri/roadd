@@ -47,9 +47,6 @@ export default function Loading() {
             <span className="text-[#f59e0b] drop-shadow-[0_0_16px_rgba(245,158,11,0.6)]">ROAD</span>
             <span className="text-white tracking-wider drop-shadow-md">FACING</span>
           </div>
-          <p className="text-xs sm:text-sm font-semibold text-slate-400 tracking-wide">
-            Real Projects. Real People. Real Updates.
-          </p>
         </div>
 
         {/* Shimmer Progress Track */}
