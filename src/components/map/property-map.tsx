@@ -2006,8 +2006,13 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
 
             {mapLayerType === "streets" ? (
               <TileLayer
-                attribution='&copy; <a href="https://carto.com/">CartoDB</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url={
+                  process.env.NEXT_PUBLIC_MAP_TILE_URL ||
+                  (process.env.NEXT_PUBLIC_CARTO_API_KEY
+                    ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?api_key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}`
+                    : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
+                }
                 maxNativeZoom={19}
                 maxZoom={20}
                 updateWhenIdle={true}
@@ -2034,7 +2039,12 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                 />
                 {/* Place names labels overlay on satellite */}
                 <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png"
+                  attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+                  url={
+                    process.env.NEXT_PUBLIC_CARTO_API_KEY
+                      ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png?api_key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}`
+                      : "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+                  }
                   maxNativeZoom={19}
                   maxZoom={20}
                   opacity={0.9}
