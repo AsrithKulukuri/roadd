@@ -55,9 +55,10 @@ export async function POST(request: Request) {
     });
 
     if (dbError) {
+      console.error("dbError in send-otp:", JSON.stringify(dbError, null, 2));
       logger.error("Failed to store OTP in database", { phone, error: dbError.message, details: dbError.details, hint: dbError.hint });
       return NextResponse.json(
-        { success: false, error: "Failed to initialize OTP request. Please try again." },
+        { success: false, error: dbError.message || "Failed to initialize OTP request. Please try again." },
         { status: 500 }
       );
     }

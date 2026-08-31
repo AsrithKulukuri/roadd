@@ -30,11 +30,16 @@ export function useWhatsAppAuth() {
     setError(null);
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: targetPhone }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       const data: SendOTPResponse & { error?: string } = await response.json();
 
@@ -51,7 +56,10 @@ export function useWhatsAppAuth() {
       toast.success(data.message || "OTP sent successfully to your WhatsApp number!");
       return true;
     } catch (err: any) {
-      const msg = err?.message || "Network error. Please try again.";
+      const msg =
+        err?.name === "AbortError"
+          ? "Request timed out. Please check your connection and try again."
+          : err?.message || "Network error. Please try again.";
       setError(msg);
       toast.error(msg);
       return false;
@@ -75,11 +83,16 @@ export function useWhatsAppAuth() {
       setError(null);
 
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         const response = await fetch("/api/auth/verify-otp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ phone, otp: targetOtp }),
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
 
         const data: VerifyOTPResponse & { error?: string } = await response.json();
 
@@ -93,7 +106,10 @@ export function useWhatsAppAuth() {
         toast.success("WhatsApp verification successful! Welcome to ROAD.");
         return data;
       } catch (err: any) {
-        const msg = err?.message || "Network error during OTP verification.";
+        const msg =
+          err?.name === "AbortError"
+            ? "Verification timed out. Please try again."
+            : err?.message || "Network error during OTP verification.";
         setError(msg);
         toast.error(msg);
         return null;

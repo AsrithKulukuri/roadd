@@ -7,6 +7,14 @@ import http from "node:http";
  * `AggregateError: (EACCES)` permission errors when connecting to external APIs (e.g. Supabase).
  */
 export function ipv4Fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  // On Vercel Serverless (Linux/AWS Lambda) or edge runtime, standard native fetch is fully functional
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || typeof https?.request !== "function") {
+    return fetch(input, {
+      ...init,
+      cache: "no-store",
+    });
+  }
+
   const urlString = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
   const parsedUrl = new URL(urlString);
   const isHttps = parsedUrl.protocol === "https:";
@@ -56,11 +64,18 @@ export function ipv4Fetch(input: RequestInfo | URL, init?: RequestInit): Promise
             }
           }
 
-          const response = new Response(bodyBuffer, {
+          const response = new Response(bodyBuffer.length > 0 ? bodyBuffer : null, {
             status: res.statusCode || 200,
             statusText: res.statusMessage || "",
             headers: responseHeaders,
           });
+
+          // Safe json() and text() resolvers for empty 201/204 PostgREST responses
+          response.json = async () => {
+            if (!bodyText || !bodyText.trim()) return null;
+            return JSON.parse(bodyText);
+          };
+          response.text = async () => bodyText;
 
           resolve(response);
         });
