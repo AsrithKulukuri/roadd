@@ -2,14 +2,23 @@
  * WhatsApp OTP Authentication System Types
  */
 
+export interface StructuredAPIError {
+  code: string;
+  message: string;
+  details?: Record<string, string>;
+}
+
 export interface SendOTPRequest {
   phone: string;
 }
 
 export interface SendOTPResponse {
   success: boolean;
-  message: string;
-  expiresInSeconds: number;
+  message?: string;
+  expiresInSeconds?: number;
+  requestId?: string;
+  error?: string | StructuredAPIError;
+  retryAfterSeconds?: number;
 }
 
 export interface VerifyOTPRequest {
@@ -20,7 +29,8 @@ export interface VerifyOTPRequest {
 export interface VerifyOTPResponse {
   success: boolean;
   isProfileComplete?: boolean;
-  message: string;
+  message?: string;
+  requestId?: string;
   user?: {
     id: string;
     phone: string;
@@ -32,12 +42,14 @@ export interface VerifyOTPResponse {
     accessToken: string;
     refreshToken: string;
   };
+  error?: string | StructuredAPIError;
 }
 
 export interface APIErrorResponse {
   success: false;
-  error: string;
+  error: string | StructuredAPIError;
   code?: string;
+  requestId?: string;
   details?: Record<string, string>;
 }
 

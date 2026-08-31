@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Phone, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -41,7 +41,7 @@ export function PhoneInput({ onSubmit, isLoading, initialValue = "", error }: Ph
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-2">
-        <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary ml-1">
+        <label htmlFor="whatsapp-phone-input" className="text-xs font-semibold uppercase tracking-wider text-text-secondary ml-1">
           WhatsApp Mobile Number
         </label>
         
@@ -53,7 +53,11 @@ export function PhoneInput({ onSubmit, isLoading, initialValue = "", error }: Ph
           </div>
 
           <Input
+            id="whatsapp-phone-input"
+            name="phone"
             type="tel"
+            inputMode="numeric"
+            autoComplete="tel"
             required
             autoFocus
             disabled={isLoading}
@@ -65,7 +69,7 @@ export function PhoneInput({ onSubmit, isLoading, initialValue = "", error }: Ph
         </div>
 
         {displayError && (
-          <p className="text-xs text-red-500 font-medium ml-1 animate-fadeIn">
+          <p id="phone-input-error" role="alert" aria-live="polite" className="text-xs text-red-500 font-medium ml-1 animate-fadeIn break-words">
             {displayError}
           </p>
         )}

@@ -5,18 +5,44 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { signSessionPayload } from "@/lib/server-auth-guard";
 import { logger } from "@/lib/logger";
 
+export const runtime = "nodejs";
+
 const MAX_ATTEMPTS = 5;
 
 export async function POST(request: Request) {
+  const requestId = `req_ver_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
   try {
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "INVALID_JSON_PAYLOAD",
+            message: "Invalid JSON payload provided.",
+          },
+          requestId,
+        },
+        { status: 400 }
+      );
+    }
 
     // 1. Input Validation with Zod
     const validationResult = verifyOTPSchema.safeParse(body);
     if (!validationResult.success) {
-      const errorMessage = validationResult.error.issues[0]?.message || "Invalid payload format";
+      const errorMessage = validationResult.error.issues[0]?.message || "Invalid OTP payload format.";
       return NextResponse.json(
-        { success: false, error: errorMessage },
+        {
+          success: false,
+          error: {
+            code: "INVALID_PAYLOAD",
+            message: errorMessage,
+          },
+          requestId,
+        },
         { status: 400 }
       );
     }
@@ -34,9 +60,18 @@ export async function POST(request: Request) {
       .limit(1);
 
     if (fetchError || !otpRecords || otpRecords.length === 0) {
-      logger.security("VERIFY_OTP_NOT_FOUND", cleanPhone, false);
+      logger.security("VERIFY_OTP_NOT_FOUND", `${cleanPhone.slice(0, 4)}****${cleanPhone.slice(-3)}`, false, {
+        requestId,
+      });
       return NextResponse.json(
-        { success: false, error: "No active OTP request found for this phone number. Please request a new code." },
+        {
+          success: false,
+          error: {
+            code: "OTP_NOT_FOUND",
+            message: "No active OTP request found for this phone number. Please request a new code.",
+          },
+          requestId,
+        },
         { status: 404 }
       );
     }
@@ -47,20 +82,39 @@ export async function POST(request: Request) {
 
     // 3. Check Expiry (5 minute window)
     if (now > expiresAt) {
-      logger.security("VERIFY_OTP_EXPIRED", cleanPhone, false);
+      logger.security("VERIFY_OTP_EXPIRED", `${cleanPhone.slice(0, 4)}****${cleanPhone.slice(-3)}`, false, {
+        requestId,
+      });
       await supabaseAdmin.from("phone_otps").delete().eq("id", record.id);
       return NextResponse.json(
-        { success: false, error: "OTP has expired. Please request a new verification code." },
+        {
+          success: false,
+          error: {
+            code: "OTP_EXPIRED",
+            message: "OTP code has expired. Please request a new verification code.",
+          },
+          requestId,
+        },
         { status: 400 }
       );
     }
 
     // 4. Check Maximum Failed Verification Attempts (Max 5 attempts)
     if (record.attempts >= MAX_ATTEMPTS) {
-      logger.security("VERIFY_OTP_MAX_ATTEMPTS_EXCEEDED", cleanPhone, false, { attempts: record.attempts });
+      logger.security("VERIFY_OTP_MAX_ATTEMPTS_EXCEEDED", `${cleanPhone.slice(0, 4)}****${cleanPhone.slice(-3)}`, false, {
+        attempts: record.attempts,
+        requestId,
+      });
       await supabaseAdmin.from("phone_otps").delete().eq("id", record.id);
       return NextResponse.json(
-        { success: false, error: "Maximum verification attempts exceeded (5/5). Please request a new OTP." },
+        {
+          success: false,
+          error: {
+            code: "MAX_ATTEMPTS_EXCEEDED",
+            message: "Maximum verification attempts exceeded (5/5). Please request a new OTP.",
+          },
+          requestId,
+        },
         { status: 403 }
       );
     }
@@ -76,12 +130,19 @@ export async function POST(request: Request) {
         .eq("id", record.id);
 
       const remaining = MAX_ATTEMPTS - newAttempts;
-      logger.security("VERIFY_OTP_FAILED", cleanPhone, false, { remainingAttempts: remaining });
+      logger.security("VERIFY_OTP_FAILED", `${cleanPhone.slice(0, 4)}****${cleanPhone.slice(-3)}`, false, {
+        remainingAttempts: remaining,
+        requestId,
+      });
 
       return NextResponse.json(
         {
           success: false,
-          error: `Invalid OTP code. ${remaining > 0 ? `${remaining} attempts remaining.` : "Please request a new OTP."}`,
+          error: {
+            code: "INVALID_OTP",
+            message: `Invalid OTP code. ${remaining > 0 ? `${remaining} attempts remaining.` : "Please request a new OTP."}`,
+          },
+          requestId,
         },
         { status: 401 }
       );
@@ -90,10 +151,10 @@ export async function POST(request: Request) {
     // 6. Delete OTP Record Immediately (Prevent Replay Attacks)
     await supabaseAdmin.from("phone_otps").delete().eq("id", record.id);
 
-    // 7. High-Speed Indexed User Lookup (Replaced slow listUsers)
-    let userPayload: any = null;
+    // 7. Indexed User Lookup
+    let userPayload: { id: string; phone: string; name: string; email: string; role: string } | null = null;
     let userId: string | null = null;
-    let existingProfile: any = null;
+    let existingProfile: { id?: string; full_name?: string; email?: string; role?: string; phone?: string } | null = null;
 
     try {
       const { data: profile } = await supabaseAdmin
@@ -106,8 +167,9 @@ export async function POST(request: Request) {
         existingProfile = profile;
         userId = profile.id;
       }
-    } catch (profileErr) {
-      console.warn("[VERIFY OTP] Profile lookup warn:", profileErr);
+    } catch (profileErr: unknown) {
+      const msg = profileErr instanceof Error ? profileErr.message : String(profileErr);
+      console.warn("[VERIFY OTP] Profile lookup warn:", msg);
     }
 
     // If profile not found, ensure Supabase Auth user exists
@@ -127,10 +189,9 @@ export async function POST(request: Request) {
         if (!createError && newUser?.user) {
           userId = newUser.user.id;
         } else {
-          // If already exists or error, assign deterministic ID
           userId = `wa_${cleanPhone.replace(/\D/g, "")}`;
         }
-      } catch (authErr) {
+      } catch {
         userId = `wa_${cleanPhone.replace(/\D/g, "")}`;
       }
     }
@@ -152,7 +213,12 @@ export async function POST(request: Request) {
 
     const authToken = signSessionPayload(userPayload);
 
-    logger.security("VERIFY_OTP_SUCCESS", cleanPhone, true, { userId, role: userRole, isProfileComplete });
+    logger.security("VERIFY_OTP_SUCCESS", `${cleanPhone.slice(0, 4)}****${cleanPhone.slice(-3)}`, true, {
+      userId,
+      role: userRole,
+      isProfileComplete,
+      requestId,
+    });
 
     // 8. Return Authenticated Session Response with cookie
     const response = NextResponse.json(
@@ -162,6 +228,7 @@ export async function POST(request: Request) {
         message: "WhatsApp OTP verified successfully.",
         user: userPayload,
         token: authToken,
+        requestId,
       },
       { status: 200 }
     );
@@ -171,7 +238,7 @@ export async function POST(request: Request) {
       path: "/",
       maxAge: 30 * 24 * 3600, // 30 days
       sameSite: "lax",
-      httpOnly: true, // HTTP-only to protect against XSS
+      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
     });
 
@@ -183,10 +250,19 @@ export async function POST(request: Request) {
     });
 
     return response;
-  } catch (err: any) {
-    logger.error("Unhandled Exception in POST /api/auth/verify-otp", { error: err?.message || err });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error("Unhandled Exception in POST /api/auth/verify-otp", { error: msg, requestId });
+
     return NextResponse.json(
-      { success: false, error: "Internal server error during OTP verification." },
+      {
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Internal server error during OTP verification. Please try again.",
+        },
+        requestId,
+      },
       { status: 500 }
     );
   }
