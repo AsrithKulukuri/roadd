@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
+import type { SharedMapItem } from "@/types/map";
 
 // Dynamically import the map component with SSR disabled
 const PropertyMap = dynamic(
@@ -21,7 +22,7 @@ const PropertyMap = dynamic(
 );
 
 interface MapWrapperProps {
-  filteredItems?: any[];
+  filteredItems?: SharedMapItem[];
   userLocation?: { lat: number, lng: number } | null;
   onVisibleItemsChange?: (visibleIds: string[]) => void;
 }
@@ -50,15 +51,13 @@ export function MapWrapper({ filteredItems, userLocation, onVisibleItemsChange }
   }, []);
 
   return (
-    <div ref={containerRef} style={{ width: "100%", height: "100%", minHeight: "400px" }}>
-      {height > 0 && (
-        <PropertyMap
-          filteredItems={filteredItems}
-          userLocation={userLocation}
-          onVisibleItemsChange={onVisibleItemsChange}
-          containerHeight={height}
-        />
-      )}
+    <div ref={containerRef} className="w-full h-full min-h-[400px] relative flex-1">
+      <PropertyMap
+        filteredItems={filteredItems}
+        userLocation={userLocation}
+        onVisibleItemsChange={onVisibleItemsChange}
+        containerHeight={height || 500}
+      />
     </div>
   );
 }

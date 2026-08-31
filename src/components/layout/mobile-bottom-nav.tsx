@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Home, Search, MapPin, Heart, Menu, X, Sparkles, Plus, User, LogOut, LogIn } from "lucide-react";
@@ -9,12 +9,12 @@ import { useFavoritesStore } from "@/stores/favorites-store";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { motion, AnimatePresence } from "framer-motion";
-import { navigationLinks } from "@/config/site";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
 import { logoutUser } from "@/hooks/use-auth-session";
 import { PostRequirementModal } from "@/components/shared/post-requirement-modal";
 import { haptic } from "@/lib/haptics";
+import { useIsMounted } from "@/hooks/use-is-mounted";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -33,26 +33,34 @@ export function MobileBottomNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
   const [user, setUser] = useState<{ name: string } | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsMounted();
   const [showMapTooltip, setShowMapTooltip] = useState(false);
 
   useEffect(() => {
     // Show map discovery tooltip once for 3 seconds on initial home visit
     try {
-      const hasSeen = sessionStorage.getItem("road_map_tooltip_seen");
+      const hasSeen = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("road_map_tooltip_seen") : null;
       if (!hasSeen && pathname === "/") {
-        setShowMapTooltip(true);
-        sessionStorage.setItem("road_map_tooltip_seen", "true");
-        const timer = setTimeout(() => {
+        const showTimer = setTimeout(() => {
+          setShowMapTooltip(true);
+          try {
+            sessionStorage.setItem("road_map_tooltip_seen", "true");
+          } catch {}
+        }, 400);
+
+        const hideTimer = setTimeout(() => {
           setShowMapTooltip(false);
-        }, 3200);
-        return () => clearTimeout(timer);
+        }, 3600);
+
+        return () => {
+          clearTimeout(showTimer);
+          clearTimeout(hideTimer);
+        };
       }
-    } catch (e) {}
+    } catch {}
   }, [pathname]);
 
   useEffect(() => {
-    setMounted(true);
     syncWithSupabase();
     fetchProperties();
     fetchProjects();
@@ -83,9 +91,18 @@ export function MobileBottomNav() {
     return savedPropertyIds.filter((id) => validIdSet.has(id)).length;
   }, [mounted, savedPropertyIds, validIdSet, storeProperties.length, storeProjects.length]);
 
+  const searchParamsString = searchParams ? searchParams.toString() : "";
+  const prevRouteRef = useRef({ pathname, searchParamsString });
+
   useEffect(() => {
-    setIsMenuOpen(false);
-  }, [pathname, searchParams]);
+    if (
+      prevRouteRef.current.pathname !== pathname ||
+      prevRouteRef.current.searchParamsString !== searchParamsString
+    ) {
+      prevRouteRef.current = { pathname, searchParamsString };
+      setIsMenuOpen(false);
+    }
+  }, [pathname, searchParamsString]);
 
   // Lock body scroll and listen for Escape key when mobile menu sheet is open
   useEffect(() => {
@@ -133,7 +150,7 @@ export function MobileBottomNav() {
             setUser(parsed);
             return;
           }
-        } catch (e) {}
+        } catch {}
       }
       setUser(null);
     };
@@ -342,6 +359,9 @@ export function MobileBottomNav() {
                 <button
                   key={item.id}
                   type="button"
+                  aria-expanded={item.id === "menu" ? isMenuOpen : undefined}
+                  aria-controls={item.id === "menu" ? "mobile-menu-drawer" : undefined}
+                  aria-label={item.label}
                   onClick={() => {
                     haptic.selection();
                     item.onClick();
@@ -370,7 +390,13 @@ export function MobileBottomNav() {
       {/* ── Mobile Full Menu Page / Slide-in Drawer ── */}
       <AnimatePresence>
         {isMenuOpen && (
-          <div className="fixed inset-0 z-50 sm:hidden">
+          <div
+            id="mobile-menu-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation Menu"
+            className="fixed inset-0 z-[9999] sm:hidden"
+          >
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}

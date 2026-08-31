@@ -1,5 +1,6 @@
 import type { Property } from "@/types/property";
 import type { Project } from "@/types/project";
+import type { FilterState } from "@/components/search/search-filters";
 
 export interface ParsedSearchIntent {
   rawQuery: string;
@@ -37,11 +38,11 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
 
   const bhks = new Set<number>();
   const propertyTypes = new Set<string>();
-  let listingType: "sale" | "rent" | undefined = undefined;
-  let saleType: "new" | "resale" | undefined = undefined;
-  let isGatedCommunity: boolean | undefined = undefined;
-  let minPrice: number | undefined = undefined;
-  let maxPrice: number | undefined = undefined;
+  const listingType: "sale" | "rent" | undefined = undefined;
+  const saleType: "new" | "resale" | undefined = undefined;
+  const isGatedCommunity: boolean | undefined = undefined;
+  const minPrice: number | undefined = undefined;
+  const maxPrice: number | undefined = undefined;
   const locationKeywords: string[] = [];
 
   // 1. Detect BHK patterns: 1bhk, 2bhk, 3bhk, 4bhk, 5bhk, 1bk, 2bk, 3bk, 4bk, 5bk, 3 bhk, 3 bed, 3 bedroom
@@ -69,9 +70,9 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     propertyTypes.add("villa");
     propertyTypes.add("independent-house");
   }
-  if (/\b(?:plot|plots|venture|ventures|layout|land|lands|residential\s*plot|residential\s*land)\b/i.test(norm)) {
-    propertyTypes.add("venture");
+  if (/\b(?:plot|plots|land|lands|site|sites|layout|layouts|venture|ventures|crda)\b/i.test(norm)) {
     propertyTypes.add("residential-land");
+    propertyTypes.add("venture");
   }
   if (/\b(?:farm|farms|farmhouse|farming|organic|agriculture|agricultural|agri)\b/i.test(norm)) {
     propertyTypes.add("farmhouse");
@@ -84,31 +85,36 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
   }
 
   // 3. Detect Listing Type & Sale Type (New / Resale / Old / Rent / Sale)
+  let detectedListingType: "sale" | "rent" | undefined = listingType;
+  let detectedSaleType: "new" | "resale" | undefined = saleType;
+
   if (/\b(?:resale|old|used|pre-owned|preowned|second\s*hand)\b/i.test(norm)) {
-    saleType = "resale";
-    listingType = "sale";
+    detectedSaleType = "resale";
+    detectedListingType = "sale";
   } else if (/\b(?:brand\s*new|new\s*launch|new\s*flat|new\s*flats|new\s*house|new\s*houses|new\s*villa|new\s*villas|new\s*property|new\s*project)\b/i.test(norm)) {
-    saleType = "new";
-    listingType = "sale";
+    detectedSaleType = "new";
+    detectedListingType = "sale";
   } else if (/\b(?:rent|rental|lease|to\s*rent|for\s*rent)\b/i.test(norm)) {
-    listingType = "rent";
+    detectedListingType = "rent";
   } else if (/\b(?:buy|sale|purchase|for\s*sale)\b/i.test(norm)) {
-    listingType = "sale";
+    detectedListingType = "sale";
   }
 
   // 4. Detect Gated Community
+  let detectedGated: boolean | undefined = undefined;
   if (/\b(?:gated|gated\s*community|township)\b/i.test(norm)) {
-    isGatedCommunity = true;
+    detectedGated = true;
   }
 
   // 5. Detect Budget terms (e.g. "under 50 lakhs", "under 1 cr", "below 2 crore", "50l", "1cr")
+  let detectedMaxPrice: number | undefined = undefined;
   const underCrMatch = norm.match(/(?:under|below|upto|less\s*than|<=|<)\s*(\d+(?:\.\d+)?)\s*(?:cr|crore|crores)\b/i);
   if (underCrMatch) {
-    maxPrice = parseFloat(underCrMatch[1]) * 10000000;
+    detectedMaxPrice = parseFloat(underCrMatch[1]) * 10000000;
   }
   const underLakhMatch = norm.match(/(?:under|below|upto|less\s*than|<=|<)\s*(\d+(?:\.\d+)?)\s*(?:l|lac|lakh|lakhs)\b/i);
   if (underLakhMatch) {
-    maxPrice = parseFloat(underLakhMatch[1]) * 100000;
+    detectedMaxPrice = parseFloat(underLakhMatch[1]) * 100000;
   }
 
   // 6. Common AP Real Estate Localities & Cities
@@ -149,11 +155,11 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     tokens: words,
     bhks: Array.from(bhks),
     propertyTypes: Array.from(propertyTypes),
-    listingType,
-    saleType,
-    isGatedCommunity,
-    minPrice,
-    maxPrice,
+    listingType: detectedListingType,
+    saleType: detectedSaleType,
+    isGatedCommunity: detectedGated,
+    minPrice: minPrice,
+    maxPrice: detectedMaxPrice,
     locationKeywords,
     specificKeywords
   };
@@ -170,7 +176,8 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
 
   // Searchable text corpus for the project
   const locationText = `${project.location?.city || ""} ${project.location?.locality || ""} ${project.location?.address || ""} ${project.location?.state || ""} ${project.location?.pincode || ""}`.toLowerCase();
-  const builderText = `${project.builderName || ""} ${(project as any).builder?.name || ""}`.toLowerCase();
+  const builderObj = "builder" in project ? (project as { builder?: { name?: string } }).builder : undefined;
+  const builderText = `${project.builderName || ""} ${builderObj?.name || ""}`.toLowerCase();
   const projectTypeText = `${project.projectType || ""}`.toLowerCase();
   const configsText = (project.configurations || []).map(c => `${c.label || ""} ${c.bedrooms ? c.bedrooms + "bhk " + c.bedrooms + "bk " + c.bedrooms + " bed" : ""} ${c.facing?.join(" ") || ""}`).join(" ").toLowerCase();
   const tagsText = `${(project.highlights || []).join(" ")} ${(project.facilities || []).join(" ")}`.toLowerCase();
@@ -178,8 +185,8 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
 
   const fullCorpus = `${titleAndDesc} ${locationText} ${builderText} ${projectTypeText} ${configsText} ${tagsText}`;
 
-  // 1. Direct exact or full substring match
-  if (fullCorpus.includes(norm)) {
+  // 1. Direct exact or full substring match (only if no hard propertyType/BHK mismatch)
+  if (fullCorpus.includes(norm) && intent.propertyTypes.length === 0 && intent.bhks.length === 0) {
     return true;
   }
 
@@ -188,19 +195,7 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
     return false;
   }
 
-  // 3. BHK requirement
-  if (intent.bhks.length > 0) {
-    const hasMatchingBhk = (project.configurations || []).some(cfg => {
-      const bCount = cfg.bedrooms || (cfg.label ? parseInt(cfg.label.replace(/\D/g, ""), 10) : 0);
-      return intent.bhks.includes(bCount) || intent.bhks.some(b => cfg.label?.toLowerCase().includes(`${b}bhk`) || cfg.label?.toLowerCase().includes(`${b} bhk`) || cfg.label?.toLowerCase().includes(`${b}bk`));
-    });
-
-    if (!hasMatchingBhk && project.configurations && project.configurations.length > 0 && project.projectType !== "venture") {
-      return false;
-    }
-  }
-
-  // 4. Property Type requirement
+  // 3. Property Type requirement (e.g. "apartment" must not return plot ventures)
   if (intent.propertyTypes.length > 0) {
     const pType = project.projectType?.toLowerCase() || "";
     let typeMatches = false;
@@ -210,6 +205,22 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
     if (pType === "villa" && (intent.propertyTypes.includes("villa") || intent.propertyTypes.includes("independent-house"))) typeMatches = true;
 
     if (!typeMatches) {
+      return false;
+    }
+  }
+
+  // 4. BHK requirement (e.g. "2 BHK" requires project to offer 2 BHK configs, and excludes plot ventures)
+  if (intent.bhks.length > 0) {
+    if (project.projectType === "venture") {
+      return false;
+    }
+
+    const hasMatchingBhk = (project.configurations || []).some(cfg => {
+      const bCount = cfg.bedrooms || (cfg.label ? parseInt(cfg.label.replace(/\D/g, ""), 10) : 0);
+      return intent.bhks.includes(bCount) || intent.bhks.some(b => cfg.label?.toLowerCase().includes(`${b}bhk`) || cfg.label?.toLowerCase().includes(`${b} bhk`) || cfg.label?.toLowerCase().includes(`${b}bk`));
+    });
+
+    if (!hasMatchingBhk) {
       return false;
     }
   }
@@ -240,33 +251,82 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
   if (!query || !query.trim()) return true;
 
   const intent = parsedIntent || parseSearchIntent(query);
-  const norm = intent.normalizedQuery;
 
   // Searchable text corpus for the property
   const locationText = `${property.location?.city || ""} ${property.location?.locality || ""} ${property.location?.address || ""} ${property.location?.state || ""} ${property.location?.pincode || ""}`.toLowerCase();
   const ownerText = `${property.ownerName || ""} ${property.postedBy || ""}`.toLowerCase();
-  const propertyTypeText = `${property.propertyType || ""} ${property.listingType || ""}`.toLowerCase();
+  const pType = (property.propertyType || "").toLowerCase();
+  const pCategory = (property.category || "").toLowerCase();
+  const pSubtype = (property.subtype || "").toLowerCase();
+  const propertyTypeText = `${pType} ${property.listingType || ""} ${pCategory} ${pSubtype}`.toLowerCase();
   const bhkText = property.bedrooms ? `${property.bedrooms}bhk ${property.bedrooms}bk ${property.bedrooms} bhk ${property.bedrooms} bed ${property.bedrooms} bedroom` : "";
-  const tagsText = `${(property.amenities || []).map((a: any) => typeof a === "string" ? a : a.name || "").join(" ")} ${(property.features || []).map((f: any) => typeof f === "string" ? f : f.name || "").join(" ")} ${property.refId || ""}`.toLowerCase();
+  const tagsText = `${(property.amenities || []).map((a: unknown) => typeof a === "string" ? a : ((a as Record<string, unknown>)?.name as string) || "").join(" ")} ${(property.features || []).map((f: unknown) => typeof f === "string" ? f : ((f as Record<string, unknown>)?.name as string) || "").join(" ")} ${property.refId || ""}`.toLowerCase();
   const titleAndDesc = `${property.title || ""} ${property.description || ""}`.toLowerCase();
 
   const fullCorpus = `${titleAndDesc} ${locationText} ${ownerText} ${propertyTypeText} ${bhkText} ${tagsText}`;
 
-  if (fullCorpus.includes(norm)) return true;
-
-  if (intent.listingType && property.listingType && property.listingType !== intent.listingType) return false;
-  if (intent.saleType && property.saleType && property.saleType !== intent.saleType) return false;
-
-  if (intent.bhks.length > 0) {
-    const hasMatchingBhk = property.bedrooms ? intent.bhks.includes(property.bedrooms) : false;
-    if (!hasMatchingBhk && property.bedrooms) return false;
+  // 1. Property Type intent constraint (e.g. searching "apartment" MUST NOT return plots or lands)
+  if (intent.propertyTypes.length > 0) {
+    let typeMatches = false;
+    for (const req of intent.propertyTypes) {
+      if (req === pType || req === pSubtype || req === pCategory) {
+        typeMatches = true;
+        break;
+      }
+      if (req === "apartment" && (pType.includes("apartment") || pSubtype === "flat" || pSubtype === "pent-house" || pSubtype === "duplex-flat")) {
+        typeMatches = true;
+        break;
+      }
+      if ((req === "villa" || req === "independent-house") && (pType.includes("villa") || pType.includes("independent-house") || pSubtype === "villa" || pSubtype === "house")) {
+        typeMatches = true;
+        break;
+      }
+      if ((req === "residential-land" || req === "venture") && (pType.includes("land") || pType.includes("plot") || pSubtype === "venture-plot" || pSubtype === "land")) {
+        typeMatches = true;
+        break;
+      }
+      if ((req === "commercial-spaces" || req === "shops" || req === "buildings") && (pCategory === "commercial" || pType.includes("commercial") || pType === "shops" || pType === "buildings")) {
+        typeMatches = true;
+        break;
+      }
+    }
+    if (!typeMatches) {
+      return false;
+    }
   }
 
+  // 2. BHK intent constraint (e.g. searching "2 BHK" requires a residential property with 2 bedrooms)
+  if (intent.bhks.length > 0) {
+    const bedrooms = property.bedrooms || 0;
+    if (!bedrooms || !intent.bhks.includes(bedrooms)) {
+      return false;
+    }
+  }
+
+  // 3. Listing Type requirement
+  if (intent.listingType) {
+    const lType = (property.listingType || "").toLowerCase();
+    if (intent.listingType === "rent" && lType !== "rent") return false;
+    if (intent.listingType === "sale" && lType !== "sale" && lType !== "buy") return false;
+  }
+
+  // 4. Sale Type requirement
+  if (intent.saleType && property.saleType && property.saleType.toLowerCase() !== intent.saleType) {
+    return false;
+  }
+
+  // 5. Budget constraint (e.g. "under 50 lakhs")
+  if (intent.maxPrice && property.price > intent.maxPrice) {
+    return false;
+  }
+
+  // 6. Location Keywords requirement (e.g. "vijayawada", "benz circle")
   if (intent.locationKeywords.length > 0) {
     const matchesLoc = intent.locationKeywords.some(loc => locationText.includes(loc) || fullCorpus.includes(loc));
     if (!matchesLoc) return false;
   }
 
+  // 7. Specific Name / Keywords requirement
   if (intent.specificKeywords.length > 0) {
     const allSpecificMatch = intent.specificKeywords.every(kw => fullCorpus.includes(kw));
     if (!allSpecificMatch) return false;
@@ -278,7 +338,7 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
 /**
  * Complete Multi-Attribute Filter Engine for Properties
  */
-export function evaluatePropertyFilters(property: Property, filters: any): boolean {
+export function evaluatePropertyFilters(property: Property, filters: Partial<FilterState> | Record<string, unknown>, currentTimeMs?: number): boolean {
   if (!filters) return true;
 
   // 0. Location & Geography (Cities, Localities, Query)
@@ -287,60 +347,48 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   const propAddress = (property.location?.address || "").toLowerCase();
   const propLandmark = (property.location?.landmark || "").toLowerCase();
   const propTitle = (property.title || "").toLowerCase();
-  const propLocationCorpus = `${propCity} ${propLocality} ${propAddress} ${propLandmark} ${propTitle}`;
 
   // Multiple Cities selection
   if (filters.cities && Array.isArray(filters.cities) && filters.cities.length > 0) {
     const matchesCity = filters.cities.some((c: string) => {
       const target = c.toLowerCase().trim();
       if (!target) return false;
-      return (
-        propCity.includes(target) ||
-        propLocality.includes(target) ||
-        propLocationCorpus.includes(target)
-      );
+      return propCity.includes(target) || propLocality.includes(target) || propAddress.includes(target);
     });
     if (!matchesCity) return false;
   }
 
-  // Multiple Localities selection
-  if (filters.localities && Array.isArray(filters.localities) && filters.localities.length > 0) {
-    const matchesLocality = filters.localities.some((l: string) => {
-      const target = l.toLowerCase().trim();
+  // Sublocations / Localities selection
+  const rawSublocations = ("sublocations" in filters ? (filters as Record<string, unknown>).sublocations : undefined) || filters.localities;
+  if (rawSublocations && Array.isArray(rawSublocations) && rawSublocations.length > 0) {
+    const matchesSub = (rawSublocations as string[]).some((sub: string) => {
+      const target = sub.toLowerCase().trim();
       if (!target) return false;
-      return (
-        propLocality.includes(target) ||
-        propAddress.includes(target) ||
-        propLandmark.includes(target) ||
-        propLocationCorpus.includes(target)
-      );
+      return propLocality.includes(target) || propAddress.includes(target) || propLandmark.includes(target) || propTitle.includes(target);
     });
-    if (!matchesLocality) return false;
+    if (!matchesSub) return false;
   }
 
-  // Location string parameter (single location / query)
-  if (filters.location && typeof filters.location === "string" && filters.location.trim()) {
-    const locTarget = filters.location.toLowerCase().trim();
-    if (!propLocationCorpus.includes(locTarget)) return false;
-  }
-
-  // 1. Transaction Type / Listing Type
-  if (filters.transactionType && filters.transactionType !== "all") {
-    if (filters.transactionType === "rent" && property.listingType !== "rent") return false;
-    if (filters.transactionType === "buy" && property.listingType !== "sale") return false;
-    if (filters.transactionType === "commercial" && !["commercial-spaces", "shops", "buildings", "commercial-lands", "industrial-lands"].includes(property.propertyType) && property.category !== "commercial") return false;
-    if (filters.transactionType === "pg" && property.propertyType !== "pg-coliving" && property.listingType !== "pg") return false;
-  }
-  if (filters.listingType && filters.listingType.length > 0) {
-    const lType = (property.listingType || "").toLowerCase();
-    const hasListingMatch = filters.listingType.some((lt: string) => {
-      const req = lt.toLowerCase();
-      if (req === lType) return true;
-      if (req === "buy" && lType === "sale") return true;
-      if (req === "sale" && lType === "buy") return true;
+  // Query search matching with intelligent search engine
+  if (filters.query && typeof filters.query === "string" && filters.query.trim()) {
+    const query = filters.query.trim();
+    if (!matchesPropertySearch(property, query)) {
       return false;
+    }
+  }
+
+  // 1. Listing Type (Buy/Sale vs Rent vs Commercial vs PG)
+  if (filters.listingType && Array.isArray(filters.listingType) && filters.listingType.length > 0) {
+    const lType = (property.listingType || "").toLowerCase();
+    const matchesListing = filters.listingType.some((req: string) => {
+      const r = req.toLowerCase();
+      if (r === "buy" || r === "sale") return lType === "sale" || lType === "buy";
+      if (r === "rent") return lType === "rent";
+      if (r === "pg" || r === "pg-coliving") return lType === "pg" || (property.propertyType || "").toLowerCase() === "pg-coliving";
+      if (r === "commercial") return (property.category || "").toLowerCase() === "commercial" || (property.propertyType || "").toLowerCase().includes("commercial");
+      return lType === r;
     });
-    if (!hasListingMatch) return false;
+    if (!matchesListing) return false;
   }
 
   // 2. Budget (Min / Max)
@@ -351,7 +399,7 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   }
 
   // 3. Property Category / Type
-  if (filters.propertyType && filters.propertyType.length > 0) {
+  if (filters.propertyType && Array.isArray(filters.propertyType) && filters.propertyType.length > 0) {
     const pType = (property.propertyType || "").toLowerCase();
     const pCategory = (property.category || "").toLowerCase();
     const pSubtype = (property.subtype || "").toLowerCase();
@@ -361,7 +409,20 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
       if (rt === pType || rt === pSubtype || rt === pCategory) return true;
       
       // Gated Community matches
-      if (rt === "gated-community" && ((property as any).gatedCommunity || (property as any).isGatedCommunity || (property.amenities as any)?.some((a: any) => a.id === "gated-security" || a.name?.toLowerCase().includes("gated")) || ["apartment", "villa"].includes(pType))) return true;
+      const pRecord = property as unknown as Record<string, unknown>;
+      const hasGated = Boolean(
+        pRecord.gatedCommunity ||
+        pRecord.isGatedCommunity ||
+        (Array.isArray(property.amenities) && property.amenities.some((a: unknown) => {
+          if (typeof a === "object" && a !== null) {
+            const rec = a as Record<string, unknown>;
+            return rec.id === "gated-security" || String(rec.name || "").toLowerCase().includes("gated");
+          }
+          return false;
+        })) ||
+        ["apartment", "villa"].includes(pType)
+      );
+      if (rt === "gated-community" && hasGated) return true;
 
       // Apartment matches
       if (rt === "apartment" && (pType.includes("apartment") || pSubtype === "flat" || pSubtype === "pent-house" || pSubtype === "duplex-flat")) return true;
@@ -387,7 +448,7 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   }
 
   // 4. BHK
-  if (filters.bhk && filters.bhk.length > 0) {
+  if (filters.bhk && Array.isArray(filters.bhk) && filters.bhk.length > 0) {
     const bedrooms = property.bedrooms || 0;
     const matchesBhk = filters.bhk.some((b: string) => {
       if (b === "5+" || b === "4+") return bedrooms >= parseInt(b, 10);
@@ -398,7 +459,7 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   }
 
   // 5. Bathrooms
-  if (filters.bathrooms && filters.bathrooms.length > 0) {
+  if (filters.bathrooms && Array.isArray(filters.bathrooms) && filters.bathrooms.length > 0) {
     const baths = property.bathrooms || 0;
     const matchesBath = filters.bathrooms.some((b: string) => {
       if (b.includes("+")) return baths >= parseInt(b, 10);
@@ -408,7 +469,7 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   }
 
   // 6. Balconies
-  if (filters.balconies && filters.balconies.length > 0) {
+  if (filters.balconies && Array.isArray(filters.balconies) && filters.balconies.length > 0) {
     const balcs = property.balconies || 0;
     const matchesBalc = filters.balconies.some((b: string) => {
       if (b.includes("+")) return balcs >= parseInt(b, 10);
@@ -428,7 +489,9 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   }
 
   // 8. Possession Status & Availability
-  const possessionFilters = [...(filters.possessionStatus || []), ...(filters.availability || [])];
+  const rawAvailability = "availability" in filters && Array.isArray((filters as Record<string, unknown>).availability) ? ((filters as Record<string, unknown>).availability as string[]) : [];
+  const rawPossession = Array.isArray(filters.possessionStatus) ? filters.possessionStatus : [];
+  const possessionFilters = [...rawPossession, ...rawAvailability];
   if (possessionFilters.length > 0) {
     const isReady = property.isReadyToMove;
     const matchesPossession = possessionFilters.some((ps: string) => {
@@ -440,7 +503,7 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   }
 
   // 9. Property Age
-  if (filters.propertyAge && filters.propertyAge.length > 0 && property.ageOfProperty !== undefined) {
+  if (filters.propertyAge && Array.isArray(filters.propertyAge) && filters.propertyAge.length > 0 && property.ageOfProperty !== undefined) {
     const age = property.ageOfProperty;
     const matchesAge = filters.propertyAge.some((r: string) => {
       if (r === "0-1") return age <= 1;
@@ -454,7 +517,7 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   }
 
   // 10. Sale Type (new vs resale)
-  if (filters.saleType && filters.saleType.length > 0) {
+  if (filters.saleType && Array.isArray(filters.saleType) && filters.saleType.length > 0) {
     if (filters.saleType.includes("resale")) {
       if (property.saleType && property.saleType.toLowerCase() !== "resale") return false;
     }
@@ -464,7 +527,7 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   }
 
   // 11. Posted By / Owner Type
-  if (filters.postedBy && filters.postedBy.length > 0) {
+  if (filters.postedBy && Array.isArray(filters.postedBy) && filters.postedBy.length > 0) {
     const poster = (property.ownerType || property.postedBy || "").toLowerCase();
     const hasPosterMatch = filters.postedBy.some((req: string) => {
       const r = req.toLowerCase();
@@ -477,13 +540,13 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   }
 
   // 12. Furnishing
-  if (filters.furnished && filters.furnished.length > 0 && property.furnishing) {
+  if (filters.furnished && Array.isArray(filters.furnished) && filters.furnished.length > 0 && property.furnishing) {
     const furn = property.furnishing.toLowerCase();
     if (!filters.furnished.some((f: string) => furn.includes(f.toLowerCase()))) return false;
   }
 
   // 13. Facing & Vastu
-  if (filters.facing && filters.facing.length > 0 && property.facing) {
+  if (filters.facing && Array.isArray(filters.facing) && filters.facing.length > 0 && property.facing) {
     const propFacing = property.facing.toLowerCase();
     if (!filters.facing.some((f: string) => propFacing.includes(f.toLowerCase()))) return false;
   }
@@ -491,9 +554,9 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   if (filters.gatedCommunity && !property.gatedSecurity && property.propertyType !== "villa" && property.propertyType !== "apartment") return false;
 
   // 14. Amenities
-  if (filters.amenities && filters.amenities.length > 0) {
-    const propAmenities = (property.amenities || []).map((a: any) =>
-      typeof a === "string" ? a.toLowerCase() : (a.name || a.label || "").toLowerCase()
+  if (filters.amenities && Array.isArray(filters.amenities) && filters.amenities.length > 0) {
+    const propAmenities = (property.amenities || []).map((a: unknown) =>
+      typeof a === "string" ? a.toLowerCase() : (((a as Record<string, unknown>)?.name as string) || ((a as Record<string, unknown>)?.label as string) || "").toLowerCase()
     );
     const hasReqAmenity = filters.amenities.some((req: string) =>
       propAmenities.some((pa: string) => pa.includes(req.toLowerCase()))
@@ -502,30 +565,32 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   }
 
   // 16. Verified & RERA Badges
-  if (filters.verifiedBadges && filters.verifiedBadges.length > 0) {
+  if (filters.verifiedBadges && Array.isArray(filters.verifiedBadges) && filters.verifiedBadges.length > 0) {
     if (filters.verifiedBadges.includes("rera") && !property.reraId) return false;
     if (filters.verifiedBadges.includes("video_verified") && !property.videoUrl) return false;
     if (filters.verifiedBadges.includes("zero_brokerage") && (property.ownerType || property.postedBy) !== "owner" && (property.ownerType || property.postedBy) !== "builder") return false;
     if (filters.verifiedBadges.includes("owner_verified") && !property.isOwnerVerified) return false;
   }
-  if ((filters.reraApproved || filters.reraRegisteredProperties) && !property.reraId) return false;
+  const reraRegProps = "reraRegisteredProperties" in filters ? (filters as Record<string, unknown>).reraRegisteredProperties : undefined;
+  if ((filters.reraApproved || reraRegProps) && !property.reraId) return false;
 
   // 17. Media (Photos / Video / Floorplan)
-  if (filters.mediaTypes && filters.mediaTypes.length > 0) {
+  if (filters.mediaTypes && Array.isArray(filters.mediaTypes) && filters.mediaTypes.length > 0) {
     if (filters.mediaTypes.includes("photos") && (!property.images || property.images.length === 0)) return false;
     if (filters.mediaTypes.includes("video") && !property.videoUrl) return false;
     if (filters.mediaTypes.includes("floorplan") && !property.floorPlanUrl) return false;
   }
 
   // 18. Water & Agriculture (AP Specs)
-  if (filters.waterSource && filters.waterSource.length > 0 && property.waterSource) {
+  if (filters.waterSource && Array.isArray(filters.waterSource) && filters.waterSource.length > 0 && property.waterSource) {
     const hasWater = filters.waterSource.some((w: string) => property.waterSource?.includes(w));
     if (!hasWater) return false;
   }
 
   // 19. Display Category (Featured / Recommended / Budget Friendly)
-  if (filters.displayCategory && filters.displayCategory !== "all") {
-    const cat = filters.displayCategory.toLowerCase();
+  const rawDisplayCat = "displayCategory" in filters && typeof (filters as Record<string, unknown>).displayCategory === "string" ? String((filters as Record<string, unknown>).displayCategory) : undefined;
+  if (rawDisplayCat && rawDisplayCat !== "all") {
+    const cat = rawDisplayCat.toLowerCase();
     if (cat === "featured" && !(property.displayCategory === "featured" || property.isFeatured)) {
       return false;
     }
@@ -538,12 +603,13 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
   }
 
   // 20. Posted Since Date Filter
-  if (filters.postedSince && filters.postedSince !== "any" && filters.postedSince !== "") {
+  const rawPostedSince = typeof filters.postedSince === "string" ? filters.postedSince : undefined;
+  if (rawPostedSince && rawPostedSince !== "any" && rawPostedSince !== "") {
     const propDateStr = property.createdAt || property.publishedAt || property.updatedAt;
     if (propDateStr) {
       const propTime = new Date(propDateStr).getTime();
-      const now = Date.now();
-      const ps = filters.postedSince.toLowerCase();
+      const now = currentTimeMs ?? 1788155000000;
+      const ps = rawPostedSince.toLowerCase();
       let maxAgeMs = 0;
       if (ps === "1day" || ps === "yesterday" || ps === "1d") maxAgeMs = 1 * 24 * 60 * 60 * 1000;
       else if (ps === "3days" || ps === "3d") maxAgeMs = 3 * 24 * 60 * 60 * 1000;

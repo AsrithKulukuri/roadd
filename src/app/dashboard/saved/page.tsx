@@ -17,7 +17,6 @@ import {
 import {
   MoreVertical,
   Share2,
-  PenSquare,
   Trash2,
   ArrowRightLeft,
   FolderHeart,
@@ -31,8 +30,8 @@ import { useFavoritesStore } from "@/stores/favorites-store";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import type { Property } from "@/types/property";
-import type { Project } from "@/types/project";
 import { toast } from "sonner";
+import { useIsMounted } from "@/hooks/use-is-mounted";
 
 export default function SavedPropertiesPage() {
   const router = useRouter();
@@ -42,7 +41,7 @@ export default function SavedPropertiesPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "properties" | "projects">("all");
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsMounted();
 
   const { savedPropertyIds, toggleFavorite } = useFavoritesStore();
   const storeProperties = usePropertiesStore((s) => s.properties);
@@ -55,17 +54,16 @@ export default function SavedPropertiesPage() {
   const projectsError = useProjectsStore((s) => s.error);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      toast.info("Please log in to view your saved items.");
-      router.replace("/login?redirect=/dashboard/saved");
+    if (!authLoading) {
+      if (!user) {
+        toast.info("Please log in to view your saved items.");
+        router.replace("/login?redirect=/dashboard/saved");
+      } else {
+        fetchProperties();
+        fetchProjects();
+      }
     }
-  }, [authLoading, user, router]);
-
-  useEffect(() => {
-    setMounted(true);
-    fetchProperties();
-    fetchProjects();
-  }, [fetchProperties, fetchProjects]);
+  }, [authLoading, user, router, fetchProperties, fetchProjects]);
 
   const savedProperties = useMemo(() => {
     return storeProperties.filter((p) => savedPropertyIds.includes(p.id));

@@ -31,7 +31,7 @@ export default function GlobalRouteError({
             Something went wrong
           </h1>
           <p className="text-text-secondary text-xs sm:text-sm leading-relaxed">
-            {error?.message || "An unexpected error occurred while loading this page."}
+            We encountered an issue while loading this page. Please try again or return to the homepage.
           </p>
         </div>
 
@@ -42,13 +42,11 @@ export default function GlobalRouteError({
           >
             <RotateCcw className="w-4 h-4" /> Try Again
           </Button>
-          <Link href="/" className="w-full sm:w-auto">
-            <Button
-              variant="outline"
-              className="w-full border-slate-300 dark:border-slate-700 text-text-primary font-bold rounded-xl gap-2 shadow-xs cursor-pointer"
-            >
-              <Home className="w-4 h-4 text-amber-500" /> Go to Homepage
-            </Button>
+          <Link
+            href="/"
+            className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-text-primary hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-sm shadow-xs transition-colors gap-2"
+          >
+            <Home className="w-4 h-4 text-amber-500" /> Go to Homepage
           </Link>
         </div>
       </div>

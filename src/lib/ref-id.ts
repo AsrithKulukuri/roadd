@@ -4,7 +4,7 @@ import type { Project } from "@/types/project";
 /**
  * Returns a standardized reference ID for any property or project (e.g. "REF101", "REF123")
  */
-export function getRefId(item: Property | Project | any): string {
+export function getRefId(item: Property | Project | { id?: string; slug?: string; title?: string; name?: string; refId?: string } | null | undefined): string {
   if (!item) return "";
   if (item.refId && item.refId.trim()) {
     const rawRef = item.refId.trim().toUpperCase().replace(/[\s-_]/g, "");
@@ -18,7 +18,8 @@ export function getRefId(item: Property | Project | any): string {
   }
 
   // Fallback using simple char-code hash
-  const str = String(item.id || item.slug || item.title || item.name || "000");
+  const label = "title" in item && item.title ? item.title : "name" in item && item.name ? item.name : "";
+  const str = String(item.id || item.slug || label || "000");
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = (hash * 31 + str.charCodeAt(i)) % 900;
@@ -146,9 +147,26 @@ export function findItemByRefId(
 /**
  * Backward compatibility alias for finding property
  */
-export function findPropertyByRefId(query: string, properties: Property[]): Property | null {
-  const res = findItemByRefId(query, properties, []);
-  return res && res.type === "property" ? (res.item as Property) : null;
+export function findPropertyByRefId<T extends { id: string; slug?: string; title?: string; refId?: string } = Property>(
+  query: string,
+  properties: T[]
+): T | null {
+  if (!query || !query.trim()) return null;
+  const raw = query.trim().toUpperCase().replace(/^#/, "").replace(/[\s-_]/g, "");
+  if (!raw) return null;
+
+  for (const p of properties) {
+    const ref = getRefId(p).toUpperCase().replace(/[\s-_]/g, "");
+    if (
+      raw === ref ||
+      (ref.startsWith("REF") && (raw === ref.replace("REF", "") || raw === `REF${ref.replace("REF", "")}`)) ||
+      raw === (p.id || "").toUpperCase().replace(/[\s-_]/g, "") ||
+      raw === (p.slug || "").toUpperCase().replace(/[\s-_]/g, "")
+    ) {
+      return p;
+    }
+  }
+  return null;
 }
 
 /**

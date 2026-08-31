@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
-import { deleteFromS3 } from '@/lib/aws/storage-utils';
 import type { Property } from '@/types/property';
 import { toast } from 'sonner';
 
@@ -20,8 +19,8 @@ const VALID_PROPERTY_COLUMNS = new Set([
   'layoutMapUrl', 'floorPlanUrl', 'brochureUrl', 'displayCategory'
 ]);
 
-export function toSupabaseProperty(prop: Partial<Property>): any {
-  const p: any = { ...prop };
+export function toSupabaseProperty(prop: Partial<Property>): Record<string, unknown> {
+  const p: Record<string, unknown> = { ...prop };
   
   if (p.pricePerSqFt !== undefined && p.pricePerSqft === undefined) p.pricePerSqft = p.pricePerSqFt;
   if (p.areaSqFt !== undefined && p.area === undefined) p.area = p.areaSqFt;
@@ -34,8 +33,9 @@ export function toSupabaseProperty(prop: Partial<Property>): any {
   if (!p.updatedAt) p.updatedAt = new Date().toISOString();
 
   // Store all structured real-estate attributes in attributes JSONB for 100% database persistence reliability
+  const existingAttributes = (p.attributes as Record<string, unknown>) || {};
   p.attributes = {
-    ...(p.attributes || {}),
+    ...existingAttributes,
     saleType: p.saleType,
     furnishingItems: p.furnishingItems,
     floorRange: p.floorRange,
@@ -55,7 +55,7 @@ export function toSupabaseProperty(prop: Partial<Property>): any {
   };
 
   // Strip keys that are not valid columns in Supabase
-  const cleaned: Record<string, any> = {};
+  const cleaned: Record<string, unknown> = {};
   for (const key of Object.keys(p)) {
     if (VALID_PROPERTY_COLUMNS.has(key)) {
       cleaned[key] = p[key];
@@ -64,31 +64,31 @@ export function toSupabaseProperty(prop: Partial<Property>): any {
   return cleaned;
 }
 
-export function fromSupabaseProperty(p: any): Property {
-  const attr = p.attributes || {};
+export function fromSupabaseProperty(p: Record<string, unknown>): Property {
+  const attr = (p.attributes as Record<string, unknown>) || {};
   return {
-    ...p,
-    saleType: p.saleType || attr.saleType || "new",
-    pricePerSqFt: p.pricePerSqft ?? p.pricePerSqFt ?? 0,
-    areaSqFt: p.area ?? p.areaSqFt ?? 0,
-    carpetAreaSqFt: p.carpetArea ?? p.carpetAreaSqFt,
-    builtUpAreaSqFt: p.builtUpArea ?? p.builtUpAreaSqFt,
-    displayCategory: p.displayCategory || (p.isFeatured ? "featured" : p.isRecommended ? "recommended" : "none"),
-    furnishingItems: p.furnishingItems || attr.furnishingItems || [],
-    floorRange: p.floorRange || attr.floorRange,
-    ownership: p.ownership || attr.ownership,
-    verifiedBadges: p.verifiedBadges || attr.verifiedBadges || [],
-    mediaTypes: p.mediaTypes || attr.mediaTypes || [],
-    tenantPreference: p.tenantPreference || attr.tenantPreference || [],
-    petsAllowed: p.petsAllowed ?? attr.petsAllowed ?? false,
-    nonVegAllowed: p.nonVegAllowed ?? attr.nonVegAllowed ?? false,
-    pgGender: p.pgGender || attr.pgGender || [],
-    pgSharing: p.pgSharing || attr.pgSharing || [],
-    foodIncluded: p.foodIncluded ?? attr.foodIncluded ?? false,
-    commercialType: p.commercialType || attr.commercialType || [],
-    furnishingGrade: p.furnishingGrade || attr.furnishingGrade || [],
-    waterSource: p.waterSource || attr.waterSource || [],
-    cultivationCrop: p.cultivationCrop || attr.cultivationCrop || [],
+    ...(p as unknown as Property),
+    saleType: (p.saleType as "new" | "resale" | undefined) || (attr.saleType as "new" | "resale" | undefined) || "new",
+    pricePerSqft: (p.pricePerSqft as number | undefined) ?? (p.pricePerSqFt as number | undefined) ?? 0,
+    area: (p.area as number | undefined) ?? (p.areaSqFt as number | undefined) ?? 0,
+    carpetArea: (p.carpetArea as number | undefined) ?? (p.carpetAreaSqFt as number | undefined),
+    builtUpArea: (p.builtUpArea as number | undefined) ?? (p.builtUpAreaSqFt as number | undefined),
+    displayCategory: (p.displayCategory as "featured" | "recommended" | "budget_friendly" | "none" | undefined) || (p.isFeatured ? "featured" : p.isRecommended ? "recommended" : "none"),
+    furnishingItems: (p.furnishingItems as string[] | undefined) || (attr.furnishingItems as string[] | undefined) || [],
+    floorRange: (p.floorRange as string | undefined) || (attr.floorRange as string | undefined),
+    ownership: (p.ownership as string | undefined) || (attr.ownership as string | undefined),
+    verifiedBadges: (p.verifiedBadges as string[] | undefined) || (attr.verifiedBadges as string[] | undefined) || [],
+    mediaTypes: (p.mediaTypes as string[] | undefined) || (attr.mediaTypes as string[] | undefined) || [],
+    tenantPreference: (p.tenantPreference as string[] | undefined) || (attr.tenantPreference as string[] | undefined) || [],
+    petsAllowed: (p.petsAllowed as boolean | undefined) ?? (attr.petsAllowed as boolean | undefined) ?? false,
+    nonVegAllowed: (p.nonVegAllowed as boolean | undefined) ?? (attr.nonVegAllowed as boolean | undefined) ?? false,
+    pgGender: (p.pgGender as string[] | undefined) || (attr.pgGender as string[] | undefined) || [],
+    pgSharing: (p.pgSharing as string[] | undefined) || (attr.pgSharing as string[] | undefined) || [],
+    foodIncluded: (p.foodIncluded as boolean | undefined) ?? (attr.foodIncluded as boolean | undefined) ?? false,
+    commercialType: (p.commercialType as string[] | undefined) || (attr.commercialType as string[] | undefined) || [],
+    furnishingGrade: (p.furnishingGrade as string[] | undefined) || (attr.furnishingGrade as string[] | undefined) || [],
+    waterSource: (p.waterSource as string[] | undefined) || (attr.waterSource as string[] | undefined) || [],
+    cultivationCrop: (p.cultivationCrop as string[] | undefined) || (attr.cultivationCrop as string[] | undefined) || [],
   };
 }
 
@@ -109,6 +109,10 @@ interface PropertiesState {
   updateProperty: (id: string, updatedProperty: Property) => Promise<void>;
 }
 
+let activePropertiesRequestId = 0;
+let inFlightPropertiesPromise: Promise<void> | null = null;
+let propertiesAbortController: AbortController | null = null;
+
 export const usePropertiesStore = create<PropertiesState>()(
   persist(
     (set, get) => ({
@@ -117,31 +121,67 @@ export const usePropertiesStore = create<PropertiesState>()(
       error: null,
 
       fetchProperties: async () => {
-        set({ isLoading: true, error: null });
-        try {
-          const fetchPromise = supabase
-            .from('properties')
-            .select('*')
-            .order('createdAt', { ascending: false });
-
-          const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((_, reject) =>
-            setTimeout(() => reject(new Error('Request timed out. Please check your connection and retry.')), 10000)
-          );
-
-          const { data, error } = (await Promise.race([fetchPromise, timeoutPromise])) as any;
-
-          if (error) {
-            console.warn('Error fetching properties from Supabase (keeping local state):', error.message);
-            set({ error: error.message, isLoading: false });
-            return;
-          }
-
-          const mappedData = (data || []).map(fromSupabaseProperty);
-          set({ properties: mappedData as Property[], isLoading: false, error: null });
-        } catch (error: any) {
-          console.error('Error fetching properties from Supabase:', error);
-          set({ error: error?.message || 'Failed to load properties', isLoading: false });
+        if (inFlightPropertiesPromise) {
+          return inFlightPropertiesPromise;
         }
+
+        if (propertiesAbortController) {
+          propertiesAbortController.abort();
+        }
+        propertiesAbortController = new AbortController();
+        const currentSignal = propertiesAbortController.signal;
+        const currentRequestId = ++activePropertiesRequestId;
+
+        set({ isLoading: true, error: null });
+
+        inFlightPropertiesPromise = (async () => {
+          let timeoutId: NodeJS.Timeout | null = null;
+          try {
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              timeoutId = setTimeout(() => {
+                propertiesAbortController?.abort();
+                reject(new Error("Request timed out. Please check your connection and retry."));
+              }, 9000);
+            });
+
+            const queryPromise = supabase
+              .from('properties')
+              .select('*')
+              .order('createdAt', { ascending: false })
+              .abortSignal(currentSignal);
+
+            const result = await Promise.race([queryPromise, timeoutPromise]);
+
+            if (currentSignal.aborted || currentRequestId !== activePropertiesRequestId) return;
+
+            const { data, error } = result as { data: Record<string, unknown>[] | null; error: { message: string } | null };
+
+            if (error) {
+              console.warn('Error fetching properties from Supabase (keeping local state):', error.message);
+              set({ error: error.message });
+              return;
+            }
+
+            const mappedData = (data || []).map(fromSupabaseProperty);
+            set({ properties: mappedData, error: null });
+          } catch (error: unknown) {
+            const isAbort = currentSignal.aborted || (error instanceof Error && (error.name === 'AbortError' || error.message.toLowerCase().includes('abort')));
+            if (isAbort || currentRequestId !== activePropertiesRequestId) {
+              return;
+            }
+            const message = error instanceof Error ? error.message : 'Failed to load properties';
+            console.error('Error fetching properties from Supabase:', message);
+            set({ error: message });
+          } finally {
+            if (timeoutId) clearTimeout(timeoutId);
+            if (currentRequestId === activePropertiesRequestId) {
+              inFlightPropertiesPromise = null;
+              set({ isLoading: false });
+            }
+          }
+        })();
+
+        return inFlightPropertiesPromise;
       },
 
       addProperty: async (property: Property) => {
@@ -158,10 +198,11 @@ export const usePropertiesStore = create<PropertiesState>()(
             .insert([dbPayload]);
 
           if (error) {
-            console.warn('Supabase property insert notice (saved to local state):', error.message || error);
+            console.warn('Supabase property insert notice (saved to local state):', error.message);
           }
-        } catch (err: any) {
-          console.warn('Supabase property insert notice (saved to local state):', err?.message || err);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.warn('Supabase property insert notice (saved to local state):', message);
         }
       },
 
@@ -186,8 +227,9 @@ export const usePropertiesStore = create<PropertiesState>()(
           }
 
           toast.success('Property permanently deleted from database');
-        } catch (error: any) {
-          console.error('Delete exception:', error);
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.error('Delete exception:', message);
           try {
             await supabase.from('properties').delete().eq('id', id);
           } catch {}
@@ -208,8 +250,9 @@ export const usePropertiesStore = create<PropertiesState>()(
             await supabase.from('properties').delete().neq('id', '___all___');
           }
           toast.success('All properties permanently deleted from database');
-        } catch (err: any) {
-          console.warn('Error in deleteAllProperties:', err);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.warn('Error in deleteAllProperties:', message);
           try {
             await supabase.from('properties').delete().neq('id', '___all___');
           } catch {}
@@ -234,8 +277,9 @@ export const usePropertiesStore = create<PropertiesState>()(
             .eq('id', id);
 
           if (error) console.warn('Supabase update warning:', error.message);
-        } catch (error: any) {
-          console.warn('Supabase update exception:', error);
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.warn('Supabase update exception:', message);
         }
       },
 
@@ -258,8 +302,9 @@ export const usePropertiesStore = create<PropertiesState>()(
             .eq('id', id);
 
           if (error) console.warn('Supabase status update warning:', error.message);
-        } catch (error: any) {
-          console.warn('Supabase status update exception:', error);
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.warn('Supabase status update exception:', message);
         }
       },
 
@@ -281,8 +326,9 @@ export const usePropertiesStore = create<PropertiesState>()(
             .eq('id', id);
 
           if (error) console.warn('Supabase showOnMap update warning:', error.message);
-        } catch (error: any) {
-          console.warn('Supabase showOnMap update exception:', error);
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.warn('Supabase showOnMap update exception:', message);
         }
       },
 
@@ -313,8 +359,9 @@ export const usePropertiesStore = create<PropertiesState>()(
             .eq('id', id);
 
           if (error) console.warn('Supabase toggleRecommended warning:', error.message);
-        } catch (error: any) {
-          console.warn('Supabase toggleRecommended exception:', error);
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.warn('Supabase toggleRecommended exception:', message);
         }
         return true;
       },
@@ -350,8 +397,9 @@ export const usePropertiesStore = create<PropertiesState>()(
             .eq('id', id);
 
           if (error) console.warn('Supabase updateDisplayCategory warning:', error.message);
-        } catch (error: any) {
-          console.warn('Supabase updateDisplayCategory exception:', error);
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.warn('Supabase updateDisplayCategory exception:', message);
         }
       },
 
@@ -392,10 +440,11 @@ export const usePropertiesStore = create<PropertiesState>()(
             .eq('id', id);
 
           if (error) {
-            console.warn('Supabase update warning (updated in local state):', error.message || error);
+            console.warn('Supabase update warning (updated in local state):', error.message);
           }
-        } catch (err: any) {
-          console.warn('Supabase update exception (updated in local state):', err?.message || err);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.warn('Supabase update exception (updated in local state):', message);
         }
       },
     }),

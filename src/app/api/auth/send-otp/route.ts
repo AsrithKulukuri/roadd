@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     });
 
     if (dbError) {
-      logger.error("Failed to store OTP in database", { phone, error: dbError.message });
+      logger.error("Failed to store OTP in database", { phone, error: dbError.message, details: dbError.details, hint: dbError.hint });
       return NextResponse.json(
         { success: false, error: "Failed to initialize OTP request. Please try again." },
         { status: 500 }
@@ -87,8 +87,9 @@ export async function POST(request: Request) {
       },
       { status: 200 }
     );
-  } catch (err: any) {
-    logger.error("Unhandled Exception in POST /api/auth/send-otp", { error: err?.message || err });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error("Unhandled Exception in POST /api/auth/send-otp", { error: msg });
     return NextResponse.json(
       { success: false, error: "Internal server error while processing OTP request." },
       { status: 500 }

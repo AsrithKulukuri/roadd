@@ -31,6 +31,8 @@ function formatDropdownPrice(val: number, isMax: boolean, placeholder?: string, 
   return `₹ ${val.toLocaleString("en-IN")}`;
 }
 
+import { useIsMounted } from "@/hooks/use-is-mounted";
+
 interface ModernBudgetDropdownProps {
   value: number;
   options: BudgetOption[];
@@ -53,23 +55,37 @@ export function ModernBudgetDropdown({
   maxCap = 100000000,
 }: ModernBudgetDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsMounted();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Close desktop dropdown on outside click
+  // Close dropdown on outside click (excluding both container and portal content)
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        !(target instanceof Element && target.closest("[data-budget-portal]"))
+      ) {
         setIsOpen(false);
       }
     }
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isOpen]);
+
+  // Close on Escape key
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
     }
   }, [isOpen]);
 
@@ -109,6 +125,9 @@ export function ModernBudgetDropdown({
       {/* Pill Trigger */}
       <button
         type="button"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-label={isMax ? "Select Maximum Budget" : "Select Minimum Budget"}
         onClick={() => {
           haptic.light();
           setIsOpen(!isOpen);
@@ -133,7 +152,7 @@ export function ModernBudgetDropdown({
       {mounted && typeof document !== "undefined" && createPortal(
         <AnimatePresence>
           {isOpen && (
-            <div className="sm:hidden fixed inset-0 z-[99999]">
+            <div data-budget-portal="true" className="sm:hidden fixed inset-0 z-[99999]">
               {/* Solid Backdrop */}
               <motion.div
                 initial={{ opacity: 0 }}

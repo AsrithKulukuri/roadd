@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
-import { deleteFromS3 } from '@/lib/aws/storage-utils';
 import type { Project } from '@/types/project';
 import { toast } from 'sonner';
 
@@ -29,14 +28,15 @@ const PUBLIC_PROJECT_SELECT = [
   'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory'
 ].join(',');
 
-export function toSupabaseProject(proj: Partial<Project>): any {
-  const p: any = { ...proj };
+export function toSupabaseProject(proj: Partial<Project>): Record<string, unknown> {
+  const p: Record<string, unknown> = { ...proj };
   
-  if (p.builder) {
-    p.builderName = p.builder.name || p.builderName || 'Independent Developer';
-    p.builderLogoUrl = p.builder.logoUrl || p.builderLogoUrl || null;
-    p.builderPhone = p.builder.phone || p.builderPhone || null;
-    p.builderWhatsapp = p.builder.whatsapp || p.builderWhatsapp || null;
+  if (p.builder && typeof p.builder === 'object') {
+    const b = p.builder as { name?: string; logoUrl?: string | null; phone?: string | null; whatsapp?: string | null };
+    p.builderName = b.name || p.builderName || 'Independent Developer';
+    p.builderLogoUrl = b.logoUrl || p.builderLogoUrl || null;
+    p.builderPhone = b.phone || p.builderPhone || null;
+    p.builderWhatsapp = b.whatsapp || p.builderWhatsapp || null;
     delete p.builder;
   }
   if (!p.builderName) p.builderName = 'Independent Developer';
@@ -47,19 +47,19 @@ export function toSupabaseProject(proj: Partial<Project>): any {
   delete p.status;
 
   if (p.videoUrl !== undefined) {
-    p.videoUrl = p.videoUrl ? p.videoUrl.trim() : null;
+    p.videoUrl = typeof p.videoUrl === 'string' ? p.videoUrl.trim() : null;
   }
   if (p.coverImage !== undefined) {
-    p.coverImage = p.coverImage ? p.coverImage.trim() : null;
+    p.coverImage = typeof p.coverImage === 'string' ? p.coverImage.trim() : null;
   }
   if (p.masterPlanUrl !== undefined) {
-    p.masterPlanUrl = p.masterPlanUrl ? p.masterPlanUrl.trim() : null;
+    p.masterPlanUrl = typeof p.masterPlanUrl === 'string' ? p.masterPlanUrl.trim() : null;
   }
 
   // Guaranteed persistence: embed master plan in images JSONB array so it is saved in Supabase without requiring table migration
   if (p.masterPlanUrl) {
     const existingImages = Array.isArray(p.images) ? [...p.images] : [];
-    const masterPlanIdx = existingImages.findIndex((img: any) => (typeof img === 'object' && (img.category === 'master-plan' || img.isMasterPlan)));
+    const masterPlanIdx = existingImages.findIndex((img: unknown) => (typeof img === 'object' && img !== null && ((img as Record<string, unknown>).category === 'master-plan' || (img as Record<string, unknown>).isMasterPlan)));
     const masterPlanItem = {
       url: p.masterPlanUrl,
       alt: 'Master Plan',
@@ -73,14 +73,14 @@ export function toSupabaseProject(proj: Partial<Project>): any {
     }
     p.images = existingImages;
   } else if (p.masterPlanUrl === null && Array.isArray(p.images)) {
-    p.images = p.images.filter((img: any) => !(typeof img === 'object' && (img.category === 'master-plan' || img.isMasterPlan)));
+    p.images = p.images.filter((img: unknown) => !(typeof img === 'object' && img !== null && ((img as Record<string, unknown>).category === 'master-plan' || (img as Record<string, unknown>).isMasterPlan)));
   }
 
   if (!p.createdAt) p.createdAt = new Date().toISOString();
   if (!p.updatedAt) p.updatedAt = new Date().toISOString();
 
   // Strip keys that are not valid columns in Supabase
-  const cleaned: Record<string, any> = {};
+  const cleaned: Record<string, unknown> = {};
   for (const key of Object.keys(p)) {
     if (VALID_PROJECT_COLUMNS.has(key)) {
       cleaned[key] = p[key];
@@ -89,17 +89,22 @@ export function toSupabaseProject(proj: Partial<Project>): any {
   return cleaned;
 }
 
-export function fromSupabaseProject(p: any): Project {
+export function fromSupabaseProject(p: Record<string, unknown>): Project {
   // Sanitize any expired temporary blob: URLs that were accidentally saved
-  const brochureUrl = p.brochureUrl && !p.brochureUrl.startsWith('blob:') ? p.brochureUrl : undefined;
-  const coverImage = p.coverImage && !p.coverImage.startsWith('blob:') ? p.coverImage : (p.cover_image && !p.cover_image.startsWith('blob:') ? p.cover_image : undefined);
-  const videoUrl = p.videoUrl && !p.videoUrl.startsWith('blob:') ? p.videoUrl : (p.video_url && !p.video_url.startsWith('blob:') ? p.video_url : undefined);
+  const rawBrochure = typeof p.brochureUrl === 'string' ? p.brochureUrl : undefined;
+  const brochureUrl = rawBrochure && !rawBrochure.startsWith('blob:') ? rawBrochure : undefined;
+  
+  const rawCover = (typeof p.coverImage === 'string' ? p.coverImage : (typeof p.cover_image === 'string' ? p.cover_image : undefined));
+  const coverImage = rawCover && !rawCover.startsWith('blob:') ? rawCover : undefined;
+  
+  const rawVideo = (typeof p.videoUrl === 'string' ? p.videoUrl : (typeof p.video_url === 'string' ? p.video_url : undefined));
+  const videoUrl = rawVideo && !rawVideo.startsWith('blob:') ? rawVideo : undefined;
   
   // Reconstruct masterPlanUrl from column, snake_case, or embedded images JSONB
   const masterPlanFromImages = Array.isArray(p.images) 
-    ? p.images.find((img: any) => typeof img === 'object' && (img.category === 'master-plan' || img.isMasterPlan))?.url 
+    ? (p.images.find((img: unknown) => typeof img === 'object' && img !== null && ((img as Record<string, unknown>).category === 'master-plan' || (img as Record<string, unknown>).isMasterPlan)) as { url?: string } | undefined)?.url 
     : undefined;
-  const rawMasterPlan = p.masterPlanUrl || p.master_plan_url || masterPlanFromImages;
+  const rawMasterPlan = (typeof p.masterPlanUrl === 'string' ? p.masterPlanUrl : (typeof p.master_plan_url === 'string' ? p.master_plan_url : masterPlanFromImages));
   const masterPlanUrl = rawMasterPlan && !rawMasterPlan.startsWith('blob:') ? rawMasterPlan : undefined;
 
   const cleanObj = { ...p };
@@ -108,21 +113,23 @@ export function fromSupabaseProject(p: any): Project {
   delete cleanObj.builder_phone;
   delete cleanObj.builder_whatsapp;
 
+  const rawId = typeof p.id === 'string' ? p.id : '';
+  const refId = typeof p.refId === 'string' ? p.refId : (rawId ? `REF${(rawId.replace(/\D/g, "") || "100").padStart(3, "0").slice(0, 5)}` : undefined);
+  const builderObj = p.builder as { name?: string; logoUrl?: string | null } | undefined;
+
   return {
-    ...cleanObj,
-    refId: p.refId || (p.id ? `REF${(p.id.replace(/\D/g, "") || "100").padStart(3, "0").slice(0, 5)}` : undefined),
+    ...(cleanObj as unknown as Project),
+    refId,
     brochureUrl,
     coverImage,
     videoUrl,
     masterPlanUrl,
-    status: p.constructionStatus || p.status || 'under-construction',
-    builder: {
-      name: p.builderName || (p.builder?.name ?? 'Independent Developer'),
-      logoUrl: p.builderLogoUrl || (p.builder?.logoUrl ?? null),
-      phone: null,
-      whatsapp: null,
-    },
-    displayCategory: p.displayCategory || (p.isFeatured ? "featured" : "none")
+    constructionStatus: (p.constructionStatus as "under-construction" | "ready-to-move" | "new-launch" | undefined) || 'under-construction',
+    builderName: (typeof p.builderName === 'string' ? p.builderName : (builderObj?.name ?? 'Independent Developer')),
+    builderLogoUrl: (typeof p.builderLogoUrl === 'string' ? p.builderLogoUrl : (builderObj?.logoUrl ?? undefined)),
+    builderPhone: undefined,
+    builderWhatsapp: undefined,
+    displayCategory: (p.displayCategory as "featured" | "recommended" | "budget_friendly" | "none" | undefined) || (p.isFeatured ? "featured" : "none")
   };
 }
 
@@ -140,6 +147,10 @@ interface ProjectsState {
   togglePublished: (id: string) => Promise<void>;
 }
 
+let activeProjectsRequestId = 0;
+let inFlightProjectsPromise: Promise<void> | null = null;
+let projectsAbortController: AbortController | null = null;
+
 export const useProjectsStore = create<ProjectsState>()(
   persist(
     (set, get) => ({
@@ -149,32 +160,67 @@ export const useProjectsStore = create<ProjectsState>()(
 
       // ─── Fetch (Supabase is source of truth) ─────────────────────────────
       fetchProjects: async () => {
+        if (inFlightProjectsPromise) {
+          return inFlightProjectsPromise;
+        }
+
+        if (projectsAbortController) {
+          projectsAbortController.abort();
+        }
+        projectsAbortController = new AbortController();
+        const currentSignal = projectsAbortController.signal;
+        const currentRequestId = ++activeProjectsRequestId;
+
         set({ isLoading: true, error: null });
 
-        try {
-          const fetchPromise = supabase
-            .from('projects')
-            .select(PUBLIC_PROJECT_SELECT)
-            .order('id', { ascending: false });
+        inFlightProjectsPromise = (async () => {
+          let timeoutId: NodeJS.Timeout | null = null;
+          try {
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              timeoutId = setTimeout(() => {
+                projectsAbortController?.abort();
+                reject(new Error("Request timed out. Please check your connection and retry."));
+              }, 9000);
+            });
 
-          const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((_, reject) =>
-            setTimeout(() => reject(new Error('Request timed out. Please check your connection and retry.')), 10000)
-          );
+            const queryPromise = supabase
+              .from('projects')
+              .select(PUBLIC_PROJECT_SELECT)
+              .order('id', { ascending: false })
+              .abortSignal(currentSignal);
 
-          const { data, error } = (await Promise.race([fetchPromise, timeoutPromise])) as any;
+            const result = await Promise.race([queryPromise, timeoutPromise]);
 
-          if (error) {
-            console.warn('Projects fetch warning (keeping local state):', error.message);
-            set({ isLoading: false, error: error.message });
-            return;
+            if (currentSignal.aborted || currentRequestId !== activeProjectsRequestId) return;
+
+            const { data, error } = result as { data: Record<string, unknown>[] | null; error: { message: string } | null };
+
+            if (error) {
+              console.warn('Projects fetch warning (keeping local state):', error.message);
+              set({ error: error.message });
+              return;
+            }
+
+            const mappedData = (data || []).map(fromSupabaseProject);
+            set({ projects: mappedData, error: null });
+          } catch (err: unknown) {
+            const isAbort = currentSignal.aborted || (err instanceof Error && (err.name === 'AbortError' || err.message.toLowerCase().includes('abort')));
+            if (isAbort || currentRequestId !== activeProjectsRequestId) {
+              return;
+            }
+            const message = err instanceof Error ? err.message : "Failed to load projects";
+            console.warn('Error fetching projects:', message);
+            set({ error: message });
+          } finally {
+            if (timeoutId) clearTimeout(timeoutId);
+            if (currentRequestId === activeProjectsRequestId) {
+              inFlightProjectsPromise = null;
+              set({ isLoading: false });
+            }
           }
+        })();
 
-          const mappedData = (data || []).map(fromSupabaseProject);
-          set({ projects: mappedData as Project[], isLoading: false, error: null });
-        } catch (err: any) {
-          console.warn('Error fetching projects:', err);
-          set({ isLoading: false, error: err?.message || 'Failed to load projects' });
-        }
+        return inFlightProjectsPromise;
       },
 
       // ─── Add ──────────────────────────────────────────────────────────────
@@ -194,15 +240,16 @@ export const useProjectsStore = create<ProjectsState>()(
           if (error) {
             console.warn('Supabase project insert warning:', error.message);
           }
-        } catch (err: any) {
-          console.warn('Supabase project insert exception:', err?.message ?? err);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.warn('Supabase project insert exception:', message);
         }
       },
 
       // ─── Update ───────────────────────────────────────────────────────────
       updateProject: async (id: string, data: Partial<Project>) => {
         const cleanData = { ...data };
-        if (cleanData.videoUrl === "") cleanData.videoUrl = null as any;
+        if (cleanData.videoUrl === "") cleanData.videoUrl = undefined;
 
         set((state) => ({
           projects: state.projects.map((p) =>
@@ -213,7 +260,7 @@ export const useProjectsStore = create<ProjectsState>()(
         }));
 
         try {
-          const dbPayload = toSupabaseProject(cleanData as any);
+          const dbPayload = toSupabaseProject(cleanData);
           let { error } = await supabase
             .from('projects')
             .update({ ...dbPayload, updatedAt: new Date().toISOString() })
@@ -233,8 +280,9 @@ export const useProjectsStore = create<ProjectsState>()(
             // Refresh store from Supabase
             await get().fetchProjects();
           }
-        } catch (err: any) {
-          console.error('Supabase project update exception:', err?.message ?? err);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error('Supabase project update exception:', message);
         }
       },
 
@@ -256,8 +304,9 @@ export const useProjectsStore = create<ProjectsState>()(
           }
 
           toast.success('Project permanently deleted from database');
-        } catch (err: any) {
-          console.warn('Project delete exception:', err?.message ?? err);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.warn('Project delete exception:', message);
           try {
             await supabase.from('projects').delete().eq('id', id);
           } catch {}
@@ -282,8 +331,9 @@ export const useProjectsStore = create<ProjectsState>()(
             .update({ isFeatured: newVal })
             .eq('id', id);
           if (error) console.warn('Supabase toggleFeatured warning:', error.message);
-        } catch (err: any) {
-          console.warn('Supabase toggleFeatured exception:', err?.message ?? err);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.warn('Supabase toggleFeatured exception:', message);
         }
       },
 
@@ -315,8 +365,9 @@ export const useProjectsStore = create<ProjectsState>()(
             .eq('id', id);
 
           if (error) console.warn('Supabase updateDisplayCategory warning:', error.message);
-        } catch (error: any) {
-          console.warn('Supabase updateDisplayCategory exception:', error);
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.warn('Supabase updateDisplayCategory exception:', message);
         }
       },
 
@@ -348,8 +399,9 @@ export const useProjectsStore = create<ProjectsState>()(
             .update({ isPublished: newVal })
             .eq('id', id);
           if (error) console.warn('Supabase togglePublished warning:', error.message);
-        } catch (err: any) {
-          console.warn('Supabase togglePublished exception:', err?.message ?? err);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.warn('Supabase togglePublished exception:', message);
         }
       },
     }),

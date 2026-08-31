@@ -77,7 +77,23 @@ export async function proxy(request: NextRequest) {
     if (!user && !isTokenValid && !hasAdminBypass) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
-      url.searchParams.set("redirect", pathname);
+      const fullTarget = request.nextUrl.search ? `${pathname}${request.nextUrl.search}` : pathname;
+      url.searchParams.set("redirect", fullTarget);
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Protect /dashboard routes (including /dashboard/saved): enforce authentic server session or signed token
+  if (pathname.startsWith("/dashboard")) {
+    const hasAdminBypass = request.cookies.has("road_admin_user");
+    const authToken = request.cookies.get("road_auth_token")?.value;
+    const isTokenValid = authToken ? Boolean(verifySignedSessionToken(authToken)) : false;
+
+    if (!user && !isTokenValid && !hasAdminBypass) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      const fullTarget = request.nextUrl.search ? `${pathname}${request.nextUrl.search}` : pathname;
+      url.searchParams.set("redirect", fullTarget);
       return NextResponse.redirect(url);
     }
   }

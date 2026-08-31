@@ -3,27 +3,24 @@
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { MixedCarouselRow, type MixedItem } from "./mixed-carousel-row";
-import { ThumbsUp, Star, IndianRupee, Sparkles, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-
-type CategoryTab = "recommended" | "featured" | "budget_friendly";
+import { ThumbsUp, Star, IndianRupee } from "lucide-react";
+import { useEffect } from "react";
+import { useIsMounted } from "@/hooks/use-is-mounted";
 
 export function HomeCategories() {
-  const { properties, fetchProperties } = usePropertiesStore();
-  const { projects, fetchProjects } = useProjectsStore();
-  const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<CategoryTab>("recommended");
+  const { properties, fetchProperties, isLoading: isPropsLoading, error: propsError } = usePropertiesStore();
+  const { projects, fetchProjects, isLoading: isProjsLoading, error: projsError } = useProjectsStore();
+  const mounted = useIsMounted();
 
   useEffect(() => {
     fetchProperties();
     fetchProjects();
-    setMounted(true);
   }, [fetchProperties, fetchProjects]);
 
-  if (!mounted || (properties.length === 0 && projects.length === 0)) {
+  const isInitialLoading = !mounted || ((isPropsLoading && properties.length === 0) && (isProjsLoading && projects.length === 0));
+  const isCompleteFailure = propsError && projsError && properties.length === 0 && projects.length === 0;
+
+  if (isInitialLoading) {
     return (
       <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between">
@@ -38,6 +35,26 @@ export function HomeCategories() {
               <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded-md w-1/2" />
             </div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isCompleteFailure) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-4">
+          <p className="text-sm text-slate-500">Could not load property categories.</p>
+          <button
+            type="button"
+            onClick={() => {
+              fetchProperties();
+              fetchProjects();
+            }}
+            className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-sm cursor-pointer"
+          >
+            Retry Loading
+          </button>
         </div>
       </div>
     );
@@ -86,32 +103,6 @@ export function HomeCategories() {
     ...budgetProps.map(p => ({ ...p, itemType: 'property' as const })),
     ...budgetProjs.map(p => ({ ...p, itemType: 'project' as const }))
   ];
-
-  const categories = [
-    {
-      id: "recommended" as const,
-      label: "Recommended",
-      icon: ThumbsUp,
-      items: recommendedMixed,
-      viewAllUrl: "/search?category=recommended",
-    },
-    {
-      id: "featured" as const,
-      label: "Featured",
-      icon: Star,
-      items: featuredMixed,
-      viewAllUrl: "/search?category=featured",
-    },
-    {
-      id: "budget_friendly" as const,
-      label: "Budget Friendly",
-      icon: IndianRupee,
-      items: budgetMixed,
-      viewAllUrl: "/search?category=budget",
-    },
-  ];
-
-  const activeCategory = categories.find(c => c.id === activeTab) || categories[0];
 
   return (
     <section className="py-2 sm:py-6 w-full">

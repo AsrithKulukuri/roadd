@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -125,6 +125,8 @@ const popularQuickFilters = [
 
 export function HeroSection() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { openProject } = useProjectOpenGuard();
   const [activeTab, setActiveTab] = useState("buy");
   const [locationTab, setLocationTab] = useState<"trending" | "vijayawada" | "guntur" | "popular" | "nearyou">("trending");
@@ -148,7 +150,7 @@ export function HeroSection() {
   useEffect(() => {
     try {
       router.prefetch("/search");
-    } catch (e) {}
+    } catch {}
   }, [router]);
 
   // ── Typewriter / Typing Effect State & Logic ──
@@ -213,7 +215,12 @@ export function HeroSection() {
   const projects = useProjectsStore((state) => state.projects);
 
   const handleSearchSubmit = (e?: React.FormEvent, customBudget?: [number, number]) => {
-    if (e) e.preventDefault();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (isNavigating) return;
+
     setIsNavigating(true);
 
     if (activeTab === "sell") {
@@ -246,6 +253,7 @@ export function HeroSection() {
     } else if (activeTab === "nearme") {
       params.set("type", "buy");
       params.set("nearMe", "true");
+      params.set("view", "map");
     } else {
       params.set("type", "buy");
     }
@@ -261,7 +269,6 @@ export function HeroSection() {
     }
 
     router.push(`/search?${params.toString()}`);
-    setTimeout(() => setIsNavigating(false), 1500);
   };
 
   // Live Auto-Suggestions for Hero Search Bar
@@ -348,7 +355,7 @@ export function HeroSection() {
 
     for (const cat of homeCategories) {
       const types = CATEGORY_TYPE_MAP[cat.id];
-      let propCount = activeTab === "projects" ? 0 : properties.filter((p) => {
+      const propCount = activeTab === "projects" ? 0 : properties.filter((p) => {
         if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
         const inBudget = p.price >= heroBudget[0] && (isAnyMax || p.price <= heroBudget[1]);
         if (!inBudget) return false;
@@ -459,6 +466,7 @@ export function HeroSection() {
                         fill
                         priority
                         unoptimized
+                        sizes="100vw"
                         className="object-cover object-[center_32%]"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -477,6 +485,7 @@ export function HeroSection() {
                         fill
                         priority
                         unoptimized
+                        sizes="100vw"
                         className="object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -849,8 +858,11 @@ export function HeroSection() {
 
         {/* Clean Modern Search Input Bar (Rectangular with subtle rounded edges & voice search) */}
         <form
+          action="#"
+          method="POST"
           onSubmit={(e) => {
             e.preventDefault();
+            e.stopPropagation();
             handleSearchSubmit(e);
           }}
           className="relative w-full max-w-[760px] h-[52px] sm:h-[58px] mx-auto flex items-center bg-white border border-slate-200/90 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 rounded-xl sm:rounded-2xl px-4 shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] transition-all duration-200 group z-30"
@@ -870,14 +882,20 @@ export function HeroSection() {
               </div>
             )}
 
-            {/* Single Stable Interactive Input Element */}
+            {/* Single Stable Interactive Input Element (No name attribute) */}
             <input
               ref={inputRef}
               type="text"
               id="hero-search-input"
-              name="hero-search-input"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSearchSubmit();
+                }
+              }}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setTimeout(() => setIsFocused(false), 200)}
               autoComplete="off"
@@ -891,7 +909,9 @@ export function HeroSection() {
           {searchQuery && (
             <button
               type="button"
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 setSearchQuery("");
                 inputRef.current?.focus();
               }}
@@ -902,10 +922,15 @@ export function HeroSection() {
             </button>
           )}
 
-          {/* Right: Search Action Icon in Logo Color (Amber #f59e0b) with Loading Indicator */}
+          {/* Right: Search Action Icon */}
           <button
             type="submit"
             disabled={isNavigating}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleSearchSubmit(e);
+            }}
             aria-label="Search properties"
             title="Search"
             className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-[#f59e0b] hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all active:scale-90 cursor-pointer shrink-0 ml-1"
@@ -1318,6 +1343,7 @@ export function HeroSection() {
                     src={cat.image}
                     alt={cat.title}
                     fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     className="object-cover transition-transform duration-700 ease-out group-hover:scale-108 opacity-95 group-hover:opacity-100"
                   />
                   {/* Clean deep gradient */}

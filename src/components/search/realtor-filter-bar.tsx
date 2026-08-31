@@ -16,14 +16,11 @@ import {
   Compass,
   Trees,
   RotateCcw,
-  Star,
-  ThumbsUp,
-  Sparkles,
   MapPin,
   Search,
   Landmark,
 } from "lucide-react";
-import { cn, formatINR, formatINRWords } from "@/lib/utils";
+import { cn, formatINRWords } from "@/lib/utils";
 import type { FilterState } from "./search-filters";
 import { Slider } from "@/components/ui/slider";
 import { ModernBudgetDropdown } from "@/components/ui/modern-budget-dropdown";
@@ -31,6 +28,7 @@ import { useLocationsStore } from "@/stores/locations-store";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { evaluatePropertyFilters } from "@/lib/search-engine";
+import { useIsMounted } from "@/hooks/use-is-mounted";
 
 interface RealtorFilterBarProps {
   filters: FilterState;
@@ -53,6 +51,10 @@ export function RealtorFilterBar({
   const { cities, fetchLocations } = useLocationsStore();
   const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
   const [localitySearch, setLocalitySearch] = useState("");
+
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
 
   const allProperties = usePropertiesStore((state) => state.properties);
   const allProjects = useProjectsStore((state) => state.projects);
@@ -114,32 +116,13 @@ export function RealtorFilterBar({
     fetchLocations();
   }, [fetchLocations]);
 
-  // Default active city tab to first city or the one selected in filters.cities
-  useEffect(() => {
-    if (cities.length > 0 && !selectedCityId) {
-      const match = cities.find((c) => (filters.cities || []).includes(c.name));
-      setSelectedCityId(match ? match.id : cities[0].id);
-    }
-  }, [cities, filters.cities, selectedCityId]);
+  const effectiveCityId = selectedCityId || (cities.find((c) => (filters.cities || []).includes(c.name))?.id ?? cities[0]?.id ?? null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
 
-  const handlePresetClick = (min: number, max: number, e?: React.SyntheticEvent) => {
-    if (e) {
-      e.stopPropagation();
-    }
-    onFilterChange({
-      ...filters,
-      budget: [min, max],
-    });
-  };
-
   // Mounted check for React Portal
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsMounted();
 
   // Detect mobile device (< 768px)
   const [isMobile, setIsMobile] = useState(false);

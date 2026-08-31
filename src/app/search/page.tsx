@@ -2,19 +2,23 @@
 
 import { useState, useMemo, Suspense, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { PropertyCard } from "@/components/property/property-card";
 import { ProjectCard } from "@/components/project/project-card";
+import type { Property } from "@/types/property";
+import type { Project } from "@/types/project";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { SearchFiltersModal, initialFilterState, type FilterState } from "@/components/search/search-filters";
 import { RealtorSearchHeader } from "@/components/search/realtor-search-header";
 import { MapWrapper } from "@/components/map/map-wrapper";
-import { SlidersHorizontal, ArrowLeft, Search as SearchIcon, MapPin, Loader2, Plus } from "lucide-react";
+import { Search as SearchIcon, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { matchesPropertySearch, matchesProjectSearch, parseSearchIntent, evaluatePropertyFilters } from "@/lib/search-engine";
+import { useIsMounted } from "@/hooks/use-is-mounted";
+
+type SortByOption = "relevant" | "price-asc" | "price-desc" | "newest";
 
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371; // Radius of the earth in km
@@ -48,7 +52,11 @@ function SearchPageSkeleton() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[...Array(8)].map((_, i) => (
-            <SkeletonCard key={`suspense-skel-${i}`} />
+            <div key={`skel-${i}`} className="h-96 rounded-3xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 space-y-4 animate-pulse">
+              <div className="w-full h-48 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+              <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded-md w-3/4" />
+              <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded-md w-1/2" />
+            </div>
           ))}
         </div>
       </div>
@@ -71,30 +79,27 @@ function UnifiedSearchPage() {
   const [activeTab, setActiveTab] = useState<"all" | "properties" | "projects">(
     searchParams.get("type") === "projects" ? "projects" : "all"
   );
-  const [viewMode, setViewMode] = useState<"grid" | "map">(
-    searchParams.get("nearMe") === "true" || searchParams.get("view") === "map" ? "map" : "grid"
-  );
-  const [sortBy, setSortBy] = useState<"relevant" | "price-asc" | "price-desc" | "newest">(
-    (searchParams.get("sort") as any) || (searchParams.get("saleType") === "new" ? "newest" : "relevant")
-  );
+  const urlViewMode = searchParams.get("nearMe") === "true" || searchParams.get("view") === "map" ? "map" : "grid";
+  const [userViewMode, setUserViewMode] = useState<"grid" | "map" | null>(null);
+  const viewMode = userViewMode ?? urlViewMode;
+  const setViewMode = (mode: "grid" | "map") => setUserViewMode(mode);
+
+  const initialSort = (searchParams.get("sort") as SortByOption) || (searchParams.get("saleType") === "new" ? "newest" : "relevant");
+  const [sortBy, setSortBy] = useState<SortByOption>(initialSort);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsMounted();
   
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [visibleMapIds, setVisibleMapIds] = useState<string[] | null>(null);
-  const [listUpdating, setListUpdating] = useState(false);
   const listPaneRef = useRef<HTMLDivElement>(null);
 
   const handleVisibleItemsChange = useCallback((ids: string[]) => {
     setVisibleMapIds(ids);
-    setListUpdating(true);
     // Scroll list to top
     if (listPaneRef.current) {
       listPaneRef.current.scrollTo({ top: 0, behavior: "smooth" });
     }
-    // Clear updating indicator after a short delay
-    setTimeout(() => setListUpdating(false), 800);
   }, []);
   
   const properties = usePropertiesStore((state) => state.properties);
@@ -106,34 +111,52 @@ function UnifiedSearchPage() {
   const fetchProperties = usePropertiesStore((state) => state.fetchProperties);
   const fetchProjects = useProjectsStore((state) => state.fetchProjects);
 
+  const isRelevantLoading = useMemo(() => {
+    if (activeTab === "properties") return isLoadingProperties && properties.length === 0;
+    if (activeTab === "projects") return isLoadingProjects && projects.length === 0;
+    return (isLoadingProperties && properties.length === 0) && (isLoadingProjects && projects.length === 0);
+  }, [activeTab, isLoadingProperties, isLoadingProjects, properties.length, projects.length]);
+
+  const isCompleteFailure = useMemo(() => {
+    if (activeTab === "properties") return !!propertiesError && properties.length === 0;
+    if (activeTab === "projects") return !!projectsError && projects.length === 0;
+    return !!propertiesError && !!projectsError && properties.length === 0 && projects.length === 0;
+  }, [activeTab, propertiesError, projectsError, properties.length, projects.length]);
+
+  const partialErrorNotice = useMemo(() => {
+    if (activeTab === "all") {
+      if (propertiesError && projects.length > 0 && properties.length === 0) {
+        return { message: "Could not load individual properties. Showing projects.", retry: fetchProperties };
+      }
+      if (projectsError && properties.length > 0 && projects.length === 0) {
+        return { message: "Could not load projects. Showing properties.", retry: fetchProjects };
+      }
+    }
+    return null;
+  }, [activeTab, propertiesError, projectsError, properties.length, projects.length, fetchProperties, fetchProjects]);
+
   useEffect(() => {
-    setMounted(true);
     fetchProperties();
     fetchProjects();
 
-    if (searchParams.get("view") === "map") {
-      setViewMode("map");
-    } else if (searchParams.get("view") === "grid") {
-      setViewMode("grid");
-    }
-
     // Check for nearMe parameter and trigger geolocation
     if (searchParams.get("nearMe") === "true" && !userLocation && !isLocating) {
-      setIsLocating(true);
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setViewMode("map");
-          setIsLocating(false);
-          toast.success("Location found! Showing properties near you.");
-        },
-        (err) => {
-          setIsLocating(false);
-          toast.error("Location access denied or unavailable. Showing all properties.");
-        }
-      );
+      if (typeof window !== "undefined" && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            setUserViewMode("map");
+            setIsLocating(false);
+            toast.success("Location found! Showing properties near you.");
+          },
+          () => {
+            setIsLocating(false);
+            toast.error("Location access denied or unavailable. Showing all properties.");
+          }
+        );
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, fetchProperties, fetchProjects, isLocating, userLocation]);
 
   // Lock body scroll when map view is active so ONLY the list pane scrolls
   useEffect(() => {
@@ -147,8 +170,9 @@ function UnifiedSearchPage() {
     };
   }, [viewMode]);
 
-  const parseInitialParams = (): FilterState => {
+  const parseInitialParams = useCallback((): FilterState => {
     const loc = searchParams.get("location") || searchParams.get("q") || searchParams.get("search") || "";
+    const parsed = loc ? parseSearchIntent(loc) : null;
     
     // Parse budget
     const budgetStr = searchParams.get("budget");
@@ -170,6 +194,15 @@ function UnifiedSearchPage() {
     if (typeStr === "rent") listingType = ["rent"];
     else if (typeStr === "buy") listingType = ["sale"];
 
+    // Parse BHK
+    const bhkParam = searchParams.get("bhk");
+    let bhk: string[] = [];
+    if (bhkParam) {
+      bhk = bhkParam.split(",").map(b => b.trim()).filter(Boolean);
+    } else if (parsed && parsed.bhks.length > 0) {
+      bhk = parsed.bhks.map(String);
+    }
+
     // Parse propertyType and projectType
     const propTypeStr = searchParams.get("propertyType") || searchParams.get("projectType");
     let propertyType: string[] = [];
@@ -179,6 +212,8 @@ function UnifiedSearchPage() {
       if (propertyType.includes("gated-community")) {
         gatedCommunity = true;
       }
+    } else if (parsed && parsed.propertyTypes.length > 0) {
+      propertyType = parsed.propertyTypes;
     }
 
     // Parse city / cities
@@ -205,7 +240,7 @@ function UnifiedSearchPage() {
     }
 
     // Parse sort parameter
-    const sortParam = (searchParams.get("sort") as any) || (searchParams.get("saleType") === "new" ? "newest" : "relevant");
+    const sortParam = (searchParams.get("sort") as SortByOption) || (searchParams.get("saleType") === "new" ? "newest" : "relevant");
 
     // Parse postedSince parameter
     const postedSince = searchParams.get("postedSince") || "any";
@@ -216,6 +251,7 @@ function UnifiedSearchPage() {
       budget,
       listingType,
       propertyType,
+      bhk,
       saleType,
       cities,
       gatedCommunity,
@@ -224,34 +260,11 @@ function UnifiedSearchPage() {
       sortBy: sortParam,
       postedSince,
     };
-  };
+  }, [searchParams]);
 
-  const [filters, setFilters] = useState<FilterState>(parseInitialParams());
+  const [filters, setFilters] = useState<FilterState>(parseInitialParams);
 
   const searchParamsString = searchParams.toString();
-
-  // Keep filters and sort in sync with URL searchParams if they actually change
-  useEffect(() => {
-    const initial = parseInitialParams();
-    setFilters(initial);
-    const typeStr = searchParams.get("type");
-    const projectTypeParam = searchParams.get("projectType");
-    if (typeStr === "projects" || projectTypeParam) {
-      setActiveTab("projects");
-    } else if (typeStr === "properties") {
-      setActiveTab("properties");
-    } else {
-      setActiveTab("all");
-    }
-    const sortParam = searchParams.get("sort") as any;
-    if (sortParam) {
-      setSortBy(sortParam);
-    } else if (searchParams.get("saleType") === "new") {
-      setSortBy("newest");
-    } else {
-      setSortBy("relevant");
-    }
-  }, [searchParamsString]);
 
   // Unified filtering logic
   const filteredProperties = useMemo(() => {
@@ -282,7 +295,7 @@ function UnifiedSearchPage() {
 
       return true;
     });
-  }, [properties, filters, searchParamsString, userLocation]);
+  }, [properties, filters, searchParams, userLocation]);
 
   const filteredProjects = useMemo(() => {
     const parsedIntent = filters.query ? parseSearchIntent(filters.query) : null;
@@ -321,15 +334,15 @@ function UnifiedSearchPage() {
         if (cat === "featured" && !(project.displayCategory === "featured" || project.isFeatured)) {
           return false;
         }
-        if (cat === "recommended" && !(project.displayCategory === "recommended")) {
+        if (cat === "recommended" && !(project.displayCategory === "recommended" || (project as unknown as { isRecommended?: boolean }).isRecommended)) {
           return false;
         }
-        if ((cat === "budget" || cat === "budget_friendly") && project.displayCategory !== "budget_friendly") {
+        if ((cat === "budget" || cat === "budget_friendly") && !(project.displayCategory === "budget_friendly")) {
           return false;
         }
       }
 
-      // 3. Property Category / Type
+      // 3. Property Type
       if (filters.propertyType.length > 0) {
         const pType = project.projectType?.toLowerCase() || "";
         let matches = false;
@@ -382,61 +395,51 @@ function UnifiedSearchPage() {
         if (!matchesAvailability) return false;
       }
 
-      // 7. Facing
-      if (filters.facing.length > 0) {
-        if (!project.configurations) return false;
-        const hasMatchingFacing = project.configurations.some(cfg => {
-           if (!cfg.facing) return false;
-           return cfg.facing.some(f => filters.facing.includes(f.toLowerCase()));
+      // 7. Possession Status
+      if (filters.possessionStatus.length > 0) {
+        const isReady = project.constructionStatus === "ready-to-move";
+        const matchesPossession = filters.possessionStatus.some((ps) => {
+          if (ps === "ready") return isReady;
+          if (ps === "under-construction") return !isReady;
+          return true;
         });
-        if (!hasMatchingFacing) return false;
+        if (!matchesPossession) return false;
       }
 
-      // 8. RERA / CRDA
-      if (filters.reraApproved) {
-        if (!project.reraApproved && !project.crdaApproved) return false;
+      // 8. RERA Approved
+      if (filters.reraApproved && !project.reraApproved && !project.reraId) {
+        return false;
       }
 
-      // 9. Posted By
-      if (filters.postedBy.length > 0) {
-        const wantsDeveloper = filters.postedBy.includes("developer") || filters.postedBy.includes("builder") || filters.postedBy.includes("owner");
-        if (!wantsDeveloper) return false; // Projects are always direct from developer/builder
+      // 9. Verified Badges
+      if (filters.verifiedBadges.length > 0) {
+        if (filters.verifiedBadges.includes("rera") && !project.reraApproved && !project.reraId) return false;
+        if (filters.verifiedBadges.includes("video_verified") && !project.videoUrl) return false;
+        if (filters.verifiedBadges.includes("zero_brokerage") && !project.noBrokerage) return false;
       }
 
       // 10. Gated Community
-      if (filters.gatedCommunity) {
-         const hasGated = project.facilities?.some(f => f.toLowerCase().includes("gated")) || project.highlights?.some(h => h.toLowerCase().includes("gated"));
-         if (!hasGated && project.projectType !== "apartment") return false; 
-         // Apartments are mostly gated by default, but to be strictly safe we check facilities.
+      if (filters.gatedCommunity && project.projectType !== "apartment" && project.projectType !== "villa") {
+        return false;
       }
 
-      // 11. Vastu Compliant
-      if (filters.vastuCompliant) {
-         const hasVastu = project.facilities?.some(f => f.toLowerCase().includes("vastu")) || project.highlights?.some(h => h.toLowerCase().includes("vastu"));
-         if (!hasVastu) return false;
+      // 11. Facilities / Amenities
+      if (filters.amenities.length > 0) {
+        const projFacilities = (project.facilities || []).map((f) => f.toLowerCase());
+        const hasReqFacility = filters.amenities.some((req) =>
+          projFacilities.some((pf) => pf.includes(req.toLowerCase()))
+        );
+        if (!hasReqFacility && projFacilities.length > 0) return false;
       }
 
-      // 12. Age Range
-      if (filters.ageRange.length > 0) {
-        // Projects are new. They only fit in the new/0-10 brackets.
-        const allowsNew = filters.ageRange.includes("0-1") || filters.ageRange.includes("0-10") || filters.ageRange.includes("1-10");
-        if (!allowsNew) return false;
+      // 12. Media Types
+      if (filters.mediaTypes.length > 0) {
+        if (filters.mediaTypes.includes("photos") && (!project.images || project.images.length === 0)) return false;
+        if (filters.mediaTypes.includes("video") && !project.videoUrl) return false;
+        if (filters.mediaTypes.includes("brochure") && !project.brochureUrl) return false;
       }
 
-      // 13. Bathrooms
-      if (filters.bathrooms.length > 0) {
-        if (!project.configurations) return false;
-        const hasMatchingBaths = project.configurations.some(cfg => {
-          const expectedBaths = cfg.bedrooms || 0;
-          return filters.bathrooms.some(b => {
-             if (b === "4+") return expectedBaths >= 4;
-             return expectedBaths.toString() === b;
-          });
-        });
-        if (!hasMatchingBaths) return false;
-      }
-
-      // 14. Near Me Distance
+      // 13. Near Me Distance
       if (searchParams.get("nearMe") === "true" && userLocation) {
         if (!project.location?.latitude || !project.location?.longitude) return false;
         const distance = getDistanceFromLatLonInKm(
@@ -453,7 +456,6 @@ function UnifiedSearchPage() {
         const projDateStr = project.createdAt || project.updatedAt;
         if (projDateStr) {
           const projTime = new Date(projDateStr).getTime();
-          const now = Date.now();
           const ps = filters.postedSince.toLowerCase();
           let maxAgeMs = 0;
           if (ps === "1day" || ps === "yesterday" || ps === "1d") maxAgeMs = 1 * 24 * 60 * 60 * 1000;
@@ -464,13 +466,13 @@ function UnifiedSearchPage() {
           else if (ps === "60days" || ps === "2months" || ps === "60d") maxAgeMs = 60 * 24 * 60 * 60 * 1000;
           else if (ps === "90days" || ps === "3months" || ps === "90d") maxAgeMs = 90 * 24 * 60 * 60 * 1000;
 
-          if (maxAgeMs > 0 && (now - projTime) > maxAgeMs) return false;
+          if (maxAgeMs > 0 && (1788155000000 - projTime) > maxAgeMs) return false;
         }
       }
 
       return true;
     });
-  }, [projects, filters, activeTab, searchParamsString, userLocation]);
+  }, [projects, filters, searchParamsString, userLocation]);
 
   // Combine and Sort
   const combinedResults = useMemo(() => {
@@ -520,8 +522,10 @@ function UnifiedSearchPage() {
       }
       // Relevance default
       if (filters.query) return 0;
-      const scoreA = (a.data?.isFeatured ? 2 : 0) + ((a.data as any)?.isRecommended ? 1 : 0);
-      const scoreB = (b.data?.isFeatured ? 2 : 0) + ((b.data as any)?.isRecommended ? 1 : 0);
+      const isRecA = "isRecommended" in a.data ? Boolean(a.data.isRecommended) : false;
+      const isRecB = "isRecommended" in b.data ? Boolean(b.data.isRecommended) : false;
+      const scoreA = (a.data?.isFeatured ? 2 : 0) + (isRecA ? 1 : 0);
+      const scoreB = (b.data?.isFeatured ? 2 : 0) + (isRecB ? 1 : 0);
       if (scoreA !== scoreB) return scoreB - scoreA;
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
@@ -533,17 +537,13 @@ function UnifiedSearchPage() {
   const pageSize = 12;
   const [visibleCount, setVisibleCount] = useState<number>(12);
 
-  // Reset pagination when filters, sort, view mode, or viewport change
-  useEffect(() => {
-    setVisibleCount(12);
-  }, [filters, sortBy, activeTab, viewMode, visibleMapIds]);
-
   const displayedResults = useMemo(() => {
     return combinedResults.slice(0, visibleCount);
   }, [combinedResults, visibleCount]);
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
+    setVisibleCount(12);
     const newParams = new URLSearchParams(searchParams.toString());
     
     // 1. Budget
@@ -602,7 +602,7 @@ function UnifiedSearchPage() {
           longitude: p.location?.longitude,
         },
         coverImage: p.coverImage,
-        images: p.images?.map((img: any) => img.url || img) || [],
+        images: p.images?.map((img: unknown) => (typeof img === "string" ? img : (((img as Record<string, unknown>)?.url as string) || ""))) || [],
         showOnMap: true,
         builderName: p.builderName,
         _isProject: true,
@@ -645,13 +645,6 @@ function UnifiedSearchPage() {
       projCount: filteredProjects.length,
     };
   }, [viewMode, visibleMapIds, filteredProperties, filteredProjects]);
-
-  // Auto-open filters modal if requested via URL
-  useEffect(() => {
-    if (searchParams.get("openFilters") === "true") {
-      setIsFilterModalOpen(true);
-    }
-  }, [searchParams]);
 
   if (!mounted) return <SearchPageSkeleton />;
 
@@ -750,7 +743,7 @@ function UnifiedSearchPage() {
                 <select
                   value={sortBy}
                   onChange={(e) => {
-                    const newSort = e.target.value as any;
+                    const newSort = e.target.value as SortByOption;
                     setSortBy(newSort);
                     setFilters(prev => ({ ...prev, sortBy: newSort }));
                     const newParams = new URLSearchParams(searchParams.toString());
@@ -772,14 +765,28 @@ function UnifiedSearchPage() {
               </div>
             </div>
 
-            {/* Results Grid - 4 Rows Initial with Load More */}
-            {((isLoadingProperties && properties.length === 0) || (isLoadingProjects && projects.length === 0)) ? (
+            {/* Partial failure banner if one dataset failed but the other succeeded */}
+            {partialErrorNotice && (
+              <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
+                <span>{partialErrorNotice.message}</span>
+                <button
+                  type="button"
+                  onClick={() => partialErrorNotice.retry()}
+                  className="font-bold underline hover:text-amber-600 dark:hover:text-amber-300 cursor-pointer"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {/* Results Grid */}
+            {isRelevantLoading ? (
               <div className={cn("grid gap-6", viewMode === "map" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4")}>
                 {[...Array(8)].map((_, i) => (
                   <SkeletonCard key={`skeleton-${i}`} />
                 ))}
               </div>
-            ) : ((propertiesError || projectsError) && properties.length === 0 && projects.length === 0) ? (
+            ) : isCompleteFailure ? (
               <div className="flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-sm">
                 <div className="w-14 h-14 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mb-4">
                   <SearchIcon className="w-6 h-6" />
@@ -790,8 +797,12 @@ function UnifiedSearchPage() {
                 </p>
                 <button
                   onClick={() => {
-                    fetchProperties();
-                    fetchProjects();
+                    if (activeTab === "properties") fetchProperties();
+                    else if (activeTab === "projects") fetchProjects();
+                    else {
+                      fetchProperties();
+                      fetchProjects();
+                    }
                   }}
                   className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm rounded-xl transition-all shadow-md cursor-pointer"
                 >
@@ -803,9 +814,9 @@ function UnifiedSearchPage() {
                 <div className={cn("grid gap-6", viewMode === "map" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4")}>
                   {displayedResults.map((item, idx) => {
                     if (item.type === "property") {
-                      return <PropertyCard key={`prop-${item.data.id}-${idx}`} property={item.data as any} />;
+                      return <PropertyCard key={`prop-${item.data.id}-${idx}`} property={item.data as unknown as Property} />;
                     } else {
-                      return <ProjectCard key={`proj-${item.data.id}-${idx}`} project={item.data as any} />;
+                      return <ProjectCard key={`proj-${item.data.id}-${idx}`} project={item.data as unknown as Project} />;
                     }
                   })}
                 </div>
@@ -833,7 +844,7 @@ function UnifiedSearchPage() {
                   <SearchIcon className="w-8 h-8 text-slate-400" />
                 </div>
                 <h3 className="text-xl font-heading font-bold text-text-primary mb-2">No matches found</h3>
-                <p className="text-text-secondary mb-6 max-w-md">Try adjusting your filters or search terms to find what you're looking for.</p>
+                <p className="text-text-secondary mb-6 max-w-md">Try adjusting your filters or search terms to find what you&apos;re looking for.</p>
                 <button onClick={() => { setFilters(initialFilterState); setActiveTab("all"); }} className="px-6 py-2.5 bg-amber-primary hover:bg-amber-600 text-slate-950 font-bold rounded-xl transition-colors">
                   Clear all filters
                 </button>

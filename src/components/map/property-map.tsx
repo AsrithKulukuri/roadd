@@ -26,6 +26,7 @@ import { useFavoritesStore } from "@/stores/favorites-store";
 import { shareItem } from "@/lib/share-utils";
 import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
 import { toast } from "sonner";
+import type { SharedMapItem, PropertyMapProps } from "@/types/map";
 
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -475,7 +476,7 @@ function FreehandDrawListener({
   return null;
 }
 
-function checkPropertyMatchesQuery(p: any, query: string): boolean {
+function checkPropertyMatchesQuery(p: SharedMapItem, query: string): boolean {
   if (!query.trim()) return false;
   const rawTerm = query.toLowerCase().trim();
 
@@ -493,7 +494,7 @@ function checkPropertyMatchesQuery(p: any, query: string): boolean {
   const city = (p.location?.city || "").toLowerCase();
   const locality = (p.location?.locality || "").toLowerCase();
   const address = (p.location?.address || "").toLowerCase();
-  const title = (p.title || "").toLowerCase();
+  const title = (p.title || ("name" in p && typeof p.name === "string" ? p.name : "") || "").toLowerCase();
   const desc = (p.description || "").toLowerCase();
 
   const searchableText = `${title} ${locality} ${city} ${address} ${pType} ${lType} ${desc}`;
@@ -538,7 +539,7 @@ function calculateDistanceStr(userPos: L.LatLng, propLat: number, propLng: numbe
   return `${(meters / 1000).toFixed(1)} km`;
 }
 
-function resolvePropertyMapCoords(p: any): { lat: number; lng: number } {
+function resolvePropertyMapCoords(p: SharedMapItem): { lat: number; lng: number } {
   if (!p) return { lat: 16.5062, lng: 80.6480 };
 
   const currentLat = Number(p.location?.latitude);
@@ -551,7 +552,7 @@ function resolvePropertyMapCoords(p: any): { lat: number; lng: number } {
 
   const pLocality = (p.location?.locality || "").toLowerCase();
   const pAddress = (p.location?.address || "").toLowerCase();
-  const pTitle = (p.title || p.name || "").toLowerCase();
+  const pTitle = (p.title || ("name" in p && typeof p.name === "string" ? p.name : "") || "").toLowerCase();
   const combined = `${pTitle} ${pLocality} ${pAddress}`;
 
   // Check if property matches any known locality preset
@@ -576,7 +577,7 @@ function resolvePropertyMapCoords(p: any): { lat: number; lng: number } {
   };
 }
 
-function getDynamicLocalityBoundary(query: string, properties: any[]): { name: string; city?: string; bounds: [number, number][] } | null {
+function getDynamicLocalityBoundary(query: string, properties: SharedMapItem[]): { name: string; city?: string; bounds: [number, number][] } | null {
   if (!query.trim()) return null;
   const qLower = query.toLowerCase().trim();
 
@@ -674,13 +675,6 @@ function getDynamicLocalityBoundary(query: string, properties: any[]): { name: s
   };
 }
 
-interface PropertyMapProps {
-  filteredItems?: any[];
-  userLocation?: { lat: number, lng: number } | null;
-  onVisibleItemsChange?: (visibleIds: string[]) => void;
-  containerHeight?: number;
-}
-
 function MapCardImageCarousel({ images, title, propertyType }: { images: string[]; title: string; propertyType: string }) {
   const [idx, setIdx] = useState(0);
   const handlePrev = (e: React.MouseEvent) => { e.stopPropagation(); setIdx(i => Math.max(0, i - 1)); }
@@ -749,7 +743,7 @@ function MapViewportListener({
   mapProperties,
   onVisibleItemsChange,
 }: {
-  mapProperties: any[];
+  mapProperties: SharedMapItem[];
   onVisibleItemsChange?: (visibleIds: string[]) => void;
 }) {
   const map = useMapEvents({
@@ -783,7 +777,7 @@ function MapViewportListenerDebounced({
   mapProperties,
   onVisibleItemsChange,
 }: {
-  mapProperties: any[];
+  mapProperties: SharedMapItem[];
   onVisibleItemsChange?: (visibleIds: string[]) => void;
 }) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -848,11 +842,11 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   const projects = useProjectsStore((state) => state.projects);
   const isLoading = usePropertiesStore((state) => state.isLoading);
 
-  const defaultAllItems = useMemo(() => {
-    const propItems = properties.filter((p: any) => p.showOnMap !== false && p.status !== 'sold');
-    const projItems = projects
-      .filter((p: any) => p.isPublished !== false && p.location?.latitude && p.location?.longitude)
-      .map((p: any) => ({
+  const defaultAllItems = useMemo((): SharedMapItem[] => {
+    const propItems = properties.filter((p) => p.showOnMap !== false && p.status !== 'sold');
+    const projItems: SharedMapItem[] = projects
+      .filter((p) => p.isPublished !== false && p.location?.latitude && p.location?.longitude)
+      .map((p) => ({
         id: p.id,
         slug: p.slug,
         title: p.name,
@@ -869,7 +863,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
           longitude: p.location.longitude,
         },
         coverImage: p.coverImage,
-        images: p.images?.map((img: any) => img.url || img) || [],
+        images: p.images?.map((img) => (typeof img === "string" ? img : img.url || "")) || [],
         showOnMap: true,
         builderName: p.builderName,
         _isProject: true,
@@ -1021,6 +1015,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
       const maxMeters = maxCommuteMins * 600; // 15 mins ~ 9,000 meters
       const userLatLng = L.latLng(position.lat, position.lng);
       source = source.filter((p) => {
+        if (!p.location?.latitude || !p.location?.longitude) return false;
         const propLatLng = L.latLng(p.location.latitude, p.location.longitude);
         return userLatLng.distanceTo(propLatLng) <= maxMeters;
       });
@@ -1113,8 +1108,9 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
     const refMatch = findPropertyByRefId(val, mapProperties);
     if (refMatch) {
       setSelectedPropertyId(refMatch.id);
-      if (refMatch.location?.latitude && refMatch.location?.longitude) {
-        const newPos = new L.LatLng(refMatch.location.latitude, refMatch.location.longitude);
+      const loc = refMatch.location;
+      if (loc && typeof loc.latitude === "number" && typeof loc.longitude === "number") {
+        const newPos = new L.LatLng(loc.latitude, loc.longitude);
         setPosition(newPos);
         if (mapRef.current) {
           mapRef.current.flyTo(newPos, 16, { duration: 1.2 });
@@ -1469,7 +1465,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                     <Car className="w-3.5 h-3.5 text-amber-400" /> Distance:
                   </span>
                   <span className="font-black text-amber-400 bg-slate-950 px-2 py-0.5 rounded-md border border-amber-500/30">
-                    {calculateDistanceStr(position, selectedProperty.location.latitude, selectedProperty.location.longitude)}
+                    {calculateDistanceStr(position, selectedProperty.location?.latitude ?? 0, selectedProperty.location?.longitude ?? 0)}
                   </span>
                 </div>
               </div>
@@ -1570,7 +1566,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                           {p.title}
                         </div>
                         <div className="text-[10px] text-slate-400 truncate">
-                          📍 {p.location.locality} • {p.bedrooms ? `${p.bedrooms} BHK` : p.propertyType}
+                          📍 {p.location?.locality || ""} • {p.bedrooms ? `${p.bedrooms} BHK` : p.propertyType}
                         </div>
                       </div>
                       <div className="text-amber-400 font-extrabold text-xs shrink-0">
@@ -1826,7 +1822,9 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                       {displayedPropertiesFiltered.slice(0, mobileTrayCount).map((prop) => {
                         const isSelected = selectedPropertyId === prop.id;
                         const coords = resolvePropertyMapCoords(prop);
-                        const distStr = position ? calculateDistanceStr(position, prop.location.latitude, prop.location.longitude) : "";
+                        const distStr = position && prop.location?.latitude && prop.location?.longitude
+                          ? calculateDistanceStr(position, prop.location.latitude, prop.location.longitude)
+                          : "";
                         
                         let allImages: string[] = [];
                         if (prop.images && Array.isArray(prop.images)) {
@@ -1856,7 +1854,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                             )}
                           >
                             {/* Thumbnail Image Carousel */}
-                            <MapCardImageCarousel images={allImages} title={prop.title} propertyType={propTypeLabel} />
+                            <MapCardImageCarousel images={allImages} title={prop.title || (prop as any).name || "Property"} propertyType={propTypeLabel} />
 
                             {/* Card Details */}
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -1868,7 +1866,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                                   {prop.title}
                                 </h4>
                                 <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                                  📍 {prop.location.locality}, {prop.location.city}
+                                  📍 {prop.location?.locality || ""}, {prop.location?.city || ""}
                                 </p>
                               </div>
 
@@ -2152,7 +2150,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
               const isSelected = selectedPropertyId === property.id;
               const isBlinking = blinkingPropertyId === property.id;
               const hasSearch = Boolean(mapSearchInput.trim());
-              const pricePillIcon = getPricePillIcon(property.price, isSelected, hasSearch, isBlinking);
+              const pricePillIcon = getPricePillIcon(property.price ?? 0, isSelected, hasSearch, isBlinking);
               const coords = resolvePropertyMapCoords(property);
 
               const firstImg = property.images && property.images[0];
@@ -2276,7 +2274,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                                   {property.area ? <span>• {property.area.toLocaleString()} sqft</span> : null}
                                 </div>
                                 <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center mt-0.5">
-                                  <span>{property.plotArea ? `${(property.plotArea / 43560).toFixed(2)} acres lot` : "0.34 acres lot"}</span>
+                                  <span>{(property as any).plotArea ? `${(((property as any).plotArea as number) / 43560).toFixed(2)} acres lot` : "0.34 acres lot"}</span>
                                 </div>
                               </>
                             )}

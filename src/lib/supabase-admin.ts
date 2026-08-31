@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { ipv4Fetch } from "@/lib/ipv4-fetch";
 
 /**
  * Server-Only Supabase Admin Client
@@ -18,5 +19,8 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
+  },
+  global: {
+    fetch: (url, options) => ipv4Fetch(url, options),
   },
 });
