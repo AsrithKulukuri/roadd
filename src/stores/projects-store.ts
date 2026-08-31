@@ -225,24 +225,27 @@ export const useProjectsStore = create<ProjectsState>()(
 
       // ─── Add ──────────────────────────────────────────────────────────────
       addProject: async (project: Project) => {
-        // 1. Optimistic update in Zustand & localStorage
+        const previousProjects = get().projects;
         set((state) => ({
           projects: [project, ...state.projects.filter((p) => p.id !== project.id)],
         }));
 
         try {
-          // 2. Prepare cleaned payload for Supabase
           const dbPayload = toSupabaseProject(project);
-          const { error } = await supabase
-            .from('projects')
-            .insert([dbPayload]);
-
-          if (error) {
-            console.warn('Supabase project insert warning:', error.message);
+          const response = await fetch('/api/projects/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'create', payload: dbPayload }),
+          });
+          const result = await response.json().catch(() => null) as { success?: boolean; error?: string } | null;
+          if (!response.ok || !result?.success) {
+            throw new Error(result?.error || 'Project could not be saved');
           }
         } catch (err: unknown) {
+          set({ projects: previousProjects });
           const message = err instanceof Error ? err.message : String(err);
-          console.warn('Supabase project insert exception:', message);
+          console.error('Project insert failed:', message);
+          throw err;
         }
       },
 
@@ -250,6 +253,7 @@ export const useProjectsStore = create<ProjectsState>()(
       updateProject: async (id: string, data: Partial<Project>) => {
         const cleanData = { ...data };
         if (cleanData.videoUrl === "") cleanData.videoUrl = undefined;
+        const previousProjects = get().projects;
 
         set((state) => ({
           projects: state.projects.map((p) =>
@@ -261,28 +265,21 @@ export const useProjectsStore = create<ProjectsState>()(
 
         try {
           const dbPayload = toSupabaseProject(cleanData);
-          let { error } = await supabase
-            .from('projects')
-            .update({ ...dbPayload, updatedAt: new Date().toISOString() })
-            .eq('id', id);
-
-          if (error && cleanData.slug) {
-            const fallbackRes = await supabase
-              .from('projects')
-              .update({ ...dbPayload, updatedAt: new Date().toISOString() })
-              .eq('slug', cleanData.slug);
-            error = fallbackRes.error;
+          const response = await fetch('/api/projects/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'update', id, slug: cleanData.slug, payload: dbPayload }),
+          });
+          const result = await response.json().catch(() => null) as { success?: boolean; error?: string } | null;
+          if (!response.ok || !result?.success) {
+            throw new Error(result?.error || 'Project could not be updated');
           }
-
-          if (error) {
-            console.error('Supabase project update warning:', error.message);
-          } else {
-            // Refresh store from Supabase
-            await get().fetchProjects();
-          }
+          await get().fetchProjects();
         } catch (err: unknown) {
+          set({ projects: previousProjects });
           const message = err instanceof Error ? err.message : String(err);
-          console.error('Supabase project update exception:', message);
+          console.error('Project update failed:', message);
+          throw err;
         }
       },
 

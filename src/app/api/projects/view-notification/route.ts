@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) return null;
   return createClient(url, serviceKey);
 }
@@ -27,9 +27,30 @@ interface BuilderSurgeState {
   surgeAlertSentAt: number;
 }
 
+interface ProjectNotificationRecord {
+  id?: string;
+  slug?: string;
+  name?: string;
+  builder_whatsapp?: string;
+  builderWhatsapp?: string;
+  builder_phone?: string;
+  builderPhone?: string;
+  builder?: {
+    whatsapp?: string;
+    phone?: string;
+  };
+  refId?: string;
+  ref_id?: string;
+  [key: string]: unknown;
+}
+
+declare global {
+  var __road_surge_state: Map<string, BuilderSurgeState> | undefined;
+}
+
 const surgeStateMap: Map<string, BuilderSurgeState> =
-  (globalThis as any).__road_surge_state || new Map<string, BuilderSurgeState>();
-(globalThis as any).__road_surge_state = surgeStateMap;
+  globalThis.__road_surge_state || new Map<string, BuilderSurgeState>();
+globalThis.__road_surge_state = surgeStateMap;
 
 export async function POST(req: NextRequest) {
   try {
@@ -107,7 +128,7 @@ export async function POST(req: NextRequest) {
     const { projectId, projectSlug, projectName, projectRefId } = body;
 
     // 2. Fetch Verified Project Record from Supabase Database ONLY
-    let dbProject: any = null;
+    let dbProject: ProjectNotificationRecord | null = null;
 
     if (supabase && (projectId || projectSlug)) {
       try {
@@ -265,6 +286,19 @@ export async function POST(req: NextRequest) {
 
       const sendResult = await WasenderService.sendTextMessage(cleanRecipientPhone, singleMessage);
 
+      if (!sendResult.success) {
+        if (leadRecordId && supabase) {
+          await supabase
+            .from("project_leads")
+            .update({ delivery_status: "failed" })
+            .eq("id", leadRecordId);
+        }
+        return NextResponse.json(
+          { success: false, reason: sendResult.error || "Builder notification failed", leadId: leadRecordId },
+          { status: 502 }
+        );
+      }
+
       if (leadRecordId && supabase) {
         try {
           await supabase
@@ -312,6 +346,19 @@ export async function POST(req: NextRequest) {
 
       const sendResult = await WasenderService.sendTextMessage(cleanRecipientPhone, surgeMessage);
 
+      if (!sendResult.success) {
+        if (leadRecordId && supabase) {
+          await supabase
+            .from("project_leads")
+            .update({ delivery_status: "failed" })
+            .eq("id", leadRecordId);
+        }
+        return NextResponse.json(
+          { success: false, reason: sendResult.error || "Builder notification failed", leadId: leadRecordId },
+          { status: 502 }
+        );
+      }
+
       if (leadRecordId && supabase) {
         try {
           await supabase
@@ -337,10 +384,11 @@ export async function POST(req: NextRequest) {
       message: "Lead recorded in database",
       leadId: leadRecordId,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[PROJECT VIEW NOTIFICATION ERROR]:", error);
+    const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { success: false, error: error?.message || "Internal server error" },
+      { success: false, error: message },
       { status: 500 }
     );
   }
