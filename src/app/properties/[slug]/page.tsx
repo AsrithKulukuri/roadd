@@ -65,11 +65,13 @@ export async function generateMetadata({
       ? `₹${(property.price / 10000000).toFixed(2)} Cr`
       : `₹${(property.price / 100000).toFixed(2)} Lakh`;
 
-  const locationFormatted = `${property.location?.locality || (property.location as any)?.area || ""}, ${property.location?.city || "Andhra Pradesh"}`;
+  const locality = property.location?.locality || (property.location && "area" in property.location ? String(property.location.area) : "");
+  const locationFormatted = `${locality}, ${property.location?.city || "Andhra Pradesh"}`;
+  const propertyArea = property.area || property.builtUpArea || property.carpetArea;
   const specsFormatted = [
     property.bedrooms ? `${property.bedrooms} Beds` : null,
     property.bathrooms ? `${property.bathrooms} Baths` : null,
-    (property as any).areaSqFt || (property as any).area || (property as any).builtUpArea ? `${((property as any).areaSqFt || (property as any).area || (property as any).builtUpArea).toLocaleString()} sq.ft` : null,
+    propertyArea ? `${propertyArea.toLocaleString()} sq.ft` : null,
   ]
     .filter(Boolean)
     .join(" • ");
@@ -78,7 +80,7 @@ export async function generateMetadata({
   const canonicalUrl = `${siteUrl}/properties/${property.slug}`;
 
   // Resolve direct publicly accessible primary photo
-  let photoUrl = property.coverImage || property.images?.[0]?.url || "";
+  const photoUrl = property.coverImage || property.images?.[0]?.url || "";
   let finalImageUrl = "";
   if (photoUrl && !photoUrl.startsWith("blob:") && !photoUrl.startsWith("data:")) {
     if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://")) {
@@ -248,7 +250,7 @@ export default async function PropertyDetailPage({
           <div className="lg:col-span-2 space-y-6 sm:space-y-8">
             
             {/* BOX 1: Title, Status, Price & Highlights Box */}
-            <div className="bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+            <div className="bg-bg-card border border-border-default rounded-3xl p-4 min-[480px]:p-5 sm:p-7 shadow-sm space-y-4">
               
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono font-black text-xs rounded-full border border-amber-500/40 shadow-xs">
@@ -260,16 +262,17 @@ export default async function PropertyDetailPage({
                   {property.listingType === "rent" ? "Home for Rent" : property.saleType === "resale" ? "Resale Property" : "House for Sale"}
                 </span>
 
-                {(property.facing || (property.attributes as any)?.facing) && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-900 text-white font-bold text-xs rounded-full border border-white/15 shadow-xs">
-                    <Compass className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="capitalize">
-                      {String(property.facing || (property.attributes as any)?.facing).toLowerCase().includes("facing")
-                        ? String(property.facing || (property.attributes as any)?.facing)
-                        : `${String(property.facing || (property.attributes as any)?.facing)} Facing`}
+                {(() => {
+                  const rawFacing = property.facing || (property.attributes && typeof property.attributes === "object" && "facing" in property.attributes ? String((property.attributes as Record<string, unknown>).facing) : "");
+                  if (!rawFacing) return null;
+                  const formattedFacing = rawFacing.toLowerCase().includes("facing") ? rawFacing : `${rawFacing} Facing`;
+                  return (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-900 text-white font-bold text-xs rounded-full border border-white/15 shadow-xs">
+                      <Compass className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="capitalize">{formattedFacing}</span>
                     </span>
-                  </span>
-                )}
+                  );
+                })()}
 
                 {property.reraId && (
                   <Badge variant="rera" className="uppercase tracking-wider text-[10px]">

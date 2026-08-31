@@ -1,6 +1,8 @@
-import { Bed, Bath, Maximize2, Compass, Calendar, Building2, Car, Layers, Armchair, Clock, ShieldCheck, Sparkles } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { Bed, Bath, Maximize2, Compass, Building2, Car, Layers, Armchair, Clock, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import type { Property } from "@/types/property";
-import { formatArea } from "@/lib/utils";
 import { propertyTypeLabels, furnishingLabels } from "@/config/site";
 
 interface PropertySpecsProps {
@@ -8,6 +10,11 @@ interface PropertySpecsProps {
 }
 
 export function PropertySpecs({ property }: PropertySpecsProps) {
+  const [showAllMobile, setShowAllMobile] = useState(false);
+  const attributes = property.attributes && typeof property.attributes === "object"
+    ? property.attributes as Record<string, unknown>
+    : {};
+
   const formatPropertyType = (type: string) => {
     if (!type) return "Residential";
     if (propertyTypeLabels[type]) return propertyTypeLabels[type];
@@ -18,14 +25,14 @@ export function PropertySpecs({ property }: PropertySpecsProps) {
   };
 
   const facing = (() => {
-    const raw = property.facing || (property.attributes as any)?.facing;
+    const raw = property.facing || (typeof attributes.facing === "string" ? attributes.facing : "");
     if (!raw) return "East Facing";
     const formatted = raw.charAt(0).toUpperCase() + raw.slice(1);
     return formatted.toLowerCase().includes("facing") ? formatted : `${formatted} Facing`;
   })();
 
   const furnishing = (() => {
-    const raw = property.furnishing || (property.attributes as any)?.furnishing;
+    const raw = property.furnishing || (typeof attributes.furnishing === "string" ? attributes.furnishing : "");
     if (!raw) return "Semi-Furnished";
     return furnishingLabels[raw] || raw.charAt(0).toUpperCase() + raw.slice(1);
   })();
@@ -44,7 +51,9 @@ export function PropertySpecs({ property }: PropertySpecsProps) {
     return null;
   })();
 
-  const uds = (property as any).uds || (property.attributes as any)?.uds;
+  const directUds = "uds" in property ? (property as Property & { uds?: string | number }).uds : undefined;
+  const attributeUds = typeof attributes.uds === "string" || typeof attributes.uds === "number" ? attributes.uds : undefined;
+  const uds = directUds || attributeUds;
 
   const specs = [
     { label: "Bedrooms", value: property.bedrooms > 0 ? `${property.bedrooms} BHK` : "1 BHK", icon: Bed, sub: "Configuration" },
@@ -60,31 +69,43 @@ export function PropertySpecs({ property }: PropertySpecsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div className="grid grid-cols-1 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
       {specs.map((spec, i) => {
         const Icon = spec.icon;
         return (
-          <div 
+          <div
             key={i} 
-            className="flex items-start gap-3 p-3.5 sm:p-4 rounded-2xl bg-bg-primary border border-border-default hover:border-amber-primary/50 transition-all shadow-xs"
+            className={`${i >= 5 && !showAllMobile ? "hidden min-[480px]:flex" : "flex"} min-h-[82px] items-center gap-3 p-3 sm:p-4 rounded-2xl bg-bg-primary border border-border-default hover:border-amber-primary/50 transition-all shadow-xs`}
           >
             <div className="w-10 h-10 rounded-xl bg-bg-elevated border border-border-default flex items-center justify-center text-text-primary shrink-0 font-bold">
               <Icon className="w-5 h-5 text-amber-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-wider font-extrabold text-text-tertiary truncate">
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-normal font-extrabold text-text-tertiary leading-tight break-words">
                 {spec.label}
               </p>
-              <p className="font-extrabold text-text-primary text-xs sm:text-sm truncate mt-0.5 leading-snug">
+              <p className="font-extrabold text-text-primary text-sm break-words mt-1 leading-snug">
                 {spec.value}
               </p>
-              <p className="text-[10px] text-text-secondary font-medium truncate mt-0.5">
+              <p className="text-[10px] text-text-secondary font-medium break-words mt-1 leading-snug">
                 {spec.sub}
               </p>
             </div>
           </div>
         );
       })}
+
+      {specs.length > 5 && (
+        <button
+          type="button"
+          aria-expanded={showAllMobile}
+          onClick={() => setShowAllMobile((current) => !current)}
+          className="min-[480px]:hidden flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm font-extrabold text-amber-700 transition-colors hover:bg-amber-500/15 dark:text-amber-400"
+        >
+          <span>{showAllMobile ? "Show fewer specifications" : `View ${specs.length - 5} more specifications`}</span>
+          {showAllMobile ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+      )}
     </div>
   );
 }

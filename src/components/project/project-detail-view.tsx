@@ -145,6 +145,8 @@ export function ProjectDetailView({
   const [floorPlanLightbox, setFloorPlanLightbox] = useState<{ url: string; label: string } | null>(null);
   const [activeMedia, setActiveMedia] = useState<Record<string, 'image' | 'video'>>({});
   const [playingVideos, setPlayingVideos] = useState<Record<string, boolean>>({});
+  const [builderContact, setBuilderContact] = useState<{ phone: string | null; whatsapp: string | null } | null>(null);
+  const [builderContactError, setBuilderContactError] = useState<string | null>(null);
 
   const tabsScrollRef = useRef<HTMLDivElement>(null);
   const cardsScrollRef = useRef<HTMLDivElement>(null);
@@ -156,6 +158,40 @@ export function ProjectDetailView({
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
   const project = projects.find((p) => (p.slug === slug || p.id === slug) && (p.isPublished || true)) || initialProject;
+
+  useEffect(() => {
+    if (!isLoggedIn || !project) return;
+    const controller = new AbortController();
+    const projectKey = project.slug || project.id || slug;
+
+    fetch(`/api/projects/${encodeURIComponent(projectKey)}/contact`, {
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const result = await response.json().catch(() => null) as {
+          success?: boolean;
+          contact?: { phone?: string | null; whatsapp?: string | null };
+          error?: string;
+        } | null;
+        if (!response.ok || !result?.success || !result.contact) {
+          throw new Error(result?.error || "Unable to load builder contact");
+        }
+        setBuilderContact({
+          phone: result.contact.phone || null,
+          whatsapp: result.contact.whatsapp || result.contact.phone || null,
+        });
+        setBuilderContactError(null);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setBuilderContact(null);
+        setBuilderContactError(error instanceof Error ? error.message : "Unable to load builder contact");
+      });
+
+    return () => controller.abort();
+  }, [isLoggedIn, project?.id, project?.slug, slug]);
 
   // Auto-redirect unauthenticated users to login
   useEffect(() => {
@@ -253,12 +289,13 @@ export function ProjectDetailView({
   const sideImages = galleryAll.filter((i) => i.url !== heroImage);
 
   // WhatsApp URL & Phone (TODO: production hardening query stripping)
-  const rawWhatsapp = project.builderWhatsapp || project.builderPhone;
+  const displayBuilderPhone = builderContact?.phone || project.builderPhone || null;
+  const rawWhatsapp = builderContact?.whatsapp || displayBuilderPhone || project.builderWhatsapp;
   const cleanWhatsappNumber = rawWhatsapp ? formatWhatsAppPhone(rawWhatsapp) : null;
   const whatsapp = cleanWhatsappNumber
     ? `https://wa.me/${cleanWhatsappNumber}?text=${encodeURIComponent(`Hi, I am interested in ${project.name}`)}`
     : null;
-  const phone = project.builderPhone ? `tel:${project.builderPhone.replace(/\s/g, "")}` : null;
+  const phone = displayBuilderPhone ? `tel:${displayBuilderPhone.replace(/\s/g, "")}` : null;
   const targetRedirect = `/projects/${project.slug || slug}`;
   const hasBrochure = Boolean(project.brochureUrl && !project.brochureUrl.startsWith("blob:"));
 
@@ -1381,7 +1418,7 @@ export function ProjectDetailView({
                             className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all shadow-xs active:scale-95"
                           >
                             <Phone className="w-4 h-4 text-amber-500 shrink-0" />
-                            <span>Call Builder {project.builderPhone ? `(${project.builderPhone})` : ""}</span>
+                            <span>Call Builder {displayBuilderPhone ? `(${displayBuilderPhone})` : ""}</span>
                           </a>
                         )}
                         {whatsapp && (
@@ -1396,6 +1433,9 @@ export function ProjectDetailView({
                           </a>
                         )}
                       </div>
+                      {!phone && !whatsapp && builderContactError && (
+                        <p className="text-xs font-medium text-red-600 dark:text-red-400">{builderContactError}</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1454,7 +1494,7 @@ export function ProjectDetailView({
                       {phone && (
                         <a href={phone} className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-sm active:scale-98">
                           <Phone className="w-4 h-4 text-amber-500 shrink-0" />
-                          <span>Call Builder {project.builderPhone ? `(${project.builderPhone})` : ""}</span>
+                          <span>Call Builder {displayBuilderPhone ? `(${displayBuilderPhone})` : ""}</span>
                         </a>
                       )}
                       {whatsapp && (
@@ -1465,6 +1505,10 @@ export function ProjectDetailView({
                         </a>
                       )}
                     </>
+                  )}
+
+                  {isLoggedIn && !phone && !whatsapp && builderContactError && (
+                    <p className="text-xs font-medium text-red-600 dark:text-red-400 text-center">{builderContactError}</p>
                   )}
 
                   {project.videoUrl && (
