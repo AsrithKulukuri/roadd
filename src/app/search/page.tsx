@@ -332,9 +332,12 @@ function UnifiedSearchPage() {
         const pType = project.projectType?.toLowerCase() || "";
         let matches = false;
         if (pType === "apartment" && filters.propertyType.includes("apartment")) matches = true;
-        if (pType === "villa" && filters.propertyType.includes("villa")) matches = true;
-        if (pType === "independent-house" && filters.propertyType.includes("independent-house")) matches = true;
-        if ((pType === "venture" || pType === "residential-land" || project.crdaApproved) && (filters.propertyType.includes("residential-land") || filters.propertyType.includes("plot") || filters.propertyType.includes("venture") || filters.propertyType.includes("crda-ventures") || filters.propertyType.includes("crda-venture") || filters.propertyType.includes("venture-plot") || filters.propertyType.includes("agricultural-lands") || filters.propertyType.includes("agricultural-land") || filters.propertyType.includes("agricultural"))) matches = true;
+        if ((pType === "villa" || pType === "independent-house") && (filters.propertyType.includes("villa") || filters.propertyType.includes("independent-house"))) matches = true;
+        
+        // CRDA Ventures / Plotted Layouts (strictly venture projectType)
+        const wantsVenture = filters.propertyType.some(t => ["venture", "crda-ventures", "crda-venture", "residential-land", "plot", "venture-plot"].includes(t.toLowerCase()));
+        if (pType === "venture" && wantsVenture) matches = true;
+
         if (pType === "commercial" && (filters.propertyType.includes("commercial-spaces") || filters.propertyType.includes("commercial") || filters.propertyType.includes("shops"))) matches = true;
         if (filters.propertyType.includes("gated-community") && ["apartment", "villa", "independent-house"].includes(pType)) matches = true;
         

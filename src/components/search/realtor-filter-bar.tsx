@@ -21,6 +21,7 @@ import {
   Sparkles,
   MapPin,
   Search,
+  Landmark,
 } from "lucide-react";
 import { cn, formatINR, formatINRWords } from "@/lib/utils";
 import type { FilterState } from "./search-filters";
@@ -285,6 +286,7 @@ export function RealtorFilterBar({
   const propertyTypes = [
     { label: "Apartment / Flat", value: "apartment", icon: Building2 },
     { label: "House / Villa", value: "villa", icon: Home },
+    { label: "CRDA Ventures", value: "venture", icon: Landmark },
     { label: "Plot / Land", value: "residential-land", icon: Compass },
     { label: "Commercial", value: "commercial-spaces", icon: Building2 },
     { label: "PG / Co-living", value: "pg", icon: Home },
@@ -313,10 +315,12 @@ export function RealtorFilterBar({
 
   // Property Type summary label
   const getPropertyTypeLabel = () => {
-    if (filters.propertyType.length === 0) return "Home type";
+    if (filters.propertyType.length === 0) return "Property Type";
     if (filters.propertyType.length === 1) {
-      const match = propertyTypes.find((p) => p.value === filters.propertyType[0]);
-      return match ? match.label : filters.propertyType[0];
+      const val = filters.propertyType[0];
+      if (val === "venture" || val === "crda-ventures" || val === "crda-venture") return "CRDA Ventures";
+      const match = propertyTypes.find((p) => p.value === val);
+      return match ? match.label : val.replace("-", " ");
     }
     return `${filters.propertyType.length} Types`;
   };

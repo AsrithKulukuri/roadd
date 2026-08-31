@@ -14,6 +14,7 @@ import {
   Briefcase,
   Trees,
   SlidersHorizontal,
+  Landmark,
 } from "lucide-react";
 import { formatINRWords, cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
@@ -715,6 +716,7 @@ export function SearchFiltersModal({
               {[
                 { label: "Flat", val: "apartment", icon: Building },
                 { label: "House/Villa", val: "villa", icon: Home },
+                { label: "CRDA Ventures", val: "venture", icon: Landmark },
                 { label: "Plot/Land", val: "residential-land", icon: Trees },
                 { label: "Commercial", val: "commercial-spaces", icon: Briefcase },
               ].map((item) => {
@@ -1326,10 +1328,11 @@ export function SearchFiltersModal({
             {activeDesktopTab === "propertyType" && (
               <div className="space-y-5">
                 <label className="text-[13px] font-semibold text-slate-900 block">Property Type</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   {[
                     { label: "Flat / Apartment", val: "apartment", icon: Building },
                     { label: "House / Villa", val: "villa", icon: Home },
+                    { label: "CRDA Ventures", val: "venture", icon: Landmark },
                     { label: "Plot / Land", val: "residential-land", icon: Trees },
                     { label: "Commercial Space", val: "commercial-spaces", icon: Briefcase },
                   ].map((item) => {

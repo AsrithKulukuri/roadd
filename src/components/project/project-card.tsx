@@ -28,7 +28,7 @@ const TYPE_CONFIG: Record<ProjectType, { icon: React.ElementType; label: string 
   },
   venture: {
     icon: Landmark,
-    label: "Venture",
+    label: "CRDA Venture",
   },
 };
 
