@@ -139,6 +139,7 @@ export function HeroSection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [heroBudget, setHeroBudget] = useState<[number, number]>([1000000, 30000000]);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -260,6 +261,7 @@ export function HeroSection() {
     }
 
     router.push(`/search?${params.toString()}`);
+    setTimeout(() => setIsNavigating(false), 1500);
   };
 
   // Live Auto-Suggestions for Hero Search Bar
@@ -603,13 +605,36 @@ export function HeroSection() {
                     }
                     setActiveTab(tab.id);
                     if (tab.id === "new-launch") {
-                      router.push("/projects?status=new-launch");
+                      router.push("/search?type=projects&status=new-launch");
                     }
                     if (tab.id === "pre-approval") {
                       router.push("/mortgage-calculator");
                     }
                     if (tab.id === "nearme") {
-                      router.push("/search?nearMe=true&view=map");
+                      if (typeof window === "undefined" || !navigator.geolocation) {
+                        toast.error("Geolocation is not supported by your browser. Showing map.");
+                        router.push("/search?view=map");
+                        return;
+                      }
+                      setIsLocating(true);
+                      navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                          setIsLocating(false);
+                          router.push(`/search?nearMe=true&view=map&lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
+                        },
+                        (err) => {
+                          setIsLocating(false);
+                          if (err.code === err.PERMISSION_DENIED) {
+                            toast.error("Location permission denied. Showing all listings near AP.");
+                          } else if (err.code === err.TIMEOUT) {
+                            toast.error("Location request timed out. Showing all listings.");
+                          } else {
+                            toast.error("Location unavailable. Showing all listings.");
+                          }
+                          router.push("/search?view=map");
+                        },
+                        { timeout: 8000 }
+                      );
                     }
                   }}
                   className={cn(
@@ -824,62 +849,63 @@ export function HeroSection() {
 
         {/* Clean Modern Search Input Bar (Rectangular with subtle rounded edges & voice search) */}
         <form
-          onSubmit={handleSearchSubmit}
-          onClick={(e) => {
-            const target = e.target as HTMLElement;
-            if (target.tagName !== "BUTTON" && !target.closest("button")) {
-              router.push(`/search?type=${activeTab}&focus=search`);
-            }
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSearchSubmit(e);
           }}
-          className="relative w-full max-w-[760px] h-[52px] sm:h-[58px] mx-auto flex items-center bg-white border border-slate-200/90 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 rounded-xl sm:rounded-2xl px-4 shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] transition-all duration-200 cursor-pointer group"
+          className="relative w-full max-w-[760px] h-[52px] sm:h-[58px] mx-auto flex items-center bg-white border border-slate-200/90 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 rounded-xl sm:rounded-2xl px-4 shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] transition-all duration-200 group z-30"
         >
           {/* Left: Outline Search Icon */}
           <Search className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-slate-500 mr-3 shrink-0 pointer-events-none group-hover:text-slate-800 transition-colors stroke-[2]" />
 
           {/* Input text wrapper */}
-          <div 
-            onMouseEnter={() => {
-              try { router.prefetch(`/search?type=${activeTab}&focus=search`); } catch (e) {}
-            }}
-            onClick={() => {
-              setIsNavigating(true);
-              router.push(`/search?type=${activeTab}&focus=search`);
-            }}
-            className="relative flex-1 min-w-0 h-full flex items-center cursor-pointer"
-          >
+          <div className="relative flex-1 min-w-0 h-full flex items-center">
+            {/* Animated placeholder overlay - shown only when searchQuery is empty */}
             {!searchQuery && (
               <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
-                <span className="text-sm sm:text-base text-slate-800 font-medium truncate select-none flex items-center w-full">
+                <span className="text-sm sm:text-base text-slate-400 font-medium truncate select-none flex items-center w-full">
                   <span>Search &ldquo;{typedText}&rdquo;</span>
-                  <span className="inline-block w-[2px] h-[16px] sm:h-[18px] bg-slate-700 ml-1 animate-pulse" />
+                  <span className="inline-block w-[2px] h-[16px] sm:h-[18px] bg-slate-400 ml-1 animate-pulse" />
                 </span>
               </div>
             )}
 
+            {/* Single Stable Interactive Input Element */}
             <input
               ref={inputRef}
               type="text"
+              id="hero-search-input"
+              name="hero-search-input"
               value={searchQuery}
-              readOnly
-              onClick={() => {
-                setIsNavigating(true);
-                router.push(`/search?type=${activeTab}&focus=search`);
-              }}
-              placeholder=""
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+              autoComplete="off"
+              aria-label="Search properties and projects"
               style={{ outline: "none", boxShadow: "none", border: "none" }}
-              className="w-full h-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-transparent font-medium border-none outline-none focus:outline-none focus:ring-0 shadow-none px-0 cursor-pointer"
+              className="w-full h-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-transparent font-medium border-none outline-none focus:outline-none focus:ring-0 shadow-none px-0 relative z-10"
             />
           </div>
+
+          {/* Clear button if searchQuery is not empty */}
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                inputRef.current?.focus();
+              }}
+              className="p-1 rounded-full text-slate-400 hover:text-slate-600 mr-1 cursor-pointer"
+              aria-label="Clear search query"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
 
           {/* Right: Search Action Icon in Logo Color (Amber #f59e0b) with Loading Indicator */}
           <button
             type="submit"
             disabled={isNavigating}
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsNavigating(true);
-              router.push(`/search?type=${activeTab}&focus=search`);
-            }}
             aria-label="Search properties"
             title="Search"
             className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-[#f59e0b] hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all active:scale-90 cursor-pointer shrink-0 ml-1"

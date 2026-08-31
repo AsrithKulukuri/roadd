@@ -2,6 +2,28 @@ import axios, { AxiosError } from "axios";
 import { WasenderAPIResponse } from "@/types/auth";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
 
+export type WasenderMode = "disabled" | "mock" | "live";
+
+export function getWasenderMode(): WasenderMode {
+  const rawMode = (process.env.WASENDER_MODE || "").trim().toLowerCase();
+  if (rawMode === "live") return "live";
+  if (rawMode === "mock") return "mock";
+  // The server must default to disabled when the value is missing or invalid
+  return "disabled";
+}
+
+function maskPhone(phone: string): string {
+  if (!phone || phone.length < 4) return "***";
+  return `${phone.slice(0, 4)}****${phone.slice(-3)}`;
+}
+
+function isPhoneAllowlisted(phone: string): boolean {
+  const allowlist = (process.env.WASENDER_QA_ALLOWLIST || "").split(",").map(p => p.trim()).filter(Boolean);
+  if (allowlist.length === 0) return true; // If no specific allowlist is set, all QA test numbers are permitted
+  const clean = phone.replace(/\D/g, "");
+  return allowlist.some(a => clean.includes(a.replace(/\D/g, "")));
+}
+
 const WASENDER_API_KEY = (process.env.WASENDER_API_KEY || "").trim();
 
 // Normalize base URL to prevent duplicate /send-message or trailing slash 404 errors on Vercel
@@ -27,7 +49,7 @@ function getEndpointUrls(): string[] {
 
 /**
  * WasenderAPI Service
- * Sends WhatsApp OTP and generic notifications using Axios.
+ * Sends WhatsApp OTP and generic notifications using Axios with strict WASENDER_MODE controls.
  */
 export class WasenderService {
   /**
@@ -37,8 +59,44 @@ export class WasenderService {
    * @param otp - 6-digit OTP string e.g. 123456
    */
   static async sendOTPMessage(phone: string, otp: string): Promise<WasenderAPIResponse> {
-    const formattedMessage = `ROAD Verification\n\nYour OTP is:\n${otp}\n\nValid for 5 minutes.\nNever share this code with anyone.`;
     const cleanPhone = formatWhatsAppPhone(phone);
+    const mode = getWasenderMode();
+
+    if (mode === "disabled") {
+      console.log(`[WASENDER DISABLED] Suppressed OTP to ${maskPhone(cleanPhone)} (WASENDER_MODE=disabled)`);
+      return {
+        success: true,
+        message: "WhatsApp OTP simulated (development mode)",
+        id: `dev-${Date.now()}`,
+      };
+    }
+
+    if (mode === "mock") {
+      if (!isPhoneAllowlisted(cleanPhone)) {
+        console.warn(`[WASENDER MOCK REJECTED] ${maskPhone(cleanPhone)} is not in WASENDER_QA_ALLOWLIST`);
+        return {
+          success: false,
+          error: "Phone number not in QA allowlist for mock delivery",
+        };
+      }
+      console.log(`[WASENDER MOCK] Simulated OTP delivery to ${maskPhone(cleanPhone)} successfully`);
+      return {
+        success: true,
+        message: "WhatsApp OTP delivery simulated (QA mode)",
+        id: `mock-${Date.now()}`,
+      };
+    }
+
+    // mode === "live" (verified production only)
+    if (!WASENDER_API_KEY) {
+      console.error("[WASENDER LIVE ERROR] WASENDER_API_KEY is missing in production environment");
+      return {
+        success: false,
+        error: "Wasender service configuration error",
+      };
+    }
+
+    const formattedMessage = `ROAD Verification\n\nYour OTP is:\n${otp}\n\nValid for 5 minutes.\nNever share this code with anyone.`;
 
     const endpoints = getEndpointUrls();
     let lastError = "";
@@ -104,6 +162,42 @@ export class WasenderService {
       return {
         success: false,
         error: "Invalid recipient phone number",
+      };
+    }
+
+    const mode = getWasenderMode();
+
+    if (mode === "disabled") {
+      console.log(`[WASENDER DISABLED] Suppressed WhatsApp notification to ${maskPhone(cleanPhone)} (WASENDER_MODE=disabled)`);
+      return {
+        success: true,
+        message: "WhatsApp notification simulated (development mode)",
+        id: `dev-notif-${Date.now()}`,
+      };
+    }
+
+    if (mode === "mock") {
+      if (!isPhoneAllowlisted(cleanPhone)) {
+        console.warn(`[WASENDER MOCK REJECTED] ${maskPhone(cleanPhone)} is not in WASENDER_QA_ALLOWLIST`);
+        return {
+          success: false,
+          error: "Phone number not in QA allowlist for mock notification",
+        };
+      }
+      console.log(`[WASENDER MOCK] Simulated WhatsApp notification delivery to ${maskPhone(cleanPhone)} successfully`);
+      return {
+        success: true,
+        message: "WhatsApp notification delivery simulated (QA mode)",
+        id: `mock-notif-${Date.now()}`,
+      };
+    }
+
+    // mode === "live" (verified production only)
+    if (!WASENDER_API_KEY) {
+      console.error("[WASENDER LIVE ERROR] WASENDER_API_KEY is missing in production environment");
+      return {
+        success: false,
+        error: "Wasender service configuration error",
       };
     }
 

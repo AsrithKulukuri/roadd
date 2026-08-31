@@ -47,11 +47,15 @@ function PropertiesPage() {
   const [visibleCount, setVisibleCount] = useState<number>(12);
   
   const properties = usePropertiesStore((state) => state.properties);
+  const isLoading = usePropertiesStore((state) => state.isLoading);
+  const error = usePropertiesStore((state) => state.error);
+  const fetchProperties = usePropertiesStore((state) => state.fetchProperties);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    fetchProperties();
+  }, [fetchProperties]);
 
   // Lock body scroll when map view is active so ONLY the map moves
   useEffect(() => {
@@ -288,10 +292,26 @@ function PropertiesPage() {
     });
   };
 
-  if (!mounted) {
+  if (!mounted || (isLoading && properties.length === 0)) {
+    return <PropertiesPageSkeleton />;
+  }
+
+  if (error && properties.length === 0) {
     return (
-      <div className="min-h-screen pt-24 pb-16 bg-slate-50 flex items-center justify-center text-slate-500 font-medium">
-        Loading properties...
+      <div className="min-h-screen pt-28 pb-16 bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center text-center px-4">
+        <div className="max-w-md w-full p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto">
+            <Building2 className="w-6 h-6" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Unable to Load Properties</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{error}</p>
+          <button
+            onClick={() => fetchProperties()}
+            className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm transition-all cursor-pointer shadow-md"
+          >
+            Retry Loading
+          </button>
+        </div>
       </div>
     );
   }

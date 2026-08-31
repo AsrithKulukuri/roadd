@@ -152,10 +152,16 @@ export const useProjectsStore = create<ProjectsState>()(
         set({ isLoading: true, error: null });
 
         try {
-          const { data, error } = await supabase
+          const fetchPromise = supabase
             .from('projects')
             .select(PUBLIC_PROJECT_SELECT)
             .order('id', { ascending: false });
+
+          const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((_, reject) =>
+            setTimeout(() => reject(new Error('Request timed out. Please check your connection and retry.')), 10000)
+          );
+
+          const { data, error } = (await Promise.race([fetchPromise, timeoutPromise])) as any;
 
           if (error) {
             console.warn('Projects fetch warning (keeping local state):', error.message);
@@ -164,10 +170,10 @@ export const useProjectsStore = create<ProjectsState>()(
           }
 
           const mappedData = (data || []).map(fromSupabaseProject);
-          set({ projects: mappedData as Project[], isLoading: false });
+          set({ projects: mappedData as Project[], isLoading: false, error: null });
         } catch (err: any) {
           console.warn('Error fetching projects:', err);
-          set({ isLoading: false, error: err?.message });
+          set({ isLoading: false, error: err?.message || 'Failed to load projects' });
         }
       },
 

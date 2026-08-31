@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import { PropertyCard } from "@/components/property/property-card";
 import { ProjectCard } from "@/components/project/project-card";
 import { CompareModal } from "@/components/property/compare-modal";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +24,7 @@ import {
   Loader2,
   Building2,
   Home,
+  Compass,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFavoritesStore } from "@/stores/favorites-store";
@@ -31,6 +35,9 @@ import type { Project } from "@/types/project";
 import { toast } from "sonner";
 
 export default function SavedPropertiesPage() {
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuthSession();
+
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
@@ -44,6 +51,15 @@ export default function SavedPropertiesPage() {
   const fetchProjects = useProjectsStore((s) => s.fetchProjects);
   const isPropertiesLoading = usePropertiesStore((s) => s.isLoading);
   const isProjectsLoading = useProjectsStore((s) => s.isLoading);
+  const propertiesError = usePropertiesStore((s) => s.error);
+  const projectsError = useProjectsStore((s) => s.error);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      toast.info("Please log in to view your saved items.");
+      router.replace("/login?redirect=/dashboard/saved");
+    }
+  }, [authLoading, user, router]);
 
   useEffect(() => {
     setMounted(true);
@@ -151,8 +167,25 @@ export default function SavedPropertiesPage() {
       {/* Loading State */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Loader2 className="w-10 h-10 text-amber-primary animate-spin mb-4" />
-          <p className="text-text-secondary">Loading your saved items...</p>
+          <Loader2 className="w-10 h-10 text-amber-500 animate-spin mb-4" />
+          <p className="text-text-secondary text-sm">Loading your saved items...</p>
+        </div>
+      ) : (propertiesError && projectsError && totalSavedCount === 0) ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-red-500/30 rounded-3xl p-8 bg-red-500/5">
+          <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mb-4">
+            <Building2 className="w-6 h-6" />
+          </div>
+          <h3 className="font-heading text-lg font-bold text-text-primary mb-2">Unable to Load Saved Items</h3>
+          <p className="text-text-secondary text-xs max-w-sm mb-6">{propertiesError || projectsError}</p>
+          <button
+            onClick={() => {
+              fetchProperties();
+              fetchProjects();
+            }}
+            className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm transition-all cursor-pointer shadow-md"
+          >
+            Retry Loading
+          </button>
         </div>
       ) : totalSavedCount > 0 ? (
         <div className="space-y-10">
@@ -228,16 +261,21 @@ export default function SavedPropertiesPage() {
           )}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border-default rounded-3xl">
-          <div className="w-16 h-16 rounded-full bg-bg-hover flex items-center justify-center mb-4">
-            <span className="text-2xl">❤️</span>
+        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border-default rounded-3xl p-8">
+          <div className="w-16 h-16 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4">
+            <FolderHeart className="w-8 h-8" />
           </div>
           <h3 className="font-heading text-xl font-bold text-text-primary mb-2">
-            No saved properties yet
+            No saved items yet
           </h3>
-          <p className="text-text-secondary max-w-md mx-auto mb-6">
-            When you find a property or project you like, click the heart icon to save it here.
+          <p className="text-text-secondary max-w-md mx-auto mb-6 text-sm">
+            When you find a property or project you like, click the heart icon to save it for quick access and comparison.
           </p>
+          <Link href="/search">
+            <Button variant="amber" className="rounded-xl px-6 gap-2">
+              <Compass className="w-4 h-4" /> Explore Listings
+            </Button>
+          </Link>
         </div>
       )}
 

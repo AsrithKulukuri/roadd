@@ -119,10 +119,16 @@ export const usePropertiesStore = create<PropertiesState>()(
       fetchProperties: async () => {
         set({ isLoading: true, error: null });
         try {
-          const { data, error } = await supabase
+          const fetchPromise = supabase
             .from('properties')
             .select('*')
             .order('createdAt', { ascending: false });
+
+          const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((_, reject) =>
+            setTimeout(() => reject(new Error('Request timed out. Please check your connection and retry.')), 10000)
+          );
+
+          const { data, error } = (await Promise.race([fetchPromise, timeoutPromise])) as any;
 
           if (error) {
             console.warn('Error fetching properties from Supabase (keeping local state):', error.message);
@@ -131,10 +137,10 @@ export const usePropertiesStore = create<PropertiesState>()(
           }
 
           const mappedData = (data || []).map(fromSupabaseProperty);
-          set({ properties: mappedData as Property[], isLoading: false });
+          set({ properties: mappedData as Property[], isLoading: false, error: null });
         } catch (error: any) {
           console.error('Error fetching properties from Supabase:', error);
-          set({ error: error.message, isLoading: false });
+          set({ error: error?.message || 'Failed to load properties', isLoading: false });
         }
       },
 

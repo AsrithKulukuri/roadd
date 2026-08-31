@@ -87,15 +87,23 @@ export function MobileBottomNav() {
     setIsMenuOpen(false);
   }, [pathname, searchParams]);
 
-  // Lock body scroll when mobile menu sheet is open
+  // Lock body scroll and listen for Escape key when mobile menu sheet is open
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
     if (isMenuOpen) {
       document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
     } else {
       document.body.style.overflow = "";
     }
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMenuOpen]);
 
@@ -174,7 +182,14 @@ export function MobileBottomNav() {
     {
       id: "activity",
       label: "Activity",
-      href: "/dashboard/saved",
+      onClick: () => {
+        if (!user) {
+          toast.info("Please log in to view your saved items.");
+          router.push("/login?redirect=/dashboard/saved");
+          return;
+        }
+        router.push("/dashboard/saved");
+      },
       icon: Heart,
       isActive: pathname.startsWith("/dashboard/saved") || pathname === "/dashboard",
       count: savedCount > 0 ? savedCount : undefined,

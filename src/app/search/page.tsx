@@ -101,6 +101,8 @@ function UnifiedSearchPage() {
   const projects = useProjectsStore((state) => state.projects);
   const isLoadingProperties = usePropertiesStore((state) => state.isLoading);
   const isLoadingProjects = useProjectsStore((state) => state.isLoading);
+  const propertiesError = usePropertiesStore((state) => state.error);
+  const projectsError = useProjectsStore((state) => state.error);
   const fetchProperties = usePropertiesStore((state) => state.fetchProperties);
   const fetchProjects = useProjectsStore((state) => state.fetchProjects);
 
@@ -651,7 +653,7 @@ function UnifiedSearchPage() {
     }
   }, [searchParams]);
 
-  if (!mounted) return null;
+  if (!mounted) return <SearchPageSkeleton />;
 
   return (
     <div className={cn("bg-bg-primary pt-16 flex flex-col", viewMode === "map" ? "h-screen overflow-hidden" : "min-h-screen")}>
@@ -771,11 +773,30 @@ function UnifiedSearchPage() {
             </div>
 
             {/* Results Grid - 4 Rows Initial with Load More */}
-            {(isLoadingProperties || isLoadingProjects) ? (
+            {((isLoadingProperties && properties.length === 0) || (isLoadingProjects && projects.length === 0)) ? (
               <div className={cn("grid gap-6", viewMode === "map" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4")}>
                 {[...Array(8)].map((_, i) => (
                   <SkeletonCard key={`skeleton-${i}`} />
                 ))}
+              </div>
+            ) : ((propertiesError || projectsError) && properties.length === 0 && projects.length === 0) ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-sm">
+                <div className="w-14 h-14 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mb-4">
+                  <SearchIcon className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-heading font-bold text-text-primary mb-2">Unable to Load Listings</h3>
+                <p className="text-text-secondary text-sm mb-6 max-w-md">
+                  {propertiesError || projectsError || "A network or server delay occurred. Please try again."}
+                </p>
+                <button
+                  onClick={() => {
+                    fetchProperties();
+                    fetchProjects();
+                  }}
+                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm rounded-xl transition-all shadow-md cursor-pointer"
+                >
+                  Retry Loading
+                </button>
               </div>
             ) : combinedResults.length > 0 ? (
               <div className="flex flex-col gap-6">
