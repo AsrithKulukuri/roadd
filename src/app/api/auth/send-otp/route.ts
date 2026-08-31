@@ -2,11 +2,36 @@ import { NextResponse } from "next/server";
 import { sendOTPSchema } from "@/lib/validations/auth";
 import { RateLimiterService } from "@/lib/rate-limiter";
 import { OTPCryptoService } from "@/lib/otp";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdmin, isServiceRoleConfigured } from "@/lib/supabase-admin";
 import { WasenderService } from "@/lib/wasender";
 import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
+
+function classifySupabaseError(error: { code?: string; message?: string; details?: string }): {
+  code: string;
+  category: "MISSING_CONFIG" | "MISSING_TABLE" | "SCHEMA_MISMATCH" | "RLS_VIOLATION" | "NETWORK_FAILURE" | "DATABASE_ERROR";
+} {
+  const msg = (error.message || "").toLowerCase();
+  const code = error.code || "";
+
+  if (msg.includes("service_role") || msg.includes("configuration") || !isServiceRoleConfigured()) {
+    return { code: "CONFIG_ERROR", category: "MISSING_CONFIG" };
+  }
+  if (code === "42P01" || msg.includes("relation") || msg.includes("does not exist")) {
+    return { code: "TABLE_NOT_FOUND", category: "MISSING_TABLE" };
+  }
+  if (code === "42703" || msg.includes("column") || msg.includes("schema")) {
+    return { code: "SCHEMA_MISMATCH", category: "SCHEMA_MISMATCH" };
+  }
+  if (code === "42501" || msg.includes("row-level security") || msg.includes("permission denied")) {
+    return { code: "RLS_VIOLATION", category: "RLS_VIOLATION" };
+  }
+  if (msg.includes("fetch failed") || msg.includes("eacces") || msg.includes("enotfound") || msg.includes("network")) {
+    return { code: "NETWORK_FAILURE", category: "NETWORK_FAILURE" };
+  }
+  return { code: "DATABASE_ERROR", category: "DATABASE_ERROR" };
+}
 
 export async function POST(request: Request) {
   const requestId = `req_otp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -86,17 +111,38 @@ export async function POST(request: Request) {
     const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString();
 
     // 5. Store Hashed OTP in Supabase Database
-    const { error: dbError } = await supabaseAdmin.from("phone_otps").insert({
-      phone,
-      otp_hash: otpHash,
-      expires_at: expiresAt,
-      attempts: 0,
-      verified: false,
-    });
+    const targetSupabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
+      ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
+      : "unknown";
+
+    let dbError: { code?: string; message?: string; details?: string; hint?: string } | null = null;
+
+    try {
+      const insertRes = await supabaseAdmin.from("phone_otps").insert({
+        phone,
+        otp_hash: otpHash,
+        expires_at: expiresAt,
+        attempts: 0,
+        verified: false,
+      });
+      if (insertRes.error) {
+        dbError = insertRes.error;
+      }
+    } catch (err: unknown) {
+      dbError = {
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
 
     if (dbError) {
+      const classification = classifySupabaseError(dbError);
+      console.error(
+        `[SUPABASE PERSISTENCE ERROR] req=${requestId} host=${targetSupabaseHost} hasServiceRole=${isServiceRoleConfigured()} category=${classification.category} code=${dbError.code || "N/A"} msg=${dbError.message || "Unknown"} details=${dbError.details || "None"}`
+      );
+
       logger.error("Failed to store OTP in database", {
         phone: `${phone.slice(0, 4)}****${phone.slice(-3)}`,
+        category: classification.category,
         error: dbError.message,
         details: dbError.details,
         requestId,
@@ -106,7 +152,7 @@ export async function POST(request: Request) {
         {
           success: false,
           error: {
-            code: "DATABASE_ERROR",
+            code: classification.code,
             message: "Unable to initialize verification session. Please try again shortly.",
           },
           requestId,
@@ -115,10 +161,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // 6. Send OTP via WasenderAPI (WhatsApp)
+    // 6. Mandatory exact log before Wasender invocation
+    console.log("[OTP_FLOW] Database persistence succeeded; invoking Wasender");
+
+    // 7. Send OTP via WasenderAPI (WhatsApp)
     const wasenderResult = await WasenderService.sendOTPMessage(phone, rawOTP, { requestId });
 
+    // 8. Mandatory exact log after Wasender completion
+    console.log(
+      `[OTP_FLOW] Wasender completed status=${wasenderResult.statusCode || (wasenderResult.success ? 200 : "ERROR")} success=${wasenderResult.success} requestId=${requestId}`
+    );
+
     if (!wasenderResult.success) {
+      // Invalidate stored OTP if delivery failed to prevent orphan unusable active record
+      try {
+        await supabaseAdmin.from("phone_otps").delete().eq("phone", phone);
+      } catch (cleanupErr: unknown) {
+        const msg = cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr);
+        console.warn("[CLEANUP_FAILED_OTP_WARNING]", msg);
+      }
+
       logger.error("WasenderAPI failed to deliver WhatsApp OTP", {
         phone: `${phone.slice(0, 4)}****${phone.slice(-3)}`,
         error: wasenderResult.error,
@@ -153,7 +215,7 @@ export async function POST(request: Request) {
       requestId,
     });
 
-    // 7. Return JSON Success Response (Never return raw OTP!)
+    // 9. Return JSON Success Response (Never return raw OTP!)
     return NextResponse.json(
       {
         success: true,
