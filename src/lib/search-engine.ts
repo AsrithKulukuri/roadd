@@ -369,8 +369,8 @@ export function evaluatePropertyFilters(property: Property, filters: any): boole
       // Villa & House matches
       if ((rt === "villa" || rt === "independent-house") && (pType.includes("villa") || pType.includes("independent-house") || pSubtype === "villa" || pSubtype === "house")) return true;
       
-      // Land & Plot matches
-      if ((rt === "residential-land" || rt === "plot" || rt === "venture" || rt === "residential-plot") && (pType.includes("land") || pType.includes("plot") || pType === "venture" || pSubtype === "venture-plot" || pSubtype === "land")) return true;
+      // CRDA Ventures, Land & Plot matches
+      if ((rt === "residential-land" || rt === "plot" || rt === "venture" || rt === "residential-plot" || rt === "crda-ventures" || rt === "crda-venture" || rt === "venture-plot") && (pType.includes("land") || pType.includes("plot") || pType === "venture" || pSubtype === "venture-plot" || pSubtype === "land" || (property as any).crdaApproved || (property as any).attributes?.approvedBy === "CRDA")) return true;
       
       // Commercial matches
       if ((rt === "commercial-spaces" || rt === "commercial" || rt === "shops" || rt === "buildings" || rt === "commercial-lands" || rt === "industrial-lands") && (pCategory === "commercial" || pType.includes("commercial") || pType === "shops" || pType === "buildings" || pSubtype === "shop" || pSubtype === "building")) return true;

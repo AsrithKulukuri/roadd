@@ -25,7 +25,7 @@ import { AdminWhatsAppModal } from "@/components/admin/admin-whatsapp-modal";
 const TYPE_CONFIG: Record<ProjectType, { label: string; icon: React.ElementType; color: string }> = {
   apartment: { label: "Apartment", icon: Building2, color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
   villa:     { label: "Villa",     icon: Home,      color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
-  venture:   { label: "Venture",   icon: Landmark,  color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
+  venture:   { label: "CRDA Ventures", icon: Landmark,  color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
 };
 
 const STATUS_CONFIG = {
@@ -139,8 +139,8 @@ export default function AdminProjectsPage() {
                 }`}
               >
                 <div className="text-2xl font-bold font-heading text-text-primary">{count}</div>
-                <div className="text-sm text-text-secondary capitalize mt-0.5">
-                  {type === "all" ? "All Projects" : `${type}s`}
+                <div className="text-sm text-text-secondary capitalize mt-0.5 font-medium">
+                  {type === "all" ? "All Projects" : type === "venture" ? "CRDA Ventures" : `${type}s`}
                 </div>
               </button>
             );
@@ -218,10 +218,17 @@ export default function AdminProjectsPage() {
                         </td>
                         {/* Type badge */}
                         <td className="px-4 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${TC.color}`}>
-                            <Icon className="w-3 h-3" />
-                            {TC.label}
-                          </span>
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${TC.color}`}>
+                              <Icon className="w-3 h-3" />
+                              {TC.label}
+                            </span>
+                            {project.crdaApproved && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                                🏛️ CRDA Approved
+                              </span>
+                            )}
+                          </div>
                         </td>
                         {/* Location */}
                         <td className="px-4 py-4">

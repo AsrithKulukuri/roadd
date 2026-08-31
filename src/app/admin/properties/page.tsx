@@ -19,6 +19,34 @@ import { useState } from "react";
 export default function AdminPropertiesPage() {
   const { properties, toggleSoldOut, deleteProperty, deleteAllProperties, toggleShowOnMap, updateDisplayCategory } = usePropertiesStore();
   const [whatsAppModalItem, setWhatsAppModalItem] = useState<any | null>(null);
+  const [filterType, setFilterType] = useState<"all" | "apartment" | "villa" | "plot" | "commercial">("all");
+
+  const isPlotOrLand = (p: any) => {
+    const pType = (p.propertyType || "").toLowerCase();
+    const subtype = (p.subtype || "").toLowerCase();
+    return subtype === "venture-plot" || subtype === "land" || pType === "residential-land" || pType === "agricultural-lands";
+  };
+
+  const getPropertyTypeLabel = (p: any) => {
+    const pType = (p.propertyType || "").toLowerCase();
+    const subtype = (p.subtype || "").toLowerCase();
+    if (isPlotOrLand(p)) return "Plot / Land";
+    if (subtype === "flat" || pType === "apartment") return "Apartment / Flat";
+    if (subtype === "villa" || subtype === "house" || pType === "villa" || pType === "independent-house") return "Villa / House";
+    if (pType.includes("commercial") || subtype.includes("shop") || subtype.includes("building")) return "Commercial";
+    return p.propertyType?.replace("-", " ") || "Property";
+  };
+
+  const filteredProperties = properties.filter((p: any) => {
+    if (filterType === "all") return true;
+    if (filterType === "plot") return isPlotOrLand(p);
+    const pType = (p.propertyType || "").toLowerCase();
+    const subtype = (p.subtype || "").toLowerCase();
+    if (filterType === "apartment") return !isPlotOrLand(p) && (subtype === "flat" || pType === "apartment");
+    if (filterType === "villa") return !isPlotOrLand(p) && (subtype === "villa" || subtype === "house" || pType === "villa" || pType === "independent-house");
+    if (filterType === "commercial") return pType.includes("commercial") || subtype.includes("shop") || subtype.includes("building");
+    return true;
+  });
 
   const handleDeleteAll = () => {
     if (confirm("Are you sure you want to delete ALL properties? This action cannot be undone.")) {
@@ -53,6 +81,35 @@ export default function AdminPropertiesPage() {
         </div>
       </div>
 
+      {/* Stats & Category Filter Tabs */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+        {[
+          { type: "all", label: "All Properties", count: properties.length },
+          { type: "apartment", label: "Apartments", count: properties.filter((p: any) => !isPlotOrLand(p) && ((p.subtype || "").toLowerCase() === "flat" || (p.propertyType || "").toLowerCase() === "apartment")).length },
+          { type: "villa", label: "Houses & Villas", count: properties.filter((p: any) => !isPlotOrLand(p) && (["villa", "house"].includes((p.subtype || "").toLowerCase()) || ["villa", "independent-house"].includes((p.propertyType || "").toLowerCase()))).length },
+          { type: "plot", label: "Plots & Land", count: properties.filter((p: any) => isPlotOrLand(p)).length },
+          { type: "commercial", label: "Commercial", count: properties.filter((p: any) => (p.propertyType || "").toLowerCase().includes("commercial") || (p.subtype || "").toLowerCase().includes("shop") || (p.subtype || "").toLowerCase().includes("building")).length },
+        ].map((item) => {
+          const active = filterType === item.type;
+          return (
+            <button
+              key={item.type}
+              onClick={() => setFilterType(item.type as any)}
+              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                active
+                  ? "border-amber-500/60 bg-amber-500/10"
+                  : "border-border-default bg-bg-card hover:border-amber-500/30"
+              }`}
+            >
+              <div className="text-2xl font-bold font-heading text-text-primary">{item.count}</div>
+              <div className="text-xs text-text-secondary capitalize mt-0.5 font-medium">
+                {item.label}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
       {properties.length === 0 ? (
         <div className="text-center py-20 bg-bg-card border border-border-default rounded-3xl p-8 space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto text-amber-500">
@@ -73,7 +130,7 @@ export default function AdminPropertiesPage() {
         
         {/* Mobile View: Property Cards */}
         <div className="block md:hidden divide-y divide-border-subtle">
-          {properties.map((property) => (
+          {filteredProperties.map((property) => (
             <div key={property.id} className="p-4 space-y-3">
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-xl bg-border-default overflow-hidden shrink-0">
@@ -87,7 +144,7 @@ export default function AdminPropertiesPage() {
                     {formatPriceCompact(property.price)}
                   </div>
                   <div className="text-xs text-text-tertiary truncate">
-                    📍 {property.location.locality}, {property.location.city}
+                    📍 {property.location.locality}, {property.location.city} • <span className="text-amber-500 font-semibold">{getPropertyTypeLabel(property)}</span>
                   </div>
                 </div>
               </div>
@@ -179,7 +236,7 @@ export default function AdminPropertiesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
-              {properties.map((property) => (
+              {filteredProperties.map((property) => (
                 <tr key={property.id} className="hover:bg-bg-primary/30 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
@@ -191,7 +248,7 @@ export default function AdminPropertiesPage() {
                           {property.title}
                         </div>
                         <div className="text-xs text-text-tertiary capitalize">
-                          {property.listingType} • {property.propertyType.replace('-', ' ')}
+                          {property.listingType} • <span className="text-amber-500 font-semibold">{getPropertyTypeLabel(property)}</span>
                         </div>
                       </div>
                     </div>

@@ -192,7 +192,7 @@ export function MobileBottomNav() {
     { label: "New Projects", href: "/search?type=projects" },
     { label: "Gated Communities", href: "/search?type=buy&propertyType=gated-community" },
     { label: "Commercial", href: "/search?type=buy&propertyType=commercial" },
-    { label: "Agriculture", href: "/search?type=buy&propertyType=agricultural-land" },
+    { label: "CRDA Ventures", href: "/search?type=projects&projectType=venture" },
   ];
 
   return (

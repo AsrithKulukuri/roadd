@@ -592,13 +592,16 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                     onChange={(e) => {
                       const newType = e.target.value as ProjectType;
                       setProjectType(newType);
+                      if (newType === "venture") {
+                        setCrdaApproved(true);
+                      }
                       setConfigs([]);
                     }}
                     className="w-full h-12 rounded-xl bg-bg-primary border border-border-default/80 px-4 pr-10 text-text-primary font-bold text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all cursor-pointer shadow-xs appearance-none"
                   >
                     <option value="apartment">Apartments (Multi-storey flats with BHK configs)</option>
                     <option value="villa">Villas (Independent luxury villas / row houses)</option>
-                    <option value="venture">Plots / Venture (Gated layout plots & lands)</option>
+                    <option value="venture">CRDA Ventures (CRDA approved plots, layout ventures & lands)</option>
                   </select>
                   <ChevronDown className="w-4 h-4 text-text-secondary absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
@@ -815,9 +818,98 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-secondary">RERA ID</label>
-                <Input value={reraId} onChange={(e) => setReraId(e.target.value)} placeholder="AP-RERA-XXXX-XXXX" className={ic()} />
+              {/* Approvals & Certifications Box */}
+              <div className="md:col-span-2 p-5 rounded-2xl bg-slate-900/90 border-2 border-amber-500/30 space-y-4">
+                <div className="flex items-center gap-2 text-amber-400 font-black text-xs uppercase tracking-wider border-b border-slate-800 pb-3">
+                  <Landmark className="w-4 h-4 text-amber-400" />
+                  <span>Approvals, RERA &amp; CRDA Layout Certifications</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* CRDA Venture Option */}
+                  <div 
+                    className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                      crdaApproved ? "bg-amber-500/15 border-amber-500 text-white" : "bg-slate-950 border-slate-800 text-slate-300"
+                    }`}
+                    onClick={() => setCrdaApproved(!crdaApproved)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={crdaApproved}
+                        onChange={(e) => setCrdaApproved(e.target.checked)}
+                        className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
+                        id="check-crda"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <label htmlFor="check-crda" className="text-sm font-bold text-white cursor-pointer select-none">
+                        🏛️ Mark as CRDA Venture / Approved Layout
+                      </label>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2 pl-8">
+                      Enabling this tags this project as an official <strong>CRDA Approved Venture</strong>. It will be showcased in the top navbar CRDA Ventures tab, search filters, and verification badges.
+                    </p>
+                  </div>
+
+                  {/* RERA Approved Option */}
+                  <div 
+                    className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                      reraApproved ? "bg-emerald-500/15 border-emerald-500 text-white" : "bg-slate-950 border-slate-800 text-slate-300"
+                    }`}
+                    onClick={() => setReraApproved(!reraApproved)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={reraApproved}
+                        onChange={(e) => setReraApproved(e.target.checked)}
+                        className="w-5 h-5 accent-emerald-500 rounded cursor-pointer"
+                        id="check-rera"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <label htmlFor="check-rera" className="text-sm font-bold text-white cursor-pointer select-none">
+                        ✅ RERA Approved Project
+                      </label>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2 pl-8">
+                      Displays the verified RERA badge across project cards, hero suggestions, and details page.
+                    </p>
+                  </div>
+
+                  {/* RERA ID Field */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300">RERA Registration ID</label>
+                    <Input
+                      value={reraId}
+                      onChange={(e) => {
+                        setReraId(e.target.value);
+                        if (e.target.value.trim() && !reraApproved) setReraApproved(true);
+                      }}
+                      placeholder="e.g. AP-RERA-P0328001123"
+                      className="w-full h-11 rounded-xl bg-slate-950 border border-slate-800 px-3 text-xs text-white placeholder:text-slate-500 focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* 0% Brokerage Option */}
+                  <div 
+                    className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer select-none ${
+                      noBrokerage ? "bg-amber-500/15 border-amber-500" : "bg-slate-950 border-slate-800"
+                    }`}
+                    onClick={() => setNoBrokerage(!noBrokerage)}
+                  >
+                    <div>
+                      <span className="text-xs font-bold text-white block">0% Brokerage Direct from Builder</span>
+                      <span className="text-[11px] text-slate-400">Buyers contact builder directly with zero commission</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={noBrokerage}
+                      onChange={(e) => setNoBrokerage(e.target.checked)}
+                      className="w-4 h-4 accent-amber-500 rounded cursor-pointer ml-3"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
