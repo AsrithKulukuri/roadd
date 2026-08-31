@@ -547,7 +547,6 @@ export class WasenderService {
           durationMs,
         };
       } catch (err: unknown) {
-        clearTimeout(timeoutId);
         const isTimeout = err instanceof Error && err.name === "AbortError";
         const errorCategory = isTimeout ? "TIMEOUT" : "NETWORK_ERROR";
         const durationMs = Date.now() - ctx.startTime;
@@ -579,6 +578,8 @@ export class WasenderService {
           errorCategory,
           durationMs,
         };
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
 

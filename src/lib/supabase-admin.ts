@@ -1,10 +1,20 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { ipv4Fetch } from "@/lib/ipv4-fetch";
+import dns from "node:dns";
+
+// Configure standard Node DNS resolution order (IPv4 first) without custom socket wrappers
+if (typeof dns?.setDefaultResultOrder === "function") {
+  try {
+    dns.setDefaultResultOrder("ipv4first");
+  } catch {
+    // Ignore in non-node/browser environments
+  }
+}
 
 /**
  * Server-Only Supabase Admin Client Factory
  * Strictly requires SUPABASE_SERVICE_ROLE_KEY and NEXT_PUBLIC_SUPABASE_URL.
  * NEVER falls back to the anonymous key or placeholders.
+ * Uses native standard fetch.
  * 
  * CRITICAL SECURITY: Never import or expose this file on the client side!
  */
@@ -54,9 +64,6 @@ export function getSupabaseAdmin(): SupabaseClient {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
-    },
-    global: {
-      fetch: (url, options) => ipv4Fetch(url, options),
     },
   });
 
