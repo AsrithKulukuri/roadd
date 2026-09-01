@@ -252,16 +252,18 @@ export function Navbar() {
       <header
         className={cn(
           "fixed top-0 left-0 right-0 z-[100] h-16 flex items-center transition-all duration-300",
-          isTransparent
-            ? "bg-transparent border-transparent"
-            : "bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 shadow-xs",
+          pathname === "/" && isScrolled
+            ? "bg-transparent border-transparent shadow-none pointer-events-none"
+            : isTransparent
+              ? "bg-transparent border-transparent"
+              : "bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 shadow-xs",
           pathname !== "/search" && isScrolled && "max-lg:opacity-0 max-lg:pointer-events-none"
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
           <div className="flex items-center justify-between gap-2">
-            {/* Left: Brand Logo */}
-            <div className="shrink-0">
+            {/* Left: Brand Logo (Hides when sticky search bar is active) */}
+            <div className={cn("shrink-0 transition-opacity duration-200", pathname === "/" && isScrolled && "opacity-0 pointer-events-none")}>
               <Logo size="md" textColor="text-white" />
             </div>
 
@@ -271,17 +273,22 @@ export function Navbar() {
                 {pathname === "/" && isScrolled ? (
                   <motion.div
                     key="nav-compact-search"
-                    initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                    initial={{ opacity: 0, scale: 0.95, y: -8 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -6 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -8 }}
                     transition={{ duration: 0.22, ease: "easeOut" }}
-                    className="w-full flex items-center bg-slate-100/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full py-1 px-1.5 shadow-xs gap-1.5"
+                    className="w-full flex items-center bg-slate-950/95 text-white border border-slate-800 rounded-full py-1.5 px-2 shadow-[0_12px_45px_rgba(0,0,0,0.35)] backdrop-blur-xl gap-1.5 pointer-events-auto"
                   >
+                    {/* Compact Logo Icon inside Pill */}
+                    <div className="shrink-0 pl-1 pr-0.5">
+                      <Logo size="sm" showText={false} href="/" />
+                    </div>
+
                     {/* Search Input */}
                     <form
                       action="#"
                       onSubmit={handleNavSearchSubmit}
-                      className="flex-1 min-w-0 flex items-center px-2.5 gap-2"
+                      className="flex-1 min-w-0 flex items-center px-2.5 gap-2 border-r border-slate-800/80 mr-1"
                     >
                       <Search className="w-4 h-4 text-amber-500 shrink-0" />
                       <input
@@ -289,13 +296,13 @@ export function Navbar() {
                         value={navSearchQuery}
                         onChange={(e) => setNavSearchQuery(e.target.value)}
                         placeholder={`Search "${NAV_SEARCH_PLACEHOLDERS[placeholderIndex]}"...`}
-                        className="w-full bg-transparent text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none border-none p-0 focus:ring-0 focus:outline-none"
+                        className="w-full bg-transparent text-xs font-medium text-white placeholder:text-slate-400 outline-none border-none p-0 focus:ring-0 focus:outline-none"
                       />
                       {navSearchQuery && (
                         <button
                           type="button"
                           onClick={() => setNavSearchQuery("")}
-                          className="p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          className="p-0.5 text-slate-400 hover:text-white"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -469,8 +476,8 @@ export function Navbar() {
               </AnimatePresence>
             </div>
 
-            {/* Right Action Icons & Controls */}
-            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            {/* Right Action Icons & Controls (Hides when sticky search bar is active) */}
+            <div className={cn("flex items-center gap-2 sm:gap-2.5 shrink-0 transition-opacity duration-200", pathname === "/" && isScrolled && "opacity-0 pointer-events-none")}>
               <div className="hidden sm:block">
                 <ThemeToggle />
               </div>
