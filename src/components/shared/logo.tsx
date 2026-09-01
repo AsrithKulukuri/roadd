@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -34,13 +33,21 @@ export function Logo({
         className="relative flex-shrink-0 flex items-center justify-center"
         style={{ height: `${iconHeight}px` }}
       >
-        <Image
-          src="/logo.png"
-          alt="ROAD FACING Logo"
-          width={Math.round(iconHeight * 0.73)}
-          height={iconHeight}
-          className="h-full w-auto object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105"
-          priority
+        <span
+          role="img"
+          aria-label="ROAD FACING Logo"
+          className="block h-full bg-[#faad13] drop-shadow-sm transition-transform duration-300 group-hover:scale-105"
+          style={{
+            width: `${Math.round(iconHeight * 0.73)}px`,
+            WebkitMaskImage: "url('/logo.png')",
+            maskImage: "url('/logo.png')",
+            WebkitMaskPosition: "center",
+            maskPosition: "center",
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+            WebkitMaskSize: "contain",
+            maskSize: "contain",
+          }}
         />
       </div>
       {showText && (
@@ -51,7 +58,7 @@ export function Logo({
               textClass
             )}
           >
-            <span className="text-[#f59e0b] font-black">ROAD</span>
+            <span className="text-[#faad13] font-black">ROAD</span>
             <span className={cn("font-black tracking-tight", resolvedTextColor)}>
               FACING
             </span>

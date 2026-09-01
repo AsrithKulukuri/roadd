@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
                   width: "44px",
                   height: "44px",
                   borderRadius: "12px",
-                  backgroundColor: "#f59e0b",
+                  backgroundColor: "#faad13",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
                     color: "#ffffff",
                   }}
                 >
-                  ROAD<span style={{ color: "#f59e0b" }}>FACING</span>
+                  ROAD<span style={{ color: "#faad13" }}>FACING</span>
                 </span>
                 <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" }}>
                   Real Projects • Real Updates
@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
                 border: "1.5px solid rgba(245, 158, 11, 0.4)",
                 padding: "8px 18px",
                 borderRadius: "9999px",
-                color: "#fcd34d",
+                color: "#faad13",
                 fontSize: "14px",
                 fontWeight: 800,
                 letterSpacing: "0.3px",
@@ -184,7 +184,7 @@ export async function GET(req: NextRequest) {
                   marginBottom: "20px",
                 }}
               >
-                <span style={{ color: "#f59e0b" }}>📍</span>
+                <span style={{ color: "#faad13" }}>📍</span>
                 <span>{location}</span>
               </div>
 
@@ -221,7 +221,7 @@ export async function GET(req: NextRequest) {
                     style={{
                       fontSize: "38px",
                       fontWeight: 900,
-                      color: "#f59e0b",
+                      color: "#faad13",
                       letterSpacing: "-0.5px",
                     }}
                   >
@@ -274,7 +274,7 @@ export async function GET(req: NextRequest) {
             }}
           >
             <span>Vijayawada • Guntur • Amaravati • Mangalagiri • Tadepalli</span>
-            <span style={{ color: "#f59e0b" }}>www.roadfacing.com</span>
+            <span style={{ color: "#faad13" }}>www.roadfacing.com</span>
           </div>
         </div>
       ),

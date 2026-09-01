@@ -44,7 +44,7 @@ export default function Loading() {
         {/* Brand Title */}
         <div className="flex flex-col items-center gap-1.5">
           <div className="flex items-center gap-1.5 font-heading text-xl sm:text-2xl font-black tracking-tight leading-none">
-            <span className="text-[#f59e0b] drop-shadow-[0_0_16px_rgba(245,158,11,0.6)]">ROAD</span>
+            <span className="text-[#faad13] drop-shadow-[0_0_16px_rgba(250,173,19,0.6)]">ROAD</span>
             <span className="text-white tracking-wider drop-shadow-md">FACING</span>
           </div>
         </div>

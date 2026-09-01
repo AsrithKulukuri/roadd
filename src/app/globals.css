@@ -6,7 +6,8 @@
 
 @theme {
   /* Brand Colors */
-  --color-amber-primary: #f1a010;
+  --color-road-brand: #faad13;
+  --color-amber-primary: #faad13;
   --color-amber-hover: #d28a0e;
   --color-amber-glow: #f8cd6f;
   --color-amber-muted: #f1a01026;
@@ -335,10 +336,83 @@ button, nav, a, [role="button"] {
 }
 
 .text-gradient-amber {
-  background: linear-gradient(135deg, var(--color-amber-glow), var(--color-amber-primary), var(--color-amber-hover));
+  background: var(--color-road-brand);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Keep every yellow/amber font treatment on the exact ROAD brand color. */
+:is(
+  .text-amber-200,
+  .text-amber-300,
+  .text-amber-400,
+  .text-amber-500,
+  .text-amber-600,
+  .text-amber-700,
+  .text-amber-800,
+  .text-amber-900,
+  .text-amber-950,
+  .text-amber-primary,
+  .text-amber-400\/60,
+  .text-amber-500\/60,
+  .text-amber-600\/60,
+  .text-amber-primary\/30,
+  .text-amber-primary\/70,
+  .text-yellow-400,
+  .text-yellow-600
+) {
+  color: var(--color-road-brand) !important;
+}
+
+:is(
+  .hover\:text-amber-300:hover,
+  .hover\:text-amber-400:hover,
+  .hover\:text-amber-500:hover,
+  .hover\:text-amber-600:hover,
+  .hover\:text-amber-700:hover,
+  .hover\:text-amber-hover:hover,
+  .hover\:text-amber-primary:hover,
+  .focus\:text-amber-500:focus
+) {
+  color: var(--color-road-brand) !important;
+}
+
+.group:hover :is(
+  .group-hover\:text-amber-300,
+  .group-hover\:text-amber-400,
+  .group-hover\:text-amber-500,
+  .group-hover\:text-amber-primary,
+  .group-hover\:text-amber-primary\/20
+) {
+  color: var(--color-road-brand) !important;
+}
+
+.dark :is(
+  .dark\:text-amber-200,
+  .dark\:text-amber-300,
+  .dark\:text-amber-400,
+  .dark\:text-amber-500,
+  .dark\:text-yellow-400
+) {
+  color: var(--color-road-brand) !important;
+}
+
+.dark :is(
+  .dark\:hover\:text-amber-300:hover,
+  .dark\:hover\:text-amber-400:hover
+) {
+  color: var(--color-road-brand) !important;
+}
+
+:is(
+  .file\:text-amber-400,
+  .file\:text-amber-500,
+  .file\:text-amber-600,
+  .file\:text-amber-700,
+  .dark\:file\:text-amber-400
+)::file-selector-button {
+  color: var(--color-road-brand) !important;
 }
 
 .text-gradient-white {
