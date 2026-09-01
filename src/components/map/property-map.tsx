@@ -342,23 +342,34 @@ function LocationMarker({
   );
 }
 
-// Forces Leaflet to recalculate map container size and load tiles.
-// This is required when MapContainer is inside a flex/dynamic layout.
+// Forces Leaflet to recalculate map container size and load tiles smoothly without jitter
 function MapInvalidator() {
   const map = useMap();
 
   useEffect(() => {
     if (!map) return;
-    // Call invalidateSize immediately, then again after layout settles
-    map.invalidateSize({ animate: false });
-    const t1 = setTimeout(() => map.invalidateSize({ animate: false }), 100);
-    const t2 = setTimeout(() => map.invalidateSize({ animate: false }), 500);
-    const t3 = setTimeout(() => map.invalidateSize({ animate: false }), 1000);
+    const container = map.getContainer();
+    if (!container) return;
+
+    // Single smooth measurement after mount
+    const t = setTimeout(() => {
+      if (map) map.invalidateSize({ animate: false, pan: false });
+    }, 150);
+
+    // Watch resize with RAF to prevent jitter
+    let rId: number | null = null;
+    const ro = new ResizeObserver(() => {
+      if (rId) cancelAnimationFrame(rId);
+      rId = requestAnimationFrame(() => {
+        if (map) map.invalidateSize({ animate: false, pan: false });
+      });
+    });
+    ro.observe(container);
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+      clearTimeout(t);
+      if (rId) cancelAnimationFrame(rId);
+      ro.disconnect();
     };
   }, [map]);
 
@@ -1982,12 +1993,13 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
             dragging={true}
             touchZoom={true}
             doubleClickZoom={true}
-            bounceAtZoomLimits={true}
-            className="w-full touch-none"
-            style={{ touchAction: "none", position: "absolute", inset: 0, height: "100%", width: "100%" }}
-            whenReady={() => {
-              setTimeout(() => mapRef.current?.invalidateSize({ animate: false }), 50);
-            }}
+            bounceAtZoomLimits={false}
+            inertia={true}
+            inertiaDeceleration={3000}
+            inertiaMaxSpeed={1500}
+            easeLinearity={0.2}
+            className="w-full touch-none select-none"
+            style={{ touchAction: "none", position: "absolute", inset: 0, height: "100%", width: "100%", overscrollBehavior: "contain" }}
           >
             {/* Must be first child — forces Leaflet to re-measure container & load tiles */}
             <MapInvalidator />

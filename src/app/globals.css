@@ -782,3 +782,30 @@ input[type="submit"] {
   scrollbar-width: none; /* Firefox */
 }
 
+/* ========================================================================
+   Leaflet Map Anti-Jitter & Hardware Acceleration Stabilization
+   ======================================================================== */
+.leaflet-container {
+  touch-action: none !important;
+  overscroll-behavior: contain !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  outline: none !important;
+}
+
+.leaflet-pane,
+.leaflet-tile-pane,
+.leaflet-marker-pane,
+.leaflet-shadow-pane,
+.leaflet-overlay-pane {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.leaflet-tile {
+  image-rendering: auto;
+  image-rendering: -webkit-optimize-contrast;
+}
