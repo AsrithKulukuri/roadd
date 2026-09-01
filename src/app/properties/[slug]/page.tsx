@@ -295,9 +295,18 @@ export default async function PropertyDetailPage({
 
               {/* Large Price Row */}
               <div className="pt-2 flex flex-wrap items-baseline justify-between gap-3 sm:gap-4 border-t border-border-default/60">
-                <span className="font-black text-3xl sm:text-4xl text-text-primary tracking-tight">
-                  {formatINR(property.price)}
-                </span>
+                <div className="flex flex-wrap items-baseline gap-2 sm:gap-2.5">
+                  <span className="font-black text-3xl sm:text-4xl text-text-primary tracking-tight">
+                    {property.listingType === "rent" || property.listingType === "pg"
+                      ? `${formatPriceCompact(property.price)}/mo`
+                      : formatPriceCompact(property.price)}
+                  </span>
+                  {property.price >= 100000 && (
+                    <span className="text-xs sm:text-sm text-text-tertiary font-semibold">
+                      ({formatINR(property.price)})
+                    </span>
+                  )}
+                </div>
 
                 <span className="text-xs text-text-tertiary font-semibold">
                   + Govt. Charges & Registration

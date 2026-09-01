@@ -82,7 +82,7 @@ export default function ComparePage() {
                   </div>
 
                   <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1 mb-1">{p.title}</h4>
-                  <div className="text-slate-900 dark:text-white font-black text-lg mb-2">{formatINR(p.price)}</div>
+                  <div className="text-slate-900 dark:text-white font-black text-lg mb-2">{formatPriceCompact(p.price)}</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mb-3">{p.location.locality}, {p.location.city}</div>
 
                   <Link href={`/properties/${p.id}`} className="block text-center py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-900 font-extrabold text-xs rounded-xl shadow-xs transition-colors">
