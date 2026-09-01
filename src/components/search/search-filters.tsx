@@ -588,10 +588,14 @@ export function SearchFiltersModal({
                     key={city.id}
                     type="button"
                     onClick={() => {
-                      const nextCities = isSelected
-                        ? (localFilters.cities || []).filter((c) => c !== city.name)
-                        : [...(localFilters.cities || []), city.name];
-                      setLocalFilters({ ...localFilters, cities: nextCities });
+                      if (isSelected) {
+                        const nextCities = (localFilters.cities || []).filter((c) => c !== city.name);
+                        const citySubNames = new Set((city.sublocations || []).map((s) => s.name));
+                        const nextLocalities = (localFilters.localities || []).filter((l) => !citySubNames.has(l));
+                        setLocalFilters({ ...localFilters, cities: nextCities, localities: nextLocalities });
+                      } else {
+                        setLocalFilters({ ...localFilters, cities: [...(localFilters.cities || []), city.name] });
+                      }
                     }}
                     className={cn(
                       "py-2 px-4 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer border",
@@ -607,36 +611,43 @@ export function SearchFiltersModal({
               })}
             </div>
 
-            {/* Sublocalities for selected city or top cities (Multi-Select) */}
+            {/* Sublocalities strictly for selected city or top cities (Multi-Select) */}
             <div className="pt-1">
               <label className="text-xs font-semibold text-slate-700 block mb-1.5">
-                Popular Localities & Hubs
+                {(localFilters.cities || []).length > 0
+                  ? `${localFilters.cities.join(", ")} Localities`
+                  : "Popular Localities & Hubs"}
               </label>
               <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
-                {cities.flatMap((c) => c.sublocations).slice(0, 16).map((sub) => {
-                  const isSelected = (localFilters.localities || []).includes(sub.name);
-                  return (
-                    <button
-                      key={sub.id}
-                      type="button"
-                      onClick={() => {
-                        const nextLocs = isSelected
-                          ? (localFilters.localities || []).filter((l) => l !== sub.name)
-                          : [...(localFilters.localities || []), sub.name];
-                        setLocalFilters({ ...localFilters, localities: nextLocs });
-                      }}
-                      className={cn(
-                        "py-1.5 px-3 rounded-full text-xs font-medium border transition-all whitespace-nowrap shrink-0 cursor-pointer",
-                        isSelected
-                          ? "bg-[#008075] text-white border-[#008075] font-semibold"
-                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                      )}
-                    >
-                      {isSelected && <Check className="w-3 h-3 inline mr-1 stroke-[2.5]" />}
-                      {sub.name}
-                    </button>
-                  );
-                })}
+                {(() => {
+                  const relevantCities = (localFilters.cities || []).length > 0
+                    ? cities.filter((c) => (localFilters.cities || []).includes(c.name))
+                    : cities;
+                  return relevantCities.flatMap((c) => c.sublocations).map((sub) => {
+                    const isSelected = (localFilters.localities || []).includes(sub.name);
+                    return (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => {
+                          const nextLocs = isSelected
+                            ? (localFilters.localities || []).filter((l) => l !== sub.name)
+                            : [...(localFilters.localities || []), sub.name];
+                          setLocalFilters({ ...localFilters, localities: nextLocs });
+                        }}
+                        className={cn(
+                          "py-1.5 px-3 rounded-full text-xs font-medium border transition-all whitespace-nowrap shrink-0 cursor-pointer",
+                          isSelected
+                            ? "bg-[#008075] text-white border-[#008075] font-semibold"
+                            : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                        )}
+                      >
+                        {isSelected && <Check className="w-3 h-3 inline mr-1 stroke-[2.5]" />}
+                        {sub.name}
+                      </button>
+                    );
+                  });
+                })()}
               </div>
             </div>
           </div>
@@ -1155,10 +1166,14 @@ export function SearchFiltersModal({
                           key={city.id}
                           type="button"
                           onClick={() => {
-                            const nextCities = isSelected
-                              ? (localFilters.cities || []).filter((c) => c !== city.name)
-                              : [...(localFilters.cities || []), city.name];
-                            setLocalFilters({ ...localFilters, cities: nextCities });
+                            if (isSelected) {
+                              const nextCities = (localFilters.cities || []).filter((c) => c !== city.name);
+                              const citySubNames = new Set((city.sublocations || []).map((s) => s.name));
+                              const nextLocalities = (localFilters.localities || []).filter((l) => !citySubNames.has(l));
+                              setLocalFilters({ ...localFilters, cities: nextCities, localities: nextLocalities });
+                            } else {
+                              setLocalFilters({ ...localFilters, cities: [...(localFilters.cities || []), city.name] });
+                            }
                           }}
                           className={cn(
                             "py-2 px-4 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer border",
@@ -1178,33 +1193,40 @@ export function SearchFiltersModal({
                 {/* Sublocalities Section */}
                 <div className="pt-2 border-t border-slate-100">
                   <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">
-                    Select Popular Localities & Hubs (Multi-Select Allowed)
+                    {(localFilters.cities || []).length > 0
+                      ? `Select ${localFilters.cities.join(", ")} Localities & Hubs`
+                      : "Select Popular Localities & Hubs (Multi-Select Allowed)"}
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {cities.flatMap((c) => c.sublocations).map((sub) => {
-                      const isSelected = (localFilters.localities || []).includes(sub.name);
-                      return (
-                        <button
-                          key={sub.id}
-                          type="button"
-                          onClick={() => {
-                            const nextLocs = isSelected
-                              ? (localFilters.localities || []).filter((l) => l !== sub.name)
-                              : [...(localFilters.localities || []), sub.name];
-                            setLocalFilters({ ...localFilters, localities: nextLocs });
-                          }}
-                          className={cn(
-                            "py-1.5 px-3 rounded-full text-xs font-medium border transition-all whitespace-nowrap shrink-0 cursor-pointer",
-                            isSelected
-                              ? "bg-[#008075] text-white border-[#008075] font-semibold"
-                              : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                          )}
-                        >
-                          {isSelected && <Check className="w-3 h-3 inline mr-1 stroke-[2.5]" />}
-                          {sub.name}
-                        </button>
-                      );
-                    })}
+                    {(() => {
+                      const relevantCities = (localFilters.cities || []).length > 0
+                        ? cities.filter((c) => (localFilters.cities || []).includes(c.name))
+                        : cities;
+                      return relevantCities.flatMap((c) => c.sublocations).map((sub) => {
+                        const isSelected = (localFilters.localities || []).includes(sub.name);
+                        return (
+                          <button
+                            key={sub.id}
+                            type="button"
+                            onClick={() => {
+                              const nextLocs = isSelected
+                                ? (localFilters.localities || []).filter((l) => l !== sub.name)
+                                : [...(localFilters.localities || []), sub.name];
+                              setLocalFilters({ ...localFilters, localities: nextLocs });
+                            }}
+                            className={cn(
+                              "py-1.5 px-3 rounded-full text-xs font-medium border transition-all whitespace-nowrap shrink-0 cursor-pointer",
+                              isSelected
+                                ? "bg-[#008075] text-white border-[#008075] font-semibold"
+                                : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                            )}
+                          >
+                            {isSelected && <Check className="w-3 h-3 inline mr-1 stroke-[2.5]" />}
+                            {sub.name}
+                          </button>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
 

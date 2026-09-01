@@ -69,11 +69,24 @@ export function RealtorFilterBar({
 
   const activeResultsCount = liveTotalCount;
 
-  useEffect(() => {
-    fetchLocations();
-  }, [fetchLocations]);
+  // STRICT RULE: If user selected cities, resolve strictly from selected cities
+  const selectedCities = useMemo(() => {
+    return cities.filter((c) => (filters.cities || []).includes(c.name));
+  }, [cities, filters.cities]);
 
-  const effectiveCityId = selectedCityId || (cities.find((c) => (filters.cities || []).includes(c.name))?.id ?? cities[0]?.id ?? null);
+  const activeCity = useMemo(() => {
+    if (selectedCities.length > 0) {
+      if (selectedCityId && selectedCities.some((c) => c.id === selectedCityId)) {
+        return selectedCities.find((c) => c.id === selectedCityId)!;
+      }
+      return selectedCities[0];
+    }
+    if (selectedCityId) {
+      const found = cities.find((c) => c.id === selectedCityId);
+      if (found) return found;
+    }
+    return cities[0];
+  }, [cities, selectedCities, selectedCityId]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
@@ -281,6 +294,37 @@ export function RealtorFilterBar({
       ? current.filter((item) => item !== value)
       : [...current, value];
     onFilterChange({ ...filters, [field]: updated });
+  };
+
+  // Toggle helper strictly for cities (with automatic locality cleanup and tab sync)
+  const toggleCityFilter = (cityName: string, cityId: string) => {
+    const currentCities = filters.cities || [];
+    const isSelected = currentCities.includes(cityName);
+
+    if (isSelected) {
+      // Unselecting this city: remove city AND prune any localities belonging to it
+      const updatedCities = currentCities.filter((c) => c !== cityName);
+      const targetCity = cities.find((c) => c.name === cityName);
+      const citySubNames = new Set((targetCity?.sublocations || []).map((s) => s.name));
+      const updatedLocalities = (filters.localities || []).filter((l) => !citySubNames.has(l));
+
+      const nextActiveCity = cities.find((c) => updatedCities.includes(c.name));
+      setSelectedCityId(nextActiveCity ? nextActiveCity.id : null);
+
+      onFilterChange({
+        ...filters,
+        cities: updatedCities,
+        localities: updatedLocalities,
+      });
+    } else {
+      // Selecting this city: add it and set it as active tab
+      const updatedCities = [...currentCities, cityName];
+      setSelectedCityId(cityId);
+      onFilterChange({
+        ...filters,
+        cities: updatedCities,
+      });
+    }
   };
 
   return (
@@ -623,16 +667,13 @@ export function RealtorFilterBar({
                     <div className="flex flex-wrap gap-1.5">
                       {cities.map((city) => {
                         const isSelected = (filters.cities || []).includes(city.name);
-                        const isTabActive = selectedCityId === city.id;
+                        const isTabActive = activeCity?.id === city.id;
 
                         return (
                           <button
                             key={`mob-city-${city.id}`}
                             type="button"
-                            onClick={() => {
-                              setSelectedCityId(city.id);
-                              toggleArrayItem("cities", city.name);
-                            }}
+                            onClick={() => toggleCityFilter(city.name, city.id)}
                             className={cn(
                               "px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs",
                               isSelected
@@ -653,7 +694,6 @@ export function RealtorFilterBar({
 
                   {/* Sublocations / Localities for Active City */}
                   {(() => {
-                    const activeCity = cities.find((c) => c.id === selectedCityId) || cities[0];
                     if (!activeCity) return null;
 
                     const sublocations = activeCity.sublocations || [];
@@ -934,16 +974,13 @@ export function RealtorFilterBar({
                 <div className="flex flex-wrap gap-1.5">
                   {cities.map((city) => {
                     const isSelected = (filters.cities || []).includes(city.name);
-                    const isTabActive = selectedCityId === city.id;
+                    const isTabActive = activeCity?.id === city.id;
 
                     return (
                       <button
                         key={`desk-city-${city.id}`}
                         type="button"
-                        onClick={() => {
-                          setSelectedCityId(city.id);
-                          toggleArrayItem("cities", city.name);
-                        }}
+                        onClick={() => toggleCityFilter(city.name, city.id)}
                         className={cn(
                           "px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs",
                           isSelected
@@ -964,7 +1001,6 @@ export function RealtorFilterBar({
 
               {/* Sublocations / Localities for Active City */}
               {(() => {
-                const activeCity = cities.find((c) => c.id === selectedCityId) || cities[0];
                 if (!activeCity) return null;
 
                 const sublocations = activeCity.sublocations || [];
