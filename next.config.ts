@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     "lazy-shrimps-prove.loca.lt",
     "tricky-toys-fly.loca.lt"
   ],
-  output: "standalone",
+  ...(process.env.DOCKER_BUILD === "true" ? { output: "standalone" } : {}),
   images: {
     remotePatterns: [
       {
