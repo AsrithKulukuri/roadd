@@ -24,9 +24,10 @@ export function MobileStickySearchHeader() {
   const [isVisible, setIsVisible] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
-  // Hidden on admin, search page (which has its own header), and auth pages
+  // Hidden on admin, search page (which has its own header), auth pages, and home page (handled by HomeStickySearch)
   const isAdmin = pathname.startsWith("/admin");
   const isSearchPage = pathname === "/search";
+  const isHomePage = pathname === "/";
   const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password";
 
   // Cycle placeholder suggestions
@@ -43,24 +44,21 @@ export function MobileStickySearchHeader() {
 
   // Detect scroll position
   useEffect(() => {
-    if (isAdmin || isSearchPage || isAuthPage) {
+    if (isAdmin || isSearchPage || isAuthPage || isHomePage) {
       setIsVisible(false);
       return;
     }
 
     const handleScroll = () => {
-      // On home page, wait until scrolled past hero search (approx 260px)
-      // On other pages, show after 80px scroll
-      const threshold = pathname === "/" ? 260 : 80;
-      setIsVisible(window.scrollY > threshold);
+      setIsVisible(window.scrollY > 80);
     };
 
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [pathname, isAdmin, isSearchPage, isAuthPage]);
+  }, [pathname, isAdmin, isSearchPage, isAuthPage, isHomePage]);
 
-  if (isAdmin || isSearchPage || isAuthPage) return null;
+  if (isAdmin || isSearchPage || isAuthPage || isHomePage) return null;
 
   const handlePillClick = () => {
     haptic.light();

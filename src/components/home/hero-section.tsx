@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 import { ModernBudgetDropdown } from "@/components/ui/modern-budget-dropdown";
 import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
+import { HomeStickySearch } from "./home-sticky-search";
 
 const HERO_BUDGET_MIN_OPTS = [
   { label: "₹ 10 L", value: 1000000 },
@@ -147,10 +148,28 @@ export function HeroSection() {
   const [heroBudget, setHeroBudget] = useState<[number, number]>([1000000, 30000000]);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const heroSearchRef = useRef<HTMLDivElement>(null);
+  const [isStickyVisible, setIsStickyVisible] = useState(false);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Track scroll position to show smart sticky search bar when scrolled past hero search
+  useEffect(() => {
+    const handleScroll = () => {
+      if (heroSearchRef.current) {
+        const rect = heroSearchRef.current.getBoundingClientRect();
+        setIsStickyVisible(rect.bottom < 50);
+      } else {
+        setIsStickyVisible(window.scrollY > 300);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Prefetch search route for instant transitions
@@ -588,7 +607,23 @@ export function HeroSection() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-30 flex flex-col items-center text-center">
+      {/* Smart Animated Sticky Search Bar on Scroll */}
+      <HomeStickySearch
+        isVisible={isStickyVisible}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        typedText={typedText}
+        heroBudget={heroBudget}
+        setHeroBudget={setHeroBudget}
+        heroCities={heroCities}
+        activeTab={activeTab}
+        matchingCount={matchingCount}
+        handleSearchSubmit={handleSearchSubmit}
+        liveHeroSuggestions={liveHeroSuggestions}
+        openProject={openProject}
+      />
+
+      <div ref={heroSearchRef} className="max-w-7xl mx-auto px-4 sm:px-6 relative z-30 flex flex-col items-center text-center">
         {/* Ambient Aurora Mesh Glow behind search bar */}
         <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[350px] sm:w-[750px] h-[200px] bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-yellow-500/20 blur-[80px] rounded-full pointer-events-none -z-10" />
 
