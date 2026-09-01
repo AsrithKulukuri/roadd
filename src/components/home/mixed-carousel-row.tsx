@@ -32,6 +32,21 @@ export function MixedCarouselRow({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+  const interactionPauseUntil = useRef(0);
+
+  const getScrollStep = () => {
+    const container = scrollRef.current;
+    const firstCard = container?.firstElementChild as HTMLElement | null;
+    if (!container || !firstCard) return 0;
+    const styles = window.getComputedStyle(container);
+    const gap = Number.parseFloat(styles.columnGap || styles.gap || "0") || 0;
+    return firstCard.getBoundingClientRect().width + gap;
+  };
+
+  const pauseAutoSlide = () => {
+    interactionPauseUntil.current = Date.now() + 5000;
+  };
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -48,29 +63,30 @@ export function MixedCarouselRow({
   }, [items]);
 
   useEffect(() => {
-    if (!autoSlide || items.length === 0) return;
+    if (!autoSlide || items.length === 0 || isHovered) return;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) return;
 
     const interval = setInterval(() => {
-      if (scrollRef.current) {
-        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-        const maxScroll = scrollWidth - clientWidth;
-        
-        // If reached the end, snap back to start
-        if (Math.ceil(scrollLeft) >= maxScroll) {
-          scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
-        } else {
-          // Scroll by one card width (assuming ~350px card + 24px gap = 374px)
-          scrollRef.current.scrollBy({ left: 374, behavior: "smooth" });
-        }
-      }
+      const container = scrollRef.current;
+      if (!container || Date.now() < interactionPauseUntil.current) return;
+
+      const maxScroll = container.scrollWidth - container.clientWidth;
+      if (maxScroll <= 1 || Math.ceil(container.scrollLeft) >= maxScroll) return;
+
+      const step = getScrollStep();
+      if (step > 0) container.scrollBy({ left: Math.min(step, maxScroll - container.scrollLeft), behavior: "smooth" });
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [autoSlide, items.length]);
+  }, [autoSlide, isHovered, items.length]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
-      const amount = direction === "left" ? -400 : 400;
+      pauseAutoSlide();
+      const step = getScrollStep();
+      const amount = direction === "left" ? -step : step;
       scrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
     }
   };
@@ -148,6 +164,10 @@ export function MixedCarouselRow({
           <div 
             ref={scrollRef}
             onScroll={checkScroll}
+            onPointerDown={pauseAutoSlide}
+            onWheel={pauseAutoSlide}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             className={cn(
               "flex overflow-x-auto snap-x snap-mandatory hide-scrollbar",
               cardVariant === "compact"
