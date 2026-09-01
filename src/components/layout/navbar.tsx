@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -20,37 +20,129 @@ import {
   LogOut,
   Megaphone,
   Sparkles,
+  IndianRupee,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatINRWords } from "@/lib/utils";
 import { navigationLinks } from "@/config/site";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
 import { logoutUser } from "@/hooks/use-auth-session";
 import { PostRequirementModal } from "@/components/shared/post-requirement-modal";
+import { usePropertiesStore } from "@/stores/properties-store";
+import { useProjectsStore } from "@/stores/projects-store";
+import { useLocationsStore } from "@/stores/locations-store";
+import { Slider } from "@/components/ui/slider";
+
+const NAV_SEARCH_PLACEHOLDERS = [
+  "Vijayawada",
+  "Guntur",
+  "Benz Circle",
+  "Amaravati Road",
+  "Poranki",
+  "Gorantla",
+  "CRDA Ventures",
+];
 
 export function Navbar() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
   const [openMobileSubmenus, setOpenMobileSubmenus] = useState<Record<string, boolean>>({});
   const [user, setUser] = useState<any>(null);
 
+  // Compact Navbar Search States
+  const [navSearchQuery, setNavSearchQuery] = useState("");
+  const [navBudget, setNavBudget] = useState<[number, number]>([1000000, 30000000]);
+  const [openNavDropdown, setOpenNavDropdown] = useState<"location" | "budget" | null>(null);
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const navDropdownRef = useRef<HTMLDivElement>(null);
+
+  const { cities } = useLocationsStore();
+  const properties = usePropertiesStore((state) => state.properties);
+  const projects = useProjectsStore((state) => state.projects);
+
+  const matchingCount = useMemo(() => {
+    let count = 0;
+    const isAnyMax = navBudget[1] >= 30000000;
+    count = properties.filter((p) => {
+      if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
+      return p.price >= navBudget[0] && (isAnyMax || p.price <= navBudget[1]);
+    }).length;
+
+    count += projects.filter((p) => {
+      if (!p.configurations || p.configurations.length === 0) return false;
+      return p.configurations.some((cfg) => {
+        const pMin = cfg.priceMin || 0;
+        const pMax = cfg.priceMax || pMin;
+        return (isAnyMax || pMin <= navBudget[1]) && pMax >= navBudget[0];
+      });
+    }).length;
+
+    return count;
+  }, [properties, projects, navBudget]);
+
+  // Rotate search placeholder
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % NAV_SEARCH_PLACEHOLDERS.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleNavSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const params = new URLSearchParams();
+    params.set("type", "buy");
+    if (navSearchQuery.trim()) {
+      params.set("location", navSearchQuery.trim());
+    }
+    const isAnyMax = navBudget[1] >= 30000000;
+    if (navBudget[0] > 1000000 || !isAnyMax) {
+      params.set("budget", `${navBudget[0]},${isAnyMax ? 100000000 : navBudget[1]}`);
+    }
+    router.push(`/search?${params.toString()}`);
+  };
+
+  const formatNavBudgetDisplay = () => {
+    const minStr = navBudget[0] > 1000000 ? formatINRWords(navBudget[0]) : "Min";
+    const maxStr = navBudget[1] < 30000000 ? formatINRWords(navBudget[1], true) : "Any";
+    if (minStr === "Min" && maxStr === "Any") return "Budget";
+    return `${minStr} - ${maxStr}`;
+  };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (navDropdownRef.current && !navDropdownRef.current.contains(e.target as Node)) {
+        setOpenNavDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const toggleMobileSubmenu = (label: string) => {
     setOpenMobileSubmenus(prev => ({ ...prev, [label]: !prev[label] }));
   };
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      // On home page, trigger immediately when scrolling past hero search input (160px)
+      const threshold = pathname === "/" ? 160 : 20;
+      setIsScrolled(window.scrollY > threshold);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -167,60 +259,218 @@ export function Navbar() {
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             {/* Left: Brand Logo */}
-            <Logo size="md" textColor="text-white" />
+            <div className="shrink-0">
+              <Logo size="md" textColor="text-white" />
+            </div>
 
-            {/* Center: Navigation Links for Desktop */}
-            <nav className="hidden lg:flex items-center gap-1" role="navigation" aria-label="Main navigation">
-              {navigationLinks.main.map((link) => (
-                <div key={link.href} className="relative group">
-                  <Link
-                    href={link.href}
-                    className={cn(
-                      "relative px-4 py-2 text-sm font-bold rounded-xl transition-all duration-200 block",
-                      isActive(link.href)
-                        ? "text-amber-500 font-black"
-                        : isTransparent
-                          ? "text-white hover:text-amber-400 hover:bg-white/10"
-                          : "text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    )}
+            {/* Center: Interactive Search Bar on Scroll OR Navigation Links */}
+            <div ref={navDropdownRef} className="flex-1 min-w-0 max-w-2xl mx-2 sm:mx-4 hidden lg:flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                {pathname === "/" && isScrolled ? (
+                  <motion.div
+                    key="nav-compact-search"
+                    initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -6 }}
+                    transition={{ duration: 0.22, ease: "easeOut" }}
+                    className="w-full flex items-center bg-slate-100/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full py-1 px-1.5 shadow-xs gap-1.5"
                   >
-                    <span className="flex items-center gap-1">
-                      {link.label}
-                      {(link as any).subItems && <ChevronDown className="w-3.5 h-3.5 opacity-50 transition-transform group-hover:rotate-180" />}
-                    </span>
-                    {isActive(link.href) && (
-                      <motion.div
-                        layoutId="navbarIndicator"
-                        className="absolute bottom-0 left-3 right-3 h-0.5 bg-amber-500 rounded-full"
-                        transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                    {/* Search Input */}
+                    <form
+                      action="#"
+                      onSubmit={handleNavSearchSubmit}
+                      className="flex-1 min-w-0 flex items-center px-2.5 gap-2"
+                    >
+                      <Search className="w-4 h-4 text-amber-500 shrink-0" />
+                      <input
+                        type="text"
+                        value={navSearchQuery}
+                        onChange={(e) => setNavSearchQuery(e.target.value)}
+                        placeholder={`Search "${NAV_SEARCH_PLACEHOLDERS[placeholderIndex]}"...`}
+                        className="w-full bg-transparent text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none border-none p-0 focus:ring-0 focus:outline-none"
                       />
-                    )}
-                  </Link>
+                      {navSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setNavSearchQuery("")}
+                          className="p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </form>
 
-                  {/* Desktop Dropdown */}
-                  {(link as any).subItems && (
-                    <div className="absolute top-full left-0 pt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2">
-                        {(link as any).subItems.map((subItem: any) => (
-                          <Link
-                            key={subItem.href}
-                            href={subItem.href}
-                            className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400"
-                          >
-                            {subItem.label}
-                          </Link>
-                        ))}
-                      </div>
+                    {/* Locations Dropdown Pill */}
+                    <div className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setOpenNavDropdown(openNavDropdown === "location" ? null : "location")}
+                        className={cn(
+                          "h-8 px-2.5 rounded-full text-xs font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap",
+                          openNavDropdown === "location"
+                            ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
+                            : "text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800"
+                        )}
+                      >
+                        <MapPin className="w-3 h-3 text-amber-500" />
+                        <span>Locations</span>
+                        <ChevronDown className={cn("w-3 h-3 opacity-60 transition-transform", openNavDropdown === "location" && "rotate-180")} />
+                      </button>
+
+                      {openNavDropdown === "location" && (
+                        <div className="absolute top-full left-0 mt-2 w-56 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden p-1.5 z-50 animate-in fade-in zoom-in-95">
+                          {cities.slice(0, 4).map((city) => (
+                            <div
+                              key={city.id}
+                              onClick={() => {
+                                setOpenNavDropdown(null);
+                                router.push(`/search?location=${encodeURIComponent(city.name)}`);
+                              }}
+                              className="px-3 py-2 rounded-xl hover:bg-slate-900 cursor-pointer flex items-center justify-between text-xs font-bold text-slate-200 hover:text-amber-400"
+                            >
+                              <span>{city.name}</span>
+                              {city.sublocations && (
+                                <span className="text-[10px] text-slate-500">{city.sublocations.length} areas</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
-            </nav>
+
+                    {/* Budget Dropdown Pill */}
+                    <div className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setOpenNavDropdown(openNavDropdown === "budget" ? null : "budget")}
+                        className={cn(
+                          "h-8 px-2.5 rounded-full text-xs font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap",
+                          openNavDropdown === "budget" || navBudget[0] > 1000000 || navBudget[1] < 30000000
+                            ? "bg-[#008075] text-white"
+                            : "text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800"
+                        )}
+                      >
+                        <IndianRupee className="w-3 h-3" />
+                        <span>{formatNavBudgetDisplay()}</span>
+                        <ChevronDown className={cn("w-3 h-3 opacity-60 transition-transform", openNavDropdown === "budget" && "rotate-180")} />
+                      </button>
+
+                      {openNavDropdown === "budget" && (
+                        <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-3.5 z-50 animate-in fade-in zoom-in-95 space-y-2.5">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-900 dark:text-white">
+                            <span>Budget</span>
+                            <span className="text-[#008075] font-black">
+                              {formatINRWords(navBudget[0])} – {formatINRWords(navBudget[1], true)}
+                            </span>
+                          </div>
+                          <Slider
+                            min={1000000}
+                            max={30000000}
+                            step={500000}
+                            value={navBudget}
+                            onValueChange={(val) => setNavBudget(val as [number, number])}
+                            className="w-full py-1"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenNavDropdown(null);
+                              handleNavSearchSubmit();
+                            }}
+                            className="w-full py-1.5 text-xs font-bold bg-[#008075] hover:bg-[#006e64] text-white rounded-lg cursor-pointer"
+                          >
+                            Apply
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* All Filters Button */}
+                    <button
+                      type="button"
+                      onClick={() => router.push("/search?openFilters=true")}
+                      title="All Filters"
+                      className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-amber-500/10 text-slate-700 dark:text-slate-200 hover:text-amber-500 flex items-center justify-center border border-slate-200 dark:border-slate-700 transition-all cursor-pointer shrink-0"
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Apply CTA Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleNavSearchSubmit()}
+                      className="h-8 px-3.5 bg-[#f1a010] hover:bg-amber-500 active:scale-95 text-slate-950 font-black text-xs rounded-full flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0"
+                    >
+                      <span>Apply</span>
+                      <span className="px-1.5 py-0.2 rounded-full bg-slate-950 text-white font-black text-[10px]">
+                        {matchingCount}
+                      </span>
+                    </button>
+                  </motion.div>
+                ) : (
+                  <motion.nav
+                    key="nav-links"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.22, ease: "easeOut" }}
+                    className="flex items-center gap-1"
+                    role="navigation"
+                    aria-label="Main navigation"
+                  >
+                    {navigationLinks.main.map((link) => (
+                      <div key={link.href} className="relative group">
+                        <Link
+                          href={link.href}
+                          className={cn(
+                            "relative px-4 py-2 text-sm font-bold rounded-xl transition-all duration-200 block",
+                            isActive(link.href)
+                              ? "text-amber-500 font-black"
+                              : isTransparent
+                                ? "text-white hover:text-amber-400 hover:bg-white/10"
+                                : "text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          )}
+                        >
+                          <span className="flex items-center gap-1">
+                            {link.label}
+                            {(link as any).subItems && <ChevronDown className="w-3.5 h-3.5 opacity-50 transition-transform group-hover:rotate-180" />}
+                          </span>
+                          {isActive(link.href) && (
+                            <motion.div
+                              layoutId="navbarIndicator"
+                              className="absolute bottom-0 left-3 right-3 h-0.5 bg-amber-500 rounded-full"
+                              transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                            />
+                          )}
+                        </Link>
+
+                        {/* Desktop Dropdown */}
+                        {(link as any).subItems && (
+                          <div className="absolute top-full left-0 pt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden py-2">
+                              {(link as any).subItems.map((subItem: any) => (
+                                <Link
+                                  key={subItem.href}
+                                  href={subItem.href}
+                                  className="block px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-amber-500 dark:hover:text-amber-400"
+                                >
+                                  {subItem.label}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </motion.nav>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Right Action Icons & Controls */}
-            <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
               <div className="hidden sm:block">
                 <ThemeToggle />
               </div>
