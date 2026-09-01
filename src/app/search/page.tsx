@@ -95,8 +95,16 @@ function UnifiedSearchPage() {
 
   const initialSort = (searchParams.get("sort") as SortByOption) || (searchParams.get("saleType") === "new" ? "newest" : "relevant");
   const [sortBy, setSortBy] = useState<SortByOption>(initialSort);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(
+    () => searchParams.get("openFilters") === "true" || searchParams.get("focus") === "filters"
+  );
   const mounted = useIsMounted();
+
+  useEffect(() => {
+    if (searchParams.get("openFilters") === "true" || searchParams.get("focus") === "filters") {
+      setIsFilterModalOpen(true);
+    }
+  }, [searchParams]);
   
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);

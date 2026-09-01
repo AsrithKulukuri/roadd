@@ -63,6 +63,8 @@ export function Navbar() {
   const [navBudget, setNavBudget] = useState<[number, number]>([1000000, 30000000]);
   const [openNavDropdown, setOpenNavDropdown] = useState<"location" | "budget" | null>(null);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [navSelectedCity, setNavSelectedCity] = useState<string>("Vijayawada");
+  const [navLocalitySearch, setNavLocalitySearch] = useState<string>("");
   const navDropdownRef = useRef<HTMLDivElement>(null);
 
   const { cities } = useLocationsStore();
@@ -97,12 +99,13 @@ export function Navbar() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleNavSearchSubmit = (e?: React.FormEvent) => {
+  const handleNavSearchSubmit = (e?: React.FormEvent, customLocation?: string) => {
     if (e) e.preventDefault();
     const params = new URLSearchParams();
     params.set("type", "buy");
-    if (navSearchQuery.trim()) {
-      params.set("location", navSearchQuery.trim());
+    const loc = customLocation !== undefined ? customLocation : navSearchQuery.trim();
+    if (loc) {
+      params.set("location", loc);
     }
     const isAnyMax = navBudget[1] >= 30000000;
     if (navBudget[0] > 1000000 || !isAnyMax) {
@@ -117,6 +120,18 @@ export function Navbar() {
     if (minStr === "Min" && maxStr === "Any") return "Budget";
     return `${minStr} - ${maxStr}`;
   };
+
+  // Filtered sublocations based on selected city & search text
+  const currentCityObj = useMemo(() => {
+    return cities.find((c) => c.name.toLowerCase() === navSelectedCity.toLowerCase()) || cities[0];
+  }, [cities, navSelectedCity]);
+
+  const filteredSublocations = useMemo(() => {
+    if (!currentCityObj?.sublocations) return [];
+    if (!navLocalitySearch.trim()) return currentCityObj.sublocations;
+    const q = navLocalitySearch.toLowerCase().trim();
+    return currentCityObj.sublocations.filter((sub) => sub.name.toLowerCase().includes(q));
+  }, [currentCityObj, navLocalitySearch]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -268,7 +283,7 @@ export function Navbar() {
             </div>
 
             {/* Center: Interactive Search Bar on Scroll OR Navigation Links */}
-            <div ref={navDropdownRef} className="flex-1 min-w-0 max-w-2xl mx-2 sm:mx-4 hidden lg:flex items-center justify-center">
+            <div ref={navDropdownRef} className="flex-1 min-w-0 max-w-4xl mx-auto hidden lg:flex items-center justify-center">
               <AnimatePresence mode="wait">
                 {pathname === "/" && isScrolled ? (
                   <motion.div
@@ -277,10 +292,10 @@ export function Navbar() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -8 }}
                     transition={{ duration: 0.22, ease: "easeOut" }}
-                    className="w-full flex items-center bg-slate-950/95 text-white border border-slate-800 rounded-full py-1.5 px-2 shadow-[0_12px_45px_rgba(0,0,0,0.35)] backdrop-blur-xl gap-1.5 pointer-events-auto"
+                    className="w-full flex items-center bg-slate-950/95 text-white border border-slate-800 rounded-full py-2 px-3 shadow-[0_14px_50px_rgba(0,0,0,0.45)] backdrop-blur-xl gap-2 pointer-events-auto"
                   >
                     {/* Compact Logo Icon inside Pill */}
-                    <div className="shrink-0 pl-1 pr-0.5">
+                    <div className="shrink-0 pl-1 pr-1">
                       <Logo size="sm" showText={false} href="/" />
                     </div>
 
@@ -288,61 +303,121 @@ export function Navbar() {
                     <form
                       action="#"
                       onSubmit={handleNavSearchSubmit}
-                      className="flex-1 min-w-0 flex items-center px-2.5 gap-2 border-r border-slate-800/80 mr-1"
+                      className="flex-1 min-w-0 flex items-center px-3 gap-2.5 border-r border-slate-800/80 mr-1"
                     >
-                      <Search className="w-4 h-4 text-amber-500 shrink-0" />
+                      <Search className="w-4.5 h-4.5 text-amber-500 shrink-0" />
                       <input
                         type="text"
                         value={navSearchQuery}
                         onChange={(e) => setNavSearchQuery(e.target.value)}
                         placeholder={`Search "${NAV_SEARCH_PLACEHOLDERS[placeholderIndex]}"...`}
-                        className="w-full bg-transparent text-xs font-medium text-white placeholder:text-slate-400 outline-none border-none p-0 focus:ring-0 focus:outline-none"
+                        className="w-full bg-transparent text-sm font-semibold text-white placeholder:text-slate-400 outline-none border-none p-0 focus:ring-0 focus:outline-none"
                       />
                       {navSearchQuery && (
                         <button
                           type="button"
                           onClick={() => setNavSearchQuery("")}
-                          className="p-0.5 text-slate-400 hover:text-white"
+                          className="p-1 text-slate-400 hover:text-white"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <X className="w-4 h-4" />
                         </button>
                       )}
                     </form>
 
-                    {/* Locations Dropdown Pill */}
+                    {/* Locations & Sublocations Dropdown Pill */}
                     <div className="relative shrink-0">
                       <button
                         type="button"
                         onClick={() => setOpenNavDropdown(openNavDropdown === "location" ? null : "location")}
                         className={cn(
-                          "h-8 px-2.5 rounded-full text-xs font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap",
+                          "h-9 px-3.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap",
                           openNavDropdown === "location"
-                            ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
-                            : "text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800"
+                            ? "bg-amber-500 text-slate-950 shadow-xs"
+                            : "text-slate-200 hover:bg-white/10"
                         )}
                       >
-                        <MapPin className="w-3 h-3 text-amber-500" />
-                        <span>Locations</span>
-                        <ChevronDown className={cn("w-3 h-3 opacity-60 transition-transform", openNavDropdown === "location" && "rotate-180")} />
+                        <MapPin className={cn("w-3.5 h-3.5", openNavDropdown === "location" ? "text-slate-950" : "text-amber-500")} />
+                        <span>{navSelectedCity || "Locations"}</span>
+                        <ChevronDown className={cn("w-3.5 h-3.5 opacity-75 transition-transform duration-200", openNavDropdown === "location" && "rotate-180")} />
                       </button>
 
                       {openNavDropdown === "location" && (
-                        <div className="absolute top-full left-0 mt-2 w-56 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden p-1.5 z-50 animate-in fade-in zoom-in-95">
-                          {cities.slice(0, 4).map((city) => (
+                        <div className="absolute top-full left-0 mt-3 w-80 sm:w-96 bg-slate-950/95 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-3 z-50 animate-in fade-in zoom-in-95 space-y-3">
+                          {/* City Selector Tabs */}
+                          <div className="flex items-center gap-1.5 p-1 bg-slate-900/80 rounded-xl border border-slate-800/80">
+                            {cities.slice(0, 4).map((city) => (
+                              <button
+                                key={city.id}
+                                type="button"
+                                onClick={() => {
+                                  setNavSelectedCity(city.name);
+                                  setNavLocalitySearch("");
+                                }}
+                                className={cn(
+                                  "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center",
+                                  navSelectedCity.toLowerCase() === city.name.toLowerCase()
+                                    ? "bg-amber-500 text-slate-950 shadow-xs font-extrabold"
+                                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                                )}
+                              >
+                                {city.name}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Quick Locality Search Input */}
+                          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 gap-2">
+                            <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <input
+                              type="text"
+                              value={navLocalitySearch}
+                              onChange={(e) => setNavLocalitySearch(e.target.value)}
+                              placeholder={`Search areas in ${navSelectedCity}...`}
+                              className="w-full bg-transparent text-xs text-white placeholder:text-slate-500 outline-none border-none p-0 focus:ring-0"
+                            />
+                            {navLocalitySearch && (
+                              <button type="button" onClick={() => setNavLocalitySearch("")} className="text-slate-400 hover:text-white">
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Sublocations List */}
+                          <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+                            {/* All City Option */}
                             <div
-                              key={city.id}
                               onClick={() => {
                                 setOpenNavDropdown(null);
-                                router.push(`/search?location=${encodeURIComponent(city.name)}`);
+                                setNavSearchQuery(navSelectedCity);
+                                handleNavSearchSubmit(undefined, navSelectedCity);
                               }}
-                              className="px-3 py-2 rounded-xl hover:bg-slate-900 cursor-pointer flex items-center justify-between text-xs font-bold text-slate-200 hover:text-amber-400"
+                              className="px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 cursor-pointer flex items-center justify-between text-xs font-black text-amber-400 transition-all"
                             >
-                              <span>{city.name}</span>
-                              {city.sublocations && (
-                                <span className="text-[10px] text-slate-500">{city.sublocations.length} areas</span>
-                              )}
+                              <span>Explore All {navSelectedCity}</span>
+                              <span className="text-[10px] bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded-full font-black">All</span>
                             </div>
-                          ))}
+
+                            {/* Sublocation Chips */}
+                            {filteredSublocations.map((sub) => (
+                              <div
+                                key={sub.id}
+                                onClick={() => {
+                                  setOpenNavDropdown(null);
+                                  setNavSearchQuery(sub.name);
+                                  handleNavSearchSubmit(undefined, sub.name);
+                                }}
+                                className="px-3 py-2 rounded-xl hover:bg-slate-900 cursor-pointer flex items-center justify-between text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors"
+                              >
+                                <div className="flex items-center gap-1.5">
+                                  <MapPin className="w-3 h-3 text-amber-400/80 shrink-0" />
+                                  <span>{sub.name}</span>
+                                </div>
+                                {sub.count && (
+                                  <span className="text-[10px] text-slate-400 font-medium">{sub.count}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -353,22 +428,22 @@ export function Navbar() {
                         type="button"
                         onClick={() => setOpenNavDropdown(openNavDropdown === "budget" ? null : "budget")}
                         className={cn(
-                          "h-8 px-2.5 rounded-full text-xs font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap",
+                          "h-9 px-3.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap",
                           openNavDropdown === "budget" || navBudget[0] > 1000000 || navBudget[1] < 30000000
-                            ? "bg-[#008075] text-white"
-                            : "text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800"
+                            ? "bg-[#008075] text-white shadow-xs"
+                            : "text-slate-200 hover:bg-white/10"
                         )}
                       >
-                        <IndianRupee className="w-3 h-3" />
+                        <IndianRupee className="w-3.5 h-3.5" />
                         <span>{formatNavBudgetDisplay()}</span>
-                        <ChevronDown className={cn("w-3 h-3 opacity-60 transition-transform", openNavDropdown === "budget" && "rotate-180")} />
+                        <ChevronDown className={cn("w-3.5 h-3.5 opacity-75 transition-transform duration-200", openNavDropdown === "budget" && "rotate-180")} />
                       </button>
 
                       {openNavDropdown === "budget" && (
-                        <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-3.5 z-50 animate-in fade-in zoom-in-95 space-y-2.5">
-                          <div className="flex justify-between items-center text-xs font-bold text-slate-900 dark:text-white">
-                            <span>Budget</span>
-                            <span className="text-[#008075] font-black">
+                        <div className="absolute top-full right-0 mt-3 w-72 bg-slate-950/95 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-4 z-50 animate-in fade-in zoom-in-95 space-y-3.5">
+                          <div className="flex justify-between items-center text-xs font-bold text-white">
+                            <span>Budget Range</span>
+                            <span className="text-[#00c5b5] font-black">
                               {formatINRWords(navBudget[0])} – {formatINRWords(navBudget[1], true)}
                             </span>
                           </div>
@@ -378,7 +453,7 @@ export function Navbar() {
                             step={500000}
                             value={navBudget}
                             onValueChange={(val) => setNavBudget(val as [number, number])}
-                            className="w-full py-1"
+                            className="w-full py-2"
                           />
                           <button
                             type="button"
@@ -386,32 +461,32 @@ export function Navbar() {
                               setOpenNavDropdown(null);
                               handleNavSearchSubmit();
                             }}
-                            className="w-full py-1.5 text-xs font-bold bg-[#008075] hover:bg-[#006e64] text-white rounded-lg cursor-pointer"
+                            className="w-full py-2 text-xs font-black bg-[#008075] hover:bg-[#006e64] text-white rounded-xl cursor-pointer transition-all shadow-xs"
                           >
-                            Apply
+                            Apply Budget
                           </button>
                         </div>
                       )}
                     </div>
 
-                    {/* All Filters Button */}
+                    {/* All Filters Button - Directly opens filters modal on search page */}
                     <button
                       type="button"
                       onClick={() => router.push("/search?openFilters=true")}
-                      title="All Filters"
-                      className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 hover:bg-amber-500/10 text-slate-700 dark:text-slate-200 hover:text-amber-500 flex items-center justify-center border border-slate-200 dark:border-slate-700 transition-all cursor-pointer shrink-0"
+                      title="Open Filters"
+                      className="w-9 h-9 rounded-full bg-slate-900 hover:bg-amber-500/20 text-slate-200 hover:text-amber-400 flex items-center justify-center border border-slate-800 transition-all cursor-pointer shrink-0"
                     >
-                      <SlidersHorizontal className="w-3.5 h-3.5" />
+                      <SlidersHorizontal className="w-4 h-4" />
                     </button>
 
                     {/* Apply CTA Button */}
                     <button
                       type="button"
                       onClick={() => handleNavSearchSubmit()}
-                      className="h-8 px-3.5 bg-[#f1a010] hover:bg-amber-500 active:scale-95 text-slate-950 font-black text-xs rounded-full flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0"
+                      className="h-9 px-4.5 bg-[#f1a010] hover:bg-amber-500 active:scale-95 text-slate-950 font-black text-xs rounded-full flex items-center gap-1.5 shadow-xs transition-all cursor-pointer shrink-0"
                     >
                       <span>Apply</span>
-                      <span className="px-1.5 py-0.2 rounded-full bg-slate-950 text-white font-black text-[10px]">
+                      <span className="px-1.5 py-0.5 rounded-full bg-slate-950 text-white font-black text-[10px]">
                         {matchingCount}
                       </span>
                     </button>
