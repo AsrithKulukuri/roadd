@@ -3,7 +3,7 @@ import { MapWrapper } from "@/components/map/map-wrapper";
 import { BackButton } from "@/components/ui/back-button";
 
 export const metadata = {
-  title: "Property Map Search | ROAD FACING",
+  title: "Property Map Search",
   description: "Explore premium properties across India on our interactive map.",
 };
 

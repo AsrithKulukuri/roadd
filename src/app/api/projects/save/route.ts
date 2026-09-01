@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/server-auth-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,9 +13,8 @@ interface SaveProjectBody {
 }
 
 export async function POST(request: NextRequest) {
-  if (!request.cookies.has("road_admin_user")) {
-    return NextResponse.json({ success: false, error: "Admin authentication required" }, { status: 401 });
-  }
+  const { errorResponse } = await requireAdmin(request);
+  if (errorResponse) return errorResponse;
 
   const body = (await request.json().catch(() => null)) as SaveProjectBody | null;
   if (!body?.mode || !body.payload || typeof body.payload !== "object") {

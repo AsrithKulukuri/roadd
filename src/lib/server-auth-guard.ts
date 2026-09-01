@@ -5,15 +5,39 @@ import crypto from "crypto";
 
 export interface AuthValidationResult {
   authorized: boolean;
-  user: any | null;
+  user: AuthenticatedUser | null;
   role: string;
   error?: string;
 }
 
-const SESSION_SECRET =
-  process.env.ADMIN_SECRET_KEY ||
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  "road_secure_hmac_session_secret_2026_production";
+export interface AuthenticatedUser {
+  id: string;
+  phone: string;
+  name: string;
+  email: string;
+  role: string;
+  user_metadata?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+function getSessionSecret(): string {
+  const secret =
+    process.env.SESSION_SECRET ||
+    process.env.ADMIN_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!secret || secret.length < 32) {
+    throw new Error("SESSION_SECRET must be configured with at least 32 characters.");
+  }
+
+  return secret;
+}
+
+function secretsMatch(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
 
 /**
  * Creates a cryptographically signed HMAC token for server-verifiable sessions
@@ -32,7 +56,7 @@ export function signSessionPayload(payload: {
   });
   const b64 = Buffer.from(jsonStr).toString("base64url");
   const signature = crypto
-    .createHmac("sha256", SESSION_SECRET)
+    .createHmac("sha256", getSessionSecret())
     .update(b64)
     .digest("base64url");
   return `${b64}.${signature}`;
@@ -51,11 +75,12 @@ export function verifySignedSessionToken(token: string): {
   try {
     const [b64, signature] = token.split(".");
     if (!b64 || !signature) return null;
+    if (token.length > 4096) return null;
     const expectedSig = crypto
-      .createHmac("sha256", SESSION_SECRET)
+      .createHmac("sha256", getSessionSecret())
       .update(b64)
       .digest("base64url");
-    if (signature !== expectedSig) return null;
+    if (!secretsMatch(signature, expectedSig)) return null;
     const parsed = JSON.parse(Buffer.from(b64, "base64url").toString("utf8"));
     if (parsed.exp && Date.now() > parsed.exp) return null;
     return parsed;
@@ -89,7 +114,7 @@ export async function authenticateServerRequest(
     }
 
     const sessionCookieToken = cookieMap.get("road_auth_token");
-    let user: any = null;
+    let user: AuthenticatedUser | null = null;
 
     // 1. Check signed HMAC token (from cookie or Bearer header)
     const tokenToVerify = sessionCookieToken || (bearerToken && bearerToken.includes(".") ? bearerToken : null);
@@ -101,9 +126,9 @@ export async function authenticateServerRequest(
           phone: verifiedSession.phone,
           name: verifiedSession.name || "Interested Buyer",
           email: verifiedSession.email || "",
-          role: verifiedSession.role || "buyer",
+          role: "buyer",
           user_metadata: {
-            role: verifiedSession.role || "buyer",
+            role: "buyer",
             name: verifiedSession.name,
             phone: verifiedSession.phone,
           },
@@ -115,7 +140,7 @@ export async function authenticateServerRequest(
     if (!user && bearerToken) {
       const { data, error } = await supabaseAdmin.auth.getUser(bearerToken);
       if (!error && data?.user) {
-        user = data.user;
+        user = data.user as unknown as AuthenticatedUser;
       }
     }
 
@@ -142,7 +167,7 @@ export async function authenticateServerRequest(
             data: { user: cookieUser },
           } = await ssrClient.auth.getUser();
           if (cookieUser) {
-            user = cookieUser;
+            user = cookieUser as unknown as AuthenticatedUser;
           }
         } catch {}
       }
@@ -154,11 +179,11 @@ export async function authenticateServerRequest(
     if (
       adminSecretHeader &&
       configuredAdminSecret &&
-      adminSecretHeader.trim() === configuredAdminSecret.trim()
+      secretsMatch(adminSecretHeader.trim(), configuredAdminSecret.trim())
     ) {
       return {
         authorized: true,
-        user: { id: "system_admin", phone: "918885005567", email: "admin@road.internal", role: "admin" },
+        user: { id: "system_admin", phone: "918885005567", name: "System Administrator", email: "admin@road.internal", role: "admin" },
         role: "admin",
       };
     }
@@ -173,10 +198,11 @@ export async function authenticateServerRequest(
     }
 
     // 5. Resolve verified role & details from Supabase DB profiles
-    let role = user.role || user.user_metadata?.role || "buyer";
-    let name = user.name || user.user_metadata?.name || user.user_metadata?.full_name || "";
-    let phone = user.phone || user.user_metadata?.phone || "";
+    let role = "buyer";
+    let name = user.name || String(user.user_metadata?.name || user.user_metadata?.full_name || "");
+    let phone = user.phone || String(user.user_metadata?.phone || "");
     let email = user.email || "";
+    let profileFound = false;
 
     try {
       const { data: profile } = await supabaseAdmin
@@ -186,14 +212,15 @@ export async function authenticateServerRequest(
         .maybeSingle();
 
       if (profile) {
-        if (profile.role) role = profile.role;
+        profileFound = true;
+        role = profile.role === "admin" ? "admin" : profile.role || "buyer";
         if (profile.full_name) name = profile.full_name;
         if (profile.phone) phone = profile.phone;
         if (profile.email && !profile.email.endsWith("@road.internal")) email = profile.email;
       }
     } catch {}
 
-    const isAdmin = role === "admin" || (email && email.toLowerCase() === "admin@road.com");
+    const isAdmin = profileFound && role === "admin";
 
     const resolvedUser = {
       ...user,
@@ -209,12 +236,12 @@ export async function authenticateServerRequest(
       user: resolvedUser,
       role: isAdmin ? "admin" : role,
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       authorized: false,
       user: null,
       role: "guest",
-      error: err?.message || "Authentication failed",
+      error: err instanceof Error ? err.message : "Authentication failed",
     };
   }
 }
@@ -224,10 +251,10 @@ export async function authenticateServerRequest(
  */
 export async function requireAdmin(
   request: Request | NextRequest
-): Promise<{ errorResponse?: NextResponse; user?: any }> {
+): Promise<{ errorResponse?: NextResponse; user?: AuthenticatedUser }> {
   const auth = await authenticateServerRequest(request);
 
-  if (!auth.authorized || auth.role !== "admin") {
+  if (!auth.authorized || auth.role !== "admin" || !auth.user) {
     return {
       errorResponse: NextResponse.json(
         {
@@ -247,7 +274,7 @@ export async function requireAdmin(
  */
 export async function requireAuthUser(
   request: Request | NextRequest
-): Promise<{ errorResponse?: NextResponse; user?: any }> {
+): Promise<{ errorResponse?: NextResponse; user?: AuthenticatedUser }> {
   const auth = await authenticateServerRequest(request);
 
   if (!auth.authorized || !auth.user) {

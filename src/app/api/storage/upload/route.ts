@@ -77,7 +77,17 @@ export async function POST(request: Request) {
 
     // 2. Folder Sanitization
     if (!ALLOWED_FOLDERS.includes(folder)) {
-      folder = "properties";
+      return NextResponse.json({ error: "Invalid upload folder" }, { status: 400 });
+    }
+
+    if (
+      auth.role !== "admin" &&
+      (folder !== "avatars" || !auth.user || entityId !== auth.user.id)
+    ) {
+      return NextResponse.json(
+        { error: "Admin privileges are required for listing media uploads." },
+        { status: 403 }
+      );
     }
 
     // 3. Extension & MIME Validation
@@ -121,6 +131,24 @@ export async function POST(request: Request) {
       else if (["mp4", "mov"].includes(cleanExt)) contentType = "video/mp4";
       else if (cleanExt === "webm") contentType = "video/webm";
       else contentType = "image/jpeg";
+    }
+
+    contentType = contentType.split(";")[0].trim().toLowerCase();
+    const expectedMimeByExtension: Record<string, Set<string>> = {
+      jpg: new Set(["image/jpeg"]),
+      jpeg: new Set(["image/jpeg"]),
+      png: new Set(["image/png"]),
+      webp: new Set(["image/webp"]),
+      pdf: new Set(["application/pdf"]),
+      mp4: new Set(["video/mp4"]),
+      mov: new Set(["video/quicktime", "video/mp4"]),
+      webm: new Set(["video/webm"]),
+    };
+    if (!ALLOWED_MIME_TYPES.has(contentType) || !expectedMimeByExtension[cleanExt]?.has(contentType)) {
+      return NextResponse.json({ error: "File extension and MIME type do not match." }, { status: 400 });
+    }
+    if (folder === "avatars" && (!contentType.startsWith("image/") || buffer.length > 5 * 1024 * 1024)) {
+      return NextResponse.json({ error: "Avatar uploads must be an image no larger than 5MB." }, { status: 400 });
     }
 
     const command = new PutObjectCommand({

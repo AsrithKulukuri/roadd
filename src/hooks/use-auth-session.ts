@@ -29,6 +29,12 @@ function isValidSessionUser(data: unknown): data is SessionUser {
 }
 
 export async function logoutUser() {
+  try {
+    await fetch("/api/auth/logout", { method: "POST" });
+  } catch (error) {
+    console.error("Server session logout error:", error);
+  }
+
   if (isSupabaseConfigured()) {
     try {
       await supabase.auth.signOut();
@@ -40,6 +46,7 @@ export async function logoutUser() {
   if (typeof window !== "undefined") {
     try {
       localStorage.removeItem("road_user");
+      localStorage.removeItem("road_admin_user");
       // Clear cookie session flags
       document.cookie = "road_user=; Max-Age=0; path=/; SameSite=Lax";
     } catch {}
@@ -190,4 +197,3 @@ export function useAuthSession() {
     refreshAuth: checkAuth,
   };
 }
-

@@ -1,4 +1,5 @@
 import * as Icons from "lucide-react";
+import type { ComponentType } from "react";
 import type { PropertyAmenity } from "@/types/property";
 
 interface PropertyAmenitiesProps {
@@ -15,9 +16,8 @@ export function PropertyAmenities({ amenities }: PropertyAmenitiesProps) {
       </h3>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {amenities.map((amenity) => {
-          // Dynamic icon rendering
-          // @ts-ignore
-          const IconComponent = Icons[amenity.icon] || Icons.CheckCircle;
+          const iconSet = Icons as unknown as Record<string, ComponentType<{ className?: string }>>;
+          const IconComponent = iconSet[amenity.icon] || Icons.CheckCircle;
           
           return (
             <div key={amenity.id} className="flex items-center gap-3 p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-amber-500/50 transition-colors">

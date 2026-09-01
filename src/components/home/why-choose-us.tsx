@@ -106,7 +106,7 @@ export function WhyChooseUs() {
           <p className="text-base sm:text-lg font-bold text-slate-100 leading-relaxed">
             &ldquo;RoadFacing brings you real, on-ground videos and regular project updates, helping you understand projects through what you can actually see — not just what you are told.&rdquo;
           </p>
-          <div className="mt-3 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-amber-400">
+          <div className="mt-3 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-[#faad13]">
             <CheckCircle2 className="w-4 h-4" /> We Show. We Don&apos;t Exaggerate.
           </div>
         </div>

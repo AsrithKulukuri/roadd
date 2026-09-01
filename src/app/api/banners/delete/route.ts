@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { deleteFromS3 } from "@/lib/aws/storage-utils";
+import { requireAdmin } from "@/lib/server-auth-guard";
 
 export async function POST(request: Request) {
   try {
+    const { errorResponse } = await requireAdmin(request);
+    if (errorResponse) return errorResponse;
+
     const body = await request.json();
     const { id, imageUrl, mobileImageUrl } = body;
 

@@ -23,7 +23,7 @@ export default function BlogPage() {
       <section className="py-16 md:py-24">
         <div className="container-road">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {mockBlogPosts.map((post) => (
+            {mockBlogPosts.map((post, index) => (
               <article 
                 key={post.id} 
                 className="group rounded-3xl bg-bg-card border border-border-default overflow-hidden hover:border-amber-primary/30 transition-all hover:shadow-elevated flex flex-col h-full"
@@ -32,7 +32,9 @@ export default function BlogPage() {
                   <Image 
                     src={post.image} 
                     alt={post.title} 
-                    fill 
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    loading={index === 0 ? "eager" : "lazy"}
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute top-4 left-4">

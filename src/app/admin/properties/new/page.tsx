@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { usePropertiesStore } from "@/stores/properties-store";
@@ -48,6 +48,7 @@ import {
 export default function AddPropertyPage() {
   const router = useRouter();
   const addProperty = usePropertiesStore((state) => state.addProperty);
+  const generatedRefId = useId().replace(/\D/g, "").padStart(3, "0").slice(-3);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -55,7 +56,7 @@ export default function AddPropertyPage() {
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
 
   const [formData, setFormData] = useState({
-    refId: `REF${Math.floor(100 + Math.random() * 900)}`,
+    refId: `REF${generatedRefId}`,
     title: "", description: "", propertyType: "apartment", listingType: "sale", 
     saleType: "new" as "new" | "resale",
     price: "", negotiable: false,
@@ -196,7 +197,7 @@ export default function AddPropertyPage() {
 
     const newProperty: Property = {
       id: propertyId,
-      refId: formData.refId || `REF${Math.floor(100 + Math.random() * 900)}`,
+      refId: formData.refId || `REF${generatedRefId}`,
       slug: formData.slug || propertyId,
       title: formData.title,
       description: formData.description,

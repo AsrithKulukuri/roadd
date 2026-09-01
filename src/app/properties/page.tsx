@@ -45,6 +45,7 @@ function PropertiesPage() {
   const [sortBy, setSortBy] = useState<"relevant" | "price-asc" | "price-desc" | "newest">("relevant");
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState<number>(12);
+  const [filterReferenceTime] = useState(Date.now);
   
   const properties = usePropertiesStore((state) => state.properties);
   const isLoading = usePropertiesStore((state) => state.isLoading);
@@ -249,7 +250,7 @@ function PropertiesPage() {
         const propDateStr = property.createdAt || property.publishedAt || property.updatedAt;
         if (propDateStr) {
           const propTime = new Date(propDateStr).getTime();
-          const now = Date.now();
+          const now = filterReferenceTime;
           const ps = filters.postedSince.toLowerCase();
           let maxAgeMs = 0;
           if (ps === "1day" || ps === "yesterday" || ps === "1d") maxAgeMs = 1 * 24 * 60 * 60 * 1000;
@@ -271,7 +272,7 @@ function PropertiesPage() {
       if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       return 0; // default relevant
     });
-  }, [properties, filters, sortBy]);
+  }, [properties, filters, sortBy, filterReferenceTime]);
 
   const handleSelectLocationFromCarousel = (locationName: string) => {
     setFilters((prev) => ({

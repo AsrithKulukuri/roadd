@@ -145,7 +145,8 @@ export default function AdminDashboardPage() {
 
   const handleSaveRefId = async (propId: string) => {
     if (!tempRefId.trim()) return;
-    await updateRefId(propId, tempRefId.trim().toUpperCase());
+    const wasSaved = await updateRefId(propId, tempRefId.trim().toUpperCase());
+    if (!wasSaved) return;
     toast.success(`Updated Reference ID to "${tempRefId.trim().toUpperCase()}"`);
     setEditingRefPropId(null);
     setTempRefId("");

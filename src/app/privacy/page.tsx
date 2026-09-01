@@ -2,7 +2,7 @@ import { Shield, Lock, Eye, FileText, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Privacy Policy | Road Facing",
+  title: "Privacy Policy",
   description: "Privacy Policy and Data Protection standards at Road Facing real estate platform.",
 };
 

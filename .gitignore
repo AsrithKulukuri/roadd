@@ -49,3 +49,6 @@ roadlaunch/
 .agents/
 __pycache__/
 *.pyc
+playwright-report/
+test-results/
+.eslint-report.json

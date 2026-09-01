@@ -100,18 +100,34 @@ interface PropertiesState {
   addProperty: (property: Property) => Promise<void>;
   deleteProperty: (id: string) => Promise<void>;
   deleteAllProperties: () => Promise<void>;
-  toggleFeatured: (id: string) => Promise<void>;
-  toggleSoldOut: (id: string) => Promise<void>;
-  toggleShowOnMap: (id: string) => Promise<void>;
+  toggleFeatured: (id: string) => Promise<boolean>;
+  toggleSoldOut: (id: string) => Promise<boolean>;
+  toggleShowOnMap: (id: string) => Promise<boolean>;
   toggleRecommended: (id: string) => Promise<boolean>;
-  updateDisplayCategory: (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => Promise<void>;
-  updateRefId: (id: string, refId: string) => Promise<void>;
+  updateDisplayCategory: (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => Promise<boolean>;
+  updateRefId: (id: string, refId: string) => Promise<boolean>;
   updateProperty: (id: string, updatedProperty: Property) => Promise<void>;
 }
 
 let activePropertiesRequestId = 0;
 let inFlightPropertiesPromise: Promise<void> | null = null;
 let propertiesAbortController: AbortController | null = null;
+
+async function savePropertyToServer(
+  mode: "create" | "update",
+  payload: Record<string, unknown>,
+  id?: string
+): Promise<void> {
+  const response = await fetch("/api/properties/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mode, id, payload }),
+  });
+  const result = await response.json().catch(() => ({ error: "The server returned an invalid response." }));
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || "Property could not be saved.");
+  }
+}
 
 export const usePropertiesStore = create<PropertiesState>()(
   persist(
@@ -185,266 +201,234 @@ export const usePropertiesStore = create<PropertiesState>()(
       },
 
       addProperty: async (property: Property) => {
-        // 1. Optimistically update local store state so property is immediately accessible
-        set((state) => ({
-          properties: [property, ...state.properties.filter((p) => p.id !== property.id)],
-        }));
-
         try {
-          // 2. Prepare cleaned payload for Supabase
           const dbPayload = toSupabaseProperty(property);
-          const { error } = await supabase
-            .from('properties')
-            .insert([dbPayload]);
-
-          if (error) {
-            console.warn('Supabase property insert notice (saved to local state):', error.message);
-          }
+          await savePropertyToServer("create", dbPayload);
+          set((state) => ({
+            properties: [property, ...state.properties.filter((p) => p.id !== property.id)],
+          }));
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
-          console.warn('Supabase property insert notice (saved to local state):', message);
+          toast.error(`Property was not saved: ${message}`);
+          throw err;
         }
       },
 
       deleteProperty: async (id: string) => {
-        // 1. Optimistically update local store immediately
+        const previousProperties = get().properties;
         set((state) => ({
-          properties: state.properties.filter((p) => p.id !== id),
+          properties: state.properties.filter((property) => property.id !== id),
         }));
 
         try {
-          // 2. Guaranteed server-side database deletion with Supabase Admin client
-          const res = await fetch('/api/properties/delete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          const response = await fetch("/api/properties/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id }),
           });
-
-          if (!res.ok) {
-            // Fallback direct Supabase delete
-            const { error } = await supabase.from('properties').delete().eq('id', id);
-            if (error) console.error('Fallback delete error:', error.message);
+          const result = await response.json().catch(() => null) as { success?: boolean; error?: string } | null;
+          if (!response.ok || !result?.success) {
+            throw new Error(result?.error || "Property could not be deleted.");
           }
-
-          toast.success('Property permanently deleted from database');
+          toast.success("Property permanently deleted from database");
         } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : String(error);
-          console.error('Delete exception:', message);
-          try {
-            await supabase.from('properties').delete().eq('id', id);
-          } catch {}
+          set({ properties: previousProperties });
+          const message = error instanceof Error ? error.message : "Property deletion failed.";
+          toast.error(message);
         }
       },
 
       deleteAllProperties: async () => {
+        const previousProperties = get().properties;
         set({ properties: [] });
 
         try {
-          const res = await fetch('/api/properties/delete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          const response = await fetch("/api/properties/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ deleteAll: true }),
           });
-
-          if (!res.ok) {
-            await supabase.from('properties').delete().neq('id', '___all___');
+          const result = await response.json().catch(() => null) as { success?: boolean; error?: string } | null;
+          if (!response.ok || !result?.success) {
+            throw new Error(result?.error || "Properties could not be deleted.");
           }
-          toast.success('All properties permanently deleted from database');
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
-          console.warn('Error in deleteAllProperties:', message);
-          try {
-            await supabase.from('properties').delete().neq('id', '___all___');
-          } catch {}
+          toast.success("All properties permanently deleted from database");
+        } catch (error: unknown) {
+          set({ properties: previousProperties });
+          const message = error instanceof Error ? error.message : "Property deletion failed.";
+          toast.error(message);
         }
       },
 
       toggleFeatured: async (id: string) => {
-        const property = get().properties.find((p) => p.id === id);
-        if (!property) return;
-        const newFeatured = !property.isFeatured;
+        const property = get().properties.find((item) => item.id === id);
+        if (!property) return false;
+        const nextValue = !property.isFeatured;
 
         set((state) => ({
-          properties: state.properties.map((p) =>
-            p.id === id ? { ...p, isFeatured: newFeatured } : p
+          properties: state.properties.map((item) =>
+            item.id === id ? { ...item, isFeatured: nextValue } : item
           ),
         }));
 
         try {
-          const { error } = await supabase
-            .from('properties')
-            .update({ isFeatured: newFeatured })
-            .eq('id', id);
-
-          if (error) console.warn('Supabase update warning:', error.message);
+          await savePropertyToServer("update", { isFeatured: nextValue }, id);
+          return true;
         } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : String(error);
-          console.warn('Supabase update exception:', message);
+          set((state) => ({
+            properties: state.properties.map((item) =>
+              item.id === id ? { ...item, isFeatured: property.isFeatured } : item
+            ),
+          }));
+          toast.error(error instanceof Error ? error.message : "Featured status was not saved.");
+          return false;
         }
       },
 
       toggleSoldOut: async (id: string) => {
-        const property = get().properties.find((p) => p.id === id);
-        if (!property) return;
-        
-        const newStatus = property.status === 'sold' ? 'published' : 'sold';
+        const property = get().properties.find((item) => item.id === id);
+        if (!property) return false;
+        const nextStatus = property.status === "sold" ? "published" : "sold";
 
         set((state) => ({
-          properties: state.properties.map((p) =>
-            p.id === id ? { ...p, status: newStatus } : p
+          properties: state.properties.map((item) =>
+            item.id === id ? { ...item, status: nextStatus } : item
           ),
         }));
 
         try {
-          const { error } = await supabase
-            .from('properties')
-            .update({ status: newStatus })
-            .eq('id', id);
-
-          if (error) console.warn('Supabase status update warning:', error.message);
+          await savePropertyToServer("update", { status: nextStatus }, id);
+          return true;
         } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : String(error);
-          console.warn('Supabase status update exception:', message);
+          set((state) => ({
+            properties: state.properties.map((item) =>
+              item.id === id ? { ...item, status: property.status } : item
+            ),
+          }));
+          toast.error(error instanceof Error ? error.message : "Property status was not saved.");
+          return false;
         }
       },
 
       toggleShowOnMap: async (id: string) => {
-        const property = get().properties.find((p) => p.id === id);
-        if (!property) return;
-        const newShowOnMap = !property.showOnMap;
+        const property = get().properties.find((item) => item.id === id);
+        if (!property) return false;
+        const nextValue = !property.showOnMap;
 
         set((state) => ({
-          properties: state.properties.map((p) =>
-            p.id === id ? { ...p, showOnMap: newShowOnMap } : p
+          properties: state.properties.map((item) =>
+            item.id === id ? { ...item, showOnMap: nextValue } : item
           ),
         }));
 
         try {
-          const { error } = await supabase
-            .from('properties')
-            .update({ showOnMap: newShowOnMap })
-            .eq('id', id);
-
-          if (error) console.warn('Supabase showOnMap update warning:', error.message);
+          await savePropertyToServer("update", { showOnMap: nextValue }, id);
+          return true;
         } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : String(error);
-          console.warn('Supabase showOnMap update exception:', message);
+          set((state) => ({
+            properties: state.properties.map((item) =>
+              item.id === id ? { ...item, showOnMap: property.showOnMap } : item
+            ),
+          }));
+          toast.error(error instanceof Error ? error.message : "Map visibility was not saved.");
+          return false;
         }
       },
 
       toggleRecommended: async (id: string) => {
-        const state = get();
-        const property = state.properties.find((p) => p.id === id);
+        const property = get().properties.find((item) => item.id === id);
         if (!property) return false;
-        
-        const targetValue = !property.isRecommended;
+        const nextValue = !property.isRecommended;
 
-        if (targetValue) {
-          const recommendedCount = state.properties.filter((p) => p.isRecommended).length;
-          if (recommendedCount >= 10) {
-            return false;
-          }
+        if (nextValue && get().properties.filter((item) => item.isRecommended).length >= 10) {
+          toast.error("A maximum of 10 properties can be recommended.");
+          return false;
         }
-        
-        set((s) => ({
-          properties: s.properties.map((p) =>
-            p.id === id ? { ...p, isRecommended: targetValue } : p
+
+        set((state) => ({
+          properties: state.properties.map((item) =>
+            item.id === id ? { ...item, isRecommended: nextValue } : item
           ),
         }));
 
         try {
-          const { error } = await supabase
-            .from('properties')
-            .update({ isRecommended: targetValue })
-            .eq('id', id);
-
-          if (error) console.warn('Supabase toggleRecommended warning:', error.message);
+          await savePropertyToServer("update", { isRecommended: nextValue }, id);
+          return true;
         } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : String(error);
-          console.warn('Supabase toggleRecommended exception:', message);
+          set((state) => ({
+            properties: state.properties.map((item) =>
+              item.id === id ? { ...item, isRecommended: property.isRecommended } : item
+            ),
+          }));
+          toast.error(error instanceof Error ? error.message : "Recommended status was not saved.");
+          return false;
         }
-        return true;
       },
 
       updateDisplayCategory: async (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => {
-        const property = get().properties.find((p) => p.id === id);
-        if (!property) return;
-
+        const property = get().properties.find((item) => item.id === id);
+        if (!property) return false;
         const isFeatured = category === "featured";
         const isRecommended = category === "recommended";
 
         set((state) => ({
-          properties: state.properties.map((p) =>
-            p.id === id
-              ? {
-                  ...p,
-                  isFeatured,
-                  isRecommended,
-                  displayCategory: category,
-                }
-              : p
+          properties: state.properties.map((item) =>
+            item.id === id
+              ? { ...item, isFeatured, isRecommended, displayCategory: category }
+              : item
           ),
         }));
 
         try {
-          const { error } = await supabase
-            .from('properties')
-            .update({
-              isFeatured,
-              isRecommended,
-              displayCategory: category,
-            })
-            .eq('id', id);
-
-          if (error) console.warn('Supabase updateDisplayCategory warning:', error.message);
+          await savePropertyToServer("update", { isFeatured, isRecommended, displayCategory: category }, id);
+          return true;
         } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : String(error);
-          console.warn('Supabase updateDisplayCategory exception:', message);
+          set((state) => ({
+            properties: state.properties.map((item) => item.id === id ? property : item),
+          }));
+          toast.error(error instanceof Error ? error.message : "Display category was not saved.");
+          return false;
         }
       },
 
       updateRefId: async (id: string, refId: string) => {
+        const property = get().properties.find((item) => item.id === id);
+        if (!property) return false;
         const cleanRef = refId.trim().toUpperCase();
+
         set((state) => ({
-          properties: state.properties.map((p) =>
-            p.id === id ? { ...p, refId: cleanRef } : p
+          properties: state.properties.map((item) =>
+            item.id === id ? { ...item, refId: cleanRef } : item
           ),
         }));
 
         try {
-          const { error } = await supabase
-            .from('properties')
-            .update({ refId: cleanRef })
-            .eq('id', id);
-
-          if (error) console.warn('Error updating refId in Supabase:', error.message);
-        } catch (error) {
-          console.warn('Error updating refId in Supabase:', error);
+          await savePropertyToServer("update", { refId: cleanRef }, id);
+          return true;
+        } catch (error: unknown) {
+          set((state) => ({
+            properties: state.properties.map((item) =>
+              item.id === id ? { ...item, refId: property.refId } : item
+            ),
+          }));
+          toast.error(error instanceof Error ? error.message : "Reference ID was not saved.");
+          return false;
         }
       },
 
       updateProperty: async (id: string, updatedProperty: Property) => {
-        // 1. Optimistically update local Zustand state & localStorage persistence
-        set((state) => ({
-          properties: state.properties.map((p) =>
-            p.id === id ? { ...updatedProperty, id, updatedAt: new Date().toISOString() } : p
-          ),
-        }));
-
         try {
-          // 2. Prepare cleaned payload for Supabase
           const dbPayload = toSupabaseProperty(updatedProperty);
-          const { error } = await supabase
-            .from('properties')
-            .update(dbPayload)
-            .eq('id', id);
-
-          if (error) {
-            console.warn('Supabase update warning (updated in local state):', error.message);
-          }
+          await savePropertyToServer("update", dbPayload, id);
+          set((state) => ({
+            properties: state.properties.map((p) =>
+              p.id === id ? { ...updatedProperty, id, updatedAt: new Date().toISOString() } : p
+            ),
+          }));
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
-          console.warn('Supabase update exception (updated in local state):', message);
+          toast.error(`Property changes were not saved: ${message}`);
+          throw err;
         }
       },
     }),
@@ -454,4 +438,3 @@ export const usePropertiesStore = create<PropertiesState>()(
     }
   )
 );
-

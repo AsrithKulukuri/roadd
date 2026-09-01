@@ -196,6 +196,7 @@
    ======================================================================== */
 
 :root {
+  --road-brand-text: #7a5200;
   --bg-primary: #FFFFFF;
   --bg-card: #FFFFFF;
   --bg-elevated: #F8FAFC;
@@ -213,6 +214,7 @@
 [data-theme="light"],
 html.light,
 html[data-theme="light"] {
+  --road-brand-text: #7a5200;
   --bg-primary: #FFFFFF;
   --bg-card: #FFFFFF;
   --bg-elevated: #F8FAFC;
@@ -230,6 +232,7 @@ html[data-theme="light"] {
 [data-theme="dark"],
 html.dark,
 html[data-theme="dark"] {
+  --road-brand-text: #faad13;
   --bg-primary: #0F172A;
   --bg-card: #1E293B;
   --bg-elevated: #334155;
@@ -340,7 +343,7 @@ button, nav, a, [role="button"] {
   background-clip: text;
 }
 
-/* Keep every yellow/amber font treatment on the exact ROAD brand color. */
+/* Use an accessible amber for text while keeping #faad13 for brand fills and marks. */
 :is(
   .text-amber-200,
   .text-amber-300,
@@ -360,7 +363,7 @@ button, nav, a, [role="button"] {
   .text-yellow-400,
   .text-yellow-600
 ) {
-  color: var(--color-road-brand) !important;
+  color: var(--road-brand-text) !important;
 }
 
 :is(
@@ -373,7 +376,7 @@ button, nav, a, [role="button"] {
   .hover\:text-amber-primary:hover,
   .focus\:text-amber-500:focus
 ) {
-  color: var(--color-road-brand) !important;
+  color: var(--road-brand-text) !important;
 }
 
 .group:hover :is(
@@ -383,7 +386,7 @@ button, nav, a, [role="button"] {
   .group-hover\:text-amber-primary,
   .group-hover\:text-amber-primary\/20
 ) {
-  color: var(--color-road-brand) !important;
+  color: var(--road-brand-text) !important;
 }
 
 .dark :is(

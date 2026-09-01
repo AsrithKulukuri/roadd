@@ -2,7 +2,7 @@ import { AlertCircle, ShieldAlert, FileText, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Disclaimer & Legal Notice | Road Facing",
+  title: "Disclaimer & Legal Notice",
   description: "Real estate disclaimer, RERA compliance, and information accuracy disclosure.",
 };
 

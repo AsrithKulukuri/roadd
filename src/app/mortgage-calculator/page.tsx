@@ -63,10 +63,12 @@ export default function MortgageCalculatorPage() {
               {/* Property Price */}
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
-                  <label className="text-sm font-medium text-text-secondary">Property Price</label>
+                  <label htmlFor="property-price" className="text-sm font-medium text-text-secondary">Property Price</label>
                   <div className="relative w-40">
                     <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" />
-                    <Input 
+                    <Input
+                      id="property-price"
+                      name="propertyPrice"
                       type="text" 
                       value={propertyPrice}
                       onChange={(e) => handlePriceChange(e.target.value)}
@@ -74,7 +76,8 @@ export default function MortgageCalculatorPage() {
                     />
                   </div>
                 </div>
-                <input 
+                <input
+                  aria-label="Property price slider"
                   type="range" 
                   min="1000000" 
                   max="100000000" 
@@ -92,10 +95,12 @@ export default function MortgageCalculatorPage() {
               {/* Down Payment */}
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
-                  <label className="text-sm font-medium text-text-secondary">Down Payment</label>
+                  <label htmlFor="down-payment" className="text-sm font-medium text-text-secondary">Down Payment</label>
                   <div className="relative w-40">
                     <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" />
-                    <Input 
+                    <Input
+                      id="down-payment"
+                      name="downPayment"
                       type="text" 
                       value={downPayment}
                       onChange={(e) => setDownPayment(Number(e.target.value.replace(/[^0-9]/g, "")))}
@@ -103,7 +108,8 @@ export default function MortgageCalculatorPage() {
                     />
                   </div>
                 </div>
-                <input 
+                <input
+                  aria-label="Down payment slider"
                   type="range" 
                   min="0" 
                   max={propertyPrice} 
@@ -121,9 +127,11 @@ export default function MortgageCalculatorPage() {
               <div className="grid sm:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   <div className="flex justify-between items-end">
-                    <label className="text-sm font-medium text-text-secondary">Interest Rate (p.a.)</label>
+                    <label htmlFor="interest-rate" className="text-sm font-medium text-text-secondary">Interest Rate (p.a.)</label>
                     <div className="relative w-24">
-                      <Input 
+                      <Input
+                        id="interest-rate"
+                        name="interestRate"
                         type="number" 
                         value={interestRate}
                         onChange={(e) => setInterestRate(Number(e.target.value))}
@@ -132,7 +140,8 @@ export default function MortgageCalculatorPage() {
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary">%</span>
                     </div>
                   </div>
-                  <input 
+                  <input
+                    aria-label="Interest rate slider"
                     type="range" 
                     min="5" 
                     max="15" 
@@ -145,9 +154,11 @@ export default function MortgageCalculatorPage() {
 
                 <div className="space-y-4">
                   <div className="flex justify-between items-end">
-                    <label className="text-sm font-medium text-text-secondary">Loan Tenure</label>
+                    <label htmlFor="loan-tenure" className="text-sm font-medium text-text-secondary">Loan Tenure</label>
                     <div className="relative w-24">
-                      <Input 
+                      <Input
+                        id="loan-tenure"
+                        name="loanTenure"
                         type="number" 
                         value={tenureYears}
                         onChange={(e) => setTenureYears(Number(e.target.value))}
@@ -156,7 +167,8 @@ export default function MortgageCalculatorPage() {
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary">Yrs</span>
                     </div>
                   </div>
-                  <input 
+                  <input
+                    aria-label="Loan tenure slider"
                     type="range" 
                     min="1" 
                     max="30" 

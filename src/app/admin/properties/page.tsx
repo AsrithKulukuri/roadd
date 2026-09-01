@@ -167,9 +167,9 @@ export default function AdminPropertiesPage() {
                   <div className="relative">
                     <select
                       value={property.displayCategory || (property.isFeatured ? "featured" : property.isRecommended ? "recommended" : "none")}
-                      onChange={(e) => {
-                        updateDisplayCategory(property.id, e.target.value as any);
-                        toast.success("Property category updated!");
+                      onChange={async (e) => {
+                        const wasSaved = await updateDisplayCategory(property.id, e.target.value as any);
+                        if (wasSaved) toast.success("Property category updated!");
                       }}
                       className="bg-bg-primary border border-border-default text-text-primary text-xs rounded-full px-2.5 py-1 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-primary cursor-pointer"
                     >
@@ -278,9 +278,9 @@ export default function AdminPropertiesPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <select
                       value={property.displayCategory || (property.isFeatured ? "featured" : property.isRecommended ? "recommended" : "none")}
-                      onChange={(e) => {
-                        updateDisplayCategory(property.id, e.target.value as any);
-                        toast.success("Property category updated!");
+                      onChange={async (e) => {
+                        const wasSaved = await updateDisplayCategory(property.id, e.target.value as any);
+                        if (wasSaved) toast.success("Property category updated!");
                       }}
                       className="bg-bg-primary border border-border-default text-text-primary text-xs rounded-full px-3 py-1.5 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-primary transition-colors hover:bg-bg-card cursor-pointer"
                     >

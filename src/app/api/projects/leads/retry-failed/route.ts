@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) return null;
   return createClient(url, serviceKey);
 }
@@ -20,15 +20,8 @@ function getSupabaseClient() {
 export async function POST(req: NextRequest) {
   try {
     const auth = await authenticateServerRequest(req);
-    const cronSecret = req.headers.get("x-cron-secret") || req.headers.get("x-admin-secret");
-    const isSecretValid = cronSecret && process.env.ADMIN_SECRET_KEY && cronSecret.trim() === process.env.ADMIN_SECRET_KEY.trim();
-
-    if (!auth.authorized && !isSecretValid) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (!isSecretValid && auth.role !== "admin") {
-      return NextResponse.json({ success: false, error: "Forbidden: Admin or Cron secret required" }, { status: 403 });
+    if (!auth.authorized || auth.role !== "admin") {
+      return NextResponse.json({ success: false, error: "Forbidden: Admin or server secret required" }, { status: 403 });
     }
 
     const supabase = getSupabaseClient();

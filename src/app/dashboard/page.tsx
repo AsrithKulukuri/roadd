@@ -130,11 +130,12 @@ export default function DashboardPage() {
             
             let isVerified = false;
             try {
-              let { data: profile, error: profileErr } = await supabase
+              const { data: loadedProfile, error: profileErr } = await supabase
                 .from("profiles")
                 .select("is_verified")
                 .eq("id", u.id)
                 .single();
+              let profile = loadedProfile;
               
               // Fallback: Auto-upsert row if missing in database
               if (profileErr || !profile) {

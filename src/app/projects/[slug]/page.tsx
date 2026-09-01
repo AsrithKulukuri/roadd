@@ -78,7 +78,7 @@ export async function generateMetadata({
   const canonicalUrl = `${siteUrl}/projects/${project.slug || slug}`;
 
   // Resolve direct publicly accessible primary photo
-  let photoUrl = project.coverImage || project.images?.[0]?.url || "";
+  const photoUrl = project.coverImage || project.images?.[0]?.url || "";
   let finalImageUrl = "";
   if (photoUrl && !photoUrl.startsWith("blob:") && !photoUrl.startsWith("data:")) {
     if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://")) {
@@ -138,9 +138,7 @@ export default async function ProjectPage({
   const cookieStore = await cookies();
   const authToken = cookieStore.get("road_auth_token")?.value;
   const isTokenValid = authToken ? Boolean(verifySignedSessionToken(authToken)) : false;
-  const hasAdminBypass = cookieStore.has("road_admin_user");
-
-  if (!isTokenValid && !hasAdminBypass) {
+  if (!isTokenValid) {
     redirect(`/login?redirect=/projects/${slug}`);
   }
 

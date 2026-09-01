@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { verifySignedSessionToken } from "@/lib/server-auth-guard";
+import { authenticateServerRequest, verifySignedSessionToken } from "@/lib/server-auth-guard";
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -51,30 +51,21 @@ export async function proxy(request: NextRequest) {
 
   // Protect /admin routes (except public /admin/login)
   if (pathname.startsWith("/admin") && !isAdminLoginPage) {
-    const hasAdminLocalCookie = request.cookies.has("road_admin_user") || request.cookies.has("road_user");
-    const isUserAdmin = user && (user.user_metadata?.role === "admin" || (user.email || "").toLowerCase().includes("admin"));
-
-    if (!user && !hasAdminLocalCookie) {
+    const adminAuth = await authenticateServerRequest(request);
+    if (!adminAuth.authorized || adminAuth.role !== "admin") {
       const url = request.nextUrl.clone();
       url.pathname = "/admin/login";
       url.searchParams.set("redirectTo", pathname);
-      return NextResponse.redirect(url);
-    }
-
-    if (user && !isUserAdmin && !hasAdminLocalCookie) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
       return NextResponse.redirect(url);
     }
   }
 
   // Protect /projects/[slug] routes: enforce server-verifiable login before accessing project details
   if (pathname.startsWith("/projects/")) {
-    const hasAdminBypass = request.cookies.has("road_admin_user");
     const authToken = request.cookies.get("road_auth_token")?.value;
     const isTokenValid = authToken ? Boolean(verifySignedSessionToken(authToken)) : false;
 
-    if (!user && !isTokenValid && !hasAdminBypass) {
+    if (!user && !isTokenValid) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       const fullTarget = request.nextUrl.search ? `${pathname}${request.nextUrl.search}` : pathname;
@@ -85,11 +76,10 @@ export async function proxy(request: NextRequest) {
 
   // Protect /dashboard routes (including /dashboard/saved): enforce authentic server session or signed token
   if (pathname.startsWith("/dashboard")) {
-    const hasAdminBypass = request.cookies.has("road_admin_user");
     const authToken = request.cookies.get("road_auth_token")?.value;
     const isTokenValid = authToken ? Boolean(verifySignedSessionToken(authToken)) : false;
 
-    if (!user && !isTokenValid && !hasAdminBypass) {
+    if (!user && !isTokenValid) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       const fullTarget = request.nextUrl.search ? `${pathname}${request.nextUrl.search}` : pathname;

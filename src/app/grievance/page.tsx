@@ -2,7 +2,7 @@ import { Mail, Phone, MapPin, MessageSquare, ArrowLeft, CheckCircle2 } from "luc
 import Link from "next/link";
 
 export const metadata = {
-  title: "Grievance Redressal | Road Facing",
+  title: "Grievance Redressal",
   description: "Official Grievance Redressal & Customer Support Officer contact details for Road Facing.",
 };
 

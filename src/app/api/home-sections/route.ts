@@ -65,11 +65,8 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
-  const hasLegacyAdminBypass = request.cookies.has("road_admin_user");
-  if (!hasLegacyAdminBypass) {
-    const { errorResponse } = await requireAdmin(request);
-    if (errorResponse) return errorResponse;
-  }
+  const { errorResponse } = await requireAdmin(request);
+  if (errorResponse) return errorResponse;
 
   try {
     const body = await request.json();

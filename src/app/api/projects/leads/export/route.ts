@@ -7,15 +7,16 @@ export const dynamic = "force-dynamic";
 
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) return null;
   return createClient(url, serviceKey);
 }
 
-function escapeCsvField(value: any): string {
+function escapeCsvField(value: unknown): string {
   if (value === null || value === undefined) return '""';
-  const str = String(value).replace(/"/g, '""');
-  return `"${str}"`;
+  const raw = String(value);
+  const formulaSafe = /^[=+\-@\t\r]/.test(raw.trimStart()) ? "'" + raw : raw;
+  return '"' + formulaSafe.replace(/"/g, '""') + '"';
 }
 
 export async function GET(req: NextRequest) {
@@ -24,7 +25,6 @@ export async function GET(req: NextRequest) {
     const builderPhone = searchParams.get("builderPhone");
     const projectSlug = searchParams.get("projectSlug");
     const projectId = searchParams.get("projectId");
-    const token = searchParams.get("token");
 
     // 1. Mandatory Server-Side Authentication
     const auth = await authenticateServerRequest(req);
@@ -39,7 +39,6 @@ export async function GET(req: NextRequest) {
 
     const userPhone = auth.user.phone ? formatWhatsAppPhone(auth.user.phone) : "";
     const isAdmin = auth.role === "admin";
-    const isValidSecretToken = token && process.env.ADMIN_SECRET_KEY && token === process.env.ADMIN_SECRET_KEY;
 
     let isAuthorizedOwner = false;
     let verifiedDbProject: any = null;
@@ -72,8 +71,8 @@ export async function GET(req: NextRequest) {
       } catch {}
     }
 
-    // If not admin and not using secret token, project-level builder ownership is mandatory
-    if (!isAdmin && !isValidSecretToken) {
+    // Non-admin users must prove project ownership from the database.
+    if (!isAdmin) {
       if (!projectId && !projectSlug) {
         return new NextResponse("Forbidden: Project identifier (projectId or projectSlug) required to export leads.", { status: 403 });
       }

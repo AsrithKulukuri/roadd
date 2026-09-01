@@ -483,7 +483,7 @@ export function RealtorFilterBar({
                       className="max-w-[125px]"
                     />
 
-                    <span className="text-slate-400 font-black text-[10px] uppercase shrink-0 px-0.5">TO</span>
+                    <span className="text-slate-600 font-black text-[10px] uppercase shrink-0 px-0.5">TO</span>
 
                     <ModernBudgetDropdown
                       value={filters.budget[1]}
@@ -784,7 +784,7 @@ export function RealtorFilterBar({
                   className="max-w-[125px]"
                 />
 
-                <span className="text-slate-400 font-black text-[10px] uppercase shrink-0 px-0.5">TO</span>
+                <span className="text-slate-600 font-black text-[10px] uppercase shrink-0 px-0.5">TO</span>
 
                 <ModernBudgetDropdown
                   value={filters.budget[1]}

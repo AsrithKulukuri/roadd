@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export interface Coordinates {
   latitude: number;
@@ -12,7 +12,7 @@ export function useGeolocation() {
   const [permissionStatus, setPermissionStatus] = useState<PermissionState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const requestLocation = () => {
+  const requestLocation = useCallback(() => {
     if (typeof window === "undefined" || !navigator.geolocation) {
       setError("Geolocation is not supported by your browser");
       return;
@@ -35,34 +35,23 @@ export function useGeolocation() {
         maximumAge: 0,
       }
     );
-  };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Check if permission already granted
+    // Observe permission state only. Location access is requested by explicit UI actions.
     if (navigator.permissions && navigator.permissions.query) {
       navigator.permissions.query({ name: "geolocation" as PermissionName }).then((result) => {
         setPermissionStatus(result.state);
-        if (result.state === "granted") {
-          requestLocation();
-        }
-        
+
         result.onchange = () => {
           setPermissionStatus(result.state);
-          if (result.state === "granted") {
-            requestLocation();
-          } else {
+          if (result.state !== "granted") {
             setCoordinates(null);
           }
         };
-      }).catch(() => {
-        // Fallback if permissions.query fails
-        requestLocation();
-      });
-    } else {
-      // Fallback query query on load
-      requestLocation();
+      }).catch(() => setPermissionStatus(null));
     }
   }, []);
 

@@ -2,7 +2,7 @@ import { Shield, FileCheck, AlertTriangle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Terms of Service | Road Facing",
+  title: "Terms of Service",
   description: "Terms and conditions of using Road Facing real estate platform.",
 };
 

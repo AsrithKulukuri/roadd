@@ -66,7 +66,7 @@ export function Logo({
             )}
             style={{ fontWeight: 900 }}
           >
-            <span className="text-[#faad13] font-black" style={{ fontWeight: 900 }}>
+            <span className="text-[#7a5200] dark:text-[#faad13] font-black" style={{ fontWeight: 900 }}>
               ROAD
             </span>
             <span className={cn("font-black tracking-tight", resolvedTextColor)} style={{ fontWeight: 900 }}>

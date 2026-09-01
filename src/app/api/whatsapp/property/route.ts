@@ -4,10 +4,11 @@ import { fromSupabaseProperty } from "@/stores/properties-store";
 import { fromSupabaseProject } from "@/stores/projects-store";
 import { formatPriceCompact, formatINR } from "@/lib/utils";
 import { getRefId } from "@/lib/ref-id";
+import { requireAdmin } from "@/lib/server-auth-guard";
 
 function getSupabaseAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
   return createClient(url, key);
 }
 
@@ -16,6 +17,9 @@ function getSupabaseAdminClient() {
  * Sends pre-approved dynamic property template or custom WhatsApp Business message.
  */
 export async function POST(req: NextRequest) {
+  const { errorResponse } = await requireAdmin(req);
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     const { propertyId, projectId, recipientPhone, mode = "template" } = body;

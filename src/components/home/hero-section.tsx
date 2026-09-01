@@ -459,6 +459,7 @@ export function HeroSection() {
 
   return (
     <section className="relative w-full text-slate-900 pt-20 sm:pt-24 md:pt-28 pb-12 md:pb-16 min-h-[480px]">
+      <h1 className="sr-only">Verified properties and new projects in Vijayawada, Guntur and Amaravati</h1>
       {/* Full-Width Dynamic Banners Block */}
       {banners.length > 0 && (
         <div className="relative z-10 w-full -mt-20 sm:-mt-24 md:-mt-28 mb-2 sm:mb-4 shadow-2xl h-[250px] sm:h-[350px] md:h-[430px] overflow-hidden">
@@ -1466,7 +1467,7 @@ export function HeroSection() {
                 placeholder="Min Price"
               />
 
-              <span className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider shrink-0">TO</span>
+              <span className="text-slate-600 font-extrabold text-[10px] uppercase tracking-wider shrink-0">TO</span>
 
               <ModernBudgetDropdown
                 value={heroBudget[1]}
@@ -1559,6 +1560,7 @@ export function HeroSection() {
                     alt={cat.title}
                     fill
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    loading={idx < 2 ? "eager" : "lazy"}
                     className="object-cover transition-transform duration-700 ease-out group-hover:scale-108 opacity-95 group-hover:opacity-100"
                   />
                   {/* Clean deep gradient */}

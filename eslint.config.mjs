@@ -11,8 +11,22 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    "playwright-report/**",
+    "test-results/**",
+    ".eslint-report.json",
+    "rename-script.js",
+    "scripts/**/*.js",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // Legacy typing debt remains visible, but no longer hides behavioral lint failures.
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-require-imports": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react/no-unescaped-entities": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

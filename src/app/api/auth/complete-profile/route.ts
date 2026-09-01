@@ -3,7 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sanitizeIndianPhoneNumber } from "@/lib/validations/auth";
 import { logger } from "@/lib/logger";
-import { signSessionPayload } from "@/lib/server-auth-guard";
+import { requireAuthUser, signSessionPayload } from "@/lib/server-auth-guard";
 
 const completeProfileSchema = z.object({
   phone: z
@@ -22,6 +22,12 @@ const completeProfileSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const { errorResponse, user: authenticatedUser } = await requireAuthUser(request);
+    if (errorResponse) return errorResponse;
+    if (!authenticatedUser) {
+      return NextResponse.json({ success: false, error: "Authentication required." }, { status: 401 });
+    }
+
     const body = await request.json();
 
     const validationResult = completeProfileSchema.safeParse(body);
@@ -35,27 +41,17 @@ export async function POST(request: Request) {
 
     const { phone, name, email } = validationResult.data;
     const cleanPhone = phone.trim();
-
-    // 1. Find user in Supabase profiles/auth
-    let userId: string | null = null;
-    let userRole = "buyer";
-
-    try {
-      const { data: profile } = await supabaseAdmin
-        .from("profiles")
-        .select("id, role")
-        .or(`phone.eq.${cleanPhone},phone.eq.${cleanPhone.replace(/\D/g, "")}`)
-        .maybeSingle();
-
-      if (profile) {
-        userId = profile.id;
-        if (profile.role) userRole = profile.role;
-      }
-    } catch {}
-
-    if (!userId) {
-      userId = `wa_${cleanPhone.replace(/\D/g, "")}`;
+    const authenticatedPhone = sanitizeIndianPhoneNumber(authenticatedUser.phone || "");
+    if (!authenticatedPhone || authenticatedPhone !== cleanPhone) {
+      logger.security("PROFILE_PHONE_MISMATCH", cleanPhone, false, { userId: authenticatedUser.id });
+      return NextResponse.json(
+        { success: false, error: "The profile phone must match the verified OTP session." },
+        { status: 403 }
+      );
     }
+
+    const userId = authenticatedUser.id;
+    const userRole = authenticatedUser.role === "admin" ? "admin" : "buyer";
 
     // 2. Upsert profile into public.profiles table
     try {
@@ -72,8 +68,15 @@ export async function POST(request: Request) {
         },
         { onConflict: "id" }
       );
-    } catch (e) {
-      console.warn("Profiles table upsert warning:", e);
+    } catch (error) {
+      logger.error("Profile persistence failed", {
+        error: error instanceof Error ? error.message : String(error),
+        userId,
+      });
+      return NextResponse.json(
+        { success: false, error: "Unable to save profile details. Please try again." },
+        { status: 503 }
+      );
     }
 
     const userPayload = {
@@ -116,8 +119,8 @@ export async function POST(request: Request) {
     });
 
     return response;
-  } catch (err: any) {
-    logger.error("Unhandled Exception in POST /api/auth/complete-profile", { error: err?.message || err });
+  } catch (err: unknown) {
+    logger.error("Unhandled Exception in POST /api/auth/complete-profile", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json(
       { success: false, error: "Failed to complete profile" },
       { status: 500 }

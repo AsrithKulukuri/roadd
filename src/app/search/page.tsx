@@ -620,6 +620,7 @@ function UnifiedSearchPage() {
         "flex-1 min-h-0 w-full flex flex-col",
         viewMode === "grid" ? "px-4 sm:px-6 lg:px-8 py-6 pb-24 max-w-7xl mx-auto overflow-y-auto" : "overflow-hidden"
       )}>
+        <h1 className="sr-only">Search properties and projects</h1>
         {/* Near Me Loading Overlay */}
         {isLocating && (
           <div className="mb-6 mx-4 sm:mx-6 lg:mx-8 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-center gap-3 text-amber-700 animate-pulse">
@@ -817,7 +818,7 @@ function UnifiedSearchPage() {
                 <div className={cn("grid gap-6", viewMode === "map" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4")}>
                   {displayedResults.map((item, idx) => {
                     if (item.type === "property") {
-                      return <PropertyCard key={`prop-${item.data.id}-${idx}`} property={item.data as unknown as Property} />;
+                      return <PropertyCard key={`prop-${item.data.id}-${idx}`} property={item.data as unknown as Property} index={idx} />;
                     } else {
                       return <ProjectCard key={`proj-${item.data.id}-${idx}`} project={item.data as unknown as Project} />;
                     }

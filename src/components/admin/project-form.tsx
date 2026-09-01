@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -114,6 +114,7 @@ interface ProjectFormProps {
 }
 
 export function ProjectForm({ initialData, mode }: ProjectFormProps) {
+  const generatedRefId = useId().replace(/\D/g, "").padStart(3, "0").slice(-3);
   const router = useRouter();
   const { addProject, updateProject } = useProjectsStore();
 
@@ -168,7 +169,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   // ── Step 1 ──
   const [projectType, setProjectType]         = useState<ProjectType>(initialData?.projectType ?? "apartment");
   const [name, setName]                       = useState(initialData?.name ?? "");
-  const [refId, setRefId]                     = useState(initialData?.refId ?? `REF${Math.floor(100 + Math.random() * 900)}`);
+  const [refId, setRefId]                     = useState(initialData?.refId ?? `REF${generatedRefId}`);
   const [tagline, setTagline]                         = useState(initialData?.tagline ?? "");
   const [description, setDescription]                 = useState(initialData?.description ?? "");
   const [builderName, setBuilderName]                 = useState(initialData?.builderName ?? "");
@@ -642,7 +643,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                   </label>
                   <button
                     type="button"
-                    onClick={() => setRefId(`REF${Math.floor(100 + Math.random() * 900)}`)}
+                    onClick={() => setRefId(`REF${generatedRefId}`)}
                     className="text-[11px] font-bold text-amber-500 hover:text-amber-400 cursor-pointer"
                   >
                     🎲 Generate New

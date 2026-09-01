@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 
@@ -32,6 +32,11 @@ export function ZoomableImageModal({
   const initialPositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const lastTapTimeRef = useRef<number>(0);
 
+  const resetZoom = () => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
   // Sync initial index
   useEffect(() => {
     setCurrentIndex(initialIndex);
@@ -50,10 +55,6 @@ export function ZoomableImageModal({
     };
   }, [isOpen]);
 
-  const resetZoom = useCallback(() => {
-    setScale(1);
-    setPosition({ x: 0, y: 0 });
-  }, []);
 
   const handleZoomIn = () => {
     setScale((prev) => Math.min(prev + 0.5, 4));

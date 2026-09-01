@@ -68,10 +68,12 @@ export function CompleteProfileStep({
 
       {/* Full Name */}
       <div className="space-y-1">
-        <label className="text-xs text-text-secondary font-medium ml-1">Full Name</label>
+        <label htmlFor="profile-full-name" className="text-xs text-text-secondary font-medium ml-1">Full Name</label>
         <div className="relative">
           <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
           <Input
+            id="profile-full-name"
+            name="name"
             required
             type="text"
             placeholder="John Doe"
@@ -85,10 +87,12 @@ export function CompleteProfileStep({
 
       {/* Email Address */}
       <div className="space-y-1">
-        <label className="text-xs text-text-secondary font-medium ml-1">Email Address</label>
+        <label htmlFor="profile-email" className="text-xs text-text-secondary font-medium ml-1">Email Address</label>
         <div className="relative">
           <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
           <Input
+            id="profile-email"
+            name="email"
             required
             type="email"
             placeholder="john@example.com"

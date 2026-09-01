@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { requireAdmin } from '@/lib/server-auth-guard';
 
 function generateFallbackDescription(data: any): string {
   const { title, name, type, location, price, bhk, size, features, projectType, builderName } = data || {};
@@ -18,6 +19,9 @@ Offered at ${formattedPrice}, this landmark home presents a rare opportunity for
 }
 
 export async function POST(req: Request) {
+  const { errorResponse } = await requireAdmin(req);
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await req.json();
     const apiKey = process.env.GEMINI_API_KEY;

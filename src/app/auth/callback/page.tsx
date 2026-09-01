@@ -7,8 +7,6 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/shared/logo";
 
-import { verifyAdminSession } from "@/lib/admin-auth";
-
 export default function AuthCallbackPage() {
   const router = useRouter();
 
@@ -21,27 +19,26 @@ export default function AuthCallbackPage() {
         if (error) throw error;
 
         if (session?.user) {
-          const u = session.user;
-          const adminCheck = await verifyAdminSession();
-
-          const role = adminCheck.isAdmin ? "admin" : (u.user_metadata?.role || "buyer");
+          const sessionResponse = await fetch("/api/auth/session", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+          const sessionResult = await sessionResponse.json();
+          if (!sessionResponse.ok || !sessionResult.success) {
+            throw new Error(sessionResult.error || "Session verification failed.");
+          }
+          const verifiedUser = sessionResult.user;
           const localUser = {
-            name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
-            email: u.email || "",
-            phone: u.phone || u.user_metadata?.phone || "",
-            role: role,
+            ...verifiedUser,
             isProfileComplete: true,
             isLoggedIn: true,
             authMethod: "oauth",
           };
 
           localStorage.setItem("road_user", JSON.stringify(localUser));
-          if (adminCheck.isAdmin) {
-            localStorage.setItem("road_admin_user", JSON.stringify(localUser));
-          }
 
           toast.success("Successfully logged in!");
-          const targetRoute = adminCheck.isAdmin ? "/admin/dashboard" : "/dashboard";
+          const targetRoute = verifiedUser.role === "admin" ? "/admin/dashboard" : "/dashboard";
           router.replace(targetRoute);
           return;
         }
@@ -51,27 +48,27 @@ export default function AuthCallbackPage() {
           async (event, currentSession) => {
             if (currentSession?.user) {
               subscription.unsubscribe();
-              const u = currentSession.user;
-              const adminCheck = await verifyAdminSession();
-              const role = adminCheck.isAdmin ? "admin" : (u.user_metadata?.role || "buyer");
+              const sessionResponse = await fetch("/api/auth/session", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${currentSession.access_token}` },
+              });
+              const sessionResult = await sessionResponse.json();
+              if (!sessionResponse.ok || !sessionResult.success) {
+                throw new Error(sessionResult.error || "Session verification failed.");
+              }
+              const verifiedUser = sessionResult.user;
 
               const localUser = {
-                name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
-                email: u.email || "",
-                phone: u.phone || u.user_metadata?.phone || "",
-                role: role,
+                ...verifiedUser,
                 isProfileComplete: true,
                 isLoggedIn: true,
                 authMethod: "oauth",
               };
 
               localStorage.setItem("road_user", JSON.stringify(localUser));
-              if (adminCheck.isAdmin) {
-                localStorage.setItem("road_admin_user", JSON.stringify(localUser));
-              }
 
               toast.success("Successfully logged in!");
-              const targetRoute = adminCheck.isAdmin ? "/admin/dashboard" : "/dashboard";
+              const targetRoute = verifiedUser.role === "admin" ? "/admin/dashboard" : "/dashboard";
               router.replace(targetRoute);
             } else if (event === "INITIAL_SESSION" && !currentSession) {
               subscription.unsubscribe();
@@ -80,9 +77,9 @@ export default function AuthCallbackPage() {
             }
           }
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("[AUTH DEBUG] Auth callback error:", err);
-        toast.error(err.message || "Authentication failed.");
+        toast.error(err instanceof Error ? err.message : "Authentication failed.");
         router.replace("/login");
       }
     };

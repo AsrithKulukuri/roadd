@@ -75,7 +75,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Strict viewer name validation from verified user profile
-    const rawName = (verifiedUser.name || verifiedUser.user_metadata?.full_name || verifiedUser.user_metadata?.name || "").trim();
+    const rawName = String(
+      verifiedUser.name || verifiedUser.user_metadata?.full_name || verifiedUser.user_metadata?.name || ""
+    ).trim();
     const isPlaceholder = (n: string) => {
       if (!n || n.trim().length < 2) return true;
       const lower = n.trim().toLowerCase();

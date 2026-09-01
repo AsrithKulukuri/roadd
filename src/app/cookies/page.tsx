@@ -2,7 +2,7 @@ import { Cookie, Shield, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Cookie Policy | Road Facing",
+  title: "Cookie Policy",
   description: "Learn how Road Facing uses cookies to enhance your browsing experience.",
 };
 

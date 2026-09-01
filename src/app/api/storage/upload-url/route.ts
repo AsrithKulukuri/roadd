@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generatePresignedUrl, getPublicUrl } from "@/lib/aws/presign";
+import { requireAuthUser } from "@/lib/server-auth-guard";
 
 const ALLOWED_FOLDERS = [
   "properties",
@@ -37,14 +38,18 @@ const ALLOWED_DOC_MIMES = [
 
 const MAX_SIZES_MB = {
   images: 20,
-  videos: 500,
+  videos: 100,
   documents: 30,
 };
 
 export async function POST(request: Request) {
   try {
+    const { errorResponse, user } = await requireAuthUser(request);
+    if (errorResponse) return errorResponse;
+
     const body = await request.json();
-    let { filename, contentType, folder, size, entityId } = body;
+    const { filename, folder, size, entityId } = body;
+    let { contentType } = body;
 
     if (!filename || !folder || size === undefined) {
       return NextResponse.json(
@@ -58,6 +63,20 @@ export async function POST(request: Request) {
         { error: `Invalid folder. Allowed: ${ALLOWED_FOLDERS.join(", ")}` },
         { status: 400 }
       );
+    }
+
+    if (
+      user?.role !== "admin" &&
+      (folder !== "avatars" || !user || entityId !== user.id)
+    ) {
+      return NextResponse.json(
+        { error: "Admin privileges are required for listing media uploads." },
+        { status: 403 }
+      );
+    }
+
+    if (!Number.isFinite(size) || size <= 0) {
+      return NextResponse.json({ error: "File size must be a positive number." }, { status: 400 });
     }
 
     const rawExt = (filename.split(".").pop() || "").toLowerCase();
@@ -78,7 +97,7 @@ export async function POST(request: Request) {
 
     let isAllowed = false;
 
-    if (ALLOWED_IMAGE_MIMES.includes(cleanContentType) || cleanContentType.startsWith("image/")) {
+    if (ALLOWED_IMAGE_MIMES.includes(cleanContentType)) {
       isAllowed = true;
       if (sizeMb > MAX_SIZES_MB.images) {
         return NextResponse.json(
@@ -86,7 +105,7 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-    } else if (ALLOWED_VIDEO_MIMES.includes(cleanContentType) || cleanContentType.startsWith("video/")) {
+    } else if (ALLOWED_VIDEO_MIMES.includes(cleanContentType)) {
       isAllowed = true;
       if (sizeMb > MAX_SIZES_MB.videos) {
         return NextResponse.json(
@@ -94,7 +113,7 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-    } else if (ALLOWED_DOC_MIMES.includes(cleanContentType) || rawExt === "pdf") {
+    } else if (ALLOWED_DOC_MIMES.includes(cleanContentType) && rawExt === "pdf") {
       isAllowed = true;
       if (sizeMb > MAX_SIZES_MB.documents) {
         return NextResponse.json(
@@ -107,6 +126,16 @@ export async function POST(request: Request) {
     if (!isAllowed) {
       return NextResponse.json(
         { error: `Unsupported file format: ${cleanContentType}` },
+        { status: 400 }
+      );
+    }
+
+    if (
+      folder === "avatars" &&
+      (!ALLOWED_IMAGE_MIMES.includes(cleanContentType) || sizeMb > 5)
+    ) {
+      return NextResponse.json(
+        { error: "Avatar uploads must be an image no larger than 5MB." },
         { status: 400 }
       );
     }
@@ -135,7 +164,7 @@ export async function POST(request: Request) {
       contentType: cleanContentType,
       expiresIn,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[S3 Upload-Url API Error]:", error);
     return NextResponse.json(
       { error: "Failed to generate presigned upload URL" },

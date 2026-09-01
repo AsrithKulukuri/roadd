@@ -1,17 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { usePathname, useRouter } from "next/navigation";
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const isLoginPage = pathname === "/admin/login";
+  const [isLoading, setIsLoading] = useState(!isLoginPage);
+  const [isAuthorized, setIsAuthorized] = useState(isLoginPage);
 
   useEffect(() => {
-    // Perform light verification without triggering continuous page reloads
-    verifyAdminSession();
-  }, [pathname]);
+    if (isLoginPage) return;
+    const controller = new AbortController();
+
+    fetch("/api/auth/session", { cache: "no-store", signal: controller.signal })
+      .then(async (response) => ({ response, data: await response.json() }))
+      .then(({ response, data }) => {
+        if (!response.ok || data.user?.role !== "admin") {
+          router.replace(`/admin/login?redirectTo=${encodeURIComponent(pathname)}`);
+          return;
+        }
+        setIsAuthorized(true);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name === "AbortError") return;
+        router.replace(`/admin/login?redirectTo=${encodeURIComponent(pathname)}`);
+      })
+      .finally(() => setIsLoading(false));
+
+    return () => controller.abort();
+  }, [isLoginPage, pathname, router]);
 
   if (isLoading) {
     return (
@@ -21,5 +40,5 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return isAuthorized ? <>{children}</> : null;
 }

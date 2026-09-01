@@ -442,6 +442,7 @@ export function PropertyCard({
               src={images[0]?.url || ""}
               alt={property.title}
               fill
+              loading={index < 2 ? "eager" : "lazy"}
               className={cn(
                 "object-cover transition-transform duration-700 group-hover:scale-110",
                 isImageLoaded ? "blur-0 scale-100" : "blur-sm scale-110",
@@ -529,6 +530,7 @@ export function PropertyCard({
               src={images[currentImage]?.url || ""}
               alt={images[currentImage]?.alt || property.title}
               fill
+              loading={index < 4 ? "eager" : "lazy"}
               className={cn(
                 "object-cover transition-transform duration-500 group-hover:scale-105",
                 isImageLoaded ? "blur-0 scale-100" : "blur-sm scale-110",

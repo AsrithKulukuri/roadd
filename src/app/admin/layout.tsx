@@ -77,7 +77,7 @@ export default function AdminLayout({
         <div className="flex flex-col h-full">
           <div className="h-16 flex items-center px-6 border-b border-border-default shrink-0 justify-between">
             <Logo size="sm" />
-            <button className="lg:hidden text-text-secondary" onClick={() => setIsMobileOpen(false)}>
+            <button type="button" aria-label="Close admin navigation" className="lg:hidden text-text-secondary" onClick={() => setIsMobileOpen(false)}>
               <X className="w-5 h-5" />
             </button>
           </div>

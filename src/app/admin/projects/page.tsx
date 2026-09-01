@@ -254,14 +254,14 @@ export default function AdminProjectsPage() {
                         <td className="px-4 py-4">
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={async () => { await toggleFeatured(project.id); toast.success("Updated!"); }}
+                              onClick={async () => { if (await toggleFeatured(project.id)) toast.success("Updated!"); }}
                               title={project.isFeatured ? "Unfeature" : "Feature"}
                               className={`p-2 rounded-full transition-colors ${project.isFeatured ? "text-amber-500 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-500 hover:bg-bg-primary"}`}
                             >
                               <Star className={`w-4 h-4 ${project.isFeatured ? "fill-amber-500" : ""}`} />
                             </button>
                             <button
-                              onClick={async () => { await togglePublished(project.id); toast.success("Updated!"); }}
+                              onClick={async () => { if (await togglePublished(project.id)) toast.success("Updated!"); }}
                               title={project.isPublished ? "Unpublish" : "Publish"}
                               className={`p-2 rounded-full transition-colors ${project.isPublished ? "text-amber-600 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-600 hover:bg-bg-primary"}`}
                             >
@@ -278,9 +278,9 @@ export default function AdminProjectsPage() {
                         <td className="px-4 py-4">
                           <select
                             value={project.displayCategory || "none"}
-                            onChange={(e) => {
-                              updateDisplayCategory(project.id, e.target.value as any);
-                              toast.success("Category updated!");
+                            onChange={async (e) => {
+                              const wasSaved = await updateDisplayCategory(project.id, e.target.value as any);
+                              if (wasSaved) toast.success("Category updated!");
                             }}
                             className="appearance-none bg-bg-primary border border-border-default text-text-secondary text-xs rounded-full px-3 py-1.5 pr-7 focus:outline-none focus:ring-1 focus:ring-amber-primary transition-colors hover:bg-bg-card"
                           >
@@ -415,9 +415,9 @@ export default function AdminProjectsPage() {
                       <span className="text-[11px] font-medium text-text-secondary">Category:</span>
                       <select
                         value={project.displayCategory || (project.isFeatured ? "featured" : "none")}
-                        onChange={(e) => {
-                          updateDisplayCategory(project.id, e.target.value as any);
-                          toast.success("Project category updated!");
+                        onChange={async (e) => {
+                          const wasSaved = await updateDisplayCategory(project.id, e.target.value as any);
+                          if (wasSaved) toast.success("Project category updated!");
                         }}
                         className="bg-bg-card border border-border-default text-text-primary text-xs rounded-lg px-2.5 py-1 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-primary cursor-pointer"
                       >
@@ -439,10 +439,10 @@ export default function AdminProjectsPage() {
                         >
                           <WhatsAppIcon className="w-4 h-4 fill-emerald-500/20" />
                         </button>
-                        <button onClick={async () => { await toggleFeatured(project.id); toast.success("Updated!"); }} title={project.isFeatured ? "Unfeature" : "Feature"} className={`p-2 rounded-full transition-colors ${project.isFeatured ? "text-amber-500 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-500 hover:bg-bg-primary"}`}>
+                        <button onClick={async () => { if (await toggleFeatured(project.id)) toast.success("Updated!"); }} title={project.isFeatured ? "Unfeature" : "Feature"} className={`p-2 rounded-full transition-colors ${project.isFeatured ? "text-amber-500 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-500 hover:bg-bg-primary"}`}>
                           <Star className={`w-4 h-4 ${project.isFeatured ? "fill-amber-500" : ""}`} />
                         </button>
-                        <button onClick={async () => { await togglePublished(project.id); toast.success("Updated!"); }} title={project.isPublished ? "Unpublish" : "Publish"} className={`p-2 rounded-full transition-colors ${project.isPublished ? "text-amber-600 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-600 hover:bg-bg-primary"}`}>
+                        <button onClick={async () => { if (await togglePublished(project.id)) toast.success("Updated!"); }} title={project.isPublished ? "Unpublish" : "Publish"} className={`p-2 rounded-full transition-colors ${project.isPublished ? "text-amber-600 hover:bg-amber-50" : "text-text-tertiary hover:text-amber-600 hover:bg-bg-primary"}`}>
                           {project.isPublished ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                         </button>
                         <Link href={`/admin/projects/${project.id}/edit`} className="p-2 rounded-full text-text-tertiary hover:text-text-primary hover:bg-bg-primary transition-colors">

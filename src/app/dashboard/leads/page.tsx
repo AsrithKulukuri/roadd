@@ -45,9 +45,7 @@ export default function BuilderLeadsPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const userCleanPhone = useMemo(() => {
-    return user?.phone ? formatWhatsAppPhone(user.phone) : "";
-  }, [user?.phone]);
+  const userCleanPhone = user?.phone ? formatWhatsAppPhone(user.phone) : "";
 
   const isAdmin = user?.role === "admin" || user?.email === "admin@road.com";
 

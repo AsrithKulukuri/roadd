@@ -1,27 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Shield, Lock, Mail, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { Shield, Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/shared/logo";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { verifyAdminSession } from "@/lib/admin-auth";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@road.com");
-  const [password, setPassword] = useState("Asrith@89");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-
-  // Do not perform automatic redirect on mount to prevent reload loops
-  useEffect(() => {
-  }, []);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,39 +31,37 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      let sessionUser: any = null;
-      let sessionData: any = null;
+      if (!isSupabaseConfigured()) {
+        throw new Error("Admin authentication is not configured.");
+      }
 
-      // 1. Authenticate via Supabase if configured
-      if (isSupabaseConfigured()) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: inputEmail,
-          password: password,
-        });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: inputEmail,
+        password,
+      });
+      if (error || !data.session?.access_token) {
+        throw new Error(error?.message || "Invalid administrator credentials.");
+      }
 
-
-        if (data?.session) {
-          sessionData = data.session;
-          sessionUser = data.user;
-        }
+      const sessionResponse = await fetch("/api/auth/admin-session", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${data.session.access_token}` },
+      });
+      const sessionResult = await sessionResponse.json();
+      if (!sessionResponse.ok || !sessionResult.success) {
+        await supabase.auth.signOut();
+        throw new Error(sessionResult.error || "This account does not have administrator access.");
       }
 
       const adminSessionPayload = {
         isLoggedIn: true,
         role: "admin",
-        email: inputEmail,
-        name: sessionUser?.user_metadata?.full_name || "Administrator",
-        id: sessionUser?.id || "admin_session_" + Date.now(),
+        email: sessionResult.user.email,
+        name: sessionResult.user.name || "Administrator",
+        id: sessionResult.user.id,
         timestamp: new Date().toISOString(),
       };
 
-
-      // Set cookie for middleware recognition
-      document.cookie = "road_admin_user=true; path=/; max-age=86400; SameSite=Lax";
-      document.cookie = "road_user=true; path=/; max-age=86400; SameSite=Lax";
-
-      // Persist session to local storage
-      localStorage.setItem("road_admin_user", JSON.stringify(adminSessionPayload));
       localStorage.setItem("road_user", JSON.stringify(adminSessionPayload));
 
       toast.success("Welcome back, Administrator!", {
@@ -80,10 +73,11 @@ export default function AdminLoginPage() {
       } else {
         router.push("/admin/dashboard");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[AUTH DEBUG] Admin Login Exception:", err);
-      setErrorMsg(err.message || "An unexpected error occurred during admin authentication.");
-      toast.error(err.message || "Admin login failed.");
+      const message = err instanceof Error ? err.message : "An unexpected error occurred during admin authentication.";
+      setErrorMsg(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -123,10 +117,12 @@ export default function AdminLoginPage() {
         {/* Login Form */}
         <form onSubmit={handleAdminLogin} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-300 ml-1">Admin Email Address</label>
+            <label htmlFor="admin-email" className="text-xs font-bold text-slate-300 ml-1">Admin Email Address</label>
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
+                id="admin-email"
+                name="email"
                 type="email"
                 required
                 value={email}
@@ -138,10 +134,12 @@ export default function AdminLoginPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-300 ml-1">Password</label>
+            <label htmlFor="admin-password" className="text-xs font-bold text-slate-300 ml-1">Password</label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
+                id="admin-password"
+                name="password"
                 type={showPassword ? "text" : "password"}
                 required
                 value={password}
@@ -152,6 +150,7 @@ export default function AdminLoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -175,16 +174,6 @@ export default function AdminLoginPage() {
           </Button>
         </form>
 
-        {/* Direct Link Alternative */}
-        <div className="pt-2 border-t border-slate-800/80 text-center">
-          <a
-            href="/admin/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Open Admin Dashboard Directly (/admin/dashboard)</span>
-          </a>
-        </div>
       </motion.div>
     </div>
   );

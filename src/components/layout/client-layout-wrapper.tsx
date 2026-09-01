@@ -21,6 +21,12 @@ const AiAssistantWidget = dynamic(
 export function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
+  const hasNestedMain =
+    isAdmin ||
+    pathname.startsWith("/dashboard") ||
+    pathname === "/search" ||
+    pathname === "/properties";
+  const ContentElement = hasNestedMain ? "div" : "main";
   const isDetailPage = 
     (pathname.startsWith("/properties/") && pathname !== "/properties" && pathname !== "/properties/map" && pathname !== "/properties/compare") ||
     (pathname.startsWith("/projects/") && pathname !== "/projects");
@@ -48,7 +54,7 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
           </Suspense>
         </>
       )}
-      <main className={`flex-1 ${isDetailPage ? "pb-0" : "pb-16 sm:pb-0"}`}>{children}</main>
+      <ContentElement className={`flex-1 ${isDetailPage ? "pb-0" : "pb-16 sm:pb-0"}`}>{children}</ContentElement>
       {!isAdmin && (
         <>
           <Footer />

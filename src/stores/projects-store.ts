@@ -140,16 +140,31 @@ interface ProjectsState {
   fetchProjects: () => Promise<void>;
   addProject: (project: Project) => Promise<void>;
   updateProject: (id: string, data: Partial<Project>) => Promise<void>;
-  updateRefId: (id: string, refId: string) => Promise<void>;
+  updateRefId: (id: string, refId: string) => Promise<boolean>;
   deleteProject: (id: string) => Promise<void>;
-  toggleFeatured: (id: string) => Promise<void>;
-  updateDisplayCategory: (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => Promise<void>;
-  togglePublished: (id: string) => Promise<void>;
+  toggleFeatured: (id: string) => Promise<boolean>;
+  updateDisplayCategory: (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => Promise<boolean>;
+  togglePublished: (id: string) => Promise<boolean>;
 }
 
 let activeProjectsRequestId = 0;
 let inFlightProjectsPromise: Promise<void> | null = null;
 let projectsAbortController: AbortController | null = null;
+
+async function saveProjectMutation(
+  id: string,
+  payload: Record<string, unknown>
+): Promise<void> {
+  const response = await fetch("/api/projects/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mode: "update", id, payload }),
+  });
+  const result = await response.json().catch(() => null) as { success?: boolean; error?: string } | null;
+  if (!response.ok || !result?.success) {
+    throw new Error(result?.error || "Project changes could not be saved.");
+  }
+}
 
 export const useProjectsStore = create<ProjectsState>()(
   persist(
@@ -285,120 +300,124 @@ export const useProjectsStore = create<ProjectsState>()(
 
       // ─── Delete ───────────────────────────────────────────────────────────
       deleteProject: async (id: string) => {
+        const previousProjects = get().projects;
         set((state) => ({
-          projects: state.projects.filter((p) => p.id !== id),
+          projects: state.projects.filter((project) => project.id !== id),
         }));
 
         try {
-          const res = await fetch('/api/projects/delete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          const response = await fetch("/api/projects/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id }),
           });
-
-          if (!res.ok) {
-            await supabase.from('projects').delete().eq('id', id);
+          const result = await response.json().catch(() => null) as { success?: boolean; error?: string } | null;
+          if (!response.ok || !result?.success) {
+            throw new Error(result?.error || "Project could not be deleted.");
           }
-
-          toast.success('Project permanently deleted from database');
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
-          console.warn('Project delete exception:', message);
-          try {
-            await supabase.from('projects').delete().eq('id', id);
-          } catch {}
+          toast.success("Project permanently deleted from database");
+        } catch (error: unknown) {
+          set({ projects: previousProjects });
+          toast.error(error instanceof Error ? error.message : "Project deletion failed.");
         }
       },
 
       // ─── Toggle Featured ──────────────────────────────────────────────────
       toggleFeatured: async (id: string) => {
-        const project = get().projects.find((p) => p.id === id);
-        if (!project) return;
-        const newVal = !project.isFeatured;
+        const project = get().projects.find((item) => item.id === id);
+        if (!project) return false;
+        const nextValue = !project.isFeatured;
 
         set((state) => ({
-          projects: state.projects.map((p) =>
-            p.id === id ? { ...p, isFeatured: newVal } : p
+          projects: state.projects.map((item) =>
+            item.id === id ? { ...item, isFeatured: nextValue } : item
           ),
         }));
 
         try {
-          const { error } = await supabase
-            .from('projects')
-            .update({ isFeatured: newVal })
-            .eq('id', id);
-          if (error) console.warn('Supabase toggleFeatured warning:', error.message);
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
-          console.warn('Supabase toggleFeatured exception:', message);
+          await saveProjectMutation(id, { isFeatured: nextValue });
+          return true;
+        } catch (error: unknown) {
+          set((state) => ({
+            projects: state.projects.map((item) =>
+              item.id === id ? { ...item, isFeatured: project.isFeatured } : item
+            ),
+          }));
+          toast.error(error instanceof Error ? error.message : "Featured status was not saved.");
+          return false;
         }
       },
 
       updateDisplayCategory: async (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => {
-        const project = get().projects.find((p) => p.id === id);
-        if (!project) return;
-
+        const project = get().projects.find((item) => item.id === id);
+        if (!project) return false;
         const isFeatured = category === "featured";
 
         set((state) => ({
-          projects: state.projects.map((p) =>
-            p.id === id
-              ? {
-                  ...p,
-                  isFeatured,
-                  displayCategory: category,
-                }
-              : p
+          projects: state.projects.map((item) =>
+            item.id === id ? { ...item, isFeatured, displayCategory: category } : item
           ),
         }));
 
         try {
-          const { error } = await supabase
-            .from('projects')
-            .update({
-              isFeatured,
-              displayCategory: category,
-            })
-            .eq('id', id);
-
-          if (error) console.warn('Supabase updateDisplayCategory warning:', error.message);
+          await saveProjectMutation(id, { isFeatured, displayCategory: category });
+          return true;
         } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : String(error);
-          console.warn('Supabase updateDisplayCategory exception:', message);
+          set((state) => ({
+            projects: state.projects.map((item) => item.id === id ? project : item),
+          }));
+          toast.error(error instanceof Error ? error.message : "Display category was not saved.");
+          return false;
         }
       },
 
       // ─── Update Ref ID ────────────────────────────────────────────────────
       updateRefId: async (id: string, refId: string) => {
+        const project = get().projects.find((item) => item.id === id);
+        if (!project) return false;
         const cleanRef = refId.trim().toUpperCase();
-        set((state) => ({
-          projects: state.projects.map((p) =>
-            p.id === id ? { ...p, refId: cleanRef, updatedAt: new Date().toISOString() } : p
-          ),
-        }));
-      },
-
-      // ─── Toggle Published ─────────────────────────────────────────────────
-      togglePublished: async (id: string) => {
-        const project = get().projects.find((p) => p.id === id);
-        if (!project) return;
-        const newVal = !project.isPublished;
 
         set((state) => ({
-          projects: state.projects.map((p) =>
-            p.id === id ? { ...p, isPublished: newVal } : p
+          projects: state.projects.map((item) =>
+            item.id === id ? { ...item, refId: cleanRef, updatedAt: new Date().toISOString() } : item
           ),
         }));
 
         try {
-          const { error } = await supabase
-            .from('projects')
-            .update({ isPublished: newVal })
-            .eq('id', id);
-          if (error) console.warn('Supabase togglePublished warning:', error.message);
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
-          console.warn('Supabase togglePublished exception:', message);
+          await saveProjectMutation(id, { refId: cleanRef });
+          return true;
+        } catch (error: unknown) {
+          set((state) => ({
+            projects: state.projects.map((item) => item.id === id ? project : item),
+          }));
+          toast.error(error instanceof Error ? error.message : "Reference ID was not saved.");
+          return false;
+        }
+      },
+
+      // ─── Toggle Published ─────────────────────────────────────────────────
+      togglePublished: async (id: string) => {
+        const project = get().projects.find((item) => item.id === id);
+        if (!project) return false;
+        const nextValue = !project.isPublished;
+
+        set((state) => ({
+          projects: state.projects.map((item) =>
+            item.id === id ? { ...item, isPublished: nextValue } : item
+          ),
+        }));
+
+        try {
+          await saveProjectMutation(id, { isPublished: nextValue });
+          return true;
+        } catch (error: unknown) {
+          set((state) => ({
+            projects: state.projects.map((item) =>
+              item.id === id ? { ...item, isPublished: project.isPublished } : item
+            ),
+          }));
+          toast.error(error instanceof Error ? error.message : "Publish status was not saved.");
+          return false;
         }
       },
     }),

@@ -344,14 +344,11 @@ function LocationMarker({
 
 // Forces Leaflet to recalculate map container size and load tiles.
 // This is required when MapContainer is inside a flex/dynamic layout.
-function MapInvalidator({ mapRef }: { mapRef: React.RefObject<L.Map | null> }) {
+function MapInvalidator() {
   const map = useMap();
 
   useEffect(() => {
     if (!map) return;
-    // Store ref for external use
-    (mapRef as React.MutableRefObject<L.Map | null>).current = map;
-
     // Call invalidateSize immediately, then again after layout settles
     map.invalidateSize({ animate: false });
     const t1 = setTimeout(() => map.invalidateSize({ animate: false }), 100);
@@ -363,7 +360,7 @@ function MapInvalidator({ mapRef }: { mapRef: React.RefObject<L.Map | null> }) {
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [map, mapRef]);
+  }, [map]);
 
   return null;
 }
@@ -904,6 +901,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   }, [externalUserLocation, initialQuery, filteredItems, mapProperties]);
 
   const [position, setPosition] = useState<L.LatLng | null>(initialCenter);
+  const [mapSearchInput, setMapSearchInput] = useState(initialQuery);
   
   // Keep position and map in sync if initialCenter or initialQuery changes
   useEffect(() => {
@@ -924,9 +922,6 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   const [showMapExplorer, setShowMapExplorer] = useState(false);
   const [mapLayerType, setMapLayerType] = useState<"streets" | "hybrid" | "terrain">("streets");
   
-  // Real-Time Search Query State inside Map
-  const [mapSearchInput, setMapSearchInput] = useState(initialQuery);
-
   // Price Heatmap Mode State
   const [showHeatmap, setShowHeatmap] = useState(false);
 
@@ -1995,7 +1990,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
             }}
           >
             {/* Must be first child — forces Leaflet to re-measure container & load tiles */}
-            <MapInvalidator mapRef={mapRef} />
+            <MapInvalidator />
 
             <FreehandDrawListener
               isDrawing={isDrawing}

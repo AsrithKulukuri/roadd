@@ -94,14 +94,19 @@ export function AiChatbot() {
     }
   };
 
-  const formatText = (text: string) => {
-    // Simple markdown parsing for bold text and links
-    const formatted = text
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-amber-500 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>')
-      .replace(/\n/g, "<br />");
-    return { __html: formatted };
-  };
+  const formatText = (text: string) =>
+    text.split("\n").map((line, lineIndex) => (
+      <span key={`${lineIndex}-${line.slice(0, 12)}`}>
+        {line.split(/(\*\*.*?\*\*)/g).map((part, partIndex) =>
+          part.startsWith("**") && part.endsWith("**") ? (
+            <strong key={partIndex}>{part.slice(2, -2)}</strong>
+          ) : (
+            <span key={partIndex}>{part}</span>
+          )
+        )}
+        {lineIndex < text.split("\n").length - 1 ? <br /> : null}
+      </span>
+    ));
 
   return (
     <>
@@ -138,7 +143,7 @@ export function AiChatbot() {
               <p className="text-xs text-text-secondary">Powered by AI</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-text-secondary hover:text-text-primary" onClick={() => setIsOpen(false)}>
+          <Button variant="ghost" size="icon" aria-label="Close AI Assistant" className="h-8 w-8 text-text-secondary hover:text-text-primary" onClick={() => setIsOpen(false)}>
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -151,7 +156,7 @@ export function AiChatbot() {
                 {msg.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
               </div>
               <div className={cn("px-4 py-2 rounded-2xl text-sm leading-relaxed", msg.role === "user" ? "bg-bg-elevated text-text-primary rounded-tr-sm" : "bg-amber-primary/10 text-text-primary border border-amber-primary/20 rounded-tl-sm")}>
-                <div dangerouslySetInnerHTML={formatText(msg.parts[0].text)} />
+                <div>{formatText(msg.parts[0].text)}</div>
               </div>
             </div>
           ))}

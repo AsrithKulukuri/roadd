@@ -1,7 +1,30 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
+
+function getTrustedImageUrl(value: string): string {
+  if (!value) return "";
+
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLowerCase();
+    const configuredSite = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL;
+    const siteHostname = configuredSite ? new URL(configuredSite).hostname.toLowerCase() : "";
+    const isTrustedHost =
+      hostname === "images.unsplash.com" ||
+      hostname === "plus.unsplash.com" ||
+      hostname === "picsum.photos" ||
+      hostname === "lh3.googleusercontent.com" ||
+      hostname.endsWith(".supabase.co") ||
+      hostname.endsWith(".amazonaws.com") ||
+      (siteHostname !== "" && hostname === siteHostname);
+
+    return url.protocol === "https:" && isTrustedHost ? url.href : "";
+  } catch {
+    return "";
+  }
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,7 +36,7 @@ export async function GET(req: NextRequest) {
     const type = searchParams.get("type") || "Property";
     const badge = searchParams.get("badge") || "RERA Verified";
     const specs = searchParams.get("specs") || "";
-    const image = searchParams.get("image") || "";
+    const image = getTrustedImageUrl(searchParams.get("image") || "");
 
     return new ImageResponse(
       (
@@ -283,8 +306,9 @@ export async function GET(req: NextRequest) {
         height: 630,
       }
     );
-  } catch (e: any) {
-    return new Response(`Failed to generate the image: ${e.message}`, {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown image error";
+    return new Response(`Failed to generate the image: ${message}`, {
       status: 500,
     });
   }
