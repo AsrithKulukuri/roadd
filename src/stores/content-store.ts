@@ -149,12 +149,46 @@ const initialApRegions: ApRegion[] = [
   { id: "ap-4", name: "Tirupati & Chittoor", tagline: "Spiritual Hub & Industrial Corridor", image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=80", subRegions: ["Renigunta", "Alipiri", "Tiruchanoor", "Sri City"], propertyCount: 45 },
 ];
 
+export const DEFAULT_DESKTOP_SEARCH_PHRASES = [
+  "Vijayawada",
+  "Guntur",
+  "Benz Circle",
+  "Amaravati Road",
+  "Poranki",
+  "Gorantla",
+  "Kanuru",
+  "Tadepalli",
+  "2 & 3 BHK Flats in Poranki",
+  "Luxury Villas in Gorantla",
+  "CRDA Approved Plots",
+];
+
+export const DEFAULT_MOBILE_SEARCH_PHRASES = [
+  "Vijayawada",
+  "Guntur",
+  "Benz Circle",
+  "Poranki",
+  "Gorantla",
+  "Amaravati",
+  "Tadepalli",
+  "Kanuru",
+];
+
 interface ContentState {
   trendingLocations: TrendingLocation[];
   homeCategories: HomeCategory[];
   apRegions: ApRegion[];
+  searchTypewriterPhrasesDesktop: string[];
+  searchTypewriterPhrasesMobile: string[];
   isLoading: boolean;
   
+  // Search Bar Typewriter Phrases Actions
+  setSearchTypewriterPhrases: (desktop: string[], mobile: string[]) => void;
+  addDesktopPhrase: (phrase: string) => void;
+  removeDesktopPhrase: (index: number) => void;
+  addMobilePhrase: (phrase: string) => void;
+  removeMobilePhrase: (index: number) => void;
+
   // Trending Locations Actions
   fetchTrendingLocations: () => Promise<void>;
   addLocation: (location: Omit<TrendingLocation, "id">) => Promise<void>;
@@ -186,7 +220,46 @@ export const useContentStore = create<ContentState>()(
       })),
       homeCategories: initialCategories,
       apRegions: initialApRegions,
+      searchTypewriterPhrasesDesktop: DEFAULT_DESKTOP_SEARCH_PHRASES,
+      searchTypewriterPhrasesMobile: DEFAULT_MOBILE_SEARCH_PHRASES,
       isLoading: false,
+
+      // Typewriter phrases actions
+      setSearchTypewriterPhrases: (desktop, mobile) => {
+        set({
+          searchTypewriterPhrasesDesktop: desktop,
+          searchTypewriterPhrasesMobile: mobile,
+        });
+        toast.success("Search typewriter phrases updated successfully!");
+      },
+
+      addDesktopPhrase: (phrase) => {
+        const clean = phrase.trim();
+        if (!clean) return;
+        const current = get().searchTypewriterPhrasesDesktop || DEFAULT_DESKTOP_SEARCH_PHRASES;
+        set({ searchTypewriterPhrasesDesktop: [...current, clean] });
+        toast.success(`Added desktop phrase: "${clean}"`);
+      },
+
+      removeDesktopPhrase: (index) => {
+        const current = get().searchTypewriterPhrasesDesktop || DEFAULT_DESKTOP_SEARCH_PHRASES;
+        set({ searchTypewriterPhrasesDesktop: current.filter((_, i) => i !== index) });
+        toast.success("Desktop phrase removed");
+      },
+
+      addMobilePhrase: (phrase) => {
+        const clean = phrase.trim();
+        if (!clean) return;
+        const current = get().searchTypewriterPhrasesMobile || DEFAULT_MOBILE_SEARCH_PHRASES;
+        set({ searchTypewriterPhrasesMobile: [...current, clean] });
+        toast.success(`Added mobile phrase: "${clean}"`);
+      },
+
+      removeMobilePhrase: (index) => {
+        const current = get().searchTypewriterPhrasesMobile || DEFAULT_MOBILE_SEARCH_PHRASES;
+        set({ searchTypewriterPhrasesMobile: current.filter((_, i) => i !== index) });
+        toast.success("Mobile phrase removed");
+      },
 
       fetchTrendingLocations: async () => {
         set({ isLoading: true });

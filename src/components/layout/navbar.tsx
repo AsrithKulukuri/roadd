@@ -35,6 +35,7 @@ import { PostRequirementModal } from "@/components/shared/post-requirement-modal
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { useLocationsStore } from "@/stores/locations-store";
+import { useContentStore, DEFAULT_DESKTOP_SEARCH_PHRASES } from "@/stores/content-store";
 import { Slider } from "@/components/ui/slider";
 
 const NAV_SEARCH_PLACEHOLDERS = [
@@ -109,13 +110,44 @@ export function Navbar() {
     return count;
   }, [properties, projects, navBudget]);
 
-  // Rotate search placeholder
+  // ── Animated Typewriter Effect in Sticky Search Bar ──
+  const { searchTypewriterPhrasesDesktop } = useContentStore();
+  const [navTypedText, setNavTypedText] = useState("");
+  const [navIsDeleting, setNavIsDeleting] = useState(false);
+  const [navLoopNum, setNavLoopNum] = useState(0);
+  const [navTypingSpeed, setNavTypingSpeed] = useState(60);
+
+  const activeNavSuggestions = useMemo(() => {
+    return (searchTypewriterPhrasesDesktop && searchTypewriterPhrasesDesktop.length > 0)
+      ? searchTypewriterPhrasesDesktop
+      : DEFAULT_DESKTOP_SEARCH_PHRASES;
+  }, [searchTypewriterPhrasesDesktop]);
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % NAV_SEARCH_PLACEHOLDERS.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!activeNavSuggestions || activeNavSuggestions.length === 0) return;
+    const currentFullText = activeNavSuggestions[navLoopNum % activeNavSuggestions.length];
+
+    const handleType = () => {
+      if (navIsDeleting) {
+        setNavTypedText(currentFullText.substring(0, navTypedText.length - 1));
+        setNavTypingSpeed(25);
+      } else {
+        setNavTypedText(currentFullText.substring(0, navTypedText.length + 1));
+        setNavTypingSpeed(55);
+      }
+
+      if (!navIsDeleting && navTypedText === currentFullText) {
+        setTimeout(() => setNavIsDeleting(true), 2200);
+      } else if (navIsDeleting && navTypedText === "") {
+        setNavIsDeleting(false);
+        setNavLoopNum((prev) => prev + 1);
+        setNavTypingSpeed(350);
+      }
+    };
+
+    const timer = setTimeout(handleType, navTypingSpeed);
+    return () => clearTimeout(timer);
+  }, [navTypedText, navIsDeleting, navLoopNum, navTypingSpeed, activeNavSuggestions]);
 
   const handleNavSearchSubmit = (e?: React.FormEvent, customLocation?: string) => {
     if (e) e.preventDefault();
@@ -321,7 +353,7 @@ export function Navbar() {
                         type="text"
                         value={navSearchQuery}
                         onChange={(e) => setNavSearchQuery(e.target.value)}
-                        placeholder={`Search "${NAV_SEARCH_PLACEHOLDERS[placeholderIndex]}"...`}
+                        placeholder={navTypedText.toLowerCase().startsWith("search") ? navTypedText : `Search "${navTypedText}"...`}
                         style={{ outline: "none", boxShadow: "none" }}
                         className="w-full bg-transparent text-xs font-semibold text-white placeholder:text-slate-400 border-none outline-none ring-0 shadow-none focus:outline-none focus:ring-0 focus:border-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-none focus-visible:shadow-none p-0"
                       />

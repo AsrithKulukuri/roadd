@@ -29,7 +29,7 @@ import { cn, formatINR, formatINRWords, formatPriceCompact } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
-import { useContentStore } from "@/stores/content-store";
+import { useContentStore, DEFAULT_DESKTOP_SEARCH_PHRASES, DEFAULT_MOBILE_SEARCH_PHRASES } from "@/stores/content-store";
 import { useBannersStore } from "@/stores/banners-store";
 import { useLocationsStore } from "@/stores/locations-store";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
@@ -171,14 +171,35 @@ export function HeroSection() {
     });
   };
 
-  // ── Typewriter / Typing Effect State & Logic ──
+  // ── Typewriter / Typing Effect State & Logic (Connected to Admin Content Store) ──
+  const { searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile } = useContentStore();
   const [typedText, setTypedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
   const [typingSpeed, setTypingSpeed] = useState(60);
+  const [isMobileScreen, setIsMobileScreen] = useState(false);
 
   useEffect(() => {
-    const currentFullText = CAROUSEL_SUGGESTIONS[loopNum % CAROUSEL_SUGGESTIONS.length];
+    const checkMobile = () => setIsMobileScreen(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  const activeSuggestions = useMemo(() => {
+    if (isMobileScreen) {
+      return (searchTypewriterPhrasesMobile && searchTypewriterPhrasesMobile.length > 0)
+        ? searchTypewriterPhrasesMobile
+        : DEFAULT_MOBILE_SEARCH_PHRASES;
+    }
+    return (searchTypewriterPhrasesDesktop && searchTypewriterPhrasesDesktop.length > 0)
+      ? searchTypewriterPhrasesDesktop
+      : DEFAULT_DESKTOP_SEARCH_PHRASES;
+  }, [isMobileScreen, searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile]);
+
+  useEffect(() => {
+    if (!activeSuggestions || activeSuggestions.length === 0) return;
+    const currentFullText = activeSuggestions[loopNum % activeSuggestions.length];
 
     const handleType = () => {
       if (isDeleting) {
@@ -202,7 +223,7 @@ export function HeroSection() {
 
     const timer = setTimeout(handleType, typingSpeed);
     return () => clearTimeout(timer);
-  }, [typedText, isDeleting, loopNum, typingSpeed]);
+  }, [typedText, isDeleting, loopNum, typingSpeed, activeSuggestions]);
 
   const { banners, fetchBanners } = useBannersStore();
   const { cities, fetchLocations: fetchMasterLocations } = useLocationsStore();
@@ -901,8 +922,8 @@ export function HeroSection() {
             {!searchQuery && (
               <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
                 <span className="text-sm sm:text-base text-slate-400 font-medium truncate select-none flex items-center w-full">
-                  <span>Search &ldquo;{typedText}&rdquo;</span>
-                  <span className="inline-block w-[2px] h-[16px] sm:h-[18px] bg-slate-400 ml-1 animate-pulse" />
+                  <span>{typedText.toLowerCase().startsWith("search") ? typedText : `Search "${typedText}"`}</span>
+                  <span className="inline-block w-[2px] h-[16px] sm:h-[18px] bg-amber-500 ml-1 animate-pulse" />
                 </span>
               </div>
             )}

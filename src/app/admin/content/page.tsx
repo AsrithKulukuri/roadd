@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useContentStore, TrendingLocation, HomeCategory } from "@/stores/content-store";
+import { useContentStore, TrendingLocation, HomeCategory, DEFAULT_DESKTOP_SEARCH_PHRASES, DEFAULT_MOBILE_SEARCH_PHRASES } from "@/stores/content-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Edit2, Plus, Trash2, MapPin, LayoutGrid, UploadCloud, X, Sparkles, ExternalLink, Image as ImageIcon } from "lucide-react";
+import { Edit2, Plus, Trash2, MapPin, LayoutGrid, UploadCloud, X, Sparkles, ExternalLink, Image as ImageIcon, Laptop, Smartphone, Check, RotateCcw, Search } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { uploadToS3 } from "@/lib/aws/storage-utils";
 
-type Tab = "categories" | "locations";
+type Tab = "categories" | "locations" | "search-phrases";
 
 const PROPERTY_TYPES = [
   { value: "apartment", label: "Apartment / Flat" },
@@ -29,9 +29,79 @@ export default function ContentAdminPage() {
     trendingLocations, isLoading, fetchTrendingLocations,
     addLocation, updateLocation, deleteLocation,
     homeCategories, addCategory, updateCategory, deleteCategory,
+    searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile,
+    setSearchTypewriterPhrases, addDesktopPhrase, removeDesktopPhrase,
+    addMobilePhrase, removeMobilePhrase,
   } = useContentStore();
 
   const [activeTab, setActiveTab] = useState<Tab>("categories");
+
+  // ─── Search Bar Typewriter State ──────────────────────────────────────────
+  const [newDesktopPhrase, setNewDesktopPhrase] = useState("");
+  const [newMobilePhrase, setNewMobilePhrase] = useState("");
+  const [editingDesktopIdx, setEditingDesktopIdx] = useState<number | null>(null);
+  const [editingDesktopText, setEditingDesktopText] = useState("");
+  const [editingMobileIdx, setEditingMobileIdx] = useState<number | null>(null);
+  const [editingMobileText, setEditingMobileText] = useState("");
+
+  const desktopList = searchTypewriterPhrasesDesktop || DEFAULT_DESKTOP_SEARCH_PHRASES;
+  const mobileList = searchTypewriterPhrasesMobile || DEFAULT_MOBILE_SEARCH_PHRASES;
+
+  // Live Typewriter Preview for Admin Laptop View
+  const [previewDesktopText, setPreviewDesktopText] = useState("");
+  const [previewDesktopDeleting, setPreviewDesktopDeleting] = useState(false);
+  const [previewDesktopLoop, setPreviewDesktopLoop] = useState(0);
+
+  useEffect(() => {
+    if (!desktopList || desktopList.length === 0) return;
+    const fullText = desktopList[previewDesktopLoop % desktopList.length];
+    const speed = previewDesktopDeleting ? 30 : 60;
+
+    const timer = setTimeout(() => {
+      if (previewDesktopDeleting) {
+        setPreviewDesktopText(fullText.substring(0, previewDesktopText.length - 1));
+      } else {
+        setPreviewDesktopText(fullText.substring(0, previewDesktopText.length + 1));
+      }
+
+      if (!previewDesktopDeleting && previewDesktopText === fullText) {
+        setTimeout(() => setPreviewDesktopDeleting(true), 2000);
+      } else if (previewDesktopDeleting && previewDesktopText === "") {
+        setPreviewDesktopDeleting(false);
+        setPreviewDesktopLoop((prev) => prev + 1);
+      }
+    }, speed);
+
+    return () => clearTimeout(timer);
+  }, [previewDesktopText, previewDesktopDeleting, previewDesktopLoop, desktopList]);
+
+  // Live Typewriter Preview for Admin Mobile View
+  const [previewMobileText, setPreviewMobileText] = useState("");
+  const [previewMobileDeleting, setPreviewMobileDeleting] = useState(false);
+  const [previewMobileLoop, setPreviewMobileLoop] = useState(0);
+
+  useEffect(() => {
+    if (!mobileList || mobileList.length === 0) return;
+    const fullText = mobileList[previewMobileLoop % mobileList.length];
+    const speed = previewMobileDeleting ? 30 : 60;
+
+    const timer = setTimeout(() => {
+      if (previewMobileDeleting) {
+        setPreviewMobileText(fullText.substring(0, previewMobileText.length - 1));
+      } else {
+        setPreviewMobileText(fullText.substring(0, previewMobileText.length + 1));
+      }
+
+      if (!previewMobileDeleting && previewMobileText === fullText) {
+        setTimeout(() => setPreviewMobileDeleting(true), 2000);
+      } else if (previewMobileDeleting && previewMobileText === "") {
+        setPreviewMobileDeleting(false);
+        setPreviewMobileLoop((prev) => prev + 1);
+      }
+    }, speed);
+
+    return () => clearTimeout(timer);
+  }, [previewMobileText, previewMobileDeleting, previewMobileLoop, mobileList]);
 
   // ─── Trending Locations state ───────────────────────────────────────────────
   const [editingLocId, setEditingLocId] = useState<string | null>(null);
@@ -222,10 +292,11 @@ export default function ContentAdminPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 p-1.5 bg-bg-card border border-border-default rounded-2xl w-fit shadow-xs">
+      <div className="flex flex-wrap gap-1.5 p-1.5 bg-bg-card border border-border-default rounded-2xl w-fit shadow-xs">
         {([
           { id: "categories", label: "Browse Home Categories", icon: LayoutGrid },
           { id: "locations", label: "Trending Locations", icon: MapPin },
+          { id: "search-phrases", label: "Search Bar Typing Phrases", icon: Sparkles },
         ] as { id: Tab; label: string; icon: React.ElementType }[]).map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -589,6 +660,368 @@ export default function ContentAdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── SEARCH BAR TYPING PHRASES TAB ──────────────────────────────────── */}
+      {activeTab === "search-phrases" && (
+        <div className="space-y-8 animate-in fade-in duration-200">
+          
+          {/* Header Card with Reset Action */}
+          <div className="bg-bg-card border border-border-default rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1.5 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-500 text-xs font-black">
+                <Sparkles className="w-3.5 h-3.5" />
+                Live Animated Typewriter Placeholder
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
+                Search Bar Typing Sentences & Screen Length Controls
+              </h2>
+              <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+                Control the phrases that automatically type out character-by-character in the search bar. 
+                Configure separate sentence lists for <strong>Laptop/Desktop</strong> screens (with length limit indicator) and <strong>Mobile</strong> screens for optimal responsive layout.
+              </p>
+            </div>
+            
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (confirm("Reset all search typing phrases to defaults?")) {
+                  setSearchTypewriterPhrases(DEFAULT_DESKTOP_SEARCH_PHRASES, DEFAULT_MOBILE_SEARCH_PHRASES);
+                  toast.success("Reset to default search phrases!");
+                }
+              }}
+              className="font-bold text-xs gap-2 border-slate-700 hover:border-amber-500/50 hover:bg-amber-500/10 shrink-0"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Reset to Defaults
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            {/* 💻 LAPTOP & DESKTOP PHRASES MANAGER */}
+            <div className="bg-bg-card border border-border-default rounded-3xl p-6 shadow-sm space-y-6 flex flex-col justify-between">
+              <div className="space-y-4">
+                {/* Section Header */}
+                <div className="flex items-center justify-between border-b border-border-default pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2.5 rounded-2xl bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                      <Laptop className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-text-primary flex items-center gap-2">
+                        Laptop & Desktop Phrases
+                      </h3>
+                      <p className="text-[11px] text-text-secondary">
+                        Recommended max length: <strong className="text-blue-400">50 chars</strong> (fits comfortably on 13&quot;+ laptops)
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-black px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-full text-text-primary">
+                    {desktopList.length} Active
+                  </span>
+                </div>
+
+                {/* Add New Desktop Phrase Form */}
+                <div className="space-y-2 bg-bg-secondary/40 border border-border-default p-4 rounded-2xl">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-text-secondary">Add New Desktop Phrase:</span>
+                    <span className={cn(
+                      "font-mono font-bold text-[11px] px-2 py-0.5 rounded-md",
+                      newDesktopPhrase.length <= 40 ? "text-emerald-400 bg-emerald-500/10" :
+                      newDesktopPhrase.length <= 50 ? "text-amber-400 bg-amber-500/10" :
+                      "text-rose-400 bg-rose-500/10"
+                    )}>
+                      {newDesktopPhrase.length} / 50 chars {newDesktopPhrase.length > 50 ? "• (Too Long)" : newDesktopPhrase.length > 40 ? "• (Approaching limit)" : "• (Optimal)"}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="e.g. 2 & 3 BHK Luxury Flats in Poranki, Vijayawada"
+                      value={newDesktopPhrase}
+                      onChange={(e) => setNewDesktopPhrase(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && newDesktopPhrase.trim()) {
+                          addDesktopPhrase(newDesktopPhrase);
+                          setNewDesktopPhrase("");
+                        }
+                      }}
+                      className="bg-bg-card border-border-default text-xs font-semibold"
+                    />
+                    <Button
+                      disabled={!newDesktopPhrase.trim()}
+                      onClick={() => {
+                        addDesktopPhrase(newDesktopPhrase);
+                        setNewDesktopPhrase("");
+                      }}
+                      className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" /> Add
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Desktop Phrases List */}
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {desktopList.map((phrase, idx) => (
+                    <div
+                      key={idx}
+                      className="group flex items-center justify-between p-3 rounded-xl bg-bg-secondary/60 hover:bg-bg-secondary border border-border-default transition-all text-xs"
+                    >
+                      {editingDesktopIdx === idx ? (
+                        <div className="flex-1 flex items-center gap-2 mr-2">
+                          <Input
+                            value={editingDesktopText}
+                            onChange={(e) => setEditingDesktopText(e.target.value)}
+                            className="h-8 text-xs bg-bg-card font-semibold"
+                          />
+                          <button
+                            onClick={() => {
+                              if (editingDesktopText.trim()) {
+                                const next = [...desktopList];
+                                next[idx] = editingDesktopText.trim();
+                                setSearchTypewriterPhrases(next, mobileList);
+                                setEditingDesktopIdx(null);
+                                toast.success("Phrase updated!");
+                              }
+                            }}
+                            className="p-1.5 rounded-lg bg-emerald-500 text-slate-950 hover:bg-emerald-400 cursor-pointer"
+                          >
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          </button>
+                          <button
+                            onClick={() => setEditingDesktopIdx(null)}
+                            className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
+                          <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-400 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <span className="font-semibold text-text-primary truncate">
+                            &ldquo;{phrase}&rdquo;
+                          </span>
+                          <span className={cn(
+                            "text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0",
+                            phrase.length <= 50 ? "text-slate-400 bg-slate-800" : "text-rose-400 bg-rose-500/10 font-bold"
+                          )}>
+                            {phrase.length} chars
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        {editingDesktopIdx !== idx && (
+                          <button
+                            onClick={() => {
+                              setEditingDesktopIdx(idx);
+                              setEditingDesktopText(phrase);
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-amber-400 cursor-pointer transition-colors"
+                            title="Edit Phrase"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => removeDesktopPhrase(idx)}
+                          className="p-1.5 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 cursor-pointer transition-colors"
+                          title="Delete Phrase"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Live Simulated Laptop Search Bar Preview */}
+              <div className="space-y-2 pt-4 border-t border-border-default">
+                <div className="flex items-center justify-between text-xs font-bold text-text-secondary">
+                  <span className="flex items-center gap-1.5">
+                    <Laptop className="w-3.5 h-3.5 text-blue-400" />
+                    Live Laptop Preview (Simulation):
+                  </span>
+                  <span className="text-[11px] text-emerald-400 font-mono">Animated</span>
+                </div>
+                
+                <div className="h-12 w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-4 flex items-center shadow-inner gap-2 text-xs">
+                  <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span className="text-slate-500 dark:text-slate-400 font-medium truncate flex items-center">
+                    Search &ldquo;{previewDesktopText}&rdquo;
+                    <span className="inline-block w-[2px] h-[14px] bg-amber-500 ml-0.5 animate-pulse" />
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 📱 MOBILE SCREEN PHRASES MANAGER */}
+            <div className="bg-bg-card border border-border-default rounded-3xl p-6 shadow-sm space-y-6 flex flex-col justify-between">
+              <div className="space-y-4">
+                {/* Section Header */}
+                <div className="flex items-center justify-between border-b border-border-default pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-text-primary flex items-center gap-2">
+                        Mobile Screen Phrases
+                      </h3>
+                      <p className="text-[11px] text-text-secondary">
+                        Recommended max length: <strong className="text-amber-400">28 chars</strong> (fits without wrapping on phone screens)
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-black px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-full text-text-primary">
+                    {mobileList.length} Active
+                  </span>
+                </div>
+
+                {/* Add New Mobile Phrase Form */}
+                <div className="space-y-2 bg-bg-secondary/40 border border-border-default p-4 rounded-2xl">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-text-secondary">Add New Mobile Phrase:</span>
+                    <span className={cn(
+                      "font-mono font-bold text-[11px] px-2 py-0.5 rounded-md",
+                      newMobilePhrase.length <= 20 ? "text-emerald-400 bg-emerald-500/10" :
+                      newMobilePhrase.length <= 28 ? "text-amber-400 bg-amber-500/10" :
+                      "text-rose-400 bg-rose-500/10"
+                    )}>
+                      {newMobilePhrase.length} / 28 chars {newMobilePhrase.length > 28 ? "• (May Clip on Phone)" : newMobilePhrase.length > 20 ? "• (Approaching limit)" : "• (Mobile-Safe)"}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="e.g. Flats in Poranki"
+                      value={newMobilePhrase}
+                      onChange={(e) => setNewMobilePhrase(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && newMobilePhrase.trim()) {
+                          addMobilePhrase(newMobilePhrase);
+                          setNewMobilePhrase("");
+                        }
+                      }}
+                      className="bg-bg-card border-border-default text-xs font-semibold"
+                    />
+                    <Button
+                      disabled={!newMobilePhrase.trim()}
+                      onClick={() => {
+                        addMobilePhrase(newMobilePhrase);
+                        setNewMobilePhrase("");
+                      }}
+                      className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" /> Add
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Mobile Phrases List */}
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {mobileList.map((phrase, idx) => (
+                    <div
+                      key={idx}
+                      className="group flex items-center justify-between p-3 rounded-xl bg-bg-secondary/60 hover:bg-bg-secondary border border-border-default transition-all text-xs"
+                    >
+                      {editingMobileIdx === idx ? (
+                        <div className="flex-1 flex items-center gap-2 mr-2">
+                          <Input
+                            value={editingMobileText}
+                            onChange={(e) => setEditingMobileText(e.target.value)}
+                            className="h-8 text-xs bg-bg-card font-semibold"
+                          />
+                          <button
+                            onClick={() => {
+                              if (editingMobileText.trim()) {
+                                const next = [...mobileList];
+                                next[idx] = editingMobileText.trim();
+                                setSearchTypewriterPhrases(desktopList, next);
+                                setEditingMobileIdx(null);
+                                toast.success("Mobile phrase updated!");
+                              }
+                            }}
+                            className="p-1.5 rounded-lg bg-emerald-500 text-slate-950 hover:bg-emerald-400 cursor-pointer"
+                          >
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          </button>
+                          <button
+                            onClick={() => setEditingMobileIdx(null)}
+                            className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
+                          <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-400 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <span className="font-semibold text-text-primary truncate">
+                            &ldquo;{phrase}&rdquo;
+                          </span>
+                          <span className={cn(
+                            "text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0",
+                            phrase.length <= 28 ? "text-slate-400 bg-slate-800" : "text-rose-400 bg-rose-500/10 font-bold"
+                          )}>
+                            {phrase.length} chars
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        {editingMobileIdx !== idx && (
+                          <button
+                            onClick={() => {
+                              setEditingMobileIdx(idx);
+                              setEditingMobileText(phrase);
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-amber-400 cursor-pointer transition-colors"
+                            title="Edit Phrase"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => removeMobilePhrase(idx)}
+                          className="p-1.5 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 cursor-pointer transition-colors"
+                          title="Delete Phrase"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Live Simulated Mobile Search Bar Preview */}
+              <div className="space-y-2 pt-4 border-t border-border-default">
+                <div className="flex items-center justify-between text-xs font-bold text-text-secondary">
+                  <span className="flex items-center gap-1.5">
+                    <Smartphone className="w-3.5 h-3.5 text-amber-400" />
+                    Live Mobile Preview (Simulation):
+                  </span>
+                  <span className="text-[11px] text-emerald-400 font-mono">Animated</span>
+                </div>
+                
+                <div className="max-w-[280px] mx-auto h-10 w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-full px-3 flex items-center shadow-inner gap-2 text-xs">
+                  <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="text-slate-500 dark:text-slate-400 font-medium truncate flex items-center text-[11px]">
+                    Search &ldquo;{previewMobileText}&rdquo;
+                    <span className="inline-block w-[1.5px] h-[12px] bg-amber-500 ml-0.5 animate-pulse" />
+                  </span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
