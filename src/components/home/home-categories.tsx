@@ -3,19 +3,37 @@
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { MixedCarouselRow, type MixedItem } from "./mixed-carousel-row";
-import { ThumbsUp, Star, IndianRupee } from "lucide-react";
 import { useEffect } from "react";
+import { useState } from "react";
 import { useIsMounted } from "@/hooks/use-is-mounted";
+import { HOME_SECTION_ICONS } from "@/lib/home-section-icons";
+import type { HomeSection } from "@/types/home-section";
 
 export function HomeCategories() {
   const { properties, fetchProperties, isLoading: isPropsLoading, error: propsError } = usePropertiesStore();
   const { projects, fetchProjects, isLoading: isProjsLoading, error: projsError } = useProjectsStore();
   const mounted = useIsMounted();
+  const [customSections, setCustomSections] = useState<HomeSection[] | null>(null);
+  const [hasCustomLayout, setHasCustomLayout] = useState(false);
 
   useEffect(() => {
     fetchProperties();
     fetchProjects();
   }, [fetchProperties, fetchProjects]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/home-sections", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data) => {
+        if (!cancelled && data.configured && Array.isArray(data.sections)) {
+          setCustomSections(data.sections);
+          setHasCustomLayout(true);
+        }
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
 
   const isInitialLoading = !mounted || ((isPropsLoading && properties.length === 0) && (isProjsLoading && projects.length === 0));
   const isCompleteFailure = propsError && projsError && properties.length === 0 && projects.length === 0;
@@ -104,45 +122,44 @@ export function HomeCategories() {
     ...budgetProjs.map(p => ({ ...p, itemType: 'project' as const }))
   ];
 
+  const propertyMap = new Map(activeProperties.map((property) => [property.id, property]));
+  const projectMap = new Map(activeProjects.map((project) => [project.id, project]));
+
+  const sectionsToRender = hasCustomLayout
+    ? (customSections ?? []).filter((section) => section.isActive).map((section) => ({
+        id: section.id,
+        title: section.title,
+        icon: HOME_SECTION_ICONS[section.icon],
+        items: section.items.flatMap((item): MixedItem[] => {
+          if (item.type === "property") {
+            const property = propertyMap.get(item.id);
+            return property ? [{ ...property, itemType: "property" as const }] : [];
+          }
+          const project = projectMap.get(item.id);
+          return project ? [{ ...project, itemType: "project" as const }] : [];
+        }),
+      }))
+    : [
+        { id: "recommended", title: "Recommended", icon: HOME_SECTION_ICONS.ThumbsUp, items: recommendedMixed },
+        { id: "featured", title: "Featured", icon: HOME_SECTION_ICONS.Star, items: featuredMixed },
+        { id: "budget-friendly", title: "Budget Friendly", icon: HOME_SECTION_ICONS.IndianRupee, items: budgetMixed },
+      ];
+
   return (
     <section className="py-2 sm:py-6 w-full">
       <div className="container-road space-y-3 sm:space-y-6">
         
-        {/* 1. Recommended Section */}
-        {recommendedMixed.length > 0 && (
+        {sectionsToRender.map((section) => section.items.length > 0 && (
           <MixedCarouselRow
-            title="Recommended"
-            icon={ThumbsUp}
-            items={recommendedMixed}
+            key={section.id}
+            title={section.title}
+            icon={section.icon}
+            items={section.items}
             hideHeader={false}
             autoSlide={true}
             cardVariant="compact"
           />
-        )}
-
-        {/* 2. Featured Section */}
-        {featuredMixed.length > 0 && (
-          <MixedCarouselRow
-            title="Featured"
-            icon={Star}
-            items={featuredMixed}
-            hideHeader={false}
-            autoSlide={true}
-            cardVariant="compact"
-          />
-        )}
-
-        {/* 3. Budget Friendly Section */}
-        {budgetMixed.length > 0 && (
-          <MixedCarouselRow
-            title="Budget Friendly"
-            icon={IndianRupee}
-            items={budgetMixed}
-            hideHeader={false}
-            autoSlide={true}
-            cardVariant="compact"
-          />
-        )}
+        ))}
 
       </div>
     </section>

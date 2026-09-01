@@ -163,7 +163,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
             )}
           >
             {/* Image Thumbnail */}
-            <div className="relative w-full h-[95px] sm:h-[135px] md:h-[160px] overflow-hidden bg-slate-100 dark:bg-slate-800">
+            <div className="relative h-[112px] w-full overflow-hidden bg-slate-100 sm:h-[142px] md:h-[168px]">
               {project.coverImage ? (
                 <img
                   src={project.coverImage}
@@ -193,8 +193,8 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
             </div>
 
             {/* Compact Details below Image */}
-            <div className="p-2.5 sm:p-3 flex flex-col justify-between">
-              <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white truncate transition-colors">
+            <div className="flex min-h-[60px] flex-col justify-center p-2.5 sm:p-3">
+              <h4 className="truncate text-[13px] font-extrabold text-slate-900 transition-colors dark:text-white sm:text-sm">
                 {project.name}
               </h4>
               <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5 flex items-center gap-1">

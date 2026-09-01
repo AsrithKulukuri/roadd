@@ -1040,7 +1040,8 @@ export function RealtorFilterBar({
                           value={localitySearch}
                           onChange={(e) => setLocalitySearch(e.target.value)}
                           placeholder={`Search ${activeCity.name} areas...`}
-                          className="w-full h-8 pl-8 pr-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-amber-500 text-slate-900 dark:text-white"
+                          style={{ outline: "none", boxShadow: "none" }}
+                          className="w-full h-8 pl-8 pr-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:outline-none focus:ring-0 focus:border-slate-400 dark:focus:border-slate-500 text-slate-900 dark:text-white"
                         />
                         {localitySearch && (
                           <button

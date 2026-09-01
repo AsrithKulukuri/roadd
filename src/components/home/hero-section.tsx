@@ -153,6 +153,17 @@ export function HeroSection() {
     } catch {}
   }, [router]);
 
+  const scrollToTopElement = (el: HTMLElement | null, offset = 65) => {
+    if (!el || typeof window === "undefined") return;
+    const rect = el.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const targetY = rect.top + scrollTop - offset;
+    window.scrollTo({
+      top: Math.max(0, targetY),
+      behavior: "smooth",
+    });
+  };
+
   // ── Typewriter / Typing Effect State & Logic ──
   const [typedText, setTypedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -899,7 +910,12 @@ export function HeroSection() {
                   handleSearchSubmit();
                 }
               }}
-              onFocus={() => setIsFocused(true)}
+              onFocus={(e) => {
+                setIsFocused(true);
+                setTimeout(() => {
+                  scrollToTopElement(e.target as HTMLElement, 75);
+                }, 120);
+              }}
               onBlur={() => setTimeout(() => setIsFocused(false), 200)}
               autoComplete="off"
               aria-label="Search properties and projects"
@@ -1119,11 +1135,18 @@ export function HeroSection() {
 
                   <motion.div
                     key={activeCity.id}
+                    ref={(node) => {
+                      if (node) {
+                        setTimeout(() => {
+                          scrollToTopElement(node, 65);
+                        }, 100);
+                      }
+                    }}
                     initial={{ opacity: 0, height: 0, y: -4 }}
                     animate={{ opacity: 1, height: "auto", y: 0 }}
                     exit={{ opacity: 0, height: 0, y: -4 }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="relative w-full mt-2 sm:absolute sm:top-full sm:mt-1.5 sm:left-1/2 sm:-translate-x-1/2 sm:w-[92vw] sm:max-w-[360px] bg-slate-950/98 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-[100] max-h-[380px] flex flex-col"
+                    className="relative w-full mt-2 sm:absolute sm:top-full sm:mt-1.5 sm:left-1/2 sm:-translate-x-1/2 sm:w-[92vw] sm:max-w-[360px] bg-slate-950/98 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-[100] max-h-[380px] flex flex-col scroll-mt-20"
                   >
                     {/* Header */}
                     <div className="px-4 py-2.5 border-b border-slate-800/80 text-[11px] uppercase font-black tracking-wider text-amber-400 flex items-center justify-between gap-3 sticky top-0 bg-slate-950 z-10 shrink-0">
@@ -1153,14 +1176,20 @@ export function HeroSection() {
 
                     {/* Search Bar */}
                     <div className="p-2 border-b border-slate-800/60 bg-slate-950/95 shrink-0">
-                      <div className="relative flex items-center bg-slate-900 border border-slate-800 focus-within:border-amber-400/80 rounded-xl px-2.5 py-1.5 transition-colors">
+                      <div className="relative flex items-center bg-slate-900 border border-slate-800 focus-within:border-slate-600 rounded-xl px-2.5 py-1.5 transition-colors">
                         <Search className="w-3.5 h-3.5 text-slate-400 shrink-0 mr-2" />
                         <input
                           type="text"
                           value={sublocationSearch}
                           onChange={(e) => setSublocationSearch(e.target.value)}
+                          onFocus={(e) => {
+                            setTimeout(() => {
+                              scrollToTopElement(e.target as HTMLElement, 70);
+                            }, 100);
+                          }}
                           placeholder={`Search ${activeCity.name} localities...`}
-                          className="w-full bg-transparent text-xs text-white placeholder-slate-500 font-medium outline-none border-none p-0 focus:ring-0"
+                          style={{ outline: "none", boxShadow: "none", border: "none" }}
+                          className="w-full bg-transparent text-xs text-white placeholder-slate-500 font-medium outline-none border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none p-0"
                           autoFocus
                         />
                         {sublocationSearch && (

@@ -18,6 +18,7 @@ import {
   LayoutGrid,
   MessageSquare,
   MapPin,
+  LayoutList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -35,6 +36,7 @@ const sidebarLinks = [
   { href: "/admin/banners", label: "Banners", icon: ImageIcon },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/content", label: "Categories & Content", icon: LayoutGrid },
+  { href: "/admin/homepage", label: "Homepage Shelves", icon: LayoutList },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

@@ -161,14 +161,14 @@ export function PropertyCard({
             )}
           >
             {/* Image Thumbnail */}
-            <div className="relative w-full h-[95px] sm:h-[135px] md:h-[160px] overflow-hidden bg-slate-100 dark:bg-slate-800">
+            <div className="relative h-[112px] w-full overflow-hidden bg-slate-100 sm:h-[142px] md:h-[168px]">
               <Image
                 src={images[0]?.url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80"}
                 alt={property.title}
                 fill
                 loading={index < 4 ? "eager" : "lazy"}
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
-                sizes="(max-width: 640px) 155px, 280px"
+                sizes="(max-width: 640px) 180px, 280px"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               
@@ -188,8 +188,8 @@ export function PropertyCard({
             </div>
 
             {/* Compact Details below Image */}
-            <div className="p-2 sm:p-2.5 flex flex-col justify-between">
-              <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate group-hover:text-amber-500 transition-colors">
+            <div className="flex min-h-[60px] flex-col justify-center p-2.5 sm:p-3">
+              <h4 className="truncate text-[13px] font-extrabold text-slate-900 transition-colors group-hover:text-amber-500 dark:text-white sm:text-sm">
                 {property.title}
               </h4>
               <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5 flex items-center gap-0.5">

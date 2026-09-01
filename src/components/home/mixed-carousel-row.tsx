@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, type LucideIcon } from "lucide-react";
 import { PropertyCard } from "@/components/property/property-card";
 import { ProjectCard } from "@/components/project/project-card";
 import type { Property } from "@/types/property";
@@ -14,7 +14,7 @@ export type MixedItem =
 
 interface MixedCarouselRowProps {
   title: string;
-  icon?: any;
+  icon?: LucideIcon;
   items: MixedItem[];
   autoSlide?: boolean;
   hideHeader?: boolean;
@@ -81,10 +81,10 @@ export function MixedCarouselRow({
     <section className="py-1 relative">
       <div className="container-road">
         {!hideHeader && (
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 mb-3">
+          <div className="mb-3 flex items-center justify-between gap-3 sm:mb-4">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white text-slate-950 border border-slate-200/80 shadow-md text-xs sm:text-sm font-extrabold tracking-tight">
-                <Icon className="h-4 w-4 text-slate-950 shrink-0" />
+              <div className="inline-flex min-h-10 items-center gap-2.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-extrabold text-slate-950 shadow-sm">
+                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-950 text-[#faad13]"><Icon className="h-3.5 w-3.5 shrink-0" /></span>
                 <span>{title}</span>
               </div>
             </div>
@@ -161,7 +161,7 @@ export function MixedCarouselRow({
                 className={cn(
                   "shrink-0 snap-start",
                   cardVariant === "compact"
-                    ? "w-[150px] sm:w-[210px] md:w-[250px]"
+                    ? "w-[170px] sm:w-[220px] md:w-[260px]"
                     : cardVariant === "category-style" 
                     ? "w-[160px] sm:w-[220px]" 
                     : "w-[220px] sm:w-[280px] md:w-[320px]"
