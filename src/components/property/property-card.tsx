@@ -137,6 +137,9 @@ export function PropertyCard({
 
   const status = getStatusBadge();
   const brokerName = property.ownerName || "Premier AP Properties";
+  const areaUnit = property.attributes && typeof property.attributes === "object" && "areaUnit" in property.attributes
+    ? String((property.attributes as Record<string, unknown>).areaUnit || "")
+    : undefined;
 
   if (variant === "compact") {
     return (
@@ -486,7 +489,7 @@ export function PropertyCard({
       >
         <div
           className={cn(
-            "relative bg-white dark:bg-bg-card border border-border-default rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 h-full flex flex-col",
+            "relative bg-white dark:bg-bg-card border border-border-default rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:border-amber-500/40 transition-[box-shadow,border-color] duration-200 h-full flex flex-col",
             selected
               ? "ring-2 ring-red-500 border-red-500"
               : "hover:border-slate-300",
@@ -494,7 +497,7 @@ export function PropertyCard({
           )}
         >
           {/* Image Container */}
-          <div className="relative aspect-[16/10] w-full overflow-hidden bg-bg-primary shrink-0">
+          <div className="relative aspect-[4/3] w-full overflow-hidden bg-bg-primary shrink-0">
             {/* Selection Checkbox */}
             {selectable && (
               <div className="absolute top-3 right-3 z-30">
@@ -564,32 +567,11 @@ export function PropertyCard({
                   {formatPropertyType(property.propertyType)}
                 </span>
               );
-              if (property.reraId || (property as any).reraApproved) {
-                badges.push(
-                  <span key="rera" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight shrink-0">
-                    <Shield className="w-3 h-3 text-amber-500" /> RERA
-                  </span>
-                );
-              }
-              if (property.isFeatured) {
-                badges.push(
-                  <span key="feat" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight shrink-0">
-                    <Sparkles className="w-3 h-3 text-amber-500" /> Featured
-                  </span>
-                );
-              }
-
-              const visibleBadges = badges.slice(0, 2);
-              const extraCount = badges.length - 2;
+              const visibleBadges = badges.slice(0, 1);
 
               return (
                 <div className="absolute top-2.5 left-2.5 max-w-[calc(100%-74px)] flex items-center gap-1 overflow-hidden z-10">
                   {visibleBadges}
-                  {extraCount > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md shrink-0">
-                      +{extraCount}
-                    </span>
-                  )}
                 </div>
               );
             })()}
@@ -599,7 +581,7 @@ export function PropertyCard({
               <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 pointer-events-auto">
                 <button
                   type="button"
-                  className="w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
+                  className="w-9 h-9 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-colors cursor-pointer border border-slate-200/60 backdrop-blur-md"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -608,18 +590,18 @@ export function PropertyCard({
                   title="Share property"
                   aria-label="Share property"
                 >
-                  <Share2 className="h-3 w-3 text-slate-800 hover:text-amber-500 transition-colors" />
+                  <Share2 className="h-4 w-4 text-slate-800" />
                 </button>
                 <button
                   type="button"
-                  className="w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
+                  className="w-9 h-9 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-colors cursor-pointer border border-slate-200/60 backdrop-blur-md"
                   onClick={toggleSave}
                   aria-label={isSaved ? "Remove from saved" : "Save property"}
                   title={isSaved ? "Remove from saved" : "Save property"}
                 >
                   <Heart
                     className={cn(
-                      "h-3 w-3 transition-all",
+                      "h-4 w-4 transition-colors",
                       isSaved
                         ? "fill-red-600 text-red-600 scale-110"
                         : "text-slate-800",
@@ -647,11 +629,11 @@ export function PropertyCard({
           </div>
 
           {/* Details Section */}
-          <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-2.5 sm:space-y-3">
-            <div className="space-y-1.5 sm:space-y-2">
+          <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+            <div className="space-y-2.5">
               {/* Title (2 lines clamp) & Location */}
               <div>
-                <h3 className="font-bold text-text-primary text-sm sm:text-base leading-snug group-hover:text-amber-primary transition-colors line-clamp-2 min-h-[38px] sm:min-h-[42px]">
+                <h3 className="font-bold text-text-primary text-base sm:text-lg leading-snug group-hover:text-amber-primary transition-colors line-clamp-2">
                   {property.title}
                 </h3>
                 <div className="flex items-center gap-1.5 text-text-secondary text-xs mt-1 truncate">
@@ -663,20 +645,10 @@ export function PropertyCard({
               </div>
 
               {/* Clean 1-Row Specs Pills */}
-              <div className="h-[24px] flex items-center gap-1.5 overflow-hidden">
+              <div className="flex min-h-6 items-center gap-2 overflow-hidden text-xs font-semibold text-text-secondary">
                 {property.bedrooms > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap">
-                    {property.bedrooms} BHK
-                  </span>
-                )}
-                {property.furnishing && property.furnishing !== "unfurnished" && (
-                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap capitalize">
-                    {property.furnishing.replace("-", " ")}
-                  </span>
-                )}
-                {property.facing && (
-                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap capitalize">
-                    {property.facing} Facing
+                  <span className="whitespace-nowrap">
+                    {property.bedrooms} BHK{property.bathrooms > 0 ? ` · ${property.bathrooms} Bath${property.bathrooms > 1 ? "s" : ""}` : ""}
                   </span>
                 )}
               </div>
@@ -687,7 +659,7 @@ export function PropertyCard({
                   <>
                     <Maximize2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                     <span className="truncate font-medium">
-                      {formatArea(property.area || property.builtUpArea || property.carpetArea || 0, (property as any).areaUnit, property.propertyType)}
+                      {formatArea(property.area || property.builtUpArea || property.carpetArea || 0, areaUnit, property.propertyType)}
                     </span>
                   </>
                 ) : (
@@ -697,7 +669,7 @@ export function PropertyCard({
             </div>
 
             {/* Locked Bottom Price & Owner Row */}
-            <div className="mt-auto pt-2.5 sm:pt-3 border-t border-border-default">
+            <div className="mt-auto pt-3 border-t border-border-default">
               {/* Top Sub-row: Category label on left, Ref ID on right so it doesn't steal price width */}
               <div className="flex items-center justify-between gap-2 mb-1">
                 <p className="text-[9.5px] text-text-tertiary uppercase tracking-wider font-extrabold truncate">
@@ -705,29 +677,15 @@ export function PropertyCard({
                     ? "Monthly Rent"
                     : "Price"}
                 </p>
-                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
-                  {getRefId(property)}
-                </span>
               </div>
 
               {/* Main Row: Big Bold Price (Left, broad) + Owner (Right, compact) */}
               <div className="flex items-end justify-between gap-3">
-                <div className="flex-1 min-w-0 pr-1">
-                  <p className="font-black text-text-primary text-base sm:text-lg leading-snug tracking-tight break-words">
+                <div className="min-w-0">
+                  <p className="font-black text-text-primary text-xl leading-tight break-words">
                     {property.listingType === "rent" || property.listingType === "pg"
                       ? `${formatINR(property.price)}/mo`
                       : formatPriceCompact(property.price)}
-                  </p>
-                </div>
-                <div className="text-right shrink-0 max-w-[105px] sm:max-w-[125px]">
-                  <p className="text-[9px] text-text-tertiary uppercase tracking-wider font-extrabold truncate">
-                    {property.ownerType ? property.ownerType.toUpperCase() : "OWNER"}
-                  </p>
-                  <p className="text-xs font-semibold text-text-secondary truncate flex items-center justify-end gap-1 mt-0.5">
-                    <span className="truncate">{brokerName}</span>
-                    {property.isOwnerVerified && (
-                      <BadgeCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    )}
                   </p>
                 </div>
               </div>

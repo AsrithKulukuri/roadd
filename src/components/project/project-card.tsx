@@ -244,10 +244,10 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
 
   return (
     <Link href={`/projects/${project.slug}`} onClick={handleCardClick} className="group block h-full">
-      <div className="relative h-full flex flex-col justify-between bg-white dark:bg-bg-card border border-border-default rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+      <div className="relative h-full flex flex-col justify-between bg-white dark:bg-bg-card border border-border-default rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:border-amber-500/40 transition-[box-shadow,border-color] duration-200">
 
         {/* Image with 16/10 uniform aspect ratio */}
-        <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
           {project.coverImage ? (
             <img
               src={project.coverImage}
@@ -269,32 +269,11 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
                 {TC.label}
               </span>
             );
-            if (project.reraApproved || (project as any).reraId) {
-              badges.push(
-                <span key="rera" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight shrink-0">
-                  <Shield className="w-3 h-3 text-amber-500" /> RERA
-                </span>
-              );
-            }
-            if (project.isFeatured) {
-              badges.push(
-                <span key="feat" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight shrink-0">
-                  <Sparkles className="w-3 h-3 text-amber-500" /> Featured
-                </span>
-              );
-            }
-
-            const visibleBadges = badges.slice(0, 2);
-            const extraCount = badges.length - 2;
+            const visibleBadges = badges.slice(0, 1);
 
             return (
               <div className="absolute top-2.5 left-2.5 max-w-[calc(100%-74px)] flex items-center gap-1 overflow-hidden z-10">
                 {visibleBadges}
-                {extraCount > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md shrink-0">
-                    +{extraCount}
-                  </span>
-                )}
               </div>
             );
           })()}
@@ -303,7 +282,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
           <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 pointer-events-auto">
             <button
               type="button"
-              className="w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
+              className="w-9 h-9 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-colors cursor-pointer border border-slate-200/60 backdrop-blur-md"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -312,11 +291,11 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
               title="Share project"
               aria-label="Share project"
             >
-              <Share2 className="h-3 w-3 text-slate-800 hover:text-amber-500 transition-colors" />
+              <Share2 className="h-4 w-4 text-slate-800" />
             </button>
             <button
               type="button"
-              className="w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-slate-200/60 backdrop-blur-md"
+              className="w-9 h-9 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-colors cursor-pointer border border-slate-200/60 backdrop-blur-md"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -325,7 +304,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
               title={isSaved ? "Remove from saved" : "Save project"}
               aria-label={isSaved ? "Remove from saved" : "Save project"}
             >
-              <Heart className={cn("h-3 w-3 transition-all", isSaved ? "fill-red-500 text-red-500 scale-110" : "text-slate-800")} />
+              <Heart className={cn("h-4 w-4 transition-colors", isSaved ? "fill-red-500 text-red-500" : "text-slate-800")} />
             </button>
           </div>
 
@@ -350,12 +329,12 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
         </div>
 
         {/* Details Section */}
-        <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-2.5 sm:space-y-3">
+        <div className="p-4 flex-1 flex flex-col justify-between gap-3">
 
-          <div className="space-y-1.5 sm:space-y-2">
+          <div className="space-y-2.5">
             {/* Title (2 lines clamp) & Locality */}
             <div>
-              <h3 className="font-bold text-text-primary text-sm sm:text-base leading-snug group-hover:text-amber-primary transition-colors line-clamp-2 min-h-[38px] sm:min-h-[42px]">
+              <h3 className="font-bold text-text-primary text-base sm:text-lg leading-snug group-hover:text-amber-primary transition-colors line-clamp-2">
                 {project.name}
               </h3>
               <div className="flex items-center gap-1.5 text-text-secondary text-xs mt-1 truncate">
@@ -365,22 +344,14 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
             </div>
 
             {/* Clean 1-Row Config Pills */}
-            <div className="h-[24px] flex items-center gap-1.5 overflow-hidden">
+            <div className="flex min-h-6 items-center gap-2 overflow-hidden text-xs font-semibold text-text-secondary">
               {configLabels.length > 0 ? (
                 <>
-                  {configLabels.slice(0, 2).map((label) => (
-                    <span key={label} className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-bg-primary border border-border-default text-text-secondary whitespace-nowrap truncate max-w-[120px]">
-                      {label}
-                    </span>
-                  ))}
-                  {configLabels.length > 2 && (
-                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 whitespace-nowrap shrink-0">
-                      +{configLabels.length - 2}
-                    </span>
-                  )}
+                  <span className="truncate">{configLabels[0]}</span>
+                  {configLabels.length > 1 && <span className="shrink-0 text-amber-600">+{configLabels.length - 1} more</span>}
                 </>
               ) : (
-                <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-bg-primary border border-border-default text-text-tertiary">
+                <span className="text-text-tertiary">
                   {TC.label} Project
                 </span>
               )}
@@ -410,34 +381,22 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
           </div>
 
           {/* Locked Bottom Price & Builder Row */}
-          <div className="mt-auto pt-2.5 sm:pt-3 border-t border-border-default">
+          <div className="mt-auto pt-3 border-t border-border-default">
             {/* Top Sub-row: Category label on left, Ref ID on right so it doesn't steal price width */}
             <div className="flex items-center justify-between gap-2 mb-1">
               <p className="text-[9.5px] text-text-tertiary uppercase tracking-wider font-extrabold truncate">
                 {isVenture ? "Starting Price" : "Price Range"}
               </p>
-              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
-                {getRefId(project)}
-              </span>
             </div>
 
             {/* Main Row: Big Bold Price (Left, broad) + Builder (Right, compact) */}
             <div className="flex items-end justify-between gap-3">
-              <div className="flex-1 min-w-0 pr-1">
-                <p className="font-black text-text-primary text-base sm:text-lg leading-snug tracking-tight break-words">
+              <div className="min-w-0">
+                <p className="font-black text-text-primary text-xl leading-tight break-words">
                   {priceLabel}
                 </p>
                 {pricePerUnit && !isVenture && pricePerUnit !== priceLabel && (
                   <p className="text-[10px] text-text-secondary font-semibold truncate mt-0.5">{pricePerUnit}</p>
-                )}
-              </div>
-              <div className="text-right shrink-0 max-w-[105px] sm:max-w-[125px]">
-                <p className="text-[9px] text-text-tertiary uppercase tracking-wider font-extrabold truncate">BUILDER</p>
-                <p className="text-xs font-semibold text-text-secondary truncate flex items-center justify-end gap-1 mt-0.5">
-                  <span className="truncate">{project.builderName}</span>
-                </p>
-                {totalLabel && !isVenture && (
-                  <p className="text-[10px] text-text-tertiary truncate mt-0.5">{totalLabel}</p>
                 )}
               </div>
             </div>
