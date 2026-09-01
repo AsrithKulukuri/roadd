@@ -82,10 +82,10 @@ export default function ComparePage() {
                   </div>
 
                   <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1 mb-1">{p.title}</h4>
-                  <div className="text-amber-500 font-black text-lg mb-2">{formatINR(p.price)}</div>
+                  <div className="text-slate-900 dark:text-white font-black text-lg mb-2">{formatINR(p.price)}</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mb-3">{p.location.locality}, {p.location.city}</div>
 
-                  <Link href={`/properties/${p.id}`} className="block text-center py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl shadow-xs transition-colors">
+                  <Link href={`/properties/${p.id}`} className="block text-center py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-900 font-extrabold text-xs rounded-xl shadow-xs transition-colors">
                     View Listing
                   </Link>
                 </div>
@@ -119,7 +119,7 @@ export default function ComparePage() {
             <div className="grid grid-cols-4 gap-6 py-3 border-b border-slate-200 dark:border-slate-800">
               <div className="font-bold text-slate-500">Price per Sq.Ft</div>
               {properties.map(p => (
-                <div key={p.id} className="font-bold text-amber-500">{formatINR(Math.round(p.price / p.area))}/sq.ft</div>
+                <div key={p.id} className="font-bold text-slate-900 dark:text-white">{formatINR(Math.round(p.price / p.area))}/sq.ft</div>
               ))}
             </div>
 

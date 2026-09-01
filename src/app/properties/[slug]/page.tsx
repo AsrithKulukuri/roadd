@@ -295,7 +295,7 @@ export default async function PropertyDetailPage({
 
               {/* Large Price Row */}
               <div className="pt-2 flex flex-wrap items-baseline justify-between gap-3 sm:gap-4 border-t border-border-default/60">
-                <span className="font-black text-3xl sm:text-4xl text-amber-600 dark:text-amber-400 tracking-tight">
+                <span className="font-black text-3xl sm:text-4xl text-text-primary tracking-tight">
                   {formatINR(property.price)}
                 </span>
 

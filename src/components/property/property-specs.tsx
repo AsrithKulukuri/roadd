@@ -69,25 +69,25 @@ export function PropertySpecs({ property }: PropertySpecsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
       {specs.map((spec, i) => {
         const Icon = spec.icon;
         return (
           <div
             key={i} 
-            className={`${i >= 5 && !showAllMobile ? "hidden min-[480px]:flex" : "flex"} min-h-[82px] items-center gap-3 p-3 sm:p-4 rounded-2xl bg-bg-primary border border-border-default hover:border-amber-primary/50 transition-all shadow-xs`}
+            className={`${i >= 5 && !showAllMobile ? "hidden min-[480px]:flex" : "flex"} min-h-[92px] items-center gap-2.5 p-3 rounded-2xl bg-[#0b1429] border border-slate-700/80 hover:border-amber-500/60 transition-colors shadow-sm`}
           >
-            <div className="w-10 h-10 rounded-xl bg-bg-elevated border border-border-default flex items-center justify-center text-text-primary shrink-0 font-bold">
-              <Icon className="w-5 h-5 text-amber-primary" />
+            <div className="w-9 h-9 rounded-full bg-white/5 border border-slate-400/80 flex items-center justify-center shrink-0">
+              <Icon className="w-4 h-4 text-amber-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-normal font-extrabold text-text-tertiary leading-tight break-words">
+              <p className="text-[9px] uppercase tracking-normal font-extrabold text-slate-400 leading-tight break-words">
                 {spec.label}
               </p>
-              <p className="font-extrabold text-text-primary text-sm break-words mt-1 leading-snug">
+              <p className="font-extrabold text-white text-xs sm:text-sm break-words mt-1 leading-snug">
                 {spec.value}
               </p>
-              <p className="text-[10px] text-text-secondary font-medium break-words mt-1 leading-snug">
+              <p className="hidden sm:block text-[10px] text-slate-400 font-medium break-words mt-1 leading-snug">
                 {spec.sub}
               </p>
             </div>
@@ -100,7 +100,7 @@ export function PropertySpecs({ property }: PropertySpecsProps) {
           type="button"
           aria-expanded={showAllMobile}
           onClick={() => setShowAllMobile((current) => !current)}
-          className="min-[480px]:hidden flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm font-extrabold text-amber-700 transition-colors hover:bg-amber-500/15 dark:text-amber-400"
+          className="col-span-2 min-[480px]:hidden flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm font-extrabold text-amber-700 transition-colors hover:bg-amber-500/15 dark:text-amber-400"
         >
           <span>{showAllMobile ? "Show fewer specifications" : `View ${specs.length - 5} more specifications`}</span>
           {showAllMobile ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
