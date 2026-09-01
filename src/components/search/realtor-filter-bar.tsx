@@ -334,17 +334,18 @@ export function RealtorFilterBar({
         <button
           type="button"
           onClick={onOpenAllFilters}
+          aria-label="All Filters"
+          title="All Filters"
           className={cn(
-            "h-9 px-3.5 rounded-full text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-xs active:scale-95",
+            "relative w-9 h-9 rounded-full flex items-center justify-center border transition-all cursor-pointer shrink-0 shadow-xs active:scale-95",
             activeFilterCount > 0
               ? "bg-[#f1a010] text-slate-950 border-[#f1a010]"
               : "bg-white text-slate-800 border-slate-300 hover:border-slate-400"
           )}
         >
-          <SlidersHorizontal className="w-3.5 h-3.5" />
-          <span>Filters</span>
+          <SlidersHorizontal className="w-4 h-4" />
           {activeFilterCount > 0 && (
-            <span className="w-4 h-4 bg-white text-slate-900 dark:bg-slate-950 dark:text-amber-400 rounded-full text-[10px] font-black flex items-center justify-center ml-0.5 shadow-xs">
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-slate-950 text-white rounded-full text-[10px] font-black flex items-center justify-center shadow-xs">
               {activeFilterCount}
             </span>
           )}

@@ -76,8 +76,17 @@ function UnifiedSearchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
+  const isNewLaunches = useMemo(() => {
+    return (
+      searchParams.get("status") === "new-launch" ||
+      searchParams.get("newLaunches") === "true" ||
+      searchParams.get("category") === "new-launch" ||
+      searchParams.get("tab") === "new-launch"
+    );
+  }, [searchParams]);
+
   const [activeTab, setActiveTab] = useState<"all" | "properties" | "projects">(
-    searchParams.get("type") === "projects" ? "projects" : "all"
+    searchParams.get("type") === "projects" || searchParams.get("status") === "new-launch" ? "projects" : "all"
   );
   const urlViewMode = searchParams.get("nearMe") === "true" || searchParams.get("view") === "map" ? "map" : "grid";
   const [userViewMode, setUserViewMode] = useState<"grid" | "map" | null>(null);
@@ -646,6 +655,89 @@ function UnifiedSearchPage() {
     };
   }, [viewMode, visibleMapIds, filteredProperties, filteredProjects]);
 
+  // New Launches specific category counts (Apartments, Ventures, Villas)
+  const { allNewLaunchCount, apartmentCount, ventureCount, villaCount } = useMemo(() => {
+    const baseProjects = projects.filter((project) => {
+      const parsedIntent = filters.query ? parseSearchIntent(filters.query) : null;
+      if (filters.query && !matchesProjectSearch(project, filters.query, parsedIntent || undefined)) {
+        return false;
+      }
+      const projCity = (project.location?.city || "").toLowerCase();
+      const projLocality = (project.location?.locality || "").toLowerCase();
+      const projAddress = (project.location?.address || "").toLowerCase();
+      const projCorpus = `${projCity} ${projLocality} ${projAddress} ${(project.name || "").toLowerCase()}`;
+      if (filters.cities && filters.cities.length > 0) {
+        const matchesCity = filters.cities.some((c: string) => {
+          const target = c.toLowerCase().trim();
+          return projCity.includes(target) || projLocality.includes(target) || projCorpus.includes(target);
+        });
+        if (!matchesCity) return false;
+      }
+      if (filters.localities && filters.localities.length > 0) {
+        const matchesLoc = filters.localities.some((l: string) => {
+          const target = l.toLowerCase().trim();
+          return projLocality.includes(target) || projAddress.includes(target) || projCorpus.includes(target);
+        });
+        if (!matchesLoc) return false;
+      }
+      if (project.configurations && project.configurations.length > 0) {
+        const hasBudgetOverlap = project.configurations.some(cfg => {
+          const pMin = cfg.priceMin || 0;
+          const pMax = cfg.priceMax || pMin;
+          return pMin <= filters.budget[1] && pMax >= filters.budget[0];
+        });
+        if (!hasBudgetOverlap) return false;
+      } else {
+        if (filters.budget[0] > 0 || filters.budget[1] < 100000000) return false;
+      }
+      return true;
+    });
+
+    let effectiveList = baseProjects;
+    if (viewMode === "map" && visibleMapIds !== null) {
+      const visibleSet = new Set(visibleMapIds);
+      effectiveList = effectiveList.filter((p) => visibleSet.has(p.id));
+    }
+
+    const apartments = effectiveList.filter(p => p.projectType === "apartment");
+    const ventures = effectiveList.filter(p => p.projectType === "venture" || (p.projectType as string) === "residential-land");
+    const villas = effectiveList.filter(p => p.projectType === "villa" || (p.projectType as string) === "independent-house");
+
+    return {
+      allNewLaunchCount: effectiveList.length,
+      apartmentCount: apartments.length,
+      ventureCount: ventures.length,
+      villaCount: villas.length,
+    };
+  }, [projects, filters.query, filters.cities, filters.localities, filters.budget, viewMode, visibleMapIds]);
+
+  const currentNewLaunchType = useMemo(() => {
+    if (filters.propertyType.includes("apartment")) return "apartment";
+    if (filters.propertyType.some(t => ["venture", "crda-ventures", "crda-venture", "residential-land", "plot"].includes(t.toLowerCase()))) return "venture";
+    if (filters.propertyType.some(t => ["villa", "independent-house"].includes(t.toLowerCase()))) return "villa";
+    return "all";
+  }, [filters.propertyType]);
+
+  const handleNewLaunchTypeChange = (type: "all" | "apartment" | "venture" | "villa") => {
+    let newTypes: string[] = [];
+    if (type === "apartment") newTypes = ["apartment"];
+    else if (type === "venture") newTypes = ["venture"];
+    else if (type === "villa") newTypes = ["villa"];
+
+    setFilters(prev => ({ ...prev, propertyType: newTypes }));
+    setVisibleCount(12);
+
+    const newParams = new URLSearchParams(searchParams.toString());
+    if (type === "all") {
+      newParams.delete("projectType");
+      newParams.delete("propertyType");
+    } else {
+      newParams.set("projectType", type);
+    }
+    const queryStr = newParams.toString();
+    router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
+  };
+
   if (!mounted) return <SearchPageSkeleton />;
 
   return (
@@ -703,40 +795,98 @@ function UnifiedSearchPage() {
 
             {/* Controls Bar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200 dark:border-slate-800 shadow-xs">
-                <button
-                  onClick={() => handleTabChange("all")}
-                  className={cn(
-                    "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer",
-                    activeTab === "all"
-                      ? "bg-amber-500 text-slate-950 shadow-sm font-black"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  )}
-                >
-                  All ({allCount})
-                </button>
-                <button
-                  onClick={() => handleTabChange("properties")}
-                  className={cn(
-                    "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer",
-                    activeTab === "properties"
-                      ? "bg-amber-500 text-slate-950 shadow-sm font-black"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  )}
-                >
-                  Properties ({propCount})
-                </button>
-                <button
-                  onClick={() => handleTabChange("projects")}
-                  className={cn(
-                    "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer",
-                    activeTab === "projects"
-                      ? "bg-amber-500 text-slate-950 shadow-sm font-black"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  )}
-                >
-                  Projects ({projCount})
-                </button>
+              <div className="flex items-center overflow-x-auto no-scrollbar whitespace-nowrap max-w-full bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200 dark:border-slate-800 shadow-xs gap-0.5 sm:gap-1">
+                {isNewLaunches ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleNewLaunchTypeChange("all")}
+                      className={cn(
+                        "px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                        currentNewLaunchType === "all"
+                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      )}
+                    >
+                      All ({allNewLaunchCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNewLaunchTypeChange("apartment")}
+                      className={cn(
+                        "px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                        currentNewLaunchType === "apartment"
+                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      )}
+                    >
+                      Apartments ({apartmentCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNewLaunchTypeChange("venture")}
+                      className={cn(
+                        "px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                        currentNewLaunchType === "venture"
+                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      )}
+                    >
+                      Ventures ({ventureCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNewLaunchTypeChange("villa")}
+                      className={cn(
+                        "px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                        currentNewLaunchType === "villa"
+                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      )}
+                    >
+                      Villas ({villaCount})
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleTabChange("all")}
+                      className={cn(
+                        "px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                        activeTab === "all"
+                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      )}
+                    >
+                      All ({allCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTabChange("properties")}
+                      className={cn(
+                        "px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                        activeTab === "properties"
+                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      )}
+                    >
+                      Properties ({propCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTabChange("projects")}
+                      className={cn(
+                        "px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                        activeTab === "projects"
+                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      )}
+                    >
+                      Projects ({projCount})
+                    </button>
+                  </>
+                )}
               </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">

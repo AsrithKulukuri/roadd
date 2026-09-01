@@ -31,7 +31,7 @@ export function CTASection() {
               </Link>
             </Button>
             <Button variant="outline" size="xl" className="w-full sm:w-auto text-white border-white/20 hover:bg-white/10" asChild>
-              <Link href="/search?type=projects">
+              <Link href="/search?type=projects&status=new-launch">
                 New Launches
               </Link>
             </Button>

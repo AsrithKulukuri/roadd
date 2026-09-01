@@ -250,6 +250,9 @@ export function HeroSection() {
     const params = new URLSearchParams();
     if (activeTab === "projects") {
       params.set("type", "projects");
+    } else if (activeTab === "new-launch") {
+      params.set("type", "projects");
+      params.set("status", "new-launch");
     } else if (activeTab === "nearme") {
       params.set("type", "buy");
       params.set("nearMe", "true");

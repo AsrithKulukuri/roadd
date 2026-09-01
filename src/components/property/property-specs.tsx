@@ -75,16 +75,16 @@ export function PropertySpecs({ property }: PropertySpecsProps) {
         return (
           <div
             key={i} 
-            className={`${i >= 5 && !showAllMobile ? "hidden min-[480px]:flex" : "flex"} min-h-[92px] items-center gap-2.5 p-3 rounded-2xl bg-[#0b1429] border border-slate-700/80 hover:border-amber-500/60 transition-colors shadow-sm`}
+            className={`${i >= 5 && !showAllMobile ? "hidden min-[480px]:flex" : "flex"} min-h-[92px] items-center gap-2.5 p-3 rounded-2xl !bg-white border border-slate-200 hover:border-amber-500/60 transition-colors shadow-sm`}
           >
-            <div className="w-9 h-9 rounded-full bg-white/5 border border-slate-400/80 flex items-center justify-center shrink-0">
-              <Icon className="w-4 h-4 text-amber-400" />
+            <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-300 flex items-center justify-center shrink-0">
+              <Icon className="w-4 h-4 text-amber-500" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[9px] uppercase tracking-normal font-extrabold text-slate-400 leading-tight break-words">
+              <p className="text-[10px] uppercase tracking-normal font-extrabold !text-[#64748b] leading-tight break-words">
                 {spec.label}
               </p>
-              <p className="font-extrabold text-white text-xs sm:text-sm break-words mt-1 leading-snug">
+              <p className="font-extrabold !text-[#0f172a] text-[13px] sm:text-sm break-words mt-1 leading-snug opacity-100">
                 {spec.value}
               </p>
               <p className="hidden sm:block text-[10px] text-slate-400 font-medium break-words mt-1 leading-snug">

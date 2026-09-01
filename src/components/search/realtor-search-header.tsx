@@ -226,8 +226,8 @@ export function RealtorSearchHeader({
                 className={cn(
                   "relative flex-1 min-w-0 flex items-center h-10 sm:h-11 rounded-full border bg-white transition-all duration-200 shadow-xs",
                   isFocused
-                    ? "border-[#f1a010] ring-2 ring-[#f1a010]/20 shadow-md"
-                    : "border-slate-300 hover:border-[#f1a010]"
+                    ? "border-slate-400 ring-2 ring-slate-200/60 shadow-sm"
+                    : "border-slate-300 hover:border-slate-400"
                 )}
               >
                 {/* Input & Animated Carousel Placeholder Overlay */}
@@ -239,10 +239,11 @@ export function RealtorSearchHeader({
                     onChange={(e) => setSearchInput(e.target.value)}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
-                    className="w-full h-full bg-transparent text-sm text-slate-900 font-medium focus:outline-none z-10"
+                    style={{ outline: "none", boxShadow: "none", border: "none" }}
+                    className="w-full h-full bg-transparent text-sm text-slate-900 font-medium border-0 outline-none ring-0 shadow-none focus:border-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:border-0 z-10"
                     spellCheck={false}
-                  autoComplete="off"
-                />
+                    autoComplete="off"
+                  />
 
                 {/* Animated Placeholder Text starting with "Try..." */}
                 {!searchInput && !isFocused && (
@@ -458,7 +459,7 @@ export function RealtorSearchHeader({
               title={viewMode === "map" ? "Switch to List View" : "Go Back"}
               aria-label={viewMode === "map" ? "Switch to List View" : "Go Back"}
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
             <div className="flex-1 min-w-0">
               <RealtorFilterBar
