@@ -15,7 +15,7 @@
   
   /* Override Tailwind's default amber to match the logo color */
   --color-amber-400: #f3b131;
-  --color-amber-500: #f1a010;
+  --color-amber-500: #faad13;
   --color-amber-600: #d28a0e;
 
   /* Backgrounds */
@@ -27,7 +27,7 @@
   /* Borders */
   --color-border-default: var(--border-default);
   --color-border-subtle: var(--border-subtle);
-  --color-border-amber: #f1a01040;
+  --color-border-amber: #faad1340;
 
   /* Text */
   --color-text-primary: var(--text-primary);
@@ -37,8 +37,8 @@
   /* Semantic */
   --color-success: #3BB273;
   --color-success-muted: #3BB27320;
-  --color-warning: #f1a010;
-  --color-warning-muted: #f1a01020;
+  --color-warning: #faad13;
+  --color-warning-muted: #faad1320;
   --color-error: #E5484D;
   --color-error-muted: #E5484D20;
   --color-info: #3B82F6;
@@ -48,12 +48,11 @@
   --color-glass-bg: var(--glass-bg);
   --color-glass-border: var(--glass-border);
 
-  /* Font Families — Realtor.com Style System Font Stack */
-  --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  --font-space-grotesk: "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-heading: var(--font-inter);
-  --font-body: var(--font-inter);
-  --font-sans: var(--font-inter);
+  /* Font Families */
+  --font-inter: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-inter), "Inter", -apple-system, sans-serif;
+  --font-body: var(--font-inter), "Inter", -apple-system, sans-serif;
+  --font-sans: var(--font-inter), "Inter", -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* Font Sizes */
@@ -97,7 +96,6 @@
   --text-overline--letter-spacing: 0.08em;
 
   /* Spacing Scale (extends Tailwind) */
-  --spacing-18: 4.5rem;
   --spacing-22: 5.5rem;
   --spacing-26: 6.5rem;
   --spacing-30: 7.5rem;

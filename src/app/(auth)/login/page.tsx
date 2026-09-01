@@ -130,20 +130,10 @@ function LoginForm() {
         className="w-full max-w-md glass border border-glass-border rounded-3xl p-8 shadow-elevated relative z-10"
       >
         {/* ROAD Branding Header */}
-        <div className="flex flex-col items-center mb-8 text-center">
-          <Logo size="lg" className="mb-6" />
-          <h1 className="font-heading text-2xl font-bold text-text-primary tracking-tight flex items-center gap-2">
-            {activeStep === "profile" ? (
-              <>
-                <UserCheck className="w-6 h-6 text-amber-400" />
-                <span>Complete Profile</span>
-              </>
-            ) : (
-              <>
-                <MessageSquare className="w-6 h-6 text-amber-400 fill-amber-400/20" />
-                <span>Welcome</span>
-              </>
-            )}
+        <div className="flex flex-col items-center mb-6 text-center">
+          <Logo size="xl" showText={false} className="mb-3" />
+          <h1 className="font-heading text-2xl font-bold text-text-primary tracking-tight">
+            {activeStep === "profile" ? "Complete Profile" : "Welcome"}
           </h1>
           <p className="text-text-secondary text-sm text-center mt-2">
             {activeStep === "phone" && "Enter your mobile number to sign in via WhatsApp OTP."}
@@ -151,16 +141,6 @@ function LoginForm() {
             {activeStep === "profile" && "Please enter your name and email to complete your account."}
           </p>
         </div>
-
-        {/* Project View Privacy Notice (Only when redirecting to a project) */}
-        {redirectTarget.startsWith("/projects") && (
-          <div className="mb-6 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-2.5 shadow-xs">
-            <ShieldCheck className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-            <p className="leading-relaxed">
-              <strong className="font-semibold text-amber-950 dark:text-amber-200">Project Privacy Notice:</strong> By viewing project details, your name and phone may be shared with the builder for follow-up.
-            </p>
-          </div>
-        )}
 
         {/* Step 1: Phone Input */}
         {activeStep === "phone" && (

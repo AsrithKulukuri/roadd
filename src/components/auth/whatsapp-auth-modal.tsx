@@ -148,19 +148,9 @@ export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthMo
 
           {/* Header */}
           <div className="flex flex-col items-center text-center mb-6">
-            <Logo size="md" isDarkBg={true} className="mb-4" />
-            <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-              {activeStep === "profile" ? (
-                <>
-                  <UserCheck className="w-5 h-5 text-amber-400" />
-                  <span>Complete Profile</span>
-                </>
-              ) : (
-                <>
-                  <MessageSquare className="w-5 h-5 text-amber-400" />
-                  <span>WhatsApp Sign In</span>
-                </>
-              )}
+            <Logo size="lg" showText={false} isDarkBg={true} className="mb-3" />
+            <h2 className="text-xl font-black text-white tracking-tight">
+              {activeStep === "profile" ? "Complete Profile" : "Welcome"}
             </h2>
             <p className="text-xs text-slate-400 mt-1 max-w-xs">
               {activeStep === "phone" && "Enter your mobile number to receive a WhatsApp OTP code."}

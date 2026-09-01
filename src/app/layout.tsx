@@ -1,8 +1,17 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "sonner";
 import { ClientLayoutWrapper } from "@/components/layout/client-layout-wrapper";
+import { cn } from "@/lib/utils";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+});
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://roadd-three.vercel.app";
 
@@ -153,7 +162,7 @@ export default function RootLayout({
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className="font-sans antialiased"
+      className={cn("font-sans antialiased", inter.variable)}
     >
       <head>
         <script
@@ -161,7 +170,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebsite) }}
         />
       </head>
-      <body suppressHydrationWarning className="min-h-screen bg-bg-primary font-body text-text-primary antialiased">
+      <body suppressHydrationWarning className={cn("min-h-screen bg-bg-primary font-sans text-text-primary antialiased", inter.className)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

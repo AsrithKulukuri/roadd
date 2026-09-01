@@ -22,10 +22,17 @@ export function Logo({
   size = "md",
   showText = true,
   href = "/",
+  isDarkBg,
   textColor,
 }: LogoProps) {
   const { iconHeight, textClass } = sizeMap[size];
-  const resolvedTextColor = textColor || "text-white";
+  const resolvedTextColor =
+    textColor ||
+    (isDarkBg === true
+      ? "text-white"
+      : isDarkBg === false
+      ? "text-slate-900"
+      : "text-slate-900 dark:text-white");
 
   const content = (
     <div className={cn("flex items-center gap-2.5 group select-none", className)}>
@@ -57,9 +64,12 @@ export function Logo({
               "font-heading font-black tracking-tight leading-none flex items-center gap-1",
               textClass
             )}
+            style={{ fontWeight: 900 }}
           >
-            <span className="text-[#faad13] font-black">ROAD</span>
-            <span className={cn("font-black tracking-tight", resolvedTextColor)}>
+            <span className="text-[#faad13] font-black" style={{ fontWeight: 900 }}>
+              ROAD
+            </span>
+            <span className={cn("font-black tracking-tight", resolvedTextColor)} style={{ fontWeight: 900 }}>
               FACING
             </span>
           </div>
