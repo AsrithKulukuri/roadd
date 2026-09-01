@@ -886,7 +886,10 @@ export function HeroSection() {
             e.stopPropagation();
             handleSearchSubmit(e);
           }}
-          className="relative w-full max-w-[760px] h-[52px] sm:h-[58px] mx-auto flex items-center bg-white border border-slate-200/90 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 rounded-xl sm:rounded-2xl px-4 shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] transition-all duration-200 group z-30"
+          className={cn(
+            "relative w-full max-w-[760px] h-[52px] sm:h-[58px] mx-auto flex items-center bg-white border border-slate-200/90 rounded-xl sm:rounded-2xl px-4 shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] transition-all duration-200 group",
+            isFocused ? "z-[60] border-slate-400 ring-2 ring-slate-200/60" : "z-30 hover:border-slate-300"
+          )}
         >
           {/* Left: Outline Search Icon */}
           <Search className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-slate-500 mr-3 shrink-0 pointer-events-none group-hover:text-slate-800 transition-colors stroke-[2]" />
@@ -972,7 +975,7 @@ export function HeroSection() {
           {isFocused && liveHeroSuggestions && liveHeroSuggestions.hasResults && (
             <div
               onMouseDown={(e) => e.preventDefault()}
-              className="absolute left-0 right-0 top-full mt-2 z-[100] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 text-left animate-in fade-in zoom-in-95"
+              className="absolute left-0 right-0 top-full mt-2 z-[100] bg-slate-950 border border-slate-800 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden divide-y divide-slate-800/80 text-left animate-in fade-in zoom-in-95 max-h-[60vh] overflow-y-auto no-scrollbar"
             >
               {/* Direct Ref ID Match Card */}
               {liveHeroSuggestions.directRefMatch && (
@@ -986,17 +989,17 @@ export function HeroSection() {
                       router.push(match.url);
                     }
                   }}
-                  className="px-4 py-3 bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent hover:from-amber-500/30 cursor-pointer flex items-center justify-between gap-3 border-b border-amber-500/30 transition-all"
+                  className="px-4 py-3 bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-slate-950 hover:from-amber-500/30 cursor-pointer flex items-center justify-between gap-3 border-b border-amber-500/30 transition-all"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-xs tracking-wider shadow-xs shrink-0">
                       🎯 {liveHeroSuggestions.directRefMatch.refId}
                     </span>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-black text-slate-900 dark:text-white truncate">
+                      <span className="text-xs font-black text-white truncate">
                         {liveHeroSuggestions.directRefMatch.title}
                       </span>
-                      <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                      <span className="text-[11px] font-semibold text-amber-400">
                         Exact Ref Match • Tap to Open Directly
                       </span>
                     </div>
@@ -1009,7 +1012,7 @@ export function HeroSection() {
               <button
                 type="button"
                 onClick={() => handleSearchSubmit()}
-                className="w-full text-left px-4 py-2.5 hover:bg-amber-500/10 flex items-center gap-3 transition-colors text-xs font-bold text-amber-600 dark:text-amber-400"
+                className="w-full text-left px-4 py-3 hover:bg-slate-900 flex items-center gap-3 transition-colors text-xs font-bold text-amber-400 bg-slate-950"
               >
                 <Search className="w-4 h-4 shrink-0 text-amber-500" />
                 <span className="truncate">Search all for &ldquo;<strong>{searchQuery}</strong>&rdquo;</span>
@@ -1017,8 +1020,8 @@ export function HeroSection() {
 
               {/* Projects suggestions */}
               {liveHeroSuggestions.projects.length > 0 && (
-                <div className="p-2">
-                  <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <div className="p-2 bg-slate-950">
+                  <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
                     Builder Projects
                   </div>
                   {liveHeroSuggestions.projects.map((p) => (
@@ -1028,14 +1031,14 @@ export function HeroSection() {
                         setIsFocused(false);
                         openProject(p, e);
                       }}
-                      className="px-2.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                      className="px-2.5 py-2 hover:bg-slate-900 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold shrink-0">Project</span>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{p.name}</span>
+                        <span className="px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-[10px] font-bold shrink-0">Project</span>
+                        <span className="text-xs font-bold text-white truncate">{p.name}</span>
                         <span className="text-[11px] text-slate-400 truncate">({p.location?.locality || p.location?.city})</span>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
                     </div>
                   ))}
                 </div>
@@ -1043,25 +1046,25 @@ export function HeroSection() {
 
               {/* Properties suggestions */}
               {liveHeroSuggestions.properties.length > 0 && (
-                <div className="p-2">
-                  <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <div className="p-2 bg-slate-950">
+                  <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
                     Properties
                   </div>
                   {liveHeroSuggestions.properties.map((p) => (
                     <div
                       key={`hero-prop-${p.id}`}
-                      onClick={() => {
+                      onClick={(e) => {
                         setIsFocused(false);
                         router.push(`/properties/${p.slug || p.id}`);
                       }}
-                      className="px-2.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                      className="px-2.5 py-2 hover:bg-slate-900 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold shrink-0">Property</span>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{p.title}</span>
+                        <span className="px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold shrink-0">Property</span>
+                        <span className="text-xs font-bold text-white truncate">{p.title}</span>
                         <span className="text-[11px] text-slate-400 truncate">({p.location?.locality || p.location?.city})</span>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
                     </div>
                   ))}
                 </div>

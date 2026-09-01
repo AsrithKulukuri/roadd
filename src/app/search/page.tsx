@@ -15,7 +15,7 @@ import { MapWrapper } from "@/components/map/map-wrapper";
 import { Search as SearchIcon, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { matchesPropertySearch, matchesProjectSearch, parseSearchIntent, evaluatePropertyFilters } from "@/lib/search-engine";
+import { matchesPropertySearch, matchesProjectSearch, parseSearchIntent, evaluatePropertyFilters, evaluateProjectFilters } from "@/lib/search-engine";
 import { useIsMounted } from "@/hooks/use-is-mounted";
 
 type SortByOption = "relevant" | "price-asc" | "price-desc" | "newest";
@@ -315,140 +315,12 @@ function UnifiedSearchPage() {
         return false;
       }
 
-      // 1b. Location & Geography (Cities, Localities)
-      const projCity = (project.location?.city || "").toLowerCase();
-      const projLocality = (project.location?.locality || "").toLowerCase();
-      const projAddress = (project.location?.address || "").toLowerCase();
-      const projCorpus = `${projCity} ${projLocality} ${projAddress} ${(project.name || "").toLowerCase()}`;
-
-      if (filters.cities && filters.cities.length > 0) {
-        const matchesCity = filters.cities.some((c: string) => {
-          const target = c.toLowerCase().trim();
-          return projCity.includes(target) || projLocality.includes(target) || projCorpus.includes(target);
-        });
-        if (!matchesCity) return false;
-      }
-
-      if (filters.localities && filters.localities.length > 0) {
-        const matchesLoc = filters.localities.some((l: string) => {
-          const target = l.toLowerCase().trim();
-          return projLocality.includes(target) || projAddress.includes(target) || projCorpus.includes(target);
-        });
-        if (!matchesLoc) return false;
-      }
-
-      // 2. Display Category (Featured / Recommended / Budget Friendly)
-      if (filters.displayCategory && filters.displayCategory !== "all") {
-        const cat = filters.displayCategory.toLowerCase();
-        if (cat === "featured" && !(project.displayCategory === "featured" || project.isFeatured)) {
-          return false;
-        }
-        if (cat === "recommended" && !(project.displayCategory === "recommended" || (project as unknown as { isRecommended?: boolean }).isRecommended)) {
-          return false;
-        }
-        if ((cat === "budget" || cat === "budget_friendly") && !(project.displayCategory === "budget_friendly")) {
-          return false;
-        }
-      }
-
-      // 3. Property Type
-      if (filters.propertyType.length > 0) {
-        const pType = project.projectType?.toLowerCase() || "";
-        let matches = false;
-        if (pType === "apartment" && filters.propertyType.includes("apartment")) matches = true;
-        if ((pType === "villa" || pType === "independent-house") && (filters.propertyType.includes("villa") || filters.propertyType.includes("independent-house"))) matches = true;
-        
-        // CRDA Ventures / Plotted Layouts (strictly venture projectType)
-        const wantsVenture = filters.propertyType.some(t => ["venture", "crda-ventures", "crda-venture", "residential-land", "plot", "venture-plot"].includes(t.toLowerCase()));
-        if (pType === "venture" && wantsVenture) matches = true;
-
-        if (pType === "commercial" && (filters.propertyType.includes("commercial-spaces") || filters.propertyType.includes("commercial") || filters.propertyType.includes("shops"))) matches = true;
-        if (filters.propertyType.includes("gated-community") && ["apartment", "villa", "independent-house"].includes(pType)) matches = true;
-        
-        if (!matches) return false;
-      }
-
-      // 4. BHK
-      if (filters.bhk.length > 0) {
-        if (!project.configurations) return false;
-        const hasMatchingBhk = project.configurations.some(cfg => {
-          const cfgBedrooms = cfg.bedrooms || 0;
-          return filters.bhk.some(b => {
-             if (b === "4+") return cfgBedrooms >= 4;
-             return cfgBedrooms.toString() === b;
-          });
-        });
-        if (!hasMatchingBhk) return false;
-      }
-
-      // 5. Budget Range (INR)
-      if (project.configurations && project.configurations.length > 0) {
-        const hasBudgetOverlap = project.configurations.some(cfg => {
-           const pMin = cfg.priceMin || 0;
-           const pMax = cfg.priceMax || pMin;
-           return pMin <= filters.budget[1] && pMax >= filters.budget[0];
-        });
-        if (!hasBudgetOverlap) return false;
-      } else {
-        if (filters.budget[0] > 0 || filters.budget[1] < 100000000) return false;
-      }
-
-      // 6. Availability
-      if (filters.availability.length > 0) {
-        const isReady = project.constructionStatus === "ready-to-move";
-        const matchesAvailability = filters.availability.some((av) => {
-          if (av === "ready") return isReady;
-          if (av === "under-construction") return !isReady;
-          return true;
-        });
-        if (!matchesAvailability) return false;
-      }
-
-      // 7. Possession Status
-      if (filters.possessionStatus.length > 0) {
-        const isReady = project.constructionStatus === "ready-to-move";
-        const matchesPossession = filters.possessionStatus.some((ps) => {
-          if (ps === "ready") return isReady;
-          if (ps === "under-construction") return !isReady;
-          return true;
-        });
-        if (!matchesPossession) return false;
-      }
-
-      // 8. RERA Approved
-      if (filters.reraApproved && !project.reraApproved && !project.reraId) {
+      // 2. Complete Multi-Attribute Evaluation
+      if (!evaluateProjectFilters(project, filters)) {
         return false;
       }
 
-      // 9. Verified Badges
-      if (filters.verifiedBadges.length > 0) {
-        if (filters.verifiedBadges.includes("rera") && !project.reraApproved && !project.reraId) return false;
-        if (filters.verifiedBadges.includes("video_verified") && !project.videoUrl) return false;
-        if (filters.verifiedBadges.includes("zero_brokerage") && !project.noBrokerage) return false;
-      }
-
-      // 10. Gated Community
-      if (filters.gatedCommunity && project.projectType !== "apartment" && project.projectType !== "villa") {
-        return false;
-      }
-
-      // 11. Facilities / Amenities
-      if (filters.amenities.length > 0) {
-        const projFacilities = (project.facilities || []).map((f) => f.toLowerCase());
-        const hasReqFacility = filters.amenities.some((req) =>
-          projFacilities.some((pf) => pf.includes(req.toLowerCase()))
-        );
-        if (!hasReqFacility && projFacilities.length > 0) return false;
-      }
-
-      // 12. Media Types
-      if (filters.mediaTypes.length > 0) {
-        if (filters.mediaTypes.includes("photos") && (!project.images || project.images.length === 0)) return false;
-        if (filters.mediaTypes.includes("video") && !project.videoUrl) return false;
-        if (filters.mediaTypes.includes("brochure") && !project.brochureUrl) return false;
-      }
-
-      // 13. Near Me Distance
+      // 3. Near Me Distance
       if (searchParams.get("nearMe") === "true" && userLocation) {
         if (!project.location?.latitude || !project.location?.longitude) return false;
         const distance = getDistanceFromLatLonInKm(
@@ -460,28 +332,9 @@ function UnifiedSearchPage() {
         if (distance > 20) return false; // 20km radius
       }
 
-      // 15. Posted Since
-      if (filters.postedSince && filters.postedSince !== "any" && filters.postedSince !== "") {
-        const projDateStr = project.createdAt || project.updatedAt;
-        if (projDateStr) {
-          const projTime = new Date(projDateStr).getTime();
-          const ps = filters.postedSince.toLowerCase();
-          let maxAgeMs = 0;
-          if (ps === "1day" || ps === "yesterday" || ps === "1d") maxAgeMs = 1 * 24 * 60 * 60 * 1000;
-          else if (ps === "3days" || ps === "3d") maxAgeMs = 3 * 24 * 60 * 60 * 1000;
-          else if (ps === "7days" || ps === "1week" || ps === "7d") maxAgeMs = 7 * 24 * 60 * 60 * 1000;
-          else if (ps === "15days" || ps === "2weeks" || ps === "15d") maxAgeMs = 15 * 24 * 60 * 60 * 1000;
-          else if (ps === "30days" || ps === "1month" || ps === "30d") maxAgeMs = 30 * 24 * 60 * 60 * 1000;
-          else if (ps === "60days" || ps === "2months" || ps === "60d") maxAgeMs = 60 * 24 * 60 * 60 * 1000;
-          else if (ps === "90days" || ps === "3months" || ps === "90d") maxAgeMs = 90 * 24 * 60 * 60 * 1000;
-
-          if (maxAgeMs > 0 && (1788155000000 - projTime) > maxAgeMs) return false;
-        }
-      }
-
       return true;
     });
-  }, [projects, filters, searchParamsString, userLocation]);
+  }, [projects, filters, searchParams, userLocation]);
 
   // Combine and Sort
   const combinedResults = useMemo(() => {

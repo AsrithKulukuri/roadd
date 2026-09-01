@@ -27,7 +27,7 @@ import { ModernBudgetDropdown } from "@/components/ui/modern-budget-dropdown";
 import { useLocationsStore } from "@/stores/locations-store";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
-import { evaluatePropertyFilters } from "@/lib/search-engine";
+import { evaluatePropertyFilters, evaluateProjectFilters } from "@/lib/search-engine";
 import { useIsMounted } from "@/hooks/use-is-mounted";
 
 interface RealtorFilterBarProps {
@@ -62,50 +62,7 @@ export function RealtorFilterBar({
   // Live count summing BOTH matching properties and projects
   const liveTotalCount = useMemo(() => {
     const propMatches = (allProperties || []).filter((p) => evaluatePropertyFilters(p, filters));
-
-    const projMatches = (allProjects || []).filter((proj) => {
-      // 1. Budget Range (INR)
-      if (filters.budget && (filters.budget[0] > 0 || filters.budget[1] < 100000000)) {
-        if (proj.configurations && proj.configurations.length > 0) {
-          const hasBudgetOverlap = proj.configurations.some((cfg) => {
-            const pMin = cfg.priceMin || 0;
-            const pMax = cfg.priceMax || pMin;
-            return pMin <= filters.budget[1] && pMax >= filters.budget[0];
-          });
-          if (!hasBudgetOverlap) return false;
-        } else {
-          return false;
-        }
-      }
-
-      // 2. Cities
-      if (filters.cities && filters.cities.length > 0) {
-        const projCity = (proj.location?.city || "").toLowerCase();
-        const projLocality = (proj.location?.locality || "").toLowerCase();
-        const matchesCity = filters.cities.some((c) => {
-          const target = c.toLowerCase().trim();
-          return projCity.includes(target) || projLocality.includes(target);
-        });
-        if (!matchesCity) return false;
-      }
-
-      // 3. Property Type
-      if (filters.propertyType && filters.propertyType.length > 0) {
-        const pType = (proj.projectType || "").toLowerCase();
-        const matches = filters.propertyType.some((t) => {
-          const target = t.toLowerCase();
-          if (target === pType) return true;
-          if (target === "apartment" && pType.includes("apartment")) return true;
-          if (target === "villa" && (pType.includes("villa") || pType.includes("independent-house"))) return true;
-          if (target === "residential-land" && (pType.includes("land") || pType.includes("plot") || pType === "venture")) return true;
-          if (target === "commercial-spaces" && (pType.includes("commercial") || pType.includes("shop"))) return true;
-          return false;
-        });
-        if (!matches) return false;
-      }
-
-      return true;
-    });
+    const projMatches = (allProjects || []).filter((proj) => evaluateProjectFilters(proj, filters));
 
     return propMatches.length + projMatches.length;
   }, [allProperties, allProjects, filters]);

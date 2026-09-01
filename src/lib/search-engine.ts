@@ -627,3 +627,249 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
 
   return true;
 }
+
+/**
+ * Complete Multi-Attribute Filter Engine for Builder Projects
+ */
+export function evaluateProjectFilters(
+  project: Project,
+  filters: Partial<FilterState> | Record<string, unknown>,
+  currentTimeMs?: number
+): boolean {
+  if (!filters) return true;
+
+  // 0. Location & Geography (Cities, Localities)
+  const projCity = (project.location?.city || "").toLowerCase();
+  const projLocality = (project.location?.locality || "").toLowerCase();
+  const projAddress = (project.location?.address || "").toLowerCase();
+  const projName = (project.name || "").toLowerCase();
+  const projCorpus = `${projCity} ${projLocality} ${projAddress} ${projName}`;
+
+  if (filters.cities && Array.isArray(filters.cities) && filters.cities.length > 0) {
+    const matchesCity = filters.cities.some((c: string) => {
+      const target = c.toLowerCase().trim();
+      if (!target) return false;
+      return projCity.includes(target) || projLocality.includes(target) || projCorpus.includes(target);
+    });
+    if (!matchesCity) return false;
+  }
+
+  if (filters.localities && Array.isArray(filters.localities) && filters.localities.length > 0) {
+    const matchesLoc = filters.localities.some((l: string) => {
+      const target = l.toLowerCase().trim();
+      if (!target) return false;
+      return projLocality.includes(target) || projAddress.includes(target) || projCorpus.includes(target);
+    });
+    if (!matchesLoc) return false;
+  }
+
+  // 1. Transaction Type (Projects are for sale / buy / investment, not for rent / PG)
+  if (filters.transactionType && typeof filters.transactionType === "string") {
+    const tType = filters.transactionType.toLowerCase();
+    if (tType === "rent" || tType === "pg") {
+      return false;
+    }
+  }
+
+  // 2. Property Type
+  const rawPropType = Array.isArray(filters.propertyType) ? filters.propertyType : [];
+  const rawSubPropType = Array.isArray(filters.subPropertyType) ? filters.subPropertyType : [];
+  const pType = (project.projectType || "").toLowerCase();
+
+  if (rawPropType.length > 0) {
+    const matchesType = rawPropType.some((t: string) => {
+      const tt = t.toLowerCase();
+      if (tt === pType) return true;
+      if (tt === "apartment" && pType.includes("apartment")) return true;
+      if (tt === "villa" && (pType.includes("villa") || pType.includes("independent-house"))) return true;
+      if (["venture", "crda-ventures", "crda-venture", "residential-land", "plot", "venture-plot", "land"].includes(tt) && (pType === "venture" || pType === "plot" || pType === "land")) return true;
+      if (["commercial-spaces", "commercial", "shops", "commercial-shop"].includes(tt) && pType.includes("commercial")) return true;
+      if (tt === "gated-community" && ["apartment", "villa", "independent-house"].includes(pType)) return true;
+      return false;
+    });
+    if (!matchesType) return false;
+  }
+
+  // 3. Sub Property Type
+  if (rawSubPropType.length > 0) {
+    const matchesSubType = rawSubPropType.some((st: string) => {
+      const sub = st.toLowerCase();
+      if (["residential-flat", "apartment", "builder-floor", "flat"].includes(sub) && pType === "apartment") return true;
+      if (["villa", "independent-house", "house"].includes(sub) && (pType === "villa" || pType === "independent-house")) return true;
+      if (["plot", "venture", "land", "residential-plot", "venture-plot"].includes(sub) && (pType === "venture" || pType === "plot" || pType === "land")) return true;
+      if (["commercial-shop", "office", "commercial", "retail"].includes(sub) && pType === "commercial") return true;
+      return false;
+    });
+    if (!matchesSubType) return false;
+  }
+
+  // 4. BHK
+  const rawBhk = Array.isArray(filters.bhk) ? (filters.bhk as string[]) : [];
+  if (rawBhk.length > 0) {
+    if (!project.configurations || project.configurations.length === 0) return false;
+    const hasMatchingBhk = project.configurations.some((cfg) => {
+      const beds = cfg.bedrooms || 0;
+      return rawBhk.some((b: string) => {
+        if (b === "5+" || b === "4+") return beds >= parseInt(b, 10);
+        return beds.toString() === b;
+      });
+    });
+    if (!hasMatchingBhk) return false;
+  }
+
+  // 5. Budget Range (INR)
+  const rawBudget = Array.isArray(filters.budget) ? (filters.budget as [number, number]) : undefined;
+  if (rawBudget) {
+    const [minB, maxB] = rawBudget;
+    if (minB > 0 || maxB < 100000000) {
+      if (project.configurations && project.configurations.length > 0) {
+        const hasBudgetOverlap = project.configurations.some((cfg) => {
+          const pMin = cfg.priceMin || 0;
+          const pMax = cfg.priceMax || pMin;
+          return pMin <= maxB && pMax >= minB;
+        });
+        if (!hasBudgetOverlap) return false;
+      }
+    }
+  }
+
+  // 6. Covered Area (sqft)
+  if (filters.coveredArea && Array.isArray(filters.coveredArea)) {
+    const [minArea, maxArea] = filters.coveredArea;
+    if (minArea > 0 || maxArea < 10000) {
+      if (project.configurations && project.configurations.length > 0) {
+        const hasAreaOverlap = project.configurations.some((cfg) => {
+          const aMin = cfg.builtUpAreaMin || cfg.superBuiltUpAreaMin || cfg.plinthAreaMin || (cfg.plotSizeMin ? cfg.plotSizeMin * 9 : 0) || 0;
+          const aMax = cfg.builtUpAreaMax || cfg.superBuiltUpAreaMax || cfg.plinthAreaMax || (cfg.plotSizeMax ? cfg.plotSizeMax * 9 : 0) || aMin;
+          if (aMin === 0 && aMax === 0) return true; // unspecified config area
+          return aMin <= maxArea && aMax >= minArea;
+        });
+        if (!hasAreaOverlap) return false;
+      }
+    }
+  }
+
+  // 7. Possession Status & Availability
+  const rawAvailability = Array.isArray((filters as Record<string, unknown>).availability) ? ((filters as Record<string, unknown>).availability as string[]) : [];
+  const rawPossession = Array.isArray(filters.possessionStatus) ? filters.possessionStatus : [];
+  const possessionFilters = [...rawPossession, ...rawAvailability];
+
+  if (possessionFilters.length > 0) {
+    const status = (project.constructionStatus || "").toLowerCase();
+    const isReady = status === "ready-to-move";
+    const isUnderConstruction = status === "under-construction";
+    const isNewLaunch = status === "new-launch" || status === "upcoming";
+
+    const matchesPossession = possessionFilters.some((ps: string) => {
+      const p = ps.toLowerCase();
+      if (p === "ready" || p === "immediate" || p === "ready-to-move") return isReady;
+      if (p === "under-construction") return isUnderConstruction;
+      if (p === "upcoming" || p === "new-launch") return isNewLaunch;
+      return true;
+    });
+    if (!matchesPossession) return false;
+  }
+
+  // 8. Posted By / Owner Type (Projects are from Builders / Developers / Channel Partners)
+  if (filters.postedBy && Array.isArray(filters.postedBy) && filters.postedBy.length > 0) {
+    const hasBuilderOrAgent = filters.postedBy.some((pb: string) => {
+      const p = pb.toLowerCase();
+      return p === "builder" || p === "developer" || p === "agent" || p === "channel_partner";
+    });
+    if (!hasBuilderOrAgent) {
+      // User selected ONLY "owner" or other non-builder roles
+      return false;
+    }
+  }
+
+  // 9. Sale Type (Projects are always "new" launches/primary developments)
+  if (filters.saleType && Array.isArray(filters.saleType) && filters.saleType.length > 0) {
+    if (filters.saleType.includes("resale") && !filters.saleType.includes("new")) {
+      return false;
+    }
+  }
+
+  // 10. RERA Approved & Badges
+  if (filters.reraApproved && !project.reraApproved && !project.reraId) {
+    return false;
+  }
+  const reraRegProps = "reraRegisteredProperties" in filters ? (filters as Record<string, unknown>).reraRegisteredProperties : undefined;
+  if (reraRegProps && !project.reraApproved && !project.reraId) {
+    return false;
+  }
+  if (filters.verifiedBadges && Array.isArray(filters.verifiedBadges) && filters.verifiedBadges.length > 0) {
+    if (filters.verifiedBadges.includes("rera") && !project.reraApproved && !project.reraId) return false;
+    if (filters.verifiedBadges.includes("video_verified") && !project.videoUrl) return false;
+    if (filters.verifiedBadges.includes("zero_brokerage") && !project.noBrokerage) return false;
+  }
+
+  // 11. Gated Community
+  if (filters.gatedCommunity && project.projectType !== "apartment" && project.projectType !== "villa") {
+    return false;
+  }
+
+  // 12. Facing
+  if (filters.facing && Array.isArray(filters.facing) && filters.facing.length > 0) {
+    const configFacings = (project.configurations || []).flatMap((c) => c.facing || []).map((f) => f.toLowerCase());
+    if (configFacings.length > 0) {
+      const hasFacing = filters.facing.some((req: string) => configFacings.some((cf) => cf.includes(req.toLowerCase())));
+      if (!hasFacing) return false;
+    }
+  }
+
+  // 13. Amenities / Facilities
+  if (filters.amenities && Array.isArray(filters.amenities) && filters.amenities.length > 0) {
+    const projFacilities = (project.facilities || []).map((f: unknown) =>
+      typeof f === "string" ? f.toLowerCase() : (((f as Record<string, unknown>)?.name as string) || ((f as Record<string, unknown>)?.label as string) || "").toLowerCase()
+    );
+    if (projFacilities.length > 0) {
+      const hasReqFacility = filters.amenities.some((req: string) =>
+        projFacilities.some((pf: string) => pf.includes(req.toLowerCase()))
+      );
+      if (!hasReqFacility) return false;
+    }
+  }
+
+  // 14. Media Types (Photos / Video / Brochure / Floor Plan)
+  if (filters.mediaTypes && Array.isArray(filters.mediaTypes) && filters.mediaTypes.length > 0) {
+    if (filters.mediaTypes.includes("photos") && (!project.images || project.images.length === 0)) return false;
+    if (filters.mediaTypes.includes("video") && !project.videoUrl) return false;
+    if (filters.mediaTypes.includes("brochure") && !project.brochureUrl) return false;
+    if (filters.mediaTypes.includes("floorplan") && !project.configurations?.some((c) => c.floorPlanUrl)) return false;
+  }
+
+  // 15. Display Category
+  const rawDisplayCat = "displayCategory" in filters && typeof (filters as Record<string, unknown>).displayCategory === "string" ? String((filters as Record<string, unknown>).displayCategory) : undefined;
+  if (rawDisplayCat && rawDisplayCat !== "all") {
+    const cat = rawDisplayCat.toLowerCase();
+    if (cat === "featured" && !(project.displayCategory === "featured" || project.isFeatured)) return false;
+    if (cat === "recommended" && !(project.displayCategory === "recommended" || (project as unknown as { isRecommended?: boolean }).isRecommended)) return false;
+    if ((cat === "budget" || cat === "budget_friendly") && project.displayCategory !== "budget_friendly") return false;
+  }
+
+  // 16. Posted Since Date Filter
+  const rawPostedSince = typeof filters.postedSince === "string" ? filters.postedSince : undefined;
+  if (rawPostedSince && rawPostedSince !== "any" && rawPostedSince !== "") {
+    const projDateStr = project.createdAt || (project as unknown as { publishedAt?: string }).publishedAt || (project as unknown as { updatedAt?: string }).updatedAt;
+    if (projDateStr) {
+      const projTime = new Date(projDateStr).getTime();
+      const now = currentTimeMs ?? 1788155000000;
+      const ps = rawPostedSince.toLowerCase();
+      let maxAgeMs = 0;
+      if (ps === "1day" || ps === "yesterday" || ps === "1d") maxAgeMs = 1 * 24 * 60 * 60 * 1000;
+      else if (ps === "3days" || ps === "3d") maxAgeMs = 3 * 24 * 60 * 60 * 1000;
+      else if (ps === "7days" || ps === "1week" || ps === "7d") maxAgeMs = 7 * 24 * 60 * 60 * 1000;
+      else if (ps === "15days" || ps === "2weeks" || ps === "15d") maxAgeMs = 15 * 24 * 60 * 60 * 1000;
+      else if (ps === "30days" || ps === "1month" || ps === "30d") maxAgeMs = 30 * 24 * 60 * 60 * 1000;
+      else if (ps === "60days" || ps === "2months" || ps === "60d") maxAgeMs = 60 * 24 * 60 * 60 * 1000;
+      else if (ps === "90days" || ps === "3months" || ps === "90d") maxAgeMs = 90 * 24 * 60 * 60 * 1000;
+
+      if (maxAgeMs > 0 && (now - projTime) > maxAgeMs) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+

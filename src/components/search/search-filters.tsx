@@ -21,7 +21,7 @@ import { Slider } from "@/components/ui/slider";
 import { useLocationsStore } from "@/stores/locations-store";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
-import { evaluatePropertyFilters } from "@/lib/search-engine";
+import { evaluatePropertyFilters, evaluateProjectFilters } from "@/lib/search-engine";
 
 export interface FilterState {
   query: string;
@@ -389,66 +389,7 @@ export function SearchFiltersModal({
   // Real-time matching property and project count calculated dynamically from active localFilters
   const { totalCount, propCount, projCount } = useMemo(() => {
     const propMatches = (properties || []).filter((p) => evaluatePropertyFilters(p, localFilters));
-    
-    const projMatches = (projects || []).filter((proj) => {
-      // 1. Cities
-      if (localFilters.cities && localFilters.cities.length > 0) {
-        const pCity = (proj.location?.city || "").toLowerCase();
-        const pLoc = (proj.location?.locality || "").toLowerCase();
-        const matchesCity = localFilters.cities.some((c) => {
-          const tc = c.toLowerCase().trim();
-          return pCity.includes(tc) || pLoc.includes(tc);
-        });
-        if (!matchesCity) return false;
-      }
-      // 2. Localities
-      if (localFilters.localities && localFilters.localities.length > 0) {
-        const pLoc = (proj.location?.locality || "").toLowerCase();
-        const matchesLoc = localFilters.localities.some((l) => pLoc.includes(l.toLowerCase().trim()));
-        if (!matchesLoc) return false;
-      }
-      // 3. Property Type
-      if (localFilters.propertyType && localFilters.propertyType.length > 0) {
-        const pType = (proj.projectType || "").toLowerCase();
-        const matchesType = localFilters.propertyType.some((t) => {
-          const tt = t.toLowerCase();
-          if (tt === pType) return true;
-          if (tt === "apartment" && pType.includes("apartment")) return true;
-          if (tt === "villa" && (pType.includes("villa") || pType.includes("independent-house"))) return true;
-          if (tt === "residential-land" && (pType.includes("land") || pType.includes("plot") || pType === "venture")) return true;
-          if (tt === "commercial-spaces" && (pType.includes("commercial") || pType.includes("shop"))) return true;
-          return false;
-        });
-        if (!matchesType) return false;
-      }
-      // 4. BHK
-      if (localFilters.bhk && localFilters.bhk.length > 0) {
-        if (!proj.configurations || proj.configurations.length === 0) return false;
-        const hasMatchingBhk = proj.configurations.some((cfg) => {
-          const beds = cfg.bedrooms || 0;
-          return localFilters.bhk.some((b) => (b === "5+" || b === "4+" ? beds >= parseInt(b, 10) : beds.toString() === b));
-        });
-        if (!hasMatchingBhk) return false;
-      }
-      // 5. Budget
-      if (localFilters.budget && (localFilters.budget[0] > 0 || localFilters.budget[1] < 100000000)) {
-        if (proj.configurations && proj.configurations.length > 0) {
-          const hasOverlap = proj.configurations.some((cfg) => {
-            const pMin = cfg.priceMin || 0;
-            const pMax = cfg.priceMax || pMin;
-            return pMin <= localFilters.budget[1] && pMax >= localFilters.budget[0];
-          });
-          if (!hasOverlap) return false;
-        }
-      }
-      // 6. Possession
-      if (localFilters.possessionStatus && localFilters.possessionStatus.length > 0) {
-        const isReady = proj.constructionStatus === "ready-to-move";
-        const matchesPoss = localFilters.possessionStatus.some((ps) => (ps === "ready" ? isReady : !isReady));
-        if (!matchesPoss) return false;
-      }
-      return true;
-    });
+    const projMatches = (projects || []).filter((proj) => evaluateProjectFilters(proj, localFilters));
 
     return {
       totalCount: propMatches.length + projMatches.length,
