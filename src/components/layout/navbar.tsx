@@ -67,9 +67,27 @@ export function Navbar() {
   const [navLocalitySearch, setNavLocalitySearch] = useState<string>("");
   const navDropdownRef = useRef<HTMLDivElement>(null);
 
-  const { cities } = useLocationsStore();
+  const { cities, fetchLocations } = useLocationsStore();
   const properties = usePropertiesStore((state) => state.properties);
   const projects = useProjectsStore((state) => state.projects);
+
+  // Fetch admin master locations on mount
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
+
+  // Admin-configured Hero Cities (matching hero-section pills exactly)
+  const heroCities = useMemo(() => {
+    const pills = cities.filter((c) => c.isHeroPill);
+    return pills.length > 0 ? pills : cities.slice(0, 3);
+  }, [cities]);
+
+  // Auto-sync active selected city with available admin hero cities
+  useEffect(() => {
+    if (heroCities.length > 0 && !heroCities.some((c) => c.name.toLowerCase() === navSelectedCity.toLowerCase())) {
+      setNavSelectedCity(heroCities[0].name);
+    }
+  }, [heroCities, navSelectedCity]);
 
   const matchingCount = useMemo(() => {
     let count = 0;
@@ -121,10 +139,10 @@ export function Navbar() {
     return `${minStr} - ${maxStr}`;
   };
 
-  // Filtered sublocations based on selected city & search text
+  // Filtered sublocations based on selected admin hero city & search text
   const currentCityObj = useMemo(() => {
-    return cities.find((c) => c.name.toLowerCase() === navSelectedCity.toLowerCase()) || cities[0];
-  }, [cities, navSelectedCity]);
+    return heroCities.find((c) => c.name.toLowerCase() === navSelectedCity.toLowerCase()) || heroCities[0];
+  }, [heroCities, navSelectedCity]);
 
   const filteredSublocations = useMemo(() => {
     if (!currentCityObj?.sublocations) return [];
@@ -336,10 +354,10 @@ export function Navbar() {
                       </button>
 
                       {openNavDropdown === "location" && (
-                        <div className="absolute top-full left-0 mt-3 w-80 sm:w-96 bg-slate-950/95 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-3 z-50 animate-in fade-in zoom-in-95 space-y-3">
-                          {/* City Selector Tabs */}
-                          <div className="flex items-center gap-1.5 p-1 bg-slate-900/80 rounded-xl border border-slate-800/80">
-                            {cities.slice(0, 4).map((city) => (
+                        <div className="absolute top-full left-0 mt-3 w-[350px] sm:w-[380px] max-w-[90vw] bg-slate-950/95 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-3.5 z-50 animate-in fade-in zoom-in-95 space-y-3">
+                          {/* City Selector Tabs — Admin Configured Hero Cities Only */}
+                          <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-xl border border-slate-800/90 overflow-x-auto no-scrollbar">
+                            {heroCities.map((city) => (
                               <button
                                 key={city.id}
                                 type="button"
@@ -348,7 +366,7 @@ export function Navbar() {
                                   setNavLocalitySearch("");
                                 }}
                                 className={cn(
-                                  "flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center",
+                                  "flex-1 min-w-[80px] py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-center whitespace-nowrap",
                                   navSelectedCity.toLowerCase() === city.name.toLowerCase()
                                     ? "bg-amber-500 text-slate-950 shadow-xs font-extrabold"
                                     : "text-slate-400 hover:text-white hover:bg-slate-800/60"
