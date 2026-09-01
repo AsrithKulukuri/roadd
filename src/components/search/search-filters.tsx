@@ -243,6 +243,50 @@ function getBudgetOptionsWithCustom(
   return list.sort((a, b) => a.value - b.value);
 }
 
+const AREA_MIN_OPTIONS = [
+  { label: "Min (0 sqft)", value: 0 },
+  { label: "500 sqft", value: 500 },
+  { label: "750 sqft", value: 750 },
+  { label: "1,000 sqft", value: 1000 },
+  { label: "1,250 sqft", value: 1250 },
+  { label: "1,500 sqft", value: 1500 },
+  { label: "1,750 sqft", value: 1750 },
+  { label: "2,000 sqft", value: 2000 },
+  { label: "2,500 sqft", value: 2500 },
+  { label: "3,000 sqft", value: 3000 },
+  { label: "4,000 sqft", value: 4000 },
+  { label: "5,000 sqft", value: 5000 },
+];
+
+const AREA_MAX_OPTIONS = [
+  { label: "750 sqft", value: 750 },
+  { label: "1,000 sqft", value: 1000 },
+  { label: "1,250 sqft", value: 1250 },
+  { label: "1,500 sqft", value: 1500 },
+  { label: "1,750 sqft", value: 1750 },
+  { label: "2,000 sqft", value: 2000 },
+  { label: "2,500 sqft", value: 2500 },
+  { label: "3,000 sqft", value: 3000 },
+  { label: "4,000 sqft", value: 4000 },
+  { label: "5,000 sqft", value: 5000 },
+  { label: "7,500 sqft", value: 7500 },
+  { label: "Max (10,000+ sqft)", value: 10000 },
+];
+
+function getAreaOptionsWithCustom(
+  options: { label: string; value: number }[],
+  customVal: number,
+  isMax = false
+) {
+  if (options.some((o) => o.value === customVal)) return options;
+  const customOption = {
+    label: isMax && customVal >= 10000 ? "Max (10,000+ sqft)" : `${customVal.toLocaleString()} sqft`,
+    value: customVal,
+  };
+  const list = [...options, customOption];
+  return list.sort((a, b) => a.value - b.value);
+}
+
 // ─── Reusable Components ────────────────────────────────────────────────────
 
 function ToggleSwitch({
@@ -731,6 +775,13 @@ export function SearchFiltersModal({
           {/* Covered Area */}
           <CollapsibleSection title="Covered Area (sqft)">
             <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-500">Selected Range</span>
+                <span className="text-xs font-black text-[#008075] bg-[#e6f4f2] px-2.5 py-0.5 rounded-full">
+                  {localFilters.coveredArea[0] === 0 ? "0 sqft" : `${localFilters.coveredArea[0].toLocaleString()} sqft`} – {localFilters.coveredArea[1] >= 10000 ? "10,000+ sqft" : `${localFilters.coveredArea[1].toLocaleString()} sqft`}
+                </span>
+              </div>
+
               <div className="flex items-center gap-3">
                 <select
                   value={localFilters.coveredArea[0]}
@@ -742,11 +793,11 @@ export function SearchFiltersModal({
                   }
                   className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none"
                 >
-                  <option value={0}>Min</option>
-                  <option value={500}>500 sqft</option>
-                  <option value={1000}>1,000 sqft</option>
-                  <option value={1500}>1,500 sqft</option>
-                  <option value={2000}>2,000 sqft</option>
+                  {getAreaOptionsWithCustom(AREA_MIN_OPTIONS, localFilters.coveredArea[0], false).map((opt) => (
+                    <option key={`area-min-${opt.value}`} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
 
                 <span className="text-xs text-slate-500 font-medium">to</span>
@@ -761,13 +812,11 @@ export function SearchFiltersModal({
                   }
                   className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none"
                 >
-                  <option value={10000}>Max</option>
-                  <option value={1000}>1,000 sqft</option>
-                  <option value={1500}>1,500 sqft</option>
-                  <option value={2000}>2,000 sqft</option>
-                  <option value={3000}>3,000 sqft</option>
-                  <option value={5000}>5,000 sqft</option>
-                  <option value={10000}>10,000+ sqft</option>
+                  {getAreaOptionsWithCustom(AREA_MAX_OPTIONS, localFilters.coveredArea[1], true).map((opt) => (
+                    <option key={`area-max-${opt.value}`} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
