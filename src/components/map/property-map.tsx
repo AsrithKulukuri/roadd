@@ -1592,8 +1592,8 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
             </button>
           )}
           
-          {/* TOP: Entity Type Pills (All / Properties / Projects) - Centered on mobile, right-aligned on desktop */}
-          <div className={cn("absolute top-3 left-1/2 -translate-x-1/2 md:left-auto md:right-3 md:translate-x-0 z-[550] items-center gap-1 sm:gap-1.5 pointer-events-auto", showMapExplorer ? "hidden md:flex" : "flex")}>
+          {/* TOP: Entity Type Pills (All / Properties / Projects) - Centered on mobile only, hidden on desktop */}
+          <div className={cn("absolute top-3 left-1/2 -translate-x-1/2 z-[550] items-center gap-1 sm:gap-1.5 pointer-events-auto md:hidden", showMapExplorer ? "hidden" : "flex")}>
             {(["all", "properties", "projects"] as const).map((lt) => (
               <button
                 key={lt}
@@ -1611,7 +1611,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
           </div>
 
           {/* RIGHT SIDE CONTROLS: Layer switcher, Draw */}
-          <div className={cn("absolute top-14 right-3 z-[550] flex-col items-center gap-2.5 pointer-events-auto", showMapExplorer ? "hidden md:flex" : "flex")}>
+          <div className={cn("absolute top-14 md:top-3 right-3 z-[550] flex-col items-center gap-2.5 pointer-events-auto", showMapExplorer ? "hidden md:flex" : "flex")}>
 
             {/* 1. MAP STYLE BUTTON — opens layer panel */}
             <div className="relative">
