@@ -136,6 +136,7 @@ export function HeroSection() {
   const [showProjectsMenu, setShowProjectsMenu] = useState(false);
   const [openLocationTab, setOpenLocationTab] = useState<string | null>(null);
   const [sublocationSearch, setSublocationSearch] = useState("");
+  const [isLocalityFocused, setIsLocalityFocused] = useState(false);
   const [showBudgetDropdown, setShowBudgetDropdown] = useState(false);
   const [showAllCategoriesMobile, setShowAllCategoriesMobile] = useState(false);
 
@@ -1289,17 +1290,26 @@ export function HeroSection() {
                     onClick={() => {
                       setOpenLocationTab(null);
                       setSublocationSearch("");
+                      setIsLocalityFocused(false);
                     }}
                     className="fixed inset-0 bg-black/80 backdrop-blur-xs"
                   />
 
-                  {/* Bottom Sheet Drawer */}
+                  {/* Bottom Sheet Drawer with Smart Expand Animation */}
                   <motion.div
                     initial={{ y: "100%" }}
-                    animate={{ y: 0 }}
+                    animate={{ 
+                      y: 0,
+                      height: (isLocalityFocused || sublocationSearch.trim().length > 0) ? "88vh" : "55vh"
+                    }}
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", damping: 28, stiffness: 320 }}
-                    className="fixed bottom-0 left-0 right-0 z-[100000] max-h-[75vh] bg-slate-950 border-t border-slate-800 rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden pb-6 safe-bottom"
+                    className={cn(
+                      "fixed bottom-0 left-0 right-0 z-[100000] bg-slate-950 border-t border-slate-800 rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden pb-6 safe-bottom transition-all duration-300 ease-out",
+                      (isLocalityFocused || sublocationSearch.trim().length > 0)
+                        ? "h-[88vh] max-h-[92vh]"
+                        : "h-[55vh] max-h-[60vh]"
+                    )}
                   >
                     {/* Drag Handle */}
                     <div className="pt-3 pb-1.5 flex justify-center shrink-0">
@@ -1330,6 +1340,7 @@ export function HeroSection() {
                         onClick={() => {
                           setOpenLocationTab(null);
                           setSublocationSearch("");
+                          setIsLocalityFocused(false);
                         }}
                         className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer active:scale-90"
                         aria-label="Close"
@@ -1338,7 +1349,7 @@ export function HeroSection() {
                       </button>
                     </div>
 
-                    {/* Search Bar inside Bottom Sheet (No autofocus so keyboard doesn't jump immediately) */}
+                    {/* Search Bar inside Bottom Sheet */}
                     <div className="p-3 border-b border-slate-800/80 bg-slate-950 shrink-0">
                       <div className="relative flex items-center bg-slate-900 border border-slate-800 focus-within:border-slate-600 rounded-xl px-3 py-2 transition-colors">
                         <Search className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
@@ -1346,6 +1357,12 @@ export function HeroSection() {
                           type="text"
                           value={sublocationSearch}
                           onChange={(e) => setSublocationSearch(e.target.value)}
+                          onFocus={() => setIsLocalityFocused(true)}
+                          onBlur={() => {
+                            if (!sublocationSearch) {
+                              setIsLocalityFocused(false);
+                            }
+                          }}
                           placeholder={`Search ${activeCity.name} localities...`}
                           style={{ outline: "none", boxShadow: "none", border: "none" }}
                           className="w-full bg-transparent text-sm text-white placeholder-slate-500 font-medium outline-none border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none p-0"
@@ -1353,7 +1370,10 @@ export function HeroSection() {
                         {sublocationSearch && (
                           <button
                             type="button"
-                            onClick={() => setSublocationSearch("")}
+                            onClick={() => {
+                              setSublocationSearch("");
+                              setIsLocalityFocused(false);
+                            }}
                             className="p-1 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors shrink-0 cursor-pointer ml-1"
                             aria-label="Clear search"
                           >
