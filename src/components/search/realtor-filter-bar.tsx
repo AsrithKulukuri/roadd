@@ -692,40 +692,24 @@ export function RealtorFilterBar({
                     </div>
                   </div>
 
-                  {/* Sublocations / Localities for Active City */}
+                  {/* Sublocations / Localities for Selected Cities */}
                   {(() => {
-                    if (!activeCity) return null;
+                    const displayCities = selectedCities.length > 0 ? selectedCities : (activeCity ? [activeCity] : []);
+                    if (displayCities.length === 0) return null;
 
-                    const sublocations = activeCity.sublocations || [];
-                    const filteredSublocations = sublocations.filter((sub) => {
-                      const q = localitySearch.trim().toLowerCase();
-                      if (!q) return true;
-                      return (
-                        sub.name.toLowerCase().includes(q) ||
-                        (sub.tagline && sub.tagline.toLowerCase().includes(q))
-                      );
-                    });
+                    const totalAreas = displayCities.reduce((acc, c) => acc + (c.sublocations?.length || 0), 0);
 
                     return (
-                      <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                        <div className="flex items-center justify-between px-0.5">
-                          <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                            {activeCity.name} Localities
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-medium">
-                            {sublocations.length} areas
-                          </span>
-                        </div>
-
+                      <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                         {/* Search Localities */}
-                        {sublocations.length > 4 && (
+                        {totalAreas > 4 && (
                           <div className="relative">
                             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                             <input
                               type="text"
                               value={localitySearch}
                               onChange={(e) => setLocalitySearch(e.target.value)}
-                              placeholder={`Search ${activeCity.name} areas...`}
+                              placeholder={`Search ${displayCities.map((c) => c.name).join(" / ")} areas...`}
                               className="w-full h-8 pl-8 pr-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-amber-500 text-slate-900 dark:text-white"
                             />
                             {localitySearch && (
@@ -740,33 +724,60 @@ export function RealtorFilterBar({
                           </div>
                         )}
 
-                        {/* Localities Chips */}
-                        <div className="max-h-52 overflow-y-auto pr-1 flex flex-wrap gap-1.5 no-scrollbar">
-                          {filteredSublocations.length > 0 ? (
-                            filteredSublocations.map((sub) => {
-                              const isSelected = (filters.localities || []).includes(sub.name);
+                        {/* Each City's Sublocations */}
+                        <div className="max-h-60 overflow-y-auto pr-1 space-y-3 no-scrollbar">
+                          {displayCities.map((city) => {
+                            const sublocations = city.sublocations || [];
+                            const filteredSublocations = sublocations.filter((sub) => {
+                              const q = localitySearch.trim().toLowerCase();
+                              if (!q) return true;
                               return (
-                                <button
-                                  key={`mob-sub-${sub.id || sub.name}`}
-                                  type="button"
-                                  onClick={() => toggleArrayItem("localities", sub.name)}
-                                  className={cn(
-                                    "px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 active:scale-95",
-                                    isSelected
-                                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
-                                      : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                                  )}
-                                >
-                                  <span>{sub.name}</span>
-                                  {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                                </button>
+                                sub.name.toLowerCase().includes(q) ||
+                                (sub.tagline && sub.tagline.toLowerCase().includes(q))
                               );
-                            })
-                          ) : (
-                            <div className="text-xs text-slate-400 py-3 text-center w-full">
-                              No matching localities in {activeCity.name}
-                            </div>
-                          )}
+                            });
+
+                            return (
+                              <div key={`mob-city-group-${city.id}`} className="space-y-1.5">
+                                <div className="flex items-center justify-between px-0.5">
+                                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                    {city.name} Localities
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-medium">
+                                    {sublocations.length} areas
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-wrap gap-1.5">
+                                  {filteredSublocations.length > 0 ? (
+                                    filteredSublocations.map((sub) => {
+                                      const isSelected = (filters.localities || []).includes(sub.name);
+                                      return (
+                                        <button
+                                          key={`mob-sub-${sub.id || sub.name}`}
+                                          type="button"
+                                          onClick={() => toggleArrayItem("localities", sub.name)}
+                                          className={cn(
+                                            "px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 active:scale-95",
+                                            isSelected
+                                              ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                                              : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                          )}
+                                        >
+                                          <span>{sub.name}</span>
+                                          {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                        </button>
+                                      );
+                                    })
+                                  ) : (
+                                    <div className="text-xs text-slate-400 py-1 text-center w-full">
+                                      No matching localities in {city.name}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     );
@@ -999,40 +1010,24 @@ export function RealtorFilterBar({
                 </div>
               </div>
 
-              {/* Sublocations / Localities for Active City */}
+              {/* Sublocations / Localities for Selected Cities */}
               {(() => {
-                if (!activeCity) return null;
+                const displayCities = selectedCities.length > 0 ? selectedCities : (activeCity ? [activeCity] : []);
+                if (displayCities.length === 0) return null;
 
-                const sublocations = activeCity.sublocations || [];
-                const filteredSublocations = sublocations.filter((sub) => {
-                  const q = localitySearch.trim().toLowerCase();
-                  if (!q) return true;
-                  return (
-                    sub.name.toLowerCase().includes(q) ||
-                    (sub.tagline && sub.tagline.toLowerCase().includes(q))
-                  );
-                });
+                const totalAreas = displayCities.reduce((acc, c) => acc + (c.sublocations?.length || 0), 0);
 
                 return (
-                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center justify-between px-0.5">
-                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                        {activeCity.name} Localities
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-medium">
-                        {sublocations.length} areas
-                      </span>
-                    </div>
-
+                  <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                     {/* Search Localities */}
-                    {sublocations.length > 4 && (
+                    {totalAreas > 4 && (
                       <div className="relative">
                         <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                         <input
                           type="text"
                           value={localitySearch}
                           onChange={(e) => setLocalitySearch(e.target.value)}
-                          placeholder={`Search ${activeCity.name} areas...`}
+                          placeholder={`Search ${displayCities.map((c) => c.name).join(" / ")} areas...`}
                           style={{ outline: "none", boxShadow: "none" }}
                           className="w-full h-8 pl-8 pr-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:outline-none focus:ring-0 focus:border-slate-400 dark:focus:border-slate-500 text-slate-900 dark:text-white"
                         />
@@ -1048,33 +1043,60 @@ export function RealtorFilterBar({
                       </div>
                     )}
 
-                    {/* Localities Chips */}
-                    <div className="max-h-52 overflow-y-auto pr-1 flex flex-wrap gap-1.5 no-scrollbar">
-                      {filteredSublocations.length > 0 ? (
-                        filteredSublocations.map((sub) => {
-                          const isSelected = (filters.localities || []).includes(sub.name);
+                    {/* Each City's Sublocations */}
+                    <div className="max-h-60 overflow-y-auto pr-1 space-y-3 no-scrollbar">
+                      {displayCities.map((city) => {
+                        const sublocations = city.sublocations || [];
+                        const filteredSublocations = sublocations.filter((sub) => {
+                          const q = localitySearch.trim().toLowerCase();
+                          if (!q) return true;
                           return (
-                            <button
-                              key={`desk-sub-${sub.id || sub.name}`}
-                              type="button"
-                              onClick={() => toggleArrayItem("localities", sub.name)}
-                              className={cn(
-                                "px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 active:scale-95",
-                                isSelected
-                                  ? "bg-amber-500 text-slate-950 font-black shadow-xs"
-                                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                              )}
-                            >
-                              <span>{sub.name}</span>
-                              {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                            </button>
+                            sub.name.toLowerCase().includes(q) ||
+                            (sub.tagline && sub.tagline.toLowerCase().includes(q))
                           );
-                        })
-                      ) : (
-                        <div className="text-xs text-slate-400 py-3 text-center w-full">
-                          No matching localities in {activeCity.name}
-                        </div>
-                      )}
+                        });
+
+                        return (
+                          <div key={`desk-city-group-${city.id}`} className="space-y-1.5">
+                            <div className="flex items-center justify-between px-0.5">
+                              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                {city.name} Localities
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-medium">
+                                {sublocations.length} areas
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap gap-1.5">
+                              {filteredSublocations.length > 0 ? (
+                                filteredSublocations.map((sub) => {
+                                  const isSelected = (filters.localities || []).includes(sub.name);
+                                  return (
+                                    <button
+                                      key={`desk-sub-${sub.id || sub.name}`}
+                                      type="button"
+                                      onClick={() => toggleArrayItem("localities", sub.name)}
+                                      className={cn(
+                                        "px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 active:scale-95",
+                                        isSelected
+                                          ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                      )}
+                                    >
+                                      <span>{sub.name}</span>
+                                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                    </button>
+                                  );
+                                })
+                              ) : (
+                                <div className="text-xs text-slate-400 py-1 text-center w-full">
+                                  No matching localities in {city.name}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );

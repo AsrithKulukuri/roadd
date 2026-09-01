@@ -743,30 +743,32 @@ function UnifiedSearchPage() {
                 )}
               </div>
 
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <select
-                  value={sortBy}
-                  onChange={(e) => {
-                    const newSort = e.target.value as SortByOption;
-                    setSortBy(newSort);
-                    setFilters(prev => ({ ...prev, sortBy: newSort }));
-                    const newParams = new URLSearchParams(searchParams.toString());
-                    if (newSort === "relevant") {
-                      newParams.delete("sort");
-                    } else {
-                      newParams.set("sort", newSort);
-                    }
-                    const queryStr = newParams.toString();
-                    router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
-                  }}
-                  className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-border-default bg-white dark:bg-bg-card text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-primary/30 cursor-pointer"
-                >
-                  <option value="relevant">Relevant / Best Match</option>
-                  <option value="newest">Newest Listed First</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                </select>
-              </div>
+              {viewMode !== "map" && (
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => {
+                      const newSort = e.target.value as SortByOption;
+                      setSortBy(newSort);
+                      setFilters(prev => ({ ...prev, sortBy: newSort }));
+                      const newParams = new URLSearchParams(searchParams.toString());
+                      if (newSort === "relevant") {
+                        newParams.delete("sort");
+                      } else {
+                        newParams.set("sort", newSort);
+                      }
+                      const queryStr = newParams.toString();
+                      router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
+                    }}
+                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-border-default bg-white dark:bg-bg-card text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-primary/30 cursor-pointer"
+                  >
+                    <option value="relevant">Relevant / Best Match</option>
+                    <option value="newest">Newest Listed First</option>
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Partial failure banner if one dataset failed but the other succeeded */}

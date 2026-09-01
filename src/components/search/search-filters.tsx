@@ -157,24 +157,23 @@ interface SearchFiltersModalProps {
   totalResults: number;
 }
 
-// Left Navigation Tabs for Desktop Modal - Location & Budget at the VERY TOP
+// Left Navigation Tabs for Desktop Modal - Ordered according to exact user sequence
 const DESKTOP_CATEGORY_TABS = [
-  { id: "location", label: "Location / City" },
-  { id: "budget", label: "Budget / Price" },
-  { id: "propertyType", label: "Property Type" },
-  { id: "bhk", label: "BHK & Bathroom" },
-  { id: "coveredArea", label: "Covered Area" },
-  { id: "possession", label: "Possession Status" },
-  { id: "subPropertyType", label: "Sub Property Type" },
-  { id: "saleType", label: "Sale Type" },
-  { id: "postedSince", label: "Posted Since" },
-  { id: "postedBy", label: "Posted By" },
-  { id: "furnishing", label: "Furnishing" },
-  { id: "amenities", label: "Amenities" },
-  { id: "verified", label: "Verified Properties" },
-  { id: "media", label: "Photos & Videos" },
-  { id: "facing", label: "Facing" },
-  { id: "agriculture", label: "Water & Agriculture" },
+  { id: "location", label: "1. Location / City" },
+  { id: "propertyType", label: "2. Property Type" },
+  { id: "budget", label: "3. Budget / Price" },
+  { id: "saleType", label: "4. Sale Type" },
+  { id: "bhk", label: "5. BHK & Bathroom" },
+  { id: "coveredArea", label: "6. Covered Area" },
+  { id: "possession", label: "7. Possession Status" },
+  { id: "postedBy", label: "8. Posted By" },
+  { id: "media", label: "9. Photos & Videos" },
+  { id: "postedSince", label: "10. Posted Since" },
+  { id: "verified", label: "11. Verified Properties" },
+  { id: "furnishing", label: "12. Furnishing" },
+  { id: "amenities", label: "13. Amenities" },
+  { id: "facing", label: "14. Facing" },
+  { id: "agriculture", label: "15. Water & Agriculture" },
 ] as const;
 
 type TabId = (typeof DESKTOP_CATEGORY_TABS)[number]["id"];
@@ -575,10 +574,10 @@ export function SearchFiltersModal({
             </div>
           </div>
 
-          {/* Select City/Localities from Master Locations (Multi-Select Supported) */}
+          {/* 1. Location / City & Localities */}
           <div className="py-3.5 space-y-2">
             <label className="text-[13px] font-semibold text-slate-900 block">
-              Select City / Primary Location
+              1. Select City / Location
             </label>
             <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
               {cities.map((city) => {
@@ -652,9 +651,85 @@ export function SearchFiltersModal({
             </div>
           </div>
 
-          {/* Budget: Dropdowns + Range Slider */}
+          {/* 2. Property Type & Sub Property Types */}
           <div className="py-3.5 space-y-3">
-            <label className="text-[13px] font-semibold text-slate-900 block">Budget</label>
+            <label className="text-[13px] font-semibold text-slate-900 block mb-1">
+              2. Property Type
+            </label>
+            <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
+              {[
+                { label: "Flat", val: "apartment", icon: Building },
+                { label: "House/Villa", val: "villa", icon: Home },
+                { label: "CRDA Ventures", val: "venture", icon: Landmark },
+                { label: "Plot/Land", val: "residential-land", icon: Trees },
+                { label: "Commercial", val: "commercial-spaces", icon: Briefcase },
+              ].map((item) => {
+                const isSelected = localFilters.propertyType.includes(item.val);
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.val}
+                    type="button"
+                    onClick={() => toggleArrayFilter("propertyType", item.val)}
+                    className={cn(
+                      "min-w-[100px] h-[86px] rounded-2xl border p-2.5 flex flex-col items-center justify-center relative transition-all cursor-pointer shrink-0 select-none",
+                      isSelected
+                        ? "bg-[#e6f4f2] border-[#008075]/40 text-slate-950 font-semibold shadow-xs"
+                        : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                    )}
+                  >
+                    {isSelected && (
+                      <span className="absolute top-2 right-2 text-[#008075]">
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      </span>
+                    )}
+                    <Icon className={cn("w-6 h-6 mb-1.5", isSelected ? "text-[#008075]" : "text-slate-600")} />
+                    <span className="text-xs leading-tight">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Sub Property Types Chips */}
+            <div className="pt-2">
+              <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+                Sub Property Types
+              </label>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
+                {[
+                  { label: "All Residential", val: "all_residential" },
+                  { label: "Residential Plot", val: "residential-land" },
+                  { label: "Residential Flat", val: "apartment" },
+                  { label: "Villa", val: "villa" },
+                  { label: "Builder Floor", val: "builder-floor" },
+                  { label: "Penthouse", val: "penthouse" },
+                ].map((st) => {
+                  const isSelected =
+                    st.val === "all_residential"
+                      ? localFilters.propertyType.length === 0
+                      : localFilters.propertyType.includes(st.val);
+                  return (
+                    <PillTag
+                      key={st.val}
+                      label={st.label}
+                      isSelected={isSelected}
+                      onClick={() => {
+                        if (st.val === "all_residential") {
+                          setLocalFilters({ ...localFilters, propertyType: [] });
+                        } else {
+                          toggleArrayFilter("propertyType", st.val);
+                        }
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Budget: Dropdowns + Range Slider */}
+          <div className="py-3.5 space-y-3">
+            <label className="text-[13px] font-semibold text-slate-900 block">3. Budget / Price</label>
             <div className="flex items-center gap-3">
               <select
                 value={localFilters.budget[0]}
@@ -703,49 +778,29 @@ export function SearchFiltersModal({
             />
           </div>
 
-          {/* Property Type: Large Horizontal Cards with checkmark */}
-          <div className="py-3.5">
-            <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">
-              Property Type
-            </label>
-            <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
+          {/* 4. Sale Type */}
+          <CollapsibleSection title="4. Sale Type">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
               {[
-                { label: "Flat", val: "apartment", icon: Building },
-                { label: "House/Villa", val: "villa", icon: Home },
-                { label: "CRDA Ventures", val: "venture", icon: Landmark },
-                { label: "Plot/Land", val: "residential-land", icon: Trees },
-                { label: "Commercial", val: "commercial-spaces", icon: Briefcase },
-              ].map((item) => {
-                const isSelected = localFilters.propertyType.includes(item.val);
-                const Icon = item.icon;
+                { label: "New Property", val: "new" },
+                { label: "Resale", val: "resale" },
+              ].map((st) => {
+                const isSelected = localFilters.saleType.includes(st.val);
                 return (
-                  <button
-                    key={item.val}
-                    type="button"
-                    onClick={() => toggleArrayFilter("propertyType", item.val)}
-                    className={cn(
-                      "min-w-[100px] h-[86px] rounded-2xl border p-2.5 flex flex-col items-center justify-center relative transition-all cursor-pointer shrink-0 select-none",
-                      isSelected
-                        ? "bg-[#e6f4f2] border-[#008075]/40 text-slate-950 font-semibold shadow-xs"
-                        : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
-                    )}
-                  >
-                    {isSelected && (
-                      <span className="absolute top-2 right-2 text-[#008075]">
-                        <Check className="w-3.5 h-3.5 stroke-[3]" />
-                      </span>
-                    )}
-                    <Icon className={cn("w-6 h-6 mb-1.5", isSelected ? "text-[#008075]" : "text-slate-600")} />
-                    <span className="text-xs leading-tight">{item.label}</span>
-                  </button>
+                  <PillTag
+                    key={st.val}
+                    label={st.label}
+                    isSelected={isSelected}
+                    onClick={() => toggleArrayFilter("saleType", st.val)}
+                  />
                 );
               })}
             </div>
-          </div>
+          </CollapsibleSection>
 
-          {/* BHK */}
-          <div className="py-3.5">
-            <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">BHK</label>
+          {/* 5. BHK & Bathroom */}
+          <div className="py-3.5 space-y-3">
+            <label className="text-[13px] font-semibold text-slate-900 block mb-1">5. BHK & Bathroom</label>
             <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
               {["1 BHK", "2 BHK", "3 BHK", "4 BHK", "5 BHK", "5+ BHK"].map((bhk) => {
                 const cleanVal = bhk.replace(" BHK", "");
@@ -760,31 +815,27 @@ export function SearchFiltersModal({
                 );
               })}
             </div>
+
+            <div className="pt-2">
+              <label className="text-xs font-semibold text-slate-700 block mb-1.5">Bathrooms</label>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
+                {["1", "2", "3", "4", "5+"].map((w) => {
+                  const isSelected = localFilters.bathrooms.includes(w);
+                  return (
+                    <PillTag
+                      key={w}
+                      label={w}
+                      isSelected={isSelected}
+                      onClick={() => toggleArrayFilter("bathrooms", w)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
-          {/* Posted By */}
-          <CollapsibleSection title="Posted By">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
-              {[
-                { label: "Owners", val: "owner" },
-                { label: "Agents", val: "agent" },
-                { label: "Builders", val: "builder" },
-              ].map((p) => {
-                const isSelected = localFilters.postedBy.includes(p.val);
-                return (
-                  <PillTag
-                    key={p.val}
-                    label={p.label}
-                    isSelected={isSelected}
-                    onClick={() => toggleArrayFilter("postedBy", p.val)}
-                  />
-                );
-              })}
-            </div>
-          </CollapsibleSection>
-
-          {/* Covered Area */}
-          <CollapsibleSection title="Covered Area (sqft)">
+          {/* 6. Covered Area */}
+          <CollapsibleSection title="6. Covered Area (sqft)">
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold text-slate-500">Selected Range</span>
@@ -844,13 +895,15 @@ export function SearchFiltersModal({
             </div>
           </CollapsibleSection>
 
-          {/* Possession Status */}
-          <CollapsibleSection title="Possession Status">
+          {/* 7. Possession Status */}
+          <CollapsibleSection title="7. Possession Status">
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
               {[
                 { label: "Ready To Move", val: "ready" },
                 { label: "Under Construction", val: "under-construction" },
-                { label: "Upcoming", val: "upcoming" },
+                { label: "Within 3 Months", val: "3months" },
+                { label: "Within 6 Months", val: "6months" },
+                { label: "Within 1 Year", val: "1year" },
               ].map((p) => {
                 const isSelected = localFilters.possessionStatus.includes(p.val);
                 return (
@@ -865,65 +918,54 @@ export function SearchFiltersModal({
             </div>
           </CollapsibleSection>
 
-          {/* Sub Property Type */}
-          <CollapsibleSection title="Sub Property Type">
+          {/* 8. Posted By */}
+          <CollapsibleSection title="8. Posted By">
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
               {[
-                { label: "ALL RESIDENTIAL", val: "all_residential" },
-                { label: "Residential Plot", val: "residential-land" },
-                { label: "Residential Flat", val: "apartment" },
-                { label: "Villa", val: "villa" },
-                { label: "Builder Floor", val: "builder-floor" },
-                { label: "Penthouse", val: "penthouse" },
-              ].map((st) => {
-                const isSelected =
-                  st.val === "all_residential"
-                    ? localFilters.propertyType.length === 0
-                    : localFilters.propertyType.includes(st.val);
+                { label: "Owners", val: "owner" },
+                { label: "Agents", val: "agent" },
+                { label: "Builders", val: "builder" },
+              ].map((p) => {
+                const isSelected = localFilters.postedBy.includes(p.val);
                 return (
                   <PillTag
-                    key={st.val}
-                    label={st.label}
+                    key={p.val}
+                    label={p.label}
                     isSelected={isSelected}
-                    onClick={() => {
-                      if (st.val === "all_residential") {
-                        setLocalFilters({ ...localFilters, propertyType: [] });
-                      } else {
-                        toggleArrayFilter("propertyType", st.val);
-                      }
-                    }}
+                    onClick={() => toggleArrayFilter("postedBy", p.val)}
                   />
                 );
               })}
             </div>
           </CollapsibleSection>
 
-          {/* Sale Type */}
-          <CollapsibleSection title="Sale Type">
+          {/* 9. Photos & Videos */}
+          <CollapsibleSection title="9. Photos & Videos">
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
               {[
-                { label: "New", val: "new" },
-                { label: "Resale", val: "resale" },
-              ].map((st) => {
-                const isSelected = localFilters.saleType.includes(st.val);
+                { label: "Photos Available", val: "photos" },
+                { label: "Video Verified Tours", val: "video" },
+              ].map((m) => {
+                const isSelected = localFilters.mediaTypes.includes(m.val);
                 return (
                   <PillTag
-                    key={st.val}
-                    label={st.label}
+                    key={m.val}
+                    label={m.label}
                     isSelected={isSelected}
-                    onClick={() => toggleArrayFilter("saleType", st.val)}
+                    onClick={() => toggleArrayFilter("mediaTypes", m.val)}
                   />
                 );
               })}
             </div>
           </CollapsibleSection>
 
-          {/* Posted Since */}
-          <CollapsibleSection title="Posted Since">
+          {/* 10. Posted Since */}
+          <CollapsibleSection title="10. Posted Since">
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
               {[
-                { label: "All", val: "any" },
+                { label: "All Properties", val: "any" },
                 { label: "Yesterday", val: "1day" },
+                { label: "Last 3 Days", val: "3days" },
                 { label: "Last Week", val: "7days" },
                 { label: "Last 2 Weeks", val: "15days" },
                 { label: "Last Month", val: "30days" },
@@ -941,8 +983,34 @@ export function SearchFiltersModal({
             </div>
           </CollapsibleSection>
 
-          {/* Furnishing */}
-          <CollapsibleSection title="Furnishing">
+          {/* 11. Verified Properties */}
+          <CollapsibleSection title="11. Verified Properties">
+            <div className="divide-y divide-slate-100 py-1">
+              <ToggleSwitch
+                label="Verified Properties Only"
+                checked={localFilters.verifiedBadges.includes("owner_verified")}
+                onChange={() => toggleArrayFilter("verifiedBadges", "owner_verified")}
+              />
+              <ToggleSwitch
+                label="RERA Registered Properties"
+                checked={localFilters.reraRegisteredProperties}
+                onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val })}
+              />
+              <ToggleSwitch
+                label="RERA Registered Agents"
+                checked={localFilters.reraRegisteredAgents}
+                onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredAgents: val })}
+              />
+              <ToggleSwitch
+                label="ROAD Exclusive Properties"
+                checked={localFilters.roadExclusive}
+                onChange={(val) => setLocalFilters({ ...localFilters, roadExclusive: val })}
+              />
+            </div>
+          </CollapsibleSection>
+
+          {/* 12. Furnishing */}
+          <CollapsibleSection title="12. Furnishing">
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
               {[
                 { label: "Furnished", val: "furnished" },
@@ -962,8 +1030,8 @@ export function SearchFiltersModal({
             </div>
           </CollapsibleSection>
 
-          {/* Amenities: 2-Column Checkbox Grid matching screenshot */}
-          <CollapsibleSection title="Amenities">
+          {/* 13. Amenities */}
+          <CollapsibleSection title="13. Amenities">
             <div className="grid grid-cols-2 gap-y-3 gap-x-4 py-1">
               {AMENITIES_GRID.map((amenity) => {
                 const isChecked = localFilters.amenities.includes(amenity.val);
@@ -985,37 +1053,8 @@ export function SearchFiltersModal({
             </div>
           </CollapsibleSection>
 
-          {/* Verified Properties Toggle */}
-          <div className="py-1">
-            <ToggleSwitch
-              label="Verified Properties"
-              checked={localFilters.verifiedBadges.includes("owner_verified")}
-              onChange={() => toggleArrayFilter("verifiedBadges", "owner_verified")}
-            />
-          </div>
-
-          {/* Photos & Videos */}
-          <CollapsibleSection title="Photos & Videos">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
-              {[
-                { label: "Photos", val: "photos" },
-                { label: "Videos", val: "video" },
-              ].map((m) => {
-                const isSelected = localFilters.mediaTypes.includes(m.val);
-                return (
-                  <PillTag
-                    key={m.val}
-                    label={m.label}
-                    isSelected={isSelected}
-                    onClick={() => toggleArrayFilter("mediaTypes", m.val)}
-                  />
-                );
-              })}
-            </div>
-          </CollapsibleSection>
-
-          {/* Facing */}
-          <CollapsibleSection title="Facing">
+          {/* 14. Facing */}
+          <CollapsibleSection title="14. Facing">
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
               {[
                 "East",
@@ -1041,36 +1080,30 @@ export function SearchFiltersModal({
             </div>
           </CollapsibleSection>
 
-          {/* Number of washrooms */}
-          <CollapsibleSection title="Number of washrooms">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
-              {["1", "2", "3", "4", "5"].map((w) => {
-                const isSelected = localFilters.bathrooms.includes(w);
-                return (
-                  <PillTag
-                    key={w}
-                    label={w}
-                    isSelected={isSelected}
-                    onClick={() => toggleArrayFilter("bathrooms", w)}
-                  />
-                );
-              })}
+          {/* 15. Water & Agriculture */}
+          <CollapsibleSection title="15. Water & Agriculture">
+            <div className="space-y-3 py-1">
+              <label className="text-xs font-semibold text-slate-700 block">Water Source</label>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
+                {[
+                  { label: "Municipal Water", val: "municipal" },
+                  { label: "Borewell", val: "borewell" },
+                  { label: "24/7 Water Supply", val: "24x7" },
+                  { label: "Water Storage", val: "storage" },
+                ].map((w) => {
+                  const isSelected = localFilters.waterSource?.includes(w.val) || false;
+                  return (
+                    <PillTag
+                      key={w.val}
+                      label={w.label}
+                      isSelected={isSelected}
+                      onClick={() => toggleArrayFilter("waterSource", w.val)}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </CollapsibleSection>
-
-          {/* Feature Toggle Switches */}
-          <div className="divide-y divide-slate-100 py-1">
-            <ToggleSwitch
-              label="RERA Registered Properties"
-              checked={localFilters.reraRegisteredProperties}
-              onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val })}
-            />
-            <ToggleSwitch
-              label="RERA Registered Agents"
-              checked={localFilters.reraRegisteredAgents}
-              onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredAgents: val })}
-            />
-          </div>
 
         </div>
 
@@ -1336,42 +1369,66 @@ export function SearchFiltersModal({
               </div>
             )}
 
-            {/* 3. Property Type Tab */}
+            {/* 2. Property Type Tab */}
             {activeDesktopTab === "propertyType" && (
-              <div className="space-y-5">
-                <label className="text-[13px] font-semibold text-slate-900 block">Property Type</label>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                  {[
-                    { label: "Flat / Apartment", val: "apartment", icon: Building },
-                    { label: "House / Villa", val: "villa", icon: Home },
-                    { label: "CRDA Ventures", val: "venture", icon: Landmark },
-                    { label: "Plot / Land", val: "residential-land", icon: Trees },
-                    { label: "Commercial Space", val: "commercial-spaces", icon: Briefcase },
-                  ].map((item) => {
-                    const isSelected = localFilters.propertyType.includes(item.val);
-                    const Icon = item.icon;
-                    return (
-                      <button
+              <div className="space-y-6">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">Property Type</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    {[
+                      { label: "Flat / Apartment", val: "apartment", icon: Building },
+                      { label: "House / Villa", val: "villa", icon: Home },
+                      { label: "CRDA Ventures", val: "venture", icon: Landmark },
+                      { label: "Plot / Land", val: "residential-land", icon: Trees },
+                      { label: "Commercial Space", val: "commercial-spaces", icon: Briefcase },
+                    ].map((item) => {
+                      const isSelected = localFilters.propertyType.includes(item.val);
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.val}
+                          type="button"
+                          onClick={() => toggleArrayFilter("propertyType", item.val)}
+                          className={cn(
+                            "h-24 rounded-2xl border p-3 flex flex-col items-center justify-center relative transition-all cursor-pointer select-none",
+                            isSelected
+                              ? "bg-[#e6f4f2] border-[#008075]/40 text-slate-950 font-semibold shadow-xs"
+                              : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                          )}
+                        >
+                          {isSelected && (
+                            <span className="absolute top-2 right-2 text-[#008075]">
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            </span>
+                          )}
+                          <Icon className={cn("w-6 h-6 mb-1.5", isSelected ? "text-[#008075]" : "text-slate-600")} />
+                          <span className="text-xs text-center">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 space-y-2.5">
+                  <label className="text-[13px] font-semibold text-slate-900 block">Sub Property Types</label>
+                  <div className="flex flex-wrap gap-2.5">
+                    {[
+                      { label: "Multistorey Apartment", val: "apartment" },
+                      { label: "Builder Floor", val: "builder-floor" },
+                      { label: "Villa", val: "villa" },
+                      { label: "Residential Plot", val: "residential-land" },
+                      { label: "Penthouse", val: "penthouse" },
+                      { label: "Studio Apartment", val: "studio" },
+                      { label: "Farm House", val: "farmhouse" },
+                    ].map((item) => (
+                      <PillTag
                         key={item.val}
-                        type="button"
+                        label={item.label}
+                        isSelected={localFilters.propertyType.includes(item.val)}
                         onClick={() => toggleArrayFilter("propertyType", item.val)}
-                        className={cn(
-                          "h-24 rounded-2xl border p-3 flex flex-col items-center justify-center relative transition-all cursor-pointer select-none",
-                          isSelected
-                            ? "bg-[#e6f4f2] border-[#008075]/40 text-slate-950 font-semibold shadow-xs"
-                            : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
-                        )}
-                      >
-                        {isSelected && (
-                          <span className="absolute top-2 right-2 text-[#008075]">
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          </span>
-                        )}
-                        <Icon className={cn("w-6 h-6 mb-1.5", isSelected ? "text-[#008075]" : "text-slate-600")} />
-                        <span className="text-xs text-center">{item.label}</span>
-                      </button>
-                    );
-                  })}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -1456,30 +1513,7 @@ export function SearchFiltersModal({
               </div>
             )}
 
-            {/* 7. Sub Property Type Tab */}
-            {activeDesktopTab === "subPropertyType" && (
-              <div className="space-y-4">
-                <label className="text-[13px] font-semibold text-slate-900 block">Residential Properties</label>
-                <div className="flex flex-wrap gap-2.5">
-                  {[
-                    { label: "Multistorey Apartment", val: "apartment" },
-                    { label: "Builder Floor", val: "builder-floor" },
-                    { label: "Villa", val: "villa" },
-                    { label: "Residential Plot", val: "residential-land" },
-                    { label: "Penthouse", val: "penthouse" },
-                    { label: "Studio Apartment", val: "studio" },
-                    { label: "Farm House", val: "farmhouse" },
-                  ].map((item) => (
-                    <PillTag
-                      key={item.val}
-                      label={item.label}
-                      isSelected={localFilters.propertyType.includes(item.val)}
-                      onClick={() => toggleArrayFilter("propertyType", item.val)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+
 
             {/* 8. Sale Type Tab */}
             {activeDesktopTab === "saleType" && (
