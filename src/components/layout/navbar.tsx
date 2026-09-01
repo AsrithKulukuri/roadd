@@ -281,7 +281,7 @@ export function Navbar() {
             </div>
 
             {/* Center: Interactive Search Bar on Scroll OR Navigation Links */}
-            <div ref={navDropdownRef} className="flex-1 min-w-0 max-w-3xl mx-2 sm:mx-4 hidden lg:flex items-center justify-center">
+            <div ref={navDropdownRef} className="flex-1 min-w-0 max-w-5xl mx-2 sm:mx-4 hidden lg:flex items-center justify-center">
               <AnimatePresence mode="wait">
                 {pathname === "/" && isScrolled ? (
                   <motion.div
@@ -618,27 +618,32 @@ export function Navbar() {
                 </div>
               )}
 
-              {/* Post Requirement CTA Button */}
-              <button
-                onClick={() => setIsRequirementModalOpen(true)}
-                className={cn(
-                  "hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 border",
-                  isTransparent
-                    ? "bg-slate-950/90 hover:bg-slate-900 text-white border-white/25 backdrop-blur-md hover:border-amber-400"
-                    : "bg-slate-950 hover:bg-slate-900 text-white border-slate-800 hover:border-amber-400"
-                )}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20 shrink-0" />
-                <span className="whitespace-nowrap">Post Requirement</span>
-              </button>
+              {/* Post Requirement & List Property (Hidden when scrolled on home page so search bar gets maximum space) */}
+              {!(pathname === "/" && isScrolled) && (
+                <>
+                  {/* Post Requirement CTA Button */}
+                  <button
+                    onClick={() => setIsRequirementModalOpen(true)}
+                    className={cn(
+                      "hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 border",
+                      isTransparent
+                        ? "bg-slate-950/90 hover:bg-slate-900 text-white border-white/25 backdrop-blur-md hover:border-amber-400"
+                        : "bg-slate-950 hover:bg-slate-900 text-white border-slate-800 hover:border-amber-400"
+                    )}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20 shrink-0" />
+                    <span className="whitespace-nowrap">Post Requirement</span>
+                  </button>
 
-              {/* List Property CTA Button */}
-              <Link href="/list-with-us" className="hidden md:block">
-                <Button size="sm" className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-full shadow-xs px-4 h-8 text-xs border-0">
-                  <Plus className="h-3.5 w-3.5 stroke-[3]" />
-                  List Property
-                </Button>
-              </Link>
+                  {/* List Property CTA Button */}
+                  <Link href="/list-with-us" className="hidden md:block">
+                    <Button size="sm" className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-full shadow-xs px-4 h-8 text-xs border-0">
+                      <Plus className="h-3.5 w-3.5 stroke-[3]" />
+                      List Property
+                    </Button>
+                  </Link>
+                </>
+              )}
 
             </div>
           </div>
