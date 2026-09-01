@@ -296,7 +296,7 @@ export function Navbar() {
                     <form
                       action="#"
                       onSubmit={handleNavSearchSubmit}
-                      className="flex-1 min-w-0 flex items-center px-2.5 gap-2 border-r border-slate-800/80 mr-1"
+                      className="flex-1 min-w-0 flex items-center px-2.5 gap-2 border-r border-slate-800/80 mr-1 outline-none ring-0 shadow-none"
                     >
                       <Search className="w-4 h-4 text-amber-500 shrink-0" />
                       <input
@@ -304,7 +304,8 @@ export function Navbar() {
                         value={navSearchQuery}
                         onChange={(e) => setNavSearchQuery(e.target.value)}
                         placeholder={`Search "${NAV_SEARCH_PLACEHOLDERS[placeholderIndex]}"...`}
-                        className="w-full bg-transparent text-xs font-semibold text-white placeholder:text-slate-400 outline-none border-none p-0 focus:ring-0 focus:outline-none"
+                        style={{ outline: "none", boxShadow: "none" }}
+                        className="w-full bg-transparent text-xs font-semibold text-white placeholder:text-slate-400 border-none outline-none ring-0 shadow-none focus:outline-none focus:ring-0 focus:border-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-none focus-visible:shadow-none p-0"
                       />
                       {navSearchQuery && (
                         <button
@@ -366,7 +367,8 @@ export function Navbar() {
                               value={navLocalitySearch}
                               onChange={(e) => setNavLocalitySearch(e.target.value)}
                               placeholder={`Search areas in ${navSelectedCity}...`}
-                              className="w-full bg-transparent text-xs text-white placeholder:text-slate-500 outline-none border-none p-0 focus:ring-0"
+                              style={{ outline: "none", boxShadow: "none" }}
+                              className="w-full bg-transparent text-xs text-white placeholder:text-slate-500 border-none outline-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 p-0"
                             />
                             {navLocalitySearch && (
                               <button type="button" onClick={() => setNavLocalitySearch("")} className="text-slate-400 hover:text-white">
