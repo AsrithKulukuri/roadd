@@ -2,10 +2,18 @@ import crypto from "crypto";
 
 /**
  * OTP Cryptographic Utility Service
- * Provides cryptographically secure 6-digit OTP generation, SHA-256 hashing,
+ * Provides cryptographically secure 6-digit OTP generation, keyed hashing,
  * and constant-time string comparison to prevent timing side-channel attacks.
  */
 export class OTPCryptoService {
+  private static getHashSecret(): string {
+    const secret = process.env.OTP_HASH_SECRET || process.env.SESSION_SECRET;
+    if (!secret || secret.length < 32) {
+      throw new Error("OTP_HASH_SECRET or SESSION_SECRET must be configured with at least 32 characters.");
+    }
+    return secret;
+  }
+
   /**
    * Generates a cryptographically secure random 6-digit OTP (100000 - 999999).
    */
@@ -15,13 +23,13 @@ export class OTPCryptoService {
   }
 
   /**
-   * Hashes a 6-digit OTP using SHA-256.
+   * Hashes a 6-digit OTP using a server-keyed HMAC.
    * Never store plain text OTPs in the database!
    * 
    * @param otp - 6-digit OTP string
    */
   static hashOTP(otp: string): string {
-    return crypto.createHash("sha256").update(otp.trim()).digest("hex");
+    return crypto.createHmac("sha256", this.getHashSecret()).update(otp.trim()).digest("hex");
   }
 
   /**
@@ -36,8 +44,8 @@ export class OTPCryptoService {
     }
 
     try {
-      const bufA = Buffer.from(hashA, "utf8");
-      const bufB = Buffer.from(hashB, "utf8");
+      const bufA = Buffer.from(hashA, "hex");
+      const bufB = Buffer.from(hashB, "hex");
       return crypto.timingSafeEqual(bufA, bufB);
     } catch {
       return false;

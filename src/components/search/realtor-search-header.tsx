@@ -235,6 +235,7 @@ export function RealtorSearchHeader({
                   <input
                     ref={inputRef}
                     type="text"
+                    aria-label="Search properties and projects"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     onFocus={() => setIsFocused(true)}

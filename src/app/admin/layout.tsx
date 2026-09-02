@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { 
@@ -19,6 +19,7 @@ import {
   MessageSquare,
   MapPin,
   LayoutList,
+  Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -35,6 +36,7 @@ const sidebarLinks = [
   { href: "/admin/locations", label: "Locations & Localities", icon: MapPin },
   { href: "/admin/banners", label: "Banners", icon: ImageIcon },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/broadcasts", label: "WhatsApp Broadcasts", icon: Send },
   { href: "/admin/content", label: "Categories & Content", icon: LayoutGrid },
   { href: "/admin/homepage", label: "Homepage Shelves", icon: LayoutList },
   { href: "/admin/settings", label: "Settings", icon: Settings },
@@ -46,6 +48,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const unreadCount = useInquiriesStore((s) => s.getUnreadCount());
@@ -53,6 +56,13 @@ export default function AdminLayout({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const signOut = async () => {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    setIsMobileOpen(false);
+    router.replace("/");
+    router.refresh();
+  };
 
   if (pathname === "/admin/login") {
     return <AdminGuard>{children}</AdminGuard>;
@@ -113,14 +123,14 @@ export default function AdminLayout({
           </nav>
 
           <div className="p-4 border-t border-border-default shrink-0">
-            <Link
-              href="/"
-              onClick={() => setIsMobileOpen(false)}
+            <button
+              type="button"
+              onClick={() => void signOut()}
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all font-medium"
             >
               <LogOut className="w-5 h-5" />
               Sign Out
-            </Link>
+            </button>
           </div>
         </div>
       </aside>

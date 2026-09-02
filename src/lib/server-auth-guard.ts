@@ -226,7 +226,7 @@ export async function authenticateServerRequest(
     let profileFound = false;
 
     try {
-      let profileQuery = supabaseAdmin
+      const profileQuery = supabaseAdmin
         .from("profiles")
         .select("id, role, full_name, phone, email")
         .eq("id", user.id)
@@ -256,10 +256,7 @@ export async function authenticateServerRequest(
 
     const isAdmin =
       (profileFound && role === "admin") ||
-      user.role === "admin" ||
-      user.user_metadata?.role === "admin" ||
-      (typeof user.app_metadata === "object" && (user.app_metadata as Record<string, unknown>)?.role === "admin") ||
-      (email && email.toLowerCase() === "admin@road.com");
+      (typeof user.app_metadata === "object" && (user.app_metadata as Record<string, unknown>)?.role === "admin");
 
     const resolvedUser = {
       ...user,

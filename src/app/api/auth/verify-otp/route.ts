@@ -85,7 +85,10 @@ export async function POST(request: Request) {
       logger.security("VERIFY_OTP_EXPIRED", `${cleanPhone.slice(0, 4)}****${cleanPhone.slice(-3)}`, false, {
         requestId,
       });
-      await supabaseAdmin.from("phone_otps").delete().eq("id", record.id);
+      await supabaseAdmin
+        .from("phone_otps")
+        .update({ verified: true, verified_at: now.toISOString(), delivery_status: "expired" })
+        .eq("id", record.id);
       return NextResponse.json(
         {
           success: false,
@@ -105,7 +108,10 @@ export async function POST(request: Request) {
         attempts: record.attempts,
         requestId,
       });
-      await supabaseAdmin.from("phone_otps").delete().eq("id", record.id);
+      await supabaseAdmin
+        .from("phone_otps")
+        .update({ verified: true, verified_at: now.toISOString(), delivery_status: "locked" })
+        .eq("id", record.id);
       return NextResponse.json(
         {
           success: false,
@@ -123,13 +129,36 @@ export async function POST(request: Request) {
     const isOTPValid = OTPCryptoService.verifyOTP(otp, record.otp_hash);
 
     if (!isOTPValid) {
-      const newAttempts = record.attempts + 1;
-      await supabaseAdmin
-        .from("phone_otps")
-        .update({ attempts: newAttempts })
-        .eq("id", record.id);
+      const { data: attemptRows, error: attemptError } = await supabaseAdmin.rpc(
+        "record_failed_phone_otp_attempt",
+        { p_otp_id: record.id, p_max_attempts: MAX_ATTEMPTS }
+      );
+      if (attemptError) {
+        logger.error("OTP attempt could not be recorded", { error: attemptError.message, requestId });
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: "OTP_STORAGE_UNAVAILABLE", message: "Verification is temporarily unavailable." },
+            requestId,
+          },
+          { status: 503 }
+        );
+      }
 
-      const remaining = MAX_ATTEMPTS - newAttempts;
+      const attemptResult = attemptRows?.[0] as { attempts?: number; locked?: boolean } | undefined;
+      if (!attemptResult) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: "OTP_ALREADY_USED", message: "This OTP is no longer active. Request a new code." },
+            requestId,
+          },
+          { status: 409 }
+        );
+      }
+      const newAttempts = Number(attemptResult.attempts || 0);
+
+      const remaining = Math.max(0, MAX_ATTEMPTS - newAttempts);
       logger.security("VERIFY_OTP_FAILED", `${cleanPhone.slice(0, 4)}****${cleanPhone.slice(-3)}`, false, {
         remainingAttempts: remaining,
         requestId,
@@ -144,12 +173,39 @@ export async function POST(request: Request) {
           },
           requestId,
         },
-        { status: 401 }
+        { status: attemptResult.locked ? 403 : 401 }
       );
     }
 
-    // 6. Delete OTP Record Immediately (Prevent Replay Attacks)
-    await supabaseAdmin.from("phone_otps").delete().eq("id", record.id);
+    // 6. Mark the code consumed to prevent replay while preserving rate-limit history.
+    const { data: consumedOtp, error: consumeError } = await supabaseAdmin
+      .from("phone_otps")
+      .update({ verified: true, verified_at: now.toISOString(), delivery_status: "verified" })
+      .eq("id", record.id)
+      .eq("verified", false)
+      .select("id")
+      .maybeSingle();
+    if (consumeError) {
+      logger.error("OTP could not be consumed", { error: consumeError.message, requestId });
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: "OTP_STORAGE_UNAVAILABLE", message: "Verification is temporarily unavailable." },
+          requestId,
+        },
+        { status: 503 }
+      );
+    }
+    if (!consumedOtp) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: "OTP_ALREADY_USED", message: "This OTP has already been used. Request a new code." },
+          requestId,
+        },
+        { status: 409 }
+      );
+    }
 
     // 7. Indexed User Lookup
     let userPayload: { id: string; phone: string; name: string; email: string; role: string } | null = null;

@@ -8,9 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:quality": "npm run lint && npm run typecheck && npm audit && npm run test:e2e && npm run build",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:ui": "npm run build && playwright test --ui",
+    "test:quality": "npm run lint && npm run typecheck && npm audit && npm run test:e2e",
     "seed:db": "tsx scripts/seed-complete-database.ts"
   },
   "dependencies": {

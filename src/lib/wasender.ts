@@ -9,6 +9,7 @@ export interface WasenderSendOptions {
 
 export interface WasenderExecutionResult extends WasenderAPIResponse {
   statusCode?: number;
+  retryAfterSeconds?: number;
   errorCategory?:
     | "CONFIG_ERROR"
     | "AUTH_ERROR"
@@ -133,7 +134,7 @@ export function getWasenderEndpoint(): string {
     const cleaned = rawUrl.replace(/\/+$/, "");
     return cleaned.endsWith("/send-message") ? cleaned : `${cleaned}/send-message`;
   }
-  return "https://wasenderapi.com/api/send-message";
+  return "https://www.wasenderapi.com/api/send-message";
 }
 
 /**
@@ -397,12 +398,97 @@ export class WasenderService {
   }
 
   /**
+   * Sends a JPEG/PNG image with an optional caption through Wasender.
+   * The image URL must be publicly reachable by the provider.
+   */
+  static async sendImageMessage(
+    phone: string,
+    imageUrl: string,
+    text: string,
+    options?: WasenderSendOptions
+  ): Promise<WasenderExecutionResult> {
+    const cleanUrl = imageUrl.trim();
+    try {
+      const parsed = new URL(cleanUrl);
+      if (parsed.protocol !== "https:") throw new Error("HTTPS required");
+    } catch {
+      return {
+        success: false,
+        error: "Broadcast image must use a valid public HTTPS URL.",
+        errorCategory: "CONFIG_ERROR",
+      };
+    }
+
+    const startTime = Date.now();
+    const requestId = options?.requestId || `media-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const cleanPhone = formatWhatsAppPhone(phone);
+    if (!cleanPhone || cleanPhone.length < 10) {
+      return {
+        success: false,
+        error: "Invalid recipient phone number",
+        errorCategory: "INVALID_PHONE",
+        durationMs: Date.now() - startTime,
+      };
+    }
+
+    const mode = getWasenderNotificationMode();
+    const endpoint = getWasenderEndpoint();
+    const endpointHost = new URL(endpoint).hostname;
+    const runtime = process.env.VERCEL ? "vercel-production" : process.env.NODE_ENV || "development";
+
+    if (mode === "disabled") {
+      return {
+        success: false,
+        error: "WhatsApp notification messaging is disabled.",
+        errorCategory: "CONFIG_ERROR",
+        durationMs: Date.now() - startTime,
+      };
+    }
+
+    if (mode === "mock") {
+      console.log(`[WASENDER MOCK MEDIA] Simulated image notification to ${maskPhone(cleanPhone)}`);
+      logWasenderDiagnostic({
+        requestId,
+        runtime,
+        mode,
+        endpointHost,
+        status: 200,
+        durationMs: Date.now() - startTime,
+        success: true,
+      });
+      return {
+        success: true,
+        message: "WhatsApp image delivery simulated (QA mode)",
+        id: `mock-media-${Date.now()}`,
+        durationMs: Date.now() - startTime,
+      };
+    }
+
+    const apiKey = getSanitizedEnv("WASENDER_API_KEY");
+    if (!apiKey) {
+      return {
+        success: false,
+        error: "Wasender service configuration error",
+        errorCategory: "CONFIG_ERROR",
+        durationMs: Date.now() - startTime,
+      };
+    }
+
+    return this.executeWithRetry(
+      endpoint,
+      apiKey,
+      { to: cleanPhone, text, imageUrl: cleanUrl },
+      { requestId, runtime, mode, endpointHost, startTime, logPrefix: "MEDIA" }
+    );
+  }
+
+  /**
    * Helper to perform HTTP request with bounded exponential backoff retry for 429 and temporary 5xx errors.
    */
   private static async executeWithRetry(
     endpoint: string,
     apiKey: string,
-    payload: { to: string; text: string },
+    payload: { to: string; text: string; imageUrl?: string },
     ctx: {
       requestId: string;
       runtime: string;
@@ -474,14 +560,6 @@ export class WasenderService {
             response.headers.get("retry-after") || String(data.retry_after || 3),
             10
           );
-          const waitMs = Math.min(Math.max(retryAfterSec, 1) * 1000, 5000);
-
-          if (attempt <= maxRetries) {
-            console.warn(`[WASENDER 429 RETRY] Attempt ${attempt}/${maxRetries}. Waiting ${waitMs}ms before retry.`);
-            await new Promise((r) => setTimeout(r, waitMs));
-            continue;
-          }
-
           logWasenderDiagnostic({
             requestId: ctx.requestId,
             runtime: ctx.runtime,
@@ -499,6 +577,7 @@ export class WasenderService {
             error: "WhatsApp gateway rate limit exceeded. Please wait a few seconds.",
             errorCategory: "RATE_LIMITED",
             statusCode: 429,
+            retryAfterSeconds: Math.max(retryAfterSec, 1),
             durationMs,
           };
         }

@@ -73,35 +73,54 @@ export async function POST(request: Request) {
 
     const { phone } = validationResult.data;
 
-    // 2. Rate Limiting Check (Max 1 per 60s, Max 5 per hour)
+    // 2. Durable phone and hashed-network rate limiting.
+    let requestIpHash: string;
     try {
-      const rateLimit = await RateLimiterService.checkRateLimit(phone);
-      if (!rateLimit.allowed) {
-        logger.security("SEND_OTP_RATE_LIMITED", phone, false, { reason: rateLimit.reason, requestId });
-        return NextResponse.json(
-          {
-            success: false,
-            error: {
-              code: "RATE_LIMIT_EXCEEDED",
-              message: rateLimit.reason || "Rate limit exceeded. Please wait before requesting another OTP.",
-            },
-            retryAfterSeconds: rateLimit.retryAfterSeconds || 60,
-            requestId,
-          },
-          { status: 429 }
-        );
-      }
-    } catch (rateLimitErr: unknown) {
-      const msg = rateLimitErr instanceof Error ? rateLimitErr.message : String(rateLimitErr);
-      console.warn("[RATE_LIMIT_BYPASS_ON_ERROR]", msg);
+      requestIpHash = RateLimiterService.hashRequestIp(request);
+    } catch (error: unknown) {
+      logger.error("OTP rate-limit secret is unavailable", {
+        error: error instanceof Error ? error.message : String(error),
+        requestId,
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: "RATE_LIMIT_CONFIGURATION_ERROR", message: "Verification is temporarily unavailable." },
+          requestId,
+        },
+        { status: 503 }
+      );
     }
 
-    // 3. Delete any previous unverified OTP records for this phone number
-    try {
-      await supabaseAdmin.from("phone_otps").delete().eq("phone", phone);
-    } catch (cleanupErr: unknown) {
-      const msg = cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr);
-      console.warn("[CLEANUP_OTP_WARNING]", msg);
+    const rateLimit = await RateLimiterService.checkRateLimit(phone, requestIpHash);
+    if (!rateLimit.allowed) {
+      logger.security("SEND_OTP_RATE_LIMITED", phone, false, { reason: rateLimit.reason, requestId });
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "RATE_LIMIT_EXCEEDED",
+            message: rateLimit.reason || "Rate limit exceeded. Please wait before requesting another OTP.",
+          },
+          retryAfterSeconds: rateLimit.retryAfterSeconds || 60,
+          requestId,
+        },
+        { status: 429 }
+      );
+    }
+
+    // 3. Invalidate an older active code while retaining its audit history.
+    const { error: invalidateError } = await supabaseAdmin
+      .from("phone_otps")
+      .update({ verified: true, verified_at: new Date().toISOString(), delivery_status: "superseded" })
+      .eq("phone", phone)
+      .eq("verified", false);
+    if (invalidateError) {
+      logger.error("Previous OTP could not be invalidated", { error: invalidateError.message, requestId });
+      return NextResponse.json(
+        { success: false, error: { code: "OTP_STORAGE_UNAVAILABLE", message: "Unable to initialize verification session." }, requestId },
+        { status: 503 }
+      );
     }
 
     // 4. Generate Cryptographically Secure 6-Digit OTP
@@ -116,17 +135,26 @@ export async function POST(request: Request) {
       : "unknown";
 
     let dbError: { code?: string; message?: string; details?: string; hint?: string } | null = null;
+    let otpRecordId = "";
 
     try {
-      const insertRes = await supabaseAdmin.from("phone_otps").insert({
-        phone,
-        otp_hash: otpHash,
-        expires_at: expiresAt,
-        attempts: 0,
-        verified: false,
-      });
+      const insertRes = await supabaseAdmin
+        .from("phone_otps")
+        .insert({
+          phone,
+          otp_hash: otpHash,
+          expires_at: expiresAt,
+          attempts: 0,
+          verified: false,
+          request_ip_hash: requestIpHash,
+          delivery_status: "pending",
+        })
+        .select("id")
+        .single();
       if (insertRes.error) {
         dbError = insertRes.error;
+      } else {
+        otpRecordId = insertRes.data.id;
       }
     } catch (err: unknown) {
       dbError = {
@@ -173,13 +201,11 @@ export async function POST(request: Request) {
     );
 
     if (!wasenderResult.success) {
-      // Invalidate stored OTP if delivery failed to prevent orphan unusable active record
-      try {
-        await supabaseAdmin.from("phone_otps").delete().eq("phone", phone);
-      } catch (cleanupErr: unknown) {
-        const msg = cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr);
-        console.warn("[CLEANUP_FAILED_OTP_WARNING]", msg);
-      }
+      // Invalidate the unusable code while retaining this request for rate limiting.
+      await supabaseAdmin
+        .from("phone_otps")
+        .update({ verified: true, verified_at: new Date().toISOString(), delivery_status: "failed" })
+        .eq("id", otpRecordId);
 
       logger.error("WasenderAPI failed to deliver WhatsApp OTP", {
         phone: `${phone.slice(0, 4)}****${phone.slice(-3)}`,
@@ -209,6 +235,11 @@ export async function POST(request: Request) {
         { status: statusCode }
       );
     }
+
+    await supabaseAdmin
+      .from("phone_otps")
+      .update({ delivery_status: "sent" })
+      .eq("id", otpRecordId);
 
     logger.security("SEND_OTP_SUCCESS", `${phone.slice(0, 4)}****${phone.slice(-3)}`, true, {
       expiresInSeconds,

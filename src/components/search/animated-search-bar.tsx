@@ -127,6 +127,7 @@ export function AnimatedSearchBar({
         {/* Actual Input */}
         <input
           type="text"
+          aria-label="Search properties and projects"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {

@@ -29,6 +29,9 @@ const protectedRequests = [
   { path: "/api/storage/upload", body: { filename: "test.jpg" }, status: 401 },
   { path: "/api/storage/upload-url", body: { filename: "test.jpg", folder: "properties", size: 100, contentType: "image/jpeg" }, status: 401 },
   { path: "/api/storage/signed-url", body: { key: "properties/test.jpg" }, status: 401 },
+  { path: "/api/admin/whatsapp/contacts", body: { action: "unsubscribe", contactId: "00000000-0000-0000-0000-000000000000" }, status: 403 },
+  { path: "/api/admin/whatsapp/campaigns", body: { name: "test", message: "test message", contentType: "custom", selectedContactIds: [] }, status: 403 },
+  { path: "/api/admin/whatsapp/process", body: { campaignId: "00000000-0000-0000-0000-000000000000" }, status: 403 },
 ];
 
 for (const entry of protectedRequests) {
@@ -37,6 +40,39 @@ for (const entry of protectedRequests) {
     expect(response.status()).toBe(entry.status);
   });
 }
+
+for (const path of ["/api/admin/whatsapp/audience", "/api/admin/whatsapp/campaigns"]) {
+  test(`${path} rejects anonymous reads`, async ({ request }) => {
+    const response = await request.get(path);
+    expect(response.status()).toBe(403);
+  });
+}
+
+test("Wasender webhook rejects an invalid signature", async ({ request }) => {
+  const response = await request.post("/api/webhooks/wasender", {
+    headers: { "x-webhook-signature": "invalid" },
+    data: { event: "messages.received", data: {} },
+  });
+  expect([401, 503]).toContain(response.status());
+});
+
+test("OTP endpoints reject malformed input without contacting the provider", async ({ request }) => {
+  const sendResponse = await request.post("/api/auth/send-otp", { data: { phone: "123" } });
+  expect(sendResponse.status()).toBe(400);
+  await expect(sendResponse.json()).resolves.toMatchObject({
+    success: false,
+    error: { code: "INVALID_PHONE_NUMBER" },
+  });
+
+  const verifyResponse = await request.post("/api/auth/verify-otp", {
+    data: { phone: "123", otp: "12" },
+  });
+  expect(verifyResponse.status()).toBe(400);
+  await expect(verifyResponse.json()).resolves.toMatchObject({
+    success: false,
+    error: { code: "INVALID_PAYLOAD" },
+  });
+});
 
 test("forged legacy admin cookies do not grant access", async ({ page, context }) => {
   await context.addCookies([

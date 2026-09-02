@@ -754,6 +754,7 @@ function UnifiedSearchPage() {
               {viewMode !== "map" && (
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                   <select
+                    aria-label="Sort search results"
                     value={sortBy}
                     onChange={(e) => {
                       const newSort = e.target.value as SortByOption;

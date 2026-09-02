@@ -318,7 +318,7 @@ export function Navbar() {
         className={cn(
           "fixed top-0 left-0 right-0 z-[100] h-16 flex items-center transition-all duration-300",
           isTransparent
-            ? "bg-transparent border-transparent"
+            ? "bg-slate-950/80 backdrop-blur-sm border-b border-white/10"
             : "bg-slate-950/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-800/90 shadow-md",
           pathname !== "/search" && isScrolled && "max-lg:opacity-0 max-lg:pointer-events-none"
         )}
@@ -327,7 +327,7 @@ export function Navbar() {
           <div className="flex items-center justify-between gap-3">
             {/* Left: Brand Logo */}
             <div className="shrink-0">
-              <Logo size="md" textColor="text-white" />
+              <Logo size="md" textColor="text-white" isDarkBg />
             </div>
 
             {/* Center: Interactive Search Bar on Scroll OR Navigation Links */}
@@ -536,9 +536,9 @@ export function Navbar() {
                 ) : (
                   <motion.nav
                     key="nav-links"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
+                    initial={{ scale: 0.98 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0.98 }}
                     transition={{ duration: 0.22, ease: "easeOut" }}
                     className="flex items-center gap-1"
                     role="navigation"
@@ -554,7 +554,7 @@ export function Navbar() {
                               ? "text-amber-500 font-black"
                               : isTransparent
                                 ? "text-white hover:text-amber-400 hover:bg-white/10"
-                                : "text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                : "text-white hover:text-amber-400 hover:bg-white/10"
                           )}
                         >
                           <span className="flex items-center gap-1">
@@ -606,7 +606,7 @@ export function Navbar() {
                   "hidden sm:inline-flex p-2 rounded-xl transition-colors",
                   isTransparent
                     ? "text-white hover:bg-white/15"
-                    : "text-slate-900 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    : "text-white hover:text-amber-400 hover:bg-white/10"
                 )}
                 aria-label="Saved properties"
               >
@@ -622,7 +622,7 @@ export function Navbar() {
                       "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border",
                       isTransparent
                         ? "bg-black/35 text-white hover:bg-black/55 border-white/20 backdrop-blur-md"
-                        : "bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700"
+                        : "bg-white/10 text-white hover:bg-white/15 border-white/20 backdrop-blur-md"
                     )}
                   >
                     <User className="w-3.5 h-3.5 text-amber-400" />
@@ -658,7 +658,7 @@ export function Navbar() {
                         "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer",
                         isTransparent
                           ? "text-white hover:bg-white/15"
-                          : "text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          : "text-white hover:bg-white/15"
                       )}
                     >
                       Log in
