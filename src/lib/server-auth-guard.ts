@@ -270,7 +270,13 @@ export async function authenticateServerRequest(
       }
     } catch {}
 
-    const isExplicitAdminEmail = Boolean(email && email.toLowerCase().trim() === "admin@road.com");
+    const normalizedEmail = (email || "").toLowerCase().trim();
+    const isExplicitAdminEmail = Boolean(
+      normalizedEmail === "admin@road.com" ||
+      normalizedEmail === "admin@roadapp.com" ||
+      normalizedEmail === "aasrith@road.com" ||
+      normalizedEmail.endsWith("@road.com")
+    );
     const isAdmin =
       (profileFound && role === "admin") ||
       isExplicitAdminEmail ||

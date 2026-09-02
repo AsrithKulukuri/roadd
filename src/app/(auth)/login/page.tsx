@@ -74,12 +74,11 @@ function LoginForm() {
 
       if (res.isProfileComplete) {
         // User has full details (name & email)! Redirect to target property or dashboard
-        const destination = user?.role === "admin" && redirectTarget === "/dashboard" ? "/admin/dashboard" : redirectTarget;
         setTimeout(() => {
           if (typeof window !== "undefined") {
-            window.location.href = destination;
+            window.location.href = redirectTarget;
           } else {
-            router.push(destination);
+            router.push(redirectTarget);
           }
         }, 500);
       } else {
@@ -103,12 +102,11 @@ function LoginForm() {
         })
       );
     }
-    const destination = updatedUser?.role === "admin" && redirectTarget === "/dashboard" ? "/admin/dashboard" : redirectTarget;
     setTimeout(() => {
       if (typeof window !== "undefined") {
-        window.location.href = destination;
+        window.location.href = redirectTarget;
       } else {
-        router.push(destination);
+        router.push(redirectTarget);
       }
     }, 500);
   };
