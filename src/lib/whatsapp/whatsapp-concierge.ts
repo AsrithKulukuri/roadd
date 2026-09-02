@@ -1,8 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { normalizeWhatsAppPhone, readImageUrl } from "@/lib/whatsapp-audience";
+import { normalizeWhatsAppPhone } from "@/lib/whatsapp-audience";
 import { WasenderService } from "@/lib/wasender";
 import { formatPriceCompact } from "@/lib/utils";
+import { parseSearchIntent, matchesPropertySearch, matchesProjectSearch } from "@/lib/search-engine";
+import { mockProperties } from "@/lib/mock-data";
+import type { Property } from "@/types/property";
+import type { Project } from "@/types/project";
 
 export interface ConciergeExecutionResult {
   handled: boolean;
@@ -12,10 +16,41 @@ export interface ConciergeExecutionResult {
   message?: string;
 }
 
-type LooseRecord = Record<string, unknown>;
+type LooseRecord = Record<string, any>;
 
 function str(val: unknown): string {
   return typeof val === "string" ? val.trim() : "";
+}
+
+/**
+ * Safely extracts image URL from any property or project record
+ */
+function extractHeroImage(item: any): string {
+  if (!item) return "";
+  if (typeof item.coverImage === "string" && item.coverImage.trim()) return item.coverImage.trim();
+  if (Array.isArray(item.images) && item.images.length > 0) {
+    const first = item.images[0];
+    if (typeof first === "string") return first;
+    if (first && typeof first.url === "string") return first.url;
+  }
+  if (typeof item.imageUrl === "string" && item.imageUrl.trim()) return item.imageUrl.trim();
+  if (typeof item.mediaUrl === "string" && item.mediaUrl.trim()) return item.mediaUrl.trim();
+  return "";
+}
+
+/**
+ * Safely formats location string from property or project
+ */
+function formatLocation(item: any): string {
+  if (!item) return "";
+  if (typeof item.location === "string") {
+    return [item.location, item.city].filter(Boolean).join(", ");
+  }
+  if (item.location && typeof item.location === "object") {
+    const loc = item.location;
+    return [loc.locality || loc.address, loc.city].filter(Boolean).join(", ");
+  }
+  return [item.subLocation, item.city].filter(Boolean).join(", ");
 }
 
 /**
@@ -102,7 +137,7 @@ export async function getRegisteredUserByPhone(rawPhone: string) {
 }
 
 /**
- * Uses Gemini AI to extract real estate search intent from incoming natural language text.
+ * Intelligent Real Estate Intent Classifier using Gemini AI + Heuristics
  */
 async function parseRealEstateIntent(text: string): Promise<{
   queryType: "property_search" | "project_search" | "human_agent_request" | "greeting" | "general_inquiry";
@@ -115,23 +150,28 @@ async function parseRealEstateIntent(text: string): Promise<{
   listingType?: "buy" | "rent";
   summary: string;
 }> {
+  const lower = text.toLowerCase();
+  const isHumanRequest =
+    lower.includes("call") ||
+    lower.includes("agent") ||
+    lower.includes("human") ||
+    lower.includes("talk to") ||
+    lower.includes("negotiat") ||
+    lower.includes("contact owner");
+
+  if (isHumanRequest) {
+    return { queryType: "human_agent_request", summary: text };
+  }
+
+  const isGreeting = ["hi", "hello", "hey", "namaste", "good morning", "good evening"].includes(lower.trim());
+  if (isGreeting) {
+    return { queryType: "greeting", summary: text };
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    // Fallback heuristic if API key is not set
-    const lower = text.toLowerCase();
-    const bhkMatch = lower.match(/(\d)\s*(?:bhk|bedroom|bed)/i);
-    const bedrooms = bhkMatch ? parseInt(bhkMatch[1], 10) : undefined;
-    let city: string | undefined;
-    if (lower.includes("vijayawada")) city = "Vijayawada";
-    else if (lower.includes("guntur")) city = "Guntur";
-    else if (lower.includes("amaravati")) city = "Amaravati";
-    else if (lower.includes("vizag") || lower.includes("visakhapatnam")) city = "Visakhapatnam";
-
-    const isHumanRequest = lower.includes("call") || lower.includes("agent") || lower.includes("human") || lower.includes("talk to") || lower.includes("negotiat");
     return {
-      queryType: isHumanRequest ? "human_agent_request" : (city || bedrooms ? "property_search" : "general_inquiry"),
-      city,
-      bedrooms,
+      queryType: "property_search",
       summary: text,
     };
   }
@@ -140,22 +180,22 @@ async function parseRealEstateIntent(text: string): Promise<{
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const prompt = `You are the real estate search parser for "ROAD FACING" (real estate platform in Andhra Pradesh: Vijayawada, Guntur, Amaravati, Visakhapatnam).
-Extract the user's property search parameters or inquiry intent from the following message:
+    const prompt = `You are the real estate search parser for "ROAD FACING" (real estate discovery platform in Andhra Pradesh: Vijayawada, Guntur, Amaravati, Visakhapatnam).
+Extract the user's property or project search intent from the message:
 
 Message: "${text}"
 
-Respond ONLY with a JSON object matching this structure (no markdown formatting, no code blocks):
+Respond ONLY with a JSON object (no markdown, no code blocks):
 {
   "queryType": "property_search" | "project_search" | "human_agent_request" | "greeting" | "general_inquiry",
   "city": "Vijayawada" | "Guntur" | "Amaravati" | "Visakhapatnam" | null,
-  "sublocation": string or null,
+  "sublocation": string or null (e.g. Edupugallu, Poranki, Autonagar, Benz Circle, Mangalagiri, Kunchanapalli, Tadepalli, etc.),
   "bedrooms": number or null (e.g. 1, 2, 3, 4),
   "propertyType": "flat" | "apartment" | "villa" | "plot" | "commercial" | null,
-  "maxBudget": number in INR or null (e.g. 5000000 for 50 Lakhs, 15000000 for 1.5 Cr),
+  "maxBudget": number in INR or null,
   "minBudget": number in INR or null,
   "listingType": "buy" | "rent" | null,
-  "summary": "one sentence summary of user request"
+  "summary": "short summary"
 }`;
 
     const result = await model.generateContent(prompt);
@@ -172,56 +212,53 @@ Respond ONLY with a JSON object matching this structure (no markdown formatting,
 }
 
 /**
- * Searches active verified properties and projects from Supabase.
+ * Searches active verified properties and projects from Supabase with smart fallback matching.
  */
-async function searchLiveListings(params: {
-  city?: string;
-  sublocation?: string;
-  bedrooms?: number;
-  propertyType?: string;
-  maxBudget?: number;
-  minBudget?: number;
-}) {
+async function searchLiveListings(queryText: string, parsedIntent: ReturnType<typeof parseSearchIntent>) {
   try {
-    let propQuery = supabaseAdmin
-      .from("properties")
-      .select("*")
-      .eq("is_published", true)
-      .limit(20);
+    // 1. Fetch live properties and projects from Supabase
+    const [{ data: dbProps }, { data: dbProjects }] = await Promise.all([
+      supabaseAdmin.from("properties").select("*").limit(200),
+      supabaseAdmin.from("projects").select("*").limit(200),
+    ]);
 
-    if (params.city) {
-      propQuery = propQuery.ilike("city", `%${params.city}%`);
-    }
-    if (params.sublocation) {
-      propQuery = propQuery.ilike("location", `%${params.sublocation}%`);
-    }
-    if (params.bedrooms) {
-      propQuery = propQuery.eq("bedrooms", params.bedrooms);
-    }
-    if (params.maxBudget) {
-      propQuery = propQuery.lte("price", params.maxBudget);
-    }
-    if (params.minBudget) {
-      propQuery = propQuery.gte("price", params.minBudget);
+    const allProperties: any[] = dbProps && dbProps.length > 0 ? dbProps : mockProperties;
+    const allProjects: any[] = dbProjects && dbProjects.length > 0 ? dbProjects : [];
+
+    // 2. Perform search engine matching
+    const matchedProperties = allProperties.filter((p) => matchesPropertySearch(p as Property, queryText, parsedIntent));
+    const matchedProjects = allProjects.filter((p) => matchesProjectSearch(p as Project, queryText, parsedIntent));
+
+    // 3. If exact matches found, return them
+    if (matchedProperties.length > 0 || matchedProjects.length > 0) {
+      return {
+        properties: matchedProperties,
+        projects: matchedProjects,
+      };
     }
 
-    const { data: properties, error: propError } = await propQuery;
-    if (propError) console.warn("[CONCIERGE PROPERTY QUERY ERROR]", propError);
+    // 4. Fallback: Multi-field text token search (matching sublocation, locality, name, or city token)
+    const normTokens = queryText
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((t) => t.length >= 3 && !["any", "the", "and", "for", "with", "find", "properties", "property"].includes(t));
 
-    let projQuery = supabaseAdmin
-      .from("projects")
-      .select("*")
-      .limit(10);
+    const fallbackProps = allProperties.filter((p) => {
+      const locText = formatLocation(p);
+      const searchTarget = `${p.title || ""} ${locText} ${p.description || ""} ${p.propertyType || ""}`.toLowerCase();
+      return normTokens.length === 0 || normTokens.some((t) => searchTarget.includes(t));
+    });
 
-    if (params.city) {
-      projQuery = projQuery.ilike("city", `%${params.city}%`);
-    }
-    const { data: projects, error: projError } = await projQuery;
-    if (projError) console.warn("[CONCIERGE PROJECT QUERY ERROR]", projError);
+    const fallbackProjects = allProjects.filter((p) => {
+      const locText = formatLocation(p);
+      const searchTarget = `${p.name || ""} ${p.title || ""} ${locText} ${p.builderName || ""} ${p.description || ""}`.toLowerCase();
+      return normTokens.length === 0 || normTokens.some((t) => searchTarget.includes(t));
+    });
 
     return {
-      properties: (properties || []) as LooseRecord[],
-      projects: (projects || []) as LooseRecord[],
+      properties: fallbackProps,
+      projects: fallbackProjects,
     };
   } catch (err) {
     console.error("[CONCIERGE DB SEARCH ERROR]", err);
@@ -363,11 +400,12 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 3. User is registered: Parse intent with Gemini AI
-  const intent = await parseRealEstateIntent(text);
+  // 3. User is registered: Parse intent with search engine parser & Gemini AI
+  const searchEngineIntent = parseSearchIntent(text);
+  const geminiIntent = await parseRealEstateIntent(text);
 
   // 4. Handle Human Agent Request or Escalation
-  if (intent.queryType === "human_agent_request" || text.toLowerCase().includes("human") || text.toLowerCase().includes("talk to agent")) {
+  if (geminiIntent.queryType === "human_agent_request") {
     const ticketId = await createOrUpdateTicket({
       phone: cleanPhone,
       userName: registeredUser.name,
@@ -407,14 +445,14 @@ export async function processInboundWhatsAppMessage(
   }
 
   // 5. Handle Greeting
-  if (intent.queryType === "greeting") {
+  if (geminiIntent.queryType === "greeting") {
     const greetingMsg =
       `👋 *Hello ${registeredUser.name}!* Welcome to ROAD Concierge 🏡\n\n` +
-      `I can find verified properties, villas, apartments, and open plots for you in real-time.\n\n` +
+      `I can find verified properties, new projects, villas, apartments, and open plots for you in real-time.\n\n` +
       `*Try asking:*\n` +
-      `• _"2bhk flats in Vijayawada"_\n` +
-      `• _"Villas in Guntur under 1.5 Cr"_\n` +
-      `• _"Commercial plots in Amaravati"_\n` +
+      `• _"Any properties in edupugallu"_\n` +
+      `• _"2bhk flats in Vijayawada under 60L"_\n` +
+      `• _"Villas in Guntur"_\n` +
       `• _"Connect me with an agent"_`;
 
     await WasenderService.sendTextMessage(cleanPhone, greetingMsg, {
@@ -439,31 +477,55 @@ export async function processInboundWhatsAppMessage(
   }
 
   // 6. Handle Property / Project Search
-  const { properties, projects } = await searchLiveListings({
-    city: intent.city,
-    sublocation: intent.sublocation,
-    bedrooms: intent.bedrooms,
-    propertyType: intent.propertyType,
-    maxBudget: intent.maxBudget,
-    minBudget: intent.minBudget,
-  });
+  const { properties, projects } = await searchLiveListings(text, searchEngineIntent);
 
   if (properties.length > 0 || projects.length > 0) {
-    const topProperty = properties[0];
     const propertyCount = properties.length;
     const projectCount = projects.length;
+    const totalCount = propertyCount + projectCount;
 
-    let responseText = `🏡 *Found ${propertyCount + projectCount} matching verified listing${propertyCount + projectCount > 1 ? "s" : ""} for you:*\n\n`;
+    let responseText = `🏡 *Found ${totalCount} verified listing${totalCount > 1 ? "s" : ""} matching your search:*\n\n`;
 
-    // Format top 3 properties
-    properties.slice(0, 3).forEach((p, idx) => {
+    // 1. Format matched Projects (e.g. Avenue Serene)
+    projects.slice(0, 3).forEach((proj: any, idx) => {
+      const projName = str(proj.name) || str(proj.title) || "Featured Project";
+      const projSlug = str(proj.slug) || str(proj.id);
+      const loc = formatLocation(proj);
+      
+      let priceStr = "Contact for Pricing";
+      if (proj.minPrice && proj.maxPrice) {
+        priceStr = `${formatPriceCompact(proj.minPrice)} - ${formatPriceCompact(proj.maxPrice)}`;
+      } else if (proj.minPrice) {
+        priceStr = `Starting at ${formatPriceCompact(proj.minPrice)}`;
+      } else if (Array.isArray(proj.configurations) && proj.configurations[0]?.priceMin) {
+        const prices = proj.configurations.map((c: any) => c.priceMin).filter(Boolean);
+        const minP = Math.min(...prices);
+        priceStr = `Starting at ${formatPriceCompact(minP)}`;
+      }
+
+      const configs = Array.isArray(proj.configurations)
+        ? proj.configurations.map((c: any) => c.label || `${c.bedrooms} BHK`).filter(Boolean).join(", ")
+        : "";
+
+      responseText += `🏗️ *${idx + 1}. ${projName}* (Project)\n`;
+      if (loc) responseText += `📍 *Location:* ${loc}\n`;
+      responseText += `💰 *Price:* ${priceStr}\n`;
+      if (configs) responseText += `🛏️ *Configurations:* ${configs}\n`;
+      if (proj.constructionStatus || proj.status) {
+        responseText += `📊 *Status:* ${str(proj.constructionStatus || proj.status).replace("-", " ").toUpperCase()}\n`;
+      }
+      responseText += `🔗 *View Project:* ${siteUrl}/projects/${projSlug}\n\n`;
+    });
+
+    // 2. Format matched individual Properties
+    properties.slice(0, 3).forEach((p: any, idx) => {
       const title = str(p.title) || `${p.bedrooms || 2} BHK Property`;
       const price = typeof p.price === "number" ? formatPriceCompact(p.price) : "Contact for Price";
-      const loc = [str(p.location), str(p.city)].filter(Boolean).join(", ");
+      const loc = formatLocation(p);
       const slug = str(p.slug) || str(p.id);
       const url = `${siteUrl}/properties/${slug}`;
 
-      responseText += `*${idx + 1}. ${title}*\n`;
+      responseText += `🏠 *${projects.length + idx + 1}. ${title}*\n`;
       responseText += `💰 *Price:* ${price}\n`;
       if (loc) responseText += `📍 *Location:* ${loc}\n`;
       if (p.bedrooms) responseText += `🛏️ *Bedrooms:* ${p.bedrooms} BHK\n`;
@@ -471,28 +533,24 @@ export async function processInboundWhatsAppMessage(
       responseText += `🔗 *View Details:* ${url}\n\n`;
     });
 
-    // Format top project if available
+    responseText += `🔍 *Browse all search results on ROAD:*\n${siteUrl}/search?q=${encodeURIComponent(text)}\n\n`;
+    responseText += `_Reply with specific budget/BHK or type "Talk to agent" anytime._`;
+
+    // Extract hero image from the top matched project or property
+    let heroImage = "";
     if (projects.length > 0) {
-      const proj = projects[0];
-      const projName = str(proj.name) || str(proj.title) || "Featured Project";
-      const projSlug = str(proj.slug) || str(proj.id);
-      responseText += `🏗️ *Featured Project:* *${projName}*\n`;
-      responseText += `📍 *City:* ${str(proj.city) || "Andhra Pradesh"}\n`;
-      responseText += `🔗 *Explore Project:* ${siteUrl}/projects/${projSlug}\n\n`;
+      heroImage = extractHeroImage(projects[0]);
+    } else if (properties.length > 0) {
+      heroImage = extractHeroImage(properties[0]);
     }
 
-    responseText += `🔍 *View all search results:*\n${siteUrl}/search?city=${encodeURIComponent(intent.city || "")}&bedrooms=${intent.bedrooms || ""}\n\n`;
-    responseText += `_Reply with specific requirements or type "Talk to agent" anytime._`;
-
-    // Send with primary image if topProperty has an image
-    const heroImage = topProperty ? readImageUrl(topProperty) : "";
-    if (heroImage && (heroImage.startsWith("http") || heroImage.startsWith("/") || heroImage.startsWith("banners/") || heroImage.startsWith("properties/"))) {
+    if (heroImage && (heroImage.startsWith("http") || heroImage.startsWith("/") || heroImage.startsWith("banners/") || heroImage.startsWith("properties/") || heroImage.startsWith("projects/"))) {
       await WasenderService.sendImageMessage(cleanPhone, heroImage, responseText, {
-        requestId: `concierge-prop-${Date.now()}`,
+        requestId: `concierge-results-${Date.now()}`,
       });
     } else {
       await WasenderService.sendTextMessage(cleanPhone, responseText, {
-        requestId: `concierge-prop-${Date.now()}`,
+        requestId: `concierge-results-${Date.now()}`,
       });
     }
 
@@ -504,7 +562,7 @@ export async function processInboundWhatsAppMessage(
       message: responseText,
       mediaUrl: heroImage || undefined,
       intent: "property_search_matched",
-      metadata: { matchedCount: propertyCount + projectCount, intent },
+      metadata: { matchedCount: totalCount, query: text },
     });
 
     return {
@@ -515,11 +573,11 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 7. No direct matches found: Provide recommendations & search page
+  // 7. No direct matches found: Provide recommendations & direct search link
   const noMatchMsg =
     `🔎 *No exact match found for "${text}" right now.*\n\n` +
-    `Here are popular verified listings in ${intent.city || "Andhra Pradesh"}:\n` +
-    `👉 *Browse Live Search:* ${siteUrl}/search\n` +
+    `Here are popular verified listings on ROAD:\n` +
+    `👉 *Browse Live Search:* ${siteUrl}/search?q=${encodeURIComponent(text)}\n` +
     `👉 *View Latest Projects:* ${siteUrl}/projects\n\n` +
     `Would you like our team to source this specific property for you? Reply *"Yes, find for me"* and our advisor will assist you!`;
 
@@ -534,7 +592,7 @@ export async function processInboundWhatsAppMessage(
     role: "assistant",
     message: noMatchMsg,
     intent: "property_search_no_match",
-    metadata: { intent },
+    metadata: { query: text },
   });
 
   return {
