@@ -1248,19 +1248,19 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   const totalLegalFee = stampDutyAmt + registrationAmt + transferDutyAmt;
   const totalOnRoadPrice = calcPropertyPrice + totalLegalFee;
 
-  const mapHeight = containerHeight || 600;
+  const mapHeight = containerHeight !== undefined ? containerHeight : "100%";
 
   return (
     <div
-      className="w-full flex flex-col touch-none relative isolate"
-      style={{ touchAction: "none", height: mapHeight, minHeight: 400 }}
+      className="w-full h-full flex-1 flex flex-col touch-none relative isolate min-h-0"
+      style={{ touchAction: "none", height: mapHeight, minHeight: containerHeight ? 400 : "100%" }}
     >
       {/* Styles for Leaflet map are in globals.css */}
 
       {/* Main Container */}
       <div
-        className="relative w-full flex-1 flex flex-col md:flex-row gap-0 overflow-hidden bg-slate-900 shadow-xl touch-none isolate"
-        style={{ touchAction: "none", height: mapHeight, minHeight: 400 }}
+        className="relative w-full h-full flex-1 flex flex-col md:flex-row gap-0 overflow-hidden bg-slate-900 shadow-xl touch-none isolate min-h-0"
+        style={{ touchAction: "none", height: mapHeight, minHeight: containerHeight ? 400 : "100%" }}
       >
         
         {/* Sidebar Control Panel / Collapsible Drawer */}
