@@ -10,6 +10,9 @@ export const dynamic = "force-dynamic";
 
 type LooseRecord = Record<string, unknown>;
 
+// In-memory LRU deduplication cache for sub-second webhook retries
+const processedMessageIds = new Map<string, number>();
+
 function safeEqual(left: string, right: string): boolean {
   if (!left || !right || left.length !== right.length) return false;
   const a = Buffer.from(left);
@@ -21,7 +24,7 @@ function asRecord(value: unknown): LooseRecord {
   return value && typeof value === "object" ? (value as LooseRecord) : {};
 }
 
-function extractIncomingMessage(payload: LooseRecord): { text: string; phone: string; fromMe: boolean } | null {
+function extractIncomingMessage(payload: LooseRecord): { text: string; phone: string; fromMe: boolean; messageId: string } | null {
   const data = asRecord(payload.data);
   const rawMessages = data.messages || payload.messages || (Array.isArray(data) ? data : null);
   const message = Array.isArray(rawMessages) ? asRecord(rawMessages[0]) : asRecord(rawMessages);
@@ -69,9 +72,10 @@ function extractIncomingMessage(payload: LooseRecord): { text: string; phone: st
 
   const phone = normalizeWhatsAppPhone(rawPhone);
   const fromMe = Boolean(key.fromMe || message.fromMe || data.fromMe || payload.fromMe);
+  const messageId = String(key.id || message.id || payload.id || "").trim();
 
   if (phone && text) {
-    return { text, phone, fromMe };
+    return { text, phone, fromMe, messageId };
   }
 
   return null;
@@ -112,11 +116,31 @@ export async function POST(request: Request) {
     }
 
     const payload = asRecord(await request.json().catch(() => null));
-    console.log("[WASENDER WEBHOOK INCOMING]", JSON.stringify(payload).slice(0, 500));
-
     const incoming = extractIncomingMessage(payload);
     if (!incoming || incoming.fromMe) {
       return NextResponse.json({ received: true, ignored: true, reason: incoming?.fromMe ? "outbound" : "unrecognized_format" });
+    }
+
+    // 0. IDEMPOTENCY / DEDUPLICATION CHECK (Eliminate 3x repeating messages from retry bursts)
+    const idempotencyKey = incoming.messageId
+      ? `${incoming.phone}:${incoming.messageId}`
+      : `${incoming.phone}:${crypto.createHash("md5").update(incoming.text).digest("hex")}:${Math.floor(Date.now() / 12000)}`;
+
+    const lastSeen = processedMessageIds.get(idempotencyKey);
+    const nowTs = Date.now();
+    if (lastSeen && nowTs - lastSeen < 30000) {
+      console.log(`[WASENDER WEBHOOK DEDUP] Dropping duplicate delivery: ${idempotencyKey}`);
+      return NextResponse.json({ received: true, deduplicated: true });
+    }
+
+    // Cache idempotency key
+    processedMessageIds.set(idempotencyKey, nowTs);
+
+    // Clean old entries from memory cache periodically
+    if (processedMessageIds.size > 2000) {
+      for (const [k, v] of processedMessageIds.entries()) {
+        if (nowTs - v > 60000) processedMessageIds.delete(k);
+      }
     }
 
     const cleanText = incoming.text.trim().toUpperCase();
@@ -129,7 +153,6 @@ export async function POST(request: Request) {
     const isStopCommand = ["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT", "STOPALL"].includes(normalizedKeyword);
 
     if (isStopCommand) {
-      // 7-day lock from current time
       const restrictionUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
       const { data: contact, error } = await supabaseAdmin
@@ -156,7 +179,6 @@ export async function POST(request: Request) {
           .in("status", ["queued", "failed"]);
       }
 
-      // Auto-respond in that WhatsApp chat saying stopped & how to resume
       try {
         await WasenderService.sendTextMessage(
           incoming.phone,
@@ -170,7 +192,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true, unsubscribed: true, restrictedUntil: restrictionUntil });
     }
 
-    // 2. Check if user is trying to RESUME / UNLOCK with "YES", "START", "UNSTOP", "RESUME", or any incoming message
+    // 2. Check if user is trying to RESUME / UNLOCK with "YES", "START", "UNSTOP", "RESUME"
     const isResumeKeyword = ["YES", "START", "UNSTOP", "RESUME", "RESTART", "AGREE", "OK", "OPTIN", "HI", "HELLO"].includes(normalizedKeyword);
 
     const { data: existingContact } = await supabaseAdmin
@@ -179,7 +201,6 @@ export async function POST(request: Request) {
       .eq("phone", incoming.phone)
       .maybeSingle();
 
-    // If user was previously unsubscribed / restricted and sent a message to resume
     if (existingContact && (!existingContact.is_subscribed || existingContact.opted_out_at || existingContact.restriction_until)) {
       if (isResumeKeyword || cleanText.length > 0) {
         const { error: unlockError } = await supabaseAdmin
@@ -195,7 +216,6 @@ export async function POST(request: Request) {
           .eq("phone", incoming.phone);
 
         if (!unlockError) {
-          // Auto-respond in that WhatsApp chat confirming resume
           try {
             await WasenderService.sendTextMessage(
               incoming.phone,

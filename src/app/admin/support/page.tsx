@@ -73,10 +73,12 @@ export default function AdminSupportPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const prevPhoneRef = useRef<string | null>(null);
 
-  const loadData = useCallback(async (phoneToSelect?: string) => {
+  const loadData = useCallback(async (phoneToSelect?: string, isManual?: boolean) => {
+    if (isManual) setIsRefreshing(true);
     try {
       const activePhone = phoneToSelect || selectedTicket?.phone;
       const url = activePhone ? `/api/admin/whatsapp/support?phone=${encodeURIComponent(activePhone)}` : "/api/admin/whatsapp/support";
@@ -96,9 +98,13 @@ export default function AdminSupportPage() {
           setSelectedTicket(json.tickets[0]);
           loadData(json.tickets[0].phone);
         }
+        if (isManual) toast.success("Support desk refreshed!");
       }
     } catch (err) {
       console.error(err);
+      if (isManual) toast.error("Failed to refresh support desk");
+    } finally {
+      if (isManual) setIsRefreshing(false);
     }
   }, [selectedTicket?.phone]);
 
@@ -217,10 +223,12 @@ export default function AdminSupportPage() {
 
         <div className="flex items-center gap-2">
           <button 
-            onClick={() => loadData()}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+            onClick={() => loadData(undefined, true)}
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-200 transition disabled:opacity-50"
           >
-            <RefreshCw className="w-3 h-3" /> Refresh
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-amber-400" : ""}`} /> 
+            {isRefreshing ? "Refreshing..." : "Refresh"}
           </button>
         </div>
       </div>

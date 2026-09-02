@@ -18,50 +18,14 @@ export async function GET(request: Request) {
   const selectedPhone = url.searchParams.get("phone");
 
   try {
-    const phoneMap = new Map<string, any>();
-
-    // 1. Fetch formal tickets
+    // 1. Fetch only formal agent escalated support tickets
     const { data: ticketsData } = await supabaseAdmin
       .from("whatsapp_support_tickets")
       .select("*")
       .order("updated_at", { ascending: false })
       .limit(100);
 
-    if (ticketsData) {
-      for (const t of ticketsData) {
-        phoneMap.set(t.phone, t);
-      }
-    }
-
-    // 2. Fetch recent WhatsApp conversations to ensure every active chatting user appears in inbox
-    const { data: convData } = await supabaseAdmin
-      .from("whatsapp_support_conversations")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(200);
-
-    if (convData) {
-      for (const conv of convData) {
-        if (!phoneMap.has(conv.phone)) {
-          phoneMap.set(conv.phone, {
-            id: conv.id || `chat-${conv.phone}`,
-            phone: conv.phone,
-            user_name: conv.user_name || "WhatsApp User",
-            user_id: conv.user_id || null,
-            subject: conv.message?.slice(0, 80) || "WhatsApp Chat",
-            last_message: conv.message || "",
-            status: "open",
-            priority: "normal",
-            created_at: conv.created_at,
-            updated_at: conv.created_at,
-          });
-        }
-      }
-    }
-
-    const tickets = Array.from(phoneMap.values()).sort(
-      (a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime()
-    );
+    const tickets = ticketsData || [];
 
     const stats = {
       urgentCount: tickets.filter((t) => t.priority === "urgent" || t.priority === "high").length,

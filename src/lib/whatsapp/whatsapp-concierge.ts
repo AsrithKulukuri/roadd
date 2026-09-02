@@ -334,20 +334,30 @@ async function createOrUpdateTicket(params: {
       .from("whatsapp_support_tickets")
       .select("id, status")
       .eq("phone", params.phone)
-      .in("status", ["open", "in_progress"])
-      .order("created_at", { ascending: false })
+      .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (existing) {
+      // Reopen or update existing ticket to 'open'
       await supabaseAdmin
         .from("whatsapp_support_tickets")
         .update({
           subject: params.subject,
           last_message: params.lastMessage,
+          status: "open",
+          resolved_at: null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", existing.id);
+
+      await supabaseAdmin.from("whatsapp_conversation_state").upsert({
+        phone: params.phone,
+        agent_mode: true,
+        active_ticket_id: existing.id,
+        updated_at: new Date().toISOString(),
+      });
+
       return existing.id;
     }
 
@@ -366,6 +376,14 @@ async function createOrUpdateTicket(params: {
       .single();
 
     if (error) throw error;
+
+    await supabaseAdmin.from("whatsapp_conversation_state").upsert({
+      phone: params.phone,
+      agent_mode: true,
+      active_ticket_id: newTicket.id,
+      updated_at: new Date().toISOString(),
+    });
+
     return newTicket.id;
   } catch (err) {
     console.error("[CONCIERGE CREATE TICKET ERROR]", err);
