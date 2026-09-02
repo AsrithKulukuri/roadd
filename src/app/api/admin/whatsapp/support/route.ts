@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/server-auth-guard";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { WasenderService } from "@/lib/wasender";
 import { normalizeWhatsAppPhone } from "@/lib/whatsapp-audience";
+import { getSavedPropertiesForUser } from "@/lib/whatsapp/lead-engine";
+import { getConversationState } from "@/lib/whatsapp/conversation-state";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,8 +20,8 @@ export async function GET(request: Request) {
   try {
     const phoneMap = new Map<string, any>();
 
-    // 1. Fetch formal tickets if table exists
-    const { data: ticketsData, error: ticketsErr } = await supabaseAdmin
+    // 1. Fetch formal tickets
+    const { data: ticketsData } = await supabaseAdmin
       .from("whatsapp_support_tickets")
       .select("*")
       .order("updated_at", { ascending: false })
@@ -31,8 +33,8 @@ export async function GET(request: Request) {
       }
     }
 
-    // 2. Fetch recent WhatsApp conversations to ensure every active chatting user appears in the inbox
-    const { data: convData, error: convErr } = await supabaseAdmin
+    // 2. Fetch recent WhatsApp conversations to ensure every active chatting user appears in inbox
+    const { data: convData } = await supabaseAdmin
       .from("whatsapp_support_conversations")
       .select("*")
       .order("created_at", { ascending: false })
@@ -57,40 +59,12 @@ export async function GET(request: Request) {
       }
     }
 
-    // 3. Fallback: If no tickets/convs exist yet, check requirements/inquiries
-    if (phoneMap.size === 0) {
-      const { data: inqData } = await supabaseAdmin
-        .from("inquiries")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      if (inqData) {
-        for (const inq of inqData) {
-          const ph = normalizeWhatsAppPhone(inq.phone || "");
-          if (ph && !phoneMap.has(ph)) {
-            phoneMap.set(ph, {
-              id: inq.id,
-              phone: ph,
-              user_name: inq.name || "Inquiry Lead",
-              user_id: inq.user_id || null,
-              subject: inq.message || inq.property_title || "Property Requirement",
-              last_message: inq.message || "Expressed interest in property",
-              status: inq.status || "open",
-              priority: "normal",
-              created_at: inq.created_at,
-              updated_at: inq.created_at,
-            });
-          }
-        }
-      }
-    }
-
     const tickets = Array.from(phoneMap.values()).sort(
       (a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime()
     );
 
     const stats = {
+      urgentCount: tickets.filter((t) => t.priority === "urgent" || t.priority === "high").length,
       openCount: tickets.filter((t) => t.status === "open").length,
       inProgressCount: tickets.filter((t) => t.status === "in_progress").length,
       resolvedCount: tickets.filter((t) => t.status === "resolved" || t.status === "closed").length,
@@ -98,16 +72,63 @@ export async function GET(request: Request) {
     };
 
     let conversations: any[] = [];
+    let customerProfile: any = null;
+    let savedProperties: any[] = [];
+    let siteVisits: any[] = [];
+    let aiCopilot: any = null;
+
     if (selectedPhone) {
-      const cleanPhone = normalizeWhatsAppPhone(selectedPhone);
+      const cleanPhone = normalizeWhatsAppPhone(selectedPhone) || selectedPhone;
+
+      // Conversations thread
       const { data: selectedConvData } = await supabaseAdmin
         .from("whatsapp_support_conversations")
         .select("*")
-        .eq("phone", cleanPhone || selectedPhone)
+        .eq("phone", cleanPhone)
         .order("created_at", { ascending: true })
         .limit(200);
 
       conversations = selectedConvData || [];
+
+      // Customer CRM Data
+      const [leadRes, savedPropsRes, visitsRes, stateRes] = await Promise.all([
+        supabaseAdmin.from("whatsapp_leads").select("*").eq("phone", cleanPhone).maybeSingle(),
+        getSavedPropertiesForUser(cleanPhone),
+        supabaseAdmin.from("whatsapp_site_visits").select("*").eq("phone", cleanPhone).order("created_at", { ascending: false }).limit(5),
+        getConversationState(cleanPhone),
+      ]);
+
+      const lead = leadRes.data;
+      savedProperties = savedPropsRes;
+      siteVisits = visitsRes.data || [];
+
+      const currentTicket = tickets.find((t) => t.phone === cleanPhone);
+
+      customerProfile = {
+        name: lead?.user_name || currentTicket?.user_name || stateRes.userName || "Valued Buyer",
+        phone: cleanPhone,
+        leadScore: lead?.lead_score || 55,
+        stage: lead?.stage || "EXPLORING",
+        purpose: lead?.purpose || "SELF_USE",
+        budgetRange: lead?.budget_range || (stateRes.lastSearch.maxPrice ? `Under ₹${(stateRes.lastSearch.maxPrice / 100000).toFixed(0)}L` : "Flexible"),
+        timeline: lead?.timeline || "1_3_MONTHS",
+        interestedProject: lead?.interested_project_name || stateRes.selectedPropertyId || "General Inquiry",
+        lastSearch: stateRes.lastSearch,
+        agentMode: stateRes.agentMode || currentTicket?.status === "in_progress",
+      };
+
+      // AI Copilot for Human Agent (Silent Assistant)
+      const lastUserMsg = [...conversations].reverse().find((m) => m.role === "user")?.message || "";
+      aiCopilot = {
+        buyerIntentSummary: `Buyer is interested in ${customerProfile.budgetRange} options in ${stateRes.lastSearch.locationKeywords?.join(", ") || "Andhra Pradesh"}.`,
+        likelyObjection: "Pricing / Payment Flexibility / Delivery Timeline",
+        recommendedAction: "Confirm specific requirements and offer high-res site photos or arrange a site visit.",
+        suggestedResponses: [
+          `Hello ${customerProfile.name}! I am reviewing verified availability in your budget right now. What is your preferred move-in date?`,
+          `We have exclusive developer pricing available on verified 3 BHK projects in this corridor. Would you like me to share the brochure?`,
+          `Would you like to schedule an on-site visit this weekend with our area consultant?`,
+        ],
+      };
     }
 
     return NextResponse.json({
@@ -115,6 +136,10 @@ export async function GET(request: Request) {
       tickets,
       stats,
       conversations,
+      customerProfile,
+      savedProperties,
+      siteVisits,
+      aiCopilot,
     });
   } catch (err: unknown) {
     console.error("[ADMIN SUPPORT API GET ERROR]", err);
@@ -135,6 +160,7 @@ const postSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("update_ticket_status"),
     ticketId: z.string(),
+    phone: z.string().optional(),
     status: z.enum(["open", "in_progress", "resolved", "closed"]),
     priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
     resolutionNote: z.string().trim().max(1000).optional(),
@@ -184,7 +210,7 @@ export async function POST(request: Request) {
         metadata: { adminId: user?.id, adminEmail: user?.email },
       });
 
-      // 3. Update ticket if associated
+      // 3. Update ticket and activate agent mode
       if (data.ticketId && !data.ticketId.startsWith("chat-") && !data.ticketId.startsWith("conv-")) {
         await supabaseAdmin
           .from("whatsapp_support_tickets")
@@ -192,11 +218,17 @@ export async function POST(request: Request) {
             last_message: `Agent: ${data.message.slice(0, 100)}`,
             status: "in_progress",
             assigned_to: user?.id,
-            assigned_name: user?.name || "Admin",
+            assigned_name: user?.name || "Admin Advisor",
             updated_at: new Date().toISOString(),
           })
           .eq("id", data.ticketId);
       }
+
+      await supabaseAdmin.from("whatsapp_conversation_state").upsert({
+        phone: cleanPhone,
+        agent_mode: true,
+        updated_at: new Date().toISOString(),
+      });
 
       return NextResponse.json({
         success: true,
@@ -220,6 +252,16 @@ export async function POST(request: Request) {
           .from("whatsapp_support_tickets")
           .update(updates)
           .eq("id", data.ticketId);
+      }
+
+      // If resolving, turn OFF agent_mode so AI Concierge resumes
+      if (data.phone && (data.status === "resolved" || data.status === "closed")) {
+        const cleanPhone = normalizeWhatsAppPhone(data.phone) || data.phone;
+        await supabaseAdmin.from("whatsapp_conversation_state").upsert({
+          phone: cleanPhone,
+          agent_mode: false,
+          updated_at: new Date().toISOString(),
+        });
       }
 
       return NextResponse.json({
