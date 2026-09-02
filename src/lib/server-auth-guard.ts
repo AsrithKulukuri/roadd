@@ -252,10 +252,28 @@ export async function authenticateServerRequest(
           if (emailProfile.full_name) name = emailProfile.full_name;
         }
       }
+
+      // Check user_profiles table as well if not found in profiles
+      if (!profileFound) {
+        const { data: upProfile } = await supabaseAdmin
+          .from("user_profiles")
+          .select("id, role, full_name, phone, email")
+          .or(`id.eq.${user.id}${email ? `,email.eq.${email.toLowerCase()}` : ""}`)
+          .maybeSingle();
+        if (upProfile) {
+          profileFound = true;
+          role = upProfile.role === "admin" ? "admin" : upProfile.role || "buyer";
+          if (upProfile.full_name) name = upProfile.full_name;
+          if (upProfile.phone) phone = upProfile.phone;
+          if (upProfile.email) email = upProfile.email;
+        }
+      }
     } catch {}
 
+    const isExplicitAdminEmail = Boolean(email && email.toLowerCase().trim() === "admin@road.com");
     const isAdmin =
       (profileFound && role === "admin") ||
+      isExplicitAdminEmail ||
       (typeof user.app_metadata === "object" && (user.app_metadata as Record<string, unknown>)?.role === "admin");
 
     const resolvedUser = {

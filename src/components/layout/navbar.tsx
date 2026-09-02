@@ -22,6 +22,8 @@ import {
   Sparkles,
   IndianRupee,
   SlidersHorizontal,
+  Shield,
+  MessageSquare,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -778,9 +780,26 @@ export function Navbar() {
 
               {user ? (
                 <div className="space-y-2 pt-2">
-                  <Link href="/dashboard" className="block">
+                  {user.role === "admin" && (
+                    <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                      <div className="text-[11px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" /> Staff Administrator
+                      </div>
+                      <Link href="/admin/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block">
+                        <Button className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-black justify-start shadow-xs">
+                          <Shield className="w-4 h-4 mr-2" /> Admin Control Center
+                        </Button>
+                      </Link>
+                      <Link href="/admin/support" onClick={() => setIsMobileMenuOpen(false)} className="block">
+                        <Button variant="outline" className="w-full bg-slate-900 border-amber-500/30 text-amber-400 font-bold justify-start text-xs">
+                          <MessageSquare className="w-4 h-4 mr-2" /> Live Support Desk
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                  <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block">
                     <Button variant="outline" className="w-full bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-extrabold justify-start shadow-xs">
-                      <User className="w-4 h-4 mr-2" /> My Dashboard ({user.name})
+                      <User className="w-4 h-4 mr-2" /> My Profile ({user.name})
                     </Button>
                   </Link>
                   <Button
@@ -792,10 +811,15 @@ export function Navbar() {
                   </Button>
                 </div>
               ) : (
-                <div className="pt-2">
-                  <Link href="/login" className="block w-full">
+                <div className="pt-2 space-y-2">
+                  <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="block w-full">
                     <Button variant="outline" className="w-full bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-extrabold shadow-xs">
                       Log in
+                    </Button>
+                  </Link>
+                  <Link href="/admin/login" onClick={() => setIsMobileMenuOpen(false)} className="block w-full">
+                    <Button variant="ghost" className="w-full text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-amber-500 flex items-center justify-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-amber-500" /> Admin Portal Sign In
                     </Button>
                   </Link>
                 </div>
