@@ -418,7 +418,52 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 3. User is registered: Schedule inactivity reminder timer
+  // 3. Human Takeover Check: If an agent is actively conversing (ticket is "in_progress" or "open"), PAUSE bot completely
+  const { data: activeTicket } = await supabaseAdmin
+    .from("whatsapp_support_tickets")
+    .select("id, status, assigned_to, assigned_name")
+    .eq("phone", cleanPhone)
+    .in("status", ["open", "in_progress"])
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  // Allow user to manually resume bot by typing "bot" or "ai mode"
+  const isSwitchToBot = ["BOT", "AI", "AI MODE", "RESUME BOT", "CLOSE CHAT", "EXIT AGENT"].includes(text.trim().toUpperCase());
+  if (isSwitchToBot && activeTicket) {
+    await supabaseAdmin
+      .from("whatsapp_support_tickets")
+      .update({ status: "resolved", resolved_at: new Date().toISOString() })
+      .eq("id", activeTicket.id);
+
+    const switchMsg = `🤖 *AI Concierge Resumed*\n\nI am back to assist you with property searches, project comparisons, and verified listings across Andhra Pradesh!`;
+    await WasenderService.sendTextMessage(cleanPhone, switchMsg, {
+      requestId: `bot-resume-${Date.now()}`,
+    });
+    return { handled: true, intent: "bot_resumed", responseSent: true, message: switchMsg };
+  }
+
+  if (activeTicket && activeTicket.status === "in_progress") {
+    // Agent is actively chatting with user -> DO NOT LOAD SEARCH OR SEND AUTOMATED MESSAGES
+    await supabaseAdmin
+      .from("whatsapp_support_tickets")
+      .update({
+        last_message: text,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", activeTicket.id);
+
+    console.log(`[CONCIERGE AGENT MODE ACTIVE] Phone: ${cleanPhone}, Message: "${text}" - Bot search paused.`);
+
+    return {
+      handled: true,
+      intent: "agent_mode_active",
+      responseSent: false,
+      message: "Agent mode active - automated bot search paused",
+    };
+  }
+
+  // 4. User is registered & Bot mode active: Schedule inactivity reminder timer
   scheduleInactivityReminder(cleanPhone, registeredUser.name);
 
   // 4. Parse intent and context
