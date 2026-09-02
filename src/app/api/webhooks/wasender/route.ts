@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getSanitizedEnv, WasenderService } from "@/lib/wasender";
 import { normalizeWhatsAppPhone } from "@/lib/whatsapp-audience";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { processInboundWhatsAppMessage } from "@/lib/whatsapp/whatsapp-concierge";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -210,7 +211,13 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ received: true, ignored: true });
+    // 3. Route all general queries, property searches, and support requests to AI Concierge
+    const conciergeResult = await processInboundWhatsAppMessage(incoming.phone, incoming.text);
+
+    return NextResponse.json({
+      received: true,
+      concierge: conciergeResult,
+    });
   } catch (err: unknown) {
     console.error("[WASENDER WEBHOOK HANDLER ERROR]", err);
     return NextResponse.json({ received: false, error: "Internal webhook processing error" }, { status: 500 });

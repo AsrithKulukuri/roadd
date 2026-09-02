@@ -20,6 +20,7 @@ import {
   MapPin,
   LayoutList,
   Send,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -30,13 +31,14 @@ import { AdminGuard } from "@/components/shared/admin-guard";
 
 const sidebarLinks = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/support", label: "WhatsApp Support Desk", icon: Bot },
+  { href: "/admin/broadcasts", label: "WhatsApp Broadcasts", icon: Send },
   { href: "/admin/inquiries", label: "Requirements", icon: MessageSquare, isBadge: true },
   { href: "/admin/properties", label: "Properties", icon: Building2 },
   { href: "/admin/projects", label: "Projects", icon: FolderOpen },
   { href: "/admin/locations", label: "Locations & Localities", icon: MapPin },
   { href: "/admin/banners", label: "Banners", icon: ImageIcon },
   { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/broadcasts", label: "WhatsApp Broadcasts", icon: Send },
   { href: "/admin/content", label: "Categories & Content", icon: LayoutGrid },
   { href: "/admin/homepage", label: "Homepage Shelves", icon: LayoutList },
   { href: "/admin/settings", label: "Settings", icon: Settings },
