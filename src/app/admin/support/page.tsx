@@ -162,6 +162,12 @@ export default function AdminSupportPage() {
 
   const handleUpdateStatus = async (newStatus: "open" | "in_progress" | "resolved") => {
     if (!selectedTicket) return;
+    
+    // Optimistic local state update
+    setSelectedTicket((prev) => prev ? { ...prev, status: newStatus } : null);
+    setCustomerProfile((prev) => prev ? { ...prev, agentMode: newStatus !== "resolved" } : null);
+    setTickets((prev) => prev.map((t) => t.phone === selectedTicket.phone ? { ...t, status: newStatus } : t));
+
     try {
       const res = await fetch("/api/admin/whatsapp/support", {
         method: "POST",
@@ -175,8 +181,10 @@ export default function AdminSupportPage() {
       });
       const data = await res.json();
       if (data.success) {
-        toast.success(`Ticket marked as ${newStatus}`);
+        toast.success(newStatus === "resolved" ? "Ticket resolved! AI Concierge resumed." : `Ticket marked as ${newStatus}`);
         loadData(selectedTicket.phone);
+      } else {
+        toast.error(data.error || "Failed to update status");
       }
     } catch {
       toast.error("Failed to update status");

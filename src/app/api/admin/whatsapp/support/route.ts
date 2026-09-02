@@ -74,7 +74,6 @@ export async function GET(request: Request) {
     let conversations: any[] = [];
     let customerProfile: any = null;
     let savedProperties: any[] = [];
-    let siteVisits: any[] = [];
     let aiCopilot: any = null;
 
     if (selectedPhone) {
@@ -91,16 +90,14 @@ export async function GET(request: Request) {
       conversations = selectedConvData || [];
 
       // Customer CRM Data
-      const [leadRes, savedPropsRes, visitsRes, stateRes] = await Promise.all([
+      const [leadRes, savedPropsRes, stateRes] = await Promise.all([
         supabaseAdmin.from("whatsapp_leads").select("*").eq("phone", cleanPhone).maybeSingle(),
         getSavedPropertiesForUser(cleanPhone),
-        supabaseAdmin.from("whatsapp_site_visits").select("*").eq("phone", cleanPhone).order("created_at", { ascending: false }).limit(5),
         getConversationState(cleanPhone),
       ]);
 
       const lead = leadRes.data;
       savedProperties = savedPropsRes;
-      siteVisits = visitsRes.data || [];
 
       const currentTicket = tickets.find((t) => t.phone === cleanPhone);
 
@@ -114,11 +111,10 @@ export async function GET(request: Request) {
         timeline: lead?.timeline || "1_3_MONTHS",
         interestedProject: lead?.interested_project_name || stateRes.selectedPropertyId || "General Inquiry",
         lastSearch: stateRes.lastSearch,
-        agentMode: stateRes.agentMode || currentTicket?.status === "in_progress",
+        agentMode: Boolean(stateRes.agentMode || currentTicket?.status === "in_progress"),
       };
 
       // AI Copilot for Human Agent (Silent Assistant)
-      const lastUserMsg = [...conversations].reverse().find((m) => m.role === "user")?.message || "";
       aiCopilot = {
         buyerIntentSummary: `Buyer is interested in ${customerProfile.budgetRange} options in ${stateRes.lastSearch.locationKeywords?.join(", ") || "Andhra Pradesh"}.`,
         likelyObjection: "Pricing / Payment Flexibility / Delivery Timeline",
@@ -138,7 +134,6 @@ export async function GET(request: Request) {
       conversations,
       customerProfile,
       savedProperties,
-      siteVisits,
       aiCopilot,
     });
   } catch (err: unknown) {
@@ -159,8 +154,8 @@ const postSchema = z.discriminatedUnion("action", [
   }),
   z.object({
     action: z.literal("update_ticket_status"),
-    ticketId: z.string(),
-    phone: z.string().optional(),
+    ticketId: z.string().optional(),
+    phone: z.string().min(10),
     status: z.enum(["open", "in_progress", "resolved", "closed"]),
     priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
     resolutionNote: z.string().trim().max(1000).optional(),
@@ -210,19 +205,17 @@ export async function POST(request: Request) {
         metadata: { adminId: user?.id, adminEmail: user?.email },
       });
 
-      // 3. Update ticket and activate agent mode
-      if (data.ticketId && !data.ticketId.startsWith("chat-") && !data.ticketId.startsWith("conv-")) {
-        await supabaseAdmin
-          .from("whatsapp_support_tickets")
-          .update({
-            last_message: `Agent: ${data.message.slice(0, 100)}`,
-            status: "in_progress",
-            assigned_to: user?.id,
-            assigned_name: user?.name || "Admin Advisor",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", data.ticketId);
-      }
+      // 3. Update all tickets for this phone to in_progress & activate agent mode
+      await supabaseAdmin
+        .from("whatsapp_support_tickets")
+        .update({
+          last_message: `Agent: ${data.message.slice(0, 100)}`,
+          status: "in_progress",
+          assigned_to: user?.id,
+          assigned_name: user?.name || "Admin Advisor",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("phone", cleanPhone);
 
       await supabaseAdmin.from("whatsapp_conversation_state").upsert({
         phone: cleanPhone,
@@ -237,36 +230,62 @@ export async function POST(request: Request) {
     }
 
     if (data.action === "update_ticket_status") {
+      const cleanPhone = normalizeWhatsAppPhone(data.phone) || data.phone;
+      const isResolved = data.status === "resolved" || data.status === "closed";
+
       const updates: Record<string, unknown> = {
         status: data.status,
         updated_at: new Date().toISOString(),
       };
       if (data.priority) updates.priority = data.priority;
       if (data.resolutionNote !== undefined) updates.resolution_note = data.resolutionNote;
-      if (data.status === "resolved" || data.status === "closed") {
+      if (isResolved) {
         updates.resolved_at = new Date().toISOString();
       }
 
-      if (!data.ticketId.startsWith("chat-") && !data.ticketId.startsWith("conv-")) {
+      // Update in whatsapp_support_tickets by phone to ensure all records for this contact are updated
+      await supabaseAdmin
+        .from("whatsapp_support_tickets")
+        .update(updates)
+        .eq("phone", cleanPhone);
+
+      // If specific ID is provided and not synthetic
+      if (data.ticketId && !data.ticketId.startsWith("chat-") && !data.ticketId.startsWith("conv-")) {
         await supabaseAdmin
           .from("whatsapp_support_tickets")
           .update(updates)
           .eq("id", data.ticketId);
       }
 
-      // If resolving, turn OFF agent_mode so AI Concierge resumes
-      if (data.phone && (data.status === "resolved" || data.status === "closed")) {
-        const cleanPhone = normalizeWhatsAppPhone(data.phone) || data.phone;
-        await supabaseAdmin.from("whatsapp_conversation_state").upsert({
-          phone: cleanPhone,
-          agent_mode: false,
-          updated_at: new Date().toISOString(),
-        });
+      // Update agent_mode in conversation state: false when resolved, true when reopened/in_progress
+      await supabaseAdmin.from("whatsapp_conversation_state").upsert({
+        phone: cleanPhone,
+        agent_mode: !isResolved,
+        updated_at: new Date().toISOString(),
+      });
+
+      // If resolved, notify the user that AI Concierge has resumed
+      if (isResolved) {
+        const resumeNotice = `🤖 *AI Concierge Resumed*\n\nYour support session has been completed by our advisor. I am back and ready to assist you with property searches across Andhra Pradesh! 🏡\n\n*Try asking:* _"3 bhk flats in Poranki"_ or _"Flats under 1 Cr"_`;
+        await WasenderService.sendTextMessage(cleanPhone, resumeNotice, {
+          requestId: `resume-notice-${Date.now()}`,
+        }).catch(() => null);
+
+        try {
+          await supabaseAdmin.from("whatsapp_support_conversations").insert({
+            phone: cleanPhone,
+            role: "system",
+            message: resumeNotice,
+            intent: "ai_resumed_notice",
+          });
+        } catch {
+          // ignore logging failure
+        }
       }
 
       return NextResponse.json({
         success: true,
-        message: `Ticket status updated to ${data.status}`,
+        message: `Ticket status updated to ${data.status}. AI Concierge ${isResolved ? "resumed" : "paused"}.`,
       });
     }
 
