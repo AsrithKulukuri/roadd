@@ -48,8 +48,8 @@ function scheduleInactivityReminder(phone: string, userName: string) {
       session.inactivitySent = true;
 
       const inactivityMsg =
-        `👋 *Hello ${userName || "there"}!*\n\n` +
-        `It seems you've been inactive for a moment. Whenever you're ready, simply reply *"Hi"* or send any property requirement to resume exploring verified listings on ROAD! 🏡`;
+        `👋 *Seems you are inactive!*\n\n` +
+        `Please type *"Hi"* or continue typing to proceed with exploring verified properties & projects on ROAD! 🏡`;
 
       try {
         await WasenderService.sendTextMessage(phone, inactivityMsg, {
