@@ -63,7 +63,17 @@ export function AiAssistantWidget() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to parse search");
+        const errorMsg = data?.error || "AI assistant is temporarily busy. You can use the search bar and filters above to find any property!";
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: "assistant",
+            content: errorMsg,
+          },
+        ]);
+        toast.error(errorMsg);
+        return;
       }
 
       // Add AI response message
@@ -91,11 +101,11 @@ export function AiAssistantWidget() {
       }
 
     } catch (error: any) {
-      console.error(error);
+      console.error("[AI Assistant Widget Error]:", error);
       setMessages(prev => [...prev, { 
         id: Date.now().toString(), 
         role: "assistant", 
-        content: "I'm sorry, I encountered an error or my API key is missing. Please try manually filtering." 
+        content: "AI assistant is temporarily unavailable. You can use the search bar and filters above to find verified properties!" 
       }]);
     } finally {
       setIsLoading(false);

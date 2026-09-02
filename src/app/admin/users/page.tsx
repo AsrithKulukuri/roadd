@@ -18,11 +18,13 @@ import {
   Briefcase,
   HardHat,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  RefreshCw
 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ProfileUser {
   id: string;
@@ -205,73 +207,71 @@ export default function AdminUsersPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-1">
+          <div className="flex items-center gap-2 text-amber-500 dark:text-amber-400 text-xs font-bold uppercase tracking-wider mb-1">
             <Sparkles className="w-3.5 h-3.5" /> Portal User Management
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-text-primary tracking-tight">Users & Role Directory</h1>
-          <p className="text-text-secondary mt-1 text-xs sm:text-sm">
+          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-slate-900 dark:text-white tracking-tight">
+            Users & Role Directory
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-1 text-xs sm:text-sm max-w-2xl">
             Manage authenticated users, real estate classifications (Buyers, Owners, Agents, Builders), and account verification.
           </p>
         </div>
-        <Button onClick={fetchUsers} variant="outline" className="gap-2 shrink-0">
-          Refresh List
+        <Button
+          onClick={fetchUsers}
+          variant="outline"
+          className="gap-2 shrink-0 self-start sm:self-auto rounded-xl border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer"
+        >
+          <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
+          <span>Refresh List</span>
         </Button>
       </div>
 
       {/* Role Filter Tabs & Search Bar */}
-      <div className="space-y-3">
-        {/* Role Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
-          <button
-            onClick={() => setRoleFilter("all")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-              roleFilter === "all" ? "bg-amber-500 text-slate-950 shadow-md" : "bg-bg-card border border-border-default text-text-secondary hover:text-white"
-            }`}
-          >
-            All Users ({roleStats.all})
-          </button>
-          <button
-            onClick={() => setRoleFilter("buyer")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-              roleFilter === "buyer" ? "bg-blue-500 text-white shadow-md" : "bg-bg-card border border-border-default text-text-secondary hover:text-white"
-            }`}
-          >
-            Buyers / Tenants ({roleStats.buyer})
-          </button>
-          <button
-            onClick={() => setRoleFilter("owner")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-              roleFilter === "owner" ? "bg-amber-500 text-slate-950 shadow-md" : "bg-bg-card border border-border-default text-text-secondary hover:text-white"
-            }`}
-          >
-            Property Owners ({roleStats.owner})
-          </button>
-          <button
-            onClick={() => setRoleFilter("agent")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-              roleFilter === "agent" ? "bg-purple-500 text-white shadow-md" : "bg-bg-card border border-border-default text-text-secondary hover:text-white"
-            }`}
-          >
-            Agents ({roleStats.agent})
-          </button>
-          <button
-            onClick={() => setRoleFilter("builder")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-              roleFilter === "builder" ? "bg-emerald-500 text-white shadow-md" : "bg-bg-card border border-border-default text-text-secondary hover:text-white"
-            }`}
-          >
-            Builders ({roleStats.builder})
-          </button>
-          <button
-            onClick={() => setRoleFilter("admin")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-              roleFilter === "admin" ? "bg-rose-500 text-white shadow-md" : "bg-bg-card border border-border-default text-text-secondary hover:text-white"
-            }`}
-          >
-            Staff Admins ({roleStats.admin})
-          </button>
+      <div className="space-y-3.5 w-full min-w-0 max-w-full">
+        {/* Role Tabs Horizontal Scroll Strip */}
+        <div className="w-full min-w-0 max-w-full overflow-hidden">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 sm:mx-0 sm:px-0 touch-pan-x scroll-smooth">
+            {[
+              { key: "all", label: "All Users", icon: Users, count: roleStats.all, active: "bg-amber-500 text-slate-950 font-black shadow-sm", badge: "bg-slate-950/20 text-slate-950" },
+              { key: "buyer", label: "Buyers / Tenants", icon: Home, count: roleStats.buyer, active: "bg-blue-600 text-white font-bold shadow-sm", badge: "bg-white/25 text-white" },
+              { key: "owner", label: "Property Owners", icon: Building2, count: roleStats.owner, active: "bg-amber-500 text-slate-950 font-black shadow-sm", badge: "bg-slate-950/20 text-slate-950" },
+              { key: "agent", label: "Agents", icon: Briefcase, count: roleStats.agent, active: "bg-purple-600 text-white font-bold shadow-sm", badge: "bg-white/25 text-white" },
+              { key: "builder", label: "Builders", icon: HardHat, count: roleStats.builder, active: "bg-emerald-600 text-white font-bold shadow-sm", badge: "bg-white/25 text-white" },
+              { key: "admin", label: "Staff Admins", icon: ShieldCheck, count: roleStats.admin, active: "bg-rose-600 text-white font-bold shadow-sm", badge: "bg-white/25 text-white" },
+            ].map((tab) => {
+              const isSelected = roleFilter === tab.key;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setRoleFilter(tab.key)}
+                  className={cn(
+                    "shrink-0 min-w-max h-10 px-3.5 sm:px-4 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap active:scale-95 border select-none",
+                    isSelected
+                      ? `${tab.active} border-transparent`
+                      : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                  )}
+                >
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="shrink-0 whitespace-nowrap">{tab.label}</span>
+                  <span
+                    className={cn(
+                      "shrink-0 px-2 py-0.5 rounded-full text-[11px] font-extrabold transition-colors whitespace-nowrap",
+                      isSelected
+                        ? tab.badge
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                    )}
+                  >
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Search */}

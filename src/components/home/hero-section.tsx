@@ -118,7 +118,7 @@ const gunturHotspots = [
 const popularQuickFilters = [
   { label: "2 BHK under ₹50L", budget: [0, 5000000], bhk: ["2"] },
   { label: "3 BHK Luxury Flats", bhk: ["3"] },
-  { label: "Gated Community Villas", propertyType: ["villa"] },
+  { label: "Gated Community Villas", propertyType: ["villa"], gatedCommunity: true },
   { label: "Ready to Move", availability: ["ready"] },
   { label: "Residential Plots", propertyType: ["residential-land"] },
   { label: "Owner Listings", postedBy: ["owner"] },

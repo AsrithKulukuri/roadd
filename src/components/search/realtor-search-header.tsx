@@ -145,6 +145,7 @@ export function RealtorSearchHeader({
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (isSubmitting) return;
     if (refMatch) {
       toast.success(`🎯 Direct match for Reference ID ${refMatch.refId} (${refMatch.title})! Opening...`);
       if (refMatch.type === "project") {

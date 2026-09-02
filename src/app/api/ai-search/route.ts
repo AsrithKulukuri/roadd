@@ -6,7 +6,7 @@ const aiRateLimitMap: Map<string, { count: number; resetAt: number }> =
   (globalThis as any).__ai_rate_limit_map || new Map();
 (globalThis as any).__ai_rate_limit_map = aiRateLimitMap;
 
-function checkAiRateLimit(ip: string, maxPerMin = 20): boolean {
+function checkAiRateLimit(ip: string, maxPerMin = 25): boolean {
   const now = Date.now();
   const entry = aiRateLimitMap.get(ip);
   if (!entry || now > entry.resetAt) {
@@ -52,20 +52,96 @@ const responseSchema: Schema = {
   required: ["location", "propertyType", "budget", "bhk", "isSearch", "messageToUser"],
 };
 
+interface ClassifiedAiError {
+  status: number;
+  code: "AI_RATE_LIMITED" | "AI_QUOTA_EXHAUSTED" | "AI_UNAVAILABLE" | "AI_TIMEOUT" | "INVALID_INPUT" | "AI_PARSE_ERROR" | "AI_ERROR";
+  message: string;
+  retryable: boolean;
+}
+
+function classifyAiError(err: any): ClassifiedAiError {
+  const msg = (err?.message || "").toLowerCase();
+  const status = typeof err?.status === "number" ? err.status : 0;
+
+  // Rate Limiting / Quota
+  if (status === 429 || msg.includes("resource_exhausted") || msg.includes("quota") || msg.includes("rate limit") || msg.includes("too many requests")) {
+    return {
+      status: 429,
+      code: msg.includes("quota") ? "AI_QUOTA_EXHAUSTED" : "AI_RATE_LIMITED",
+      message: "AI search rate limit reached. Please try again shortly or use manual search filters.",
+      retryable: false,
+    };
+  }
+
+  // Timeout
+  if (msg.includes("timeout") || msg.includes("timed out") || msg.includes("aborted") || msg.includes("deadline_exceeded")) {
+    return {
+      status: 504,
+      code: "AI_TIMEOUT",
+      message: "AI search request timed out. Please try again or use direct search.",
+      retryable: true,
+    };
+  }
+
+  // Unavailable / 503
+  if (status === 503 || msg.includes("unavailable") || msg.includes("overloaded") || msg.includes("service unavailable")) {
+    return {
+      status: 503,
+      code: "AI_UNAVAILABLE",
+      message: "AI search service is temporarily unavailable. Standard search remains active.",
+      retryable: true,
+    };
+  }
+
+  // Bad input
+  if (status === 400 || msg.includes("invalid argument") || msg.includes("bad request")) {
+    return {
+      status: 400,
+      code: "INVALID_INPUT",
+      message: "Invalid query provided to AI search.",
+      retryable: false,
+    };
+  }
+
+  // Generic failure
+  return {
+    status: 500,
+    code: "AI_ERROR",
+    message: "Unable to process AI search at this time.",
+    retryable: false,
+  };
+}
+
+async function callGeminiWithTimeout(ai: GoogleGenAI, promptText: string, timeoutMs = 8000) {
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error("AI request timed out")), timeoutMs);
+  });
+
+  const apiPromise = ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: promptText }]
+      }
+    ],
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: responseSchema,
+      temperature: 0.1,
+    }
+  });
+
+  return Promise.race([apiPromise, timeoutPromise]);
+}
+
 export async function POST(req: Request) {
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
     if (!checkAiRateLimit(ip, 25)) {
       return NextResponse.json(
-        { error: "Too many AI search requests. Please slow down and try again in a minute." },
+        { error: "Too many AI search requests. Please slow down and try again in a minute.", code: "AI_RATE_LIMITED" },
         { status: 429 }
-      );
-    }
-
-    if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json(
-        { error: "GEMINI_API_KEY is not configured in the environment." },
-        { status: 500 }
       );
     }
 
@@ -73,7 +149,17 @@ export async function POST(req: Request) {
     const { prompt, history = "" } = body;
 
     if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
-      return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Valid search prompt is required", code: "INVALID_INPUT" },
+        { status: 400 }
+      );
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return NextResponse.json(
+        { error: "AI search is currently disabled in this environment.", code: "AI_DISABLED" },
+        { status: 503 }
+      );
     }
 
     // Input bounds check to prevent token abuse
@@ -97,20 +183,21 @@ Rules:
 7. Consider previous conversation context when parsing intent: ${String(history).slice(0, 1000)}`;
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: `${systemPrompt}\n\nUser Query: "${cleanPrompt}"` }]
-        }
-      ],
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: responseSchema,
-        temperature: 0.1,
+    const fullPrompt = `${systemPrompt}\n\nUser Query: "${cleanPrompt}"`;
+
+    let response: any;
+    try {
+      response = await callGeminiWithTimeout(ai, fullPrompt, 8000);
+    } catch (primaryErr: any) {
+      const classified = classifyAiError(primaryErr);
+      if (classified.retryable) {
+        // Retry once after 350ms backoff
+        await new Promise((resolve) => setTimeout(resolve, 350));
+        response = await callGeminiWithTimeout(ai, fullPrompt, 8000);
+      } else {
+        throw primaryErr;
       }
-    });
+    }
 
     const resultText = response.text;
     if (!resultText) {
@@ -120,17 +207,20 @@ Rules:
     const parsedData = JSON.parse(resultText);
     return NextResponse.json(parsedData);
   } catch (error: any) {
-    console.error("[AI Search API Error]:", error);
+    const classified = classifyAiError(error);
+    console.error("[AI Search API Diagnostic]:", {
+      code: classified.code,
+      status: classified.status,
+      retryable: classified.retryable,
+      errorName: error?.name,
+    });
     return NextResponse.json(
       {
-        location: "",
-        propertyType: "any",
-        budget: [0, 100000000],
-        bhk: "any",
-        isSearch: false,
-        messageToUser: "I had trouble processing that with AI, but you can use the search filters above to find properties!",
+        error: classified.message,
+        code: classified.code,
+        retryable: classified.retryable,
       },
-      { status: 200 }
+      { status: classified.status }
     );
   }
 }

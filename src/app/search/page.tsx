@@ -15,7 +15,7 @@ import { MapWrapper } from "@/components/map/map-wrapper";
 import { Search as SearchIcon, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { matchesPropertySearch, matchesProjectSearch, parseSearchIntent, evaluatePropertyFilters, evaluateProjectFilters } from "@/lib/search-engine";
+import { matchesPropertySearch, matchesProjectSearch, parseSearchIntent, evaluatePropertyFilters, evaluateProjectFilters, matchesStructuredLocation } from "@/lib/search-engine";
 import { useIsMounted } from "@/hooks/use-is-mounted";
 
 type SortByOption = "relevant" | "price-asc" | "price-desc" | "newest";
@@ -208,8 +208,14 @@ function UnifiedSearchPage() {
     // Parse listing type (buy -> sale, rent -> rent)
     const typeStr = searchParams.get("type");
     let listingType: string[] = [];
-    if (typeStr === "rent") listingType = ["rent"];
-    else if (typeStr === "buy") listingType = ["sale"];
+    let transactionType: FilterState["transactionType"] = "all";
+    if (typeStr === "rent") {
+      listingType = ["rent"];
+      transactionType = "rent";
+    } else if (typeStr === "buy") {
+      listingType = ["sale"];
+      transactionType = "buy";
+    }
 
     // Parse BHK
     const bhkParam = searchParams.get("bhk");
@@ -223,14 +229,17 @@ function UnifiedSearchPage() {
     // Parse propertyType and projectType
     const propTypeStr = searchParams.get("propertyType") || searchParams.get("projectType");
     let propertyType: string[] = [];
-    let gatedCommunity = false;
+    let gatedCommunity = searchParams.get("gatedCommunity") === "true";
     if (propTypeStr) {
-      propertyType = propTypeStr.split(",");
+      propertyType = propTypeStr.split(",").map(p => p.trim()).filter(Boolean);
       if (propertyType.includes("gated-community")) {
         gatedCommunity = true;
       }
     } else if (parsed && parsed.propertyTypes.length > 0) {
       propertyType = parsed.propertyTypes;
+    }
+    if (parsed?.isGatedCommunity) {
+      gatedCommunity = true;
     }
 
     // Parse city / cities
@@ -238,6 +247,20 @@ function UnifiedSearchPage() {
     let cities: string[] = [];
     if (cityParam) {
       cities = cityParam.split(",").map(c => c.trim()).filter(Boolean);
+    }
+
+    // Parse localities / sublocation
+    const localityParam = searchParams.get("locality") || searchParams.get("localities") || searchParams.get("sublocation");
+    let localities: string[] = [];
+    if (localityParam) {
+      localities = localityParam.split(",").map(l => l.trim()).filter(Boolean);
+    }
+
+    // Parse status / possessionStatus
+    const statusParam = searchParams.get("status") || searchParams.get("possession") || searchParams.get("possessionStatus");
+    let possessionStatus: string[] = [];
+    if (statusParam) {
+      possessionStatus = statusParam.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
     }
 
     // Parse reraApproved
@@ -267,10 +290,13 @@ function UnifiedSearchPage() {
       query: loc,
       budget,
       listingType,
+      transactionType,
       propertyType,
       bhk,
       saleType,
       cities,
+      localities,
+      possessionStatus,
       gatedCommunity,
       reraApproved: reraParam,
       displayCategory: categoryParam,
@@ -345,9 +371,11 @@ function UnifiedSearchPage() {
   }, [projects, filters, searchParams, userLocation]);
 
   // Combine and Sort
+  const isRentActive = (filters.listingType || []).includes("rent") || filters.transactionType === "rent";
+
   const combinedResults = useMemo(() => {
     let propList = activeTab !== "projects" ? filteredProperties : [];
-    let projList = activeTab !== "properties" ? filteredProjects : [];
+    let projList = (activeTab !== "properties" && !isRentActive) ? filteredProjects : [];
 
     // In map mode with a visible-ids set, drive the list from the MAP's viewport
     // while keeping all search/budget filters active
@@ -401,7 +429,7 @@ function UnifiedSearchPage() {
     });
 
     return items;
-  }, [filteredProperties, filteredProjects, sortBy, filters.sortBy, filters.query, viewMode, visibleMapIds, activeTab]);
+  }, [filteredProperties, filteredProjects, isRentActive, sortBy, filters.sortBy, filters.query, viewMode, visibleMapIds, activeTab]);
 
   // 12 properties / projects initial load with Load More
   const pageSize = 12;
@@ -411,41 +439,132 @@ function UnifiedSearchPage() {
     return combinedResults.slice(0, visibleCount);
   }, [combinedResults, visibleCount]);
 
-  const handleFilterChange = (newFilters: FilterState) => {
+  // Central atomic URL synchronization to eliminate competing router.replace calls
+  const syncFiltersToUrl = useCallback((
+    newFilters: FilterState,
+    targetTab?: "all" | "properties" | "projects",
+    options?: { removeModalParams?: boolean }
+  ) => {
     setFilters(newFilters);
     setVisibleCount(12);
+    if (targetTab) {
+      setActiveTab(targetTab);
+    }
+
     const newParams = new URLSearchParams(searchParams.toString());
-    
-    // 1. Budget
+
+    // Always strip openFilters and focus when closing or applying
+    if (options?.removeModalParams) {
+      newParams.delete("openFilters");
+      newParams.delete("focus");
+    }
+
+    // 1. Tab / Type / Listing Type
+    const currentTab = targetTab || activeTab;
+    if (currentTab === "properties" || currentTab === "projects") {
+      newParams.set("type", currentTab);
+    } else if (newFilters.listingType && newFilters.listingType.length > 0) {
+      if (newFilters.listingType.includes("rent")) {
+        newParams.set("type", "rent");
+      } else if (newFilters.listingType.includes("sale")) {
+        newParams.set("type", "buy");
+      }
+    } else if (currentTab === "all") {
+      const existingType = newParams.get("type");
+      if (existingType === "properties" || existingType === "projects") {
+        newParams.delete("type");
+      }
+    }
+
+    // 2. Location / Query
+    if (newFilters.query && newFilters.query.trim()) {
+      newParams.set("location", newFilters.query.trim());
+      newParams.delete("q");
+      newParams.delete("search");
+    } else {
+      newParams.delete("location");
+      newParams.delete("q");
+      newParams.delete("search");
+    }
+
+    // 3. Budget
     if (newFilters.budget && (newFilters.budget[0] > 0 || newFilters.budget[1] < 100000000)) {
       newParams.set("budget", `${newFilters.budget[0]},${newFilters.budget[1]}`);
     } else {
       newParams.delete("budget");
     }
 
-    // 2. Query
-    if (newFilters.query) {
-      newParams.set("location", newFilters.query);
+    // 4. Cities
+    if (newFilters.cities && newFilters.cities.length > 0) {
+      newParams.set("city", newFilters.cities.join(","));
+      newParams.delete("cities");
     } else {
-      newParams.delete("location");
+      newParams.delete("city");
+      newParams.delete("cities");
     }
 
-    // 3. PropertyType
+    // 5. Localities
+    if (newFilters.localities && newFilters.localities.length > 0) {
+      newParams.set("locality", newFilters.localities.join(","));
+      newParams.delete("localities");
+      newParams.delete("sublocation");
+    } else {
+      newParams.delete("locality");
+      newParams.delete("localities");
+      newParams.delete("sublocation");
+    }
+
+    // 6. PropertyType
     if (newFilters.propertyType && newFilters.propertyType.length > 0) {
       newParams.set("propertyType", newFilters.propertyType.join(","));
     } else {
       newParams.delete("propertyType");
     }
 
-    // 4. Cities
-    if (newFilters.cities && newFilters.cities.length > 0) {
-      newParams.set("city", newFilters.cities.join(","));
+    // 7. BHK
+    if (newFilters.bhk && newFilters.bhk.length > 0) {
+      newParams.set("bhk", newFilters.bhk.join(","));
     } else {
-      newParams.delete("city");
+      newParams.delete("bhk");
+    }
+
+    // 8. Status / Possession
+    if (newFilters.possessionStatus && newFilters.possessionStatus.length > 0) {
+      newParams.set("status", newFilters.possessionStatus.join(","));
+    } else {
+      newParams.delete("status");
+      newParams.delete("possession");
+      newParams.delete("possessionStatus");
+    }
+
+    // 9. RERA
+    if (newFilters.reraApproved) {
+      newParams.set("reraApproved", "true");
+    } else {
+      newParams.delete("reraApproved");
+      newParams.delete("rera");
+    }
+
+    // 10. Gated Community
+    if (newFilters.gatedCommunity) {
+      newParams.set("gatedCommunity", "true");
+    } else {
+      newParams.delete("gatedCommunity");
+    }
+
+    // 11. Sort
+    if (newFilters.sortBy && newFilters.sortBy !== "relevance" && newFilters.sortBy !== "relevant") {
+      newParams.set("sort", newFilters.sortBy);
+    } else {
+      newParams.delete("sort");
     }
 
     const queryStr = newParams.toString();
     router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
+  }, [searchParams, activeTab, router]);
+
+  const handleFilterChange = (newFilters: FilterState) => {
+    syncFiltersToUrl(newFilters, undefined, { removeModalParams: false });
   };
 
   // Map items: pass active filtered properties & projects to the map so all matching markers render.
@@ -453,7 +572,7 @@ function UnifiedSearchPage() {
     const propItems = filteredProperties
       .filter((p) => p.showOnMap !== false && p.status !== 'sold');
 
-    const projItems = filteredProjects
+    const projItems = (isRentActive ? [] : filteredProjects)
       .filter((p) => p.isPublished !== false)
       .map((p) => ({
         id: p.id,
@@ -480,29 +599,22 @@ function UnifiedSearchPage() {
       }));
 
     return [...propItems, ...projItems];
-  }, [filteredProperties, filteredProjects]);
+  }, [filteredProperties, filteredProjects, isRentActive]);
 
-  // Tab change handler that keeps URL and state in sync
+  // Tab change handler that keeps URL and state in sync atomically
   const handleTabChange = (tab: "all" | "properties" | "projects") => {
-    setActiveTab(tab);
-    const newParams = new URLSearchParams(searchParams.toString());
-    if (tab === "all") {
-      newParams.delete("type");
-    } else {
-      newParams.set("type", tab);
-    }
-    const queryStr = newParams.toString();
-    router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
+    syncFiltersToUrl(filters, tab, { removeModalParams: false });
   };
 
   // Active counts for the 3 smart filter buttons:
-  // In Map View with active viewport, count items in map viewport that match filters.
-  // In Grid View, count all items that match filters.
   const { allCount, propCount, projCount } = useMemo(() => {
+    const pList = filteredProperties;
+    const jList = isRentActive ? [] : filteredProjects;
+
     if (viewMode === "map" && visibleMapIds !== null) {
       const visibleSet = new Set(visibleMapIds);
-      const visibleProps = filteredProperties.filter((p) => visibleSet.has(p.id));
-      const visibleProjs = filteredProjects.filter((p) => visibleSet.has(p.id));
+      const visibleProps = pList.filter((p) => visibleSet.has(p.id));
+      const visibleProjs = jList.filter((p) => visibleSet.has(p.id));
       return {
         allCount: visibleProps.length + visibleProjs.length,
         propCount: visibleProps.length,
@@ -510,34 +622,38 @@ function UnifiedSearchPage() {
       };
     }
     return {
-      allCount: filteredProperties.length + filteredProjects.length,
-      propCount: filteredProperties.length,
-      projCount: filteredProjects.length,
+      allCount: pList.length + jList.length,
+      propCount: pList.length,
+      projCount: jList.length,
     };
-  }, [viewMode, visibleMapIds, filteredProperties, filteredProjects]);
+  }, [viewMode, visibleMapIds, filteredProperties, filteredProjects, isRentActive]);
 
   // New Launches specific category counts (Apartments, Ventures, Villas)
   const { allNewLaunchCount, apartmentCount, ventureCount, villaCount } = useMemo(() => {
     const baseProjects = projects.filter((project) => {
+      // Must strictly be new launch / upcoming
+      const status = (project.constructionStatus || "").toLowerCase();
+      const isNewLaunch = status === "new-launch" || status === "upcoming" || status === "new_launch";
+      if (!isNewLaunch) return false;
+
       const parsedIntent = filters.query ? parseSearchIntent(filters.query) : null;
       if (filters.query && !matchesProjectSearch(project, filters.query, parsedIntent || undefined)) {
         return false;
       }
-      const projCity = (project.location?.city || "").toLowerCase();
-      const projLocality = (project.location?.locality || "").toLowerCase();
-      const projAddress = (project.location?.address || "").toLowerCase();
-      const projCorpus = `${projCity} ${projLocality} ${projAddress} ${(project.name || "").toLowerCase()}`;
       if (filters.cities && filters.cities.length > 0) {
         const matchesCity = filters.cities.some((c: string) => {
           const target = c.toLowerCase().trim();
-          return projCity.includes(target) || projLocality.includes(target) || projCorpus.includes(target);
+          return matchesStructuredLocation(project.location, [target]);
         });
         if (!matchesCity) return false;
       }
       if (filters.localities && filters.localities.length > 0) {
+        const projLocality = String(project.location?.locality || "").toLowerCase();
+        const projAddress = String(project.location?.address || "").toLowerCase();
+        const projLandmark = String((project.location as any)?.landmark || "").toLowerCase();
         const matchesLoc = filters.localities.some((l: string) => {
           const target = l.toLowerCase().trim();
-          return projLocality.includes(target) || projAddress.includes(target) || projCorpus.includes(target);
+          return projLocality.includes(target) || projAddress.includes(target) || projLandmark.includes(target);
         });
         if (!matchesLoc) return false;
       }
@@ -878,13 +994,20 @@ function UnifiedSearchPage() {
 
       <SearchFiltersModal
         isOpen={isFilterModalOpen}
-        onClose={() => setIsFilterModalOpen(false)}
+        onClose={() => {
+          setIsFilterModalOpen(false);
+          const newParams = new URLSearchParams(searchParams.toString());
+          if (newParams.has("openFilters") || newParams.has("focus")) {
+            newParams.delete("openFilters");
+            newParams.delete("focus");
+            const queryStr = newParams.toString();
+            router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
+          }
+        }}
         filters={filters}
         onApplyFilters={(newFilters, targetTab) => {
-          handleFilterChange(newFilters);
-          if (targetTab) {
-            handleTabChange(targetTab);
-          }
+          setIsFilterModalOpen(false);
+          syncFiltersToUrl(newFilters, targetTab, { removeModalParams: true });
         }}
         totalResults={combinedResults.length}
       />

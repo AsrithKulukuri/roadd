@@ -179,6 +179,111 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
   };
 }
 
+const LOCATION_ALIASES: Record<string, string[]> = {
+  "benz circle": ["benz circle", "patamata", "mg road", "m.g. road", "bandar road"],
+  "amaravati": ["amaravati", "amaravathi", "thullur", "velagapudi", "mandadam", "rayapudi", "nekkallu", "inavolu", "anantavaram", "dharanikota"],
+  "guntur": ["guntur", "gorantla", "brodipet", "pattabhipuram", "amaravati road", "kaza", "pedakakani", "vidhyanagar", "nallapadu"],
+  "vijayawada": ["vijayawada", "kanuru", "poranki", "penamaluru", "benz circle", "auto nagar", "patamata", "gunadala", "bhavanipuram", "gannavaram", "tadepalli", "mangalagiri", "gollapudi", "prasadampadu", "ramavarappadu", "ennikepadu", "nidamanuru", "edupugallu", "yenamalakuduru", "payakapuram", "ayodhya nagar"],
+  "mangalagiri": ["mangalagiri", "kaza", "chinakakani", "aiims", "atmakur"],
+  "tadepalli": ["tadepalli", "undavalli", "dolhas nagar", "kolanukonda", "seethanagaram"],
+  "vizag": ["vizag", "visakhapatnam", "madhurawada", "gajuwaka", "rushikonda"],
+  "visakhapatnam": ["vizag", "visakhapatnam", "madhurawada", "gajuwaka", "rushikonda"],
+};
+
+export function matchesStructuredLocation(
+  locObj?: { city?: string; locality?: string; address?: string; landmark?: string; state?: string; pincode?: string },
+  locationKeywords: string[] = []
+): boolean {
+  if (!locationKeywords || locationKeywords.length === 0) return true;
+  if (!locObj) return false;
+
+  const city = (locObj.city || "").toLowerCase().trim();
+  const locality = (locObj.locality || "").toLowerCase().trim();
+  const address = (locObj.address || "").toLowerCase().trim();
+  const landmark = (locObj.landmark || "").toLowerCase().trim();
+  const pincode = (locObj.pincode || "").toLowerCase().trim();
+
+  const structuredCorpus = `${city} ${locality} ${address} ${landmark} ${pincode}`;
+
+  return locationKeywords.every((kw) => {
+    const target = kw.toLowerCase().trim();
+    if (!target) return true;
+
+    // Direct match in structured location fields
+    if (structuredCorpus.includes(target)) return true;
+
+    // Check locality / alias expansions
+    const aliases = LOCATION_ALIASES[target];
+    if (aliases && aliases.some((alias) => structuredCorpus.includes(alias))) {
+      return true;
+    }
+
+    return false;
+  });
+}
+
+/**
+ * Strict verification of explicit gated community evidence for Properties
+ */
+export function hasGatedEvidenceProperty(property: Property): boolean {
+  const pRecord = property as unknown as Record<string, unknown>;
+  if (pRecord.gatedCommunity === true || pRecord.isGatedCommunity === true || pRecord.gatedSecurity === true) {
+    return true;
+  }
+  if (Array.isArray(property.amenities)) {
+    const hasAmenity = property.amenities.some((a: unknown) => {
+      if (typeof a === "object" && a !== null) {
+        const rec = a as Record<string, unknown>;
+        const id = String(rec.id || "").toLowerCase();
+        const name = String(rec.name || "").toLowerCase();
+        return id === "gated-security" || name.includes("gated community") || name.includes("gated security") || name.includes("24/7 security & gated");
+      }
+      if (typeof a === "string") {
+        const str = a.toLowerCase();
+        return str === "gated-security" || str.includes("gated community") || str.includes("gated security");
+      }
+      return false;
+    });
+    if (hasAmenity) return true;
+  }
+  if (Array.isArray(property.features)) {
+    const hasFeature = property.features.some((f: unknown) => {
+      const text = (typeof f === "string" ? f : String((f as Record<string, unknown>)?.name || "")).toLowerCase();
+      return text.includes("gated community") || text.includes("gated security");
+    });
+    if (hasFeature) return true;
+  }
+  return false;
+}
+
+/**
+ * Strict verification of explicit gated community evidence for Projects
+ */
+export function hasGatedEvidenceProject(project: Project): boolean {
+  const pRecord = project as unknown as Record<string, unknown>;
+  if (pRecord.isGated === true || pRecord.gatedCommunity === true || pRecord.isGatedCommunity === true || pRecord.gatedSecurity === true) {
+    return true;
+  }
+  if (Array.isArray(project.highlights)) {
+    if (project.highlights.some((h) => /gated\s*(?:community|security)/i.test(h))) return true;
+  }
+  if (Array.isArray(project.facilities)) {
+    if (project.facilities.some((f) => {
+      const text = typeof f === "string" ? f : String((f as any)?.name || (f as any)?.label || "");
+      return /gated\s*(?:community|security)/i.test(text);
+    })) return true;
+  }
+  const projAmenities = (project as any).amenities;
+  if (Array.isArray(projAmenities)) {
+    const hasAmenity = projAmenities.some((a: unknown) => {
+      const text = (typeof a === "string" ? a : String((a as Record<string, unknown>)?.name || "")).toLowerCase();
+      return text.includes("gated community") || text.includes("gated security");
+    });
+    if (hasAmenity) return true;
+  }
+  return false;
+}
+
 /**
  * Intelligent Project Matcher
  */
@@ -189,12 +294,13 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
   const norm = intent.normalizedQuery;
 
   // Searchable text corpus for the project
-  const locationText = `${project.location?.city || ""} ${project.location?.locality || ""} ${project.location?.address || ""} ${project.location?.state || ""} ${project.location?.pincode || ""}`.toLowerCase();
+  const projLandmark = (project.location as any)?.landmark || "";
+  const locationText = `${project.location?.city || ""} ${project.location?.locality || ""} ${project.location?.address || ""} ${projLandmark} ${project.location?.state || ""} ${project.location?.pincode || ""}`.toLowerCase();
   const builderObj = "builder" in project ? (project as { builder?: { name?: string } }).builder : undefined;
   const builderText = `${project.builderName || ""} ${builderObj?.name || ""}`.toLowerCase();
   const projectTypeText = `${project.projectType || ""}`.toLowerCase();
   const configsText = (project.configurations || []).map(c => `${c.label || ""} ${c.bedrooms ? c.bedrooms + "bhk " + c.bedrooms + "bk " + c.bedrooms + " bed" : ""} ${c.facing?.join(" ") || ""}`).join(" ").toLowerCase();
-  const tagsText = `${(project.highlights || []).join(" ")} ${(project.facilities || []).join(" ")}`.toLowerCase();
+  const tagsText = `${(project.highlights || []).join(" ")} ${(project.facilities || []).map((f: any) => typeof f === 'string' ? f : (f?.name || f?.label || "")).join(" ")}`.toLowerCase();
   const titleAndDesc = `${project.name || ""} ${project.tagline || ""} ${project.description || ""}`.toLowerCase();
 
   const fullCorpus = `${titleAndDesc} ${locationText} ${builderText} ${projectTypeText} ${configsText} ${tagsText}`;
@@ -223,14 +329,16 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
     }
   }
 
-  // 3. Direct exact or full substring match (only if no hard propertyType/BHK mismatch)
-  if (fullCorpus.includes(norm) && intent.propertyTypes.length === 0 && intent.bhks.length === 0) {
-    return true;
-  }
-
-  // 4. Listing Type requirement: If user specifically searches for "rent", projects are typically for sale
+  // 3. Listing Type requirement: If user specifically searches for "rent", projects are typically for sale
   if (intent.listingType === "rent") {
     return false;
+  }
+
+  // 4. Gated Community requirement: Queries like "gated villa in Guntur" strictly require gated evidence
+  if (intent.isGatedCommunity) {
+    if (!hasGatedEvidenceProject(project)) {
+      return false;
+    }
   }
 
   // 5. Property Type requirement (e.g. "apartment" must not return plot ventures)
@@ -263,15 +371,15 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
     }
   }
 
-  // 5. Location Keywords requirement (e.g. "edupugallu", "benz circle", "guntur")
+  // 7. Hard Location Keywords requirement: Must match structured location fields only
   if (intent.locationKeywords.length > 0) {
-    const matchesLoc = intent.locationKeywords.some(loc => locationText.includes(loc) || fullCorpus.includes(loc));
+    const matchesLoc = matchesStructuredLocation(project.location, intent.locationKeywords);
     if (!matchesLoc) {
       return false;
     }
   }
 
-  // 6. Specific Name / Builder Keywords requirement (e.g. "sri", "lansum", "heights")
+  // 8. Specific Name / Builder Keywords requirement (e.g. "sri", "lansum", "heights")
   if (intent.specificKeywords.length > 0) {
     const allSpecificMatch = intent.specificKeywords.every(kw => fullCorpus.includes(kw));
     if (!allSpecificMatch) {
@@ -291,7 +399,7 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
   const intent = parsedIntent || parseSearchIntent(query);
 
   // Searchable text corpus for the property
-  const locationText = `${property.location?.city || ""} ${property.location?.locality || ""} ${property.location?.address || ""} ${property.location?.state || ""} ${property.location?.pincode || ""}`.toLowerCase();
+  const locationText = `${property.location?.city || ""} ${property.location?.locality || ""} ${property.location?.address || ""} ${property.location?.landmark || ""} ${property.location?.state || ""} ${property.location?.pincode || ""}`.toLowerCase();
   const ownerText = `${property.ownerName || ""} ${property.postedBy || ""}`.toLowerCase();
   const pType = (property.propertyType || "").toLowerCase();
   const pCategory = (property.category || "").toLowerCase();
@@ -353,18 +461,25 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
     return false;
   }
 
-  // 5. Budget constraint (e.g. "under 50 lakhs")
+  // 5. Gated Community requirement: Queries like "gated villa in Guntur" strictly require gated evidence
+  if (intent.isGatedCommunity) {
+    if (!hasGatedEvidenceProperty(property)) {
+      return false;
+    }
+  }
+
+  // 6. Budget constraint (e.g. "under 50 lakhs")
   if (intent.maxPrice && property.price > intent.maxPrice) {
     return false;
   }
 
-  // 6. Location Keywords requirement (e.g. "vijayawada", "benz circle")
+  // 7. Hard Location Keywords requirement: Must match structured location fields, NOT marketing descriptions
   if (intent.locationKeywords.length > 0) {
-    const matchesLoc = intent.locationKeywords.some(loc => locationText.includes(loc) || fullCorpus.includes(loc));
+    const matchesLoc = matchesStructuredLocation(property.location, intent.locationKeywords);
     if (!matchesLoc) return false;
   }
 
-  // 7. Specific Name / Keywords requirement
+  // 8. Specific Name / Keywords requirement
   if (intent.specificKeywords.length > 0) {
     const allSpecificMatch = intent.specificKeywords.every(kw => fullCorpus.includes(kw));
     if (!allSpecificMatch) return false;
@@ -384,14 +499,13 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
   const propLocality = (property.location?.locality || "").toLowerCase();
   const propAddress = (property.location?.address || "").toLowerCase();
   const propLandmark = (property.location?.landmark || "").toLowerCase();
-  const propTitle = (property.title || "").toLowerCase();
 
-  // Multiple Cities selection
+  // Multiple Cities selection: Match structured location fields only
   if (filters.cities && Array.isArray(filters.cities) && filters.cities.length > 0) {
     const matchesCity = filters.cities.some((c: string) => {
       const target = c.toLowerCase().trim();
       if (!target) return false;
-      return propCity.includes(target) || propLocality.includes(target) || propAddress.includes(target);
+      return matchesStructuredLocation(property.location, [target]);
     });
     if (!matchesCity) return false;
   }
@@ -402,7 +516,7 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
     const matchesSub = (rawSublocations as string[]).some((sub: string) => {
       const target = sub.toLowerCase().trim();
       if (!target) return false;
-      return propLocality.includes(target) || propAddress.includes(target) || propLandmark.includes(target) || propTitle.includes(target);
+      return propLocality.includes(target) || propAddress.includes(target) || propLandmark.includes(target);
     });
     if (!matchesSub) return false;
   }
@@ -446,21 +560,10 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
       const rt = reqType.toLowerCase();
       if (rt === pType || rt === pSubtype || rt === pCategory) return true;
       
-      // Gated Community matches
-      const pRecord = property as unknown as Record<string, unknown>;
-      const hasGated = Boolean(
-        pRecord.gatedCommunity ||
-        pRecord.isGatedCommunity ||
-        (Array.isArray(property.amenities) && property.amenities.some((a: unknown) => {
-          if (typeof a === "object" && a !== null) {
-            const rec = a as Record<string, unknown>;
-            return rec.id === "gated-security" || String(rec.name || "").toLowerCase().includes("gated");
-          }
-          return false;
-        })) ||
-        ["apartment", "villa"].includes(pType)
-      );
-      if (rt === "gated-community" && hasGated) return true;
+      // Strict Gated Community: requires explicit gated evidence
+      if (rt === "gated-community") {
+        return hasGatedEvidenceProperty(property);
+      }
 
       // Apartment matches
       if (rt === "apartment" && (pType.includes("apartment") || pSubtype === "flat" || pSubtype === "pent-house" || pSubtype === "duplex-flat")) return true;
@@ -483,6 +586,11 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
       return false;
     });
     if (!hasMatch) return false;
+  }
+
+  // Explicit Gated Community toggle
+  if (filters.gatedCommunity && !hasGatedEvidenceProperty(property)) {
+    return false;
   }
 
   // 4. BHK
@@ -589,7 +697,7 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
     if (!filters.facing.some((f: string) => propFacing.includes(f.toLowerCase()))) return false;
   }
   if (filters.vastuCompliant && !property.vastuCompliant) return false;
-  if (filters.gatedCommunity && !property.gatedSecurity && property.propertyType !== "villa" && property.propertyType !== "apartment") return false;
+  if (filters.gatedCommunity && !hasGatedEvidenceProperty(property)) return false;
 
   // 14. Amenities
   if (filters.amenities && Array.isArray(filters.amenities) && filters.amenities.length > 0) {
@@ -684,18 +792,12 @@ export function evaluateProjectFilters(
     }
   }
 
-  // 0. Location & Geography (Cities, Localities)
-  const projCity = (project.location?.city || "").toLowerCase();
-  const projLocality = (project.location?.locality || "").toLowerCase();
-  const projAddress = (project.location?.address || "").toLowerCase();
-  const projName = (project.name || "").toLowerCase();
-  const projCorpus = `${projCity} ${projLocality} ${projAddress} ${projName}`;
-
+  // 0. Location & Geography (Cities, Localities) - Match structured location fields
   if (filters.cities && Array.isArray(filters.cities) && filters.cities.length > 0) {
     const matchesCity = filters.cities.some((c: string) => {
       const target = c.toLowerCase().trim();
       if (!target) return false;
-      return projCity.includes(target) || projLocality.includes(target) || projCorpus.includes(target);
+      return matchesStructuredLocation(project.location, [target]);
     });
     if (!matchesCity) return false;
   }
@@ -704,17 +806,21 @@ export function evaluateProjectFilters(
     const matchesLoc = filters.localities.some((l: string) => {
       const target = l.toLowerCase().trim();
       if (!target) return false;
-      return projLocality.includes(target) || projAddress.includes(target) || projCorpus.includes(target);
+      const projLocality = String(project.location?.locality || "").toLowerCase();
+      const projAddress = String(project.location?.address || "").toLowerCase();
+      const projLandmark = String((project.location as any)?.landmark || "").toLowerCase();
+      return projLocality.includes(target) || projAddress.includes(target) || projLandmark.includes(target);
     });
     if (!matchesLoc) return false;
   }
 
-  // 1. Transaction Type (Projects are for sale / buy / investment, not for rent / PG)
-  if (filters.transactionType && typeof filters.transactionType === "string") {
-    const tType = filters.transactionType.toLowerCase();
-    if (tType === "rent" || tType === "pg") {
-      return false;
-    }
+  // 1. Transaction Type & Listing Type (Projects are for sale / primary developments; strictly exclude rent & PG)
+  const tType = typeof filters.transactionType === "string" ? filters.transactionType.toLowerCase() : "";
+  const isRentListing =
+    tType === "rent" || tType === "pg" ||
+    (Array.isArray(filters.listingType) && filters.listingType.length > 0 && filters.listingType.some((t) => typeof t === "string" && (t.toLowerCase() === "rent" || t.toLowerCase() === "pg")));
+  if (isRentListing) {
+    return false;
   }
 
   // 2. Property Type
@@ -730,7 +836,7 @@ export function evaluateProjectFilters(
       if (tt === "villa" && (pType.includes("villa") || pType.includes("independent-house"))) return true;
       if (["venture", "crda-ventures", "crda-venture", "residential-land", "plot", "venture-plot", "land"].includes(tt) && (pType === "venture" || pType === "plot" || pType === "land")) return true;
       if (["commercial-spaces", "commercial", "shops", "commercial-shop"].includes(tt) && pType.includes("commercial")) return true;
-      if (tt === "gated-community" && ["apartment", "villa", "independent-house"].includes(pType)) return true;
+      if (tt === "gated-community") return hasGatedEvidenceProject(project);
       return false;
     });
     if (!matchesType) return false;
@@ -795,22 +901,23 @@ export function evaluateProjectFilters(
     }
   }
 
-  // 7. Possession Status & Availability
+  // 7. Possession Status & Construction Status & Availability
   const rawAvailability = Array.isArray((filters as Record<string, unknown>).availability) ? ((filters as Record<string, unknown>).availability as string[]) : [];
   const rawPossession = Array.isArray(filters.possessionStatus) ? filters.possessionStatus : [];
-  const possessionFilters = [...rawPossession, ...rawAvailability];
+  const rawStatus = "status" in filters && typeof (filters as Record<string, unknown>).status === "string" ? [String((filters as Record<string, unknown>).status)] : [];
+  const possessionFilters = [...rawPossession, ...rawAvailability, ...rawStatus];
 
   if (possessionFilters.length > 0) {
     const status = (project.constructionStatus || "").toLowerCase();
-    const isReady = status === "ready-to-move";
+    const isReady = status === "ready-to-move" || status === "ready";
     const isUnderConstruction = status === "under-construction";
-    const isNewLaunch = status === "new-launch" || status === "upcoming";
+    const isNewLaunch = status === "new-launch" || status === "upcoming" || status === "new_launch";
 
     const matchesPossession = possessionFilters.some((ps: string) => {
       const p = ps.toLowerCase();
-      if (p === "ready" || p === "immediate" || p === "ready-to-move") return isReady;
-      if (p === "under-construction") return isUnderConstruction;
-      if (p === "upcoming" || p === "new-launch") return isNewLaunch;
+      if (p === "ready" || p === "immediate" || p === "ready-to-move" || p === "ready_to_move") return isReady;
+      if (p === "under-construction" || p === "under_construction") return isUnderConstruction;
+      if (p === "upcoming" || p === "new-launch" || p === "new_launch") return isNewLaunch;
       return true;
     });
     if (!matchesPossession) return false;
@@ -850,7 +957,7 @@ export function evaluateProjectFilters(
   }
 
   // 11. Gated Community
-  if (filters.gatedCommunity && project.projectType !== "apartment" && project.projectType !== "villa") {
+  if (filters.gatedCommunity && !hasGatedEvidenceProject(project)) {
     return false;
   }
 
