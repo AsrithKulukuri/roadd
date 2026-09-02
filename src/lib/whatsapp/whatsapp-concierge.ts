@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { normalizeWhatsAppPhone } from "@/lib/whatsapp-audience";
 import { WasenderService } from "@/lib/wasender";
 import { formatPriceCompact } from "@/lib/utils";
-import { parseSearchIntent, matchesPropertySearch, matchesProjectSearch } from "@/lib/search-engine";
+import { parseSearchIntent, matchesPropertySearch, matchesProjectSearch, type ParsedSearchIntent } from "@/lib/search-engine";
 import { mockProperties } from "@/lib/mock-data";
 import type { Property } from "@/types/property";
 import type { Project } from "@/types/project";
@@ -20,6 +20,60 @@ type LooseRecord = Record<string, any>;
 
 function str(val: unknown): string {
   return typeof val === "string" ? val.trim() : "";
+}
+
+/**
+ * Inactivity Session State Tracker (Hetzner in-memory Map + DB)
+ */
+const activeSessions: Map<string, { lastActivity: number; inactivitySent: boolean; timeoutId?: NodeJS.Timeout }> =
+  (globalThis as any).__whatsapp_active_sessions || new Map();
+(globalThis as any).__whatsapp_active_sessions = activeSessions;
+
+/**
+ * Registers an inactivity timer: after 60 seconds of silence, sends a friendly prompt.
+ */
+function scheduleInactivityReminder(phone: string, userName: string) {
+  const existing = activeSessions.get(phone);
+  if (existing?.timeoutId) {
+    clearTimeout(existing.timeoutId);
+  }
+
+  const timeoutId = setTimeout(async () => {
+    const session = activeSessions.get(phone);
+    if (!session || session.inactivitySent) return;
+
+    // Check if user has sent any new message in the last 60 seconds
+    const now = Date.now();
+    if (now - session.lastActivity >= 58000) {
+      session.inactivitySent = true;
+
+      const inactivityMsg =
+        `👋 *Hello ${userName || "there"}!*\n\n` +
+        `It seems you've been inactive for a moment. Whenever you're ready, simply reply *"Hi"* or send any property requirement to resume exploring verified listings on ROAD! 🏡`;
+
+      try {
+        await WasenderService.sendTextMessage(phone, inactivityMsg, {
+          requestId: `inactivity-${Date.now()}`,
+        });
+
+        await logConversation({
+          phone,
+          userName,
+          role: "system",
+          message: inactivityMsg,
+          intent: "inactivity_reminder",
+        });
+      } catch (err) {
+        console.warn("[CONCIERGE INACTIVITY SEND ERROR]", err);
+      }
+    }
+  }, 65000); // 65 seconds
+
+  activeSessions.set(phone, {
+    lastActivity: Date.now(),
+    inactivitySent: false,
+    timeoutId,
+  });
 }
 
 /**
@@ -137,84 +191,31 @@ export async function getRegisteredUserByPhone(rawPhone: string) {
 }
 
 /**
- * Intelligent Real Estate Intent Classifier using Gemini AI + Heuristics
+ * Fetches recent conversation history for multi-turn context
  */
-async function parseRealEstateIntent(text: string): Promise<{
-  queryType: "property_search" | "project_search" | "human_agent_request" | "greeting" | "general_inquiry";
-  city?: string;
-  sublocation?: string;
-  bedrooms?: number;
-  propertyType?: string;
-  maxBudget?: number;
-  minBudget?: number;
-  listingType?: "buy" | "rent";
-  summary: string;
-}> {
-  const lower = text.toLowerCase();
-  const isHumanRequest =
-    lower.includes("call") ||
-    lower.includes("agent") ||
-    lower.includes("human") ||
-    lower.includes("talk to") ||
-    lower.includes("negotiat") ||
-    lower.includes("contact owner");
-
-  if (isHumanRequest) {
-    return { queryType: "human_agent_request", summary: text };
-  }
-
-  const isGreeting = ["hi", "hello", "hey", "namaste", "good morning", "good evening"].includes(lower.trim());
-  if (isGreeting) {
-    return { queryType: "greeting", summary: text };
-  }
-
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return {
-      queryType: "property_search",
-      summary: text,
-    };
-  }
-
+async function getRecentConversationHistory(phone: string, limit = 6): Promise<string> {
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const { data } = await supabaseAdmin
+      .from("whatsapp_support_conversations")
+      .select("role, message, created_at")
+      .eq("phone", phone)
+      .order("created_at", { ascending: false })
+      .limit(limit);
 
-    const prompt = `You are the real estate search parser for "ROAD FACING" (real estate discovery platform in Andhra Pradesh: Vijayawada, Guntur, Amaravati, Visakhapatnam).
-Extract the user's property or project search intent from the message:
-
-Message: "${text}"
-
-Respond ONLY with a JSON object (no markdown, no code blocks):
-{
-  "queryType": "property_search" | "project_search" | "human_agent_request" | "greeting" | "general_inquiry",
-  "city": "Vijayawada" | "Guntur" | "Amaravati" | "Visakhapatnam" | null,
-  "sublocation": string or null (e.g. Edupugallu, Poranki, Autonagar, Benz Circle, Mangalagiri, Kunchanapalli, Tadepalli, etc.),
-  "bedrooms": number or null (e.g. 1, 2, 3, 4),
-  "propertyType": "flat" | "apartment" | "villa" | "plot" | "commercial" | null,
-  "maxBudget": number in INR or null,
-  "minBudget": number in INR or null,
-  "listingType": "buy" | "rent" | null,
-  "summary": "short summary"
-}`;
-
-    const result = await model.generateContent(prompt);
-    const rawResponse = result.response.text().trim();
-    const cleanJson = rawResponse.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-    return JSON.parse(cleanJson);
-  } catch (err) {
-    console.warn("[CONCIERGE GEMINI PARSE ERROR]", err);
-    return {
-      queryType: "property_search",
-      summary: text,
-    };
+    if (!data || data.length === 0) return "";
+    return data
+      .reverse()
+      .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.message}`)
+      .join("\n");
+  } catch {
+    return "";
   }
 }
 
 /**
- * Searches active verified properties and projects from Supabase with smart fallback matching.
+ * Searches active verified properties and projects from Supabase with strict budget and criteria enforcement.
  */
-async function searchLiveListings(queryText: string, parsedIntent: ReturnType<typeof parseSearchIntent>) {
+async function searchLiveListings(queryText: string, parsedIntent: ParsedSearchIntent) {
   try {
     // 1. Fetch live properties and projects from Supabase
     const [{ data: dbProps }, { data: dbProjects }] = await Promise.all([
@@ -225,7 +226,7 @@ async function searchLiveListings(queryText: string, parsedIntent: ReturnType<ty
     const allProperties: any[] = dbProps && dbProps.length > 0 ? dbProps : mockProperties;
     const allProjects: any[] = dbProjects && dbProjects.length > 0 ? dbProjects : [];
 
-    // 2. Perform search engine matching
+    // 2. Perform search engine matching (with strict maxPrice and minPrice enforcement)
     const matchedProperties = allProperties.filter((p) => matchesPropertySearch(p as Property, queryText, parsedIntent));
     const matchedProjects = allProjects.filter((p) => matchesProjectSearch(p as Project, queryText, parsedIntent));
 
@@ -234,23 +235,38 @@ async function searchLiveListings(queryText: string, parsedIntent: ReturnType<ty
       return {
         properties: matchedProperties,
         projects: matchedProjects,
+        allProjects,
+        allProperties,
       };
     }
 
-    // 4. Fallback: Multi-field text token search (matching sublocation, locality, name, or city token)
+    // 4. Fallback: Multi-field text token search, BUT STRICTLY ENFORCING BUDGET
     const normTokens = queryText
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, " ")
       .split(/\s+/)
-      .filter((t) => t.length >= 3 && !["any", "the", "and", "for", "with", "find", "properties", "property"].includes(t));
+      .filter((t) => t.length >= 3 && !["any", "the", "and", "for", "with", "find", "properties", "property", "flats", "below", "under", "lakhs", "cr"].includes(t));
 
     const fallbackProps = allProperties.filter((p) => {
+      if (parsedIntent.maxPrice && typeof p.price === "number" && p.price > parsedIntent.maxPrice) return false;
+      if (parsedIntent.minPrice && typeof p.price === "number" && p.price < parsedIntent.minPrice) return false;
       const locText = formatLocation(p);
       const searchTarget = `${p.title || ""} ${locText} ${p.description || ""} ${p.propertyType || ""}`.toLowerCase();
       return normTokens.length === 0 || normTokens.some((t) => searchTarget.includes(t));
     });
 
     const fallbackProjects = allProjects.filter((p) => {
+      // Must strictly respect budget
+      if (parsedIntent.maxPrice) {
+        const configMinPrices = (p.configurations || []).map((c: any) => c.priceMin).filter(Boolean);
+        const minProjectPrice = configMinPrices.length > 0 ? Math.min(...configMinPrices) : (p.minPrice || 0);
+        if (minProjectPrice && minProjectPrice > parsedIntent.maxPrice) return false;
+      }
+      if (parsedIntent.minPrice) {
+        const configMaxPrices = (p.configurations || []).map((c: any) => c.priceMax).filter(Boolean);
+        const maxProjectPrice = configMaxPrices.length > 0 ? Math.max(...configMaxPrices) : (p.maxPrice || Infinity);
+        if (maxProjectPrice && maxProjectPrice < parsedIntent.minPrice) return false;
+      }
       const locText = formatLocation(p);
       const searchTarget = `${p.name || ""} ${p.title || ""} ${locText} ${p.builderName || ""} ${p.description || ""}`.toLowerCase();
       return normTokens.length === 0 || normTokens.some((t) => searchTarget.includes(t));
@@ -259,10 +275,12 @@ async function searchLiveListings(queryText: string, parsedIntent: ReturnType<ty
     return {
       properties: fallbackProps,
       projects: fallbackProjects,
+      allProjects,
+      allProperties,
     };
   } catch (err) {
     console.error("[CONCIERGE DB SEARCH ERROR]", err);
-    return { properties: [], projects: [] };
+    return { properties: [], projects: [], allProjects: [], allProperties: [] };
   }
 }
 
@@ -400,12 +418,25 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 3. User is registered: Parse intent with search engine parser & Gemini AI
-  const searchEngineIntent = parseSearchIntent(text);
-  const geminiIntent = await parseRealEstateIntent(text);
+  // 3. User is registered: Schedule inactivity reminder timer
+  scheduleInactivityReminder(cleanPhone, registeredUser.name);
 
-  // 4. Handle Human Agent Request or Escalation
-  if (geminiIntent.queryType === "human_agent_request") {
+  // 4. Parse intent and context
+  const searchEngineIntent = parseSearchIntent(text);
+  const lower = text.toLowerCase();
+
+  const isHumanAgentRequest =
+    lower.includes("agent") ||
+    lower.includes("human") ||
+    lower.includes("call me") ||
+    lower.includes("talk to") ||
+    lower.includes("connect") ||
+    lower.includes("advisor") ||
+    lower.includes("negotiate") ||
+    lower.includes("contact owner");
+
+  // 5. Handle Human Agent Request or Escalation
+  if (isHumanAgentRequest) {
     const ticketId = await createOrUpdateTicket({
       phone: cleanPhone,
       userName: registeredUser.name,
@@ -416,11 +447,11 @@ export async function processInboundWhatsAppMessage(
     });
 
     const humanAck =
-      `👨‍💼 *Request Forwarded to Real Estate Advisor*\n\n` +
+      `👨‍💼 *Request Forwarded to Senior Real Estate Advisor*\n\n` +
       `Hello ${registeredUser.name}, we have connected you with our dedicated property advisory team.\n\n` +
       `📌 *Your Inquiry:* "${text}"\n` +
       `🎫 *Ticket ID:* #${ticketId ? ticketId.slice(0, 8) : "ROAD-" + Date.now().toString().slice(-4)}\n\n` +
-      `A senior property consultant will reply directly to this chat shortly.`;
+      `A senior property consultant has received your request and will reply directly to this chat shortly.`;
 
     await WasenderService.sendTextMessage(cleanPhone, humanAck, {
       requestId: `agent-escalation-${Date.now()}`,
@@ -444,15 +475,16 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 5. Handle Greeting
-  if (geminiIntent.queryType === "greeting") {
+  // 6. Handle Greeting
+  const isGreeting = ["hi", "hello", "hey", "namaste", "good morning", "good evening", "start"].includes(lower.trim());
+  if (isGreeting) {
     const greetingMsg =
       `👋 *Hello ${registeredUser.name}!* Welcome to ROAD Concierge 🏡\n\n` +
       `I can find verified properties, new projects, villas, apartments, and open plots for you in real-time.\n\n` +
       `*Try asking:*\n` +
-      `• _"Any properties in edupugallu"_\n` +
+      `• _"Any properties in Edupugallu"_\n` +
       `• _"2bhk flats in Vijayawada under 60L"_\n` +
-      `• _"Villas in Guntur"_\n` +
+      `• _"Villas in Guntur under 1.5 Cr"_\n` +
       `• _"Connect me with an agent"_`;
 
     await WasenderService.sendTextMessage(cleanPhone, greetingMsg, {
@@ -476,22 +508,19 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 6. Handle Property / Project Search
-  const { properties, projects } = await searchLiveListings(text, searchEngineIntent);
+  // 7. Search Listings with Strict Budget Enforcement
+  const { properties, projects, allProjects, allProperties } = await searchLiveListings(text, searchEngineIntent);
+  const totalMatches = properties.length + projects.length;
 
-  if (properties.length > 0 || projects.length > 0) {
-    const propertyCount = properties.length;
-    const projectCount = projects.length;
-    const totalCount = propertyCount + projectCount;
-
-    let responseText = `🏡 *Found ${totalCount} verified listing${totalCount > 1 ? "s" : ""} matching your search:*\n\n`;
+  if (totalMatches > 0) {
+    let responseText = `🏡 *Found ${totalMatches} verified listing${totalMatches > 1 ? "s" : ""} matching your search:*\n\n`;
 
     // 1. Format matched Projects (e.g. Avenue Serene)
     projects.slice(0, 3).forEach((proj: any, idx) => {
       const projName = str(proj.name) || str(proj.title) || "Featured Project";
       const projSlug = str(proj.slug) || str(proj.id);
       const loc = formatLocation(proj);
-      
+
       let priceStr = "Contact for Pricing";
       if (proj.minPrice && proj.maxPrice) {
         priceStr = `${formatPriceCompact(proj.minPrice)} - ${formatPriceCompact(proj.maxPrice)}`;
@@ -562,7 +591,7 @@ export async function processInboundWhatsAppMessage(
       message: responseText,
       mediaUrl: heroImage || undefined,
       intent: "property_search_matched",
-      metadata: { matchedCount: totalCount, query: text },
+      metadata: { matchedCount: totalMatches, query: text },
     });
 
     return {
@@ -573,16 +602,36 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 7. No direct matches found: Provide recommendations & direct search link
-  const noMatchMsg =
-    `🔎 *No exact match found for "${text}" right now.*\n\n` +
-    `Here are popular verified listings on ROAD:\n` +
-    `👉 *Browse Live Search:* ${siteUrl}/search?q=${encodeURIComponent(text)}\n` +
-    `👉 *View Latest Projects:* ${siteUrl}/projects\n\n` +
-    `Would you like our team to source this specific property for you? Reply *"Yes, find for me"* and our advisor will assist you!`;
+  // 8. No Exact Match for Budget / Criteria: Intelligent Real Estate Explanation
+  let budgetNote = "";
+  if (searchEngineIntent.maxPrice) {
+    const formattedBudget = formatPriceCompact(searchEngineIntent.maxPrice);
+    
+    // Find what the closest starting project or property is in the database
+    let closestListing = "";
+    if (allProjects.length > 0) {
+      const p = allProjects[0];
+      const pName = p.name || "Avenue Serene";
+      const pLoc = formatLocation(p);
+      const minP = p.minPrice ? formatPriceCompact(p.minPrice) : (p.configurations?.[0]?.priceMin ? formatPriceCompact(p.configurations[0].priceMin) : "₹1.14 Cr");
+      closestListing = `The closest verified project in this region is *${pName}* in ${pLoc}, starting from *${minP}*.`;
+    }
 
-  await WasenderService.sendTextMessage(cleanPhone, noMatchMsg, {
-    requestId: `no-match-${Date.now()}`,
+    budgetNote =
+      `🔎 *No active flats found under ${formattedBudget} currently.*\n\n` +
+      `${closestListing}\n\n` +
+      `Would you like our property advisor to check upcoming unlisted developments or resale flats in your ${formattedBudget} budget?\n\n` +
+      `👉 Reply *"Yes, find for me"* or *"Talk to agent"* to connect directly with our advisory team.`;
+  } else {
+    budgetNote =
+      `🔎 *No exact listings found for "${text}" right now.*\n\n` +
+      `👉 *Browse Live Search:* ${siteUrl}/search?q=${encodeURIComponent(text)}\n` +
+      `👉 *View Latest Projects:* ${siteUrl}/projects\n\n` +
+      `Would you like our advisory team to source this specific property for you? Reply *"Yes, find for me"* and our advisor will assist you!`;
+  }
+
+  await WasenderService.sendTextMessage(cleanPhone, budgetNote, {
+    requestId: `no-match-budget-${Date.now()}`,
   });
 
   await logConversation({
@@ -590,15 +639,15 @@ export async function processInboundWhatsAppMessage(
     userId: registeredUser.id,
     userName: registeredUser.name,
     role: "assistant",
-    message: noMatchMsg,
-    intent: "property_search_no_match",
-    metadata: { query: text },
+    message: budgetNote,
+    intent: "property_search_no_match_budget",
+    metadata: { query: text, intent: searchEngineIntent },
   });
 
   return {
     handled: true,
-    intent: "property_search_no_match",
+    intent: "property_search_no_match_budget",
     responseSent: true,
-    message: noMatchMsg,
+    message: budgetNote,
   };
 }

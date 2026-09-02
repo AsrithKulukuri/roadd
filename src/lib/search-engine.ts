@@ -106,8 +106,10 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     detectedGated = true;
   }
 
-  // 5. Detect Budget terms (e.g. "under 50 lakhs", "under 1 cr", "below 2 crore", "50l", "1cr")
+  // 5. Detect Budget terms (e.g. "under 50 lakhs", "under 1 cr", "below 2 crore", "50l", "1cr", "above 80l")
   let detectedMaxPrice: number | undefined = undefined;
+  let detectedMinPrice: number | undefined = undefined;
+
   const underCrMatch = norm.match(/(?:under|below|upto|less\s*than|<=|<)\s*(\d+(?:\.\d+)?)\s*(?:cr|crore|crores)\b/i);
   if (underCrMatch) {
     detectedMaxPrice = parseFloat(underCrMatch[1]) * 10000000;
@@ -115,6 +117,15 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
   const underLakhMatch = norm.match(/(?:under|below|upto|less\s*than|<=|<)\s*(\d+(?:\.\d+)?)\s*(?:l|lac|lakh|lakhs)\b/i);
   if (underLakhMatch) {
     detectedMaxPrice = parseFloat(underLakhMatch[1]) * 100000;
+  }
+
+  const aboveCrMatch = norm.match(/(?:above|more\s*than|min|minimum|>=|>)\s*(\d+(?:\.\d+)?)\s*(?:cr|crore|crores)\b/i);
+  if (aboveCrMatch) {
+    detectedMinPrice = parseFloat(aboveCrMatch[1]) * 10000000;
+  }
+  const aboveLakhMatch = norm.match(/(?:above|more\s*than|min|minimum|>=|>)\s*(\d+(?:\.\d+)?)\s*(?:l|lac|lakh|lakhs)\b/i);
+  if (aboveLakhMatch) {
+    detectedMinPrice = parseFloat(aboveLakhMatch[1]) * 100000;
   }
 
   // 6. Common AP Real Estate Localities & Cities
@@ -138,13 +149,12 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     "in", "at", "near", "for", "with", "of", "and", "the", "a", "an", "to", "on", "by", "is",
     "looking", "want", "need", "show", "me", "find", "best", "top", "good", "cheap", "luxury",
     "buy", "rent", "sale", "bhk", "bk", "bed", "beds", "bedroom", "bedrooms", "property", "properties",
-    "project", "projects", "flat", "flats", "apartment", "apartments", "villa", "villas", "house", "houses",
-    "plot", "plots", "land", "lands", "venture", "ventures", "commercial", "space", "spaces", "ready", "move", "new", "old", "resale"
+    "below", "under", "above", "less", "more", "than", "lakh", "lakhs", "lac", "lacs", "cr", "crore", "crores"
   ]);
 
   const specificKeywords: string[] = [];
   for (const w of words) {
-    if (!STOP_WORDS.has(w) && !bhks.has(parseInt(w, 10)) && !w.match(/^\d+(?:bhk|bk|cr|l|lac|bed)$/i)) {
+    if (w.length >= 3 && !STOP_WORDS.has(w) && !KNOWN_PLACES.includes(w) && !w.match(/^\d+(?:bhk|bk|rk|l|cr|k)?$/i)) {
       specificKeywords.push(w);
     }
   }
@@ -158,7 +168,7 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     listingType: detectedListingType,
     saleType: detectedSaleType,
     isGatedCommunity: detectedGated,
-    minPrice: minPrice,
+    minPrice: detectedMinPrice,
     maxPrice: detectedMaxPrice,
     locationKeywords,
     specificKeywords
@@ -185,17 +195,41 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
 
   const fullCorpus = `${titleAndDesc} ${locationText} ${builderText} ${projectTypeText} ${configsText} ${tagsText}`;
 
-  // 1. Direct exact or full substring match (only if no hard propertyType/BHK mismatch)
+  // 1. Budget / Max Price check: If user specified max budget, project's starting price MUST be within budget
+  if (intent.maxPrice) {
+    const configMinPrices = (project.configurations || []).map((c: any) => c.priceMin).filter(Boolean);
+    const minProjectPrice = configMinPrices.length > 0
+      ? Math.min(...configMinPrices)
+      : (typeof (project as any).minPrice === "number" ? (project as any).minPrice : 0);
+
+    if (minProjectPrice && minProjectPrice > intent.maxPrice) {
+      return false;
+    }
+  }
+
+  // 2. Budget / Min Price check
+  if (intent.minPrice) {
+    const configMaxPrices = (project.configurations || []).map((c: any) => c.priceMax).filter(Boolean);
+    const maxProjectPrice = configMaxPrices.length > 0
+      ? Math.max(...configMaxPrices)
+      : (typeof (project as any).maxPrice === "number" ? (project as any).maxPrice : Infinity);
+
+    if (maxProjectPrice && maxProjectPrice < intent.minPrice) {
+      return false;
+    }
+  }
+
+  // 3. Direct exact or full substring match (only if no hard propertyType/BHK mismatch)
   if (fullCorpus.includes(norm) && intent.propertyTypes.length === 0 && intent.bhks.length === 0) {
     return true;
   }
 
-  // 2. Listing Type requirement: If user specifically searches for "rent", projects are typically for sale
+  // 4. Listing Type requirement: If user specifically searches for "rent", projects are typically for sale
   if (intent.listingType === "rent") {
     return false;
   }
 
-  // 3. Property Type requirement (e.g. "apartment" must not return plot ventures)
+  // 5. Property Type requirement (e.g. "apartment" must not return plot ventures)
   if (intent.propertyTypes.length > 0) {
     const pType = project.projectType?.toLowerCase() || "";
     let typeMatches = false;
@@ -209,7 +243,7 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
     }
   }
 
-  // 4. BHK requirement (e.g. "2 BHK" requires project to offer 2 BHK configs, and excludes plot ventures)
+  // 6. BHK requirement (e.g. "2 BHK" requires project to offer 2 BHK configs, and excludes plot ventures)
   if (intent.bhks.length > 0) {
     if (project.projectType === "venture") {
       return false;
