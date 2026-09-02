@@ -7,14 +7,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
 
-    // 1. Find recent conversations in the last 10 minutes
+    // 1. Find recent conversations in the last 15 minutes
     const { data: recentMessages, error } = await supabaseAdmin
       .from("whatsapp_support_conversations")
       .select("id, phone, user_name, role, intent, created_at")
-      .gte("created_at", tenMinutesAgo)
+      .gte("created_at", fifteenMinutesAgo)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -35,8 +34,8 @@ export async function GET(request: Request) {
     let sentCount = 0;
 
     for (const [phone, { latestMsg, allMsgs }] of phoneMap.entries()) {
-      // If the latest message was already an inactivity reminder, skip
-      if (latestMsg.intent === "inactivity_reminder") continue;
+      // If the latest message is an inactivity reminder or from user, skip
+      if (latestMsg.intent === "inactivity_reminder" || latestMsg.role === "user") continue;
 
       // Check if the user is in an active human agent takeover session (in_progress)
       const { data: activeTicket } = await supabaseAdmin
@@ -48,14 +47,15 @@ export async function GET(request: Request) {
 
       if (activeTicket) continue; // Don't interrupt human agent chat
 
-      // Check if last activity happened more than 60 seconds ago
+      // Check if last activity happened more than 2.5 minutes (150s) ago and less than 15 minutes ago
       const lastActivityTime = new Date(latestMsg.created_at).getTime();
-      const isPast60Seconds = Date.now() - lastActivityTime >= 60 * 1000;
+      const idleTimeMs = Date.now() - lastActivityTime;
+      const isEligibleForReminder = idleTimeMs >= 150 * 1000 && idleTimeMs <= 15 * 60 * 1000;
 
       // Check if an inactivity reminder was already sent for this conversation session
       const alreadySentInactivity = allMsgs.some((m) => m.intent === "inactivity_reminder");
 
-      if (isPast60Seconds && !alreadySentInactivity) {
+      if (isEligibleForReminder && !alreadySentInactivity) {
         const userName = latestMsg.user_name || "there";
         const inactivityText =
           `👋 *Seems you are inactive!*\n\n` +
