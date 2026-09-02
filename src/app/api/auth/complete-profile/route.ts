@@ -18,6 +18,10 @@ const completeProfileSchema = z.object({
     .string()
     .trim()
     .email("Please enter a valid email address"),
+  role: z
+    .enum(["buyer", "owner", "agent", "builder"])
+    .optional()
+    .default("buyer"),
 });
 
 export async function POST(request: Request) {
@@ -39,7 +43,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { phone, name, email } = validationResult.data;
+    const { phone, name, email, role } = validationResult.data;
     const cleanPhone = phone.trim();
     const authenticatedPhone = sanitizeIndianPhoneNumber(authenticatedUser.phone || "");
     if (!authenticatedPhone || authenticatedPhone !== cleanPhone) {
@@ -51,23 +55,38 @@ export async function POST(request: Request) {
     }
 
     const userId = authenticatedUser.id;
-    const userRole = authenticatedUser.role === "admin" ? "admin" : "buyer";
+    const userRole = authenticatedUser.role === "admin" ? "admin" : (role || "buyer");
 
-    // 2. Upsert profile into public.profiles table
+    // 2. Upsert profile into public.profiles and user_profiles tables
     try {
-      await supabaseAdmin.from("profiles").upsert(
-        {
-          id: userId,
-          phone: cleanPhone,
-          full_name: name,
-          email: email,
-          role: userRole,
-          is_verified: true,
-          is_profile_complete: true,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "id" }
-      );
+      await Promise.allSettled([
+        supabaseAdmin.from("profiles").upsert(
+          {
+            id: userId,
+            phone: cleanPhone,
+            full_name: name,
+            email: email,
+            role: userRole,
+            is_verified: true,
+            is_profile_complete: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        ),
+        supabaseAdmin.from("user_profiles").upsert(
+          {
+            id: userId,
+            phone: cleanPhone,
+            full_name: name,
+            email: email,
+            role: userRole,
+            is_verified: true,
+            is_profile_complete: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        ),
+      ]);
     } catch (error) {
       logger.error("Profile persistence failed", {
         error: error instanceof Error ? error.message : String(error),

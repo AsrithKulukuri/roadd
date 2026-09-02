@@ -77,14 +77,14 @@ export default function DashboardPage() {
   const [phone, setPhone] = useState("");
   const [selectedCountry, setSelectedCountry] = useState(countryCodes[0]);
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [selectedRole, setSelectedRole] = useState("buyer");
   
   // Validation errors
+  const [nameError, setNameError] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadLocalUser = () => {
@@ -222,36 +222,6 @@ export default function DashboardPage() {
   const nextWizardStep = () => {
     if (wizardStep === 1) {
       setWizardStep(2);
-    } else if (wizardStep === 2) {
-      // Validate Step 2 details (Email & Phone)
-      let stepValid = true;
-      
-      let rawPhone = phone.trim().replace(/\D/g, "");
-      if (rawPhone.length === 12 && rawPhone.startsWith("91")) {
-        rawPhone = rawPhone.substring(2);
-      }
-      if (!rawPhone) {
-        setPhoneError("Phone number is required");
-        stepValid = false;
-      } else if (selectedCountry.code === "+91" && rawPhone.length !== 10) {
-        setPhoneError("Please enter a valid 10-digit number");
-        stepValid = false;
-      } else {
-        setPhoneError("");
-      }
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!email.trim()) {
-        setEmailError("Email is required");
-        stepValid = false;
-      } else if (!emailRegex.test(email)) {
-        setEmailError("Please enter a valid email address");
-        stepValid = false;
-      } else {
-        setEmailError("");
-      }
-
-      if (stepValid) setWizardStep(3);
     }
   };
 
@@ -261,22 +231,45 @@ export default function DashboardPage() {
     }
   };
 
-  const validateFinalStep = () => {
-    if (!password) {
-      setPasswordError("Password is required");
-      return false;
-    }
-    if (password.length < 6) {
-      setPasswordError("Password must be at least 6 characters");
-      return false;
-    }
-    setPasswordError("");
-    return true;
-  };
-
   const handleCompleteProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateFinalStep()) return;
+    
+    // Validate Step 2 details (Name, Email & Phone)
+    let stepValid = true;
+    
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      setNameError("Full name must be at least 2 characters");
+      stepValid = false;
+    } else {
+      setNameError("");
+    }
+
+    let rawPhone = phone.trim().replace(/\D/g, "");
+    if (rawPhone.length === 12 && rawPhone.startsWith("91")) {
+      rawPhone = rawPhone.substring(2);
+    }
+    if (!rawPhone) {
+      setPhoneError("Phone number is required");
+      stepValid = false;
+    } else if (selectedCountry.code === "+91" && rawPhone.length !== 10) {
+      setPhoneError("Please enter a valid 10-digit number");
+      stepValid = false;
+    } else {
+      setPhoneError("");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim()) {
+      setEmailError("Email is required");
+      stepValid = false;
+    } else if (!emailRegex.test(email)) {
+      setEmailError("Please enter a valid email address");
+      stepValid = false;
+    } else {
+      setEmailError("");
+    }
+
+    if (!stepValid) return;
 
     setIsSubmitting(true);
     let rawDigits = phone.replace(/\D/g, "");
@@ -292,7 +285,7 @@ export default function DashboardPage() {
           await supabase.auth.updateUser({
             phone: fullPhone,
             data: {
-              full_name: user?.name || "User",
+              full_name: fullName.trim() || user?.name || "User",
               phone: fullPhone,
               role: selectedRole,
               isProfileComplete: true,
@@ -305,8 +298,8 @@ export default function DashboardPage() {
     }
 
     const updatedUser: UserSession = {
-      name: user?.name || "User",
-      email: email,
+      name: fullName.trim() || user?.name || "User",
+      email: email.trim().toLowerCase(),
       phone: fullPhone,
       role: selectedRole,
       isProfileComplete: true,
@@ -325,9 +318,9 @@ export default function DashboardPage() {
           .from("profiles")
           .upsert({
             id: authUserObj.user.id,
-            email: email,
+            email: email.trim().toLowerCase(),
             phone: fullPhone,
-            full_name: user?.name || "User",
+            full_name: fullName.trim() || user?.name || "User",
             role: selectedRole,
             is_profile_complete: true,
             is_verified: false,
@@ -343,7 +336,7 @@ export default function DashboardPage() {
 
     setIsModalOpen(false);
     setIsSubmitting(false);
-    toast.success("Profile updated successfully!");
+    toast.success("Profile setup complete! Welcome to ROAD.");
   };
 
   const handleSignOut = async () => {
@@ -671,14 +664,13 @@ export default function DashboardPage() {
               <div className="mb-6 space-y-1.5">
                 <div className="flex justify-between items-center text-xs text-amber-primary font-bold uppercase tracking-wider">
                   <span>Profile Configuration</span>
-                  <span>Phase {wizardStep} of 3</span>
+                  <span>Phase {wizardStep} of 2</span>
                 </div>
                 
                 {/* Visual Step Progress Bar */}
-                <div className="grid grid-cols-3 gap-1.5 h-1.5 w-full bg-border-default rounded-full overflow-hidden mt-1.5">
+                <div className="grid grid-cols-2 gap-1.5 h-1.5 w-full bg-border-default rounded-full overflow-hidden mt-1.5">
                   <div className={`h-full rounded-full transition-all duration-300 ${wizardStep >= 1 ? "bg-amber-primary" : "bg-transparent"}`} />
                   <div className={`h-full rounded-full transition-all duration-300 ${wizardStep >= 2 ? "bg-amber-primary" : "bg-transparent"}`} />
-                  <div className={`h-full rounded-full transition-all duration-300 ${wizardStep >= 3 ? "bg-amber-primary" : "bg-transparent"}`} />
                 </div>
               </div>
 
@@ -775,12 +767,29 @@ export default function DashboardPage() {
                       <div className="space-y-1">
                         <h3 className="font-heading text-lg font-bold text-text-primary leading-tight">Phase 2: Contact Details</h3>
                         <p className="text-text-secondary text-xs leading-normal">
-                          Provide your registered email address and a contact mobile number.
+                          Provide your full name, registered email address and contact mobile number.
                         </p>
                       </div>
 
-                      {/* Email Address */}
+                      {/* Full Name */}
                       <div className="space-y-1 pt-2">
+                        <label className="text-xs text-text-secondary font-medium ml-1">Full Name</label>
+                        <div className="relative">
+                          <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-text-tertiary" />
+                          <Input
+                            required
+                            type="text"
+                            placeholder="e.g. Ramesh Kumar"
+                            value={fullName}
+                            onChange={(e) => { setFullName(e.target.value); setNameError(""); }}
+                            className="bg-bg-primary/40 border-border-default/60 pl-11 h-12 rounded-xl focus:border-amber-primary"
+                          />
+                        </div>
+                        {nameError && <p className="text-[0.72rem] text-error font-medium ml-1 mt-0.5">{nameError}</p>}
+                      </div>
+
+                      {/* Email Address */}
+                      <div className="space-y-1">
                         <label className="text-xs text-text-secondary font-medium ml-1">Email Address</label>
                         <div className="relative">
                           <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-text-tertiary" />
@@ -848,61 +857,6 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         {phoneError && <p className="text-[0.72rem] text-error font-medium ml-1 mt-0.5">{phoneError}</p>}
-                      </div>
-
-                      <div className="flex gap-3 pt-6 border-t border-border-default/50 mt-6">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={prevWizardStep}
-                          className="h-12 rounded-xl text-sm flex gap-1.5 items-center justify-center font-semibold"
-                        >
-                          <ArrowLeft className="w-4 h-4" />
-                          Back
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="amber"
-                          onClick={nextWizardStep}
-                          className="h-12 rounded-xl text-sm flex-1 font-semibold flex gap-1.5 items-center justify-center shadow-amber-glow"
-                        >
-                          Continue
-                          <ArrowRight className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* PHASE 3: SET PASSWORD */}
-                  {wizardStep === 3 && (
-                    <motion.div
-                      key="wizard-3"
-                      initial={{ opacity: 0, x: 15 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -15 }}
-                      className="space-y-4"
-                    >
-                      <div className="space-y-1">
-                        <h3 className="font-heading text-lg font-bold text-text-primary leading-tight">Phase 3: Secure Account</h3>
-                        <p className="text-text-secondary text-xs leading-normal">
-                          Define a profile login password so you can sign in directly using credentials in future.
-                        </p>
-                      </div>
-
-                      <div className="space-y-1 pt-2">
-                        <label className="text-xs text-text-secondary font-medium ml-1">Choose Login Password</label>
-                        <div className="relative">
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-text-tertiary" />
-                          <Input
-                            required
-                            type="password"
-                            placeholder="At least 6 characters"
-                            value={password}
-                            onChange={(e) => { setPassword(e.target.value); setPasswordError(""); }}
-                            className="bg-bg-primary/40 border-border-default/60 pl-11 h-12 rounded-xl focus:border-amber-primary"
-                          />
-                        </div>
-                        {passwordError && <p className="text-[0.72rem] text-error font-medium ml-1 mt-0.5">{passwordError}</p>}
                       </div>
 
                       <div className="flex gap-3 pt-6 border-t border-border-default/50 mt-6">
