@@ -104,6 +104,7 @@ export default function AdminBroadcastsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExternalForm, setShowExternalForm] = useState(false);
   const [processingCampaignId, setProcessingCampaignId] = useState<string | null>(null);
+  const [deliveryMode, setDeliveryMode] = useState<"live" | "mock" | "disabled">("disabled");
   const queueAbortRef = useRef(false);
 
   const [campaignName, setCampaignName] = useState("");
@@ -135,9 +136,15 @@ export default function AdminBroadcastsPage() {
 
   const loadCampaigns = useCallback(async () => {
     const response = await fetch("/api/admin/whatsapp/campaigns", { cache: "no-store" });
-    const result = (await response.json().catch(() => null)) as { success?: boolean; error?: string; campaigns?: Campaign[] } | null;
+    const result = (await response.json().catch(() => null)) as {
+      success?: boolean;
+      error?: string;
+      campaigns?: Campaign[];
+      deliveryMode?: "live" | "mock" | "disabled";
+    } | null;
     if (!response.ok || !result?.success) throw new Error(result?.error || "Could not load campaigns.");
     setCampaigns(result.campaigns || []);
+    setDeliveryMode(result.deliveryMode || "disabled");
   }, []);
 
   useEffect(() => {
@@ -370,11 +377,16 @@ export default function AdminBroadcastsPage() {
         error?: string;
         campaignId?: string;
         recipientCount?: number;
+        deliveryMode?: "live" | "mock" | "disabled";
       } | null;
       if (!response.ok || !result?.success || !result.campaignId) {
         throw new Error(result?.error || "Campaign could not be created.");
       }
-      toast.success(`Campaign queued for ${result.recipientCount || selectedContactIds.size} contacts.`);
+      if (result.deliveryMode === "live") {
+        toast.success(`Campaign queued for ${result.recipientCount || selectedContactIds.size} contacts.`);
+      } else {
+        toast.warning("Campaign is running in simulation mode. No live WhatsApp request will be sent.");
+      }
       setCampaignName("");
       setMessage("");
       await loadCampaigns();
@@ -564,12 +576,23 @@ export default function AdminBroadcastsPage() {
             <span className="flex justify-between text-xs font-normal text-text-tertiary"><span>Opt-out text and the selected listing link are appended automatically.</span><span>{message.length}/3500</span></span>
           </label>
 
-          <div className="flex items-center gap-2 rounded-lg bg-amber-primary/10 p-3 text-xs font-medium text-text-secondary">
-            <Clock3 className="h-4 w-4 shrink-0 text-amber-primary" /> Provider-safe paced delivery is active.
+          <div className={cn(
+            "flex items-center gap-2 rounded-lg p-3 text-xs font-semibold",
+            deliveryMode === "live"
+              ? "bg-emerald-500/10 text-emerald-700"
+              : "bg-red-500/10 text-red-700"
+          )}>
+            <Clock3 className="h-4 w-4 shrink-0" />
+            {deliveryMode === "live"
+              ? "Live Wasender delivery is active with provider-safe pacing."
+              : deliveryMode === "mock"
+                ? "Simulation mode: Wasender will not be contacted."
+                : "WhatsApp notifications are disabled."}
           </div>
 
           <Button type="submit" disabled={isSubmitting || isUploading || selectedCount === 0 || Boolean(processingCampaignId)} className="h-12 w-full gap-2">
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Queue and send
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {deliveryMode === "live" ? "Queue and send" : "Run simulation"}
           </Button>
         </form>
       </div>

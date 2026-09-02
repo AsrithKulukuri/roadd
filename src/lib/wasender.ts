@@ -10,6 +10,7 @@ export interface WasenderSendOptions {
 export interface WasenderExecutionResult extends WasenderAPIResponse {
   statusCode?: number;
   retryAfterSeconds?: number;
+  simulated?: boolean;
   errorCategory?:
     | "CONFIG_ERROR"
     | "AUTH_ERROR"
@@ -249,6 +250,7 @@ export class WasenderService {
         success: true,
         message: "WhatsApp OTP delivery simulated (QA mode)",
         id: `mock-${Date.now()}`,
+        simulated: true,
         durationMs: Date.now() - startTime,
       };
     }
@@ -357,6 +359,7 @@ export class WasenderService {
         success: true,
         message: "WhatsApp notification delivery simulated (QA mode)",
         id: `mock-notif-${Date.now()}`,
+        simulated: true,
         durationMs: Date.now() - startTime,
       };
     }
@@ -460,6 +463,7 @@ export class WasenderService {
         success: true,
         message: "WhatsApp image delivery simulated (QA mode)",
         id: `mock-media-${Date.now()}`,
+        simulated: true,
         durationMs: Date.now() - startTime,
       };
     }

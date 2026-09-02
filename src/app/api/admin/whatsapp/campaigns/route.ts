@@ -8,6 +8,7 @@ import {
   toPublicMediaUrl,
   withWhatsAppOptOut,
 } from "@/lib/whatsapp-audience";
+import { getWasenderNotificationMode } from "@/lib/wasender";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -67,7 +68,11 @@ export async function GET(request: Request) {
   if (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ success: true, campaigns: data || [] });
+  return NextResponse.json({
+    success: true,
+    campaigns: data || [],
+    deliveryMode: getWasenderNotificationMode(),
+  });
 }
 
 export async function POST(request: Request) {
@@ -137,7 +142,12 @@ export async function POST(request: Request) {
       throw recipientsError;
     }
 
-    return NextResponse.json({ success: true, campaignId: campaign.id, recipientCount: contacts.length });
+    return NextResponse.json({
+      success: true,
+      campaignId: campaign.id,
+      recipientCount: contacts.length,
+      deliveryMode: getWasenderNotificationMode(),
+    });
   } catch (error: unknown) {
     console.error("[WHATSAPP CAMPAIGN CREATE ERROR]", error);
     return NextResponse.json(

@@ -115,7 +115,18 @@ export async function POST(request: Request) {
         ? await WasenderService.sendImageMessage(recipient.phone, campaign.media_url, campaign.message, { requestId })
         : await WasenderService.sendTextMessage(recipient.phone, campaign.message, { requestId });
 
-    if (result.success) {
+    if (result.simulated) {
+      const { error } = await supabaseAdmin
+        .from("whatsapp_campaign_recipients")
+        .update({
+          status: "skipped",
+          provider_message_id: result.id || null,
+          last_error: "Simulation only. No request was sent to Wasender.",
+          sent_at: null,
+        })
+        .eq("id", recipient.id);
+      if (error) throw error;
+    } else if (result.success) {
       const { error } = await supabaseAdmin
         .from("whatsapp_campaign_recipients")
         .update({
@@ -146,7 +157,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       processed: true,
-      delivered: result.success,
+      delivered: result.success && !result.simulated,
+      simulated: Boolean(result.simulated),
       providerStatus: result.statusCode || null,
       nextDelayMs: getBroadcastIntervalMs(),
       ...progress,

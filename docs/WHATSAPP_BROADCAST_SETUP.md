@@ -6,11 +6,14 @@ Apply these SQL files to the production Supabase project in this order:
 
 1. `supabase/migrations/20260901_harden_phone_otp_rate_limits.sql`
 2. `supabase/migrations/20260901_whatsapp_broadcasts.sql`
+3. `supabase/migrations/20260902_reclassify_mock_whatsapp_deliveries.sql`
 
 The first migration preserves OTP request history, adds network rate-limit data,
 enforces one active OTP per phone, and installs the atomic failed-attempt RPC.
 The second creates the consent ledger, campaigns, recipients, and atomic queue
 claiming function.
+The third corrects historical QA simulations that older builds counted as live
+deliveries.
 
 ## 2. Configure production secrets
 
