@@ -204,7 +204,6 @@ Respond ONLY with valid JSON:
  * Searches active verified properties and projects from Supabase with strict constraints.
  */
 async function searchLiveListings(queryText: string, parsedIntent: ParsedSearchIntent) {
-  // If the query has NO real estate search criteria at all, do NOT dump arbitrary properties
   const hasSearchCriteria =
     parsedIntent.locationKeywords.length > 0 ||
     parsedIntent.bhks.length > 0 ||
@@ -424,7 +423,72 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 3. Human Takeover Check: If an agent is actively conversing, PAUSE bot completely
+  const norm = text.toLowerCase().trim();
+
+  // 3. User manual switch back to bot
+  const isSwitchToBot = ["BOT", "AI", "AI MODE", "RESUME BOT", "CLOSE CHAT", "EXIT AGENT", "RESUME"].includes(text.trim().toUpperCase());
+  if (isSwitchToBot) {
+    await supabaseAdmin
+      .from("whatsapp_support_tickets")
+      .update({ status: "resolved", resolved_at: new Date().toISOString() })
+      .eq("phone", cleanPhone)
+      .in("status", ["open", "in_progress"]);
+
+    const switchMsg = `🤖 *AI Concierge Resumed*\n\nI am back to assist you with property searches, project comparisons, and verified listings across Andhra Pradesh! 🏡\n\n*Try asking:* _"3 bhk flats in Poranki"_ or _"Flats under 1 Cr"_`;
+    await WasenderService.sendTextMessage(cleanPhone, switchMsg, {
+      requestId: `bot-resume-${Date.now()}`,
+    });
+    return { handled: true, intent: "bot_resumed", responseSent: true, message: switchMsg };
+  }
+
+  // 4. Human Agent Escalation Check (Matches "talk with agent", "talk to agent", "connect with agent", "speak with agent", "agent", "call me")
+  const isHumanRequest =
+    /\b(?:agent|human|advisor|consultant|broker|representative|executive|call me|connect|talk (?:to|with)|speak (?:to|with)|negotiat|contact (?:owner|builder|advisor))\b/i.test(norm) ||
+    norm.includes("agent") ||
+    norm.includes("human") ||
+    norm.includes("advisor") ||
+    norm.includes("call me");
+
+  if (isHumanRequest) {
+    const ticketId = await createOrUpdateTicket({
+      phone: cleanPhone,
+      userName: registeredUser.name,
+      userId: registeredUser.id,
+      subject: `Inquiry from ${registeredUser.name}: "${text.slice(0, 80)}"`,
+      lastMessage: text,
+      priority: "high",
+    });
+
+    const humanAck =
+      `👨‍💼 *Request Forwarded to Real Estate Advisor*\n\n` +
+      `Hello ${registeredUser.name}, we have connected you with our dedicated property advisory team.\n\n` +
+      `📌 *Your Inquiry:* "${text}"\n` +
+      `🎫 *Ticket ID:* #${ticketId ? ticketId.slice(0, 8) : "ROAD-" + Date.now().toString().slice(-4)}\n\n` +
+      `A senior property consultant has received your request and will reply directly to this chat shortly.`;
+
+    await WasenderService.sendTextMessage(cleanPhone, humanAck, {
+      requestId: `agent-escalation-${Date.now()}`,
+    });
+
+    await logConversation({
+      phone: cleanPhone,
+      userId: registeredUser.id,
+      userName: registeredUser.name,
+      role: "assistant",
+      message: humanAck,
+      intent: "human_agent_escalation",
+    });
+
+    return {
+      handled: true,
+      intent: "human_agent_escalation",
+      responseSent: true,
+      ticketCreated: true,
+      message: humanAck,
+    };
+  }
+
+  // 5. Check if an agent is currently in a live 1-on-1 chat session
   const { data: activeTicket } = await supabaseAdmin
     .from("whatsapp_support_tickets")
     .select("id, status, assigned_to, assigned_name")
@@ -434,23 +498,8 @@ export async function processInboundWhatsAppMessage(
     .limit(1)
     .maybeSingle();
 
-  // Allow user to manually resume bot by typing "bot" or "ai mode"
-  const isSwitchToBot = ["BOT", "AI", "AI MODE", "RESUME BOT", "CLOSE CHAT", "EXIT AGENT"].includes(text.trim().toUpperCase());
-  if (isSwitchToBot && activeTicket) {
-    await supabaseAdmin
-      .from("whatsapp_support_tickets")
-      .update({ status: "resolved", resolved_at: new Date().toISOString() })
-      .eq("id", activeTicket.id);
-
-    const switchMsg = `🤖 *AI Concierge Resumed*\n\nI am back to assist you with property searches, project comparisons, and verified listings across Andhra Pradesh!`;
-    await WasenderService.sendTextMessage(cleanPhone, switchMsg, {
-      requestId: `bot-resume-${Date.now()}`,
-    });
-    return { handled: true, intent: "bot_resumed", responseSent: true, message: switchMsg };
-  }
-
   if (activeTicket && activeTicket.status === "in_progress") {
-    // Agent is actively chatting with user -> DO NOT LOAD SEARCH OR SEND AUTOMATED MESSAGES
+    // Human agent is conversing -> update ticket last_message for admin desk and pause automated bot
     await supabaseAdmin
       .from("whatsapp_support_tickets")
       .update({
@@ -467,9 +516,7 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  const norm = text.toLowerCase().trim();
-
-  // 4. Deterministic Identity & Conversational Rules (Instant & Guaranteed)
+  // 6. Deterministic Identity & Conversational Rules (Instant & Guaranteed)
   const isIdentityQuestion =
     /\b(?:who are you|what(?:'s| is)? (?:ur|your) name|ur name|your name|who r u|who made you|created you|who is this)\b/i.test(norm) ||
     norm === "u r name" || norm === "ur name" || norm === "name" || norm === "who are you";
@@ -551,56 +598,7 @@ export async function processInboundWhatsAppMessage(
     return { handled: true, intent: "gratitude_reply", responseSent: true, message: thanksMsg };
   }
 
-  // 5. Check for Human Agent Escalation
-  const isHumanRequest =
-    norm.includes("connect me with agent") ||
-    norm.includes("talk to agent") ||
-    norm.includes("call me") ||
-    norm.includes("talk to human") ||
-    norm.includes("speak with agent") ||
-    norm.includes("contact advisor") ||
-    norm.includes("negotiate with owner");
-
-  if (isHumanRequest) {
-    const ticketId = await createOrUpdateTicket({
-      phone: cleanPhone,
-      userName: registeredUser.name,
-      userId: registeredUser.id,
-      subject: `Inquiry from ${registeredUser.name}: "${text.slice(0, 80)}"`,
-      lastMessage: text,
-      priority: "high",
-    });
-
-    const humanAck =
-      `👨‍💼 *Request Forwarded to Real Estate Advisor*\n\n` +
-      `Hello ${registeredUser.name}, we have connected you with our dedicated property advisory team.\n\n` +
-      `📌 *Your Inquiry:* "${text}"\n` +
-      `🎫 *Ticket ID:* #${ticketId ? ticketId.slice(0, 8) : "ROAD-" + Date.now().toString().slice(-4)}\n\n` +
-      `A senior property consultant will reply directly to this chat shortly.`;
-
-    await WasenderService.sendTextMessage(cleanPhone, humanAck, {
-      requestId: `agent-escalation-${Date.now()}`,
-    });
-
-    await logConversation({
-      phone: cleanPhone,
-      userId: registeredUser.id,
-      userName: registeredUser.name,
-      role: "assistant",
-      message: humanAck,
-      intent: "human_agent_escalation",
-    });
-
-    return {
-      handled: true,
-      intent: "human_agent_escalation",
-      responseSent: true,
-      ticketCreated: true,
-      message: humanAck,
-    };
-  }
-
-  // 6. Check for Greeting
+  // 7. Check for Greeting
   const isGreeting = ["hi", "hello", "helo", "hey", "namaste", "good morning", "good evening", "start"].includes(norm);
   if (isGreeting) {
     const greetingMsg =
@@ -610,7 +608,7 @@ export async function processInboundWhatsAppMessage(
       `• _"3 bhk flats in Poranki"_\n` +
       `• _"Flats in Vijayawada under 1 Crore"_\n` +
       `• _"Villas in Guntur"_\n` +
-      `• _"Connect me with an agent"_`;
+      `• _"Talk to agent"_`;
 
     await WasenderService.sendTextMessage(cleanPhone, greetingMsg, {
       requestId: `greet-${Date.now()}`,
@@ -633,7 +631,7 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 7. Multi-Turn Gemini Analysis
+  // 8. Multi-Turn Gemini Analysis for Open-Ended Real Estate Q&A
   const conversationHistory = await getRecentConversationHistory(cleanPhone, 6);
   const geminiAnalysis = await analyzeWithGemini(text, conversationHistory, registeredUser.name);
 
@@ -659,7 +657,7 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 8. Search Listings
+  // 9. Search Database Listings
   const searchEngineIntent = parseSearchIntent(text);
   const { properties, projects } = await searchLiveListings(text, searchEngineIntent);
   const totalMatches = properties.length + projects.length;
@@ -754,7 +752,7 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 9. No Direct Search Match -> Intelligent AI Explanation / General Chat
+  // 10. No Direct Search Match -> Intelligent AI Explanation / Helpful Prompt
   let fallbackMsg = "";
   if (geminiAnalysis?.chatResponse) {
     fallbackMsg = geminiAnalysis.chatResponse;
