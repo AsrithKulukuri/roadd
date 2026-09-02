@@ -311,7 +311,7 @@ export default function AdminBroadcastsPage() {
       setCustomMediaUrl(result.fileUrl);
       setCustomMediaName(file.name);
       setContentSelection("custom:");
-      toast.success("Broadcast image uploaded.");
+      toast.success("Custom banner uploaded to ROAD storage.");
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Image upload failed.");
     } finally {
@@ -548,19 +548,59 @@ export default function AdminBroadcastsPage() {
           <label className="block space-y-1.5 text-sm font-semibold text-text-primary">
             Property, project, or banner
             <select value={contentSelection} onChange={(event) => setContentSelection(event.target.value)} className="h-11 w-full rounded-lg border border-border-default bg-bg-primary px-3 outline-none focus:border-amber-primary">
-              <option value="custom:">Custom message or uploaded image</option>
               <optgroup label="Properties">{content.filter((item) => item.kind === "property").map((item) => <option key={`property-${item.id}`} value={`property:${item.id}`}>{item.title}</option>)}</optgroup>
               <optgroup label="Projects">{content.filter((item) => item.kind === "project").map((item) => <option key={`project-${item.id}`} value={`project:${item.id}`}>{item.title}</option>)}</optgroup>
-              <optgroup label="Banners">{content.filter((item) => item.kind === "banner").map((item) => <option key={`banner-${item.id}`} value={`banner:${item.id}`}>{item.title}</option>)}</optgroup>
+              <optgroup label="Banners">
+                <option value="custom:">Upload custom banner from device</option>
+                {content.filter((item) => item.kind === "banner").map((item) => <option key={`banner-${item.id}`} value={`banner:${item.id}`}>{item.title}</option>)}
+              </optgroup>
             </select>
           </label>
 
           {contentSelection === "custom:" && (
-            <label className="flex min-h-24 cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border-default bg-bg-primary p-4 hover:border-amber-primary">
-              <input type="file" accept="image/jpeg,image/png" className="sr-only" onChange={(event) => void uploadCustomMedia(event.target.files?.[0])} />
-              {isUploading ? <Loader2 className="h-6 w-6 animate-spin text-amber-primary" /> : <Upload className="h-6 w-6 text-amber-primary" />}
-              <span className="min-w-0"><span className="block font-semibold text-text-primary">{customMediaName || "Upload JPEG or PNG"}</span><span className="block text-xs text-text-secondary">Maximum 5MB</span></span>
-            </label>
+            <div className="space-y-2">
+              <label className={cn(
+                "flex min-h-24 items-center gap-3 rounded-lg border border-dashed border-border-default bg-bg-primary p-4 transition-colors",
+                isUploading ? "cursor-wait opacity-75" : "cursor-pointer hover:border-amber-primary focus-within:border-amber-primary"
+              )}>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  className="sr-only"
+                  disabled={isUploading}
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0];
+                    event.currentTarget.value = "";
+                    void uploadCustomMedia(file);
+                  }}
+                />
+                {isUploading ? <Loader2 className="h-6 w-6 shrink-0 animate-spin text-amber-primary" /> : <Upload className="h-6 w-6 shrink-0 text-amber-primary" />}
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold text-text-primary">
+                    {isUploading ? "Uploading to ROAD storage..." : customMediaName || "Choose a custom banner"}
+                  </span>
+                  <span className="block text-xs text-text-secondary">JPEG or PNG, maximum 5MB</span>
+                </span>
+              </label>
+              {customMediaUrl && !isUploading && (
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="flex min-w-0 items-center gap-1.5 font-semibold text-emerald-700">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    <span className="truncate">Stored in ROAD media</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomMediaUrl("");
+                      setCustomMediaName("");
+                    }}
+                    className="flex shrink-0 items-center gap-1 font-semibold text-red-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-primary"
+                  >
+                    <XCircle className="h-3.5 w-3.5" /> Remove
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
           {selectedMediaUrl && (

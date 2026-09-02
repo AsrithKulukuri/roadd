@@ -28,14 +28,26 @@ type LooseRecord = Record<string, unknown>;
 async function resolveCampaignMedia(
   contentType: "custom" | "property" | "project" | "banner",
   contentId?: string,
-  customMediaUrl?: string
+  customMediaUrl?: string,
+  requestUrl?: string
 ): Promise<{ mediaUrl: string; contentUrl: string }> {
   if (contentType === "custom") {
     if (!customMediaUrl) return { mediaUrl: "", contentUrl: "" };
-    if (!isTrustedCustomMediaUrl(customMediaUrl)) {
+
+    const cleanMediaUrl = customMediaUrl.trim();
+    const roadBannerPath = /^\/api\/media\/banners\/[a-zA-Z0-9/_-]+\.(?:jpe?g|png)$/i.test(cleanMediaUrl);
+    if (roadBannerPath && requestUrl) {
+      const requestOrigin = new URL(requestUrl).origin;
+      if (!requestOrigin.startsWith("https://")) {
+        throw new Error("Custom banners can only be sent from ROAD's HTTPS deployment.");
+      }
+      return { mediaUrl: new URL(cleanMediaUrl, requestOrigin).toString(), contentUrl: "" };
+    }
+
+    if (!isTrustedCustomMediaUrl(cleanMediaUrl)) {
       throw new Error("Custom media must be an HTTPS image uploaded to ROAD storage.");
     }
-    return { mediaUrl: customMediaUrl, contentUrl: "" };
+    return { mediaUrl: cleanMediaUrl, contentUrl: "" };
   }
 
   if (!contentId) throw new Error("Select content to attach to this campaign.");
@@ -104,7 +116,12 @@ export async function POST(request: Request) {
     if (contactsError) throw contactsError;
     if (!contacts?.length) throw new Error("No eligible opted-in contacts were found.");
 
-    const resolvedContent = await resolveCampaignMedia(input.contentType, input.contentId, input.customMediaUrl);
+    const resolvedContent = await resolveCampaignMedia(
+      input.contentType,
+      input.contentId,
+      input.customMediaUrl,
+      request.url
+    );
     const messageWithLink =
       resolvedContent.contentUrl && !input.message.includes(resolvedContent.contentUrl)
         ? `${input.message}\n\nView details: ${resolvedContent.contentUrl}`
