@@ -159,19 +159,17 @@ async function getRecentConversationHistory(phone: string, limit = 6): Promise<s
 }
 
 /**
- * Uses Gemini 2.5 Flash to intelligently understand conversational questions and classify user requests.
+ * Uses Gemini 2.5 Flash to intelligently answer conversational questions or classify user intent.
  */
 async function analyzeWithGemini(userText: string, conversationHistory: string, userName: string) {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return null;
-  }
+  if (!apiKey) return null;
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const prompt = `You are "ROAD Facing AI Concierge" 🏡 — the smart, polite, expert AI real estate assistant on WhatsApp for "ROAD FACING" (Andhra Pradesh's verified MLS real estate platform in Vijayawada, Guntur, Amaravati, Visakhapatnam).
+    const prompt = `You are "ROAD Facing AI Concierge" 🏡 — the friendly, expert AI real estate assistant on WhatsApp for "ROAD FACING" (Andhra Pradesh's verified real estate platform in Vijayawada, Guntur, Amaravati, Visakhapatnam).
 User Name: ${userName || "Valued Member"}
 
 Recent Conversation Context:
@@ -179,17 +177,16 @@ ${conversationHistory || "No previous messages"}
 
 User's Latest Message: "${userText}"
 
-Classify the user message into ONE of these categories:
-1. "interactive_chat": If the user is asking general questions, chatting, asking about your identity ("Who are you?", "Are you a robot?", "What's your name?"), asking about real estate trends, RERA, registration process in Andhra Pradesh, or thanking you.
-2. "property_search": If the user is actively searching for properties, flats, apartments, villas, plots, land, or specific projects (e.g. "3bhk flats in poranki", "Avenue Serene", "flats under 50L").
-3. "human_agent": If the user is asking to talk to a real person, agent, phone call, negotiation, or contact owner.
-4. "greeting": If the user simply said "Hi", "Hello", "Hey", "Good morning".
+Classify into ONE of these:
+1. "interactive_chat": General chat, questions about your identity ("Who are you?", "Are you a robot?", "What's your name?", "ur name"), real estate questions (RERA, stamp duty, localities in AP), greetings, or compliments.
+2. "property_search": User is searching for properties/projects (e.g. "3bhk in poranki", "Avenue Serene", "villas in guntur", "plots in amaravati", "flats under 60L").
+3. "human_agent": User asks for a human consultant, agent, phone call, or negotiation.
 
-If the category is "interactive_chat", generate a warm, concise, WhatsApp-formatted response (using *bold* and emojis) answering their question naturally and offering real estate help.
+If "interactive_chat", generate a warm, concise WhatsApp response with bold text and emojis.
 
-Respond ONLY with a valid JSON object (no markdown code fences):
+Respond ONLY with valid JSON:
 {
-  "category": "interactive_chat" | "property_search" | "human_agent" | "greeting",
+  "category": "interactive_chat" | "property_search" | "human_agent",
   "chatResponse": string | null
 }`;
 
@@ -204,9 +201,22 @@ Respond ONLY with a valid JSON object (no markdown code fences):
 }
 
 /**
- * Searches active verified properties and projects from Supabase with strict location, BHK, and budget enforcement.
+ * Searches active verified properties and projects from Supabase with strict constraints.
  */
 async function searchLiveListings(queryText: string, parsedIntent: ParsedSearchIntent) {
+  // If the query has NO real estate search criteria at all, do NOT dump arbitrary properties
+  const hasSearchCriteria =
+    parsedIntent.locationKeywords.length > 0 ||
+    parsedIntent.bhks.length > 0 ||
+    parsedIntent.propertyTypes.length > 0 ||
+    parsedIntent.maxPrice !== undefined ||
+    parsedIntent.minPrice !== undefined ||
+    parsedIntent.specificKeywords.length > 0;
+
+  if (!hasSearchCriteria) {
+    return { properties: [], projects: [], allProjects: [], allProperties: [] };
+  }
+
   try {
     const [{ data: dbProps }, { data: dbProjects }] = await Promise.all([
       supabaseAdmin.from("properties").select("*").limit(200),
@@ -228,7 +238,7 @@ async function searchLiveListings(queryText: string, parsedIntent: ParsedSearchI
       };
     }
 
-    // Precise fallback: Only match if criteria match
+    // Precise fallback: Only return items matching the exact location/BHK/budget criteria
     const fallbackProjects = allProjects.filter((p) => {
       const locText = formatLocation(p).toLowerCase();
       const nameText = `${p.name || ""} ${p.title || ""}`.toLowerCase();
@@ -457,21 +467,99 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 4. Multi-Turn Context & Gemini AI Intelligence
-  const conversationHistory = await getRecentConversationHistory(cleanPhone, 6);
-  const geminiAnalysis = await analyzeWithGemini(text, conversationHistory, registeredUser.name);
+  const norm = text.toLowerCase().trim();
 
-  const lower = text.toLowerCase().trim();
+  // 4. Deterministic Identity & Conversational Rules (Instant & Guaranteed)
+  const isIdentityQuestion =
+    /\b(?:who are you|what(?:'s| is)? (?:ur|your) name|ur name|your name|who r u|who made you|created you|who is this)\b/i.test(norm) ||
+    norm === "u r name" || norm === "ur name" || norm === "name" || norm === "who are you";
 
-  // 5. Handle Human Agent Request
+  if (isIdentityQuestion) {
+    const identityMsg =
+      `🤖 *I am the ROAD Facing AI Concierge!*\n\n` +
+      `I am your 24/7 personal real estate assistant for Andhra Pradesh 🏡\n\n` +
+      `I can find verified properties, builder projects, gated villas, apartments, and open plots across *Vijayawada, Guntur, Amaravati, and Visakhapatnam* in real-time.\n\n` +
+      `*How can I help you today? Try asking:*\n` +
+      `• _"3 bhk flats in Poranki"_\n` +
+      `• _"Flats under 1 Crore"_\n` +
+      `• _"Avenue Serene project"_\n` +
+      `• _"Talk to agent"_`;
+
+    await WasenderService.sendTextMessage(cleanPhone, identityMsg, {
+      requestId: `identity-${Date.now()}`,
+    });
+
+    await logConversation({
+      phone: cleanPhone,
+      userId: registeredUser.id,
+      userName: registeredUser.name,
+      role: "assistant",
+      message: identityMsg,
+      intent: "identity_answer",
+    });
+
+    return {
+      handled: true,
+      intent: "identity_answer",
+      responseSent: true,
+      message: identityMsg,
+    };
+  }
+
+  const isRobotQuestion = /\b(?:are you (?:a )?(?:robot|bot|ai|human|real)|is this (?:a )?(?:bot|ai))\b/i.test(norm);
+  if (isRobotQuestion) {
+    const botMsg =
+      `🤖 *Yes, I am an AI Real Estate Assistant!*\n\n` +
+      `I use advanced AI to instantly search verified properties, compare configurations, and deliver project insights for ROAD FACING.\n\n` +
+      `If you'd like to speak with a human property consultant, simply reply *"Talk to agent"* anytime! 👨‍💼`;
+
+    await WasenderService.sendTextMessage(cleanPhone, botMsg, {
+      requestId: `bot-q-${Date.now()}`,
+    });
+
+    await logConversation({
+      phone: cleanPhone,
+      userId: registeredUser.id,
+      userName: registeredUser.name,
+      role: "assistant",
+      message: botMsg,
+      intent: "robot_answer",
+    });
+
+    return {
+      handled: true,
+      intent: "robot_answer",
+      responseSent: true,
+      message: botMsg,
+    };
+  }
+
+  const isGratitude = /\b(?:thank you|thanks|tq|thx|great|awesome|super|nice)\b/i.test(norm) && norm.split(/\s+/).length <= 4;
+  if (isGratitude) {
+    const thanksMsg = `😊 *You're very welcome, ${registeredUser.name}!* Let me know whenever you want to explore more verified properties or projects in Andhra Pradesh. 🏡`;
+    await WasenderService.sendTextMessage(cleanPhone, thanksMsg, {
+      requestId: `thanks-${Date.now()}`,
+    });
+    await logConversation({
+      phone: cleanPhone,
+      userId: registeredUser.id,
+      userName: registeredUser.name,
+      role: "assistant",
+      message: thanksMsg,
+      intent: "gratitude_reply",
+    });
+    return { handled: true, intent: "gratitude_reply", responseSent: true, message: thanksMsg };
+  }
+
+  // 5. Check for Human Agent Escalation
   const isHumanRequest =
-    geminiAnalysis?.category === "human_agent" ||
-    lower.includes("connect me with agent") ||
-    lower.includes("talk to agent") ||
-    lower.includes("human") ||
-    lower.includes("call me") ||
-    lower.includes("talk to human") ||
-    lower.includes("speak with agent");
+    norm.includes("connect me with agent") ||
+    norm.includes("talk to agent") ||
+    norm.includes("call me") ||
+    norm.includes("talk to human") ||
+    norm.includes("speak with agent") ||
+    norm.includes("contact advisor") ||
+    norm.includes("negotiate with owner");
 
   if (isHumanRequest) {
     const ticketId = await createOrUpdateTicket({
@@ -512,34 +600,8 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 6. Handle Interactive Chat / Q&A ("Are you a robot?", "What is your name?", etc.)
-  if (geminiAnalysis?.category === "interactive_chat" && geminiAnalysis.chatResponse) {
-    await WasenderService.sendTextMessage(cleanPhone, geminiAnalysis.chatResponse, {
-      requestId: `chat-ai-${Date.now()}`,
-    });
-
-    await logConversation({
-      phone: cleanPhone,
-      userId: registeredUser.id,
-      userName: registeredUser.name,
-      role: "assistant",
-      message: geminiAnalysis.chatResponse,
-      intent: "interactive_chat",
-    });
-
-    return {
-      handled: true,
-      intent: "interactive_chat",
-      responseSent: true,
-      message: geminiAnalysis.chatResponse,
-    };
-  }
-
-  // 7. Handle Greeting
-  const isGreeting =
-    geminiAnalysis?.category === "greeting" ||
-    ["hi", "hello", "helo", "hey", "namaste", "good morning", "good evening", "start"].includes(lower);
-
+  // 6. Check for Greeting
+  const isGreeting = ["hi", "hello", "helo", "hey", "namaste", "good morning", "good evening", "start"].includes(norm);
   if (isGreeting) {
     const greetingMsg =
       `👋 *Hello ${registeredUser.name}!* Welcome to ROAD Facing Concierge 🏡\n\n` +
@@ -571,6 +633,32 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
+  // 7. Multi-Turn Gemini Analysis
+  const conversationHistory = await getRecentConversationHistory(cleanPhone, 6);
+  const geminiAnalysis = await analyzeWithGemini(text, conversationHistory, registeredUser.name);
+
+  if (geminiAnalysis?.category === "interactive_chat" && geminiAnalysis.chatResponse) {
+    await WasenderService.sendTextMessage(cleanPhone, geminiAnalysis.chatResponse, {
+      requestId: `chat-ai-${Date.now()}`,
+    });
+
+    await logConversation({
+      phone: cleanPhone,
+      userId: registeredUser.id,
+      userName: registeredUser.name,
+      role: "assistant",
+      message: geminiAnalysis.chatResponse,
+      intent: "interactive_chat",
+    });
+
+    return {
+      handled: true,
+      intent: "interactive_chat",
+      responseSent: true,
+      message: geminiAnalysis.chatResponse,
+    };
+  }
+
   // 8. Search Listings
   const searchEngineIntent = parseSearchIntent(text);
   const { properties, projects } = await searchLiveListings(text, searchEngineIntent);
@@ -582,7 +670,6 @@ export async function processInboundWhatsAppMessage(
 
     let responseText = `🏡 *Found ${totalMatches} verified listing${totalMatches > 1 ? "s" : ""} matching your search:*\n\n`;
 
-    // Format Projects
     topProjects.forEach((proj: any, idx) => {
       const projName = str(proj.name) || str(proj.title) || "Featured Project";
       const projSlug = str(proj.slug) || str(proj.id);
@@ -613,7 +700,6 @@ export async function processInboundWhatsAppMessage(
       responseText += `🔗 *View Project:* ${siteUrl}/projects/${projSlug}\n\n`;
     });
 
-    // Format individual Properties
     topProps.forEach((p: any, idx) => {
       const title = str(p.title) || `${p.bedrooms || 2} BHK Property`;
       const price = typeof p.price === "number" ? formatPriceCompact(p.price) : "Contact for Price";
@@ -668,7 +754,7 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 9. No Direct Search Match -> Intelligent AI Explanation / Fallback
+  // 9. No Direct Search Match -> Intelligent AI Explanation / General Chat
   let fallbackMsg = "";
   if (geminiAnalysis?.chatResponse) {
     fallbackMsg = geminiAnalysis.chatResponse;
@@ -680,12 +766,22 @@ export async function processInboundWhatsAppMessage(
       `👉 *Browse Live Search:* ${siteUrl}/search?q=${encodeURIComponent(text)}\n\n` +
       `Would you like our property advisor to check upcoming unlisted developments or resale options in your ${formattedBudget} budget?\n\n` +
       `👉 Reply *"Talk to agent"* or *"Yes, find for me"* to connect directly with our advisory team.`;
-  } else {
+  } else if (searchEngineIntent.locationKeywords.length > 0) {
+    const loc = searchEngineIntent.locationKeywords[0];
     fallbackMsg =
-      `🔎 *No exact listings found for "${text}" right now.*\n\n` +
+      `🔎 *No active listings found matching "${text}" right now in ${loc}.*\n\n` +
       `👉 *Browse Live Search:* ${siteUrl}/search?q=${encodeURIComponent(text)}\n` +
       `👉 *View Latest Projects:* ${siteUrl}/projects\n\n` +
       `Reply with specific requirements (e.g. *"3 bhk in Poranki"*) or type *"Talk to agent"* anytime!`;
+  } else {
+    fallbackMsg =
+      `🤖 *I am the ROAD Facing AI Concierge!*\n\n` +
+      `I can find verified properties, builder projects, villas, apartments, and open plots for you in real-time.\n\n` +
+      `*Try asking:*\n` +
+      `• _"3 bhk flats in Poranki"_\n` +
+      `• _"Flats in Vijayawada under 1 Crore"_\n` +
+      `• _"Villas in Guntur"_\n` +
+      `• _"Talk to agent"_`;
   }
 
   await WasenderService.sendTextMessage(cleanPhone, fallbackMsg, {
