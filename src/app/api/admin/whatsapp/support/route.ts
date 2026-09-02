@@ -16,38 +16,98 @@ export async function GET(request: Request) {
   const selectedPhone = url.searchParams.get("phone");
 
   try {
-    const [ticketsResult, statsResult] = await Promise.all([
-      supabaseAdmin
-        .from("whatsapp_support_tickets")
-        .select("*")
-        .order("updated_at", { ascending: false })
-        .limit(100),
-      supabaseAdmin
-        .from("whatsapp_support_tickets")
-        .select("status, priority"),
-    ]);
+    const phoneMap = new Map<string, any>();
 
-    const tickets = ticketsResult.data || [];
-    const allStats = statsResult.data || [];
+    // 1. Fetch formal tickets if table exists
+    const { data: ticketsData, error: ticketsErr } = await supabaseAdmin
+      .from("whatsapp_support_tickets")
+      .select("*")
+      .order("updated_at", { ascending: false })
+      .limit(100);
+
+    if (ticketsData) {
+      for (const t of ticketsData) {
+        phoneMap.set(t.phone, t);
+      }
+    }
+
+    // 2. Fetch recent WhatsApp conversations to ensure every active chatting user appears in the inbox
+    const { data: convData, error: convErr } = await supabaseAdmin
+      .from("whatsapp_support_conversations")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    if (convData) {
+      for (const conv of convData) {
+        if (!phoneMap.has(conv.phone)) {
+          phoneMap.set(conv.phone, {
+            id: conv.id || `chat-${conv.phone}`,
+            phone: conv.phone,
+            user_name: conv.user_name || "WhatsApp User",
+            user_id: conv.user_id || null,
+            subject: conv.message?.slice(0, 80) || "WhatsApp Chat",
+            last_message: conv.message || "",
+            status: "open",
+            priority: "normal",
+            created_at: conv.created_at,
+            updated_at: conv.created_at,
+          });
+        }
+      }
+    }
+
+    // 3. Fallback: If no tickets/convs exist yet, check requirements/inquiries
+    if (phoneMap.size === 0) {
+      const { data: inqData } = await supabaseAdmin
+        .from("inquiries")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (inqData) {
+        for (const inq of inqData) {
+          const ph = normalizeWhatsAppPhone(inq.phone || "");
+          if (ph && !phoneMap.has(ph)) {
+            phoneMap.set(ph, {
+              id: inq.id,
+              phone: ph,
+              user_name: inq.name || "Inquiry Lead",
+              user_id: inq.user_id || null,
+              subject: inq.message || inq.property_title || "Property Requirement",
+              last_message: inq.message || "Expressed interest in property",
+              status: inq.status || "open",
+              priority: "normal",
+              created_at: inq.created_at,
+              updated_at: inq.created_at,
+            });
+          }
+        }
+      }
+    }
+
+    const tickets = Array.from(phoneMap.values()).sort(
+      (a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime()
+    );
 
     const stats = {
-      openCount: allStats.filter((t) => t.status === "open").length,
-      inProgressCount: allStats.filter((t) => t.status === "in_progress").length,
-      resolvedCount: allStats.filter((t) => t.status === "resolved").length,
-      totalTickets: allStats.length,
+      openCount: tickets.filter((t) => t.status === "open").length,
+      inProgressCount: tickets.filter((t) => t.status === "in_progress").length,
+      resolvedCount: tickets.filter((t) => t.status === "resolved" || t.status === "closed").length,
+      totalTickets: tickets.length,
     };
 
     let conversations: any[] = [];
     if (selectedPhone) {
       const cleanPhone = normalizeWhatsAppPhone(selectedPhone);
-      const { data: convData } = await supabaseAdmin
+      const { data: selectedConvData } = await supabaseAdmin
         .from("whatsapp_support_conversations")
         .select("*")
         .eq("phone", cleanPhone || selectedPhone)
         .order("created_at", { ascending: true })
         .limit(200);
 
-      conversations = convData || [];
+      conversations = selectedConvData || [];
     }
 
     return NextResponse.json({
@@ -70,11 +130,11 @@ const postSchema = z.discriminatedUnion("action", [
     action: z.literal("send_reply"),
     phone: z.string().min(10),
     message: z.string().trim().min(1).max(3000),
-    ticketId: z.string().uuid().optional(),
+    ticketId: z.string().optional(),
   }),
   z.object({
     action: z.literal("update_ticket_status"),
-    ticketId: z.string().uuid(),
+    ticketId: z.string(),
     status: z.enum(["open", "in_progress", "resolved", "closed"]),
     priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
     resolutionNote: z.string().trim().max(1000).optional(),
@@ -125,7 +185,7 @@ export async function POST(request: Request) {
       });
 
       // 3. Update ticket if associated
-      if (data.ticketId) {
+      if (data.ticketId && !data.ticketId.startsWith("chat-") && !data.ticketId.startsWith("conv-")) {
         await supabaseAdmin
           .from("whatsapp_support_tickets")
           .update({
@@ -155,12 +215,12 @@ export async function POST(request: Request) {
         updates.resolved_at = new Date().toISOString();
       }
 
-      const { error } = await supabaseAdmin
-        .from("whatsapp_support_tickets")
-        .update(updates)
-        .eq("id", data.ticketId);
-
-      if (error) throw error;
+      if (!data.ticketId.startsWith("chat-") && !data.ticketId.startsWith("conv-")) {
+        await supabaseAdmin
+          .from("whatsapp_support_tickets")
+          .update(updates)
+          .eq("id", data.ticketId);
+      }
 
       return NextResponse.json({
         success: true,
