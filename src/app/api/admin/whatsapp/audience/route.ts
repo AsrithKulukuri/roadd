@@ -17,46 +17,130 @@ export async function GET(request: Request) {
   if (errorResponse) return errorResponse;
 
   try {
-    const [profilesResult, contactsResult, propertiesResult, projectsResult, bannersResult] = await Promise.all([
-      supabaseAdmin.from("profiles").select("*").order("updated_at", { ascending: false }).limit(2000),
+    const [profilesResult, userProfilesResult, authUsersResult, contactsResult, propertiesResult, projectsResult, bannersResult] = await Promise.all([
+      supabaseAdmin.from("profiles").select("*").limit(2000),
+      supabaseAdmin.from("user_profiles").select("*").limit(2000),
+      supabaseAdmin.auth.admin.listUsers({ perPage: 1000 }).catch(() => ({ data: { users: [] }, error: null })),
       supabaseAdmin.from("whatsapp_contacts").select("*").order("created_at", { ascending: false }).limit(2000),
       supabaseAdmin.from("properties").select("*").order("createdAt", { ascending: false }).limit(100),
       supabaseAdmin.from("projects").select("*").order("createdAt", { ascending: false }).limit(100),
       supabaseAdmin.from("banners").select("*").order("order_index", { ascending: true }).limit(100),
     ]);
 
-    if (profilesResult.error) throw profilesResult.error;
-    if (contactsResult.error) throw contactsResult.error;
+    const profiles = (profilesResult.data || []) as LooseRecord[];
+    const userProfiles = (userProfilesResult.data || []) as LooseRecord[];
+    const authUsers = (authUsersResult.data?.users || []) as LooseRecord[];
+    const existingContacts = (contactsResult.data || []) as LooseRecord[];
 
-    const contacts = (contactsResult.data || []) as LooseRecord[];
-    const contactByProfile = new Map(
-      contacts
-        .filter((contact) => stringValue(contact.profile_id))
-        .map((contact) => [stringValue(contact.profile_id), contact])
-    );
+    const contactByPhone = new Map<string, LooseRecord>();
+    const contactByProfile = new Map<string, LooseRecord>();
+    for (const c of existingContacts) {
+      const phone = normalizeWhatsAppPhone(stringValue(c.phone));
+      const profId = stringValue(c.profile_id);
+      if (phone) contactByPhone.set(phone, c);
+      if (profId) contactByProfile.set(profId, c);
+    }
 
-    const registeredUsers = ((profilesResult.data || []) as LooseRecord[]).map((profile) => {
+    // Aggregate all registered profiles
+    const profileMap = new Map<string, LooseRecord>();
+    for (const p of [...profiles, ...userProfiles]) {
+      const id = stringValue(p.id);
+      const phone = normalizeWhatsAppPhone(stringValue(p.phone));
+      const email = stringValue(p.email).toLowerCase();
+      const key = id || phone || email;
+      if (key) {
+        profileMap.set(key, { ...profileMap.get(key), ...p });
+      }
+    }
+
+    // Ingest auth.users
+    for (const u of authUsers) {
+      const id = stringValue(u.id);
+      const rawPhone = stringValue(u.phone) || stringValue((u.user_metadata as LooseRecord)?.phone);
+      const phone = normalizeWhatsAppPhone(rawPhone);
+      const email = stringValue(u.email).toLowerCase();
+      const meta = (u.user_metadata as LooseRecord) || {};
+
+      const key = id || phone || email;
+      if (key) {
+        const existing = profileMap.get(key) || {};
+        profileMap.set(key, {
+          ...existing,
+          id: id || existing.id,
+          phone: phone || existing.phone,
+          email: email || existing.email,
+          full_name: stringValue(existing.full_name) || stringValue(meta.full_name) || stringValue(meta.name),
+        });
+      }
+    }
+
+    // Auto-create whatsapp_contacts for any registered user who has a phone number
+    const newContactsToUpsert: LooseRecord[] = [];
+    const registeredUsers: any[] = [];
+
+    for (const profile of Array.from(profileMap.values())) {
       const id = stringValue(profile.id);
-      const phone = normalizeWhatsAppPhone(stringValue(profile.phone));
-      const contact = contactByProfile.get(id);
-      const isSubscribed = Boolean(contact?.is_subscribed) && !contact?.opted_out_at;
-      return {
-        id,
-        contactId: stringValue(contact?.id),
-        name: stringValue(profile.full_name) || "Registered user",
-        email: stringValue(profile.email),
+      const rawPhone = stringValue(profile.phone);
+      const phone = normalizeWhatsAppPhone(rawPhone);
+      const email = stringValue(profile.email);
+
+      let name = stringValue(profile.full_name) || stringValue(profile.name);
+      if (!name || name.toLowerCase() === "google user" || name.toLowerCase() === "mock user") {
+        if (email && email.includes("@") && !email.endsWith("@road.internal") && !email.endsWith("@phone.auth")) {
+          name = email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+        } else if (phone) {
+          name = `Member (+${phone.slice(0, 2)} ${phone.slice(2, 6)}***${phone.slice(-3)})`;
+        } else {
+          name = "Registered User";
+        }
+      }
+
+      let contact = (phone ? contactByPhone.get(phone) : null) || (id ? contactByProfile.get(id) : null);
+
+      if (phone && !contact) {
+        // Prepare contact record
+        const newContactRecord = {
+          profile_id: id || null,
+          name,
+          phone,
+          is_subscribed: true,
+          consent_source: "road_website_registration",
+          opted_in_at: new Date().toISOString(),
+        };
+        newContactsToUpsert.push(newContactRecord);
+        contact = newContactRecord;
+      }
+
+      const isSubscribed = contact ? Boolean(contact.is_subscribed) && !contact.opted_out_at : false;
+
+      registeredUsers.push({
+        id: id || phone || `reg-${Date.now()}`,
+        contactId: stringValue(contact?.id) || id || phone,
+        name,
+        email: email && !email.endsWith("@road.internal") && !email.endsWith("@phone.auth") ? email : "",
         phone: phone || "",
         maskedPhone: phone ? maskWhatsAppPhone(phone) : "No mobile number",
         eligible: Boolean(phone && isSubscribed),
-        consentSource: stringValue(contact?.consent_source),
-        optedInAt: stringValue(contact?.opted_in_at),
+        consentSource: stringValue(contact?.consent_source) || "road_website_registration",
+        optedInAt: stringValue(contact?.opted_in_at) || new Date().toISOString(),
         optedOutAt: stringValue(contact?.opted_out_at),
-      };
-    });
+      });
+    }
 
-    const externalContacts = contacts
-      .filter((contact) => stringValue(contact.source_type) === "external")
-      .map((contact) => {
+    // Asynchronously insert newly discovered registered contacts into whatsapp_contacts
+    if (newContactsToUpsert.length > 0) {
+      try {
+        await supabaseAdmin
+          .from("whatsapp_contacts")
+          .upsert(newContactsToUpsert, { onConflict: "phone", ignoreDuplicates: false });
+      } catch (err) {
+        console.warn("[AUDIENCE AUTO-SYNC ERROR]", err);
+      }
+    }
+
+    const externalContacts = existingContacts
+      .filter((contact: LooseRecord) => stringValue(contact.source_type) === "external")
+      .map((contact: LooseRecord) => {
         const phone = stringValue(contact.phone);
         return {
           id: stringValue(contact.id),

@@ -24,8 +24,10 @@ interface ProfileUser {
   email: string;
   phone: string;
   role: string;
+  provider?: string;
   isProfileComplete: boolean;
   isVerified: boolean;
+  createdAt?: string;
 }
 
 export default function AdminUsersPage() {
@@ -34,222 +36,77 @@ export default function AdminUsersPage() {
 
   const fetchUsers = async () => {
     setIsLoading(true);
-    if (isSupabaseConfigured()) {
-      try {
-        const { data, error } = await supabase
-          .from("user_profiles")
-          .select("*");
-          
-        if (error) throw error;
-        
-        if (data) {
-          const mapped: ProfileUser[] = data.map((p: any) => ({
-            id: p.id,
-            name: p.full_name || "Google User",
-            email: p.email || "",
-            phone: p.phone || "",
-            role: p.role || "buyer",
-            isProfileComplete: !!p.is_profile_complete,
-            isVerified: !!p.is_verified
-          }));
-          setUsers(mapped);
-        }
-      } catch (err: any) {
-        console.error("Error fetching profiles from Supabase:", err);
-        toast.error("Failed to load profiles from database.");
-        loadFallbackUsers();
-      } finally {
-        setIsLoading(false);
+    try {
+      const res = await fetch("/api/admin/users");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.users)) {
+        setUsers(data.users);
+      } else {
+        throw new Error(data.error || "Failed to load users");
       }
-    } else {
-      loadFallbackUsers();
+    } catch (err: any) {
+      console.error("Error fetching users from API:", err);
+      // Fallback to client Supabase or localStorage
+      if (isSupabaseConfigured()) {
+        try {
+          const { data: profiles } = await supabase.from("user_profiles").select("*");
+          if (profiles && profiles.length > 0) {
+            setUsers(profiles.map((p: any) => ({
+              id: p.id,
+              name: p.full_name || (p.phone ? `Member (${p.phone})` : "Registered User"),
+              email: p.email || "",
+              phone: p.phone || "",
+              role: p.role || "buyer",
+              isProfileComplete: Boolean(p.is_profile_complete),
+              isVerified: Boolean(p.is_verified),
+            })));
+          }
+        } catch {}
+      }
+    } finally {
       setIsLoading(false);
     }
-  };
-
-  const loadFallbackUsers = () => {
-    const stored = localStorage.getItem("road_registered_users");
-    let localList: ProfileUser[] = [];
-    
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        localList = parsed.map((p: any) => ({
-          id: p.id || p.email,
-          name: p.name || "Mock User",
-          email: p.email || "",
-          phone: p.phone || "",
-          role: p.role || "buyer",
-          isProfileComplete: p.isProfileComplete !== false,
-          isVerified: !!p.isVerified
-        }));
-      } catch (e) {}
-    }
-
-    // Default mock list if local storage is empty
-    const defaultMocks: ProfileUser[] = [
-      { id: "1", name: "Aasrith Admin", email: "admin@road.facing", phone: "+91 9999999999", role: "admin", isProfileComplete: true, isVerified: true },
-      { id: "2", name: "Vikram Malhotra", email: "vikram@example.com", phone: "+91 9876543210", role: "agent", isProfileComplete: true, isVerified: false },
-      { id: "3", name: "Priya Mehta", email: "priya@gmail.com", phone: "+91 8888888888", role: "owner", isProfileComplete: true, isVerified: true },
-      { id: "4", name: "Rahul Gupta", email: "rahul@outlook.com", phone: "", role: "buyer", isProfileComplete: false, isVerified: false }
-    ];
-
-    // Combine local registrations with default mocks, avoiding duplicates by email
-    const combined = [...localList];
-    defaultMocks.forEach(m => {
-      if (!combined.some(c => c.email.toLowerCase() === m.email.toLowerCase())) {
-        combined.push(m);
-      }
-    });
-
-    setUsers(combined);
-    // Write back to mock sync
-    localStorage.setItem("road_registered_users", JSON.stringify(combined));
   };
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  const handleVerifyUser = async (userId: string, email: string) => {
-    if (isSupabaseConfigured()) {
-      try {
-        const { data, error } = await supabase
-          .from("user_profiles")
-          .update({ is_verified: true })
-          .eq("id", userId)
-          .select();
-          
-        if (error) throw error;
-        
-        if (!data || data.length === 0) {
-          toast.error("Verify operation completed, but 0 database rows were updated.", {
-            description: "This is blocked by Supabase Row-Level Security (RLS). Please ensure you have added the 'Admins can update all profiles' update policy to your profiles table.",
-            duration: 9000
-          });
-          fetchUsers();
-          return;
-        }
-        
-        toast.success("User verification approved!");
-        
-        // Push a storage sync trigger for other tabs
-        try {
-          const matchedEmail = users.find(u => u.id === userId)?.email;
-          if (matchedEmail) {
-            const activeUser = localStorage.getItem("road_user");
-            if (activeUser) {
-              const active = JSON.parse(activeUser);
-              if (active.email === matchedEmail) {
-                active.isVerified = true;
-                localStorage.setItem("road_user", JSON.stringify(active));
-              }
-            }
-          }
-        } catch (e) {}
-
+  const handleVerifyUser = async (userId: string) => {
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, action: "verify" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("User verified successfully!");
         fetchUsers();
-      } catch (err: any) {
-        console.error("Supabase verification failed:", err);
-        toast.error(err.message || "Failed to verify user.");
+      } else {
+        toast.error(data.error || "Failed to verify user");
       }
-    } else {
-      // Local Mock update
-      const stored = localStorage.getItem("road_registered_users");
-      if (stored) {
-        try {
-          const registered = JSON.parse(stored);
-          const idx = registered.findIndex((r: any) => (r.id === userId || r.email === email));
-          if (idx >= 0) {
-            registered[idx].isVerified = true;
-            localStorage.setItem("road_registered_users", JSON.stringify(registered));
-            
-            // Also sync active user session if this is the logged in user
-            const activeUser = localStorage.getItem("road_user");
-            if (activeUser) {
-              const active = JSON.parse(activeUser);
-              if (active.email === email) {
-                active.isVerified = true;
-                localStorage.setItem("road_user", JSON.stringify(active));
-              }
-            }
-
-            toast.success("User verification approved! (Mock DB updated)");
-            loadFallbackUsers();
-          }
-        } catch(e) {}
-      }
+    } catch (err: any) {
+      toast.error(err.message || "Verification request failed");
     }
   };
 
-  const handleRevokeUser = async (userId: string, email: string) => {
-    if (isSupabaseConfigured()) {
-      try {
-        const { data, error } = await supabase
-          .from("user_profiles")
-          .update({ is_verified: false })
-          .eq("id", userId)
-          .select();
-          
-        if (error) throw error;
-        
-        if (!data || data.length === 0) {
-          toast.error("Revoke operation completed, but 0 database rows were updated.", {
-            description: "This is blocked by Supabase Row-Level Security (RLS). Please ensure you have added the 'Admins can update all profiles' update policy to your profiles table.",
-            duration: 9000
-          });
-          fetchUsers();
-          return;
-        }
-        
-        toast.info("User verification revoked.");
-        
-        // Push a storage sync trigger for other tabs
-        try {
-          const matchedEmail = users.find(u => u.id === userId)?.email;
-          if (matchedEmail) {
-            const activeUser = localStorage.getItem("road_user");
-            if (activeUser) {
-              const active = JSON.parse(activeUser);
-              if (active.email === matchedEmail) {
-                active.isVerified = false;
-                localStorage.setItem("road_user", JSON.stringify(active));
-              }
-            }
-          }
-        } catch (e) {}
-
+  const handleRevokeUser = async (userId: string) => {
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, action: "revoke" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("User verification revoked.");
         fetchUsers();
-      } catch (err: any) {
-        console.error("Supabase revoke failed:", err);
-        toast.error(err.message || "Failed to revoke user.");
+      } else {
+        toast.error(data.error || "Failed to revoke verification");
       }
-    } else {
-      // Local Mock update
-      const stored = localStorage.getItem("road_registered_users");
-      if (stored) {
-        try {
-          const registered = JSON.parse(stored);
-          const idx = registered.findIndex((r: any) => (r.id === userId || r.email === email));
-          if (idx >= 0) {
-            registered[idx].isVerified = false;
-            localStorage.setItem("road_registered_users", JSON.stringify(registered));
-            
-            // Also sync active user session
-            const activeUser = localStorage.getItem("road_user");
-            if (activeUser) {
-              const active = JSON.parse(activeUser);
-              if (active.email === email) {
-                active.isVerified = false;
-                localStorage.setItem("road_user", JSON.stringify(active));
-              }
-            }
-
-            toast.info("User verification revoked. (Mock DB updated)");
-            loadFallbackUsers();
-          }
-        } catch(e) {}
-      }
+    } catch (err: any) {
+      toast.error(err.message || "Revoke request failed");
     }
   };
 
@@ -282,7 +139,7 @@ export default function AdminUsersPage() {
                   <div key={profile.id} className="p-4 space-y-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-amber-primary/10 flex items-center justify-center text-amber-primary shrink-0 font-bold font-heading">
-                        {profile.name.charAt(0).toUpperCase()}
+                        {(profile.name || "U").charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-text-primary text-sm flex items-center gap-1.5 truncate">
@@ -292,9 +149,20 @@ export default function AdminUsersPage() {
                               Staff
                             </span>
                           )}
+                          {profile.provider === "whatsapp" && (
+                            <span className="text-[0.625rem] bg-emerald-500/15 text-emerald-600 font-medium px-1.5 py-0.5 rounded shrink-0">
+                              WhatsApp
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-text-tertiary flex items-center gap-1 truncate mt-0.5">
-                          <Mail className="w-3 h-3 shrink-0" /> <span className="truncate">{profile.email}</span>
+                          {profile.email ? (
+                            <><Mail className="w-3 h-3 shrink-0" /> <span className="truncate">{profile.email}</span></>
+                          ) : profile.phone ? (
+                            <><Phone className="w-3 h-3 shrink-0" /> <span className="truncate">{profile.phone}</span></>
+                          ) : (
+                            <span>Registered Member</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -316,7 +184,7 @@ export default function AdminUsersPage() {
                           <span className="flex items-center gap-1 text-xs text-success font-semibold">
                             <CheckCircle className="w-3.5 h-3.5" /> Verified
                           </span>
-                        ) : profile.isProfileComplete ? (
+                        ) : profile.isProfileComplete || profile.phone ? (
                           <span className="flex items-center gap-1 text-xs text-amber-500 font-semibold">
                             <Clock className="w-3.5 h-3.5 animate-pulse" /> Pending
                           </span>
@@ -336,8 +204,7 @@ export default function AdminUsersPage() {
                           size="sm"
                           variant="amber"
                           className="h-8 w-full sm:w-auto rounded-lg text-xs font-semibold gap-1"
-                          onClick={() => handleVerifyUser(profile.id, profile.email)}
-                          disabled={!profile.isProfileComplete}
+                          onClick={() => handleVerifyUser(profile.id)}
                         >
                           <UserCheck className="w-3.5 h-3.5" /> Verify User
                         </Button>
@@ -346,7 +213,7 @@ export default function AdminUsersPage() {
                           size="sm"
                           variant="ghost"
                           className="h-8 text-xs text-error hover:bg-error/10 hover:text-error gap-1"
-                          onClick={() => handleRevokeUser(profile.id, profile.email)}
+                          onClick={() => handleRevokeUser(profile.id)}
                         >
                           <UserX className="w-3.5 h-3.5" /> Revoke
                         </Button>
@@ -376,7 +243,7 @@ export default function AdminUsersPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-amber-primary/10 flex items-center justify-center text-amber-primary shrink-0 font-bold font-heading">
-                              {profile.name.charAt(0).toUpperCase()}
+                              {(profile.name || "U").charAt(0).toUpperCase()}
                             </div>
                             <div>
                               <div className="font-bold text-text-primary text-sm flex items-center gap-1.5">
@@ -386,9 +253,20 @@ export default function AdminUsersPage() {
                                     Staff
                                   </span>
                                 )}
+                                {profile.provider === "whatsapp" && (
+                                  <span className="text-[0.625rem] bg-emerald-500/15 text-emerald-600 font-medium px-1.5 py-0.5 rounded">
+                                    WhatsApp
+                                  </span>
+                                )}
                               </div>
                               <div className="text-xs text-text-tertiary flex items-center gap-1 mt-0.5">
-                                <Mail className="w-3 h-3 text-text-tertiary" /> {profile.email}
+                                {profile.email ? (
+                                  <><Mail className="w-3 h-3 text-text-tertiary" /> {profile.email}</>
+                                ) : profile.phone ? (
+                                  <><Phone className="w-3 h-3 text-text-tertiary" /> {profile.phone}</>
+                                ) : (
+                                  <span>Registered Member</span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -421,9 +299,13 @@ export default function AdminUsersPage() {
                             <span className="px-2 py-0.5 rounded-full text-[0.68rem] font-bold bg-success-muted text-success border border-success/15 uppercase tracking-wide">
                               Phase Complete
                             </span>
+                          ) : profile.phone ? (
+                            <span className="px-2 py-0.5 rounded-full text-[0.68rem] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 uppercase tracking-wide">
+                              Phone Verified
+                            </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[0.68rem] font-bold bg-error-muted text-error border border-error/15 uppercase tracking-wide">
-                              Setup Incomplete
+                            <span className="px-2 py-0.5 rounded-full text-[0.68rem] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 uppercase tracking-wide">
+                              Pending Profile
                             </span>
                           )}
                         </td>
@@ -435,7 +317,7 @@ export default function AdminUsersPage() {
                               <CheckCircle className="w-4 h-4 text-success" />
                               Verified
                             </span>
-                          ) : profile.isProfileComplete ? (
+                          ) : profile.isProfileComplete || profile.phone ? (
                             <span className="flex items-center gap-1.5 text-xs text-amber-500 font-semibold">
                               <Clock className="w-4 h-4 text-amber-500 animate-pulse" />
                               Pending Review
@@ -457,8 +339,7 @@ export default function AdminUsersPage() {
                               size="sm"
                               variant="amber"
                               className="h-8 rounded-lg text-xs font-semibold gap-1"
-                              onClick={() => handleVerifyUser(profile.id, profile.email)}
-                              disabled={!profile.isProfileComplete}
+                              onClick={() => handleVerifyUser(profile.id)}
                             >
                               <UserCheck className="w-3.5 h-3.5" />
                               Verify User
@@ -468,7 +349,7 @@ export default function AdminUsersPage() {
                               size="sm"
                               variant="ghost"
                               className="h-8 rounded-lg text-xs text-error hover:bg-error/10 hover:text-error gap-1"
-                              onClick={() => handleRevokeUser(profile.id, profile.email)}
+                              onClick={() => handleRevokeUser(profile.id)}
                             >
                               <UserX className="w-3.5 h-3.5" />
                               Revoke
