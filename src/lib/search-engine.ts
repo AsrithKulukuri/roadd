@@ -146,10 +146,14 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
 
   // Common Real Estate noise / stop words that shouldn't restrict name matching
   const STOP_WORDS = new Set([
-    "in", "at", "near", "for", "with", "of", "and", "the", "a", "an", "to", "on", "by", "is",
-    "looking", "want", "need", "show", "me", "find", "best", "top", "good", "cheap", "luxury",
-    "buy", "rent", "sale", "bhk", "bk", "bed", "beds", "bedroom", "bedrooms", "property", "properties",
-    "below", "under", "above", "less", "more", "than", "lakh", "lakhs", "lac", "lacs", "cr", "crore", "crores"
+    "in", "at", "near", "for", "with", "of", "and", "the", "a", "an", "to", "on", "by", "is", "are", "any", "all",
+    "i", "want", "need", "looking", "look", "show", "me", "find", "get", "give", "please", "pls", "best", "top", "good",
+    "cheap", "luxury", "budget", "affordable", "premium", "verified", "available", "buy", "rent", "sale", "purchase",
+    "bhk", "bk", "rk", "bed", "beds", "bedroom", "bedrooms", "property", "properties", "flat", "flats", "apartment",
+    "apartments", "villa", "villas", "house", "houses", "home", "homes", "duplex", "plot", "plots", "land", "lands",
+    "venture", "ventures", "commercial", "space", "spaces", "shop", "shops", "building", "buildings", "office", "offices",
+    "below", "under", "above", "less", "more", "than", "within", "upto", "lakh", "lakhs", "lac", "lacs", "cr", "crore",
+    "crores", "gated", "community", "ready", "move", "new", "old", "resale", "project", "projects", "facing", "road"
   ]);
 
   const specificKeywords: string[] = [];
@@ -671,6 +675,14 @@ export function evaluateProjectFilters(
   currentTimeMs?: number
 ): boolean {
   if (!filters) return true;
+
+  // Query search matching with intelligent search engine
+  if (filters.query && typeof filters.query === "string" && filters.query.trim()) {
+    const query = filters.query.trim();
+    if (!matchesProjectSearch(project, query)) {
+      return false;
+    }
+  }
 
   // 0. Location & Geography (Cities, Localities)
   const projCity = (project.location?.city || "").toLowerCase();
