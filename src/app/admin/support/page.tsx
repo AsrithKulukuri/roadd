@@ -9,16 +9,10 @@ import {
   Clock, 
   Sparkles, 
   CheckCircle2, 
-  AlertCircle, 
   Flame, 
-  Calendar, 
   Heart, 
-  MapPin, 
-  Building2, 
-  Phone, 
   ShieldCheck,
   RefreshCw,
-  Eye,
   MessageSquare
 } from "lucide-react";
 import { toast } from "sonner";
@@ -73,15 +67,14 @@ export default function AdminSupportPage() {
   const [conversations, setConversations] = useState<Message[]>([]);
   const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
   const [savedProperties, setSavedProperties] = useState<any[]>([]);
-  const [siteVisits, setSiteVisits] = useState<any[]>([]);
   const [aiCopilot, setAiCopilot] = useState<AICopilot | null>(null);
 
   const [filterStatus, setFilterStatus] = useState<"all" | "open" | "in_progress" | "resolved">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [replyText, setReplyText] = useState("");
-  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const prevPhoneRef = useRef<string | null>(null);
 
   const loadData = useCallback(async (phoneToSelect?: string) => {
     try {
@@ -98,30 +91,32 @@ export default function AdminSupportPage() {
           setConversations(json.conversations || []);
           setCustomerProfile(json.customerProfile || null);
           setSavedProperties(json.savedProperties || []);
-          setSiteVisits(json.siteVisits || []);
           setAiCopilot(json.aiCopilot || null);
         } else if (json.tickets?.length > 0 && !selectedTicket) {
-          // Auto select first ticket
           setSelectedTicket(json.tickets[0]);
           loadData(json.tickets[0].phone);
         }
       }
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   }, [selectedTicket?.phone]);
 
   useEffect(() => {
     loadData();
-    const timer = setInterval(() => loadData(), 8000); // 8-second polling for live incoming WhatsApps
+    const timer = setInterval(() => loadData(), 8000);
     return () => clearInterval(timer);
   }, [loadData]);
 
+  // Scroll inner chat container strictly without affecting outer page scroll
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversations]);
+    if (selectedTicket?.phone && selectedTicket.phone !== prevPhoneRef.current) {
+      prevPhoneRef.current = selectedTicket.phone;
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      }
+    }
+  }, [selectedTicket?.phone, conversations]);
 
   const handleSelectTicket = (t: Ticket) => {
     setSelectedTicket(t);
@@ -149,6 +144,12 @@ export default function AdminSupportPage() {
         toast.success("Reply sent via WhatsApp!");
         setReplyText("");
         loadData(selectedTicket.phone);
+        // Scroll to bottom on send
+        setTimeout(() => {
+          if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+          }
+        }, 100);
       } else {
         toast.error(data.error || "Failed to send WhatsApp message");
       }
@@ -193,37 +194,37 @@ export default function AdminSupportPage() {
   });
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-slate-950 text-slate-100 antialiased overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] w-full bg-slate-950 text-slate-100 antialiased overflow-hidden select-text">
       {/* Top Bar Stats */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md">
+      <div className="flex items-center justify-between px-6 py-2.5 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-gradient-to-tr from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30">
-            <Bot className="w-5 h-5" />
+          <div className="p-1.5 rounded-xl bg-gradient-to-tr from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30">
+            <Bot className="w-4 h-4" />
           </div>
           <div>
-            <h1 className="text-base font-semibold text-white tracking-tight">Enterprise Support Desk & Live CRM</h1>
-            <p className="text-xs text-slate-400">Two-way WhatsApp live agent desk with AI Copilot</p>
+            <h1 className="text-sm font-semibold text-white tracking-tight leading-tight">Enterprise Support Desk & Live CRM</h1>
+            <p className="text-[11px] text-slate-400 leading-tight">Two-way WhatsApp live agent desk with AI Copilot</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <button 
             onClick={() => loadData()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
           >
-            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+            <RefreshCw className="w-3 h-3" /> Refresh
           </button>
         </div>
       </div>
 
       {/* 3-Pane Enterprise Layout */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden min-h-0">
         
         {/* PANE 1: Tickets & Filter Sidebar */}
-        <div className="w-80 border-r border-slate-800/80 bg-slate-900/30 flex flex-col">
+        <div className="w-72 border-r border-slate-800/80 bg-slate-900/30 flex flex-col shrink-0 min-h-0">
           {/* Status Tabs */}
-          <div className="p-3 border-b border-slate-800/80 space-y-2">
-            <div className="grid grid-cols-4 gap-1 p-1 bg-slate-950 rounded-lg text-[11px] font-medium text-slate-400">
+          <div className="p-2.5 border-b border-slate-800/80 space-y-2 shrink-0">
+            <div className="grid grid-cols-4 gap-1 p-1 bg-slate-950 rounded-lg text-[10px] font-medium text-slate-400">
               <button 
                 onClick={() => setFilterStatus("all")}
                 className={`py-1 rounded-md transition ${filterStatus === "all" ? "bg-slate-800 text-white font-semibold" : "hover:text-slate-200"}`}
@@ -251,22 +252,22 @@ export default function AdminSupportPage() {
             </div>
 
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
               <input 
                 type="text"
-                placeholder="Search by name or phone..."
+                placeholder="Search name or phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500/50"
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-2.5 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500/50"
               />
             </div>
           </div>
 
           {/* Ticket List */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-800/50">
+          <div className="flex-1 overflow-y-auto divide-y divide-slate-800/50 min-h-0">
             {filteredTickets.length === 0 ? (
-              <div className="p-8 text-center text-xs text-slate-500">
-                <MessageSquare className="w-8 h-8 mx-auto mb-2 text-slate-600 opacity-50" />
+              <div className="p-6 text-center text-xs text-slate-500">
+                <MessageSquare className="w-6 h-6 mx-auto mb-2 text-slate-600 opacity-50" />
                 No inquiries in this tab
               </div>
             ) : (
@@ -276,7 +277,7 @@ export default function AdminSupportPage() {
                   <button
                     key={t.id}
                     onClick={() => handleSelectTicket(t)}
-                    className={`w-full text-left p-3 transition flex flex-col gap-1.5 ${
+                    className={`w-full text-left p-2.5 transition flex flex-col gap-1 ${
                       isSelected ? "bg-amber-500/10 border-l-2 border-amber-500" : "hover:bg-slate-800/40"
                     }`}
                   >
@@ -303,21 +304,21 @@ export default function AdminSupportPage() {
         </div>
 
         {/* PANE 2: Visual Conversation Thread & Agent Tools */}
-        <div className="flex-1 flex flex-col bg-slate-950 border-r border-slate-800/80">
+        <div className="flex-1 flex flex-col bg-slate-950 border-r border-slate-800/80 min-h-0">
           {selectedTicket ? (
             <>
               {/* Active Ticket Header */}
-              <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800/80 bg-slate-900/40">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center font-bold text-amber-400 border border-slate-700">
+              <div className="flex items-center justify-between px-5 py-2.5 border-b border-slate-800/80 bg-slate-900/40 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-amber-400 border border-slate-700 text-xs">
                     {selectedTicket.user_name.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-sm font-semibold text-white">{selectedTicket.user_name}</h2>
-                      <span className="text-xs text-slate-400 font-mono">+{selectedTicket.phone}</span>
+                      <h2 className="text-xs font-semibold text-white">{selectedTicket.user_name}</h2>
+                      <span className="text-[11px] text-slate-400 font-mono">+{selectedTicket.phone}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400">
                       <span>Status: <strong className="text-slate-200 capitalize">{selectedTicket.status.replace("_", " ")}</strong></span>
                       <span>•</span>
                       <span>Agent Mode: <strong className={customerProfile?.agentMode ? "text-emerald-400" : "text-amber-400"}>{customerProfile?.agentMode ? "Active (AI Paused)" : "AI Concierge"}</strong></span>
@@ -329,14 +330,14 @@ export default function AdminSupportPage() {
                   {selectedTicket.status !== "resolved" ? (
                     <button
                       onClick={() => handleUpdateStatus("resolved")}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-sm"
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-sm"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" /> Mark Resolved & Resume AI
                     </button>
                   ) : (
                     <button
                       onClick={() => handleUpdateStatus("in_progress")}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition"
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition"
                     >
                       Reopen Ticket
                     </button>
@@ -345,10 +346,10 @@ export default function AdminSupportPage() {
               </div>
 
               {/* Message Thread Visualizer */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
                 {conversations.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-slate-500 text-xs">
-                    <Clock className="w-8 h-8 mb-2 opacity-40" />
+                    <Clock className="w-6 h-6 mb-2 opacity-40" />
                     No message history loaded for this contact.
                   </div>
                 ) : (
@@ -359,7 +360,7 @@ export default function AdminSupportPage() {
 
                     return (
                       <div key={msg.id || i} className={`flex flex-col ${isUser ? "items-start" : "items-end"}`}>
-                        <div className="flex items-center gap-1.5 mb-1 px-1">
+                        <div className="flex items-center gap-1.5 mb-0.5 px-1">
                           {isUser ? (
                             <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
                               <User className="w-3 h-3 text-slate-400" /> {selectedTicket.user_name}
@@ -380,7 +381,7 @@ export default function AdminSupportPage() {
                           </span>
                         </div>
 
-                        <div className={`max-w-[78%] rounded-2xl px-4 py-3 text-xs leading-relaxed shadow-sm whitespace-pre-wrap ${
+                        <div className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed shadow-sm whitespace-pre-wrap ${
                           isUser ? "bg-slate-800 text-slate-100 rounded-tl-sm border border-slate-700/50" :
                           isAI ? "bg-gradient-to-br from-indigo-950/80 to-slate-900 border border-indigo-800/40 text-indigo-100 rounded-tr-sm" :
                           isAgent ? "bg-gradient-to-br from-emerald-950/80 to-slate-900 border border-emerald-800/40 text-emerald-100 rounded-tr-sm" :
@@ -392,34 +393,33 @@ export default function AdminSupportPage() {
                     );
                   })
                 )}
-                <div ref={messagesEndRef} />
               </div>
 
               {/* Agent Quick Insert Tools */}
-              <div className="px-6 py-2 border-t border-slate-800/60 bg-slate-900/30 flex items-center gap-2 overflow-x-auto text-[11px]">
+              <div className="px-4 py-1.5 border-t border-slate-800/60 bg-slate-900/30 flex items-center gap-1.5 overflow-x-auto text-[11px] shrink-0">
                 <span className="text-slate-500 text-[10px] font-semibold uppercase tracking-wider">Quick Actions:</span>
                 <button
-                  onClick={() => setReplyText("Hello! I am reviewing the best verified property options in your budget right now. What is your preferred move-in timeline?")}
-                  className="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition whitespace-nowrap"
+                  onClick={() => setReplyText("Hello! I am reviewing verified availability in your budget right now. What is your preferred move-in date?")}
+                  className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition whitespace-nowrap text-[11px]"
                 >
                   💰 Ask Timeline
                 </button>
                 <button
                   onClick={() => setReplyText("Would you like me to schedule a private on-site inspection for you this weekend?")}
-                  className="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition whitespace-nowrap"
+                  className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition whitespace-nowrap text-[11px]"
                 >
                   📅 Offer Site Visit
                 </button>
                 <button
                   onClick={() => setReplyText("Here is the verified brochure and master floor plan for the project: https://roadd-three.vercel.app/projects")}
-                  className="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition whitespace-nowrap"
+                  className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition whitespace-nowrap text-[11px]"
                 >
                   📄 Send Brochure Link
                 </button>
               </div>
 
               {/* Live WhatsApp Composer */}
-              <div className="p-4 border-t border-slate-800 bg-slate-900/60">
+              <div className="p-3 border-t border-slate-800 bg-slate-900/60 shrink-0">
                 <div className="flex gap-2">
                   <textarea
                     rows={2}
@@ -432,40 +432,40 @@ export default function AdminSupportPage() {
                       }
                     }}
                     placeholder={`Reply directly to ${selectedTicket.user_name} via WhatsApp...`}
-                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50 resize-none"
+                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50 resize-none"
                   />
                   <button
                     onClick={() => handleSendReply()}
                     disabled={!replyText.trim() || sending}
-                    className="px-5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 disabled:opacity-50 text-slate-950 font-bold rounded-xl transition flex items-center justify-center gap-1.5 text-xs shadow-md shadow-amber-500/10"
+                    className="px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 disabled:opacity-50 text-slate-950 font-bold rounded-xl transition flex items-center justify-center gap-1 text-xs shadow-md shadow-amber-500/10"
                   >
-                    <Send className="w-4 h-4" /> Send
+                    <Send className="w-3.5 h-3.5" /> Send
                   </button>
                 </div>
               </div>
             </>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-slate-500 text-xs">
-              <Bot className="w-12 h-12 mb-3 text-slate-600 opacity-40" />
+              <Bot className="w-10 h-10 mb-2 text-slate-600 opacity-40" />
               Select an inquiry thread from the left to view messages and reply.
             </div>
           )}
         </div>
 
         {/* PANE 3: Customer CRM Profile & Silent AI Copilot */}
-        <div className="w-84 border-l border-slate-800/80 bg-slate-900/40 flex flex-col overflow-y-auto divide-y divide-slate-800/80">
+        <div className="w-80 border-l border-slate-800/80 bg-slate-900/40 flex flex-col overflow-y-auto divide-y divide-slate-800/80 shrink-0 min-h-0">
           {customerProfile ? (
             <>
               {/* Buyer CRM Card */}
-              <div className="p-5 space-y-4">
+              <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Buyer CRM Profile</h3>
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs font-bold">
-                    <Flame className="w-3.5 h-3.5" /> Score: {customerProfile.leadScore}
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Buyer CRM Profile</h3>
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[11px] font-bold">
+                    <Flame className="w-3 h-3" /> Score: {customerProfile.leadScore}
                   </div>
                 </div>
 
-                <div className="space-y-2 text-xs">
+                <div className="space-y-1.5 text-xs">
                   <div className="flex justify-between py-1 border-b border-slate-800/50">
                     <span className="text-slate-400">Stage:</span>
                     <span className="font-semibold text-white uppercase">{customerProfile.stage}</span>
@@ -487,30 +487,30 @@ export default function AdminSupportPage() {
 
               {/* Silent AI Copilot for Human Agents */}
               {aiCopilot && (
-                <div className="p-5 space-y-3 bg-gradient-to-b from-indigo-950/30 to-slate-950/50">
+                <div className="p-4 space-y-2.5 bg-gradient-to-b from-indigo-950/30 to-slate-950/50">
                   <div className="flex items-center gap-1.5 text-indigo-400 font-bold text-xs">
-                    <Sparkles className="w-4 h-4" /> AI AGENT COPILOT
+                    <Sparkles className="w-3.5 h-3.5" /> AI AGENT COPILOT
                   </div>
 
-                  <div className="space-y-2 text-[11px]">
-                    <div className="p-2.5 rounded-lg bg-indigo-950/40 border border-indigo-800/30">
+                  <div className="space-y-1.5 text-[11px]">
+                    <div className="p-2 rounded-lg bg-indigo-950/40 border border-indigo-800/30">
                       <span className="font-semibold text-indigo-300 block mb-0.5">Intent Summary:</span>
                       <span className="text-slate-300">{aiCopilot.buyerIntentSummary}</span>
                     </div>
 
-                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                    <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
                       <span className="font-semibold text-amber-400 block mb-0.5">Recommended Action:</span>
                       <span className="text-slate-300">{aiCopilot.recommendedAction}</span>
                     </div>
                   </div>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Suggested Quick Replies:</span>
                     {aiCopilot.suggestedResponses.map((sug, idx) => (
                       <button
                         key={idx}
                         onClick={() => setReplyText(sug)}
-                        className="w-full text-left p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-[11px] text-slate-300 transition border border-slate-800/80 hover:border-slate-700"
+                        className="w-full text-left p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-[11px] text-slate-300 transition border border-slate-800/80 hover:border-slate-700"
                       >
                         &quot;{sug}&quot;
                       </button>
@@ -519,18 +519,18 @@ export default function AdminSupportPage() {
                 </div>
               )}
 
-              {/* Saved Properties & Site Visits */}
-              <div className="p-5 space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <Heart className="w-3.5 h-3.5 text-rose-400" /> Saved Properties ({savedProperties.length})
+              {/* Saved Properties */}
+              <div className="p-4 space-y-2.5">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <Heart className="w-3 h-3 text-rose-400" /> Saved Properties ({savedProperties.length})
                 </h4>
 
                 {savedProperties.length === 0 ? (
                   <p className="text-[11px] text-slate-500">No properties saved yet.</p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {savedProperties.map((sp) => (
-                      <div key={sp.id} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+                      <div key={sp.id} className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs">
                         <div className="font-semibold text-white truncate">{sp.title}</div>
                         <div className="text-[10px] text-slate-400 flex items-center justify-between mt-1">
                           <span>{sp.location_text || "Vijayawada"}</span>
@@ -543,7 +543,7 @@ export default function AdminSupportPage() {
               </div>
             </>
           ) : (
-            <div className="p-8 text-center text-xs text-slate-500">
+            <div className="p-6 text-center text-xs text-slate-500">
               No customer profile selected.
             </div>
           )}
