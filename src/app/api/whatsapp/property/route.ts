@@ -5,6 +5,7 @@ import { fromSupabaseProject } from "@/stores/projects-store";
 import { formatPriceCompact, formatINR } from "@/lib/utils";
 import { getRefId } from "@/lib/ref-id";
 import { requireAdmin } from "@/lib/server-auth-guard";
+import { resolveExternalMediaUrl } from "@/lib/aws/presign";
 
 function getSupabaseAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -105,6 +106,9 @@ export async function POST(req: NextRequest) {
 
     // Primary image for header
     let imageUrl = item.coverImage || item.images?.[0]?.url || "";
+    if (imageUrl) {
+      imageUrl = await resolveExternalMediaUrl(imageUrl).catch(() => imageUrl);
+    }
     if (imageUrl && !imageUrl.startsWith("http")) {
       imageUrl = `${siteUrl}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
     }

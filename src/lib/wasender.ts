@@ -1,5 +1,6 @@
 import { WasenderAPIResponse } from "@/types/auth";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
+import { resolveExternalMediaUrl } from "@/lib/aws/presign";
 
 export type WasenderMode = "disabled" | "mock" | "live";
 
@@ -410,9 +411,12 @@ export class WasenderService {
     text: string,
     options?: WasenderSendOptions
   ): Promise<WasenderExecutionResult> {
-    const cleanUrl = imageUrl.trim();
+    const rawUrl = (imageUrl || "").trim();
+    // Resolve relative, proxy (/api/media/...), or S3 keys to direct S3 pre-signed GET URLs
+    const resolvedUrl = await resolveExternalMediaUrl(rawUrl).catch(() => rawUrl);
+
     try {
-      const parsed = new URL(cleanUrl);
+      const parsed = new URL(resolvedUrl);
       if (parsed.protocol !== "https:") throw new Error("HTTPS required");
     } catch {
       return {
@@ -481,7 +485,7 @@ export class WasenderService {
     return this.executeWithRetry(
       endpoint,
       apiKey,
-      { to: cleanPhone, text, imageUrl: cleanUrl },
+      { to: cleanPhone, text, imageUrl: resolvedUrl },
       { requestId, runtime, mode, endpointHost, startTime, logPrefix: "MEDIA" }
     );
   }

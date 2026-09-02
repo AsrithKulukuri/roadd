@@ -75,7 +75,8 @@ export function isTrustedCustomMediaUrl(value: string): boolean {
     return (
       trustedHosts.includes(url.hostname) ||
       url.hostname.endsWith(".amazonaws.com") ||
-      url.hostname.endsWith(".cloudfront.net")
+      url.hostname.endsWith(".cloudfront.net") ||
+      url.hostname.endsWith(".vercel.app")
     );
   } catch {
     return false;
