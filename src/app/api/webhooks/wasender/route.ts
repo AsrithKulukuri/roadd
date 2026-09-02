@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
-import { getSanitizedEnv } from "@/lib/wasender";
+import { getSanitizedEnv, WasenderService } from "@/lib/wasender";
 import { normalizeWhatsAppPhone } from "@/lib/whatsapp-audience";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -52,30 +52,96 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true, ignored: true });
   }
 
-  const command = incoming.text.trim().toUpperCase().replace(/[^A-Z]/g, "");
-  if (!["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"].includes(command)) {
-    return NextResponse.json({ received: true, ignored: true });
-  }
-
+  const cleanText = incoming.text.trim().toUpperCase();
+  const normalizedKeyword = cleanText.replace(/[^A-Z0-9]/g, "");
   const now = new Date().toISOString();
-  const { data: contact, error } = await supabaseAdmin
+
+  // 1. Check if user typed STOP / UNSUBSCRIBE / QUIT / CANCEL / END
+  const isStopCommand = ["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT", "STOPALL"].includes(normalizedKeyword);
+
+  if (isStopCommand) {
+    // 7-day lock from current time
+    const restrictionUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: contact, error } = await supabaseAdmin
+      .from("whatsapp_contacts")
+      .update({
+        is_subscribed: false,
+        opted_out_at: now,
+        restriction_until: restrictionUntil,
+        updated_at: now,
+      })
+      .eq("phone", incoming.phone)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      console.error("[WASENDER OPT-OUT ERROR]", error);
+      return NextResponse.json({ received: false }, { status: 500 });
+    }
+
+    if (contact) {
+      await supabaseAdmin
+        .from("whatsapp_campaign_recipients")
+        .update({ status: "skipped", last_error: "Recipient opted out through WhatsApp (STOP command)." })
+        .eq("contact_id", contact.id)
+        .in("status", ["queued", "failed"]);
+    }
+
+    // Auto-respond in that WhatsApp chat saying stopped & how to resume
+    try {
+      await WasenderService.sendTextMessage(
+        incoming.phone,
+        "You have unsubscribed from ROAD FACING property updates. You will not receive broadcast messages.\n\nReply YES (or any message) to resume receiving updates again.",
+        { requestId: `webhook-stop-${Date.now()}` }
+      );
+    } catch (sendErr) {
+      console.warn("[WASENDER STOP REPLY ERROR]", sendErr);
+    }
+
+    return NextResponse.json({ received: true, unsubscribed: true, restrictedUntil: restrictionUntil });
+  }
+
+  // 2. Check if user is trying to RESUME / UNLOCK with "YES", "START", "UNSTOP", "RESUME", or any incoming message
+  const isResumeKeyword = ["YES", "START", "UNSTOP", "RESUME", "RESTART", "AGREE", "OK", "OPTIN"].includes(normalizedKeyword);
+
+  const { data: existingContact } = await supabaseAdmin
     .from("whatsapp_contacts")
-    .update({ is_subscribed: false, opted_out_at: now, updated_at: now })
+    .select("id, is_subscribed, opted_out_at, restriction_until")
     .eq("phone", incoming.phone)
-    .select("id")
     .maybeSingle();
-  if (error) {
-    console.error("[WASENDER OPT-OUT ERROR]", error);
-    return NextResponse.json({ received: false }, { status: 500 });
+
+  // If user was previously unsubscribed / restricted and typed YES (or sent a message to resume)
+  if (existingContact && (!existingContact.is_subscribed || existingContact.opted_out_at || existingContact.restriction_until)) {
+    if (isResumeKeyword || cleanText.length > 0) {
+      const { error: unlockError } = await supabaseAdmin
+        .from("whatsapp_contacts")
+        .update({
+          is_subscribed: true,
+          opted_out_at: null,
+          restriction_until: null,
+          opted_in_at: now,
+          consent_source: "whatsapp_user_keyword_yes",
+          updated_at: now,
+        })
+        .eq("phone", incoming.phone);
+
+      if (!unlockError) {
+        // Auto-respond in that WhatsApp chat confirming resume
+        try {
+          await WasenderService.sendTextMessage(
+            incoming.phone,
+            "Welcome back! You have successfully resubscribed to ROAD FACING property updates.\n\nYou will now receive alerts on new properties, verified listings, and projects.",
+            { requestId: `webhook-resume-${Date.now()}` }
+          );
+        } catch (sendErr) {
+          console.warn("[WASENDER RESUME REPLY ERROR]", sendErr);
+        }
+
+        return NextResponse.json({ received: true, resubscribed: true });
+      }
+    }
   }
 
-  if (contact) {
-    await supabaseAdmin
-      .from("whatsapp_campaign_recipients")
-      .update({ status: "skipped", last_error: "Recipient opted out through WhatsApp." })
-      .eq("contact_id", contact.id)
-      .in("status", ["queued", "failed"]);
-  }
-
-  return NextResponse.json({ received: true, unsubscribed: Boolean(contact) });
+  return NextResponse.json({ received: true, ignored: true });
 }

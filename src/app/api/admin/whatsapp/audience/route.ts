@@ -124,6 +124,7 @@ export async function GET(request: Request) {
         consentSource: stringValue(contact?.consent_source) || "road_website_registration",
         optedInAt: stringValue(contact?.opted_in_at) || new Date().toISOString(),
         optedOutAt: stringValue(contact?.opted_out_at),
+        restrictionUntil: stringValue(contact?.restriction_until),
       });
     }
 
@@ -151,6 +152,7 @@ export async function GET(request: Request) {
           consentSource: stringValue(contact.consent_source),
           optedInAt: stringValue(contact.opted_in_at),
           optedOutAt: stringValue(contact.opted_out_at),
+          restrictionUntil: stringValue(contact.restriction_until),
         };
       });
 

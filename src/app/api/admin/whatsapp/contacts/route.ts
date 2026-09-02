@@ -64,12 +64,40 @@ export async function POST(request: Request) {
     }
 
     if (parsed.data.action === "resubscribe") {
+      const { data: existingContact, error: fetchErr } = await supabaseAdmin
+        .from("whatsapp_contacts")
+        .select("id, restriction_until, opted_out_at")
+        .eq("id", parsed.data.contactId)
+        .maybeSingle();
+      if (fetchErr) throw fetchErr;
+      if (!existingContact) return NextResponse.json({ success: false, error: "Contact not found." }, { status: 404 });
+
+      if (existingContact.restriction_until && new Date(existingContact.restriction_until).getTime() > Date.now()) {
+        const unlockDate = new Date(existingContact.restriction_until).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        return NextResponse.json(
+          {
+            success: false,
+            restricted: true,
+            restrictionUntil: existingContact.restriction_until,
+            error: `This recipient opted out on WhatsApp (STOP command). Re-enrollment is locked for 7 days until ${unlockDate}. The user can unlock at any time by replying 'YES' in WhatsApp.`,
+          },
+          { status: 403 }
+        );
+      }
+
       const { data, error } = await supabaseAdmin
         .from("whatsapp_contacts")
         .update({
           is_subscribed: true,
           opted_in_at: now,
           opted_out_at: null,
+          restriction_until: null,
           consent_source: parsed.data.consentSource,
           consent_evidence: parsed.data.consentEvidence || null,
           updated_at: now,
@@ -78,7 +106,7 @@ export async function POST(request: Request) {
         .select("id")
         .maybeSingle();
       if (error) throw error;
-      if (!data) return NextResponse.json({ success: false, error: "Contact not found." }, { status: 404 });
+      if (!data) return NextResponse.json({ success: false, error: "Contact could not be updated." }, { status: 404 });
       return NextResponse.json({ success: true, contactId: data.id });
     }
 
@@ -100,12 +128,12 @@ export async function POST(request: Request) {
         await Promise.all([
           supabaseAdmin
             .from("whatsapp_contacts")
-            .select("id, profile_id")
+            .select("id, profile_id, restriction_until, opted_out_at")
             .eq("profile_id", String(profile.id))
             .maybeSingle(),
           supabaseAdmin
             .from("whatsapp_contacts")
-            .select("id, profile_id")
+            .select("id, profile_id, restriction_until, opted_out_at")
             .eq("phone", phone)
             .maybeSingle(),
         ]);
@@ -124,6 +152,26 @@ export async function POST(request: Request) {
         );
       }
 
+      const existingContact = profileContact || phoneContact;
+      if (existingContact?.restriction_until && new Date(existingContact.restriction_until).getTime() > Date.now()) {
+        const unlockDate = new Date(existingContact.restriction_until).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        return NextResponse.json(
+          {
+            success: false,
+            restricted: true,
+            restrictionUntil: existingContact.restriction_until,
+            error: `This user opted out on WhatsApp (STOP command). Re-enrollment is locked for 7 days until ${unlockDate}. The user can unlock at any time by replying 'YES' in WhatsApp.`,
+          },
+          { status: 403 }
+        );
+      }
+
       const payload = {
         profile_id: String(profile.id),
         name: String(profile.full_name || "Registered user"),
@@ -134,10 +182,10 @@ export async function POST(request: Request) {
         is_subscribed: true,
         opted_in_at: now,
         opted_out_at: null,
+        restriction_until: null,
         created_by: user!.id,
         updated_at: now,
       };
-      const existingContact = profileContact || phoneContact;
       const mutation = existingContact
         ? supabaseAdmin.from("whatsapp_contacts").update(payload).eq("id", existingContact.id)
         : supabaseAdmin.from("whatsapp_contacts").insert(payload);
@@ -153,7 +201,7 @@ export async function POST(request: Request) {
 
     const { data: existing, error: lookupError } = await supabaseAdmin
       .from("whatsapp_contacts")
-      .select("id, profile_id")
+      .select("id, profile_id, restriction_until, opted_out_at")
       .eq("phone", phone)
       .maybeSingle();
     if (lookupError) throw lookupError;
@@ -161,6 +209,25 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, error: "This number belongs to a registered user. Record consent from the registered users list." },
         { status: 409 }
+      );
+    }
+
+    if (existing?.restriction_until && new Date(existing.restriction_until).getTime() > Date.now()) {
+      const unlockDate = new Date(existing.restriction_until).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          restricted: true,
+          restrictionUntil: existing.restriction_until,
+          error: `This number opted out on WhatsApp (STOP command). Re-enrollment is locked for 7 days until ${unlockDate}. The user can unlock at any time by replying 'YES' in WhatsApp.`,
+        },
+        { status: 403 }
       );
     }
 
@@ -173,6 +240,7 @@ export async function POST(request: Request) {
       is_subscribed: true,
       opted_in_at: now,
       opted_out_at: null,
+      restriction_until: null,
       created_by: user!.id,
       updated_at: now,
     };

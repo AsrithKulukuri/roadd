@@ -3,16 +3,19 @@
 import Image from "next/image";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
   Check,
   CheckCircle2,
   Clock3,
   ImagePlus,
   Loader2,
+  Lock,
   MessageSquareText,
   PauseCircle,
   Plus,
   Search,
   Send,
+  ShieldAlert,
   ShieldCheck,
   Smartphone,
   Upload,
@@ -45,6 +48,7 @@ type AudienceContact = {
   consentSource: string;
   optedInAt: string;
   optedOutAt: string;
+  restrictionUntil?: string;
 };
 
 type BroadcastContent = {
@@ -70,6 +74,7 @@ type ConsentTarget = {
   mode: "registered" | "resubscribe";
   id: string;
   name: string;
+  wasOptedOut?: boolean;
 };
 
 type AudienceResponse = {
@@ -124,6 +129,7 @@ export default function AdminBroadcastsPage() {
   const [consentSource, setConsentSource] = useState("");
   const [consentEvidence, setConsentEvidence] = useState("");
   const [consentConfirmed, setConsentConfirmed] = useState(false);
+  const [restrictedModalInfo, setRestrictedModalInfo] = useState<{ name: string; phone: string; unlockDate: string } | null>(null);
 
   const loadAudience = useCallback(async () => {
     const response = await fetch("/api/admin/whatsapp/audience", { cache: "no-store" });
@@ -456,6 +462,16 @@ export default function AdminBroadcastsPage() {
             Evidence or note
             <input value={externalEvidence} onChange={(event) => setExternalEvidence(event.target.value)} placeholder="Form ID or date" className="h-11 w-full rounded-lg border border-border-default bg-bg-primary px-3 outline-none focus:border-amber-primary" />
           </label>
+          <div className="lg:col-span-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+            <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
+              <ShieldAlert className="h-4 w-4 shrink-0" />
+              Compliance Notice & Disclaimer
+            </div>
+            <p className="leading-relaxed">
+              Every contact added here must have given explicit, affirmative consent to receive property alerts on WhatsApp. Contacts with an active 7-day <strong>STOP</strong> restriction cannot be manually enrolled until unlocked.
+            </p>
+          </div>
+
           <label className="flex items-start gap-2 text-sm text-text-secondary lg:col-span-3">
             <Checkbox checked={externalConfirmed} onCheckedChange={(checked) => setExternalConfirmed(checked === true)} className="mt-0.5" />
             This person explicitly agreed to receive ROAD WhatsApp updates and the consent source above is accurate.
@@ -503,25 +519,102 @@ export default function AdminBroadcastsPage() {
                 {visibleContacts.map((contact) => {
                   const selectableId = audienceTab === "registered" ? contact.contactId : contact.id;
                   const checked = Boolean(selectableId && selectedContactIds.has(selectableId));
+                  const isRestricted = Boolean(
+                    contact.restrictionUntil && new Date(contact.restrictionUntil).getTime() > Date.now()
+                  );
+                  const formattedUnlock = contact.restrictionUntil
+                    ? new Date(contact.restrictionUntil).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "";
+
                   return (
                     <div key={`${audienceTab}-${contact.id}`} className="flex gap-3 p-4 sm:items-center">
-                      <Checkbox checked={checked} disabled={!contact.eligible || !selectableId} onCheckedChange={() => selectableId && toggleContact(selectableId)} className="mt-1 sm:mt-0" aria-label={`Select ${contact.name}`} />
+                      <Checkbox
+                        checked={checked}
+                        disabled={!contact.eligible || !selectableId || isRestricted}
+                        onCheckedChange={() => selectableId && toggleContact(selectableId)}
+                        className="mt-1 sm:mt-0"
+                        aria-label={`Select ${contact.name}`}
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="truncate font-semibold text-text-primary">{contact.name}</span>
-                          <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", contact.eligible ? "bg-emerald-500/10 text-emerald-600" : contact.optedOutAt ? "bg-red-500/10 text-red-600" : "bg-slate-500/10 text-text-tertiary")}>{contact.eligible ? "Opted in" : contact.optedOutAt ? "Opted out" : "Consent needed"}</span>
+                          {isRestricted ? (
+                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold bg-red-500/15 text-red-600 border border-red-500/20">
+                              <Lock className="h-3 w-3" /> Locked (7d)
+                            </span>
+                          ) : (
+                            <span
+                              className={cn(
+                                "rounded-full px-2 py-0.5 text-[11px] font-bold",
+                                contact.eligible
+                                  ? "bg-emerald-500/10 text-emerald-600"
+                                  : contact.optedOutAt
+                                  ? "bg-amber-500/10 text-amber-700"
+                                  : "bg-slate-500/10 text-text-tertiary"
+                              )}
+                            >
+                              {contact.eligible ? "Opted in" : contact.optedOutAt ? "Opted out" : "Consent needed"}
+                            </span>
+                          )}
                         </div>
                         <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-secondary">
-                          <span className="flex items-center gap-1"><Smartphone className="h-3.5 w-3.5" /> {contact.maskedPhone}</span>
+                          <span className="flex items-center gap-1">
+                            <Smartphone className="h-3.5 w-3.5" /> {contact.maskedPhone}
+                          </span>
                           {contact.email && <span className="truncate">{contact.email}</span>}
-                          {contact.consentSource && <span>Source: {contact.consentSource}</span>}
+                          {isRestricted ? (
+                            <span className="text-red-500 font-medium">
+                              Restricted until {formattedUnlock} (Type YES to unlock)
+                            </span>
+                          ) : (
+                            contact.consentSource && <span>Source: {contact.consentSource}</span>
+                          )}
                         </div>
                       </div>
                       <div className="shrink-0">
-                        {contact.eligible && selectableId ? (
-                          <button type="button" onClick={() => unsubscribeContact(selectableId)} className="text-xs font-semibold text-red-600 hover:underline">Unsubscribe</button>
+                        {contact.eligible && selectableId && !isRestricted ? (
+                          <button
+                            type="button"
+                            onClick={() => unsubscribeContact(selectableId)}
+                            className="text-xs font-semibold text-red-600 hover:underline"
+                          >
+                            Unsubscribe
+                          </button>
+                        ) : isRestricted ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRestrictedModalInfo({
+                                name: contact.name,
+                                phone: contact.phone,
+                                unlockDate: formattedUnlock,
+                              })
+                            }
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:underline"
+                          >
+                            <Lock className="h-3 w-3" /> Restricted
+                          </button>
                         ) : contact.phone ? (
-                          <button type="button" onClick={() => setConsentTarget({ mode: contact.optedOutAt && selectableId ? "resubscribe" : "registered", id: contact.optedOutAt && selectableId ? selectableId : contact.id, name: contact.name })} className="text-xs font-semibold text-amber-primary hover:underline">Record consent</button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setConsentTarget({
+                                mode: contact.optedOutAt && selectableId ? "resubscribe" : "registered",
+                                id: contact.optedOutAt && selectableId ? selectableId : contact.id,
+                                name: contact.name,
+                                wasOptedOut: Boolean(contact.optedOutAt),
+                              })
+                            }
+                            className="text-xs font-semibold text-amber-primary hover:underline"
+                          >
+                            Record consent
+                          </button>
                         ) : (
                           <span className="text-xs text-text-tertiary">No number</span>
                         )}
@@ -668,10 +761,56 @@ export default function AdminBroadcastsPage() {
             <DialogTitle>Record WhatsApp consent</DialogTitle>
             <DialogDescription>{consentTarget?.name} becomes eligible only after the consent details are saved.</DialogDescription>
           </DialogHeader>
+
+          {consentTarget?.wasOptedOut && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
+                <ShieldAlert className="h-4 w-4 shrink-0" />
+                Compliance Warning & Disclaimer
+              </div>
+              <p className="leading-relaxed">
+                This recipient previously requested to <strong>STOP</strong> notifications. By re-enrolling this contact, you certify under platform guidelines that you have obtained fresh, explicit, and verifiable consent from the recipient.
+              </p>
+            </div>
+          )}
+
           <label className="space-y-1.5 text-sm font-semibold text-text-primary">Consent source<input value={consentSource} onChange={(event) => setConsentSource(event.target.value)} placeholder="Website form, phone call, event" className="h-11 w-full rounded-lg border border-border-default bg-bg-primary px-3 outline-none focus:border-amber-primary" /></label>
           <label className="space-y-1.5 text-sm font-semibold text-text-primary">Evidence or note<input value={consentEvidence} onChange={(event) => setConsentEvidence(event.target.value)} placeholder="Form ID, date, or reference" className="h-11 w-full rounded-lg border border-border-default bg-bg-primary px-3 outline-none focus:border-amber-primary" /></label>
           <label className="flex items-start gap-2 text-sm text-text-secondary"><Checkbox checked={consentConfirmed} onCheckedChange={(checked) => setConsentConfirmed(checked === true)} className="mt-0.5" />This person explicitly agreed to receive ROAD WhatsApp updates.</label>
           <DialogFooter><Button type="button" variant="outline" onClick={() => setConsentTarget(null)}>Cancel</Button><Button type="button" onClick={() => void saveConsent()} disabled={!consentConfirmed || consentSource.trim().length < 3 || isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save consent</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 7-Day Restriction Explanation Modal */}
+      <Dialog open={Boolean(restrictedModalInfo)} onOpenChange={(open) => !open && setRestrictedModalInfo(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="flex items-center gap-2 text-red-600">
+              <Lock className="h-5 w-5" />
+              <DialogTitle>7-Day Opt-Out Restriction Active</DialogTitle>
+            </div>
+            <div className="pt-2 space-y-3 text-sm text-text-secondary">
+              <p>
+                <strong>{restrictedModalInfo?.name}</strong> sent a <strong>STOP</strong> keyword on WhatsApp to unsubscribe from broadcast updates.
+              </p>
+              <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3.5 text-xs text-red-700 dark:text-red-300 space-y-2">
+                <p className="font-semibold text-red-800 dark:text-red-200">
+                  🔒 Restriction Active Until: {restrictedModalInfo?.unlockDate}
+                </p>
+                <p className="leading-relaxed">
+                  To prevent spam and protect recipient rights, manual admin enrollment is locked for 7 days after an opt-out.
+                </p>
+                <div className="pt-1 text-emerald-700 dark:text-emerald-300 font-medium">
+                  💡 <strong>How user can unlock earlier:</strong> The recipient can instantly resume at any time by replying <strong>&quot;YES&quot;</strong> in their WhatsApp chat with ROAD.
+                </div>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" onClick={() => setRestrictedModalInfo(null)}>
+              Understood
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
