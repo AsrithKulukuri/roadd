@@ -202,8 +202,8 @@ export function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      // On home page, trigger immediately when scrolling past hero search input (160px)
-      const threshold = pathname === "/" ? 160 : 20;
+      // On home page, trigger sticky search bar smoothly once scrolled past top banner area (70px)
+      const threshold = pathname === "/" ? 70 : 20;
       setIsScrolled(window.scrollY > threshold);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -327,18 +327,52 @@ export function Navbar() {
           "fixed top-0 left-0 right-0 z-[100] h-16 flex items-center transition-all duration-300 ease-in-out",
           isTransparent
             ? "bg-transparent border-b border-transparent shadow-none"
-            : "bg-slate-950/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-800/90 shadow-md",
-          isSearchPage
-            ? (isScrolled ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100")
-            : (isScrolled && "max-lg:opacity-0 max-lg:pointer-events-none")
+            : "bg-slate-950/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-800/90 shadow-md"
         )}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
-          <div className="flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 w-full">
+          <div className="flex items-center justify-between gap-2 sm:gap-3">
             {/* Left: Brand Logo */}
             <div className="shrink-0">
-              <Logo size="md" textColor="text-white" isDarkBg />
+              <div className={cn(pathname === "/" && isScrolled && "max-sm:hidden")}>
+                <Logo size="md" textColor="text-white" isDarkBg />
+              </div>
+              {pathname === "/" && isScrolled && (
+                <div className="sm:hidden">
+                  <Logo size="sm" showText={false} href="/" />
+                </div>
+              )}
             </div>
+
+            {/* Mobile / Tablet Compact Search Pill on Home Scroll (always visible when scrolled) */}
+            {pathname === "/" && isScrolled && (
+              <div
+                onClick={() => {
+                  router.push("/search?openFilters=true");
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="Search properties and projects"
+                className="flex-1 min-w-0 h-9.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 flex items-center px-3 gap-2 transition-all cursor-pointer shadow-xs lg:hidden"
+              >
+                <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className="text-xs text-slate-300 font-medium truncate flex-1 select-none">
+                  {navTypedText ? (navTypedText.toLowerCase().startsWith("search") ? navTypedText : `Search "${navTypedText}"...`) : 'Search location, project...'}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push("/search?openFilters=true");
+                  }}
+                  title="Open Filters"
+                  aria-label="Open Filters"
+                  className="w-6 h-6 rounded-full bg-slate-800 text-amber-500 flex items-center justify-center shrink-0 border border-slate-700 active:scale-90"
+                >
+                  <SlidersHorizontal strokeWidth={2.5} className="w-3 h-3 text-amber-500" />
+                </button>
+              </div>
+            )}
 
             {/* Center: Interactive Search Bar on Scroll OR Navigation Links */}
             <div ref={navDropdownRef} className="flex-1 min-w-0 max-w-5xl mx-2 sm:mx-4 hidden lg:flex items-center justify-center">

@@ -24,9 +24,10 @@ export function MobileStickySearchHeader() {
   const [isVisible, setIsVisible] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
-  // Hidden on admin, search page (which has its own header), and auth pages
+  // Hidden on admin, search page (which has its own header), auth pages, and home page (handled directly by Navbar)
   const isAdmin = pathname.startsWith("/admin");
   const isSearchPage = pathname === "/search" || pathname === "/properties";
+  const isHomePage = pathname === "/";
   const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password";
 
   // Cycle placeholder suggestions
@@ -43,22 +44,22 @@ export function MobileStickySearchHeader() {
 
   // Detect scroll position
   useEffect(() => {
-    if (isAdmin || isSearchPage || isAuthPage) {
+    if (isAdmin || isSearchPage || isAuthPage || isHomePage) {
       setIsVisible(false);
       return;
     }
 
     const handleScroll = () => {
-      const threshold = pathname === "/" ? 160 : 80;
+      const threshold = 80;
       setIsVisible(window.scrollY > threshold);
     };
 
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [pathname, isAdmin, isSearchPage, isAuthPage]);
+  }, [pathname, isAdmin, isSearchPage, isAuthPage, isHomePage]);
 
-  if (isAdmin || isSearchPage || isAuthPage) return null;
+  if (isAdmin || isSearchPage || isAuthPage || isHomePage) return null;
 
   const handlePillClick = () => {
     haptic.light();
