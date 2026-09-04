@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, Suspense } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { usePropertiesStore } from "@/stores/properties-store";
@@ -17,6 +17,18 @@ const AiAssistantWidget = dynamic(
   () => import("@/components/shared/ai-assistant-widget").then((m) => ({ default: m.AiAssistantWidget })),
   { ssr: false }
 );
+
+function ConditionalFooter() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isMapView =
+    (pathname === "/search" && searchParams.get("view") === "map") ||
+    (pathname === "/properties" && searchParams.get("view") === "map") ||
+    pathname === "/properties/map";
+
+  if (isMapView) return null;
+  return <Footer />;
+}
 
 export function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -57,7 +69,9 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
       <ContentElement className={`flex-1 ${isDetailPage ? "pb-0" : "pb-16 sm:pb-0"}`}>{children}</ContentElement>
       {!isAdmin && (
         <>
-          <Footer />
+          <Suspense fallback={null}>
+            <ConditionalFooter />
+          </Suspense>
           <Suspense fallback={null}>
             <AiAssistantWidget />
           </Suspense>

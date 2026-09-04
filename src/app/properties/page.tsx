@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense, useEffect } from "react";
+import { useState, useMemo, Suspense, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePropertiesStore } from "@/stores/properties-store";
@@ -41,7 +41,8 @@ export default function PropertiesPageWrapper() {
 function PropertiesPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
+  const initialViewMode = searchParams.get("view") === "map" ? "map" : "grid";
+  const [viewMode, setViewMode] = useState<"grid" | "map">(initialViewMode);
   const [sortBy, setSortBy] = useState<"relevant" | "price-asc" | "price-desc" | "newest">("relevant");
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState<number>(12);
@@ -58,14 +59,37 @@ function PropertiesPage() {
     fetchProperties();
   }, [fetchProperties]);
 
-  // Lock body scroll when map view is active so ONLY the map moves
+  // Keep viewMode in sync with URL searchParams
+  useEffect(() => {
+    const currentView = searchParams.get("view") === "map" ? "map" : "grid";
+    if (currentView !== viewMode) {
+      setViewMode(currentView);
+    }
+  }, [searchParams]);
+
+  const handleViewModeChange = useCallback((mode: "grid" | "map") => {
+    setViewMode(mode);
+    const newParams = new URLSearchParams(searchParams.toString());
+    if (mode === "map") {
+      newParams.set("view", "map");
+    } else {
+      newParams.delete("view");
+    }
+    const queryStr = newParams.toString();
+    router.replace(`/properties${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
+  }, [searchParams, router]);
+
+  // Lock body & document scroll when map view is active so ONLY the map moves
   useEffect(() => {
     if (viewMode === "map" && typeof window !== "undefined") {
+      document.documentElement.style.overflow = "hidden";
       document.body.style.overflow = "hidden";
     } else {
+      document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
     }
     return () => {
+      document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
     };
   }, [viewMode]);
@@ -345,13 +369,18 @@ function PropertiesPage() {
     : "AP homes for sale & real estate";
 
   return (
-    <div className="flex flex-col min-h-screen pt-16 pb-16 bg-slate-50/50 text-slate-900">
+    <div
+      className={cn(
+        "flex flex-col w-full bg-slate-50/50 text-slate-900 transition-all",
+        viewMode === "map" ? "h-[100dvh] max-h-[100dvh] overflow-hidden pt-16" : "min-h-screen pt-16 pb-16"
+      )}
+    >
       {/* Realtor.com Inspired Sticky Search Header & Filter Bar */}
       <RealtorSearchHeader
         filters={filters}
         onFilterChange={setFilters}
         viewMode={viewMode}
-        onViewModeChange={setViewMode}
+        onViewModeChange={handleViewModeChange}
         onOpenAllFilters={() => setIsFilterModalOpen(true)}
         totalResults={filteredProperties.length}
       />
@@ -375,7 +404,12 @@ function PropertiesPage() {
       )}
 
       {/* Main Content Area */}
-      <main className={cn("w-full transition-all", viewMode === "map" ? "mt-0" : "max-w-7xl mx-auto px-4 sm:px-6 mt-4")}>
+      <main
+        className={cn(
+          "w-full transition-all flex-1 min-h-0",
+          viewMode === "map" ? "mt-0 flex flex-col overflow-hidden h-full" : "max-w-7xl mx-auto px-4 sm:px-6 mt-4"
+        )}
+      >
         {/* Results Page Header Title & Control Bar (Grid View Only) */}
         {viewMode === "grid" && (
           <div className="mb-6 space-y-2">
@@ -425,9 +459,9 @@ function PropertiesPage() {
 
         {/* View Mode Rendering: Mobile Viewport Map Mode vs Grid View */}
         {viewMode === "map" ? (
-          <div>
-            {/* Mobile View: Fixed Viewport below sticky header so header & filter pills remain visible without overlapping map controls */}
-            <div className="md:hidden fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-white overflow-hidden flex flex-col">
+          <div className="flex-1 w-full h-full min-h-0 overflow-hidden relative">
+            {/* Mobile View: Fill full available height directly below header with zero page scroll */}
+            <div className="md:hidden w-full h-full min-h-0 overflow-hidden flex flex-col bg-white">
               <MapWrapper
                 filteredItems={filteredProperties}
                 activeFilters={filters}

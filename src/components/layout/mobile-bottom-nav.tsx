@@ -21,7 +21,10 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isMapView = (pathname === "/search" && searchParams.get("view") === "map") || pathname === "/properties/map";
+  const isMapView =
+    (pathname === "/search" && searchParams.get("view") === "map") ||
+    (pathname === "/properties" && searchParams.get("view") === "map") ||
+    pathname === "/properties/map";
 
   const savedPropertyIds = useFavoritesStore((state) => state.savedPropertyIds);
   const setSavedPropertyIds = useFavoritesStore((state) => state.setSavedPropertyIds);

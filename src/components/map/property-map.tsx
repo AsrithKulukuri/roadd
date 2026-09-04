@@ -1032,6 +1032,21 @@ export default function PropertyMap({
   const [blinkingPropertyId, setBlinkingPropertyId] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [showMapExplorer, setShowMapExplorer] = useState(false);
+
+  // Lock mobile body and document scroll when Map Explorer drawer is open
+  useEffect(() => {
+    if (showMapExplorer && typeof window !== "undefined" && window.innerWidth < 768) {
+      const origHtmlOverflow = document.documentElement.style.overflow;
+      const origBodyOverflow = document.body.style.overflow;
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.documentElement.style.overflow = origHtmlOverflow;
+        document.body.style.overflow = origBodyOverflow;
+      };
+    }
+  }, [showMapExplorer]);
+
   const [mapLayerType, setMapLayerType] = useState<"streets" | "hybrid" | "terrain">("streets");
   
   // Price Heatmap Mode State
@@ -1746,8 +1761,8 @@ export default function PropertyMap({
             "text-slate-900 z-[999] shadow-2xl flex flex-col justify-between transition-all duration-300 pointer-events-auto",
             // Desktop: sleek left sidebar panel with clean white background and light border
             "md:relative md:w-96 md:flex-shrink-0 md:h-full md:border-r md:border-slate-200 md:bg-white md:p-6 md:space-y-5 md:overflow-y-auto",
-            // Mobile: modern bottom drawer modal with rounded top in clean white
-            "fixed inset-x-0 bottom-0 max-h-[85vh] rounded-t-3xl border-t border-slate-200 bg-white/98 backdrop-blur-2xl p-5 space-y-4 overflow-y-auto",
+            // Mobile: modern bottom drawer modal with rounded top in clean white, with headroom so top header remains visible & overscroll contained
+            "fixed inset-x-0 bottom-0 max-h-[calc(100dvh-120px)] rounded-t-3xl border-t border-slate-200 bg-white p-5 space-y-4 overflow-y-auto overscroll-contain touch-pan-y",
             showMapExplorer ? "flex animate-in slide-in-from-bottom duration-300 md:animate-none" : "hidden"
           )}
         >
@@ -2334,7 +2349,10 @@ export default function PropertyMap({
           {/* Open Map Explorer Button (When Closed) - top-left on mobile, bottom-left above zoom on desktop */}
           {!showMapExplorer && (
             <button
-              onClick={() => setShowMapExplorer(true)}
+              onClick={() => {
+                setShowMapExplorer(true);
+                setShowPropertiesTray(false);
+              }}
               className="absolute top-3 left-3 md:bottom-[140px] md:top-auto md:left-3 z-[500] bg-white/95 backdrop-blur-sm text-slate-900 p-2 sm:px-3 sm:py-2 rounded-xl shadow-lg border border-slate-200 flex items-center gap-1.5 hover:bg-slate-50 transition-colors pointer-events-auto cursor-pointer"
             >
               <Compass className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
