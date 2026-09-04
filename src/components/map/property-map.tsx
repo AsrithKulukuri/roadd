@@ -2224,58 +2224,6 @@ export default function PropertyMap({
                 </div>
               </div>
             )}
-
-            {/* Map Layer Mode Switcher */}
-            <div className="bg-slate-50/90 p-1.5 rounded-xl border border-slate-200 space-y-1 shadow-xs">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 flex items-center gap-1">
-                <Layers3 className="w-3 h-3 text-amber-600" /> Map View Mode:
-              </label>
-              <div className="grid grid-cols-2 gap-1 text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setMapLayerType("streets")}
-                  className={`py-1.5 px-2 rounded-lg transition-all text-center cursor-pointer ${
-                    mapLayerType === "streets"
-                      ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
-                      : "text-slate-700 hover:bg-white hover:text-slate-950"
-                  }`}
-                >
-                  Clear Streets
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMapLayerType("hybrid")}
-                  className={`py-1.5 px-2 rounded-lg transition-all text-center cursor-pointer ${
-                    mapLayerType === "hybrid"
-                      ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
-                      : "text-slate-700 hover:bg-white hover:text-slate-950"
-                  }`}
-                >
-                  Satellite + Names
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Explore Hotspots */}
-            <div className="space-y-1.5 pt-1">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-600" /> Quick Jump Locality:
-              </label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {quickLocalityCoords.map((loc) => (
-                  <button
-                    key={loc.name}
-                    onClick={() => {
-                      handleFlyToLocality(loc.lat, loc.lng);
-                      setShowMapExplorer(false);
-                    }}
-                    className="px-2 py-1.5 rounded-xl bg-white hover:bg-amber-500 hover:text-slate-950 text-slate-700 text-xs font-semibold border border-slate-200 hover:border-amber-500 transition-all text-left truncate cursor-pointer shadow-xs"
-                  >
-                    📍 {loc.name}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
 
