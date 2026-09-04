@@ -162,15 +162,47 @@ const LOCALITY_BOUNDARIES: Record<string, LocalityBoundary> = {
 };
 
 const landmarkOverlays = [
-  { id: "s1", type: "school", name: "VP Siddhartha Public School", lat: 16.5020, lng: 80.6450, tag: "Top Rated School" },
-  { id: "s2", type: "school", name: "KCP Siddhartha Adarsh Residential", lat: 16.4880, lng: 80.6920, tag: "Premier School" },
-  { id: "s3", type: "school", name: "KL Deemed University", lat: 16.4419, lng: 80.6222, tag: "A++ University" },
-  { id: "h1", type: "hospital", name: "Ramesh Hospitals (Benz Circle)", lat: 16.5085, lng: 80.6495, tag: "Multi-Specialty Hospital" },
+  // Temples & Religious
+  { id: "t1", type: "temple", name: "Panakala Narasimha Temple", lat: 16.4420, lng: 80.5650, tag: "Historic Hill Temple" },
+  { id: "t2", type: "temple", name: "Kanaka Durga Temple", lat: 16.5152, lng: 80.6053, tag: "Famous Pilgrim Shrine" },
+  { id: "t3", type: "temple", name: "Gorantla Venkateswara Temple", lat: 16.3350, lng: 80.4210, tag: "Prominent Temple" },
+  { id: "t4", type: "temple", name: "Siva Temple (Pattabhipuram)", lat: 16.2950, lng: 80.4200, tag: "Colony Temple" },
+  { id: "t5", type: "temple", name: "Koritapadu Venkateswara Temple", lat: 16.3060, lng: 80.4220, tag: "Heritage Temple" },
+
+  // Churches & Shrines
+  { id: "c1", type: "church", name: "Gunadala Mary Matha Shrine", lat: 16.5320, lng: 80.6550, tag: "Celebrated Holy Shrine" },
+  { id: "c2", type: "church", name: "St. Peter's Cathedral", lat: 16.5118, lng: 80.6234, tag: "Historic Cathedral" },
+
+  // Hospitals
+  { id: "h1", type: "hospital", name: "Ramesh Hospitals", lat: 16.5085, lng: 80.6495, tag: "Multi-Specialty Hospital" },
   { id: "h2", type: "hospital", name: "Ayush Hospitals", lat: 16.5140, lng: 80.6610, tag: "Emergency Care" },
-  { id: "h3", type: "hospital", name: "AIIMS Mangalagiri", lat: 16.4380, lng: 80.5550, tag: "Premier Institute" },
+  { id: "h3", type: "hospital", name: "AIIMS Mangalagiri", lat: 16.4380, lng: 80.5550, tag: "Premier Medical Institute" },
+  { id: "h4", type: "hospital", name: "Manipal Hospital (Tadepalli)", lat: 16.4855, lng: 80.6125, tag: "Super Specialty Hospital" },
+  { id: "h5", type: "hospital", name: "Andhra Hospitals", lat: 16.5245, lng: 80.6312, tag: "Multi-Specialty Center" },
+  { id: "h6", type: "hospital", name: "Capital Hospital (Kanuru)", lat: 16.4912, lng: 80.6845, tag: "General Care Hospital" },
+  { id: "h7", type: "hospital", name: "Time Hospital (Auto Nagar)", lat: 16.4998, lng: 80.6685, tag: "Emergency & Trauma" },
+  { id: "h8", type: "hospital", name: "St. Joseph Hospital (Guntur)", lat: 16.3120, lng: 80.4280, tag: "Healthcare Institute" },
+
+  // Parks & Waterfront
+  { id: "p1", type: "park", name: "Rajiv Gandhi Park", lat: 16.5148, lng: 80.6142, tag: "City Waterfront Park" },
+  { id: "p2", type: "park", name: "Dr. K.L. Rao Park", lat: 16.5250, lng: 80.6010, tag: "Urban Park" },
+  { id: "p3", type: "park", name: "Brundavan Gardens (Guntur)", lat: 16.3195, lng: 80.4241, tag: "Public Garden & Park" },
+  { id: "p4", type: "park", name: "Bhavani Island", lat: 16.5210, lng: 80.5890, tag: "River Island Tourism" },
+
+  // Schools & Universities
+  { id: "s1", type: "school", name: "VP Siddhartha Public School", lat: 16.5020, lng: 80.6450, tag: "Top Rated School" },
+  { id: "s2", type: "school", name: "KCP Siddhartha Residential", lat: 16.4880, lng: 80.6920, tag: "Premier School" },
+  { id: "s3", type: "school", name: "KL Deemed University", lat: 16.4419, lng: 80.6222, tag: "A++ University" },
+  { id: "s4", type: "school", name: "VR Siddhartha Engineering", lat: 16.4835, lng: 80.6938, tag: "Top Engineering College" },
+  { id: "s5", type: "school", name: "Acharya Nagarjuna University", lat: 16.3775, lng: 80.5285, tag: "State University" },
+
+  // Transit & Major Hubs
   { id: "it1", type: "transit", name: "Medha IT Park", lat: 16.5350, lng: 80.7920, tag: "Tech Hub" },
-  { id: "it2", type: "transit", name: "Vijayawada Railway Junction", lat: 16.5180, lng: 80.6200, tag: "Transit Hub" },
-  { id: "it3", type: "transit", name: "Vijayawada International Airport", lat: 16.5300, lng: 80.7970, tag: "International Airport" },
+  { id: "it2", type: "transit", name: "Vijayawada Railway Junction", lat: 16.5180, lng: 80.6200, tag: "Major Railway Junction" },
+  { id: "it3", type: "transit", name: "Vijayawada Airport", lat: 16.5300, lng: 80.7970, tag: "International Airport" },
+  { id: "it4", type: "transit", name: "AP Secretariat (Velagapudi)", lat: 16.5412, lng: 80.5182, tag: "State Capital Secretariat" },
+  { id: "it5", type: "transit", name: "AP High Court (Nelapadu)", lat: 16.5215, lng: 80.5058, tag: "AP High Court" },
+  { id: "it6", type: "transit", name: "Guntur Railway Station", lat: 16.3052, lng: 80.4439, tag: "Major Railway Station" },
 ];
 
 const localityHeatmaps = [
@@ -195,18 +227,32 @@ function isPointInPolygon(point: { lat: number; lng: number }, polygon: L.LatLng
   return inside;
 }
 
-function getLandmarkIcon(type: string) {
+function getLandmarkIcon(type: string, name: string) {
   if (typeof window === "undefined" || !L || !L.divIcon) return undefined;
   
   let bg = "#3B82F6";
   let iconHtml = "🏫";
-  if (type === "hospital") {
-    bg = "#EF4444";
+  if (type === "temple") {
+    bg = "#EA580C"; // orange-600
+    iconHtml = "🛕";
+  } else if (type === "church") {
+    bg = "#7C3AED"; // purple-600
+    iconHtml = "⛪";
+  } else if (type === "hospital") {
+    bg = "#DC2626"; // red-600
     iconHtml = "🏥";
+  } else if (type === "park") {
+    bg = "#16A34A"; // green-600
+    iconHtml = "🌳";
   } else if (type === "transit") {
-    bg = "#10B981";
+    bg = "#0284C7"; // sky-600
     iconHtml = "⚡";
+  } else if (type === "school") {
+    bg = "#4F46E5"; // indigo-600
+    iconHtml = "🏫";
   }
+
+  const safeName = (name || "").replace(/"/g, "&quot;");
 
   return L.divIcon({
     className: "landmark-overlay-marker",
@@ -215,21 +261,24 @@ function getLandmarkIcon(type: string) {
         background: ${bg};
         color: #FFFFFF;
         padding: 3px 8px;
-        border-radius: 16px;
+        border-radius: 9999px;
         font-size: 11px;
         font-weight: 800;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        box-shadow: 0 4px 14px rgba(0,0,0,0.35);
         display: inline-flex;
         align-items: center;
-        gap: 3px;
-        border: 1.5px solid #FFFFFF;
+        gap: 4px;
+        border: 2px solid #FFFFFF;
         white-space: nowrap;
+        max-width: 170px;
+        cursor: pointer;
       ">
-        <span>${iconHtml}</span>
+        <span style="font-size: 12px; line-height: 1;">${iconHtml}</span>
+        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px;">${safeName}</span>
       </div>
     `,
-    iconSize: [40, 24],
-    iconAnchor: [20, 12],
+    iconSize: [120, 26],
+    iconAnchor: [60, 13],
   });
 }
 
@@ -1051,6 +1100,8 @@ export default function PropertyMap({
   
   // Price Heatmap Mode State
   const [showHeatmap, setShowHeatmap] = useState(false);
+  // Show Landmarks Toggle State (Default OFF - only shows when enabled by user)
+  const [showLandmarks, setShowLandmarks] = useState(false);
 
   // Master locations & sublocations from admin
   const { cities: adminCities, fetchLocations } = useLocationsStore();
@@ -2205,6 +2256,42 @@ export default function PropertyMap({
               )}
             </div>
 
+            {/* SHOW LANDMARKS TOGGLE */}
+            <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 space-y-2 shadow-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700">
+                    <Landmark className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-extrabold text-slate-900">Show Landmarks</div>
+                    <div className="text-[10px] text-slate-500">Temples, churches, hospitals & parks</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={showLandmarks}
+                  onClick={() => setShowLandmarks((prev) => !prev)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    showLandmarks ? "bg-amber-500" : "bg-slate-300"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                      showLandmarks ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+              {showLandmarks && (
+                <div className="pt-1.5 text-[11px] text-slate-600 border-t border-slate-200/70 flex items-center justify-between">
+                  <span className="font-bold text-amber-700">✨ {landmarkOverlays.length} Landmarks Visible</span>
+                  <span className="text-[10px] text-slate-400">Tap pins to inspect</span>
+                </div>
+              )}
+            </div>
+
             {/* Selected Property Distance Display Card */}
             {selectedProperty && position && (
               <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-3 text-xs space-y-1.5 animate-in fade-in shadow-xs">
@@ -2740,6 +2827,36 @@ export default function PropertyMap({
                   </Popup>
                 </Circle>
               ))}
+
+            {/* INTERACTIVE LANDMARKS & PUBLIC PLACES (Temples, Churches, Hospitals, Parks, Schools, Transit) */}
+            {showLandmarks &&
+              landmarkOverlays.map((landmark) => {
+                const icon = getLandmarkIcon(landmark.type, landmark.name);
+                return (
+                  <Marker
+                    key={landmark.id}
+                    position={[landmark.lat, landmark.lng]}
+                    icon={icon}
+                  >
+                    <Popup className="landmark-map-popup">
+                      <div className="p-2 text-xs space-y-1 min-w-[180px]">
+                        <div className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+                          <span>
+                            {landmark.type === "temple" ? "🛕" :
+                             landmark.type === "church" ? "⛪" :
+                             landmark.type === "hospital" ? "🏥" :
+                             landmark.type === "park" ? "🌳" :
+                             landmark.type === "school" ? "🏫" : "⚡"}
+                          </span>
+                          <span>{landmark.name}</span>
+                        </div>
+                        <div className="text-amber-600 font-semibold text-xs">{landmark.tag}</div>
+                        <div className="text-[11px] text-slate-500 capitalize">Category: {landmark.type}</div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
 
 
             {/* Render Searched Locality Highlight Boundary (Auto Nagar, Benz Circle, Poranki, etc.) */}
