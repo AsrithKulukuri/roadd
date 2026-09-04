@@ -1760,18 +1760,18 @@ export default function PropertyMap({
           className={cn(
             "text-slate-900 z-[9999] shadow-2xl flex flex-col transition-all duration-300 pointer-events-auto",
             // Desktop: sleek left sidebar panel with clean white background and light border
-            "md:relative md:w-96 md:flex-shrink-0 md:h-full md:border-r md:border-slate-200 md:bg-white md:p-6 md:space-y-5 md:overflow-y-auto",
-            // Mobile: modern bottom drawer modal with rounded top in clean white, with top headroom so header remains visible & overscroll contained
-            "fixed inset-x-0 bottom-0 max-h-[85vh] rounded-t-3xl border-t border-slate-200 bg-white p-4 pt-2 overflow-y-auto overscroll-contain touch-pan-y shadow-2xl",
+            "md:relative md:w-96 md:flex-shrink-0 md:h-full md:border-r md:border-slate-200 md:bg-white md:overflow-hidden",
+            // Mobile: modern bottom drawer modal with rounded top in clean white, overflow-hidden prevents any bleed
+            "fixed inset-x-0 bottom-0 max-h-[85vh] rounded-t-3xl border-t border-slate-200 bg-white shadow-2xl overflow-hidden",
             showMapExplorer ? "flex animate-in slide-in-from-bottom duration-300 md:animate-none" : "hidden"
           )}
         >
-          {/* STICKY TOP HEADER of Drawer on Mobile & Sidebar on Desktop */}
-          <div className="sticky top-0 bg-white z-30 pb-2.5 pt-1 border-b border-slate-100 shrink-0">
+          {/* 1. PERMANENT TOP HEADER - Fixed at top of drawer, never scrolls, zero gap */}
+          <div className="bg-white border-b border-slate-100 px-4 sm:px-6 pt-3 pb-3 shrink-0 select-none">
             {/* Mobile pull handle */}
             <div
               onClick={() => setShowMapExplorer(false)}
-              className="w-12 h-1.5 bg-slate-300 hover:bg-slate-400 rounded-full mx-auto mb-2 md:hidden cursor-pointer shrink-0"
+              className="w-10 h-1 bg-slate-300 hover:bg-slate-400 rounded-full mx-auto mb-2.5 md:hidden cursor-pointer shrink-0 transition-colors"
             />
 
             <div className="flex items-center justify-between">
@@ -1788,17 +1788,22 @@ export default function PropertyMap({
                   </p>
                 </div>
               </div>
+
+              {/* Clean Circular Close Button */}
               <button
+                type="button"
                 onClick={() => setShowMapExplorer(false)}
-                className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl hover:text-slate-950 transition-colors cursor-pointer border border-slate-200"
-                title="Close"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-500 hover:text-slate-900 transition-all flex items-center justify-center cursor-pointer border border-slate-200/80 shadow-xs shrink-0"
+                title="Close Map Explorer"
+                aria-label="Close Map Explorer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 stroke-[2.5]" />
               </button>
             </div>
           </div>
 
-          <div className="space-y-4 pt-3">
+          {/* 2. SCROLLABLE BODY - Content scrolls strictly below header with zero bleed */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 overscroll-contain touch-pan-y no-scrollbar">
 
             {/* Entity Type Filter Buttons (All, Properties, Projects) */}
             <div className="space-y-1.5 shrink-0">
