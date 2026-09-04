@@ -13,12 +13,14 @@ import {
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart, ChevronLeft, ChevronRight, Plus, Share2 } from "lucide-react";
+import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart, ChevronLeft, ChevronRight, Plus, Share2, Home, Building2, Landmark, Trees, Briefcase } from "lucide-react";
 import L from "leaflet";
 import Link from "next/link";
 import { PropertyCard } from "@/components/property/property-card";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
+import { useLocationsStore } from "@/stores/locations-store";
+import { Slider } from "@/components/ui/slider";
 import { formatPriceCompact, formatINR, cn } from "@/lib/utils";
 import { useSearchParams, useRouter } from "next/navigation";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
@@ -536,6 +538,75 @@ function checkPropertyMatchesQuery(p: SharedMapItem, query: string): boolean {
   return searchableText.includes(rawTerm);
 }
 
+function itemMatchesSubtype(p: any, typeKey: string): boolean {
+  if (!typeKey || typeKey === "all") return true;
+
+  const pType = (p.propertyType || "").toLowerCase();
+  const subType = (p.subtype || "").toLowerCase();
+  const title = (p.title || p.name || "").toLowerCase();
+  const desc = (p.description || "").toLowerCase();
+  const isProj = Boolean(p._isProject);
+  const origProj = p._originalProjectData;
+
+  switch (typeKey) {
+    case "flats":
+    case "apartments":
+      if (isProj) {
+        return pType === "apartment" || title.includes("apartment") || title.includes("flat") || title.includes("tower");
+      }
+      return pType === "apartment" || subType.includes("flat") || title.includes("flat") || title.includes("apartment");
+
+    case "houses":
+      if (isProj) return false;
+      return pType === "independent-house" || subType.includes("house") || title.includes("house");
+
+    case "villas":
+      if (isProj) {
+        return pType === "villa" || title.includes("villa");
+      }
+      return pType === "villa" || subType.includes("villa") || title.includes("villa");
+
+    case "plots":
+      if (isProj) {
+        return pType === "venture" || title.includes("plot") || title.includes("layout") || title.includes("venture");
+      }
+      return pType === "residential-land" || pType === "commercial-lands" || subType.includes("plot") || subType.includes("land") || title.includes("plot");
+
+    case "agriculture":
+      if (isProj) return false;
+      return pType === "agricultural-lands" || pType === "farmhouse" || subType.includes("farm") || title.includes("agri") || title.includes("farm") || desc.includes("agriculture");
+
+    case "crda":
+      if (isProj) {
+        return pType === "venture" || Boolean(origProj?.crdaApproved) || Boolean(p.crdaApproved) || title.includes("crda") || desc.includes("crda");
+      }
+      return title.includes("crda") || desc.includes("crda");
+
+    case "gated": {
+      const hasGatedAmenity = Array.isArray(p.amenities) && p.amenities.some((a: unknown) => {
+        if (typeof a === "string") return a.toLowerCase().includes("gated");
+        if (a && typeof a === "object" && "name" in a && typeof (a as any).name === "string") {
+          return (a as any).name.toLowerCase().includes("gated");
+        }
+        return false;
+      });
+      if (isProj) {
+        return Boolean(origProj?.isGatedCommunity) || Boolean(p.isGatedCommunity) || title.includes("gated") || desc.includes("gated") || hasGatedAmenity;
+      }
+      return title.includes("gated") || desc.includes("gated") || hasGatedAmenity;
+    }
+
+    case "commercial":
+      if (isProj) {
+        return pType.includes("commercial") || title.includes("commercial");
+      }
+      return pType.includes("commercial") || pType === "shops" || pType === "buildings" || title.includes("commercial") || title.includes("shop");
+
+    default:
+      return true;
+  }
+}
+
 function calculateDistanceStr(userPos: L.LatLng, propLat: number, propLng: number) {
   if (!userPos || !propLat || !propLng) return "";
   const userLatLng = L.latLng(userPos.lat, userPos.lng);
@@ -737,12 +808,12 @@ function MapCardSkeleton() {
 
 function SidebarCardSkeleton() {
   return (
-    <div className="p-2 rounded-xl bg-slate-800/50 border border-slate-700/50 flex items-center justify-between gap-2 animate-pulse">
+    <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2 animate-pulse">
       <div className="flex-1 space-y-2">
-        <div className="h-3 bg-slate-700 rounded w-3/4"></div>
-        <div className="h-2 bg-slate-700 rounded w-1/2"></div>
+        <div className="h-3 bg-slate-200 rounded w-3/4"></div>
+        <div className="h-2 bg-slate-200 rounded w-1/2"></div>
       </div>
-      <div className="h-3 bg-slate-700 rounded w-16"></div>
+      <div className="h-3 bg-slate-200 rounded w-16"></div>
     </div>
   )
 }
@@ -783,10 +854,14 @@ function MapViewportListener({
 // Debounced version of the viewport listener with change detection
 function MapViewportListenerDebounced({
   mapProperties,
+  displayedProperties,
   onVisibleItemsChange,
+  onVisibleAreaChange,
 }: {
   mapProperties: SharedMapItem[];
+  displayedProperties?: SharedMapItem[];
   onVisibleItemsChange?: (visibleIds: string[]) => void;
+  onVisibleAreaChange?: (visibleIds: string[]) => void;
 }) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastVisibleKeyRef = useRef<string>("");
@@ -799,8 +874,22 @@ function MapViewportListenerDebounced({
   const scheduleUpdate = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      if (!onVisibleItemsChange || !map) return;
+      if (!map) return;
       const bounds = map.getBounds();
+
+      // 1. Calculate items in the visible area before subtype filter for real area counts
+      const areaSource = displayedProperties || mapProperties;
+      const areaVisibleIds = areaSource
+        .filter((p) => {
+          const coords = resolvePropertyMapCoords(p);
+          const latLng = L.latLng(coords.lat, coords.lng);
+          return bounds.contains(latLng);
+        })
+        .map((p) => p.id);
+
+      onVisibleAreaChange?.(areaVisibleIds);
+
+      // 2. Currently active filtered items in viewport
       const visibleIds = mapProperties
         .filter((p) => {
           const coords = resolvePropertyMapCoords(p);
@@ -808,14 +897,16 @@ function MapViewportListenerDebounced({
           return bounds.contains(latLng);
         })
         .map((p) => p.id);
-      
-      const nextKey = visibleIds.join(",");
-      if (nextKey !== lastVisibleKeyRef.current) {
-        lastVisibleKeyRef.current = nextKey;
-        onVisibleItemsChange(visibleIds);
+
+      if (onVisibleItemsChange) {
+        const nextKey = visibleIds.join(",");
+        if (nextKey !== lastVisibleKeyRef.current) {
+          lastVisibleKeyRef.current = nextKey;
+          onVisibleItemsChange(visibleIds);
+        }
       }
     }, 250);
-  }, [map, mapProperties, onVisibleItemsChange]);
+  }, [map, mapProperties, displayedProperties, onVisibleItemsChange, onVisibleAreaChange]);
 
   // Initial trigger
   useEffect(() => {
@@ -826,7 +917,17 @@ function MapViewportListenerDebounced({
   return null;
 }
 
-export default function PropertyMap({ filteredItems, userLocation: externalUserLocation, onVisibleItemsChange, containerHeight }: PropertyMapProps = {}) {
+export default function PropertyMap({
+  filteredItems,
+  userLocation: externalUserLocation,
+  onVisibleItemsChange,
+  containerHeight,
+  entityTypeFilter,
+  onEntityTypeFilterChange,
+  counts,
+  activeFilters,
+  onFiltersChange,
+}: PropertyMapProps = {}) {
   const router = useRouter();
   const { openProject } = useProjectOpenGuard();
   const searchParams = useSearchParams();
@@ -936,11 +1037,173 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   // Price Heatmap Mode State
   const [showHeatmap, setShowHeatmap] = useState(false);
 
-  // Commute Time Radius State (0 = disabled, 15 = 15 mins, 30 = 30 mins)
-  const [maxCommuteMins, setMaxCommuteMins] = useState<number>(0);
+  // Master locations & sublocations from admin
+  const { cities: adminCities, fetchLocations } = useLocationsStore();
 
-  // Landmark Overlays State (School / Hospital / Transit)
-  const [activeLandmarkTypes, setActiveLandmarkTypes] = useState<string[]>([]);
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
+
+  // Selected Location (City) & Sublocation (Locality) in Map Explorer
+  const [selectedMapCity, setSelectedMapCity] = useState<string | null>(() => {
+    return activeFilters?.cities?.[0] || null;
+  });
+  const [selectedMapLocality, setSelectedMapLocality] = useState<string | null>(() => {
+    return activeFilters?.localities?.[0] || null;
+  });
+  const [localitySearchText, setLocalitySearchText] = useState<string>("");
+
+  // Sync with activeFilters from top filter box
+  useEffect(() => {
+    if (activeFilters) {
+      const topCity = activeFilters.cities?.[0] || null;
+      const topLoc = activeFilters.localities?.[0] || null;
+      setSelectedMapCity((prev) => (prev !== topCity ? topCity : prev));
+      setSelectedMapLocality((prev) => (prev !== topLoc ? topLoc : prev));
+    }
+  }, [activeFilters?.cities, activeFilters?.localities]);
+
+  // Price Range Slider State in Map Explorer [minPrice, maxPrice]
+  const [mapPriceRange, setMapPriceRange] = useState<[number, number]>(() => {
+    if (activeFilters?.budget) return activeFilters.budget;
+    if (parsedBudget) return parsedBudget;
+    return [0, 100000000];
+  });
+
+  useEffect(() => {
+    if (activeFilters?.budget) {
+      setMapPriceRange((prev) => {
+        if (prev[0] !== activeFilters.budget[0] || prev[1] !== activeFilters.budget[1]) {
+          return activeFilters.budget;
+        }
+        return prev;
+      });
+    } else if (parsedBudget) {
+      setMapPriceRange(parsedBudget);
+    }
+  }, [activeFilters?.budget, parsedBudget]);
+
+  const handleBudgetSelect = useCallback((range: [number, number]) => {
+    setMapPriceRange(range);
+    if (onFiltersChange) {
+      onFiltersChange((prev) => ({
+        ...prev,
+        budget: range,
+      }));
+    }
+  }, [onFiltersChange]);
+
+  const flyToLocation = useCallback((cityName: string) => {
+    if (!mapRef.current) return;
+    const qLower = cityName.toLowerCase().trim();
+    if (qLower.includes("vijayawada")) {
+      mapRef.current.flyTo([16.5062, 80.6480], 12, { duration: 1.2 });
+      return;
+    }
+    if (qLower.includes("guntur")) {
+      mapRef.current.flyTo([16.3067, 80.4365], 12, { duration: 1.2 });
+      return;
+    }
+    if (qLower.includes("amaravati")) {
+      mapRef.current.flyTo([16.5131, 80.5165], 12, { duration: 1.2 });
+      return;
+    }
+    const match = mapProperties.find((p) => (p.location?.city || "").toLowerCase().includes(qLower));
+    if (match) {
+      const coords = resolvePropertyMapCoords(match);
+      mapRef.current.flyTo([coords.lat, coords.lng], 12, { duration: 1.2 });
+    }
+  }, [mapProperties]);
+
+  const flyToSublocation = useCallback((subName: string, parentCity?: string | null) => {
+    if (!mapRef.current) return;
+    const qLower = subName.toLowerCase().trim();
+
+    if (LOCALITY_BOUNDARIES[qLower]) {
+      const b = LOCALITY_BOUNDARIES[qLower];
+      try {
+        const poly = L.polygon(b.bounds);
+        mapRef.current.fitBounds(poly.getBounds(), { padding: [40, 40], maxZoom: 15, duration: 1.2 });
+        return;
+      } catch {}
+    }
+
+    const quick = quickLocalityCoords.find((k) => k.name.toLowerCase() === qLower);
+    if (quick) {
+      mapRef.current.flyTo([quick.lat, quick.lng], 15, { duration: 1.2 });
+      return;
+    }
+
+    const match = mapProperties.find((p) => {
+      const pLoc = (p.location?.locality || "").toLowerCase();
+      const pAddr = (p.location?.address || "").toLowerCase();
+      return pLoc.includes(qLower) || pAddr.includes(qLower);
+    });
+    if (match) {
+      const coords = resolvePropertyMapCoords(match);
+      mapRef.current.flyTo([coords.lat, coords.lng], 15, { duration: 1.2 });
+      return;
+    }
+
+    if (parentCity) {
+      flyToLocation(parentCity);
+    }
+  }, [mapProperties, flyToLocation]);
+
+  const handleSelectCity = useCallback((cityName: string | null) => {
+    if (selectedMapCity === cityName || cityName === null) {
+      setSelectedMapCity(null);
+      setSelectedMapLocality(null);
+      setLocalitySearchText("");
+      if (onFiltersChange) {
+        onFiltersChange((prev) => ({
+          ...prev,
+          cities: [],
+          localities: [],
+          query: "",
+        }));
+      }
+    } else {
+      setSelectedMapCity(cityName);
+      setSelectedMapLocality(null);
+      setLocalitySearchText("");
+      flyToLocation(cityName);
+      if (onFiltersChange) {
+        onFiltersChange((prev) => ({
+          ...prev,
+          cities: [cityName],
+          localities: [],
+          query: "",
+        }));
+      }
+    }
+  }, [selectedMapCity, flyToLocation, onFiltersChange]);
+
+  const handleSelectLocality = useCallback((subName: string) => {
+    if (selectedMapLocality?.toLowerCase() === subName.toLowerCase()) {
+      setSelectedMapLocality(null);
+      if (onFiltersChange) {
+        onFiltersChange((prev) => ({
+          ...prev,
+          localities: [],
+        }));
+      }
+    } else {
+      setSelectedMapLocality(subName);
+      flyToSublocation(subName, selectedMapCity);
+      if (onFiltersChange) {
+        onFiltersChange((prev) => {
+          const parentCity = selectedMapCity || (adminCities.find((c) => c.sublocations?.some((s) => s.name.toLowerCase() === subName.toLowerCase()))?.name);
+          return {
+            ...prev,
+            cities: parentCity ? [parentCity] : prev.cities,
+            localities: [subName],
+            query: "",
+          };
+        });
+      }
+    }
+  }, [selectedMapLocality, selectedMapCity, flyToSublocation, onFiltersChange, adminCities]);
 
   // AP Stamp Duty Calculator Modal State
   const [showCalculatorModal, setShowCalculatorModal] = useState(false);
@@ -968,13 +1231,107 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   const [mapDataLayer, setMapDataLayer] = useState<"none" | "hotness" | "dom" | "sqft" | "yearbuilt" | "neighborhood">("none");
 
   // Entity type pill filter on map (All / Properties / Projects)
-  const [listingTypeFilter, setListingTypeFilter] = useState<"all" | "properties" | "projects">("all");
+  const [internalListingTypeFilter, setInternalListingTypeFilter] = useState<"all" | "properties" | "projects">("all");
+  
+  const listingTypeFilter = entityTypeFilter !== undefined ? entityTypeFilter : internalListingTypeFilter;
 
-  // Active Locality Highlight Boundary (Dynamic for ANY searched location!)
+  const setListingTypeFilter = useCallback((newType: "all" | "properties" | "projects") => {
+    setInternalListingTypeFilter(newType);
+    if (onEntityTypeFilterChange) {
+      onEntityTypeFilterChange(newType);
+    }
+  }, [onEntityTypeFilterChange]);
+
+  // Property / Project Subtype filter state (e.g. "flats", "villas", "plots", "crda", etc.)
+  const [selectedSubtype, setSelectedSubtype] = useState<string | null>(() => {
+    if (activeFilters?.gatedCommunity) return "gated";
+    if (activeFilters?.propertyType && activeFilters.propertyType.length > 0) {
+      const pt = activeFilters.propertyType[0];
+      if (pt === "apartment") return "flats";
+      if (pt === "villa") return "villas";
+      if (pt === "residential-land") return "plots";
+      if (pt === "commercial-spaces") return "commercial";
+      if (pt === "farmhouse") return "farmhouses";
+    }
+    return null;
+  });
+
+  // Sync subtype with activeFilters from top filter box
+  useEffect(() => {
+    if (activeFilters) {
+      if (activeFilters.gatedCommunity) {
+        setSelectedSubtype("gated");
+      } else if (activeFilters.propertyType && activeFilters.propertyType.length > 0) {
+        const pt = activeFilters.propertyType[0];
+        if (pt === "apartment") setSelectedSubtype("flats");
+        else if (pt === "villa") setSelectedSubtype("villas");
+        else if (pt === "residential-land") setSelectedSubtype("plots");
+        else if (pt === "commercial-spaces") setSelectedSubtype("commercial");
+        else if (pt === "farmhouse") setSelectedSubtype("farmhouses");
+      } else if (!activeFilters.gatedCommunity && (!activeFilters.propertyType || activeFilters.propertyType.length === 0)) {
+        setSelectedSubtype(null);
+      }
+    }
+  }, [activeFilters?.gatedCommunity, activeFilters?.propertyType]);
+
+  const handleSubtypeSelect = useCallback((key: string) => {
+    const isCurrent = selectedSubtype === key;
+    const nextKey = isCurrent ? null : key;
+    setSelectedSubtype(nextKey);
+
+    if (onFiltersChange) {
+      onFiltersChange((prev) => {
+        let propType: string[] = [];
+        let isGated = false;
+
+        if (nextKey === "flats" || nextKey === "apartments") {
+          propType = ["apartment"];
+        } else if (nextKey === "villas") {
+          propType = ["villa"];
+        } else if (nextKey === "plots" || nextKey === "open_plots") {
+          propType = ["residential-land"];
+        } else if (nextKey === "commercial") {
+          propType = ["commercial-spaces"];
+        } else if (nextKey === "farmhouses") {
+          propType = ["farmhouse"];
+        } else if (nextKey === "gated" || nextKey === "gated_community") {
+          isGated = true;
+        }
+
+        return {
+          ...prev,
+          propertyType: propType,
+          gatedCommunity: isGated,
+        };
+      });
+    }
+  }, [selectedSubtype, onFiltersChange]);
+
+  const handleResetType = useCallback(() => {
+    setSelectedSubtype(null);
+    if (onFiltersChange) {
+      onFiltersChange((prev) => ({
+        ...prev,
+        propertyType: [],
+        gatedCommunity: false,
+      }));
+    }
+  }, [onFiltersChange]);
+
+  // Reset subtype when user switches between All / Properties / Projects
+  useEffect(() => {
+    setSelectedSubtype(null);
+  }, [listingTypeFilter]);
+
+  // Track item IDs visible in current map viewport for real selected area counts
+  const [visibleAreaIds, setVisibleAreaIds] = useState<string[] | null>(null);
+
+  // Active Locality Highlight Boundary (Dynamic for ANY searched or selected location!)
   const activeLocalityBoundary = useMemo(() => {
-    if (!mapSearchInput.trim()) return null;
-    return getDynamicLocalityBoundary(mapSearchInput, mapProperties);
-  }, [mapSearchInput, mapProperties]);
+    const term = selectedMapLocality || selectedMapCity || mapSearchInput;
+    if (!term.trim()) return null;
+    return getDynamicLocalityBoundary(term, mapProperties);
+  }, [selectedMapLocality, selectedMapCity, mapSearchInput, mapProperties]);
 
   // Fly map to locality boundary when detected or fit bounds to displayed properties
   useEffect(() => {
@@ -1016,19 +1373,35 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
       });
     }
 
-    // Commute Radius Filter (approx 15 mins drive = ~8 km radius from user pin)
-    if (maxCommuteMins > 0 && position) {
-      const maxMeters = maxCommuteMins * 600; // 15 mins ~ 9,000 meters
-      const userLatLng = L.latLng(position.lat, position.lng);
+    // Location (City) filter from Map Explorer
+    if (selectedMapCity) {
+      const cityQ = selectedMapCity.toLowerCase().trim();
       source = source.filter((p) => {
-        if (!p.location?.latitude || !p.location?.longitude) return false;
-        const propLatLng = L.latLng(p.location.latitude, p.location.longitude);
-        return userLatLng.distanceTo(propLatLng) <= maxMeters;
+        const pCity = (p.location?.city || "").toLowerCase();
+        const pAddr = (p.location?.address || "").toLowerCase();
+        return pCity.includes(cityQ) || pAddr.includes(cityQ);
       });
     }
 
-    // Budget Filter when loaded via direct URL or standalone without filteredItems
-    if (parsedBudget && !filteredItems) {
+    // Sublocation (Locality) filter from Map Explorer
+    if (selectedMapLocality) {
+      const locQ = selectedMapLocality.toLowerCase().trim();
+      source = source.filter((p) => {
+        const pLoc = (p.location?.locality || "").toLowerCase();
+        const pAddr = (p.location?.address || "").toLowerCase();
+        const pTitle = (p.title || "").toLowerCase();
+        return pLoc.includes(locQ) || pAddr.includes(locQ) || pTitle.includes(locQ);
+      });
+    }
+
+    // Price Range Slider Filter from Map Explorer
+    if (mapPriceRange[0] > 0 || mapPriceRange[1] < 100000000) {
+      source = source.filter((p) => {
+        const price = Number(p.price || 0);
+        if (price === 0) return true; // Price on request
+        return price >= mapPriceRange[0] && price <= mapPriceRange[1];
+      });
+    } else if (parsedBudget && !filteredItems) {
       source = source.filter((p) => {
         const price = Number(p.price || 0);
         return price >= parsedBudget[0] && price <= parsedBudget[1];
@@ -1040,25 +1413,123 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
     }
 
     return source.filter((p) => checkPropertyMatchesQuery(p, mapSearchInput));
-  }, [mapProperties, filteredItems, drawPolygonPoints, maxCommuteMins, position, mapSearchInput]);
+  }, [mapProperties, filteredItems, drawPolygonPoints, selectedMapCity, selectedMapLocality, mapPriceRange, parsedBudget, mapSearchInput]);
+
+  // Only locations selected on Home page (isHeroPill === true)
+  const homeCities = useMemo(() => {
+    const pills = adminCities.filter((c) => c.isHeroPill);
+    return pills.length > 0 ? pills : adminCities.slice(0, 3);
+  }, [adminCities]);
+
+  // Active sublocations based on selectedMapCity and homeCities
+  const activeSublocations = useMemo(() => {
+    if (selectedMapCity) {
+      const cityObj = homeCities.find((c) => c.name.toLowerCase() === selectedMapCity.toLowerCase());
+      return cityObj?.sublocations || [];
+    }
+    return homeCities.flatMap((c) => c.sublocations || []);
+  }, [selectedMapCity, homeCities]);
+
+  // Filtered sublocations by user search input
+  const displayedSublocations = useMemo(() => {
+    if (!localitySearchText.trim()) return activeSublocations;
+    const q = localitySearchText.toLowerCase().trim();
+    return activeSublocations.filter((sub) =>
+      sub.name.toLowerCase().includes(q) || (sub.tagline && sub.tagline.toLowerCase().includes(q))
+    );
+  }, [activeSublocations, localitySearchText]);
+
+  // Count matching properties in this sublocation
+  const getSublocationPropertyCount = useCallback((subName: string) => {
+    const q = subName.toLowerCase().trim();
+    return displayedProperties.filter((p) => {
+      const pLoc = (p.location?.locality || "").toLowerCase();
+      const pAddr = (p.location?.address || "").toLowerCase();
+      const pTitle = (p.title || "").toLowerCase();
+      return pLoc.includes(q) || pAddr.includes(q) || pTitle.includes(q);
+    }).length;
+  }, [displayedProperties]);
 
   const selectedProperty = useMemo(() => {
     return displayedProperties.find((p) => p.id === selectedPropertyId);
   }, [displayedProperties, selectedPropertyId]);
 
-  const toggleLandmarkFilter = (type: string) => {
-    setActiveLandmarkTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
-    );
-  };
 
-  // Entity type filter applied on top of displayedProperties
+  // Entity type filter & subtype filter applied on top of displayedProperties
   const displayedPropertiesFiltered = useMemo(() => {
-    if (listingTypeFilter === "all") return displayedProperties;
-    if (listingTypeFilter === "properties") return displayedProperties.filter((p: any) => !p._isProject);
-    if (listingTypeFilter === "projects") return displayedProperties.filter((p: any) => Boolean(p._isProject));
-    return displayedProperties;
-  }, [displayedProperties, listingTypeFilter]);
+    let list = displayedProperties;
+    if (listingTypeFilter === "properties") list = list.filter((p: any) => !p._isProject);
+    else if (listingTypeFilter === "projects") list = list.filter((p: any) => Boolean(p._isProject));
+
+    if (selectedSubtype) {
+      list = list.filter((p) => itemMatchesSubtype(p, selectedSubtype));
+    }
+    return list;
+  }, [displayedProperties, listingTypeFilter, selectedSubtype]);
+
+  const fallbackPropCount = useMemo(() => displayedProperties.filter((p: any) => !p._isProject).length, [displayedProperties]);
+  const fallbackProjCount = useMemo(() => displayedProperties.filter((p: any) => Boolean(p._isProject)).length, [displayedProperties]);
+
+  const allCount = counts ? counts.all : displayedProperties.length;
+  const propertiesCount = counts ? counts.properties : fallbackPropCount;
+  const projectsCount = counts ? counts.projects : fallbackProjCount;
+
+  // Real synchronized active count for the "Show On Map" header
+  const currentActiveCount = useMemo(() => {
+    if (selectedSubtype) {
+      return displayedPropertiesFiltered.length;
+    }
+    if (listingTypeFilter === "properties") return propertiesCount;
+    if (listingTypeFilter === "projects") return projectsCount;
+    return allCount;
+  }, [selectedSubtype, displayedPropertiesFiltered.length, listingTypeFilter, propertiesCount, projectsCount, allCount]);
+
+  // Options for Property / Project Type Boxes with live counts from the selected/visible map area
+  const currentTypeOptions = useMemo(() => {
+    let areaFiltered = displayedProperties;
+    if (visibleAreaIds !== null && visibleAreaIds.length > 0) {
+      const areaSet = new Set(visibleAreaIds);
+      areaFiltered = areaFiltered.filter((p) => areaSet.has(p.id));
+    }
+
+    const baseItems = listingTypeFilter === "properties" 
+      ? areaFiltered.filter((p: any) => !p._isProject)
+      : listingTypeFilter === "projects"
+      ? areaFiltered.filter((p: any) => Boolean(p._isProject))
+      : areaFiltered;
+
+    if (listingTypeFilter === "properties") {
+      return [
+        { key: "flats", label: "Flats", icon: Building2, count: baseItems.filter((p) => itemMatchesSubtype(p, "flats")).length },
+        { key: "houses", label: "Houses", icon: Home, count: baseItems.filter((p) => itemMatchesSubtype(p, "houses")).length },
+        { key: "villas", label: "Villas", icon: Sparkles, count: baseItems.filter((p) => itemMatchesSubtype(p, "villas")).length },
+        { key: "plots", label: "Plots", icon: Compass, count: baseItems.filter((p) => itemMatchesSubtype(p, "plots")).length },
+        { key: "agriculture", label: "Agriculture", icon: Trees, count: baseItems.filter((p) => itemMatchesSubtype(p, "agriculture")).length },
+        { key: "commercial", label: "Commercial", icon: Briefcase, count: baseItems.filter((p) => itemMatchesSubtype(p, "commercial")).length },
+      ];
+    }
+
+    if (listingTypeFilter === "projects") {
+      return [
+        { key: "apartments", label: "Apartments", icon: Building2, count: baseItems.filter((p) => itemMatchesSubtype(p, "apartments")).length },
+        { key: "villas", label: "Villas", icon: Sparkles, count: baseItems.filter((p) => itemMatchesSubtype(p, "villas")).length },
+        { key: "crda", label: "CRDA Ventures", icon: Landmark, count: baseItems.filter((p) => itemMatchesSubtype(p, "crda")).length },
+        { key: "gated", label: "Gated Comm.", icon: ShieldCheck, count: baseItems.filter((p) => itemMatchesSubtype(p, "gated")).length },
+        { key: "commercial", label: "Commercial", icon: Briefcase, count: baseItems.filter((p) => itemMatchesSubtype(p, "commercial")).length },
+      ];
+    }
+
+    return [
+      { key: "flats", label: "Flats", icon: Building2, count: baseItems.filter((p) => itemMatchesSubtype(p, "flats")).length },
+      { key: "houses", label: "Houses", icon: Home, count: baseItems.filter((p) => itemMatchesSubtype(p, "houses")).length },
+      { key: "villas", label: "Villas", icon: Sparkles, count: baseItems.filter((p) => itemMatchesSubtype(p, "villas")).length },
+      { key: "plots", label: "Plots", icon: Compass, count: baseItems.filter((p) => itemMatchesSubtype(p, "plots")).length },
+      { key: "crda", label: "CRDA Ventures", icon: Landmark, count: baseItems.filter((p) => itemMatchesSubtype(p, "crda")).length },
+      { key: "gated", label: "Gated Comm.", icon: ShieldCheck, count: baseItems.filter((p) => itemMatchesSubtype(p, "gated")).length },
+      { key: "agriculture", label: "Agriculture", icon: Trees, count: baseItems.filter((p) => itemMatchesSubtype(p, "agriculture")).length },
+      { key: "commercial", label: "Commercial", icon: Briefcase, count: baseItems.filter((p) => itemMatchesSubtype(p, "commercial")).length },
+    ];
+  }, [listingTypeFilter, displayedProperties, visibleAreaIds]);
 
   // Color for data layer price pills
   const getDataLayerColor = useCallback((property: any): string | null => {
@@ -1216,9 +1687,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
   const handleDrawEnd = () => {
     setIsDrawing(false);
     if (drawPolygonPoints.length >= 3 && onVisibleItemsChange) {
-      const filtered = mapProperties.filter((p: any) => {
-        if (listingTypeFilter === "properties" && p._isProject) return false;
-        if (listingTypeFilter === "projects" && !p._isProject) return false;
+      const filtered = displayedProperties.filter((p: any) => {
         const coords = resolvePropertyMapCoords(p);
         return isPointInPolygon({ lat: coords.lat, lng: coords.lng }, drawPolygonPoints);
       });
@@ -1263,136 +1732,392 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
         style={{ touchAction: "none", height: mapHeight, minHeight: containerHeight ? 400 : "100%" }}
       >
         
-        {/* Sidebar Control Panel / Collapsible Drawer */}
+        {/* Mobile Backdrop Overlay */}
+        {showMapExplorer && (
+          <div
+            className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-[998] transition-opacity duration-300 pointer-events-auto"
+            onClick={() => setShowMapExplorer(false)}
+          />
+        )}
+
+        {/* Sidebar Control Panel / Collapsible Drawer (Desktop side-panel & Mobile bottom sheet) */}
         <div
-          className={`w-full md:w-80 flex-shrink-0 p-5 md:p-6 flex-col justify-between bg-slate-900 text-white z-[999] border-b md:border-b-0 md:border-r border-slate-800 shadow-2xl space-y-5 overflow-y-auto ${
-            showMapExplorer ? "flex absolute inset-0 md:relative" : "hidden"
-          }`}
+          className={cn(
+            "text-slate-900 z-[999] shadow-2xl flex flex-col justify-between transition-all duration-300 pointer-events-auto",
+            // Desktop: sleek left sidebar panel with clean white background and light border
+            "md:relative md:w-96 md:flex-shrink-0 md:h-full md:border-r md:border-slate-200 md:bg-white md:p-6 md:space-y-5 md:overflow-y-auto",
+            // Mobile: modern bottom drawer modal with rounded top in clean white
+            "fixed inset-x-0 bottom-0 max-h-[85vh] rounded-t-3xl border-t border-slate-200 bg-white/98 backdrop-blur-2xl p-5 space-y-4 overflow-y-auto",
+            showMapExplorer ? "flex animate-in slide-in-from-bottom duration-300 md:animate-none" : "hidden"
+          )}
         >
+          {/* Mobile pull handle */}
+          <div
+            onClick={() => setShowMapExplorer(false)}
+            className="w-12 h-1.5 bg-slate-200 hover:bg-slate-300 rounded-full mx-auto -mt-1 mb-1 md:hidden cursor-pointer shrink-0"
+          />
+
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Compass className="w-5 h-5 text-amber-400" />
-                <h2 className="font-heading text-xl font-bold text-white tracking-tight">
-                  Map Explorer
-                </h2>
+            {/* Header */}
+            <div className="flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shadow-xs">
+                  <Compass className="w-4 h-4 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="font-heading text-lg font-black text-slate-950 tracking-tight leading-tight">
+                    Map Explorer
+                  </h2>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    Live Vijayawada & AP Map Radar
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => setShowMapExplorer(false)}
-                className="p-1.5 bg-slate-800 text-slate-300 rounded-xl hover:text-white"
+                className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl hover:text-slate-950 transition-colors cursor-pointer border border-slate-200"
+                title="Close"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Smart Search Input Box */}
-            <div className="relative">
-              <Search className="w-4 h-4 text-amber-400 absolute left-3 top-3" />
-              <input
-                type="text"
-                value={mapSearchInput}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Try 'villa', '3bhk', 'Benz Circle'..."
-                className="w-full pl-9 pr-8 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
-              />
-              {mapSearchInput && (
+            {/* Entity Type Filter Buttons (All, Properties, Projects) */}
+            <div className="space-y-1.5 shrink-0">
+              <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-slate-500 px-0.5">
+                <span>Show On Map</span>
+                <span className="text-amber-600 font-bold">{currentActiveCount} Active</span>
+              </div>
+              <div className="grid grid-cols-3 p-1 bg-slate-100/90 border border-slate-200 rounded-2xl gap-1 shadow-inner">
                 <button
-                  onClick={() => handleSearchChange("")}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-white"
+                  type="button"
+                  onClick={() => setListingTypeFilter("all")}
+                  className={cn(
+                    "h-9 px-1 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer min-w-0 select-none",
+                    listingTypeFilter === "all"
+                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                      : "text-slate-600 hover:text-slate-950 hover:bg-white"
+                  )}
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <Layers className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "all" ? "text-slate-950" : "text-amber-600")} />
+                  <span className="truncate">All</span>
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold shrink-0 transition-colors",
+                    listingTypeFilter === "all"
+                      ? "bg-slate-950 text-amber-400 font-black shadow-xs"
+                      : "bg-white text-slate-600 border border-slate-200"
+                  )}>
+                    {allCount}
+                  </span>
                 </button>
-              )}
-            </div>
 
-            {/* AP PRICE HEATMAP & COMMUTE TIME RADIUS SWITCHERS */}
-            <div className="bg-slate-800/90 p-3 rounded-2xl border border-slate-700/80 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold uppercase text-slate-300 tracking-wider flex items-center gap-1.5">
-                  <Flame className="w-3.5 h-3.5 text-amber-400" /> AP Locality Heatmap
-                </span>
                 <button
-                  onClick={() => setShowHeatmap(!showHeatmap)}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
-                    showHeatmap ? "bg-amber-500 text-slate-950 shadow-md" : "bg-slate-700 text-slate-300"
-                  }`}
+                  type="button"
+                  onClick={() => setListingTypeFilter("properties")}
+                  className={cn(
+                    "h-9 px-1 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer min-w-0 select-none",
+                    listingTypeFilter === "properties"
+                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                      : "text-slate-600 hover:text-slate-950 hover:bg-white"
+                  )}
                 >
-                  {showHeatmap ? "Active ON" : "Turn ON"}
+                  <Home className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "properties" ? "text-slate-950" : "text-blue-600")} />
+                  <span className="truncate">Properties</span>
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold shrink-0 transition-colors",
+                    listingTypeFilter === "properties"
+                      ? "bg-slate-950 text-amber-400 font-black shadow-xs"
+                      : "bg-white text-slate-600 border border-slate-200"
+                  )}>
+                    {propertiesCount}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setListingTypeFilter("projects")}
+                  className={cn(
+                    "h-9 px-1 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer min-w-0 select-none",
+                    listingTypeFilter === "projects"
+                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                      : "text-slate-600 hover:text-slate-950 hover:bg-white"
+                  )}
+                >
+                  <Building2 className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "projects" ? "text-slate-950" : "text-emerald-600")} />
+                  <span className="truncate">Projects</span>
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold shrink-0 transition-colors",
+                    listingTypeFilter === "projects"
+                      ? "bg-slate-950 text-amber-400 font-black shadow-xs"
+                      : "bg-white text-slate-600 border border-slate-200"
+                  )}>
+                    {projectsCount}
+                  </span>
                 </button>
               </div>
+            </div>
 
-              {/* Commute Time Radius Picker */}
-              <div className="space-y-1 pt-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                  <Timer className="w-3 h-3 text-amber-400" /> Max Commute Radius:
-                </label>
-                <div className="grid grid-cols-3 gap-1 text-[10px] font-bold">
-                  {[0, 15, 30].map((mins) => (
+            {/* PROPERTY & PROJECT TYPES */}
+            <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 space-y-2.5 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  {listingTypeFilter === "properties" 
+                    ? "Property Types" 
+                    : listingTypeFilter === "projects" 
+                    ? "Project Categories" 
+                    : "Property & Project Types"}
+                </span>
+                {selectedSubtype && (
+                  <button
+                    type="button"
+                    onClick={handleResetType}
+                    className="text-[10px] font-bold text-amber-600 hover:text-amber-700 underline cursor-pointer"
+                  >
+                    Reset Type
+                  </button>
+                )}
+              </div>
+
+              {/* Grid of Boxes with Icons - Full text fully visible with stacked layout */}
+              <div className="grid grid-cols-2 gap-2">
+                {currentTypeOptions.map((opt) => {
+                  const IconComp = opt.icon;
+                  const isSelected = selectedSubtype === opt.key;
+                  return (
                     <button
-                      key={mins}
-                      onClick={() => setMaxCommuteMins(mins)}
-                      className={`py-1.5 rounded-lg border transition-all cursor-pointer ${
-                        maxCommuteMins === mins
-                          ? "bg-amber-500 text-slate-950 border-amber-500 font-extrabold"
-                          : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
-                      }`}
+                      key={opt.key}
+                      type="button"
+                      onClick={() => handleSubtypeSelect(opt.key)}
+                      className={cn(
+                        "p-2.5 rounded-2xl border text-left flex flex-col justify-between gap-1.5 transition-all cursor-pointer group min-h-[64px]",
+                        isSelected
+                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-md shadow-amber-500/25 scale-[1.02] font-black"
+                          : "bg-white border-slate-200 text-slate-800 hover:border-amber-400 hover:bg-amber-50/40 hover:text-slate-950 shadow-xs"
+                      )}
                     >
-                      {mins === 0 ? "Any Dist" : `< ${mins} Mins`}
+                      {/* Top row: Icon on left, count on right */}
+                      <div className="flex items-center justify-between w-full">
+                        <div className={cn(
+                          "w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+                          isSelected ? "bg-slate-950/20 text-slate-950" : "bg-amber-500/15 text-amber-600 group-hover:bg-amber-500/25"
+                        )}>
+                          <IconComp className="w-3.5 h-3.5" />
+                        </div>
+                        <span className={cn(
+                          "text-[10px] font-mono px-2 py-0.5 rounded-full font-bold",
+                          isSelected ? "bg-slate-950/20 text-slate-950" : "bg-slate-100 text-slate-600 border border-slate-200"
+                        )}>
+                          {opt.count}
+                        </span>
+                      </div>
+
+                      {/* Bottom row: Full label with zero truncation */}
+                      <span className={cn(
+                        "text-xs font-extrabold tracking-tight leading-snug break-words",
+                        isSelected ? "text-slate-950 font-black" : "text-slate-900"
+                      )}>
+                        {opt.label}
+                      </span>
                     </button>
-                  ))}
+                  );
+                })}
+              </div>
+
+            </div>
+
+            {/* LOCATIONS & SUBLOCATIONS (Added by Admin) */}
+            <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 space-y-3 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-amber-600" /> Locations & Sublocations
+                </span>
+                {(selectedMapCity || selectedMapLocality) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMapCity(null);
+                      setSelectedMapLocality(null);
+                      setLocalitySearchText("");
+                      if (onFiltersChange) {
+                        onFiltersChange((prev) => ({
+                          ...prev,
+                          cities: [],
+                          localities: [],
+                          query: "",
+                        }));
+                      }
+                    }}
+                    className="text-[10px] font-bold text-amber-600 hover:text-amber-700 underline cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+
+              {/* 1. Locations (Cities) First */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block px-0.5">
+                  Select Location:
+                </label>
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectCity(null)}
+                    className={cn(
+                      "px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border",
+                      !selectedMapCity
+                        ? "bg-amber-500 text-slate-950 border-amber-500 font-black shadow-xs"
+                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-slate-950 shadow-xs"
+                    )}
+                  >
+                    All Locations
+                  </button>
+                  {homeCities.map((city) => {
+                    const isSelected = selectedMapCity?.toLowerCase() === city.name.toLowerCase();
+                    return (
+                      <button
+                        key={city.id}
+                        type="button"
+                        onClick={() => handleSelectCity(city.name)}
+                        className={cn(
+                          "px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border flex items-center gap-1.5",
+                          isSelected
+                            ? "bg-amber-500 text-slate-950 border-amber-500 font-black shadow-xs"
+                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-slate-950 shadow-xs"
+                        )}
+                      >
+                        <span>{city.name}</span>
+                        {city.sublocations && city.sublocations.length > 0 && (
+                          <span className={cn(
+                            "text-[10px] font-mono px-1 rounded font-bold",
+                            isSelected ? "bg-slate-950/25 text-slate-950" : "text-slate-500"
+                          )}>
+                            {city.sublocations.length}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Sublocations for Selected Location */}
+              <div className="space-y-1.5 pt-1 border-t border-slate-200">
+                <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider px-0.5">
+                  <span>{selectedMapCity ? `${selectedMapCity} Sublocations` : "Sublocations"}</span>
+                  <span>{activeSublocations.length} areas</span>
+                </div>
+
+                {/* Sublocation search if many */}
+                {activeSublocations.length > 6 && (
+                  <div className="relative">
+                    <Search className="w-3 h-3 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={localitySearchText}
+                      onChange={(e) => setLocalitySearchText(e.target.value)}
+                      placeholder={`Search ${selectedMapCity || "all"} areas...`}
+                      className="w-full h-7 pl-7 pr-6 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-amber-500 shadow-xs"
+                    />
+                    {localitySearchText && (
+                      <button
+                        type="button"
+                        onClick={() => setLocalitySearchText("")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Sublocation Pills */}
+                <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1 no-scrollbar">
+                  {displayedSublocations.length > 0 ? (
+                    displayedSublocations.map((sub) => {
+                      const isSelected = selectedMapLocality?.toLowerCase() === sub.name.toLowerCase();
+                      const count = getSublocationPropertyCount(sub.name);
+                      return (
+                        <button
+                          key={sub.id || sub.name}
+                          type="button"
+                          onClick={() => handleSelectLocality(sub.name)}
+                          className={cn(
+                            "px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border",
+                            isSelected
+                              ? "bg-amber-500 text-slate-950 border-amber-500 font-black shadow-xs shadow-amber-500/20"
+                              : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-950 shadow-xs"
+                          )}
+                        >
+                          <span>{sub.name}</span>
+                          {count > 0 && (
+                            <span className={cn(
+                              "text-[9px] font-mono px-1 rounded-full font-bold",
+                              isSelected ? "bg-slate-950/20 text-slate-950" : "bg-slate-100 text-slate-500 border border-slate-200"
+                            )}>
+                              {count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="text-[11px] text-slate-500 italic py-1 px-0.5">
+                      No sublocations found matching &quot;{localitySearchText}&quot;
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* NEIGHBORHOOD AMENITY OVERLAY SWITCHERS */}
-            <div className="bg-slate-800/90 p-3 rounded-2xl border border-slate-700/80 space-y-2">
-              <span className="text-[11px] font-extrabold uppercase text-slate-300 tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Neighborhood Overlays
-              </span>
-              <div className="grid grid-cols-3 gap-1 text-[11px] font-bold">
-                <button
-                  onClick={() => toggleLandmarkFilter("school")}
-                  className={`py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                    activeLandmarkTypes.includes("school")
-                      ? "bg-amber-600 text-white shadow-md"
-                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                  }`}
-                >
-                  <School className="w-3 h-3" /> Schools
-                </button>
-                <button
-                  onClick={() => toggleLandmarkFilter("hospital")}
-                  className={`py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                    activeLandmarkTypes.includes("hospital")
-                      ? "bg-red-600 text-white shadow-md"
-                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                  }`}
-                >
-                  <Hospital className="w-3 h-3" /> Hospitals
-                </button>
-                <button
-                  onClick={() => toggleLandmarkFilter("transit")}
-                  className={`py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                    activeLandmarkTypes.includes("transit")
-                      ? "bg-amber-600 text-white shadow-md"
-                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                  }`}
-                >
-                  <Zap className="w-3 h-3" /> Transit
-                </button>
+            {/* PRICE / BUDGET FILTER BUTTONS */}
+            <div className="bg-slate-50/90 border border-slate-200 rounded-2xl p-2.5 shadow-xs">
+              <div className="flex items-center justify-between mb-2 px-0.5">
+                <div className="flex items-center gap-1.5">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-amber-600" />
+                  <span className="text-xs font-bold text-slate-900">Price Budget</span>
+                </div>
+                {(mapPriceRange[0] > 0 || mapPriceRange[1] < 100000000) && (
+                  <button
+                    type="button"
+                    onClick={() => handleBudgetSelect([0, 100000000])}
+                    className="text-[10px] text-amber-600 hover:text-amber-700 font-semibold px-2 py-0.5 rounded-full hover:bg-amber-500/10 transition-colors"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+
+              {/* Budget Buttons - All 5 in a single row */}
+              <div className="grid grid-cols-5 gap-1 w-full">
+                {[
+                  { label: "All", range: [0, 100000000] as [number, number] },
+                  { label: "< 50L", range: [0, 5000000] as [number, number] },
+                  { label: "50L-1Cr", range: [5000000, 10000000] as [number, number] },
+                  { label: "1Cr-2Cr", range: [10000000, 20000000] as [number, number] },
+                  { label: "> 2Cr", range: [20000000, 100000000] as [number, number] },
+                ].map((preset) => {
+                  const isActive = mapPriceRange[0] === preset.range[0] && mapPriceRange[1] === preset.range[1];
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => handleBudgetSelect(preset.range)}
+                      className={cn(
+                        "w-full py-1.5 px-0.5 rounded-xl text-[10px] sm:text-[10.5px] font-bold transition-all cursor-pointer text-center flex items-center justify-center whitespace-nowrap",
+                        isActive
+                          ? "bg-amber-500 text-slate-950 shadow-xs shadow-amber-500/20 font-black border border-amber-500"
+                          : "bg-white text-slate-700 hover:text-slate-950 hover:bg-slate-100 border border-slate-200 shadow-xs"
+                      )}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* AP STAMP DUTY CALCULATOR BUTTON */}
-            <button
-              onClick={() => setShowCalculatorModal(true)}
-              className="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-            >
-              <Calculator className="w-4 h-4 text-amber-400" />
-              <span>AP Stamp Duty & Govt Fee Calculator</span>
-            </button>
-
-            {/* Primary Action Button */}
             <button
               type="button"
               onClick={() => {
@@ -1407,15 +2132,15 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
             </button>
 
             {/* DRAW SEARCH AREA TOOL PANEL */}
-            <div className="bg-slate-800/90 p-3 rounded-2xl border border-slate-700/80 space-y-2">
+            <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 space-y-2 shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-amber-400 flex items-center gap-1.5">
-                  <Pencil className="w-4 h-4" /> Draw Search Area
+                <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                  <Pencil className="w-4 h-4 text-amber-600" /> Draw Search Area
                 </span>
                 {drawPolygonPoints.length > 0 && (
                   <button
                     onClick={handleClearDraw}
-                    className="text-[11px] text-red-400 hover:text-red-300 flex items-center gap-1 font-bold cursor-pointer"
+                    className="text-[11px] text-red-600 hover:text-red-700 flex items-center gap-1 font-bold cursor-pointer"
                   >
                     <Trash2 className="w-3 h-3" /> Clear
                   </button>
@@ -1432,10 +2157,10 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                   className={`py-2 px-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     isDrawing
                       ? "bg-amber-500 text-slate-950 shadow-md animate-pulse"
-                      : "bg-slate-700 text-white hover:bg-slate-600"
+                      : "bg-white text-slate-800 hover:bg-slate-100 border border-slate-200 shadow-xs"
                   }`}
                 >
-                  <Pencil className="w-3.5 h-3.5" />
+                  <Pencil className="w-3.5 h-3.5 text-amber-600" />
                   <span>{isDrawing ? "Click Map..." : "Start Drawing"}</span>
                 </button>
 
@@ -1443,34 +2168,34 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                   type="button"
                   onClick={handleClearDraw}
                   disabled={drawPolygonPoints.length === 0}
-                  className="py-2 px-2.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 disabled:opacity-40 cursor-pointer"
+                  className="py-2 px-2.5 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 disabled:opacity-40 cursor-pointer shadow-xs"
                 >
                   Reset Draw
                 </button>
               </div>
 
               {drawPolygonPoints.length > 0 && (
-                <div className="text-[11px] text-slate-300 bg-slate-950 p-2 rounded-xl border border-amber-500/30 flex items-center justify-between">
+                <div className="text-[11px] text-slate-700 bg-white p-2 rounded-xl border border-amber-500/40 flex items-center justify-between shadow-xs">
                   <span>📍 {drawPolygonPoints.length} points placed</span>
-                  <span className="font-extrabold text-amber-400">{displayedProperties.length} homes</span>
+                  <span className="font-extrabold text-amber-600">{displayedProperties.length} homes</span>
                 </div>
               )}
             </div>
 
             {/* Selected Property Distance Display Card */}
             {selectedProperty && position && (
-              <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-3 text-xs space-y-1.5 animate-in fade-in">
-                <div className="flex items-center gap-1.5 text-amber-400 font-extrabold">
-                  <Route className="w-4 h-4 text-amber-400" /> Live Route Distance:
+              <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-3 text-xs space-y-1.5 animate-in fade-in shadow-xs">
+                <div className="flex items-center gap-1.5 text-amber-700 font-extrabold">
+                  <Route className="w-4 h-4 text-amber-600" /> Live Route Distance:
                 </div>
-                <div className="font-bold text-white text-sm truncate">
+                <div className="font-bold text-slate-950 text-sm truncate">
                   {selectedProperty.title}
                 </div>
-                <div className="flex items-center justify-between text-slate-200 pt-0.5">
+                <div className="flex items-center justify-between text-slate-700 pt-0.5">
                   <span className="flex items-center gap-1">
-                    <Car className="w-3.5 h-3.5 text-amber-400" /> Distance:
+                    <Car className="w-3.5 h-3.5 text-amber-600" /> Distance:
                   </span>
-                  <span className="font-black text-amber-400 bg-slate-950 px-2 py-0.5 rounded-md border border-amber-500/30">
+                  <span className="font-black text-slate-950 bg-white px-2 py-0.5 rounded-md border border-amber-300 shadow-xs">
                     {calculateDistanceStr(position, selectedProperty.location?.latitude ?? 0, selectedProperty.location?.longitude ?? 0)}
                   </span>
                 </div>
@@ -1478,9 +2203,9 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
             )}
 
             {/* Map Layer Mode Switcher */}
-            <div className="bg-slate-800/90 p-1.5 rounded-xl border border-slate-700/80 space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 flex items-center gap-1">
-                <Layers3 className="w-3 h-3 text-amber-400" /> Map View Mode:
+            <div className="bg-slate-50/90 p-1.5 rounded-xl border border-slate-200 space-y-1 shadow-xs">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 flex items-center gap-1">
+                <Layers3 className="w-3 h-3 text-amber-600" /> Map View Mode:
               </label>
               <div className="grid grid-cols-2 gap-1 text-xs font-semibold">
                 <button
@@ -1489,7 +2214,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                   className={`py-1.5 px-2 rounded-lg transition-all text-center cursor-pointer ${
                     mapLayerType === "streets"
                       ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
-                      : "text-slate-300 hover:bg-slate-700"
+                      : "text-slate-700 hover:bg-white hover:text-slate-950"
                   }`}
                 >
                   Clear Streets
@@ -1500,7 +2225,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                   className={`py-1.5 px-2 rounded-lg transition-all text-center cursor-pointer ${
                     mapLayerType === "hybrid"
                       ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
-                      : "text-slate-300 hover:bg-slate-700"
+                      : "text-slate-700 hover:bg-white hover:text-slate-950"
                   }`}
                 >
                   Satellite + Names
@@ -1510,8 +2235,8 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
 
             {/* Quick Explore Hotspots */}
             <div className="space-y-1.5 pt-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-400" /> Quick Jump Locality:
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-amber-600" /> Quick Jump Locality:
               </label>
               <div className="grid grid-cols-2 gap-1.5">
                 {quickLocalityCoords.map((loc) => (
@@ -1521,7 +2246,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                       handleFlyToLocality(loc.lat, loc.lng);
                       setShowMapExplorer(false);
                     }}
-                    className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-300 text-xs font-semibold border border-slate-700 hover:border-amber-500 transition-all text-left truncate cursor-pointer"
+                    className="px-2 py-1.5 rounded-xl bg-white hover:bg-amber-500 hover:text-slate-950 text-slate-700 text-xs font-semibold border border-slate-200 hover:border-amber-500 transition-all text-left truncate cursor-pointer shadow-xs"
                   >
                     📍 {loc.name}
                   </button>
@@ -1530,13 +2255,13 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-800 space-y-2 text-xs text-slate-300">
-            <div className="flex items-center justify-between bg-slate-800/60 px-3 py-2 rounded-xl border border-slate-700/50">
+          <div className="pt-3 border-t border-slate-200 space-y-2 text-xs text-slate-700">
+            <div className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-                <span className="font-extrabold text-white">Found Listings</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <span className="font-extrabold text-slate-950">Found Listings</span>
               </div>
-              <span className="font-extrabold text-amber-400 text-sm">{displayedPropertiesFiltered.length}</span>
+              <span className="font-extrabold text-amber-600 text-sm">{displayedPropertiesFiltered.length}</span>
             </div>
 
             {/* Sidebar Mini Property Listings List */}
@@ -1551,6 +2276,7 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                 displayedPropertiesFiltered.map((p) => {
                   const isSel = selectedPropertyId === p.id;
                   const coords = resolvePropertyMapCoords(p);
+                  const isProj = Boolean((p as any)._isProject);
                   return (
                     <div
                       key={p.id}
@@ -1559,23 +2285,36 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                         if (mapRef.current) {
                           mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
                         }
+                        if (typeof window !== "undefined" && window.innerWidth < 768) {
+                          setShowMapExplorer(false);
+                        }
                       }}
                       className={cn(
                         "p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 group",
                         isSel
-                          ? "bg-amber-500/15 border-amber-500 text-white"
-                          : "bg-slate-800/80 border-slate-700/80 text-slate-300 hover:bg-slate-700 hover:border-slate-600"
+                          ? "bg-amber-50 border-amber-400 text-slate-950 shadow-xs"
+                          : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-xs"
                       )}
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="font-bold text-xs text-white truncate group-hover:text-amber-400">
-                          {p.title}
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className={cn(
+                            "text-[9px] font-black uppercase px-1.5 py-0.2 rounded-md shrink-0",
+                            isProj 
+                              ? "bg-amber-100 text-amber-800 border border-amber-200" 
+                              : "bg-blue-100 text-blue-800 border border-blue-200"
+                          )}>
+                            {isProj ? "Project" : "Property"}
+                          </span>
+                          <span className="font-bold text-xs text-slate-950 truncate group-hover:text-amber-600">
+                            {p.title}
+                          </span>
                         </div>
-                        <div className="text-[10px] text-slate-400 truncate">
+                        <div className="text-[10px] text-slate-500 truncate">
                           📍 {p.location?.locality || ""} • {p.bedrooms ? `${p.bedrooms} BHK` : p.propertyType}
                         </div>
                       </div>
-                      <div className="text-amber-400 font-extrabold text-xs shrink-0">
+                      <div className="text-amber-600 font-extrabold text-xs shrink-0">
                         {formatPriceCompact(p.price)}
                       </div>
                     </div>
@@ -1596,10 +2335,10 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
           {!showMapExplorer && (
             <button
               onClick={() => setShowMapExplorer(true)}
-              className="absolute top-3 left-3 md:bottom-[140px] md:top-auto md:left-3 z-[500] bg-slate-900/90 backdrop-blur-sm text-white p-2 sm:px-3 sm:py-2 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.3)] border border-slate-700 flex items-center gap-1.5 hover:bg-slate-800 transition-colors pointer-events-auto cursor-pointer"
+              className="absolute top-3 left-3 md:bottom-[140px] md:top-auto md:left-3 z-[500] bg-white/95 backdrop-blur-sm text-slate-900 p-2 sm:px-3 sm:py-2 rounded-xl shadow-lg border border-slate-200 flex items-center gap-1.5 hover:bg-slate-50 transition-colors pointer-events-auto cursor-pointer"
             >
-              <Compass className="w-4 h-4 sm:w-5 sm:h-5 text-[#f1a010]" />
-              <span className="font-bold text-xs sm:text-sm hidden sm:block shadow-sm">Map Explorer</span>
+              <Compass className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
+              <span className="font-bold text-xs sm:text-sm text-slate-950 hidden sm:block shadow-xs">Map Explorer</span>
             </button>
           )}
           
@@ -2013,8 +2752,10 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
 
             {/* Realtor-style: update list panel whenever map viewport changes */}
             <MapViewportListenerDebounced
-              mapProperties={displayedPropertiesFiltered}
+              mapProperties={displayedProperties}
+              displayedProperties={displayedProperties}
               onVisibleItemsChange={onVisibleItemsChange}
+              onVisibleAreaChange={setVisibleAreaIds}
             />
 
 
@@ -2095,23 +2836,6 @@ export default function PropertyMap({ filteredItems, userLocation: externalUserL
                 </Circle>
               ))}
 
-            {/* Landmark Overlay Markers (Schools, Hospitals, Transit Hubs) */}
-            {landmarkOverlays
-              .filter((lm) => activeLandmarkTypes.includes(lm.type))
-              .map((lm) => (
-                <Marker
-                  key={lm.id}
-                  position={[lm.lat, lm.lng]}
-                  icon={getLandmarkIcon(lm.type)}
-                >
-                  <Popup>
-                    <div className="p-1 text-xs">
-                      <strong className="text-amber-600 block text-sm">{lm.name}</strong>
-                      <span className="text-slate-600 font-medium">{lm.tag}</span>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
 
             {/* Render Searched Locality Highlight Boundary (Auto Nagar, Benz Circle, Poranki, etc.) */}
             {activeLocalityBoundary && (

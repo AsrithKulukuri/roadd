@@ -986,7 +986,20 @@ function UnifiedSearchPage() {
           {/* Map Pane: Full-screen on mobile, split-pane on desktop */}
           {viewMode === "map" && (
             <div className="flex-1 w-full h-full min-h-0 overflow-hidden md:border-l md:border-slate-200 md:dark:border-slate-800">
-              <MapWrapper filteredItems={mapItems} userLocation={userLocation} onVisibleItemsChange={handleVisibleItemsChange} />
+              <MapWrapper
+                filteredItems={mapItems}
+                userLocation={userLocation}
+                onVisibleItemsChange={handleVisibleItemsChange}
+                entityTypeFilter={activeTab}
+                onEntityTypeFilterChange={handleTabChange}
+                activeFilters={filters}
+                onFiltersChange={setFilters}
+                counts={{
+                  all: allCount,
+                  properties: propCount,
+                  projects: projCount,
+                }}
+              />
             </div>
           )}
         </div>

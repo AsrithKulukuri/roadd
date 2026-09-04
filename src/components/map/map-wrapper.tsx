@@ -21,19 +21,44 @@ const PropertyMap = dynamic(
   }
 );
 
+import type { FilterState } from "@/components/search/search-filters";
+
 interface MapWrapperProps {
   filteredItems?: SharedMapItem[];
   userLocation?: { lat: number, lng: number } | null;
   onVisibleItemsChange?: (visibleIds: string[]) => void;
+  entityTypeFilter?: "all" | "properties" | "projects";
+  onEntityTypeFilterChange?: (filter: "all" | "properties" | "projects") => void;
+  counts?: {
+    all: number;
+    properties: number;
+    projects: number;
+  };
+  activeFilters?: FilterState;
+  onFiltersChange?: (filters: FilterState | ((prev: FilterState) => FilterState)) => void;
 }
 
-export function MapWrapper({ filteredItems, userLocation, onVisibleItemsChange }: MapWrapperProps) {
+export function MapWrapper({
+  filteredItems,
+  userLocation,
+  onVisibleItemsChange,
+  entityTypeFilter,
+  onEntityTypeFilterChange,
+  counts,
+  activeFilters,
+  onFiltersChange,
+}: MapWrapperProps) {
   return (
     <div className="w-full h-full min-h-[400px] relative flex-1 overscroll-contain touch-none">
       <PropertyMap
         filteredItems={filteredItems}
         userLocation={userLocation}
         onVisibleItemsChange={onVisibleItemsChange}
+        entityTypeFilter={entityTypeFilter}
+        onEntityTypeFilterChange={onEntityTypeFilterChange}
+        counts={counts}
+        activeFilters={activeFilters}
+        onFiltersChange={onFiltersChange}
       />
     </div>
   );

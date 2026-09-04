@@ -10,6 +10,7 @@ import { PropertyActions } from "@/components/property/property-actions";
 import { MapPin, Shield, ChevronLeft, Building2, Tag, Percent, ArrowDownRight, Sparkles, Play, Compass } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PropertyLocationWrapper } from "@/components/property/property-location-wrapper";
+import { PropertyHeaderLocation } from "@/components/property/property-header-location";
 import { BackButton } from "@/components/ui/back-button";
 import { MortgageCalculator } from "@/components/property/mortgage-calculator";
 import { formatINR, formatPriceCompact, getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
@@ -285,13 +286,13 @@ export default async function PropertyDetailPage({
                 {property.title}
               </h1>
 
-              <div className="flex items-center gap-2 text-text-secondary text-sm">
-                <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
-                <span>
-                  {property.location.address}, {property.location.locality},{" "}
-                  {property.location.city}
-                </span>
-              </div>
+              <PropertyHeaderLocation
+                address={property.location.address}
+                locality={property.location.locality}
+                city={property.location.city}
+                latitude={property.location.latitude}
+                longitude={property.location.longitude}
+              />
 
               {/* Large Price Row */}
               <div className="pt-2 flex flex-wrap items-baseline justify-between gap-3 sm:gap-4 border-t border-border-default/60">
@@ -403,7 +404,7 @@ export default async function PropertyDetailPage({
             )}
 
             {/* BOX 6: Location & Neighborhood Map */}
-            <div className="bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+            <div id="location-map-section" className="bg-bg-card border border-border-default rounded-3xl p-6 sm:p-7 shadow-sm space-y-4 scroll-mt-24">
               <div>
                 <h2 className="text-xl font-bold text-text-primary">
                   Location & Neighborhood

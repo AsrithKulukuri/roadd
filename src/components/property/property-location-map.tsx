@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/hooks/use-auth-session";
 
@@ -57,56 +56,52 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
   const { isLoggedIn, getLoginUrl } = useAuthSession();
   const [userLocation, setUserLocation] = useState<L.LatLng | null>(null);
   const [distance, setDistance] = useState<string | null>(null);
-  const [loadingLoc, setLoadingLoc] = useState(false);
   
   const propertyPos = new L.LatLng(latitude, longitude);
 
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
-      return;
-    }
-    setLoadingLoc(true);
+  useEffect(() => {
+    if (typeof window === "undefined" || !navigator.geolocation) return;
+
+    // 1. Check cached coordinates in sessionStorage for instant calculation
+    try {
+      const cached = sessionStorage.getItem("user_coords");
+      if (cached) {
+        const { latitude: lat, longitude: lng } = JSON.parse(cached);
+        if (typeof lat === "number" && typeof lng === "number") {
+          const userLatLng = new L.LatLng(lat, lng);
+          setUserLocation(userLatLng);
+          const distInMeters = userLatLng.distanceTo(propertyPos);
+          setDistance((distInMeters / 1000).toFixed(1));
+        }
+      }
+    } catch {}
+
+    // 2. Automatically request current position
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
+        try {
+          sessionStorage.setItem("user_coords", JSON.stringify({ latitude: lat, longitude: lng }));
+        } catch {}
         const userLatLng = new L.LatLng(lat, lng);
         setUserLocation(userLatLng);
-        
-        // Calculate distance in meters using Leaflet's built-in distanceTo function
         const distInMeters = userLatLng.distanceTo(propertyPos);
-        setDistance((distInMeters / 1000).toFixed(1)); // Convert to km
-        setLoadingLoc(false);
+        setDistance((distInMeters / 1000).toFixed(1));
       },
-      (err) => {
-        console.error("Location error:", err);
-        alert("Unable to get your location. Please check your browser permissions.");
-        setLoadingLoc(false);
-      }
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
     );
-  };
+  }, [latitude, longitude]);
 
   return (
     <div className="w-full space-y-4">
-      {/* Map Control Buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
-        <Button 
-          type="button"
-          onClick={handleGetLocation} 
-          disabled={loadingLoc}
-          variant="outline" 
-          size="sm" 
-          className="w-full sm:w-auto h-10 border-slate-300 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-        >
-          <Navigation className={`w-4 h-4 text-amber-500 ${loadingLoc ? 'animate-spin' : ''}`} />
-          <span>{loadingLoc ? "Getting Location..." : "Check distance from your location"}</span>
-        </Button>
-        {distance && (
-          <div className="w-full sm:w-auto h-10 flex items-center justify-center text-xs font-black text-amber-500 bg-amber-500/15 border border-amber-500/30 px-3.5 rounded-xl shadow-xs shrink-0">
+      {distance && (
+        <div className="flex items-center">
+          <div className="inline-flex items-center text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-500/15 border border-amber-500/30 px-3.5 py-2 rounded-xl shadow-xs">
             📍 {distance} km away from this property
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="relative h-[300px] md:h-[400px] w-full rounded-2xl overflow-hidden border border-border-default/50 z-0">
         <MapContainer 

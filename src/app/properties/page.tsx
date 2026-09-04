@@ -185,6 +185,29 @@ function PropertiesPage() {
   // Filter properties based on FilterState
   const filteredProperties = useMemo(() => {
     return properties.filter((property: any) => {
+      // 0a. Cities filter
+      if (filters.cities && filters.cities.length > 0) {
+        const propCity = (property.location?.city || "").toLowerCase();
+        const matchesCity = filters.cities.some((c) => propCity.includes(c.toLowerCase()));
+        if (!matchesCity) return false;
+      }
+
+      // 0b. Localities filter
+      if (filters.localities && filters.localities.length > 0) {
+        const propLoc = (property.location?.locality || "").toLowerCase();
+        const propAddr = (property.location?.address || "").toLowerCase();
+        const matchesLoc = filters.localities.some((l) => propLoc.includes(l.toLowerCase()) || propAddr.includes(l.toLowerCase()));
+        if (!matchesLoc) return false;
+      }
+
+      // 0c. Gated Community filter
+      if (filters.gatedCommunity) {
+        const title = (property.title || "").toLowerCase();
+        const desc = (property.description || "").toLowerCase();
+        const isGated = Boolean(property.isGatedCommunity) || title.includes("gated") || desc.includes("gated") || (property.amenities && property.amenities.some((a: any) => typeof a === "string" && a.toLowerCase().includes("gated")));
+        if (!isGated) return false;
+      }
+
       // 1. Intelligent Location & Free Text Query Match
       if (filters.query.trim() && !matchesPropertySearch(property, filters.query)) {
         return false;
@@ -405,12 +428,20 @@ function PropertiesPage() {
           <div>
             {/* Mobile View: Fixed Viewport below sticky header so header & filter pills remain visible without overlapping map controls */}
             <div className="md:hidden fixed top-[192px] left-0 right-0 bottom-0 z-20 bg-white overflow-hidden flex flex-col">
-              <MapWrapper filteredItems={filteredProperties} />
+              <MapWrapper
+                filteredItems={filteredProperties}
+                activeFilters={filters}
+                onFiltersChange={setFilters}
+              />
             </div>
 
             {/* Desktop View: Full height Map Container */}
             <div className="hidden md:block w-full h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white relative z-0">
-              <MapWrapper filteredItems={filteredProperties} />
+              <MapWrapper
+                filteredItems={filteredProperties}
+                activeFilters={filters}
+                onFiltersChange={setFilters}
+              />
             </div>
           </div>
         ) : filteredProperties.length > 0 ? (

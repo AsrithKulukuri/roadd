@@ -1,5 +1,6 @@
 import type { Property, PropertyImage } from "./property";
 import type { Project } from "./project";
+import type { FilterState } from "@/components/search/search-filters";
 
 export interface MapProjectItem {
   id: string;
@@ -40,4 +41,14 @@ export interface PropertyMapProps {
   userLocation?: { lat: number; lng: number } | null;
   onVisibleItemsChange?: (visibleIds: string[]) => void;
   containerHeight?: number;
+  entityTypeFilter?: "all" | "properties" | "projects";
+  onEntityTypeFilterChange?: (filter: "all" | "properties" | "projects") => void;
+  counts?: {
+    all: number;
+    properties: number;
+    projects: number;
+  };
+  activeFilters?: FilterState;
+  onFiltersChange?: (filters: FilterState | ((prev: FilterState) => FilterState)) => void;
 }
+
