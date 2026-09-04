@@ -96,7 +96,7 @@ export function MobileStickySearchHeader() {
               className="flex-1 min-w-0 h-9.5 rounded-xl bg-slate-100 dark:bg-slate-900/90 hover:bg-slate-200/70 dark:hover:bg-slate-800 border border-slate-300/80 dark:border-slate-700/80 flex items-center px-3 gap-2 transition-all cursor-pointer shadow-2xs group"
             >
               {/* Left Search Icon */}
-              <Search className="w-3.5 h-3.5 text-amber-500 shrink-0 group-hover:scale-110 transition-transform" />
+              <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-500 shrink-0 group-hover:scale-110 transition-transform" />
 
               {/* Animated Carousel Placeholder */}
               <div className="flex-1 min-w-0 overflow-hidden relative h-full flex items-center">
@@ -120,9 +120,9 @@ export function MobileStickySearchHeader() {
                 onClick={handleFiltersClick}
                 title="Open Filters"
                 aria-label="Open Filters"
-                className="w-7 h-7 rounded-full bg-white dark:bg-slate-800 hover:bg-amber-500/20 text-slate-700 dark:text-slate-200 hover:text-amber-500 flex items-center justify-center transition-all cursor-pointer shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs active:scale-90"
+                className="w-7 h-7 rounded-full bg-white dark:bg-slate-800 hover:bg-amber-500/20 text-amber-500 hover:text-amber-400 flex items-center justify-center transition-all cursor-pointer shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs active:scale-90"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5 stroke-[2.5]" />
+                <SlidersHorizontal strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-500" />
               </button>
             </div>
           </div>

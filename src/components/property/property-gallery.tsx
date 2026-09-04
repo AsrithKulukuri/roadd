@@ -89,8 +89,8 @@ export function PropertyGallery({
 
           {/* Badge top-left */}
           <div className="absolute top-3.5 left-3.5 flex items-center gap-2 z-10">
-            <span className="bg-slate-950/80 backdrop-blur-md text-white font-extrabold text-[11px] px-3 py-1 rounded-full border border-white/20 shadow-md">
-              {isReadyToMove ? "Ready to Move" : "New Construction"}
+            <span className="bg-slate-950 backdrop-blur-md text-white font-extrabold text-[11px] px-3 py-1 rounded-full border border-[#faad13] shadow-md">
+              {isReadyToMove ? "Ready to Move" : "Under Construction"}
             </span>
           </div>
 

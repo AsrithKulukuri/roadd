@@ -73,9 +73,19 @@ export function RealtorSearchHeader({
   const [openDropdown, setOpenDropdown] = useState<"price" | "rooms" | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     setSearchInput(filters.query || "");
@@ -217,7 +227,12 @@ export function RealtorSearchHeader({
 
   return (
     <>
-      <header className="relative z-40 w-full bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+      <header
+        className={cn(
+          "sticky top-0 z-40 w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 transition-all duration-300",
+          isScrolled ? "shadow-md py-0.5" : "shadow-sm"
+        )}
+      >
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2">
           {/* ROW 1: REALTOR SEARCH BOX & LIST/MAP VIEW TOGGLE */}
           <div className="flex items-center gap-2 w-full">

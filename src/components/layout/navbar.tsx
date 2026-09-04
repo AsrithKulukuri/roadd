@@ -312,17 +312,20 @@ export function Navbar() {
   };
 
   const isTransparent = pathname === "/" && !isScrolled;
+  const isSearchPage = pathname === "/search" || pathname === "/properties";
 
   return (
     <>
       {/* Realtor.com Style Clean Navbar */}
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-[100] h-16 flex items-center transition-all duration-300",
+          "fixed top-0 left-0 right-0 z-[100] h-16 flex items-center transition-all duration-300 ease-in-out",
           isTransparent
             ? "bg-slate-950/80 backdrop-blur-sm border-b border-white/10"
             : "bg-slate-950/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-800/90 shadow-md",
-          pathname !== "/search" && isScrolled && "max-lg:opacity-0 max-lg:pointer-events-none"
+          isSearchPage
+            ? (isScrolled ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100")
+            : (isScrolled && "max-lg:opacity-0 max-lg:pointer-events-none")
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
@@ -413,7 +416,7 @@ export function Navbar() {
 
                           {/* Quick Locality Search Input */}
                           <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 gap-2">
-                            <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                             <input
                               type="text"
                               value={navLocalitySearch}
@@ -520,7 +523,7 @@ export function Navbar() {
                       title="Open Filters"
                       className="w-9 h-9 rounded-full bg-slate-900 hover:bg-amber-500/20 text-slate-200 hover:text-amber-400 flex items-center justify-center border border-slate-800 transition-all cursor-pointer shrink-0"
                     >
-                      <SlidersHorizontal className="w-4 h-4" />
+                      <SlidersHorizontal strokeWidth={2.5} className="w-4 h-4 text-amber-400" />
                     </button>
 
                     {/* Apply CTA Button */}
@@ -561,7 +564,7 @@ export function Navbar() {
                         >
                           <span className="flex items-center gap-1">
                             {link.label}
-                            {(link as any).subItems && <ChevronDown className="w-3.5 h-3.5 opacity-50 transition-transform group-hover:rotate-180" />}
+                            {(link as any).subItems && <ChevronDown strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-400 transition-transform group-hover:rotate-180" />}
                           </span>
                           {isActive(link.href) && (
                             <motion.div
@@ -612,7 +615,7 @@ export function Navbar() {
                 )}
                 aria-label="Saved properties"
               >
-                <Heart className="h-4.5 w-4.5 stroke-[2.5]" />
+                <Heart strokeWidth={2.5} className="h-4.5 w-4.5 text-amber-400" />
               </Link>
 
               {user ? (
@@ -627,9 +630,9 @@ export function Navbar() {
                         : "bg-white/10 text-white hover:bg-white/15 border-white/20 backdrop-blur-md"
                     )}
                   >
-                    <User className="w-3.5 h-3.5 text-amber-400" />
+                    <User strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-400" />
                     <span className="max-w-[75px] truncate">{user.name || "Account"}</span>
-                    <ChevronDown className="w-3 h-3 opacity-60 group-hover:rotate-180 transition-transform" />
+                    <ChevronDown strokeWidth={2.5} className="w-3 h-3 text-amber-400 group-hover:rotate-180 transition-transform" />
                   </Link>
 
                   {/* Dropdown Menu */}

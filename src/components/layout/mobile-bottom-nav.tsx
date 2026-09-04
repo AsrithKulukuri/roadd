@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Home, Search, MapPin, Heart, Menu, X, Sparkles, Plus, User, LogOut, LogIn } from "lucide-react";
+import { X, Sparkles, Plus, User, LogOut, LogIn } from "lucide-react";
+import { SolidHome, SolidSearch, SolidMapPin, SolidHeart, SolidMenu } from "@/components/ui/solid-icons";
 import { cn } from "@/lib/utils";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { usePropertiesStore } from "@/stores/properties-store";
@@ -179,21 +180,21 @@ export function MobileBottomNav() {
       id: "home",
       label: "Home",
       href: "/",
-      icon: Home,
+      icon: SolidHome,
       isActive: pathname === "/",
     },
     {
       id: "search",
       label: "Search",
       href: "/search",
-      icon: Search,
+      icon: SolidSearch,
       isActive: (pathname.startsWith("/search") && !isMapView) || pathname.startsWith("/properties") || pathname.startsWith("/projects"),
     },
     {
       id: "map",
       label: "Map",
       href: "/search?view=map",
-      icon: MapPin,
+      icon: SolidMapPin,
       isActive: isMapView,
     },
     {
@@ -207,7 +208,7 @@ export function MobileBottomNav() {
         }
         router.push("/dashboard/saved");
       },
-      icon: Heart,
+      icon: SolidHeart,
       isActive: pathname.startsWith("/dashboard/saved") || pathname === "/dashboard",
       count: savedCount > 0 ? savedCount : undefined,
     },
@@ -215,7 +216,7 @@ export function MobileBottomNav() {
       id: "menu",
       label: "Menu",
       onClick: () => setIsMenuOpen(!isMenuOpen),
-      icon: Menu,
+      icon: SolidMenu,
       isActive: isMenuOpen,
     },
   ];
@@ -273,10 +274,10 @@ export function MobileBottomNav() {
                           : "bg-slate-900 border-amber-500/50 text-amber-400 shadow-[0_3px_12px_rgba(0,0,0,0.25)] hover:border-amber-400 hover:scale-105"
                       )}
                     >
-                      <MapPin
+                      <SolidMapPin
                         className={cn(
-                          "w-5 h-5 transition-transform duration-200",
-                          item.isActive ? "stroke-[2.5] scale-110" : "stroke-[2.2]"
+                          "w-5.5 h-5.5 transition-transform duration-200",
+                          item.isActive ? "scale-110 text-slate-950" : "text-amber-400"
                         )}
                       />
                       {/* Subtle location accent dot */}
@@ -309,8 +310,8 @@ export function MobileBottomNav() {
                 className={cn(
                   "flex flex-col items-center justify-center py-1 rounded-2xl transition-all relative cursor-pointer group",
                   item.isActive
-                    ? "text-amber-600 dark:text-amber-400 font-extrabold"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
+                    ? "text-amber-500 dark:text-amber-400 font-black"
+                    : "text-slate-700 dark:text-slate-300 hover:text-amber-500 font-bold"
                 )}
               >
                 {/* Active Tab Spring Glow Pill */}
@@ -326,8 +327,10 @@ export function MobileBottomNav() {
                 <div className="relative flex items-center justify-center">
                   <Icon
                     className={cn(
-                      "w-5 h-5 transition-transform duration-200",
-                      item.isActive ? "stroke-[2.5] scale-105" : "stroke-[1.8]"
+                      "w-5.5 h-5.5 transition-transform duration-200",
+                      item.isActive
+                        ? "scale-110 text-[#faad13] drop-shadow-[0_2px_8px_rgba(250,173,19,0.35)]"
+                        : "text-[#faad13]/85 group-hover:text-[#faad13]"
                     )}
                   />
 
@@ -348,7 +351,14 @@ export function MobileBottomNav() {
                 </div>
 
                 {/* Text Label */}
-                <span className="text-[10px] tracking-tight mt-1 leading-tight">
+                <span
+                  className={cn(
+                    "text-[10px] tracking-tight mt-1 leading-tight font-bold",
+                    item.isActive
+                      ? "text-[#faad13] font-black"
+                      : "text-slate-700 dark:text-slate-300 group-hover:text-[#faad13]"
+                  )}
+                >
                   {item.label}
                 </span>
               </motion.div>

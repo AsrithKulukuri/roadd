@@ -141,8 +141,9 @@ export function ModernBudgetDropdown({
       >
         <span className="truncate">{displayLabel}</span>
         <ChevronDown
+          strokeWidth={2.5}
           className={cn(
-            "w-3.5 h-3.5 text-amber-400 absolute right-2.5 top-1/2 -translate-y-1/2 stroke-[2.5] transition-transform duration-200 pointer-events-none",
+            "w-3.5 h-3.5 text-amber-400 absolute right-2.5 top-1/2 -translate-y-1/2 transition-transform duration-200 pointer-events-none",
             isOpen && "rotate-180 text-amber-300"
           )}
         />

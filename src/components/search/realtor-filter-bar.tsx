@@ -21,6 +21,7 @@ import {
   Landmark,
 } from "lucide-react";
 import { cn, formatINRWords } from "@/lib/utils";
+import { SolidMapPin } from "@/components/ui/solid-icons";
 import type { FilterState } from "./search-filters";
 import { Slider } from "@/components/ui/slider";
 import { ModernBudgetDropdown } from "@/components/ui/modern-budget-dropdown";
@@ -344,7 +345,7 @@ export function RealtorFilterBar({
               : "bg-white text-slate-800 border-slate-300 hover:border-slate-400"
           )}
         >
-          <SlidersHorizontal className="w-4 h-4" />
+          <SlidersHorizontal strokeWidth={2.5} className={cn("w-4 h-4", activeFilterCount > 0 ? "text-slate-950" : "text-amber-500")} />
           {activeFilterCount > 0 && (
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-slate-950 text-white rounded-full text-[10px] font-black flex items-center justify-center shadow-xs">
               {activeFilterCount}
@@ -365,11 +366,13 @@ export function RealtorFilterBar({
               : "bg-white text-slate-800 border-slate-300 hover:border-slate-400"
           )}
         >
-          <MapPin className="w-3.5 h-3.5" />
+          <SolidMapPin className={cn("w-3.5 h-3.5", ((filters.cities?.length || 0) > 0 || (filters.localities?.length || 0) > 0 || openDropdown === "location") ? "text-slate-950" : "text-amber-500")} />
           <span>{getLocationLabel()}</span>
           <ChevronDown
+            strokeWidth={2.5}
             className={cn(
               "w-3.5 h-3.5 transition-transform duration-200",
+              ((filters.cities?.length || 0) > 0 || (filters.localities?.length || 0) > 0 || openDropdown === "location") ? "text-slate-950" : "text-amber-500",
               openDropdown === "location" && "rotate-180"
             )}
           />
@@ -408,11 +411,13 @@ export function RealtorFilterBar({
               : "bg-white text-slate-800 border-slate-300 hover:border-slate-400"
           )}
         >
-          <IndianRupee className="w-3.5 h-3.5 shrink-0" />
+          <IndianRupee strokeWidth={2.5} className={cn("w-3.5 h-3.5 shrink-0", (filters.budget[0] > 0 || filters.budget[1] < 100000000 || openDropdown === "price") ? "text-slate-950" : "text-amber-500")} />
           <span>{getPriceLabel()}</span>
           <ChevronDown
+            strokeWidth={2.5}
             className={cn(
               "w-3.5 h-3.5 transition-transform duration-200",
+              (filters.budget[0] > 0 || filters.budget[1] < 100000000 || openDropdown === "price") ? "text-slate-950" : "text-amber-500",
               openDropdown === "price" && "rotate-180"
             )}
           />
@@ -704,7 +709,7 @@ export function RealtorFilterBar({
                         {/* Search Localities */}
                         {totalAreas > 4 && (
                           <div className="relative">
-                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                            <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
                             <input
                               type="text"
                               value={localitySearch}
@@ -1022,7 +1027,7 @@ export function RealtorFilterBar({
                     {/* Search Localities */}
                     {totalAreas > 4 && (
                       <div className="relative">
-                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                        <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
                         <input
                           type="text"
                           value={localitySearch}

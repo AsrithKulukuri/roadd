@@ -742,7 +742,7 @@ function UnifiedSearchPage() {
 
       <main className={cn(
         "flex-1 min-h-0 w-full flex flex-col",
-        viewMode === "grid" ? "px-4 sm:px-6 lg:px-8 py-6 pb-24 max-w-7xl mx-auto overflow-y-auto" : "overflow-hidden"
+        viewMode === "grid" ? "px-4 sm:px-6 lg:px-8 py-6 pb-24 max-w-7xl mx-auto" : "overflow-hidden"
       )}>
         <h1 className="sr-only">Search properties and projects</h1>
         {/* Near Me Loading Overlay */}

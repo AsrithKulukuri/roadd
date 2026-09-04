@@ -24,6 +24,7 @@ import {
   X,
   Loader2,
   Mic,
+  RotateCcw,
 } from "lucide-react";
 import { cn, formatINR, formatINRWords, formatPriceCompact } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -39,6 +40,7 @@ import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 import { ModernBudgetDropdown } from "@/components/ui/modern-budget-dropdown";
 import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
+import { SolidMapPin, SolidSearch } from "@/components/ui/solid-icons";
 
 const HERO_BUDGET_MIN_OPTS = [
   { label: "₹ 10 L", value: 1000000 },
@@ -698,10 +700,10 @@ export function HeroSection() {
                 >
                   {tab.label}
                   {tab.id === "buy" && (
-                    <ChevronDown className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-50 transition-transform duration-200", showBuyMenu && "rotate-180")} />
+                    <ChevronDown strokeWidth={2.5} className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 transition-transform duration-200", showBuyMenu && "rotate-180")} />
                   )}
                   {tab.id === "projects" && (
-                    <ChevronDown className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-50 transition-transform duration-200", showProjectsMenu && "rotate-180")} />
+                    <ChevronDown strokeWidth={2.5} className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 transition-transform duration-200", showProjectsMenu && "rotate-180")} />
                   )}
                   {isActive && (
                     <motion.div
@@ -913,8 +915,8 @@ export function HeroSection() {
             isFocused ? "z-[60] border-slate-400 ring-2 ring-slate-200/60" : "z-30 hover:border-slate-300"
           )}
         >
-          {/* Left: Outline Search Icon */}
-          <Search className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-slate-500 mr-3 shrink-0 pointer-events-none group-hover:text-slate-800 transition-colors stroke-[2]" />
+          {/* Left: Bold Brand Solid Search Icon */}
+          <SolidSearch className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-amber-500 mr-3 shrink-0 pointer-events-none transition-colors" />
 
           {/* Input text wrapper */}
           <div className="relative flex-1 min-w-0 h-full flex items-center">
@@ -1129,10 +1131,10 @@ export function HeroSection() {
                       : "bg-slate-900/90 hover:bg-slate-900 border-slate-700/60 text-slate-100 font-semibold"
                   )}
                 >
-                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
+                  <SolidMapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span className="whitespace-nowrap tracking-tight">{city.name}</span>
                   {hasSublocations && (
-                    <ChevronDown className={cn("w-2.5 h-2.5 sm:w-3 sm:h-3 transition-transform shrink-0", isOpen && "rotate-180")} />
+                    <ChevronDown strokeWidth={2.5} className={cn("w-3 h-3 text-amber-400 transition-transform shrink-0", isOpen && "rotate-180")} />
                   )}
                 </button>
               );
@@ -1203,7 +1205,7 @@ export function HeroSection() {
                       {/* Search Bar */}
                       <div className="p-2 border-b border-slate-800/60 bg-slate-950/95 shrink-0">
                         <div className="relative flex items-center bg-slate-900 border border-slate-800 focus-within:border-slate-600 rounded-xl px-2.5 py-1.5 transition-colors">
-                          <Search className="w-3.5 h-3.5 text-slate-400 shrink-0 mr-2" />
+                          <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-400 shrink-0 mr-2" />
                           <input
                             type="text"
                             value={sublocationSearch}
@@ -1377,7 +1379,7 @@ export function HeroSection() {
                     {/* Search Bar inside Bottom Sheet */}
                     <div className="p-3 border-b border-slate-800/80 bg-slate-950 shrink-0">
                       <div className="relative flex items-center bg-slate-900 border border-slate-800 focus-within:border-slate-600 rounded-xl px-3 py-2 transition-colors">
-                        <Search className="w-4 h-4 text-slate-400 shrink-0 mr-2.5" />
+                        <Search strokeWidth={2.5} className="w-4 h-4 text-amber-400 shrink-0 mr-2.5" />
                         <input
                           type="text"
                           value={sublocationSearch}
@@ -1475,29 +1477,61 @@ export function HeroSection() {
         <div className="relative z-20 w-full max-w-[760px] mx-auto mt-2 sm:mt-3 text-left">
           <div className="bg-white/95 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-2.5 sm:p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.05)] space-y-2 sm:space-y-2.5">
             
-            {/* Row 1: BUDGET: [ ₹ 10 L ⌄ ] TO [ Any Price ⌄ ] */}
-            <div className="flex items-center gap-2 sm:gap-2.5">
-              <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider shrink-0">
-                BUDGET:
-              </span>
-              
-              <ModernBudgetDropdown
-                value={heroBudget[0]}
-                options={HERO_BUDGET_MIN_OPTS}
-                onChange={(val) => setHeroBudget([val, Math.max(val, heroBudget[1])])}
-                placeholder="Min Price"
-              />
+            {/* Row 1: BUDGET Selectors (Desktop: Apply button inline beside selectors; Mobile: full-width selectors) */}
+            <div className="flex items-center justify-between gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 sm:gap-2.5 flex-1 min-w-0">
+                <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider shrink-0">
+                  BUDGET:
+                </span>
+                
+                <div className="flex-1 sm:max-w-[150px]">
+                  <ModernBudgetDropdown
+                    value={heroBudget[0]}
+                    options={HERO_BUDGET_MIN_OPTS}
+                    onChange={(val) => setHeroBudget([val, Math.max(val, heroBudget[1])])}
+                    placeholder="Min Price"
+                  />
+                </div>
 
-              <span className="text-slate-600 font-extrabold text-[10px] uppercase tracking-wider shrink-0">TO</span>
+                <span className="text-slate-600 font-extrabold text-[10px] uppercase tracking-wider shrink-0">
+                  TO
+                </span>
 
-              <ModernBudgetDropdown
-                value={heroBudget[1]}
-                options={HERO_BUDGET_MAX_OPTS}
-                onChange={(val) => setHeroBudget([Math.min(heroBudget[0], val), val])}
-                placeholder="Any Price"
-                align="right"
-                isMax
-              />
+                <div className="flex-1 sm:max-w-[150px]">
+                  <ModernBudgetDropdown
+                    value={heroBudget[1]}
+                    options={HERO_BUDGET_MAX_OPTS}
+                    onChange={(val) => setHeroBudget([Math.min(heroBudget[0], val), val])}
+                    placeholder="Any Price"
+                    align="right"
+                    isMax
+                  />
+                </div>
+
+                {(heroBudget[0] !== 1000000 || heroBudget[1] !== 30000000) && (
+                  <button
+                    type="button"
+                    onClick={() => setHeroBudget([1000000, 30000000])}
+                    className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-slate-700 transition-colors cursor-pointer px-1.5 py-0.5 rounded-md hover:bg-slate-100 shrink-0"
+                    title="Reset budget to default"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Desktop Only: Smart Apply Button Beside Selectors */}
+              <button
+                type="button"
+                onClick={() => handleSearchSubmit()}
+                className="hidden sm:inline-flex h-8 sm:h-8.5 px-3.5 sm:px-4.5 bg-slate-950 hover:bg-slate-900 active:scale-95 text-white font-extrabold text-xs rounded-full items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all cursor-pointer shrink-0 ml-auto border border-white/10 group"
+              >
+                <span>Apply</span>
+                <span className="px-1.5 py-0.2 min-w-[18px] h-[18px] rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-2xs group-hover:scale-105 transition-transform">
+                  {matchingCount}
+                </span>
+              </button>
             </div>
 
             {/* Row 2: Range Slider (Teal Accent Track with Refined Knobs) */}
@@ -1533,11 +1567,11 @@ export function HeroSection() {
               />
             </div>
 
-            {/* Row 3: Compact Apply Button */}
+            {/* Row 3: Mobile Only Apply Button (Kept exactly like before on mobile) */}
             <button
               type="button"
               onClick={() => handleSearchSubmit()}
-              className="w-full h-8 sm:h-9 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs rounded-full flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all active:scale-98 cursor-pointer"
+              className="sm:hidden w-full h-8 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs rounded-full flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all active:scale-98 cursor-pointer"
             >
               <span>Apply</span>
               <span className="px-1.5 py-0.2 min-w-[18px] h-[18px] rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-2xs">

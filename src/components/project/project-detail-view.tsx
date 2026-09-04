@@ -151,6 +151,64 @@ export function ProjectDetailView({
   const tabsScrollRef = useRef<HTMLDivElement>(null);
   const cardsScrollRef = useRef<HTMLDivElement>(null);
   const updatesScrollRef = useRef<HTMLDivElement>(null);
+  const configSliderRef = useRef<HTMLDivElement>(null);
+  const configTrackRef = useRef<HTMLDivElement>(null);
+  const [configScrollPercent, setConfigScrollPercent] = useState(0);
+  const [configThumbWidth, setConfigThumbWidth] = useState(30);
+  const [canScrollConfigs, setCanScrollConfigs] = useState(false);
+  const [isDraggingConfig, setIsDraggingConfig] = useState(false);
+
+  const updateConfigScroll = () => {
+    const el = configSliderRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (maxScroll > 5) {
+      setCanScrollConfigs(true);
+      const pct = Math.max(0, Math.min(1, el.scrollLeft / maxScroll));
+      setConfigScrollPercent(pct);
+      const ratio = el.clientWidth / el.scrollWidth;
+      setConfigThumbWidth(Math.max(20, Math.min(60, Math.round(ratio * 100))));
+    } else {
+      setCanScrollConfigs(false);
+    }
+  };
+
+  const updateScrollFromPointer = (clientX: number) => {
+    const track = configTrackRef.current;
+    const slider = configSliderRef.current;
+    if (!track || !slider) return;
+    const rect = track.getBoundingClientRect();
+    const clickX = clientX - rect.left;
+    const thumbPx = (configThumbWidth / 100) * rect.width;
+    const usableWidth = rect.width - thumbPx;
+    const pct = usableWidth > 0 
+      ? Math.max(0, Math.min(1, (clickX - thumbPx / 2) / usableWidth))
+      : Math.max(0, Math.min(1, clickX / rect.width));
+    const maxScroll = slider.scrollWidth - slider.clientWidth;
+    slider.scrollLeft = pct * maxScroll;
+  };
+
+  const handlePointerDownConfig = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsDraggingConfig(true);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    updateScrollFromPointer(e.clientX);
+  };
+
+  const handlePointerMoveConfig = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingConfig) return;
+    updateScrollFromPointer(e.clientX);
+  };
+
+  const handlePointerUpConfig = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingConfig) {
+      setIsDraggingConfig(false);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
   
   const { scrollY } = useScroll();
   const yHero = useTransform(scrollY, [0, 800], [0, 200]);
@@ -158,6 +216,18 @@ export function ProjectDetailView({
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
   const project = projects.find((p) => (p.slug === slug || p.id === slug) && (p.isPublished || true)) || initialProject;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      updateConfigScroll();
+    }, 100);
+    const handleResize = () => updateConfigScroll();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [project?.configurations]);
 
   useEffect(() => {
     if (!isLoggedIn || !project) return;
@@ -483,6 +553,13 @@ export function ProjectDetailView({
               </div>
             )}
             
+            {/* Top-Left: Status Badge */}
+            <div className="absolute top-3 left-3 flex items-center gap-2 z-10 pointer-events-none">
+              <span className="bg-slate-950 backdrop-blur-md text-white font-extrabold text-[11px] px-3 py-1 rounded-full border border-[#faad13] shadow-md">
+                {STATUS_LABELS[project.constructionStatus] || "Under Construction"}
+              </span>
+            </div>
+
             {/* Top-Right: Sleek Video Tour Pill */}
             {project.videoUrl && (
               <button 
@@ -523,6 +600,13 @@ export function ProjectDetailView({
               {/* Subtle dark bottom gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent group-hover:from-black/70 transition-colors" />
               
+              {/* Badge top-left: Status */}
+              <div className="absolute top-3.5 left-3.5 flex items-center gap-2 z-10 pointer-events-none">
+                <span className="bg-slate-950 backdrop-blur-md text-white font-extrabold text-[11px] px-3 py-1 rounded-full border border-[#faad13] shadow-md">
+                  {STATUS_LABELS[project.constructionStatus] || "Under Construction"}
+                </span>
+              </div>
+
               {/* Bottom Right: Real total media counter */}
               <div className="absolute bottom-3.5 right-4 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/15">
                 <Layers className="w-4 h-4 text-white" />
@@ -732,6 +816,226 @@ export function ProjectDetailView({
                     )}
                   </div>
                 </div>
+
+                {/* Available Configurations Section */}
+                {project.configurations && project.configurations.length > 0 ? (
+                  <div className="pt-4 border-t border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#faad13] animate-pulse shrink-0" />
+                        <h2 className="text-xs font-black uppercase tracking-wider !text-slate-950">
+                          Available Configurations
+                        </h2>
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-500/20 !text-slate-950 border border-amber-500/40 shadow-2xs">
+                          {project.configurations.length} {project.configurations.length === 1 ? "Option" : "Options"}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const el = document.getElementById("floor-plans");
+                          if (el) el.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-black !text-slate-950 hover:text-amber-600 transition-colors cursor-pointer group"
+                      >
+                        <span>View Plans & Pricing</span>
+                        <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform text-[#faad13]" />
+                      </button>
+                    </div>
+
+                    <div className="relative group/config-slider">
+                      <div
+                        ref={configSliderRef}
+                        onScroll={updateConfigScroll}
+                        className={cn(
+                          "flex items-stretch gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-2 pt-1 -mx-1 px-1 touch-pan-x",
+                          isDraggingConfig ? "scroll-auto" : "scroll-smooth"
+                        )}
+                      >
+                      {project.configurations.map((cfg, idx) => {
+                        const isVenture = project.projectType === "venture";
+                        const sizeMin = isVenture ? cfg.plotSizeMin : (cfg.superBuiltUpAreaMin || cfg.builtUpAreaMin || cfg.plinthAreaMin);
+                        const sizeMax = isVenture ? cfg.plotSizeMax : (cfg.superBuiltUpAreaMax || cfg.builtUpAreaMax || cfg.plinthAreaMax);
+                        const unitLabel = isVenture ? "sq.yd" : "sq.ft";
+                        
+                        let sizeText = "";
+                        if (sizeMin && sizeMax && sizeMin !== sizeMax) {
+                          sizeText = `${sizeMin.toLocaleString("en-IN")} – ${sizeMax.toLocaleString("en-IN")} ${unitLabel}`;
+                        } else if (sizeMin) {
+                          sizeText = `${sizeMin.toLocaleString("en-IN")} ${unitLabel}`;
+                        } else if (sizeMax) {
+                          sizeText = `${sizeMax.toLocaleString("en-IN")} ${unitLabel}`;
+                        }
+
+                        let priceText = "Price on request";
+                        if (cfg.priceMin && cfg.priceMax && cfg.priceMin !== cfg.priceMax) {
+                          priceText = `${formatINRCrore(cfg.priceMin)} – ${formatINRCrore(cfg.priceMax)}`;
+                        } else if (cfg.priceMin) {
+                          priceText = formatINRCrore(cfg.priceMin);
+                        } else if (cfg.priceMax) {
+                          priceText = formatINRCrore(cfg.priceMax);
+                        } else if (cfg.pricePerUnit) {
+                          priceText = `₹${cfg.pricePerUnit.toLocaleString("en-IN")} / ${unitLabel}`;
+                        }
+
+                        const ConfigIcon = project.projectType === "villa" ? Home : project.projectType === "venture" ? Landmark : Building2;
+                        const isSelected = activeConfigLabel === cfg.label;
+
+                        return (
+                          <div
+                            key={cfg.id || `cfg-${idx}`}
+                            onClick={() => {
+                              setActiveConfigLabel(cfg.label);
+                              const el = document.getElementById("floor-plans");
+                              if (el) el.scrollIntoView({ behavior: "smooth" });
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                setActiveConfigLabel(cfg.label);
+                                const el = document.getElementById("floor-plans");
+                                if (el) el.scrollIntoView({ behavior: "smooth" });
+                              }
+                            }}
+                            className={`group p-3 sm:p-3.5 rounded-2xl border transition-all duration-200 shadow-xs cursor-pointer flex flex-col justify-between text-left shrink-0 w-[270px] sm:w-[300px] snap-start ${
+                              isSelected
+                                ? "!bg-slate-950 !text-white !border-slate-950 shadow-md ring-2 ring-amber-500/40"
+                                : "!bg-white !text-slate-950 border-slate-200 hover:!bg-slate-950 hover:!text-white hover:!border-slate-950 hover:shadow-md"
+                            }`}
+                          >
+                            <div>
+                              <div className="flex items-start justify-between gap-2">
+                                <span className={`font-black text-sm sm:text-base flex items-center gap-1.5 transition-colors ${
+                                  isSelected
+                                    ? "!text-white"
+                                    : "!text-slate-950 group-hover:!text-white"
+                                }`}>
+                                  <ConfigIcon className="w-4 h-4 text-[#faad13] shrink-0" />
+                                  <span>{cfg.label}</span>
+                                </span>
+                                <span className={`text-xs font-black px-2.5 py-0.5 rounded-lg border transition-colors shrink-0 ${
+                                  isSelected
+                                    ? "bg-amber-500 !text-slate-950 border-amber-400"
+                                    : "bg-amber-500/15 !text-slate-950 border-amber-500/30 group-hover:bg-amber-500 group-hover:!text-slate-950 group-hover:border-amber-400"
+                                }`}>
+                                  {priceText}
+                                </span>
+                              </div>
+
+                              <div className={`flex items-center justify-between gap-2 mt-2 text-xs transition-colors ${
+                                isSelected
+                                  ? "!text-slate-200"
+                                  : "!text-slate-700 group-hover:!text-slate-200"
+                              }`}>
+                                {sizeText ? (
+                                  <span className="font-bold">
+                                    {sizeText}
+                                  </span>
+                                ) : (
+                                  <span className="text-[11px] opacity-75">Layout available</span>
+                                )}
+                                {cfg.pricePerUnit && (
+                                  <span className={`text-[11px] font-bold transition-colors ${
+                                    isSelected
+                                      ? "!text-slate-300"
+                                      : "!text-slate-600 group-hover:!text-slate-300"
+                                  }`}>
+                                    ₹{cfg.pricePerUnit.toLocaleString("en-IN")}/{unitLabel}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {(cfg.facing?.length || cfg.possessionDate || cfg.uds) && (
+                              <div className={`flex items-center gap-1.5 mt-2.5 pt-2 border-t text-[10px] flex-wrap transition-colors ${
+                                isSelected
+                                  ? "border-white/15 text-slate-300"
+                                  : "border-slate-100 text-slate-600 group-hover:border-white/15 group-hover:text-slate-300"
+                              }`}>
+                                {cfg.facing && cfg.facing.length > 0 && (
+                                  <span className={`px-1.5 py-0.5 rounded-md border font-bold transition-colors ${
+                                    isSelected
+                                      ? "bg-white/10 text-white border-white/15"
+                                      : "bg-slate-100 text-slate-900 border-slate-200 group-hover:bg-white/10 group-hover:text-white group-hover:border-white/15"
+                                  }`}>
+                                    {cfg.facing.join(", ")}
+                                  </span>
+                                )}
+                                {cfg.possessionDate && (
+                                  <span className={`px-1.5 py-0.5 rounded-md border font-bold transition-colors ${
+                                    isSelected
+                                      ? "bg-white/10 text-white border-white/15"
+                                      : "bg-slate-100 text-slate-900 border-slate-200 group-hover:bg-white/10 group-hover:text-white group-hover:border-white/15"
+                                  }`}>
+                                    Poss: {cfg.possessionDate}
+                                  </span>
+                                )}
+                                {cfg.uds && (
+                                  <span className={`px-1.5 py-0.5 rounded-md border font-bold transition-colors ${
+                                    isSelected
+                                      ? "bg-white/10 text-white border-white/15"
+                                      : "bg-slate-100 text-slate-900 border-slate-200 group-hover:bg-white/10 group-hover:text-white group-hover:border-white/15"
+                                  }`}>
+                                    UDS: {cfg.uds} sq.yd
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      </div>
+                    </div>
+
+                    {/* Synchronized Movement Draggable Progress Bar */}
+                    {canScrollConfigs && (
+                      <div className="pt-2 pb-0.5 flex flex-col items-center justify-center">
+                        <div
+                          ref={configTrackRef}
+                          onPointerDown={handlePointerDownConfig}
+                          onPointerMove={handlePointerMoveConfig}
+                          onPointerUp={handlePointerUpConfig}
+                          onPointerCancel={handlePointerUpConfig}
+                          title="Drag or click to scroll configurations"
+                          role="slider"
+                          aria-label="Drag to scroll configurations"
+                          aria-valuenow={Math.round(configScrollPercent * 100)}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          className="py-2.5 px-2 cursor-grab active:cursor-grabbing touch-none select-none flex items-center group/track"
+                        >
+                          <div className={cn(
+                            "h-2 sm:h-2.5 w-40 sm:w-52 bg-slate-200/90 dark:bg-slate-800 rounded-full relative overflow-hidden transition-all shadow-inner",
+                            isDraggingConfig ? "h-2.5 sm:h-3 ring-2 ring-amber-400/40" : "group-hover/track:h-2.5"
+                          )}>
+                            <div
+                              className={cn(
+                                "absolute top-0 bottom-0 rounded-full shadow-xs transition-all",
+                                isDraggingConfig
+                                  ? "bg-amber-500 dark:bg-amber-400 ring-2 ring-amber-400/60 duration-0"
+                                  : "bg-[#faad13] dark:bg-amber-400 duration-75 group-hover/track:bg-amber-500"
+                              )}
+                              style={{
+                                width: `${configThumbWidth}%`,
+                                left: `${configScrollPercent * (100 - configThumbWidth)}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Unit configurations and floor plans available on request.</span>
+                    </div>
+                    <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">Contact Developer</span>
+                  </div>
+                )}
               </div>
 
               {/* Box 2: Overview / About This Project Section */}

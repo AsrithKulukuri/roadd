@@ -618,14 +618,14 @@ export function PropertyCard({
 
             {/* Status Bottom Left */}
             <div className="absolute bottom-2.5 left-2.5 z-10">
-              <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold backdrop-blur-md border border-white/10 bg-slate-950/85 text-amber-400 shadow-sm">
+              <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold backdrop-blur-md border border-[#faad13] bg-slate-950 text-white shadow-sm">
                 {property.listingType === "rent" || property.listingType === "pg"
                   ? "For Rent"
                   : property.saleType === "resale"
                   ? "Resale"
                   : property.isReadyToMove
                   ? "Ready to Move"
-                  : "New Construction"}
+                  : "Under Construction"}
               </span>
             </div>
           </div>

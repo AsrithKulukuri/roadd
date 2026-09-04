@@ -313,8 +313,8 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
 
           {/* Bottom Left Status */}
           <div className="absolute bottom-2.5 left-2.5 z-10">
-            <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold backdrop-blur-md border border-white/10 bg-slate-950/85 text-amber-400 shadow-sm">
-              {STATUS_LABELS[project.constructionStatus] || "New Launch"}
+            <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold backdrop-blur-md border border-[#faad13] bg-slate-950 text-white shadow-sm">
+              {STATUS_LABELS[project.constructionStatus] || "Under Construction"}
             </span>
           </div>
 
