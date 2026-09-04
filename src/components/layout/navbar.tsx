@@ -326,7 +326,7 @@ export function Navbar() {
         className={cn(
           "fixed top-0 left-0 right-0 z-[100] h-16 flex items-center transition-all duration-300 ease-in-out",
           isTransparent
-            ? "bg-slate-950/80 backdrop-blur-sm border-b border-white/10"
+            ? "bg-transparent border-b border-transparent shadow-none"
             : "bg-slate-950/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-800/90 shadow-md",
           isSearchPage
             ? (isScrolled ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100")
