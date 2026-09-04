@@ -45,6 +45,7 @@ interface ProjectMapViewProps {
   locality: string;
   city: string;
   projectType: string;
+  distanceText?: string;
 }
 
 export default function ProjectMapView({
@@ -54,6 +55,7 @@ export default function ProjectMapView({
   locality,
   city,
   projectType,
+  distanceText,
 }: ProjectMapViewProps) {
   const center: [number, number] = [latitude, longitude];
 
@@ -96,6 +98,11 @@ export default function ProjectMapView({
               </p>
               <p style={{ fontSize: "11px", color: "#64748b", marginBottom: "2px" }}>
                 {locality}, {city}
+                {distanceText && (
+                  <span style={{ display: "block", color: "#b45309", fontWeight: 700, marginTop: "2px" }}>
+                    📍 {distanceText}
+                  </span>
+                )}
               </p>
               <span style={{
                 display: "inline-block", background: "#F59E0B22", color: "#B45309",

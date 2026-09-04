@@ -10,7 +10,7 @@ import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import {
   MapPin, CheckCircle2, Phone, MessageCircle, Download, FileText, ExternalLink,
   ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark,
-  Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate, Film, Layers, Loader2, Copy, Share2, Lock, ShieldCheck
+  Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate, Film, Layers, Loader2, Copy, Share2, Lock, ShieldCheck, Navigation
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -57,6 +57,31 @@ function formatINRCrore(amount: number): string {
   if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
   if (amount >= 100000)   return `₹${(amount / 100000).toFixed(2)} L`;
   return `₹${amount.toLocaleString("en-IN")}`;
+}
+
+function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function formatDistanceText(km: number): string {
+  if (km < 1) {
+    const meters = Math.round(km * 1000);
+    return `${meters} meters`;
+  }
+  if (km < 10) {
+    return `${km.toFixed(1)} kms`;
+  }
+  return `${Math.round(km)} kms`;
 }
 
 function RollingStatusTab({ isSelected }: { isSelected?: boolean }) {
@@ -157,6 +182,7 @@ export function ProjectDetailView({
   const [configThumbWidth, setConfigThumbWidth] = useState(30);
   const [canScrollConfigs, setCanScrollConfigs] = useState(false);
   const [isDraggingConfig, setIsDraggingConfig] = useState(false);
+  const [userDistanceKm, setUserDistanceKm] = useState<number | null>(null);
 
   const updateConfigScroll = () => {
     const el = configSliderRef.current;
@@ -228,6 +254,44 @@ export function ProjectDetailView({
       window.removeEventListener("resize", handleResize);
     };
   }, [project?.configurations]);
+
+  // Automatically retrieve user location and calculate distance in km to project location
+  useEffect(() => {
+    if (typeof window === "undefined" || !navigator.geolocation) return;
+
+    const projLat = project?.location?.latitude;
+    const projLng = project?.location?.longitude;
+    if (!projLat || !projLng) return;
+
+    // 1. Instantly check sessionStorage for cached coordinates to eliminate layout shift
+    try {
+      const cached = sessionStorage.getItem("user_coords");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (typeof parsed.latitude === "number" && typeof parsed.longitude === "number") {
+          const dist = calculateDistanceKm(parsed.latitude, parsed.longitude, projLat, projLng);
+          setUserDistanceKm(dist);
+        }
+      }
+    } catch {}
+
+    // 2. Automatically request current position via HTML5 Geolocation API
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        try {
+          sessionStorage.setItem("user_coords", JSON.stringify({ latitude: lat, longitude: lng }));
+        } catch {}
+        const dist = calculateDistanceKm(lat, lng, projLat, projLng);
+        setUserDistanceKm(dist);
+      },
+      (err) => {
+        console.warn("Geolocation prompt skipped or error:", err.message);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    );
+  }, [project?.location?.latitude, project?.location?.longitude]);
 
   useEffect(() => {
     if (!isLoggedIn || !project) return;
@@ -778,9 +842,17 @@ export function ProjectDetailView({
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 text-text-secondary text-xs sm:text-sm font-medium mt-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                        <span>{project.location.locality}, {project.location.city}</span>
+
+                      <div className="flex items-center gap-1.5 text-text-secondary text-xs sm:text-sm font-medium mt-1 flex-wrap">
+                        <MapPin className="w-3.5 h-3.5 text-[#faad13] shrink-0" />
+                        <span>
+                          {project.location.locality}, {project.location.city}
+                          {userDistanceKm !== null && (
+                            <span className="font-bold text-slate-900 dark:text-amber-400">
+                              , just located {formatDistanceText(userDistanceKm)} from you
+                            </span>
+                          )}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1560,10 +1632,25 @@ export function ProjectDetailView({
 
               <ScrollReveal id="location" className="scroll-mt-32">
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
-                  <h2 className="text-xl font-bold text-text-primary">Location & Map</h2>
-                  <div className="flex items-center gap-2 text-text-secondary text-sm">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <h2 className="text-xl font-bold text-text-primary">Location & Map</h2>
+                    {userDistanceKm !== null && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/15 text-slate-950 dark:text-amber-400 border border-amber-500/30 shadow-2xs">
+                        <Navigation className="w-3.5 h-3.5 text-[#faad13] fill-[#faad13]/20" />
+                        Just located {formatDistanceText(userDistanceKm)} from you
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-text-secondary text-sm flex-wrap">
                     <MapPin className="w-4 h-4 text-amber-primary shrink-0" />
-                    <span>{project.location.address || `${project.location.locality}, ${project.location.city}, ${project.location.state}`}</span>
+                    <span>
+                      {project.location.address || `${project.location.locality}, ${project.location.city}, ${project.location.state}`}
+                      {userDistanceKm !== null && (
+                        <span className="font-bold text-slate-900 dark:text-amber-400 ml-1">
+                          , just located {formatDistanceText(userDistanceKm)} from you
+                        </span>
+                      )}
+                    </span>
                   </div>
 
                   {/* Map */}
@@ -1575,6 +1662,7 @@ export function ProjectDetailView({
                       locality={project.location.locality}
                       city={project.location.city}
                       projectType={project.projectType}
+                      distanceText={userDistanceKm !== null ? `just located ${formatDistanceText(userDistanceKm)} from you` : undefined}
                     />
                   </div>
 
