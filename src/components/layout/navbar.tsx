@@ -314,6 +314,11 @@ export function Navbar() {
   const isTransparent = pathname === "/" && !isScrolled;
   const isSearchPage = pathname === "/search" || pathname === "/properties";
 
+  // Hide Road Facing top navbar on search and properties pages in both map and list view
+  if (isSearchPage) {
+    return null;
+  }
+
   return (
     <>
       {/* Realtor.com Style Clean Navbar */}

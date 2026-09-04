@@ -26,7 +26,7 @@ export function MobileStickySearchHeader() {
 
   // Hidden on admin, search page (which has its own header), and auth pages
   const isAdmin = pathname.startsWith("/admin");
-  const isSearchPage = pathname === "/search";
+  const isSearchPage = pathname === "/search" || pathname === "/properties";
   const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password";
 
   // Cycle placeholder suggestions

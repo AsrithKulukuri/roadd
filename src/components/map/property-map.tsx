@@ -1736,21 +1736,21 @@ export default function PropertyMap({
 
   return (
     <div
-      className="w-full h-full flex-1 flex flex-col touch-none relative isolate min-h-0"
+      className="w-full h-full flex-1 flex flex-col touch-none relative min-h-0"
       style={{ touchAction: "none", height: mapHeight, minHeight: containerHeight ? 400 : "100%" }}
     >
       {/* Styles for Leaflet map are in globals.css */}
 
       {/* Main Container */}
       <div
-        className="relative w-full h-full flex-1 flex flex-col md:flex-row gap-0 overflow-hidden bg-slate-900 shadow-xl touch-none isolate min-h-0"
+        className="relative w-full h-full flex-1 flex flex-col md:flex-row gap-0 overflow-hidden bg-slate-900 shadow-xl touch-none min-h-0"
         style={{ touchAction: "none", height: mapHeight, minHeight: containerHeight ? 400 : "100%" }}
       >
         
         {/* Mobile Backdrop Overlay */}
         {showMapExplorer && (
           <div
-            className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-[998] transition-opacity duration-300 pointer-events-auto"
+            className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-[9998] transition-opacity duration-300 pointer-events-auto"
             onClick={() => setShowMapExplorer(false)}
           />
         )}
@@ -1758,29 +1758,29 @@ export default function PropertyMap({
         {/* Sidebar Control Panel / Collapsible Drawer (Desktop side-panel & Mobile bottom sheet) */}
         <div
           className={cn(
-            "text-slate-900 z-[999] shadow-2xl flex flex-col justify-between transition-all duration-300 pointer-events-auto",
+            "text-slate-900 z-[9999] shadow-2xl flex flex-col transition-all duration-300 pointer-events-auto",
             // Desktop: sleek left sidebar panel with clean white background and light border
             "md:relative md:w-96 md:flex-shrink-0 md:h-full md:border-r md:border-slate-200 md:bg-white md:p-6 md:space-y-5 md:overflow-y-auto",
-            // Mobile: modern bottom drawer modal with rounded top in clean white, with headroom so top header remains visible & overscroll contained
-            "fixed inset-x-0 bottom-0 max-h-[calc(100dvh-120px)] rounded-t-3xl border-t border-slate-200 bg-white p-5 space-y-4 overflow-y-auto overscroll-contain touch-pan-y",
+            // Mobile: modern bottom drawer modal with rounded top in clean white, with top headroom so header remains visible & overscroll contained
+            "fixed inset-x-0 bottom-0 max-h-[85vh] rounded-t-3xl border-t border-slate-200 bg-white p-4 pt-2 overflow-y-auto overscroll-contain touch-pan-y shadow-2xl",
             showMapExplorer ? "flex animate-in slide-in-from-bottom duration-300 md:animate-none" : "hidden"
           )}
         >
-          {/* Mobile pull handle */}
-          <div
-            onClick={() => setShowMapExplorer(false)}
-            className="w-12 h-1.5 bg-slate-200 hover:bg-slate-300 rounded-full mx-auto -mt-1 mb-1 md:hidden cursor-pointer shrink-0"
-          />
+          {/* STICKY TOP HEADER of Drawer on Mobile & Sidebar on Desktop */}
+          <div className="sticky top-0 bg-white z-30 pb-2.5 pt-1 border-b border-slate-100 shrink-0">
+            {/* Mobile pull handle */}
+            <div
+              onClick={() => setShowMapExplorer(false)}
+              className="w-12 h-1.5 bg-slate-300 hover:bg-slate-400 rounded-full mx-auto mb-2 md:hidden cursor-pointer shrink-0"
+            />
 
-          <div className="space-y-4">
-            {/* Header */}
-            <div className="flex items-center justify-between shrink-0">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shadow-xs">
                   <Compass className="w-4 h-4 text-amber-600" />
                 </div>
                 <div>
-                  <h2 className="font-heading text-lg font-black text-slate-950 tracking-tight leading-tight">
+                  <h2 className="font-heading text-base sm:text-lg font-black text-slate-950 tracking-tight leading-tight">
                     Map Explorer
                   </h2>
                   <p className="text-[10px] text-slate-500 font-medium">
@@ -1796,6 +1796,9 @@ export default function PropertyMap({
                 <X className="w-4 h-4" />
               </button>
             </div>
+          </div>
+
+          <div className="space-y-4 pt-3">
 
             {/* Entity Type Filter Buttons (All, Properties, Projects) */}
             <div className="space-y-1.5 shrink-0">
