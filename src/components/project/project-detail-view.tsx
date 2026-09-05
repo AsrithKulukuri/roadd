@@ -1035,7 +1035,30 @@ export function ProjectDetailView({
                 )}
               </div>
 
-              {/* Box 2: Overview / About This Project Section */}
+              {/* Box 2: Price Range & Quick Actions */}
+              <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider mb-1">Starting Price Range</p>
+                  <p className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">{priceRange}
+                    <span className="text-xs font-semibold text-text-secondary ml-2 font-normal">+ Govt. Charges</span>
+                  </p>
+                  {project.configurations[0] && (
+                    <p className="text-xs sm:text-sm text-text-secondary mt-1 font-medium">
+                      Available in {[...new Set(project.configurations.map((c) => c.label))].join(", ")} {project.projectType === "venture" ? "Plots" : project.projectType === "villa" ? "Villas" : "Apartments"}
+                    </p>
+                  )}
+                </div>
+                {hasBrochure && (
+                  <button
+                    onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all shadow-sm whitespace-nowrap cursor-pointer active:scale-95"
+                  >
+                    <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download Brochure
+                  </button>
+                )}
+              </div>
+
+              {/* Box 3: Overview / About This Project Section */}
               <ScrollReveal id="overview" className="scroll-mt-32">
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm space-y-6">
                   <div>
@@ -1081,29 +1104,6 @@ export function ProjectDetailView({
                   )}
                 </div>
               </ScrollReveal>
-
-              {/* Box 3: Price Range & Quick Actions */}
-              <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider mb-1">Starting Price Range</p>
-                  <p className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">{priceRange}
-                    <span className="text-xs font-semibold text-text-secondary ml-2 font-normal">+ Govt. Charges</span>
-                  </p>
-                  {project.configurations[0] && (
-                    <p className="text-xs sm:text-sm text-text-secondary mt-1 font-medium">
-                      Available in {[...new Set(project.configurations.map((c) => c.label))].join(", ")} {project.projectType === "venture" ? "Plots" : project.projectType === "villa" ? "Villas" : "Apartments"}
-                    </p>
-                  )}
-                </div>
-                {hasBrochure && (
-                  <button
-                    onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all shadow-sm whitespace-nowrap cursor-pointer active:scale-95"
-                  >
-                    <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download Brochure
-                  </button>
-                )}
-              </div>
 
               {/* Box 4: Construction Updates Box */}
               {project.constructionUpdates && project.constructionUpdates.length > 0 && (
