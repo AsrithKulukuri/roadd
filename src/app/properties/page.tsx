@@ -372,7 +372,7 @@ function PropertiesPage() {
     <div
       className={cn(
         "flex flex-col w-full bg-slate-50/50 text-slate-900 transition-all",
-        viewMode === "map" ? "h-[100dvh] max-h-[100dvh] overflow-hidden pt-16" : "min-h-screen pt-16 pb-16"
+        viewMode === "map" ? "h-[100dvh] max-h-[100dvh] overflow-hidden" : "min-h-screen pb-16"
       )}
     >
       {/* Realtor.com Inspired Sticky Search Header & Filter Bar */}
