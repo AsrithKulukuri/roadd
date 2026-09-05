@@ -606,8 +606,8 @@ function itemMatchesSubtype(p: any, typeKey: string): boolean {
       return pType === "apartment" || subType.includes("flat") || title.includes("flat") || title.includes("apartment");
 
     case "houses":
-      if (isProj) return false;
-      return pType === "independent-house" || subType.includes("house") || title.includes("house");
+      if (isProj) return pType.includes("house") || title.includes("house");
+      return pType === "independent-house" || pType.includes("house") || subType.includes("house") || title.includes("house");
 
     case "villas":
       if (isProj) {
@@ -623,13 +623,35 @@ function itemMatchesSubtype(p: any, typeKey: string): boolean {
 
     case "agriculture":
       if (isProj) return false;
-      return pType === "agricultural-lands" || pType === "farmhouse" || subType.includes("farm") || title.includes("agri") || title.includes("farm") || desc.includes("agriculture");
+      return (
+        pType === "agricultural-lands" ||
+        pType === "farmhouse" ||
+        subType.includes("farm") ||
+        subType.includes("agri") ||
+        title.includes("agri") ||
+        title.includes("farm") ||
+        desc.includes("agriculture")
+      );
 
-    case "crda":
+    case "crda": {
+      const pApprovedBy = ((p as any).landApprovedBy || (p as any).approvedBy || "").toLowerCase();
       if (isProj) {
-        return pType === "venture" || Boolean(origProj?.crdaApproved) || Boolean(p.crdaApproved) || title.includes("crda") || desc.includes("crda");
+        return (
+          pType === "venture" ||
+          Boolean(origProj?.crdaApproved) ||
+          Boolean((p as any).crdaApproved) ||
+          pApprovedBy.includes("crda") ||
+          title.includes("crda") ||
+          desc.includes("crda")
+        );
       }
-      return title.includes("crda") || desc.includes("crda");
+      return (
+        pApprovedBy.includes("crda") ||
+        Boolean((p as any).crdaApproved) ||
+        title.includes("crda") ||
+        desc.includes("crda")
+      );
+    }
 
     case "gated": {
       const hasGatedAmenity = Array.isArray(p.amenities) && p.amenities.some((a: unknown) => {
@@ -1308,15 +1330,21 @@ export default function PropertyMap({
     }
   }, [onEntityTypeFilterChange]);
 
+  // Guard against internal subtype clicks being wiped out by subsequent activeFilters sync
+  const isInternalSubtypeChange = useRef(false);
+
   // Property / Project Subtype filter state (e.g. "flats", "villas", "plots", "crda", etc.)
   const [selectedSubtype, setSelectedSubtype] = useState<string | null>(() => {
     if (activeFilters?.gatedCommunity) return "gated";
     if (activeFilters?.propertyType && activeFilters.propertyType.length > 0) {
-      const pt = activeFilters.propertyType[0];
+      const pt = activeFilters.propertyType[0]?.toLowerCase();
       if (pt === "apartment") return "flats";
+      if (pt === "independent-house" || pt === "house" || pt === "houses") return "houses";
       if (pt === "villa") return "villas";
-      if (pt === "residential-land") return "plots";
-      if (pt === "commercial-spaces") return "commercial";
+      if (pt === "residential-land" || pt === "plot" || pt === "plots") return "plots";
+      if (pt === "crda-ventures" || pt === "crda" || pt === "crda-venture") return "crda";
+      if (pt === "agricultural-lands" || pt === "agriculture") return "agriculture";
+      if (pt === "commercial-spaces" || pt === "commercial" || pt === "shops") return "commercial";
       if (pt === "farmhouse") return "farmhouses";
     }
     return null;
@@ -1324,15 +1352,22 @@ export default function PropertyMap({
 
   // Sync subtype with activeFilters from top filter box
   useEffect(() => {
+    if (isInternalSubtypeChange.current) {
+      isInternalSubtypeChange.current = false;
+      return;
+    }
     if (activeFilters) {
       if (activeFilters.gatedCommunity) {
         setSelectedSubtype("gated");
       } else if (activeFilters.propertyType && activeFilters.propertyType.length > 0) {
-        const pt = activeFilters.propertyType[0];
+        const pt = activeFilters.propertyType[0]?.toLowerCase();
         if (pt === "apartment") setSelectedSubtype("flats");
+        else if (pt === "independent-house" || pt === "house" || pt === "houses") setSelectedSubtype("houses");
         else if (pt === "villa") setSelectedSubtype("villas");
-        else if (pt === "residential-land") setSelectedSubtype("plots");
-        else if (pt === "commercial-spaces") setSelectedSubtype("commercial");
+        else if (pt === "residential-land" || pt === "plot" || pt === "plots") setSelectedSubtype("plots");
+        else if (pt === "crda-ventures" || pt === "crda" || pt === "crda-venture") setSelectedSubtype("crda");
+        else if (pt === "agricultural-lands" || pt === "agriculture") setSelectedSubtype("agriculture");
+        else if (pt === "commercial-spaces" || pt === "commercial" || pt === "shops") setSelectedSubtype("commercial");
         else if (pt === "farmhouse") setSelectedSubtype("farmhouses");
       } else if (!activeFilters.gatedCommunity && (!activeFilters.propertyType || activeFilters.propertyType.length === 0)) {
         setSelectedSubtype(null);
@@ -1343,6 +1378,7 @@ export default function PropertyMap({
   const handleSubtypeSelect = useCallback((key: string) => {
     const isCurrent = selectedSubtype === key;
     const nextKey = isCurrent ? null : key;
+    isInternalSubtypeChange.current = true;
     setSelectedSubtype(nextKey);
 
     if (onFiltersChange) {
@@ -1352,10 +1388,16 @@ export default function PropertyMap({
 
         if (nextKey === "flats" || nextKey === "apartments") {
           propType = ["apartment"];
+        } else if (nextKey === "houses") {
+          propType = ["independent-house"];
         } else if (nextKey === "villas") {
           propType = ["villa"];
         } else if (nextKey === "plots" || nextKey === "open_plots") {
           propType = ["residential-land"];
+        } else if (nextKey === "crda") {
+          propType = ["crda-ventures"];
+        } else if (nextKey === "agriculture") {
+          propType = ["agricultural-lands"];
         } else if (nextKey === "commercial") {
           propType = ["commercial-spaces"];
         } else if (nextKey === "farmhouses") {
@@ -1374,6 +1416,7 @@ export default function PropertyMap({
   }, [selectedSubtype, onFiltersChange]);
 
   const handleResetType = useCallback(() => {
+    isInternalSubtypeChange.current = true;
     setSelectedSubtype(null);
     if (onFiltersChange) {
       onFiltersChange((prev) => ({

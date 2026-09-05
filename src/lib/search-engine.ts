@@ -568,12 +568,23 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
       // Apartment matches
       if (rt === "apartment" && (pType.includes("apartment") || pSubtype === "flat" || pSubtype === "pent-house" || pSubtype === "duplex-flat")) return true;
       
-      // Villa & House matches
-      if ((rt === "villa" || rt === "independent-house") && (pType.includes("villa") || pType.includes("independent-house") || pSubtype === "villa" || pSubtype === "house")) return true;
+      // Independent House matches
+      if ((rt === "independent-house" || rt === "house" || rt === "houses") && (pType.includes("independent-house") || pType.includes("house") || pSubtype.includes("house") || (property.title || "").toLowerCase().includes("house"))) return true;
+
+      // Villa matches
+      if (rt === "villa" && (pType.includes("villa") || pSubtype === "villa" || (property.title || "").toLowerCase().includes("villa"))) return true;
       
       // Land & Plot matches for standalone properties
       if ((rt === "residential-land" || rt === "plot" || rt === "residential-plot" || rt === "venture-plot") && (pType.includes("land") || pType.includes("plot") || pSubtype === "venture-plot" || pSubtype === "land")) return true;
       
+      // CRDA Ventures & CRDA Approved matches
+      if (rt === "crda-ventures" || rt === "crda" || rt === "crda-venture") {
+        const landApproved = String((property as any).landApprovedBy || (property as any).approvedBy || "").toLowerCase();
+        const titleLower = (property.title || "").toLowerCase();
+        const descLower = (property.description || "").toLowerCase();
+        return landApproved.includes("crda") || Boolean((property as any).crdaApproved) || titleLower.includes("crda") || descLower.includes("crda");
+      }
+
       // Commercial matches
       if ((rt === "commercial-spaces" || rt === "commercial" || rt === "shops" || rt === "buildings" || rt === "commercial-lands" || rt === "industrial-lands") && (pCategory === "commercial" || pType.includes("commercial") || pType === "shops" || pType === "buildings" || pSubtype === "shop" || pSubtype === "building")) return true;
       
@@ -581,7 +592,7 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
       if ((rt === "pg" || rt === "pg-coliving") && (pType === "pg-coliving" || pType === "pg" || property.listingType === "pg")) return true;
       
       // Farmhouse & Agricultural matches
-      if ((rt === "farmhouse" || rt === "agricultural-lands" || rt === "agricultural-land" || rt === "agricultural") && (pType === "farmhouse" || pType === "agricultural-lands" || pCategory === "agricultural" || pSubtype === "farm-house" || pSubtype === "land")) return true;
+      if ((rt === "farmhouse" || rt === "agricultural-lands" || rt === "agricultural-land" || rt === "agricultural" || rt === "agriculture") && (pType === "farmhouse" || pType === "agricultural-lands" || pCategory === "agricultural" || pSubtype === "farm-house" || pSubtype === "land" || (property.title || "").toLowerCase().includes("agri") || (property.title || "").toLowerCase().includes("farm"))) return true;
 
       return false;
     });
@@ -834,7 +845,13 @@ export function evaluateProjectFilters(
       if (tt === pType) return true;
       if (tt === "apartment" && pType.includes("apartment")) return true;
       if (tt === "villa" && (pType.includes("villa") || pType.includes("independent-house"))) return true;
-      if (["venture", "crda-ventures", "crda-venture", "residential-land", "plot", "venture-plot", "land"].includes(tt) && (pType === "venture" || pType === "plot" || pType === "land")) return true;
+      if ((tt === "independent-house" || tt === "house" || tt === "houses") && (pType.includes("house") || (project.name || "").toLowerCase().includes("house"))) return true;
+      if (["venture", "crda-ventures", "crda-venture", "crda", "residential-land", "plot", "venture-plot", "land"].includes(tt)) {
+        if (tt === "crda-ventures" || tt === "crda" || tt === "crda-venture") {
+          return pType === "venture" || Boolean(project.crdaApproved) || (project.name || "").toLowerCase().includes("crda") || (project.description || "").toLowerCase().includes("crda");
+        }
+        return pType === "venture" || pType === "plot" || pType === "land";
+      }
       if (["commercial-spaces", "commercial", "shops", "commercial-shop"].includes(tt) && pType.includes("commercial")) return true;
       if (tt === "gated-community") return hasGatedEvidenceProject(project);
       return false;
