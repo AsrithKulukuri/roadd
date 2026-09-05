@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   Calendar,
   Clock,
@@ -10,8 +11,6 @@ import {
   MapPin,
   CheckCircle2,
   X,
-  Building2,
-  Sparkles,
   MessageSquare,
   AlertCircle,
   Loader2,
@@ -70,7 +69,8 @@ function getAvailableDates() {
 }
 
 export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitModalProps) {
-  const dates = React.useMemo(() => getAvailableDates(), []);
+  const [mounted, setMounted] = useState(false);
+  const dates = useMemo(() => getAvailableDates(), []);
   const [selectedDate, setSelectedDate] = useState(dates[0]);
   const [selectedSlot, setSelectedSlot] = useState(TIME_SLOTS[0]);
 
@@ -85,9 +85,13 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
 
   const addSchedule = useSchedulesStore((s) => s.addSchedule);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Auto-fill from logged-in user profile if exists
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && isOpen) {
       try {
         const stored = localStorage.getItem("road_user");
         if (stored) {
@@ -100,7 +104,18 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  // Handle ESC key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        handleResetAndClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  if (!isOpen || !mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -200,77 +215,86 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-neutral-200 overflow-hidden flex flex-col max-h-[90vh]">
+  const modalContent = (
+    <div
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleResetAndClose();
+      }}
+    >
+      <div
+        className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-neutral-200 flex flex-col max-h-[85vh] overflow-hidden my-auto animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 bg-white">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-neutral-100 bg-white shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-600 shrink-0">
               <Calendar className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-neutral-900">Schedule Site Visit</h3>
-              <p className="text-xs text-neutral-500 truncate max-w-xs">{project.name}</p>
+            <div className="min-w-0">
+              <h3 className="text-base sm:text-lg font-bold text-neutral-900 leading-tight">Schedule Site Visit</h3>
+              <p className="text-xs text-neutral-500 truncate mt-0.5">{project.name}</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={handleResetAndClose}
-            className="p-2 text-neutral-400 hover:text-neutral-700 rounded-lg hover:bg-neutral-100 transition-colors"
+            className="p-1.5 text-neutral-400 hover:text-neutral-700 rounded-lg hover:bg-neutral-100 transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto space-y-6">
+        {/* Scrollable Content */}
+        <div className="p-5 sm:p-6 overflow-y-auto flex-1 min-h-0 space-y-5">
           {scheduledResult ? (
             /* Confirmation Success State */
-            <div className="text-center py-4 space-y-5 animate-in zoom-in-95 duration-300">
-              <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto ring-8 ring-emerald-50/50">
-                <CheckCircle2 className="w-9 h-9" />
+            <div className="text-center py-2 space-y-4">
+              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto ring-8 ring-emerald-50/50">
+                <CheckCircle2 className="w-8 h-8" />
               </div>
 
               <div>
-                <h4 className="text-xl font-bold text-neutral-900">Site Visit Confirmed!</h4>
-                <p className="text-sm text-neutral-600 mt-1">
+                <h4 className="text-lg sm:text-xl font-bold text-neutral-900">Site Visit Confirmed!</h4>
+                <p className="text-xs sm:text-sm text-neutral-600 mt-1">
                   Your appointment for <span className="font-semibold text-neutral-900">{project.name}</span> is booked.
                 </p>
               </div>
 
               {/* Summary Card */}
-              <div className="bg-neutral-50 rounded-xl p-4 text-left border border-neutral-200 space-y-3">
+              <div className="bg-neutral-50 rounded-xl p-4 text-left border border-neutral-200 space-y-2.5">
                 <div className="flex items-center justify-between text-xs pb-2 border-b border-neutral-200">
                   <span className="text-neutral-500">Booking ID</span>
                   <span className="font-mono font-medium text-neutral-800">{scheduledResult.id}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
                   <div>
-                    <span className="text-xs text-neutral-500 block">Date</span>
+                    <span className="text-[11px] text-neutral-500 block">Date</span>
                     <span className="font-semibold text-neutral-900">{scheduledResult.visitDate}</span>
                   </div>
                   <div>
-                    <span className="text-xs text-neutral-500 block">Time Slot</span>
+                    <span className="text-[11px] text-neutral-500 block">Time Slot</span>
                     <span className="font-semibold text-neutral-900">{scheduledResult.timeSlot}</span>
                   </div>
                   <div>
-                    <span className="text-xs text-neutral-500 block">Customer</span>
+                    <span className="text-[11px] text-neutral-500 block">Customer</span>
                     <span className="font-medium text-neutral-900">{scheduledResult.customerName}</span>
                   </div>
                   <div>
-                    <span className="text-xs text-neutral-500 block">Phone</span>
+                    <span className="text-[11px] text-neutral-500 block">Phone</span>
                     <span className="font-medium text-neutral-900">{scheduledResult.customerPhone}</span>
                   </div>
                 </div>
               </div>
 
               {/* WhatsApp Notification Status Details */}
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-left space-y-2">
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 text-left space-y-2">
                 <div className="flex items-center gap-2 text-xs font-semibold text-amber-900">
                   <MessageSquare className="w-4 h-4 text-amber-600" />
                   <span>WhatsApp Notifications Dispatched</span>
                 </div>
-                <ul className="text-xs text-neutral-700 space-y-1.5 pl-6 list-disc">
+                <ul className="text-xs text-neutral-700 space-y-1 pl-5 list-disc">
                   <li>
                     <span className="font-medium">Customer:</span> Confirmation sent to {scheduledResult.customerPhone}
                   </li>
@@ -286,20 +310,20 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
               <button
                 type="button"
                 onClick={handleResetAndClose}
-                className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold rounded-xl shadow-sm transition-all text-sm"
+                className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold rounded-xl shadow-xs transition-all text-sm"
               >
                 Done
               </button>
             </div>
           ) : (
             /* Booking Form */
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form id="schedule-visit-form" onSubmit={handleSubmit} className="space-y-4">
               {/* Select Date */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-2">
                   Select Date
                 </label>
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none">
                   {dates.map((d) => {
                     const isSelected = selectedDate.iso === d.iso;
                     return (
@@ -307,14 +331,14 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
                         key={d.iso}
                         type="button"
                         onClick={() => setSelectedDate(d)}
-                        className={`flex-shrink-0 w-20 py-2.5 px-2 rounded-xl text-center border transition-all ${
+                        className={`flex-shrink-0 w-18 sm:w-20 py-2 px-1.5 rounded-xl text-center border transition-all ${
                           isSelected
-                            ? "bg-amber-500 border-amber-500 text-neutral-950 shadow-sm font-bold scale-[1.02]"
+                            ? "bg-amber-500 border-amber-500 text-neutral-950 shadow-xs font-bold scale-[1.02]"
                             : "bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50"
                         }`}
                       >
                         <span className="block text-[10px] uppercase font-semibold opacity-80">{d.dayName}</span>
-                        <span className="block text-lg font-bold leading-tight">{d.dateNum}</span>
+                        <span className="block text-base sm:text-lg font-bold leading-tight">{d.dateNum}</span>
                         <span className="block text-[10px] uppercase">{d.monthName}</span>
                       </button>
                     );
@@ -335,9 +359,9 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
                         key={slot}
                         type="button"
                         onClick={() => setSelectedSlot(slot)}
-                        className={`py-2.5 px-3 rounded-xl text-xs font-semibold text-center border flex items-center justify-center gap-1.5 transition-all ${
+                        className={`py-2 px-2.5 rounded-xl text-xs font-semibold text-center border flex items-center justify-center gap-1.5 transition-all ${
                           isSelected
-                            ? "bg-neutral-900 border-neutral-900 text-white shadow-sm"
+                            ? "bg-neutral-900 border-neutral-900 text-white shadow-xs"
                             : "bg-white border-neutral-200 text-neutral-800 hover:bg-neutral-50 hover:border-neutral-300"
                         }`}
                       >
@@ -364,7 +388,7 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       required
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-neutral-300 rounded-xl text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-neutral-300 rounded-xl text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                     />
                   </div>
                 </div>
@@ -378,12 +402,12 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       required
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-neutral-300 rounded-xl text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-neutral-300 rounded-xl text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                     />
                   </div>
                   <p className="text-[11px] text-neutral-500 mt-1 flex items-center gap-1">
-                    <MessageSquare className="w-3 h-3 text-emerald-600" />
-                    Instant WhatsApp confirmation & 1-hr reminder will be sent to this number
+                    <MessageSquare className="w-3 h-3 text-emerald-600 shrink-0" />
+                    WhatsApp confirmation &amp; 1-hr reminder will be sent to this number
                   </p>
                 </div>
 
@@ -395,7 +419,7 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
                       placeholder="Email Address (Optional)"
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-neutral-300 rounded-xl text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-neutral-300 rounded-xl text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                     />
                   </div>
                 </div>
@@ -406,40 +430,47 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
                     placeholder="Specific requirements or questions for the site tour? (Optional)"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-xl text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                    className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-xl text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                   />
                 </div>
               </div>
 
               {errorMessage && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200">
+                <div className="flex items-center gap-2 p-2.5 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{errorMessage}</span>
                 </div>
               )}
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-neutral-950 font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Scheduling & Notifying Builder...</span>
-                  </>
-                ) : (
-                  <>
-                    <Calendar className="w-4 h-4" />
-                    <span>Confirm Site Visit</span>
-                  </>
-                )}
-              </button>
             </form>
           )}
         </div>
+
+        {/* Sticky Footer with Submit Button */}
+        {!scheduledResult && (
+          <div className="p-4 bg-white border-t border-neutral-100 shrink-0 shadow-xs">
+            <button
+              type="submit"
+              form="schedule-visit-form"
+              disabled={isSubmitting}
+              className="w-full py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-neutral-950 font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 text-sm cursor-pointer active:scale-98"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Scheduling &amp; Notifying Builder...</span>
+                </>
+              ) : (
+                <>
+                  <Calendar className="w-4 h-4" />
+                  <span>Confirm Site Visit</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
