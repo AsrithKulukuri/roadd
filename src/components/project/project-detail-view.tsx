@@ -1523,15 +1523,15 @@ export function ProjectDetailView({
 
                             {/* Micro-Specs Grid */}
                             <div className="grid grid-cols-2 gap-2 my-2">
-                              <div className="bg-bg-primary dark:bg-bg-primary/60 border border-border-default/60 rounded-xl px-3 py-2">
+                              <div className="bg-bg-primary dark:bg-bg-primary/60 border border-border-default/60 rounded-xl px-2.5 sm:px-3 py-2">
                                 <div className="text-[10px] uppercase font-bold text-text-tertiary">Status</div>
-                                <div className="text-xs font-bold text-text-primary capitalize truncate mt-0.5">
+                                <div className="text-[11px] sm:text-xs font-bold text-text-primary capitalize leading-snug mt-0.5 whitespace-normal">
                                   {(cfg.constructionStatus || project.constructionStatus).replace("-", " ")}
                                 </div>
                               </div>
-                              <div className="bg-bg-primary dark:bg-bg-primary/60 border border-border-default/60 rounded-xl px-3 py-2">
+                              <div className="bg-bg-primary dark:bg-bg-primary/60 border border-border-default/60 rounded-xl px-2.5 sm:px-3 py-2">
                                 <div className="text-[10px] uppercase font-bold text-text-tertiary">Possession</div>
-                                <div className="text-xs font-bold text-text-primary truncate mt-0.5">
+                                <div className="text-[11px] sm:text-xs font-bold text-text-primary leading-snug mt-0.5 whitespace-normal">
                                   {cfg.possessionDate || "On Request"}
                                 </div>
                               </div>
