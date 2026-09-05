@@ -2392,15 +2392,15 @@ export default function PropertyMap({
         </div>
 
         {/* PART 2: Properties & Projects List (Left equal part on desktop in mobile view style, hidden on mobile sheet) */}
-        <div className="hidden md:flex md:w-1/2 h-full flex-col min-w-0 bg-slate-50 dark:bg-slate-950 overflow-hidden md:border-r md:border-slate-200 dark:md:border-slate-800">
+        <div className="hidden md:flex md:w-1/2 h-full flex-col min-w-0 bg-white overflow-hidden md:border-r md:border-slate-200">
           {/* Part 2 Top Header */}
-          <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between shrink-0 select-none">
+          <div className="bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between shrink-0 select-none">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-[#f1a010] flex items-center justify-center">
                 <Sparkles className="w-3.5 h-3.5" />
               </div>
               <div>
-                <h3 className="font-heading text-xs sm:text-sm font-black text-slate-950 dark:text-white leading-tight">
+                <h3 className="font-heading text-xs sm:text-sm font-black text-slate-950 leading-tight">
                   {(() => {
                     const hasProj = displayedPropertiesFiltered.some((p: any) => p._isProject);
                     const hasProp = displayedPropertiesFiltered.some((p: any) => !p._isProject);
@@ -2412,34 +2412,40 @@ export default function PropertyMap({
                     return `${entityLabel} (${displayedPropertiesFiltered.length})`;
                   })()}
                 </h3>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                <p className="text-[10px] text-slate-500 font-medium">
                   Mobile card view • Click to focus map
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+            <span className="text-[11px] font-black px-2.5 py-1 rounded-full bg-amber-500/10 text-[#f1a010] border border-[#f1a010]/30">
               {displayedPropertiesFiltered.length} Active
             </span>
           </div>
 
           {/* Part 2 Scrollable Cards List */}
           {isLoading ? (
-            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 no-scrollbar">
-              <MapCardSkeleton />
-              <MapCardSkeleton />
-              <MapCardSkeleton />
-              <MapCardSkeleton />
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 no-scrollbar bg-slate-50/50">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="w-full bg-white border border-slate-200 rounded-2xl p-2.5 flex gap-3 animate-pulse">
+                  <div className="w-24 sm:w-28 h-24 rounded-xl bg-slate-100 shrink-0" />
+                  <div className="flex-1 space-y-2 py-1">
+                    <div className="h-4 bg-slate-200 rounded w-1/3" />
+                    <div className="h-3 bg-slate-100 rounded w-3/4" />
+                    <div className="h-3 bg-slate-100 rounded w-1/2" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : displayedPropertiesFiltered.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mb-3">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-slate-50/50">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-[#f1a010] flex items-center justify-center mb-3">
                 <Search className="w-6 h-6" />
               </div>
-              <p className="font-heading font-bold text-sm text-slate-900 dark:text-white mb-1">
-                No listings found
+              <p className="font-heading font-black text-sm text-slate-950 mb-1">
+                No listings in this map area
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mb-4">
-                No properties or projects match your selected filters in this area.
+              <p className="text-xs text-slate-500 max-w-xs mb-4">
+                Pan or zoom out the map to see properties and projects in surrounding areas.
               </p>
               <button
                 type="button"
@@ -2448,14 +2454,17 @@ export default function PropertyMap({
                   setListingTypeFilter("all");
                   setSelectedMapLocality(null);
                   setMapPriceRange([0, 100000000]);
+                  if (mapRef.current) {
+                    mapRef.current.setView([16.5062, 80.6480], 13);
+                  }
                 }}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer"
+                className="px-4 py-2 bg-[#f1a010] hover:bg-[#d88c0a] text-slate-950 font-black text-xs rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
               >
-                Reset Map Filters
+                Reset Map View
               </button>
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 no-scrollbar">
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 no-scrollbar bg-slate-50/50">
               {displayedPropertiesFiltered.slice(0, mobileTrayCount).map((prop) => {
                 const isSelected = selectedPropertyId === prop.id;
                 const coords = resolvePropertyMapCoords(prop);
@@ -2488,12 +2497,12 @@ export default function PropertyMap({
                       setTimeout(() => setBlinkingPropertyId(null), 4000);
                     }}
                     className={cn(
-                      "w-full bg-white dark:bg-slate-900 border rounded-2xl p-2.5 transition-all duration-200 cursor-pointer flex gap-3 group hover:border-[#f1a010] shadow-xs hover:shadow-md",
-                      isSelected ? "border-[#f1a010] ring-2 ring-[#f1a010]/30 bg-amber-500/5 shadow-md" : "border-slate-200 dark:border-slate-800"
+                      "w-full bg-white border rounded-2xl p-2.5 transition-all duration-200 cursor-pointer flex gap-3 group hover:border-[#f1a010] shadow-xs hover:shadow-md",
+                      isSelected ? "border-[#f1a010] ring-2 ring-[#f1a010]/30 bg-amber-50/40 shadow-md" : "border-slate-200"
                     )}
                   >
                     {/* Thumbnail Image Carousel */}
-                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shrink-0 relative bg-slate-100 dark:bg-slate-800">
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shrink-0 relative bg-slate-100">
                       <MapCardImageCarousel
                         images={allImages}
                         title={prop.title || (prop as any).name || "Property"}
@@ -2508,25 +2517,26 @@ export default function PropertyMap({
                           <span className="text-[#f1a010] font-black text-sm sm:text-base tracking-tight leading-tight">
                             {formatPriceCompact(prop.price)}
                           </span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+                          <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-800 border border-slate-200 shrink-0">
                             {propTypeLabel}
                           </span>
                         </div>
-                        <h4 className="text-slate-900 dark:text-white font-bold text-xs truncate group-hover:text-[#f1a010] transition-colors mt-1 leading-snug">
+                        <h4 className="text-slate-950 font-bold text-xs truncate group-hover:text-[#f1a010] transition-colors mt-1 leading-snug">
                           {prop.title || (prop as any).name || "Property"}
                         </h4>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                          📍 {prop.location?.locality || ""}, {prop.location?.city || ""}
+                        <p className="text-[11px] text-slate-600 truncate mt-0.5 flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-[#f1a010] shrink-0" />
+                          <span>{prop.location?.locality || ""}, {prop.location?.city || ""}</span>
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-800/80 text-[10px] mt-1">
+                      <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px] mt-1">
                         {distStr ? (
-                          <span className="text-[#f1a010] font-extrabold flex items-center gap-1 truncate max-w-[80px]">
+                          <span className="text-[#f1a010] font-extrabold flex items-center gap-1 truncate max-w-[85px]">
                             <Navigation className="w-3 h-3 text-[#f1a010] shrink-0" /> {distStr}
                           </span>
                         ) : (
-                          <span className="text-slate-400 font-medium capitalize truncate max-w-[80px]">
+                          <span className="text-slate-500 font-bold capitalize truncate max-w-[85px]">
                             {(prop as any)._isProject ? "Project" : prop.listingType}
                           </span>
                         )}
@@ -2543,11 +2553,11 @@ export default function PropertyMap({
                               setBlinkingPropertyId(prop.id);
                               setTimeout(() => setBlinkingPropertyId(null), 4000);
                             }}
-                            className="px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[10px] rounded-lg flex items-center gap-1 transition-all border border-slate-200 dark:border-slate-700"
+                            className="px-2 py-1 bg-white hover:bg-slate-50 text-slate-900 font-bold text-[10px] rounded-lg flex items-center gap-1 transition-all border border-slate-200 hover:border-[#f1a010]"
                             title="Focus on map"
                           >
                             <MapPin className="w-3 h-3 text-[#f1a010]" />
-                            <span className="hidden sm:inline">Map</span>
+                            <span>Map</span>
                           </button>
                           <button
                             type="button"
@@ -2559,7 +2569,7 @@ export default function PropertyMap({
                                 router.push(`/properties/${prop.slug || prop.id}`);
                               }
                             }}
-                            className="px-2.5 py-1 bg-[#f1a010] hover:bg-[#d88c0a] text-slate-950 font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shadow-xs cursor-pointer"
+                            className="px-2.5 py-1 bg-[#f1a010] hover:bg-[#d88c0a] text-slate-950 font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shadow-xs cursor-pointer active:scale-95"
                           >
                             <span>View</span>
                             <ArrowRight className="w-3 h-3" />
@@ -2576,9 +2586,9 @@ export default function PropertyMap({
                 <button
                   type="button"
                   onClick={() => setMobileTrayCount((prev) => prev + 12)}
-                  className="w-full py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500 font-bold text-xs text-slate-700 dark:text-slate-200 hover:text-amber-600 flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-98"
+                  className="w-full py-2.5 rounded-xl bg-white border border-slate-200 hover:border-[#f1a010] font-bold text-xs text-slate-900 hover:text-[#f1a010] flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-98"
                 >
-                  <Plus className="w-3.5 h-3.5 text-amber-500" />
+                  <Plus className="w-3.5 h-3.5 text-[#f1a010]" />
                   <span>Load More Listings (+{Math.min(12, displayedPropertiesFiltered.length - mobileTrayCount)})</span>
                 </button>
               )}
