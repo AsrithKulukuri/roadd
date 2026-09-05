@@ -173,6 +173,18 @@ export function ProjectDetailView({
   const [builderContact, setBuilderContact] = useState<{ phone: string | null; whatsapp: string | null } | null>(null);
   const [builderContactError, setBuilderContactError] = useState<string | null>(null);
 
+  const scrollConfigLeft = () => {
+    if (configSliderRef.current) {
+      configSliderRef.current.scrollBy({ left: -290, behavior: "smooth" });
+    }
+  };
+
+  const scrollConfigRight = () => {
+    if (configSliderRef.current) {
+      configSliderRef.current.scrollBy({ left: 290, behavior: "smooth" });
+    }
+  };
+
   const tabsScrollRef = useRef<HTMLDivElement>(null);
   const cardsScrollRef = useRef<HTMLDivElement>(null);
   const updatesScrollRef = useRef<HTMLDivElement>(null);
@@ -923,26 +935,46 @@ export function ProjectDetailView({
                         </span>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const el = document.getElementById("floor-plans");
-                          if (el) el.scrollIntoView({ behavior: "smooth" });
-                        }}
-                        className="inline-flex items-center gap-1 text-xs font-black text-text-primary hover:text-amber-600 transition-colors cursor-pointer group"
-                      >
-                        <span className="text-text-primary group-hover:text-amber-600">View Plans & Pricing</span>
-                        <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform text-[#faad13]" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const el = document.getElementById("floor-plans");
+                            if (el) el.scrollIntoView({ behavior: "smooth" });
+                          }}
+                          className="inline-flex items-center gap-1 text-xs font-black text-text-primary hover:text-amber-600 transition-colors cursor-pointer group mr-1"
+                        >
+                          <span className="text-text-primary group-hover:text-amber-600">View Plans & Pricing</span>
+                          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform text-[#faad13]" />
+                        </button>
+
+                        {/* Slide Navigation Controls */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={scrollConfigLeft}
+                            className="w-6 h-6 rounded-full border border-border-default hover:border-amber-500 bg-white dark:bg-bg-card flex items-center justify-center text-text-secondary hover:text-amber-600 transition-colors cursor-pointer active:scale-95 shadow-2xs"
+                            aria-label="Previous configurations"
+                          >
+                            <ChevronLeft className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={scrollConfigRight}
+                            className="w-6 h-6 rounded-full border border-border-default hover:border-amber-500 bg-white dark:bg-bg-card flex items-center justify-center text-text-secondary hover:text-amber-600 transition-colors cursor-pointer active:scale-95 shadow-2xs"
+                            aria-label="Next configurations"
+                          >
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className={cn(
-                      "grid gap-3",
-                      project.configurations.length === 1 && "grid-cols-1 max-w-sm",
-                      project.configurations.length === 2 && "grid-cols-1 sm:grid-cols-2",
-                      project.configurations.length === 3 && "grid-cols-1 sm:grid-cols-3",
-                      project.configurations.length >= 4 && "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4"
-                    )}>
+                    {/* Configurations Slide View */}
+                    <div
+                      ref={configSliderRef}
+                      className="flex items-stretch gap-3 overflow-x-auto scrollbar-none snap-x snap-mandatory scroll-smooth touch-pan-x pb-2 pt-0.5"
+                    >
                       {project.configurations.map((cfg, idx) => {
                         const isVenture = project.projectType === "venture";
                         const sizeMin = isVenture ? cfg.plotSizeMin : (cfg.superBuiltUpAreaMin || cfg.builtUpAreaMin || cfg.plinthAreaMin);
@@ -989,7 +1021,7 @@ export function ProjectDetailView({
                                 if (el) el.scrollIntoView({ behavior: "smooth" });
                               }
                             }}
-                            className={`p-3 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
+                            className={`shrink-0 w-[270px] sm:w-[290px] snap-start p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
                               isSelected
                                 ? "!bg-slate-950 !text-white !border-slate-950 shadow-sm ring-2 ring-amber-500/40"
                                 : "bg-bg-primary text-text-primary border-border-default/60 hover:border-amber-500 hover:bg-slate-50 dark:hover:bg-slate-900/80"
