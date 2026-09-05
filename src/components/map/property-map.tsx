@@ -2604,14 +2604,14 @@ export default function PropertyMap({
           style={{ touchAction: "none", position: "relative", minHeight: 300 }}
         >
           
-          {/* Open Map Explorer Button (When Closed) - top-left on mobile, bottom-left above zoom on desktop */}
+          {/* Open Map Explorer Button (When Closed) - top-left on mobile, bottom-left on desktop */}
           {!showMapExplorer && (
             <button
               onClick={() => {
                 setShowMapExplorer(true);
                 setShowPropertiesTray(true);
               }}
-              className="absolute top-3 left-3 md:bottom-[140px] md:top-auto md:left-3 z-[500] bg-white/95 backdrop-blur-sm text-slate-900 p-2 sm:px-3 sm:py-2 rounded-xl shadow-lg border border-slate-200 flex items-center gap-1.5 hover:bg-slate-50 transition-colors pointer-events-auto cursor-pointer"
+              className="absolute top-3 left-3 md:bottom-6 md:top-auto md:left-4 z-[500] bg-white/95 backdrop-blur-sm text-slate-900 p-2 sm:px-3 sm:py-2 rounded-xl shadow-lg border border-slate-200 flex items-center gap-1.5 hover:bg-slate-50 transition-colors pointer-events-auto cursor-pointer"
             >
               <Compass className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
               <span className="font-bold text-xs sm:text-sm text-slate-950 hidden sm:block shadow-xs">Map Explorer</span>
@@ -2734,9 +2734,9 @@ export default function PropertyMap({
           {/* FLOATING BOTTOM CENTER: Search This Area + Search As I Move */}
           <div
             className={cn(
-              "absolute left-1/2 -translate-x-1/2 z-[520] flex-col items-center gap-2 pointer-events-auto transition-all duration-300",
-              showMapExplorer ? "hidden md:flex md:bottom-6" : "flex",
-              showPropertiesTray && !showMapExplorer ? "bottom-[340px]" : "bottom-14 md:bottom-6"
+              "absolute left-1/2 -translate-x-1/2 z-[520] flex-col items-center gap-2 pointer-events-auto transition-all duration-300 md:bottom-6",
+              showMapExplorer ? "hidden md:flex" : "flex",
+              showPropertiesTray && !showMapExplorer ? "bottom-[340px]" : "bottom-14"
             )}
           >
             {showSearchThisArea && (
@@ -2995,9 +2995,9 @@ export default function PropertyMap({
           {/* FLOATING ZOOM + MY LOCATION CONTROLS (BOTTOM-RIGHT) */}
           <div
             className={cn(
-              "absolute right-3 md:right-4 z-[500] flex-col gap-1.5 pointer-events-auto transition-all duration-300",
-              showMapExplorer ? "hidden md:flex md:bottom-8" : "flex",
-              showPropertiesTray && !showMapExplorer ? "bottom-[340px]" : "bottom-16 md:bottom-8"
+              "absolute right-3 md:right-4 z-[500] flex-col gap-1.5 pointer-events-auto transition-all duration-300 md:bottom-8",
+              showMapExplorer ? "hidden md:flex" : "flex",
+              showPropertiesTray && !showMapExplorer ? "bottom-[340px]" : "bottom-16"
             )}
           >
             <button
