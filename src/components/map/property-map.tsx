@@ -938,6 +938,7 @@ function MapViewportListenerDebounced({
   const lastVisibleKeyRef = useRef<string>("");
 
   const map = useMapEvents({
+    move: () => scheduleUpdate(),
     moveend: () => scheduleUpdate(),
     zoomend: () => scheduleUpdate(),
   });
@@ -976,7 +977,7 @@ function MapViewportListenerDebounced({
           onVisibleItemsChange(visibleIds);
         }
       }
-    }, 250);
+    }, 100);
   }, [map, mapProperties, displayedProperties, onVisibleItemsChange, onVisibleAreaChange]);
 
   // Initial trigger
@@ -1573,8 +1574,16 @@ export default function PropertyMap({
 
 
   // Entity type filter & subtype filter applied on top of displayedProperties
+  // Real-time viewport boundary filter: Show ONLY what is shown on the map!
   const displayedPropertiesFiltered = useMemo(() => {
     let list = displayedProperties;
+
+    // Filter to items currently visible within the map viewport bounds in real time
+    if (visibleAreaIds !== null) {
+      const areaSet = new Set(visibleAreaIds);
+      list = list.filter((p) => areaSet.has(p.id));
+    }
+
     if (listingTypeFilter === "properties") list = list.filter((p: any) => !p._isProject);
     else if (listingTypeFilter === "projects") list = list.filter((p: any) => Boolean(p._isProject));
 
@@ -1582,14 +1591,29 @@ export default function PropertyMap({
       list = list.filter((p) => itemMatchesSubtype(p, selectedSubtype));
     }
     return list;
-  }, [displayedProperties, listingTypeFilter, selectedSubtype]);
+  }, [displayedProperties, visibleAreaIds, listingTypeFilter, selectedSubtype]);
 
-  const fallbackPropCount = useMemo(() => displayedProperties.filter((p: any) => !p._isProject).length, [displayedProperties]);
-  const fallbackProjCount = useMemo(() => displayedProperties.filter((p: any) => Boolean(p._isProject)).length, [displayedProperties]);
+  const fallbackPropCount = useMemo(() => {
+    let list = displayedProperties;
+    if (visibleAreaIds !== null) {
+      const areaSet = new Set(visibleAreaIds);
+      list = list.filter((p) => areaSet.has(p.id));
+    }
+    return list.filter((p: any) => !p._isProject).length;
+  }, [displayedProperties, visibleAreaIds]);
 
-  const allCount = counts ? counts.all : displayedProperties.length;
-  const propertiesCount = counts ? counts.properties : fallbackPropCount;
-  const projectsCount = counts ? counts.projects : fallbackProjCount;
+  const fallbackProjCount = useMemo(() => {
+    let list = displayedProperties;
+    if (visibleAreaIds !== null) {
+      const areaSet = new Set(visibleAreaIds);
+      list = list.filter((p) => areaSet.has(p.id));
+    }
+    return list.filter((p: any) => Boolean(p._isProject)).length;
+  }, [displayedProperties, visibleAreaIds]);
+
+  const allCount = visibleAreaIds !== null ? visibleAreaIds.length : (counts ? counts.all : displayedProperties.length);
+  const propertiesCount = fallbackPropCount;
+  const projectsCount = fallbackProjCount;
 
   // Real synchronized active count for the "Show On Map" header
   const currentActiveCount = useMemo(() => {
@@ -1604,7 +1628,7 @@ export default function PropertyMap({
   // Options for Property / Project Type Boxes with live counts from the selected/visible map area
   const currentTypeOptions = useMemo(() => {
     let areaFiltered = displayedProperties;
-    if (visibleAreaIds !== null && visibleAreaIds.length > 0) {
+    if (visibleAreaIds !== null) {
       const areaSet = new Set(visibleAreaIds);
       areaFiltered = areaFiltered.filter((p) => areaSet.has(p.id));
     }
