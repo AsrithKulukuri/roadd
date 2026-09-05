@@ -1707,7 +1707,7 @@ export function ProjectDetailView({
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs sm:text-sm transition-all shadow-xs active:scale-95"
                           >
-                            <WhatsAppIcon className="w-4 h-4 shrink-0 fill-current" />
+                            <WhatsAppIcon className="w-4.5 h-4.5 shrink-0" />
                             <span>WhatsApp Builder</span>
                           </a>
                         )}
@@ -1768,7 +1768,7 @@ export function ProjectDetailView({
                       {whatsapp && (
                         <a href={whatsapp} target="_blank" rel="noopener noreferrer"
                           className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm transition-all shadow-sm active:scale-98">
-                          <WhatsAppIcon className="w-4 h-4 shrink-0 fill-current" />
+                          <WhatsAppIcon className="w-4.5 h-4.5 shrink-0" />
                           <span>WhatsApp Builder</span>
                         </a>
                       )}
