@@ -724,7 +724,7 @@ export function HeroSection() {
                       showBuyMenu ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
                     )}
                   >
-                    <div className="bg-slate-950 text-white border border-slate-800 rounded-2xl shadow-2xl overflow-visible py-2 text-left relative">
+                    <div className="bg-white text-slate-950 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-visible py-2 text-left relative">
                       {/* 1. Flats */}
                       <div 
                         className="relative group"
@@ -733,34 +733,34 @@ export function HeroSection() {
                         <button
                           type="button"
                           onClick={() => setActiveBuySub(activeBuySub === "flats" ? null : "flats")}
-                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-900 hover:text-amber-400 transition-colors text-left cursor-pointer"
+                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
                         >
                           <span>Flats</span>
-                          <ChevronRight className={cn("w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-transform", activeBuySub === "flats" && "rotate-90 sm:rotate-0 text-amber-400")} />
+                          <ChevronRight className={cn("w-4 h-4 text-amber-500 group-hover:text-amber-600 transition-transform", activeBuySub === "flats" && "rotate-90 sm:rotate-0")} />
                         </button>
                         
                         {/* Flats Submenu */}
                         {activeBuySub === "flats" && (
-                          <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
+                          <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
                             <Link 
                               href="/search?type=buy&propertyType=apartment&saleType=new" 
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-400 rounded-lg mx-1 transition-colors"
+                              className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               New Flats
                             </Link>
                             <Link 
                               href="/search?type=buy&propertyType=apartment&saleType=resale" 
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-400 rounded-lg mx-1 transition-colors"
+                              className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               Resale Flats
                             </Link>
-                            <div className="h-px bg-slate-800 my-1 mx-2" />
+                            <div className="h-px bg-slate-100 my-1 mx-2" />
                             <Link 
                               href="/search?type=buy&propertyType=apartment" 
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-1.5 text-[11px] font-medium text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg mx-1 transition-colors"
+                              className="block px-3.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               All Flats
                             </Link>
@@ -776,34 +776,34 @@ export function HeroSection() {
                         <button
                           type="button"
                           onClick={() => setActiveBuySub(activeBuySub === "houses" ? null : "houses")}
-                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-900 hover:text-amber-400 transition-colors text-left cursor-pointer"
+                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
                         >
                           <span>Houses</span>
-                          <ChevronRight className={cn("w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-transform", activeBuySub === "houses" && "rotate-90 sm:rotate-0 text-amber-400")} />
+                          <ChevronRight className={cn("w-4 h-4 text-amber-500 group-hover:text-amber-600 transition-transform", activeBuySub === "houses" && "rotate-90 sm:rotate-0")} />
                         </button>
                         
                         {/* Houses Submenu */}
                         {activeBuySub === "houses" && (
-                          <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
+                          <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
                             <Link 
                               href="/search?type=buy&propertyType=independent-house&saleType=new" 
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-400 rounded-lg mx-1 transition-colors"
+                              className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               New Houses
                             </Link>
                             <Link 
                               href="/search?type=buy&propertyType=independent-house&saleType=resale" 
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-400 rounded-lg mx-1 transition-colors"
+                              className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               Resale Houses
                             </Link>
-                            <div className="h-px bg-slate-800 my-1 mx-2" />
+                            <div className="h-px bg-slate-100 my-1 mx-2" />
                             <Link 
                               href="/search?type=buy&propertyType=independent-house" 
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-1.5 text-[11px] font-medium text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg mx-1 transition-colors"
+                              className="block px-3.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               All Houses
                             </Link>
@@ -819,34 +819,34 @@ export function HeroSection() {
                         <button
                           type="button"
                           onClick={() => setActiveBuySub(activeBuySub === "villas" ? null : "villas")}
-                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-900 hover:text-amber-400 transition-colors text-left cursor-pointer"
+                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
                         >
                           <span>Villas</span>
-                          <ChevronRight className={cn("w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-transform", activeBuySub === "villas" && "rotate-90 sm:rotate-0 text-amber-400")} />
+                          <ChevronRight className={cn("w-4 h-4 text-amber-500 group-hover:text-amber-600 transition-transform", activeBuySub === "villas" && "rotate-90 sm:rotate-0")} />
                         </button>
                         
                         {/* Villas Submenu */}
                         {activeBuySub === "villas" && (
-                          <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
+                          <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
                             <Link 
                               href="/search?type=buy&propertyType=villa&saleType=new" 
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-400 rounded-lg mx-1 transition-colors"
+                              className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               New Villas
                             </Link>
                             <Link 
                               href="/search?type=buy&propertyType=villa&saleType=resale" 
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-400 rounded-lg mx-1 transition-colors"
+                              className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               Resale Villas
                             </Link>
-                            <div className="h-px bg-slate-800 my-1 mx-2" />
+                            <div className="h-px bg-slate-100 my-1 mx-2" />
                             <Link 
                               href="/search?type=buy&propertyType=villa" 
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-1.5 text-[11px] font-medium text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg mx-1 transition-colors"
+                              className="block px-3.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               All Villas
                             </Link>
@@ -858,7 +858,7 @@ export function HeroSection() {
                       <Link 
                         href="/search?type=buy&propertyType=residential-plot" 
                         onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                        className="block px-4 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-900 hover:text-amber-400 transition-colors"
+                        className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors"
                       >
                         Plots
                       </Link>
@@ -867,7 +867,7 @@ export function HeroSection() {
                       <Link 
                         href="/search?type=buy&propertyType=agricultural-land" 
                         onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                        className="block px-4 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-900 hover:text-amber-400 transition-colors"
+                        className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors"
                       >
                         Agriculture
                       </Link>
@@ -880,17 +880,17 @@ export function HeroSection() {
                     "absolute top-full left-0 sm:left-1/2 sm:-translate-x-1/2 pt-2 w-48 sm:w-52 transition-all duration-200 z-[100]",
                     showProjectsMenu ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
                   )}>
-                    <div className="bg-slate-950 text-white border border-slate-800 rounded-2xl shadow-2xl overflow-hidden py-2 text-left">
-                      <Link href="/search?type=projects&propertyType=apartment" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-300 hover:bg-slate-900 hover:text-amber-400">
+                    <div className="bg-white text-slate-950 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden py-2 text-left">
+                      <Link href="/search?type=projects&propertyType=apartment" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
                         Apartments
                       </Link>
-                      <Link href="/search?type=projects&propertyType=villa" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-300 hover:bg-slate-900 hover:text-amber-400">
+                      <Link href="/search?type=projects&propertyType=villa" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
                         Villas
                       </Link>
-                      <Link href="/search?type=projects&propertyType=venture" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-300 hover:bg-slate-900 hover:text-amber-400">
+                      <Link href="/search?type=projects&propertyType=venture" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
                         CRDA Ventures
                       </Link>
-                      <Link href="/search?type=projects" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-amber-400 hover:bg-slate-900 hover:text-amber-300 border-t border-slate-800 mt-1 pt-3">
+                      <Link href="/search?type=projects" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 border-t border-slate-100 mt-1 pt-3">
                         View All Projects →
                       </Link>
                     </div>
@@ -999,7 +999,7 @@ export function HeroSection() {
           {isFocused && liveHeroSuggestions && liveHeroSuggestions.hasResults && (
             <div
               onMouseDown={(e) => e.preventDefault()}
-              className="absolute left-0 right-0 top-full mt-2 z-[100] bg-slate-950 border border-slate-800 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden divide-y divide-slate-800/80 text-left animate-in fade-in zoom-in-95 max-h-[60vh] overflow-y-auto no-scrollbar"
+              className="absolute left-0 right-0 top-full mt-2 z-[100] bg-white border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-100 text-left animate-in fade-in zoom-in-95 max-h-[60vh] overflow-y-auto no-scrollbar"
             >
               {/* Direct Ref ID Match Card */}
               {liveHeroSuggestions.directRefMatch && (
@@ -1013,22 +1013,22 @@ export function HeroSection() {
                       router.push(match.url);
                     }
                   }}
-                  className="px-4 py-3 bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-slate-950 hover:from-amber-500/30 cursor-pointer flex items-center justify-between gap-3 border-b border-amber-500/30 transition-all"
+                  className="px-4 py-3 bg-amber-50 hover:bg-amber-100/80 cursor-pointer flex items-center justify-between gap-3 border-b border-amber-500/30 transition-all"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-xs tracking-wider shadow-xs shrink-0">
                       🎯 {liveHeroSuggestions.directRefMatch.refId}
                     </span>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-black text-white truncate">
+                      <span className="text-xs font-black text-slate-950 truncate">
                         {liveHeroSuggestions.directRefMatch.title}
                       </span>
-                      <span className="text-[11px] font-semibold text-amber-400">
+                      <span className="text-[11px] font-bold text-amber-700">
                         Exact Ref Match • Tap to Open Directly
                       </span>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-amber-500 shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
                 </div>
               )}
 
@@ -1036,16 +1036,16 @@ export function HeroSection() {
               <button
                 type="button"
                 onClick={() => handleSearchSubmit()}
-                className="w-full text-left px-4 py-3 hover:bg-slate-900 flex items-center gap-3 transition-colors text-xs font-bold text-amber-400 bg-slate-950"
+                className="w-full text-left px-4 py-3 hover:bg-amber-500/10 flex items-center gap-3 transition-colors text-xs font-bold text-slate-950 bg-white"
               >
                 <Search className="w-4 h-4 shrink-0 text-amber-500" />
-                <span className="truncate">Search all for &ldquo;<strong>{searchQuery}</strong>&rdquo;</span>
+                <span className="truncate">Search all for &ldquo;<strong className="text-amber-600">{searchQuery}</strong>&rdquo;</span>
               </button>
 
               {/* Projects suggestions */}
               {liveHeroSuggestions.projects.length > 0 && (
-                <div className="p-2 bg-slate-950">
-                  <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                <div className="p-2 bg-white">
+                  <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50 rounded-lg mb-1">
                     Builder Projects
                   </div>
                   {liveHeroSuggestions.projects.map((p) => (
@@ -1055,14 +1055,14 @@ export function HeroSection() {
                         setIsFocused(false);
                         openProject(p, e);
                       }}
-                      className="px-2.5 py-2 hover:bg-slate-900 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                      className="px-2.5 py-2 hover:bg-amber-500/10 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-[10px] font-bold shrink-0">Project</span>
-                        <span className="text-xs font-bold text-white truncate">{p.name}</span>
-                        <span className="text-[11px] text-slate-400 truncate">({p.location?.locality || p.location?.city})</span>
+                        <span className="px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 text-[10px] font-extrabold shrink-0">Project</span>
+                        <span className="text-xs font-bold text-slate-950 group-hover:text-amber-600 truncate">{p.name}</span>
+                        <span className="text-[11px] text-slate-500 truncate">({p.location?.locality || p.location?.city})</span>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
                     </div>
                   ))}
                 </div>
@@ -1070,8 +1070,8 @@ export function HeroSection() {
 
               {/* Properties suggestions */}
               {liveHeroSuggestions.properties.length > 0 && (
-                <div className="p-2 bg-slate-950">
-                  <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                <div className="p-2 bg-white">
+                  <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50 rounded-lg mb-1">
                     Properties
                   </div>
                   {liveHeroSuggestions.properties.map((p) => (
@@ -1081,14 +1081,14 @@ export function HeroSection() {
                         setIsFocused(false);
                         router.push(`/properties/${p.slug || p.id}`);
                       }}
-                      className="px-2.5 py-2 hover:bg-slate-900 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                      className="px-2.5 py-2 hover:bg-amber-500/10 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold shrink-0">Property</span>
-                        <span className="text-xs font-bold text-white truncate">{p.title}</span>
-                        <span className="text-[11px] text-slate-400 truncate">({p.location?.locality || p.location?.city})</span>
+                        <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold shrink-0">Property</span>
+                        <span className="text-xs font-bold text-slate-950 group-hover:text-amber-600 truncate">{p.title}</span>
+                        <span className="text-[11px] text-slate-500 truncate">({p.location?.locality || p.location?.city})</span>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
                     </div>
                   ))}
                 </div>
@@ -1174,16 +1174,16 @@ export function HeroSection() {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.96, y: -4 }}
                       transition={{ duration: 0.18, ease: "easeOut" }}
-                      className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[380px] bg-slate-950/98 backdrop-blur-2xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-[100] max-h-[380px] flex flex-col"
+                      className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[380px] bg-white border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden z-[100] max-h-[380px] flex flex-col"
                     >
                       {/* Header */}
-                      <div className="px-4 py-2.5 border-b border-slate-800/80 text-[11px] uppercase font-black tracking-wider text-amber-400 flex items-center justify-between gap-3 sticky top-0 bg-slate-950 z-10 shrink-0">
-                        <span className="whitespace-nowrap flex items-center gap-1.5">
-                          <MapPin className="w-3 h-3 text-amber-400" />
+                      <div className="px-4 py-2.5 border-b border-amber-500/20 text-[11px] uppercase font-black tracking-wider text-slate-950 flex items-center justify-between gap-3 sticky top-0 bg-white z-10 shrink-0">
+                        <span className="whitespace-nowrap flex items-center gap-1.5 text-slate-950 font-black">
+                          <MapPin className="w-3.5 h-3.5 text-amber-500" />
                           {activeCity.name} Localities
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-400 font-medium text-[10px] whitespace-nowrap lowercase">
+                          <span className="text-slate-500 font-bold text-[10px] whitespace-nowrap lowercase">
                             {filteredSublocations.length === activeCity.sublocations.length
                               ? `${activeCity.sublocations.length} areas`
                               : `${filteredSublocations.length} of ${activeCity.sublocations.length}`}
@@ -1194,7 +1194,7 @@ export function HeroSection() {
                               setOpenLocationTab(null);
                               setSublocationSearch("");
                             }}
-                            className="w-6 h-6 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-90 shadow-2xs"
+                            className="w-6 h-6 rounded-full bg-slate-100 hover:bg-amber-500/15 border border-slate-200 text-slate-700 hover:text-amber-600 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-90 shadow-2xs"
                             aria-label="Close"
                           >
                             <X className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -1203,23 +1203,23 @@ export function HeroSection() {
                       </div>
 
                       {/* Search Bar */}
-                      <div className="p-2 border-b border-slate-800/60 bg-slate-950/95 shrink-0">
-                        <div className="relative flex items-center bg-slate-900 border border-slate-800 focus-within:border-slate-600 rounded-xl px-2.5 py-1.5 transition-colors">
-                          <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-400 shrink-0 mr-2" />
+                      <div className="p-2 border-b border-amber-500/20 bg-slate-50/80 shrink-0">
+                        <div className="relative flex items-center bg-white border border-amber-500/40 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 rounded-xl px-2.5 py-1.5 transition-colors">
+                          <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-500 shrink-0 mr-2" />
                           <input
                             type="text"
                             value={sublocationSearch}
                             onChange={(e) => setSublocationSearch(e.target.value)}
                             placeholder={`Search ${activeCity.name} localities...`}
                             style={{ outline: "none", boxShadow: "none", border: "none" }}
-                            className="w-full bg-transparent text-xs text-white placeholder-slate-500 font-medium outline-none border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none p-0"
+                            className="w-full bg-transparent text-xs text-slate-950 placeholder-slate-400 font-semibold outline-none border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none p-0"
                             autoFocus
                           />
                           {sublocationSearch && (
                             <button
                               type="button"
                               onClick={() => setSublocationSearch("")}
-                              className="p-0.5 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors shrink-0 cursor-pointer ml-1"
+                              className="p-0.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors shrink-0 cursor-pointer ml-1"
                               aria-label="Clear sublocation search"
                             >
                               <X className="w-3 h-3" />
@@ -1229,7 +1229,7 @@ export function HeroSection() {
                       </div>
 
                       {/* Localities List */}
-                      <div className="overflow-y-auto divide-y divide-slate-900/60 no-scrollbar flex-1 py-1">
+                      <div className="overflow-y-auto divide-y divide-slate-100 no-scrollbar flex-1 py-1 bg-white">
                         {filteredSublocations.length > 0 ? (
                           filteredSublocations.map((sub) => (
                             <div
@@ -1243,15 +1243,15 @@ export function HeroSection() {
                                   )}&locality=${encodeURIComponent(sub.name)}`
                                 );
                               }}
-                              className="px-4 py-2.5 hover:bg-slate-900/90 cursor-pointer flex flex-col transition-colors group"
+                              className="px-4 py-2.5 hover:bg-amber-500/10 cursor-pointer flex flex-col transition-colors group"
                             >
                               <div className="flex items-center justify-between gap-3">
-                                <span className="font-bold text-xs text-white group-hover:text-amber-400 transition-colors whitespace-nowrap">
+                                <span className="font-bold text-xs text-slate-950 group-hover:text-amber-600 transition-colors whitespace-nowrap">
                                   {sub.name}
                                 </span>
                               </div>
                               {sub.tagline && (
-                                <span className="text-[10px] text-slate-400 block mt-0.5 whitespace-nowrap">
+                                <span className="text-[10px] text-slate-500 block mt-0.5 whitespace-nowrap">
                                   {sub.tagline}
                                 </span>
                               )}
@@ -1259,7 +1259,7 @@ export function HeroSection() {
                           ))
                         ) : (
                           <div className="py-6 px-4 text-center">
-                            <p className="text-xs text-slate-400 font-medium mb-2.5">
+                            <p className="text-xs text-slate-500 font-medium mb-2.5">
                               No localities found for &ldquo;{sublocationSearch}&rdquo;
                             </p>
                             <button
@@ -1274,9 +1274,9 @@ export function HeroSection() {
                                   )}&locality=${encodeURIComponent(term)}`
                                 );
                               }}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[11px] font-bold transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 text-[11px] font-bold transition-colors cursor-pointer"
                             >
-                              <Search className="w-3 h-3 text-amber-400" />
+                              <Search className="w-3 h-3 text-slate-950" />
                               <span>Search &ldquo;{sublocationSearch}&rdquo; in {activeCity.name}</span>
                             </button>
                           </div>
@@ -1332,7 +1332,7 @@ export function HeroSection() {
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", damping: 28, stiffness: 320 }}
                     className={cn(
-                      "fixed bottom-0 left-0 right-0 z-[100000] bg-slate-950 border-t border-slate-800 rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden pb-6 safe-bottom transition-all duration-300 ease-out",
+                      "fixed bottom-0 left-0 right-0 z-[100000] bg-white border-t-2 border-amber-500 rounded-t-3xl shadow-2xl flex flex-col overflow-hidden pb-6 safe-bottom transition-all duration-300 ease-out",
                       (isLocalityFocused || sublocationSearch.trim().length > 0)
                         ? "h-[88vh] max-h-[92vh]"
                         : "h-[55vh] max-h-[60vh]"
@@ -1340,21 +1340,21 @@ export function HeroSection() {
                   >
                     {/* Drag Handle */}
                     <div className="pt-3 pb-1.5 flex justify-center shrink-0">
-                      <div className="w-10 h-1 rounded-full bg-slate-700" />
+                      <div className="w-10 h-1 rounded-full bg-slate-300" />
                     </div>
 
                     {/* Header */}
-                    <div className="px-5 py-3 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-950">
+                    <div className="px-5 py-3 border-b border-amber-500/20 flex items-center justify-between shrink-0 bg-white">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                        <div className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500">
                           <MapPin className="w-4 h-4" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
+                          <h3 className="text-sm font-black text-slate-950 tracking-tight flex items-center gap-1.5">
                             <span>{activeCity.name}</span>
-                            <span className="text-amber-400 uppercase text-[10px] tracking-wider">Localities</span>
+                            <span className="text-amber-600 uppercase text-[10px] tracking-wider">Localities</span>
                           </h3>
-                          <p className="text-[10px] text-slate-400 font-medium">
+                          <p className="text-[10px] text-slate-500 font-medium">
                             {filteredSublocations.length === activeCity.sublocations.length
                               ? `${activeCity.sublocations.length} verified areas`
                               : `${filteredSublocations.length} of ${activeCity.sublocations.length} areas`}
@@ -1369,7 +1369,7 @@ export function HeroSection() {
                           setSublocationSearch("");
                           setIsLocalityFocused(false);
                         }}
-                        className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer active:scale-90"
+                        className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-950 flex items-center justify-center cursor-pointer active:scale-90"
                         aria-label="Close"
                       >
                         <X className="w-4 h-4 stroke-[2.5]" />
@@ -1377,9 +1377,9 @@ export function HeroSection() {
                     </div>
 
                     {/* Search Bar inside Bottom Sheet */}
-                    <div className="p-3 border-b border-slate-800/80 bg-slate-950 shrink-0">
-                      <div className="relative flex items-center bg-slate-900 border border-slate-800 focus-within:border-slate-600 rounded-xl px-3 py-2 transition-colors">
-                        <Search strokeWidth={2.5} className="w-4 h-4 text-amber-400 shrink-0 mr-2.5" />
+                    <div className="p-3 border-b border-amber-500/20 bg-slate-50/80 shrink-0">
+                      <div className="relative flex items-center bg-white border border-amber-500/40 focus-within:border-amber-500 rounded-xl px-3 py-2 transition-colors">
+                        <Search strokeWidth={2.5} className="w-4 h-4 text-amber-500 shrink-0 mr-2.5" />
                         <input
                           type="text"
                           value={sublocationSearch}
@@ -1392,7 +1392,7 @@ export function HeroSection() {
                           }}
                           placeholder={`Search ${activeCity.name} localities...`}
                           style={{ outline: "none", boxShadow: "none", border: "none" }}
-                          className="w-full bg-transparent text-sm text-white placeholder-slate-500 font-medium outline-none border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none p-0"
+                          className="w-full bg-transparent text-sm text-slate-950 placeholder-slate-400 font-semibold outline-none border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none p-0"
                         />
                         {sublocationSearch && (
                           <button
@@ -1401,7 +1401,7 @@ export function HeroSection() {
                               setSublocationSearch("");
                               setIsLocalityFocused(false);
                             }}
-                            className="p-1 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors shrink-0 cursor-pointer ml-1"
+                            className="p-1 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors shrink-0 cursor-pointer ml-1"
                             aria-label="Clear search"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -1411,7 +1411,7 @@ export function HeroSection() {
                     </div>
 
                     {/* Localities List */}
-                    <div className="overflow-y-auto divide-y divide-slate-900/80 no-scrollbar flex-1 py-1 px-2">
+                    <div className="overflow-y-auto divide-y divide-slate-100 no-scrollbar flex-1 py-1 px-2 bg-white">
                       {filteredSublocations.length > 0 ? (
                         filteredSublocations.map((sub) => (
                           <div
@@ -1425,24 +1425,24 @@ export function HeroSection() {
                                 )}&locality=${encodeURIComponent(sub.name)}`
                               );
                             }}
-                            className="px-4 py-3 hover:bg-slate-900 rounded-xl cursor-pointer flex items-center justify-between transition-colors active:scale-[0.99]"
+                            className="px-4 py-3 hover:bg-amber-500/10 rounded-xl cursor-pointer flex items-center justify-between transition-colors active:scale-[0.99]"
                           >
                             <div>
-                              <span className="font-bold text-sm text-white block">
+                              <span className="font-bold text-sm text-slate-950 block">
                                 {sub.name}
                               </span>
                               {sub.tagline && (
-                                <span className="text-xs text-slate-400 block mt-0.5">
+                                <span className="text-xs text-slate-500 block mt-0.5">
                                   {sub.tagline}
                                 </span>
                               )}
                             </div>
-                            <ChevronRight className="w-4 h-4 text-slate-500" />
+                            <ChevronRight className="w-4 h-4 text-amber-500" />
                           </div>
                         ))
                       ) : (
                         <div className="py-8 px-4 text-center">
-                          <p className="text-sm text-slate-400 font-medium mb-3">
+                          <p className="text-sm text-slate-500 font-medium mb-3">
                             No localities found for &ldquo;{sublocationSearch}&rdquo;
                           </p>
                           <button
@@ -1451,15 +1451,16 @@ export function HeroSection() {
                               const term = sublocationSearch;
                               setOpenLocationTab(null);
                               setSublocationSearch("");
+                              setIsLocalityFocused(false);
                               router.push(
                                 `/search?type=${activeTab}&location=${encodeURIComponent(
                                   activeCity.name
                                 )}&locality=${encodeURIComponent(term)}`
                               );
                             }}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-bold transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black shadow-xs cursor-pointer transition-all"
                           >
-                            <Search className="w-3.5 h-3.5 text-amber-400" />
+                            <Search className="w-3.5 h-3.5" />
                             <span>Search &ldquo;{sublocationSearch}&rdquo; in {activeCity.name}</span>
                           </button>
                         </div>

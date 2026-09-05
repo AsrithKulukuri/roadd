@@ -68,8 +68,23 @@ export function ProjectCarouselRow({
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
-      const amount = direction === "left" ? -400 : 400;
-      scrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      const maxScroll = scrollWidth - clientWidth;
+      const amount = 400;
+
+      if (direction === "right") {
+        if (Math.ceil(scrollLeft) >= maxScroll - 10) {
+          scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
+        } else {
+          scrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
+        }
+      } else {
+        if (scrollLeft <= 10) {
+          scrollRef.current.scrollTo({ left: maxScroll, behavior: "smooth" });
+        } else {
+          scrollRef.current.scrollBy({ left: -amount, behavior: "smooth" });
+        }
+      }
     }
   };
 
@@ -97,26 +112,20 @@ export function ProjectCarouselRow({
 
             <div className="flex items-center gap-2 hidden md:flex">
               <button
+                type="button"
                 onClick={() => scroll("left")}
-                disabled={!canScrollLeft}
-                className={`p-2 rounded-full border border-border-default transition-all ${
-                  canScrollLeft 
-                    ? "bg-bg-card hover:bg-bg-hover text-text-primary" 
-                    : "bg-bg-primary text-border-default cursor-not-allowed"
-                }`}
+                aria-label="Previous projects"
+                className="p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-all bg-white dark:bg-slate-900 hover:bg-amber-500 hover:border-amber-500 hover:text-slate-950 text-slate-800 dark:text-slate-200 active:scale-95 cursor-pointer shadow-xs"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
               </button>
               <button
+                type="button"
                 onClick={() => scroll("right")}
-                disabled={!canScrollRight}
-                className={`p-2 rounded-full border border-border-default transition-all ${
-                  canScrollRight 
-                    ? "bg-bg-card hover:bg-bg-hover text-text-primary" 
-                    : "bg-bg-primary text-border-default cursor-not-allowed"
-                }`}
+                aria-label="Next projects"
+                className="p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-all bg-white dark:bg-slate-900 hover:bg-amber-500 hover:border-amber-500 hover:text-slate-950 text-slate-800 dark:text-slate-200 active:scale-95 cursor-pointer shadow-xs"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-5 h-5 stroke-[2.5]" />
               </button>
             </div>
           </div>
@@ -125,26 +134,20 @@ export function ProjectCarouselRow({
         {hideHeader && (
           <div className="flex justify-end gap-2 mb-4 hidden md:flex">
             <button
+              type="button"
               onClick={() => scroll("left")}
-              disabled={!canScrollLeft}
-              className={`p-2 rounded-full border border-border-default transition-all shadow-sm ${
-                canScrollLeft 
-                  ? "bg-bg-card hover:bg-bg-hover text-text-primary" 
-                  : "bg-bg-primary text-border-default cursor-not-allowed"
-              }`}
+              aria-label="Previous projects"
+              className="p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-all bg-white dark:bg-slate-900 hover:bg-amber-500 hover:border-amber-500 hover:text-slate-950 text-slate-800 dark:text-slate-200 active:scale-95 cursor-pointer shadow-xs"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
             </button>
             <button
+              type="button"
               onClick={() => scroll("right")}
-              disabled={!canScrollRight}
-              className={`p-2 rounded-full border border-border-default transition-all shadow-sm ${
-                canScrollRight 
-                  ? "bg-bg-card hover:bg-bg-hover text-text-primary" 
-                  : "bg-bg-primary text-border-default cursor-not-allowed"
-              }`}
+              aria-label="Next projects"
+              className="p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-all bg-white dark:bg-slate-900 hover:bg-amber-500 hover:border-amber-500 hover:text-slate-950 text-slate-800 dark:text-slate-200 active:scale-95 cursor-pointer shadow-xs"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>
         )}
@@ -153,7 +156,7 @@ export function ProjectCarouselRow({
           <div 
             ref={scrollRef}
             onScroll={checkScroll}
-            className="flex gap-6 overflow-x-auto snap-x snap-mandatory hide-scrollbar pb-6"
+            className="flex gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-6"
           >
             {projects.map((project, index) => (
               <div 

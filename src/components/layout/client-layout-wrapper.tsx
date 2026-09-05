@@ -40,7 +40,7 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
     pathname === "/properties";
   const ContentElement = hasNestedMain ? "div" : "main";
   const isDetailPage = 
-    (pathname.startsWith("/properties/") && pathname !== "/properties" && pathname !== "/properties/map" && pathname !== "/properties/compare") ||
+    (pathname.startsWith("/properties/") && pathname !== "/properties" && pathname !== "/properties/map") ||
     (pathname.startsWith("/projects/") && pathname !== "/projects");
 
   const fetchProperties = usePropertiesStore((state) => state.fetchProperties);

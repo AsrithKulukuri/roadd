@@ -1862,23 +1862,23 @@ export default function PropertyMap({
                 <span>Show On Map</span>
                 <span className="text-amber-600 font-bold">{currentActiveCount} Active</span>
               </div>
-              <div className="grid grid-cols-3 p-1 bg-slate-100/90 border border-slate-200 rounded-2xl gap-1 shadow-inner">
+              <div className="grid grid-cols-[0.85fr_1.35fr_1.1fr] p-1 bg-slate-100/90 border border-slate-200 rounded-2xl gap-1 shadow-inner">
                 <button
                   type="button"
                   onClick={() => setListingTypeFilter("all")}
                   className={cn(
-                    "h-9 px-1 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer min-w-0 select-none",
+                    "h-9 px-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer select-none",
                     listingTypeFilter === "all"
-                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                      ? "bg-amber-500 text-slate-950 shadow-xs"
                       : "text-slate-600 hover:text-slate-950 hover:bg-white"
                   )}
                 >
                   <Layers className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "all" ? "text-slate-950" : "text-amber-600")} />
-                  <span className="truncate">All</span>
+                  <span className="whitespace-nowrap">All</span>
                   <span className={cn(
                     "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold shrink-0 transition-colors",
                     listingTypeFilter === "all"
-                      ? "bg-slate-950 text-amber-400 font-black shadow-xs"
+                      ? "bg-slate-950 text-amber-400 font-bold shadow-xs"
                       : "bg-white text-slate-600 border border-slate-200"
                   )}>
                     {allCount}
@@ -1889,18 +1889,18 @@ export default function PropertyMap({
                   type="button"
                   onClick={() => setListingTypeFilter("properties")}
                   className={cn(
-                    "h-9 px-1 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer min-w-0 select-none",
+                    "h-9 px-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer select-none",
                     listingTypeFilter === "properties"
-                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                      ? "bg-amber-500 text-slate-950 shadow-xs"
                       : "text-slate-600 hover:text-slate-950 hover:bg-white"
                   )}
                 >
                   <Home className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "properties" ? "text-slate-950" : "text-blue-600")} />
-                  <span className="truncate">Properties</span>
+                  <span className="whitespace-nowrap">Properties</span>
                   <span className={cn(
                     "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold shrink-0 transition-colors",
                     listingTypeFilter === "properties"
-                      ? "bg-slate-950 text-amber-400 font-black shadow-xs"
+                      ? "bg-slate-950 text-amber-400 font-bold shadow-xs"
                       : "bg-white text-slate-600 border border-slate-200"
                   )}>
                     {propertiesCount}
@@ -1911,18 +1911,18 @@ export default function PropertyMap({
                   type="button"
                   onClick={() => setListingTypeFilter("projects")}
                   className={cn(
-                    "h-9 px-1 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer min-w-0 select-none",
+                    "h-9 px-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer select-none",
                     listingTypeFilter === "projects"
-                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                      ? "bg-amber-500 text-slate-950 shadow-xs"
                       : "text-slate-600 hover:text-slate-950 hover:bg-white"
                   )}
                 >
                   <Building2 className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "projects" ? "text-slate-950" : "text-emerald-600")} />
-                  <span className="truncate">Projects</span>
+                  <span className="whitespace-nowrap">Projects</span>
                   <span className={cn(
                     "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold shrink-0 transition-colors",
                     listingTypeFilter === "projects"
-                      ? "bg-slate-950 text-amber-400 font-black shadow-xs"
+                      ? "bg-slate-950 text-amber-400 font-bold shadow-xs"
                       : "bg-white text-slate-600 border border-slate-200"
                   )}>
                     {projectsCount}

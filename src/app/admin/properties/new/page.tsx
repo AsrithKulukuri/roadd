@@ -610,7 +610,6 @@ export default function AddPropertyPage() {
                   <option value="sale">For Sale</option>
                   <option value="resale">Resale</option>
                   <option value="rent">For Rent</option>
-                  <option value="pg">PG / Co-living</option>
                 </select>
               </div>
 

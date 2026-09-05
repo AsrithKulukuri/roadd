@@ -226,7 +226,7 @@ _Submitted via Road Facing Portal_`;
                 <select
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white outline-none cursor-pointer"
+                  className="w-full h-10 px-3 border-2 border-amber-500 rounded-xl bg-white text-xs font-bold text-slate-950 outline-none cursor-pointer focus:ring-1 focus:ring-amber-500/30"
                 >
                   {LOCATIONS.map((loc) => (
                     <option key={loc} value={loc}>
@@ -241,7 +241,7 @@ _Submitted via Road Facing Portal_`;
                     value={customLocation}
                     onChange={(e) => setCustomLocation(e.target.value)}
                     placeholder="Enter locality / area..."
-                    className="w-full h-10 px-3 mt-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white outline-none"
+                    className="w-full h-10 px-3 mt-2 border-2 border-amber-500 rounded-xl bg-white text-xs font-bold text-slate-950 outline-none"
                   />
                 )}
               </div>
@@ -254,7 +254,7 @@ _Submitted via Road Facing Portal_`;
                 <select
                   value={bhk}
                   onChange={(e) => setBhk(e.target.value)}
-                  className="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white outline-none cursor-pointer"
+                  className="w-full h-10 px-3 border-2 border-amber-500 rounded-xl bg-white text-xs font-bold text-slate-950 outline-none cursor-pointer focus:ring-1 focus:ring-amber-500/30"
                 >
                   {BHK_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
@@ -357,7 +357,7 @@ _Submitted via Road Facing Portal_`;
                 <select
                   value={timeline}
                   onChange={(e) => setTimeline(e.target.value)}
-                  className="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white outline-none cursor-pointer"
+                  className="w-full h-10 px-3 border-2 border-amber-500 rounded-xl bg-white text-xs font-bold text-slate-950 outline-none cursor-pointer focus:ring-1 focus:ring-amber-500/30"
                 >
                   {TIMELINES.map((t) => (
                     <option key={t} value={t}>

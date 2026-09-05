@@ -243,7 +243,6 @@ export function RealtorFilterBar({
     { label: "CRDA Ventures", value: "venture", icon: Landmark },
     { label: "Plot / Land", value: "residential-land", icon: Compass },
     { label: "Commercial", value: "commercial-spaces", icon: Building2 },
-    { label: "PG / Co-living", value: "pg", icon: Home },
     { label: "Farmhouse", value: "farmhouse", icon: Trees },
     { label: "Agricultural Land", value: "agricultural-lands", icon: Compass },
   ];
@@ -491,11 +490,11 @@ export function RealtorFilterBar({
             />
 
             {/* MOBILE BOTTOM SHEET DRAWER */}
-            <div className="fixed bottom-0 left-0 right-0 z-[10000] bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 p-5 shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[85vh] overflow-y-auto">
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="fixed bottom-0 left-0 right-0 z-[10000] bg-white rounded-t-3xl border-t-2 border-amber-500 p-5 shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[85vh] overflow-y-auto">
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white capitalize">
+                  <h3 className="text-base font-extrabold text-slate-950 capitalize">
                     {openDropdown === "price"
                       ? "Select Budget"
                       : openDropdown === "location"
@@ -509,7 +508,7 @@ export function RealtorFilterBar({
                   type="button"
                   onClick={() => setOpenDropdown(null)}
                   aria-label="Close"
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-100 flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95 shadow-xs"
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95 shadow-xs"
                 >
                   <X className="w-4 h-4 stroke-[2.5]" />
                 </button>
@@ -520,7 +519,7 @@ export function RealtorFilterBar({
                 <div className="space-y-4 p-1">
                   {/* Row 1: BUDGET: [ ₹ 10 L ⌄ ] TO [ Any Price ⌄ ] */}
                   <div className="flex items-center justify-center gap-2 w-full mx-auto">
-                    <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider shrink-0">
+                    <span className="text-xs font-black text-slate-950 uppercase tracking-wider shrink-0">
                       BUDGET:
                     </span>
                     
@@ -563,11 +562,11 @@ export function RealtorFilterBar({
                   <button
                     type="button"
                     onClick={() => setOpenDropdown(null)}
-                    className="w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-900 text-white font-black text-xs sm:text-sm rounded-full shadow-md transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer border border-white/10"
+                    className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs sm:text-sm rounded-full shadow-md transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <span>Apply</span>
                     {activeResultsCount !== undefined && (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[11px] font-black">
+                      <span className="px-2 py-0.5 rounded-full bg-slate-950 text-white text-[11px] font-black">
                         {activeResultsCount}
                       </span>
                     )}
@@ -590,7 +589,7 @@ export function RealtorFilterBar({
                             "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
                             isSelected
                               ? "bg-amber-500 text-slate-950 font-bold"
-                              : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                              : "text-slate-800 hover:bg-amber-50 hover:text-amber-700"
                           )}
                         >
                           <span>{opt.label}</span>
@@ -599,13 +598,13 @@ export function RealtorFilterBar({
                       );
                     })}
                   </div>
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                     <button
                       type="button"
                       onClick={() => onFilterChange({ ...filters, propertyType: [] })}
-                      className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-950 flex items-center gap-1 cursor-pointer"
                     >
-                      <RotateCcw className="w-3 h-3" /> Reset
+                      <RotateCcw className="w-3 h-3 text-amber-500" /> Reset
                     </button>
                     <button
                       type="button"
@@ -633,7 +632,7 @@ export function RealtorFilterBar({
                             "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
                             isSelected
                               ? "bg-amber-500 text-slate-950 font-bold"
-                              : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                              : "text-slate-800 hover:bg-amber-50 hover:text-amber-700"
                           )}
                         >
                           <span>{opt.label}</span>
@@ -642,13 +641,13 @@ export function RealtorFilterBar({
                       );
                     })}
                   </div>
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                     <button
                       type="button"
                       onClick={() => onFilterChange({ ...filters, postedBy: [] })}
-                      className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-950 flex items-center gap-1 cursor-pointer"
                     >
-                      <RotateCcw className="w-3 h-3" /> Reset
+                      <RotateCcw className="w-3 h-3 text-amber-500" /> Reset
                     </button>
                     <button
                       type="button"
@@ -666,7 +665,7 @@ export function RealtorFilterBar({
                 <div className="space-y-4">
                   {/* Cities Row */}
                   <div>
-                    <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2 px-0.5">
+                    <div className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2 px-0.5">
                       Select City / Region
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -680,15 +679,15 @@ export function RealtorFilterBar({
                             type="button"
                             onClick={() => toggleCityFilter(city.name, city.id)}
                             className={cn(
-                              "px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs",
+                              "px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs border",
                               isSelected
-                                ? "bg-amber-500 text-slate-950 font-black"
+                                ? "bg-amber-500 text-slate-950 font-black border-amber-500"
                                 : isTabActive
-                                ? "bg-slate-950 text-white dark:bg-slate-800"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200"
+                                ? "bg-slate-950 text-white border-slate-950"
+                                : "bg-slate-100 border-slate-200 text-slate-800 hover:bg-amber-50 hover:border-amber-500/40"
                             )}
                           >
-                            <MapPin className="w-3 h-3" />
+                            <MapPin className="w-3 h-3 text-amber-500" />
                             <span>{city.name}</span>
                             {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                           </button>
@@ -705,7 +704,7 @@ export function RealtorFilterBar({
                     const totalAreas = displayCities.reduce((acc, c) => acc + (c.sublocations?.length || 0), 0);
 
                     return (
-                      <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <div className="space-y-3 pt-2 border-t border-slate-100">
                         {/* Search Localities */}
                         {totalAreas > 4 && (
                           <div className="relative">
@@ -715,7 +714,7 @@ export function RealtorFilterBar({
                               value={localitySearch}
                               onChange={(e) => setLocalitySearch(e.target.value)}
                               placeholder={`Search ${displayCities.map((c) => c.name).join(" / ")} areas...`}
-                              className="w-full h-8 pl-8 pr-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-amber-500 text-slate-900 dark:text-white"
+                              className="w-full h-8 pl-8 pr-3 bg-white border border-amber-500/40 rounded-xl text-xs outline-none focus:border-amber-500 text-slate-950 placeholder:text-slate-400"
                             />
                             {localitySearch && (
                               <button
@@ -745,10 +744,10 @@ export function RealtorFilterBar({
                             return (
                               <div key={`mob-city-group-${city.id}`} className="space-y-1.5">
                                 <div className="flex items-center justify-between px-0.5">
-                                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">
                                     {city.name} Localities
                                   </span>
-                                  <span className="text-[10px] text-slate-400 font-medium">
+                                  <span className="text-[10px] text-slate-500 font-medium">
                                     {sublocations.length} areas
                                   </span>
                                 </div>
@@ -763,10 +762,10 @@ export function RealtorFilterBar({
                                           type="button"
                                           onClick={() => toggleArrayItem("localities", sub.name)}
                                           className={cn(
-                                            "px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 active:scale-95",
+                                            "px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 active:scale-95 border",
                                             isSelected
-                                              ? "bg-amber-500 text-slate-950 font-black shadow-xs"
-                                              : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                              ? "bg-amber-500 text-slate-950 font-black border-amber-500 shadow-xs"
+                                              : "bg-slate-100 border-slate-200 text-slate-800 hover:bg-amber-50 hover:border-amber-500/40"
                                           )}
                                         >
                                           <span>{sub.name}</span>
@@ -775,7 +774,7 @@ export function RealtorFilterBar({
                                       );
                                     })
                                   ) : (
-                                    <div className="text-xs text-slate-400 py-1 text-center w-full">
+                                    <div className="text-xs text-slate-500 py-1 text-center w-full">
                                       No matching localities in {city.name}
                                     </div>
                                   )}
@@ -789,15 +788,15 @@ export function RealtorFilterBar({
                   })()}
 
                   {/* Reset / Apply Bar */}
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                     <button
                       type="button"
                       onClick={() => {
                         onFilterChange({ ...filters, cities: [], localities: [] });
                       }}
-                      className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-950 flex items-center gap-1 cursor-pointer"
                     >
-                      <RotateCcw className="w-3 h-3" /> Reset
+                      <RotateCcw className="w-3 h-3 text-amber-500" /> Reset
                     </button>
                     <button
                       type="button"
@@ -818,7 +817,7 @@ export function RealtorFilterBar({
       {/* DESKTOP POPOVER CONTAINER (INLINE UNDER BUTTON) */}
       {openDropdown !== null && (
         <div
-          className="hidden md:block absolute top-full left-0 mt-2 z-[100] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-4 animate-in fade-in zoom-in-95 duration-150"
+          className="hidden md:block absolute top-full left-0 mt-2 z-[100] bg-white rounded-2xl shadow-2xl border-2 border-amber-500 p-4 animate-in fade-in zoom-in-95 duration-150"
           style={{
             width: openDropdown === "price" ? "340px" : openDropdown === "location" ? "360px" : "280px",
           }}
@@ -828,7 +827,7 @@ export function RealtorFilterBar({
             <div className="space-y-4 p-1">
               {/* Row 1: BUDGET: [ ₹ 10 L ⌄ ] TO [ Any Price ⌄ ] */}
               <div className="flex items-center justify-center gap-2 w-full mx-auto">
-                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider shrink-0">
+                <span className="text-xs font-black text-slate-950 uppercase tracking-wider shrink-0">
                   BUDGET:
                 </span>
                 
@@ -867,15 +866,15 @@ export function RealtorFilterBar({
                 />
               </div>
 
-              {/* Row 3: Full-width Solid Black Pill Apply Button with Count */}
+              {/* Row 3: Full-width Apply Button with Count */}
               <button
                 type="button"
                 onClick={() => setOpenDropdown(null)}
-                className="w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-900 text-white font-black text-xs sm:text-sm rounded-full shadow-md transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer border border-white/10"
+                className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs sm:text-sm rounded-full shadow-md transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Apply</span>
                 {activeResultsCount !== undefined && (
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[11px] font-black">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-950 text-white text-[11px] font-black">
                     {activeResultsCount}
                   </span>
                 )}
@@ -886,7 +885,7 @@ export function RealtorFilterBar({
           {/* 2. PROPERTY TYPE DROPDOWN CONTENT */}
           {openDropdown === "propertyType" && (
             <div className="space-y-3">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
+              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-1">
                 Property Type
               </div>
               <div className="space-y-1">
@@ -901,7 +900,7 @@ export function RealtorFilterBar({
                         "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
                         isSelected
                           ? "bg-amber-500 text-slate-950 font-bold"
-                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          : "text-slate-800 hover:bg-amber-50 hover:text-amber-700"
                       )}
                     >
                       <span>{opt.label}</span>
@@ -911,13 +910,13 @@ export function RealtorFilterBar({
                 })}
               </div>
 
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => onFilterChange({ ...filters, propertyType: [] })}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-950 flex items-center gap-1 cursor-pointer"
                 >
-                  <RotateCcw className="w-3 h-3" /> Reset
+                  <RotateCcw className="w-3 h-3 text-amber-500" /> Reset
                 </button>
                 <button
                   type="button"
@@ -933,7 +932,7 @@ export function RealtorFilterBar({
           {/* 3. POSTED BY DROPDOWN CONTENT */}
           {openDropdown === "postedBy" && (
             <div className="space-y-3">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
+              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-1">
                 Posted By
               </div>
               <div className="space-y-1">
@@ -948,7 +947,7 @@ export function RealtorFilterBar({
                         "w-full text-left px-3 py-2.5 text-xs rounded-xl font-medium flex items-center justify-between transition-colors cursor-pointer",
                         isSelected
                           ? "bg-amber-500 text-slate-950 font-bold"
-                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          : "text-slate-800 hover:bg-amber-50 hover:text-amber-700"
                       )}
                     >
                       <span>{opt.label}</span>
@@ -958,15 +957,15 @@ export function RealtorFilterBar({
                 })}
               </div>
 
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => {
                     onFilterChange({ ...filters, postedBy: [] });
                   }}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-950 flex items-center gap-1 cursor-pointer"
                 >
-                  <RotateCcw className="w-3 h-3" /> Reset
+                  <RotateCcw className="w-3 h-3 text-amber-500" /> Reset
                 </button>
                 <button
                   type="button"
@@ -984,7 +983,7 @@ export function RealtorFilterBar({
             <div className="space-y-4">
               {/* Cities Row */}
               <div>
-                <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2 px-0.5">
+                <div className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2 px-0.5">
                   Select City / Region
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -998,15 +997,15 @@ export function RealtorFilterBar({
                         type="button"
                         onClick={() => toggleCityFilter(city.name, city.id)}
                         className={cn(
-                          "px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs",
+                          "px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs border",
                           isSelected
-                            ? "bg-amber-500 text-slate-950 font-black"
+                            ? "bg-amber-500 text-slate-950 font-black border-amber-500"
                             : isTabActive
-                            ? "bg-slate-950 text-white dark:bg-slate-800"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200"
+                            ? "bg-slate-950 text-white border-slate-950"
+                            : "bg-slate-100 border-slate-200 text-slate-800 hover:bg-amber-50 hover:border-amber-500/40"
                         )}
                       >
-                        <MapPin className="w-3 h-3" />
+                        <MapPin className="w-3 h-3 text-amber-500" />
                         <span>{city.name}</span>
                         {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                       </button>
@@ -1023,7 +1022,7 @@ export function RealtorFilterBar({
                 const totalAreas = displayCities.reduce((acc, c) => acc + (c.sublocations?.length || 0), 0);
 
                 return (
-                  <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="space-y-3 pt-2 border-t border-slate-100">
                     {/* Search Localities */}
                     {totalAreas > 4 && (
                       <div className="relative">
@@ -1034,7 +1033,7 @@ export function RealtorFilterBar({
                           onChange={(e) => setLocalitySearch(e.target.value)}
                           placeholder={`Search ${displayCities.map((c) => c.name).join(" / ")} areas...`}
                           style={{ outline: "none", boxShadow: "none" }}
-                          className="w-full h-8 pl-8 pr-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:outline-none focus:ring-0 focus:border-slate-400 dark:focus:border-slate-500 text-slate-900 dark:text-white"
+                          className="w-full h-8 pl-8 pr-3 bg-white border border-amber-500/40 rounded-xl text-xs outline-none focus:outline-none focus:ring-0 focus:border-amber-500 text-slate-950 placeholder:text-slate-400"
                         />
                         {localitySearch && (
                           <button
@@ -1064,10 +1063,10 @@ export function RealtorFilterBar({
                         return (
                           <div key={`desk-city-group-${city.id}`} className="space-y-1.5">
                             <div className="flex items-center justify-between px-0.5">
-                              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                              <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">
                                 {city.name} Localities
                               </span>
-                              <span className="text-[10px] text-slate-400 font-medium">
+                              <span className="text-[10px] text-slate-500 font-medium">
                                 {sublocations.length} areas
                               </span>
                             </div>
@@ -1082,10 +1081,10 @@ export function RealtorFilterBar({
                                       type="button"
                                       onClick={() => toggleArrayItem("localities", sub.name)}
                                       className={cn(
-                                        "px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 active:scale-95",
+                                        "px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 active:scale-95 border",
                                         isSelected
-                                          ? "bg-amber-500 text-slate-950 font-black shadow-xs"
-                                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                          ? "bg-amber-500 text-slate-950 font-black border-amber-500 shadow-xs"
+                                          : "bg-slate-100 border-slate-200 text-slate-800 hover:bg-amber-50 hover:border-amber-500/40"
                                       )}
                                     >
                                       <span>{sub.name}</span>
@@ -1094,7 +1093,7 @@ export function RealtorFilterBar({
                                   );
                                 })
                               ) : (
-                                <div className="text-xs text-slate-400 py-1 text-center w-full">
+                                <div className="text-xs text-slate-500 py-1 text-center w-full">
                                   No matching localities in {city.name}
                                 </div>
                               )}
@@ -1108,15 +1107,15 @@ export function RealtorFilterBar({
               })()}
 
               {/* Reset / Apply Bar */}
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => {
                     onFilterChange({ ...filters, cities: [], localities: [] });
                   }}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-950 flex items-center gap-1 cursor-pointer"
                 >
-                  <RotateCcw className="w-3 h-3" /> Reset
+                  <RotateCcw className="w-3 h-3 text-amber-500" /> Reset
                 </button>
                 <button
                   type="button"

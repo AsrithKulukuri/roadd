@@ -739,7 +739,7 @@ export function SearchFiltersModal({
                     budget: [parseInt(e.target.value, 10), localFilters.budget[1]],
                   })
                 }
-                className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none"
+                className="flex-1 bg-white border-2 border-amber-500 rounded-xl px-3 py-2 text-xs font-bold text-slate-950 outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-500/20 cursor-pointer shadow-xs"
               >
                 {getBudgetOptionsWithCustom(BUDGET_MIN_OPTIONS, localFilters.budget[0]).map((opt) => (
                   <option key={`min-${opt.value}`} value={opt.value}>
@@ -758,7 +758,7 @@ export function SearchFiltersModal({
                     budget: [localFilters.budget[0], parseInt(e.target.value, 10)],
                   })
                 }
-                className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none"
+                className="flex-1 bg-white border-2 border-amber-500 rounded-xl px-3 py-2 text-xs font-bold text-slate-950 outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-500/20 cursor-pointer shadow-xs"
               >
                 {getBudgetOptionsWithCustom(BUDGET_MAX_OPTIONS, localFilters.budget[1], true).map((opt) => (
                   <option key={`max-${opt.value}`} value={opt.value}>
@@ -853,7 +853,7 @@ export function SearchFiltersModal({
                       coveredArea: [parseInt(e.target.value, 10), localFilters.coveredArea[1]],
                     })
                   }
-                  className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none"
+                  className="flex-1 bg-white border-2 border-amber-500 rounded-xl px-3 py-2 text-xs font-bold text-slate-950 outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-500/20 cursor-pointer shadow-xs"
                 >
                   {getAreaOptionsWithCustom(AREA_MIN_OPTIONS, localFilters.coveredArea[0], false).map((opt) => (
                     <option key={`area-min-${opt.value}`} value={opt.value}>
@@ -872,7 +872,7 @@ export function SearchFiltersModal({
                       coveredArea: [localFilters.coveredArea[0], parseInt(e.target.value, 10)],
                     })
                   }
-                  className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none"
+                  className="flex-1 bg-white border-2 border-amber-500 rounded-xl px-3 py-2 text-xs font-bold text-slate-950 outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-500/20 cursor-pointer shadow-xs"
                 >
                   {getAreaOptionsWithCustom(AREA_MAX_OPTIONS, localFilters.coveredArea[1], true).map((opt) => (
                     <option key={`area-max-${opt.value}`} value={opt.value}>
@@ -1303,7 +1303,7 @@ export function SearchFiltersModal({
                         budget: [parseInt(e.target.value, 10), localFilters.budget[1]],
                       })
                     }
-                    className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none cursor-pointer"
+                    className="flex-1 bg-white border-2 border-amber-500 rounded-xl px-3 py-2 text-xs font-bold text-slate-950 outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-500/20 cursor-pointer shadow-xs"
                   >
                     {getBudgetOptionsWithCustom(BUDGET_MIN_OPTIONS, localFilters.budget[0]).map((opt) => (
                       <option key={`desk-min-${opt.value}`} value={opt.value}>
@@ -1322,7 +1322,7 @@ export function SearchFiltersModal({
                         budget: [localFilters.budget[0], parseInt(e.target.value, 10)],
                       })
                     }
-                    className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 outline-none cursor-pointer"
+                    className="flex-1 bg-white border-2 border-amber-500 rounded-xl px-3 py-2 text-xs font-bold text-slate-950 outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-500/20 cursor-pointer shadow-xs"
                   >
                     {getBudgetOptionsWithCustom(BUDGET_MAX_OPTIONS, localFilters.budget[1], true).map((opt) => (
                       <option key={`desk-max-${opt.value}`} value={opt.value}>

@@ -43,7 +43,6 @@ export const propertyTypeLabels: Record<string, string> = {
   "independent-house": "Independent House",
   plot: "Plot / Land",
   commercial: "Commercial Space",
-  "pg-coliving": "PG / Co-living",
   farmhouse: "Farmhouse",
 };
 
@@ -51,7 +50,6 @@ export const listingTypeLabels: Record<string, string> = {
   sale: "Buy / For Sale",
   resale: "Resale",
   rent: "Rent",
-  pg: "PG / Co-living",
 };
 
 export const furnishingLabels: Record<string, string> = {

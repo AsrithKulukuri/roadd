@@ -885,7 +885,7 @@ function UnifiedSearchPage() {
                       const queryStr = newParams.toString();
                       router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
                     }}
-                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-border-default bg-white dark:bg-bg-card text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-primary/30 cursor-pointer"
+                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border-2 border-amber-500 bg-white text-slate-950 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/30 cursor-pointer shadow-xs"
                   >
                     <option value="relevant">Relevant / Best Match</option>
                     <option value="newest">Newest Listed First</option>

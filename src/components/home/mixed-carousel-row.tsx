@@ -30,10 +30,13 @@ export function MixedCarouselRow({
   cardVariant = "default",
 }: MixedCarouselRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const interactionPauseUntil = useRef(0);
+  const isInitialized = useRef(false);
+
+  const hasMultiple = items.length > 1;
+  // Duplicate 3 times for seamless infinite scroll
+  const loopCopies = hasMultiple ? [0, 1, 2] : [0];
 
   const getScrollStep = () => {
     const container = scrollRef.current;
@@ -48,22 +51,53 @@ export function MixedCarouselRow({
     interactionPauseUntil.current = Date.now() + 5000;
   };
 
-  const checkScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(Math.ceil(scrollLeft + clientWidth) < scrollWidth);
-    }
-  };
-
+  // Initialize scroll position to the middle copy (copy 1) so user can scroll left or right infinitely
   useEffect(() => {
-    checkScroll();
-    window.addEventListener("resize", checkScroll);
-    return () => window.removeEventListener("resize", checkScroll);
-  }, [items]);
+    const container = scrollRef.current;
+    if (!container || !hasMultiple) return;
 
+    const timer = setTimeout(() => {
+      const step = getScrollStep();
+      if (step > 0) {
+        const setWidth = items.length * step;
+        container.scrollLeft = setWidth;
+        isInitialized.current = true;
+      }
+    }, 60);
+
+    return () => clearTimeout(timer);
+  }, [items.length, hasMultiple]);
+
+  // Debounced normalization for manual user scrolling / swipe
   useEffect(() => {
-    if (!autoSlide || items.length === 0 || isHovered) return;
+    const container = scrollRef.current;
+    if (!container || !hasMultiple) return;
+
+    let timeout: NodeJS.Timeout;
+    const handleScroll = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        const step = getScrollStep();
+        if (step <= 0) return;
+        const setWidth = items.length * step;
+        if (container.scrollLeft >= 2 * setWidth) {
+          container.scrollLeft -= setWidth;
+        } else if (container.scrollLeft < setWidth - step) {
+          container.scrollLeft += setWidth;
+        }
+      }, 150);
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      clearTimeout(timeout);
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, [items.length, hasMultiple]);
+
+  // Infinite Auto-Slide
+  useEffect(() => {
+    if (!autoSlide || !hasMultiple || isHovered) return;
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
@@ -72,22 +106,40 @@ export function MixedCarouselRow({
       const container = scrollRef.current;
       if (!container || Date.now() < interactionPauseUntil.current) return;
 
-      const maxScroll = container.scrollWidth - container.clientWidth;
-      if (maxScroll <= 1 || Math.ceil(container.scrollLeft) >= maxScroll) return;
-
       const step = getScrollStep();
-      if (step > 0) container.scrollBy({ left: Math.min(step, maxScroll - container.scrollLeft), behavior: "smooth" });
+      if (step <= 0) return;
+
+      const setWidth = items.length * step;
+      // If approaching the end of the 2nd loop, seamlessly reset to middle copy
+      if (container.scrollLeft >= 2 * setWidth - 5) {
+        container.scrollLeft -= setWidth;
+      }
+
+      container.scrollBy({ left: step, behavior: "smooth" });
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [autoSlide, isHovered, items.length]);
+  }, [autoSlide, isHovered, items.length, hasMultiple]);
 
   const scroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      pauseAutoSlide();
-      const step = getScrollStep();
-      const amount = direction === "left" ? -step : step;
-      scrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
+    const container = scrollRef.current;
+    if (!container) return;
+    pauseAutoSlide();
+    const step = getScrollStep();
+    if (step <= 0) return;
+
+    const setWidth = items.length * step;
+
+    if (direction === "right") {
+      if (container.scrollLeft >= 2 * setWidth - 5) {
+        container.scrollLeft -= setWidth;
+      }
+      container.scrollBy({ left: step, behavior: "smooth" });
+    } else {
+      if (container.scrollLeft <= step) {
+        container.scrollLeft += setWidth;
+      }
+      container.scrollBy({ left: -step, behavior: "smooth" });
     }
   };
 
@@ -106,56 +158,46 @@ export function MixedCarouselRow({
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-2">
-              <button
-                onClick={() => scroll("left")}
-                disabled={!canScrollLeft}
-                className={`p-2 rounded-full border border-border-default transition-all ${
-                  canScrollLeft 
-                    ? "bg-bg-card hover:bg-bg-hover text-text-primary" 
-                    : "bg-bg-primary text-border-default cursor-not-allowed"
-                }`}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => scroll("right")}
-                disabled={!canScrollRight}
-                className={`p-2 rounded-full border border-border-default transition-all ${
-                  canScrollRight 
-                    ? "bg-bg-card hover:bg-bg-hover text-text-primary" 
-                    : "bg-bg-primary text-border-default cursor-not-allowed"
-                }`}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+            {hasMultiple && (
+              <div className="hidden md:flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => scroll("left")}
+                  aria-label="Previous items"
+                  className="p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-all bg-white dark:bg-slate-900 hover:bg-amber-500 hover:border-amber-500 hover:text-slate-950 text-slate-800 dark:text-slate-200 active:scale-95 cursor-pointer shadow-xs"
+                >
+                  <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scroll("right")}
+                  aria-label="Next items"
+                  className="p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-all bg-white dark:bg-slate-900 hover:bg-amber-500 hover:border-amber-500 hover:text-slate-950 text-slate-800 dark:text-slate-200 active:scale-95 cursor-pointer shadow-xs"
+                >
+                  <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+                </button>
+              </div>
+            )}
           </div>
         )}
 
-        {hideHeader && (
+        {hideHeader && hasMultiple && (
           <div className="flex justify-end gap-2 mb-4 hidden md:flex">
             <button
+              type="button"
               onClick={() => scroll("left")}
-              disabled={!canScrollLeft}
-              className={`p-2 rounded-full border border-border-default transition-all shadow-sm ${
-                canScrollLeft 
-                  ? "bg-bg-card hover:bg-bg-hover text-text-primary" 
-                  : "bg-bg-primary text-border-default cursor-not-allowed"
-              }`}
+              aria-label="Previous items"
+              className="p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-all bg-white dark:bg-slate-900 hover:bg-amber-500 hover:border-amber-500 hover:text-slate-950 text-slate-800 dark:text-slate-200 active:scale-95 cursor-pointer shadow-xs"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
             </button>
             <button
+              type="button"
               onClick={() => scroll("right")}
-              disabled={!canScrollRight}
-              className={`p-2 rounded-full border border-border-default transition-all shadow-sm ${
-                canScrollRight 
-                  ? "bg-bg-card hover:bg-bg-hover text-text-primary" 
-                  : "bg-bg-primary text-border-default cursor-not-allowed"
-              }`}
+              aria-label="Next items"
+              className="p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-all bg-white dark:bg-slate-900 hover:bg-amber-500 hover:border-amber-500 hover:text-slate-950 text-slate-800 dark:text-slate-200 active:scale-95 cursor-pointer shadow-xs"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>
         )}
@@ -163,45 +205,46 @@ export function MixedCarouselRow({
         <div className="relative group">
           <div 
             ref={scrollRef}
-            onScroll={checkScroll}
             onPointerDown={pauseAutoSlide}
             onWheel={pauseAutoSlide}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             className={cn(
-              "flex overflow-x-auto snap-x snap-mandatory hide-scrollbar",
+              "flex overflow-x-auto snap-x snap-mandatory no-scrollbar",
               cardVariant === "compact"
                 ? "gap-2.5 sm:gap-4 md:gap-5 pb-1 sm:pb-3"
                 : "gap-4 sm:gap-6 pb-4 sm:pb-6"
             )}
           >
-            {items.map((item, index) => (
-              <div 
-                key={item.id} 
-                className={cn(
-                  "shrink-0 snap-start",
-                  cardVariant === "compact"
-                    ? "w-[170px] sm:w-[220px] md:w-[260px]"
-                    : cardVariant === "category-style" 
-                    ? "w-[160px] sm:w-[220px]" 
-                    : "w-[220px] sm:w-[280px] md:w-[320px]"
-                )}
-              >
-                {item.itemType === 'property' ? (
-                  <PropertyCard
-                    property={item}
-                    index={index}
-                    variant={cardVariant}
-                  />
-                ) : (
-                  <ProjectCard
-                    project={item}
-                    index={index}
-                    variant={cardVariant}
-                  />
-                )}
-              </div>
-            ))}
+            {loopCopies.map((loopIndex) =>
+              items.map((item, itemIndex) => (
+                <div 
+                  key={`${item.id}-loop-${loopIndex}-${itemIndex}`} 
+                  className={cn(
+                    "shrink-0 snap-start",
+                    cardVariant === "compact"
+                      ? "w-[170px] sm:w-[220px] md:w-[260px]"
+                      : cardVariant === "category-style" 
+                      ? "w-[160px] sm:w-[220px]" 
+                      : "w-[220px] sm:w-[280px] md:w-[320px]"
+                  )}
+                >
+                  {item.itemType === 'property' ? (
+                    <PropertyCard
+                      property={item}
+                      index={itemIndex}
+                      variant={cardVariant}
+                    />
+                  ) : (
+                    <ProjectCard
+                      project={item}
+                      index={itemIndex}
+                      variant={cardVariant}
+                    />
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </div>
 

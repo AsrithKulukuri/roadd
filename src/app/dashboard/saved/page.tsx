@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { PropertyCard } from "@/components/property/property-card";
 import { ProjectCard } from "@/components/project/project-card";
-import { CompareModal } from "@/components/property/compare-modal";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
@@ -18,7 +17,6 @@ import {
   MoreVertical,
   Share2,
   Trash2,
-  ArrowRightLeft,
   FolderHeart,
   Loader2,
   Building2,
@@ -37,9 +35,6 @@ export default function SavedPropertiesPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuthSession();
 
-  const [compareMode, setCompareMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [showCompareModal, setShowCompareModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "properties" | "projects">("all");
   const mounted = useIsMounted();
 
@@ -82,21 +77,6 @@ export default function SavedPropertiesPage() {
     });
   };
 
-  const selectedProps = savedProperties.filter((p) =>
-    selectedIds.includes(p.id)
-  );
-
-  const toggleSelection = (id: string) => {
-    setSelectedIds((prev) => {
-      if (prev.includes(id)) return prev.filter((i) => i !== id);
-      if (prev.length >= 3) {
-        toast.error("You can only compare up to 3 properties at once.");
-        return prev;
-      }
-      return [...prev, id];
-    });
-  };
-
   const isLoading = !mounted || (isPropertiesLoading && isProjectsLoading && totalSavedCount === 0);
 
   return (
@@ -107,21 +87,8 @@ export default function SavedPropertiesPage() {
             Saved Properties & Projects
           </h1>
           <p className="text-text-secondary mt-1">
-            Organize, compare, and manage your favorite properties and projects.
+            Organize and manage your favorite properties and projects.
           </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button
-            variant={compareMode ? "amber" : "outline"}
-            onClick={() => {
-              setCompareMode(!compareMode);
-              if (compareMode) setSelectedIds([]);
-            }}
-          >
-            <ArrowRightLeft className="w-4 h-4 mr-2" />
-            {compareMode ? "Cancel Compare" : "Compare"}
-          </Button>
         </div>
       </div>
 
@@ -201,9 +168,6 @@ export default function SavedPropertiesPage() {
                     key={property.id}
                     property={property}
                     index={i}
-                    selectable={compareMode}
-                    selected={selectedIds.includes(property.id)}
-                    onSelect={() => toggleSelection(property.id)}
                     actionMenu={
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -267,7 +231,7 @@ export default function SavedPropertiesPage() {
             No saved items yet
           </h3>
           <p className="text-text-secondary max-w-md mx-auto mb-6 text-sm">
-            When you find a property or project you like, click the heart icon to save it for quick access and comparison.
+            When you find a property or project you like, click the heart icon to save it for quick access.
           </p>
           <Link href="/search">
             <Button variant="amber" className="rounded-xl px-6 gap-2">
@@ -275,36 +239,6 @@ export default function SavedPropertiesPage() {
             </Button>
           </Link>
         </div>
-      )}
-
-      {/* Floating Action Bar for Compare Mode */}
-      {compareMode && selectedIds.length > 0 && (
-        <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] lg:bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-10 fade-in duration-300">
-          <div className="bg-bg-card border border-border-default shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] rounded-full p-2 pl-6 flex items-center gap-6">
-            <div className="text-sm font-medium text-text-primary whitespace-nowrap">
-              <span className="text-amber-primary font-bold text-lg">
-                {selectedIds.length}
-              </span>{" "}
-              / 3 selected
-            </div>
-            <Button
-              variant="amber"
-              className="rounded-full shadow-amber-glow px-6"
-              disabled={selectedIds.length < 2}
-              onClick={() => setShowCompareModal(true)}
-            >
-              Compare Properties
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Compare Modal */}
-      {showCompareModal && (
-        <CompareModal
-          properties={selectedProps}
-          onClose={() => setShowCompareModal(false)}
-        />
       )}
     </div>
   );

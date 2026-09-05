@@ -21,7 +21,7 @@ export function AiAssistantWidget() {
   const searchParams = useSearchParams();
   const isMapView = (pathname === "/search" && searchParams?.get("view") === "map") || pathname === "/properties/map";
   const isDetailPage = 
-    (pathname.startsWith("/properties/") && pathname !== "/properties" && pathname !== "/properties/map" && pathname !== "/properties/compare") ||
+    (pathname.startsWith("/properties/") && pathname !== "/properties" && pathname !== "/properties/map") ||
     (pathname.startsWith("/projects/") && pathname !== "/projects");
   const isNavHidden = isDetailPage || isMapView;
 

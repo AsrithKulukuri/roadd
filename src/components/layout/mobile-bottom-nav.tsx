@@ -163,7 +163,7 @@ export function MobileBottomNav() {
   }, [pathname, isMenuOpen]);
 
   const isDetailPage = 
-    (pathname.startsWith("/properties/") && pathname !== "/properties" && pathname !== "/properties/map" && pathname !== "/properties/compare") ||
+    (pathname.startsWith("/properties/") && pathname !== "/properties" && pathname !== "/properties/map") ||
     (pathname.startsWith("/projects/") && pathname !== "/projects");
 
   if (isDetailPage || isMapView) {
