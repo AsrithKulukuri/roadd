@@ -936,7 +936,13 @@ export function ProjectDetailView({
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className={cn(
+                      "grid gap-3",
+                      project.configurations.length === 1 && "grid-cols-1 max-w-sm",
+                      project.configurations.length === 2 && "grid-cols-1 sm:grid-cols-2",
+                      project.configurations.length === 3 && "grid-cols-1 sm:grid-cols-3",
+                      project.configurations.length >= 4 && "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4"
+                    )}>
                       {project.configurations.map((cfg, idx) => {
                         const isVenture = project.projectType === "venture";
                         const sizeMin = isVenture ? cfg.plotSizeMin : (cfg.superBuiltUpAreaMin || cfg.builtUpAreaMin || cfg.plinthAreaMin);
@@ -1005,14 +1011,14 @@ export function ProjectDetailView({
                               </span>
                             </div>
 
-                            <div className="flex items-baseline justify-between gap-1 mt-0.5">
-                              <span className={`text-xs sm:text-sm font-bold truncate ${
+                            <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 mt-1">
+                              <span className={`text-xs sm:text-sm font-bold whitespace-normal ${
                                 isSelected ? "text-white" : "text-text-primary"
                               }`}>
                                 {sizeText || "Layout available"}
                               </span>
                               {cfg.pricePerUnit && (
-                                <span className={`text-[10px] font-medium shrink-0 ${
+                                <span className={`text-[11px] font-medium shrink-0 ${
                                   isSelected ? "text-slate-300" : "text-text-secondary"
                                 }`}>
                                   ₹{cfg.pricePerUnit.toLocaleString("en-IN")}/{unitLabel}
