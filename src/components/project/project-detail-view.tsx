@@ -25,7 +25,11 @@ import { WhatsAppIcon } from "@/components/property/whatsapp-share-button";
 import { toast } from "sonner";
 import { WatermarkOverlay } from "@/components/shared/watermark-overlay";
 import { useAuthSession } from "@/hooks/use-auth-session";
-import { triggerProjectViewNotification } from "@/lib/project-notifications";
+import {
+  trackProjectImpression,
+  initProjectDwellTracker,
+  trackShareDetailsWithBuilder,
+} from "@/lib/project-activity-tracker";
 import { ScheduleVisitModal } from "@/components/project/schedule-visit-modal";
 
 // ─── Lazy map (SSR unsafe) ─────────────────────────────────────────────────────
@@ -349,12 +353,23 @@ export function ProjectDetailView({
     }
   }, [isLoading, isLoggedIn, project?.slug, slug, getLoginUrl, router]);
 
-  // Detail-page fallback: Send notification on landing if not already triggered at click-time
+  // Track genuine impression and active dwell time (WITHOUT sending WhatsApp viewing messages)
   useEffect(() => {
-    if (isLoggedIn && project) {
-      triggerProjectViewNotification(project, user);
-    }
-  }, [isLoggedIn, user, project]);
+    if (!project) return;
+    trackProjectImpression({
+      projectId: project.id,
+      projectSlug: project.slug,
+      projectName: project.name,
+    });
+
+    const cleanupDwell = initProjectDwellTracker({
+      projectId: project.id,
+      projectSlug: project.slug,
+      projectName: project.name,
+    });
+
+    return () => cleanupDwell();
+  }, [project?.id, project?.slug, project?.name]);
 
   useEffect(() => {
     if (!project) return;
@@ -1745,6 +1760,15 @@ export function ProjectDetailView({
                             href={whatsapp}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={() => {
+                              trackShareDetailsWithBuilder({
+                                projectId: project.id,
+                                projectSlug: project.slug,
+                                projectName: project.name,
+                                builderPhone: project.builderWhatsapp || project.builderPhone,
+                                action: "contact_builder",
+                              });
+                            }}
                             className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs sm:text-sm transition-all shadow-xs active:scale-95"
                           >
                             <WhatsAppIcon className="w-4.5 h-4.5 shrink-0" />
@@ -1823,8 +1847,21 @@ export function ProjectDetailView({
                   ) : (
                     <>
                       {whatsapp && (
-                        <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm transition-all shadow-sm active:scale-98">
+                        <a
+                          href={whatsapp}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => {
+                            trackShareDetailsWithBuilder({
+                              projectId: project.id,
+                              projectSlug: project.slug,
+                              projectName: project.name,
+                              builderPhone: project.builderWhatsapp || project.builderPhone,
+                              action: "contact_builder",
+                            });
+                          }}
+                          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm transition-all shadow-sm active:scale-98"
+                        >
                           <WhatsAppIcon className="w-4.5 h-4.5 shrink-0" />
                           <span>WhatsApp Builder</span>
                         </a>

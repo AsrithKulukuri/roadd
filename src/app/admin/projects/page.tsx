@@ -21,6 +21,8 @@ import type { Project, ProjectType } from "@/types/project";
 import { getRefId, findItemByRefId } from "@/lib/ref-id";
 import { WhatsAppIcon } from "@/components/property/whatsapp-share-button";
 import { AdminWhatsAppModal } from "@/components/admin/admin-whatsapp-modal";
+import { ProjectActivityModal } from "@/components/admin/project-activity-modal";
+import { FileSpreadsheet } from "lucide-react";
 
 const TYPE_CONFIG: Record<ProjectType, { label: string; icon: React.ElementType; color: string }> = {
   apartment: { label: "Apartment", icon: Building2, color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
@@ -69,6 +71,7 @@ export default function AdminProjectsPage() {
   const { projects, fetchProjects, deleteProject, toggleFeatured, togglePublished, updateDisplayCategory } = useProjectsStore();
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [whatsAppModalProject, setWhatsAppModalProject] = useState<Project | null>(null);
+  const [activityModalProject, setActivityModalProject] = useState<Project | null>(null);
   const [filterType, setFilterType] = useState<ProjectType | "all">("all");
 
   useEffect(() => {
@@ -295,6 +298,15 @@ export default function AdminProjectsPage() {
                           <div className="flex items-center gap-1.5">
                             <button
                               type="button"
+                              onClick={() => setActivityModalProject(project)}
+                              className="p-1.5 rounded-lg border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold"
+                              title="Download Activity Excel Report"
+                            >
+                              <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span className="hidden xl:inline">Activity Excel</span>
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => setWhatsAppModalProject(project)}
                               className="p-1.5 rounded-lg border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 transition-colors cursor-pointer"
                               title="Share on WhatsApp"
@@ -308,6 +320,12 @@ export default function AdminProjectsPage() {
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-bg-card border border-border-default">
+                                <DropdownMenuItem
+                                  className="text-emerald-600 focus:text-emerald-600 flex items-center gap-2 cursor-pointer font-semibold"
+                                  onClick={() => setActivityModalProject(project)}
+                                >
+                                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Activity Excel Report
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   className="text-emerald-500 focus:text-emerald-500 flex items-center gap-2 cursor-pointer"
                                   onClick={() => setWhatsAppModalProject(project)}
@@ -433,6 +451,14 @@ export default function AdminProjectsPage() {
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
+                          onClick={() => setActivityModalProject(project)}
+                          className="p-2 rounded-full text-emerald-600 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                          title="Activity Excel Report"
+                        >
+                          <FileSpreadsheet className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => setWhatsAppModalProject(project)}
                           className="p-2 rounded-full text-emerald-500 hover:bg-emerald-500/10 transition-colors cursor-pointer"
                           title="Share on WhatsApp"
@@ -467,6 +493,13 @@ export default function AdminProjectsPage() {
         type="project"
         isOpen={Boolean(whatsAppModalProject)}
         onClose={() => setWhatsAppModalProject(null)}
+      />
+
+      {/* Project Real Activity & Excel Export Modal */}
+      <ProjectActivityModal
+        isOpen={Boolean(activityModalProject)}
+        onClose={() => setActivityModalProject(null)}
+        project={activityModalProject}
       />
     </>
   );

@@ -3,7 +3,8 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthSession } from "@/hooks/use-auth-session";
-import { triggerProjectViewNotification, ProjectNotificationData } from "@/lib/project-notifications";
+import { ProjectNotificationData } from "@/lib/project-notifications";
+import { trackProjectImpression } from "@/lib/project-activity-tracker";
 import { toast } from "sonner";
 
 /**
@@ -40,9 +41,13 @@ export function useProjectOpenGuard() {
         return false;
       }
 
-      // 2. If user is logged in, immediately trigger WhatsApp lead notification and navigate
+      // 2. If user is logged in, track impression/click (NO builder notification) and navigate
       if (isLoggedIn) {
-        triggerProjectViewNotification(project, user);
+        trackProjectImpression({
+          projectId: project.id,
+          projectSlug: project.slug,
+          projectName: project.name || "Project",
+        });
         router.push(projectUrl);
         return true;
       }
