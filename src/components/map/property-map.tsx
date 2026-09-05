@@ -833,7 +833,7 @@ function MapCardImageCarousel({ images, title, propertyType }: { images: string[
   return (
     <div className="relative w-24 sm:w-28 h-24 rounded-xl overflow-hidden shrink-0 bg-slate-800 group/carousel">
       <img src={images[idx]} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-      <div className="absolute top-1 left-1 bg-slate-950/80 text-[#f1a010] text-[9px] font-extrabold px-1.5 py-0.5 rounded-md backdrop-blur-xs z-10 shadow-xs border border-[#f1a010]/20">
+      <div className="absolute top-1 left-1 bg-white/95 text-black text-[9px] font-black px-1.5 py-0.5 rounded-md backdrop-blur-xs z-10 shadow-xs border border-slate-200">
         {propertyType}
       </div>
       {images.length > 1 && idx > 0 && (
@@ -2514,29 +2514,30 @@ export default function PropertyMap({
                     <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                       <div>
                         <div className="flex items-center justify-between gap-1">
-                          <span className="text-[#f1a010] font-black text-sm sm:text-base tracking-tight leading-tight">
+                          <span className="text-black font-black text-sm sm:text-base tracking-tight leading-tight">
                             {formatPriceCompact(prop.price)}
                           </span>
-                          <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-800 border border-slate-200 shrink-0">
+                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-slate-100 text-black border border-slate-200 shrink-0">
                             {propTypeLabel}
                           </span>
                         </div>
-                        <h4 className="text-slate-950 font-bold text-xs truncate group-hover:text-[#f1a010] transition-colors mt-1 leading-snug">
+                        <h4 className="text-black font-extrabold text-xs truncate transition-colors mt-1 leading-snug">
                           {prop.title || (prop as any).name || "Property"}
                         </h4>
-                        <p className="text-[11px] text-slate-600 truncate mt-0.5 flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-[#f1a010] shrink-0" />
+                        <p className="text-[11px] text-black font-semibold truncate mt-0.5 flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-[#f1a010] shrink-0" />
                           <span>{prop.location?.locality || ""}, {prop.location?.city || ""}</span>
                         </p>
                       </div>
 
                       <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px] mt-1">
                         {distStr ? (
-                          <span className="text-[#f1a010] font-extrabold flex items-center gap-1 truncate max-w-[85px]">
-                            <Navigation className="w-3 h-3 text-[#f1a010] shrink-0" /> {distStr}
+                          <span className="text-black font-black flex items-center gap-1 truncate max-w-[85px]">
+                            <Navigation className="w-3.5 h-3.5 text-[#f1a010] shrink-0" />
+                            <span>{distStr}</span>
                           </span>
                         ) : (
-                          <span className="text-slate-500 font-bold capitalize truncate max-w-[85px]">
+                          <span className="text-black font-bold capitalize truncate max-w-[85px]">
                             {(prop as any)._isProject ? "Project" : prop.listingType}
                           </span>
                         )}
@@ -2553,10 +2554,10 @@ export default function PropertyMap({
                               setBlinkingPropertyId(prop.id);
                               setTimeout(() => setBlinkingPropertyId(null), 4000);
                             }}
-                            className="px-2 py-1 bg-white hover:bg-slate-50 text-slate-900 font-bold text-[10px] rounded-lg flex items-center gap-1 transition-all border border-slate-200 hover:border-[#f1a010]"
+                            className="px-2.5 py-1 bg-white hover:bg-slate-100 text-black font-black text-[10px] rounded-lg flex items-center gap-1 transition-all border border-slate-300 hover:border-[#f1a010]"
                             title="Focus on map"
                           >
-                            <MapPin className="w-3 h-3 text-[#f1a010]" />
+                            <MapPin className="w-3.5 h-3.5 text-[#f1a010]" />
                             <span>Map</span>
                           </button>
                           <button
@@ -2569,10 +2570,10 @@ export default function PropertyMap({
                                 router.push(`/properties/${prop.slug || prop.id}`);
                               }
                             }}
-                            className="px-2.5 py-1 bg-[#f1a010] hover:bg-[#d88c0a] text-slate-950 font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shadow-xs cursor-pointer active:scale-95"
+                            className="px-2.5 py-1 bg-[#f1a010] hover:bg-[#d88c0a] text-black font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shadow-xs cursor-pointer active:scale-95"
                           >
                             <span>View</span>
-                            <ArrowRight className="w-3 h-3" />
+                            <ArrowRight className="w-3 h-3 text-black stroke-[2.5]" />
                           </button>
                         </div>
                       </div>
