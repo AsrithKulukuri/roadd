@@ -889,16 +889,36 @@ export function ProjectDetailView({
                   </div>
                 </div>
 
+                {/* Project Snapshot Specs (Introduction) */}
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
+                    <span className="text-[10px] font-bold text-text-tertiary uppercase block">Project Type</span>
+                    <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.projectType}</span>
+                  </div>
+                  <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
+                    <span className="text-[10px] font-bold text-text-tertiary uppercase block">Total Area</span>
+                    <span className="text-xs sm:text-sm font-bold text-text-primary">{project.totalArea || "On Request"}</span>
+                  </div>
+                  <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
+                    <span className="text-[10px] font-bold text-text-tertiary uppercase block">Total Units</span>
+                    <span className="text-xs sm:text-sm font-bold text-text-primary">{project.totalUnits ? `${project.totalUnits} Units` : "On Request"}</span>
+                  </div>
+                  <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
+                    <span className="text-[10px] font-bold text-text-tertiary uppercase block">Status</span>
+                    <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.constructionStatus.replace("-", " ")}</span>
+                  </div>
+                </div>
+
                 {/* Available Configurations Section */}
                 {project.configurations && project.configurations.length > 0 ? (
-                  <div className="pt-4 border-t border-slate-200 space-y-3">
+                  <div className="pt-4 border-t border-slate-200 dark:border-slate-800/80 space-y-3">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full bg-[#faad13] animate-pulse shrink-0" />
-                        <h2 className="text-xs font-black uppercase tracking-wider !text-slate-950">
+                        <h2 className="text-xs font-black uppercase tracking-wider !text-slate-950 dark:!text-white">
                           Available Configurations
                         </h2>
-                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-500/20 !text-slate-950 border border-amber-500/40 shadow-2xs">
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-500/20 !text-slate-950 dark:!text-amber-400 border border-amber-500/40 shadow-2xs">
                           {project.configurations.length} {project.configurations.length === 1 ? "Option" : "Options"}
                         </span>
                       </div>
@@ -909,22 +929,14 @@ export function ProjectDetailView({
                           const el = document.getElementById("floor-plans");
                           if (el) el.scrollIntoView({ behavior: "smooth" });
                         }}
-                        className="inline-flex items-center gap-1 text-xs font-black !text-slate-950 hover:text-amber-600 transition-colors cursor-pointer group"
+                        className="inline-flex items-center gap-1 text-xs font-black !text-slate-950 dark:!text-white hover:text-amber-600 transition-colors cursor-pointer group"
                       >
                         <span>View Plans & Pricing</span>
                         <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform text-[#faad13]" />
                       </button>
                     </div>
 
-                    <div className="relative group/config-slider">
-                      <div
-                        ref={configSliderRef}
-                        onScroll={updateConfigScroll}
-                        className={cn(
-                          "flex items-stretch gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-2 pt-1 -mx-1 px-1 touch-pan-x",
-                          isDraggingConfig ? "scroll-auto" : "scroll-smooth"
-                        )}
-                      >
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {project.configurations.map((cfg, idx) => {
                         const isVenture = project.projectType === "venture";
                         const sizeMin = isVenture ? cfg.plotSizeMin : (cfg.superBuiltUpAreaMin || cfg.builtUpAreaMin || cfg.plinthAreaMin);
@@ -948,7 +960,7 @@ export function ProjectDetailView({
                         } else if (cfg.priceMax) {
                           priceText = formatINRCrore(cfg.priceMax);
                         } else if (cfg.pricePerUnit) {
-                          priceText = `₹${cfg.pricePerUnit.toLocaleString("en-IN")} / ${unitLabel}`;
+                          priceText = `₹${cfg.pricePerUnit.toLocaleString("en-IN")}/${unitLabel}`;
                         }
 
                         const ConfigIcon = project.projectType === "villa" ? Home : project.projectType === "venture" ? Landmark : Building2;
@@ -971,133 +983,46 @@ export function ProjectDetailView({
                                 if (el) el.scrollIntoView({ behavior: "smooth" });
                               }
                             }}
-                            className={`group p-3 sm:p-3.5 rounded-2xl border transition-all duration-200 shadow-xs cursor-pointer flex flex-col justify-between text-left shrink-0 w-[270px] sm:w-[300px] snap-start ${
+                            className={`p-3 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
                               isSelected
-                                ? "!bg-slate-950 !text-white !border-slate-950 shadow-md ring-2 ring-amber-500/40"
-                                : "!bg-white !text-slate-950 border-slate-200 hover:!bg-slate-950 hover:!text-white hover:!border-slate-950 hover:shadow-md"
+                                ? "!bg-slate-950 !text-white !border-slate-950 shadow-sm ring-2 ring-amber-500/40"
+                                : "bg-bg-primary text-text-primary border-border-default/60 hover:border-amber-500 hover:bg-slate-50 dark:hover:bg-slate-900/80"
                             }`}
                           >
-                            <div>
-                              <div className="flex items-start justify-between gap-2">
-                                <span className={`font-black text-sm sm:text-base flex items-center gap-1.5 transition-colors ${
-                                  isSelected
-                                    ? "!text-white"
-                                    : "!text-slate-950 group-hover:!text-white"
-                                }`}>
-                                  <ConfigIcon className="w-4 h-4 text-[#faad13] shrink-0" />
-                                  <span>{cfg.label}</span>
-                                </span>
-                                <span className={`text-xs font-black px-2.5 py-0.5 rounded-lg border transition-colors shrink-0 ${
-                                  isSelected
-                                    ? "bg-amber-500 !text-slate-950 border-amber-400"
-                                    : "bg-amber-500/15 !text-slate-950 border-amber-500/30 group-hover:bg-amber-500 group-hover:!text-slate-950 group-hover:border-amber-400"
-                                }`}>
-                                  {priceText}
-                                </span>
-                              </div>
-
-                              <div className={`flex items-center justify-between gap-2 mt-2 text-xs transition-colors ${
-                                isSelected
-                                  ? "!text-slate-200"
-                                  : "!text-slate-700 group-hover:!text-slate-200"
+                            <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                              <span className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                                isSelected ? "text-amber-400" : "text-text-tertiary"
                               }`}>
-                                {sizeText ? (
-                                  <span className="font-bold">
-                                    {sizeText}
-                                  </span>
-                                ) : (
-                                  <span className="text-[11px] opacity-75">Layout available</span>
-                                )}
-                                {cfg.pricePerUnit && (
-                                  <span className={`text-[11px] font-bold transition-colors ${
-                                    isSelected
-                                      ? "!text-slate-300"
-                                      : "!text-slate-600 group-hover:!text-slate-300"
-                                  }`}>
-                                    ₹{cfg.pricePerUnit.toLocaleString("en-IN")}/{unitLabel}
-                                  </span>
-                                )}
-                              </div>
+                                <ConfigIcon className="w-3.5 h-3.5 text-[#faad13] shrink-0" />
+                                <span>{cfg.label}</span>
+                              </span>
+                              <span className={`text-xs font-black px-1.5 py-0.5 rounded-md ${
+                                isSelected
+                                  ? "bg-amber-500 text-slate-950"
+                                  : "bg-amber-500/15 text-slate-950 dark:text-amber-400 border border-amber-500/30"
+                              }`}>
+                                {priceText}
+                              </span>
                             </div>
 
-                            {(cfg.facing?.length || cfg.possessionDate || cfg.uds) && (
-                              <div className={`flex items-center gap-1.5 mt-2.5 pt-2 border-t text-[10px] flex-wrap transition-colors ${
-                                isSelected
-                                  ? "border-white/15 text-slate-300"
-                                  : "border-slate-100 text-slate-600 group-hover:border-white/15 group-hover:text-slate-300"
+                            <div className="flex items-baseline justify-between gap-1 mt-0.5">
+                              <span className={`text-xs sm:text-sm font-bold truncate ${
+                                isSelected ? "text-white" : "text-text-primary"
                               }`}>
-                                {cfg.facing && cfg.facing.length > 0 && (
-                                  <span className={`px-1.5 py-0.5 rounded-md border font-bold transition-colors ${
-                                    isSelected
-                                      ? "bg-white/10 text-white border-white/15"
-                                      : "bg-slate-100 text-slate-900 border-slate-200 group-hover:bg-white/10 group-hover:text-white group-hover:border-white/15"
-                                  }`}>
-                                    {cfg.facing.join(", ")}
-                                  </span>
-                                )}
-                                {cfg.possessionDate && (
-                                  <span className={`px-1.5 py-0.5 rounded-md border font-bold transition-colors ${
-                                    isSelected
-                                      ? "bg-white/10 text-white border-white/15"
-                                      : "bg-slate-100 text-slate-900 border-slate-200 group-hover:bg-white/10 group-hover:text-white group-hover:border-white/15"
-                                  }`}>
-                                    Poss: {cfg.possessionDate}
-                                  </span>
-                                )}
-                                {cfg.uds && (
-                                  <span className={`px-1.5 py-0.5 rounded-md border font-bold transition-colors ${
-                                    isSelected
-                                      ? "bg-white/10 text-white border-white/15"
-                                      : "bg-slate-100 text-slate-900 border-slate-200 group-hover:bg-white/10 group-hover:text-white group-hover:border-white/15"
-                                  }`}>
-                                    UDS: {cfg.uds} sq.yd
-                                  </span>
-                                )}
-                              </div>
-                            )}
+                                {sizeText || "Layout available"}
+                              </span>
+                              {cfg.pricePerUnit && (
+                                <span className={`text-[10px] font-medium shrink-0 ${
+                                  isSelected ? "text-slate-300" : "text-text-secondary"
+                                }`}>
+                                  ₹{cfg.pricePerUnit.toLocaleString("en-IN")}/{unitLabel}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
-                      </div>
                     </div>
-
-                    {/* Synchronized Movement Draggable Progress Bar */}
-                    {canScrollConfigs && (
-                      <div className="pt-2 pb-0.5 flex flex-col items-center justify-center">
-                        <div
-                          ref={configTrackRef}
-                          onPointerDown={handlePointerDownConfig}
-                          onPointerMove={handlePointerMoveConfig}
-                          onPointerUp={handlePointerUpConfig}
-                          onPointerCancel={handlePointerUpConfig}
-                          title="Drag or click to scroll configurations"
-                          role="slider"
-                          aria-label="Drag to scroll configurations"
-                          aria-valuenow={Math.round(configScrollPercent * 100)}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                          className="py-2.5 px-2 cursor-grab active:cursor-grabbing touch-none select-none flex items-center group/track"
-                        >
-                          <div className={cn(
-                            "h-2 sm:h-2.5 w-40 sm:w-52 bg-slate-200/90 dark:bg-slate-800 rounded-full relative overflow-hidden transition-all shadow-inner",
-                            isDraggingConfig ? "h-2.5 sm:h-3 ring-2 ring-amber-400/40" : "group-hover/track:h-2.5"
-                          )}>
-                            <div
-                              className={cn(
-                                "absolute top-0 bottom-0 rounded-full shadow-xs transition-all",
-                                isDraggingConfig
-                                  ? "bg-amber-500 dark:bg-amber-400 ring-2 ring-amber-400/60 duration-0"
-                                  : "bg-[#faad13] dark:bg-amber-400 duration-75 group-hover/track:bg-amber-500"
-                              )}
-                              style={{
-                                width: `${configThumbWidth}%`,
-                                left: `${configScrollPercent * (100 - configThumbWidth)}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
@@ -1154,26 +1079,6 @@ export function ProjectDetailView({
                       </div>
                     </div>
                   )}
-
-                  {/* Project Snapshot Specs */}
-                  <div className="pt-4 border-t border-border-default grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
-                      <span className="text-[10px] font-bold text-text-tertiary uppercase block">Project Type</span>
-                      <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.projectType}</span>
-                    </div>
-                    <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
-                      <span className="text-[10px] font-bold text-text-tertiary uppercase block">Total Area</span>
-                      <span className="text-xs sm:text-sm font-bold text-text-primary">{project.totalArea || "On Request"}</span>
-                    </div>
-                    <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
-                      <span className="text-[10px] font-bold text-text-tertiary uppercase block">Total Units</span>
-                      <span className="text-xs sm:text-sm font-bold text-text-primary">{project.totalUnits ? `${project.totalUnits} Units` : "On Request"}</span>
-                    </div>
-                    <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
-                      <span className="text-[10px] font-bold text-text-tertiary uppercase block">Status</span>
-                      <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.constructionStatus.replace("-", " ")}</span>
-                    </div>
-                  </div>
                 </div>
               </ScrollReveal>
 

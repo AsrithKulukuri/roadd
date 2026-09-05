@@ -175,15 +175,21 @@ function UnifiedSearchPage() {
     }
   }, [searchParams, fetchProperties, fetchProjects, isLocating, userLocation]);
 
-  // Lock body scroll when map view is active so ONLY the list pane scrolls
+  // Lock body and html scroll when map view is active so ONLY the list pane / drawer scrolls
   useEffect(() => {
     if (viewMode === "map" && typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.style.overflow = "hidden";
       document.body.style.overflow = "hidden";
-    } else {
+    } else if (typeof window !== "undefined") {
+      document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = "";
+      if (typeof window !== "undefined") {
+        document.documentElement.style.overflow = "";
+        document.body.style.overflow = "";
+      }
     };
   }, [viewMode]);
 

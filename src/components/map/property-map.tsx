@@ -1332,6 +1332,40 @@ export default function PropertyMap({
     }
   }, [onEntityTypeFilterChange]);
 
+  // Track exact bottom of RealtorSearchHeader dynamically so drawer aligns perfectly with zero gap & zero overlap
+  const [headerBottom, setHeaderBottom] = useState(191);
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (typeof window === "undefined") return;
+      setIsDesktop(window.innerWidth >= 768);
+
+      const el = document.getElementById("realtor-search-header") || document.querySelectorAll("header")[1] || document.querySelector("header");
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        setHeaderBottom(Math.round(rect.bottom));
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener("resize", updateDimensions);
+    window.addEventListener("scroll", updateDimensions);
+
+    const el = document.getElementById("realtor-search-header") || document.querySelectorAll("header")[1] || document.querySelector("header");
+    let ro: ResizeObserver | null = null;
+    if (el && typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => updateDimensions());
+      ro.observe(el);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updateDimensions);
+      window.removeEventListener("scroll", updateDimensions);
+      if (ro) ro.disconnect();
+    };
+  }, [showMapExplorer]);
+
   // Guard against internal subtype clicks being wiped out by subsequent activeFilters sync
   const isInternalSubtypeChange = useRef(false);
 
@@ -1883,10 +1917,11 @@ export default function PropertyMap({
 
         {/* Sidebar Control Panel / Collapsible Drawer (Desktop left-side panel & Mobile bottom sheet) */}
         <div
+          style={isDesktop ? { top: `${headerBottom}px` } : undefined}
           className={cn(
             "text-slate-900 shadow-2xl flex flex-col md:flex-row-reverse transition-all duration-300 pointer-events-auto",
             // Desktop: Opens strictly on the LEFT SIDE of the screen, split into 2 equal parts (Properties/Projects on Left, Map Explorer on Right)
-            "md:fixed md:left-0 md:top-[191px] md:bottom-0 md:w-[56%] lg:w-[52%] xl:w-[50%] md:z-[50] md:border-r md:border-slate-200 md:bg-white md:overflow-hidden md:shadow-2xl",
+            "md:fixed md:left-0 md:bottom-0 md:w-[56%] lg:w-[52%] xl:w-[50%] md:z-[50] md:border-r md:border-slate-200 md:bg-white md:overflow-hidden md:shadow-2xl",
             // Mobile: modern bottom drawer modal with rounded top in clean white, overflow-hidden prevents any bleed
             "fixed inset-x-0 bottom-0 max-h-[85vh] rounded-t-3xl border-t border-slate-200 bg-white shadow-2xl overflow-hidden z-[9999]",
             showMapExplorer ? "flex animate-in slide-in-from-bottom duration-300 md:animate-none" : "hidden"
