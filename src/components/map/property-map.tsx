@@ -1876,10 +1876,10 @@ export default function PropertyMap({
                   <Layers className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "all" ? "text-slate-950" : "text-amber-600")} />
                   <span className="whitespace-nowrap">All</span>
                   <span className={cn(
-                    "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold shrink-0 transition-colors",
+                    "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-black shrink-0 transition-colors",
                     listingTypeFilter === "all"
-                      ? "bg-slate-950 text-amber-400 font-bold shadow-xs"
-                      : "bg-white text-slate-600 border border-slate-200"
+                      ? "bg-white text-slate-950 shadow-xs border border-amber-600/20"
+                      : "bg-white text-slate-700 font-bold border border-slate-200"
                   )}>
                     {allCount}
                   </span>
@@ -1898,10 +1898,10 @@ export default function PropertyMap({
                   <Home className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "properties" ? "text-slate-950" : "text-blue-600")} />
                   <span className="whitespace-nowrap">Properties</span>
                   <span className={cn(
-                    "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold shrink-0 transition-colors",
+                    "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-black shrink-0 transition-colors",
                     listingTypeFilter === "properties"
-                      ? "bg-slate-950 text-amber-400 font-bold shadow-xs"
-                      : "bg-white text-slate-600 border border-slate-200"
+                      ? "bg-white text-slate-950 shadow-xs border border-amber-600/20"
+                      : "bg-white text-slate-700 font-bold border border-slate-200"
                   )}>
                     {propertiesCount}
                   </span>
@@ -1920,10 +1920,10 @@ export default function PropertyMap({
                   <Building2 className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "projects" ? "text-slate-950" : "text-emerald-600")} />
                   <span className="whitespace-nowrap">Projects</span>
                   <span className={cn(
-                    "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold shrink-0 transition-colors",
+                    "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-black shrink-0 transition-colors",
                     listingTypeFilter === "projects"
-                      ? "bg-slate-950 text-amber-400 font-bold shadow-xs"
-                      : "bg-white text-slate-600 border border-slate-200"
+                      ? "bg-white text-slate-950 shadow-xs border border-amber-600/20"
+                      : "bg-white text-slate-700 font-bold border border-slate-200"
                   )}>
                     {projectsCount}
                   </span>
