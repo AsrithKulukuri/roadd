@@ -915,10 +915,10 @@ export function ProjectDetailView({
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full bg-[#faad13] animate-pulse shrink-0" />
-                        <h2 className="text-xs font-black uppercase tracking-wider !text-slate-950 dark:!text-white">
+                        <h2 className="text-xs font-black uppercase tracking-wider text-text-primary">
                           Available Configurations
                         </h2>
-                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-500/20 !text-slate-950 dark:!text-amber-400 border border-amber-500/40 shadow-2xs">
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-500/20 text-text-primary border border-amber-500/40 shadow-2xs">
                           {project.configurations.length} {project.configurations.length === 1 ? "Option" : "Options"}
                         </span>
                       </div>
@@ -929,9 +929,9 @@ export function ProjectDetailView({
                           const el = document.getElementById("floor-plans");
                           if (el) el.scrollIntoView({ behavior: "smooth" });
                         }}
-                        className="inline-flex items-center gap-1 text-xs font-black !text-slate-950 dark:!text-white hover:text-amber-600 transition-colors cursor-pointer group"
+                        className="inline-flex items-center gap-1 text-xs font-black text-text-primary hover:text-amber-600 transition-colors cursor-pointer group"
                       >
-                        <span>View Plans & Pricing</span>
+                        <span className="text-text-primary group-hover:text-amber-600">View Plans & Pricing</span>
                         <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform text-[#faad13]" />
                       </button>
                     </div>
