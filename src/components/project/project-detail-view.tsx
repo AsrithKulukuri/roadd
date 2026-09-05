@@ -86,17 +86,17 @@ function formatDistanceText(km: number): string {
 
 function RollingStatusTab({ isSelected }: { isSelected?: boolean }) {
   const [index, setIndex] = useState(0);
-  const phrases = ["Status", "Project Progress", "Project Updates"];
+  const phrases = ["Project Progress", "Progress Update"];
 
   useEffect(() => {
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % phrases.length);
-    }, 2200);
+    }, 2400);
     return () => clearInterval(timer);
   }, [phrases.length]);
 
   return (
-    <span className="relative inline-flex items-center h-4 overflow-hidden text-left min-w-[96px]">
+    <span className="relative inline-flex items-center h-4 overflow-hidden text-left min-w-[104px]">
       <AnimatePresence mode="wait">
         <motion.span
           key={phrases[index]}
