@@ -1860,16 +1860,18 @@ export default function PropertyMap({
         {/* Sidebar Control Panel / Collapsible Drawer (Desktop left-side panel & Mobile bottom sheet) */}
         <div
           className={cn(
-            "text-slate-900 shadow-2xl flex flex-col transition-all duration-300 pointer-events-auto",
-            // Desktop: Opens strictly on the LEFT SIDE of the screen (over left pane), NOT on the map canvas
-            "md:fixed md:left-0 md:top-[191px] md:bottom-0 md:w-[50%] lg:md:w-[45%] xl:md:w-[45%] md:z-[50] md:border-r md:border-slate-200 md:bg-white md:overflow-hidden md:shadow-xl",
+            "text-slate-900 shadow-2xl flex flex-col md:flex-row transition-all duration-300 pointer-events-auto",
+            // Desktop: Opens strictly on the LEFT SIDE of the screen, split into 2 equal parts
+            "md:fixed md:left-0 md:top-[191px] md:bottom-0 md:w-[56%] lg:w-[52%] xl:w-[50%] md:z-[50] md:border-r md:border-slate-200 md:bg-white md:overflow-hidden md:shadow-2xl",
             // Mobile: modern bottom drawer modal with rounded top in clean white, overflow-hidden prevents any bleed
             "fixed inset-x-0 bottom-0 max-h-[85vh] rounded-t-3xl border-t border-slate-200 bg-white shadow-2xl overflow-hidden z-[9999]",
             showMapExplorer ? "flex animate-in slide-in-from-bottom duration-300 md:animate-none" : "hidden"
           )}
         >
-          {/* 1. PERMANENT TOP HEADER - Fixed at top of drawer, never scrolls, zero gap */}
-          <div className="bg-white border-b border-slate-100 px-4 sm:px-6 pt-3 pb-3 shrink-0 select-none">
+          {/* PART 1: Map Explorer Filters (Left equal part on desktop, full width on mobile) */}
+          <div className="w-full md:w-1/2 h-full flex flex-col min-w-0 bg-white md:border-r md:border-slate-200 overflow-hidden">
+            {/* 1. PERMANENT TOP HEADER - Fixed at top of drawer, never scrolls, zero gap */}
+            <div className="bg-white border-b border-slate-100 px-4 sm:px-5 pt-3 pb-3 shrink-0 select-none">
             {/* Mobile pull handle */}
             <div
               onClick={() => setShowMapExplorer(false)}
@@ -2365,6 +2367,208 @@ export default function PropertyMap({
           </div>
         </div>
 
+        {/* PART 2: Properties & Projects List (Right equal part on desktop in mobile view style, hidden on mobile sheet) */}
+        <div className="hidden md:flex md:w-1/2 h-full flex-col min-w-0 bg-slate-50 dark:bg-slate-950 overflow-hidden">
+          {/* Part 2 Top Header */}
+          <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between shrink-0 select-none">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center">
+                <Sparkles className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <h3 className="font-heading text-xs sm:text-sm font-black text-slate-950 dark:text-white leading-tight">
+                  {(() => {
+                    const hasProj = displayedPropertiesFiltered.some((p: any) => p._isProject);
+                    const hasProp = displayedPropertiesFiltered.some((p: any) => !p._isProject);
+                    const entityLabel = hasProj && hasProp
+                      ? "Properties & Projects"
+                      : hasProj
+                      ? (displayedPropertiesFiltered.length === 1 ? "Project" : "Projects")
+                      : (displayedPropertiesFiltered.length === 1 ? "Property" : "Properties");
+                    return `${entityLabel} (${displayedPropertiesFiltered.length})`;
+                  })()}
+                </h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                  Mobile card view • Click to focus map
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowMapExplorer(false)}
+              className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-900 dark:text-slate-300 flex items-center justify-center cursor-pointer transition-colors shadow-xs"
+              title="Close Map Explorer"
+              aria-label="Close Map Explorer"
+            >
+              <X className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </div>
+
+          {/* Part 2 Scrollable Cards List */}
+          {isLoading ? (
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 no-scrollbar">
+              <MapCardSkeleton />
+              <MapCardSkeleton />
+              <MapCardSkeleton />
+              <MapCardSkeleton />
+            </div>
+          ) : displayedPropertiesFiltered.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mb-3">
+                <Search className="w-6 h-6" />
+              </div>
+              <p className="font-heading font-bold text-sm text-slate-900 dark:text-white mb-1">
+                No listings found
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mb-4">
+                No properties or projects match your selected filters in this area.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedSubtype(null);
+                  setListingTypeFilter("all");
+                  setSelectedMapLocality(null);
+                  setMapPriceRange([0, 100000000]);
+                }}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                Reset Map Filters
+              </button>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 no-scrollbar">
+              {displayedPropertiesFiltered.slice(0, mobileTrayCount).map((prop) => {
+                const isSelected = selectedPropertyId === prop.id;
+                const coords = resolvePropertyMapCoords(prop);
+                const distStr = position && prop.location?.latitude && prop.location?.longitude
+                  ? calculateDistanceStr(position, prop.location.latitude, prop.location.longitude)
+                  : "";
+
+                let allImages: string[] = [];
+                if (prop.images && Array.isArray(prop.images)) {
+                  allImages = (prop.images as any[]).map((img: any) => typeof img === 'string' ? img : (img as any)?.url).filter(Boolean);
+                }
+                if (allImages.length === 0 && (prop as any).coverImage) {
+                  allImages = [(prop as any).coverImage];
+                }
+                if (allImages.length === 0) {
+                  allImages = ["https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80"];
+                }
+
+                const propTypeLabel = (prop as any)._isProject ? "Project" : (prop.bedrooms ? `${prop.bedrooms} BHK` : prop.propertyType);
+
+                return (
+                  <div
+                    key={prop.id}
+                    onClick={() => {
+                      setSelectedPropertyId(prop.id);
+                      if (mapRef.current) {
+                        mapRef.current.setView([coords.lat, coords.lng], 16, { animate: true, duration: 1.0 });
+                      }
+                      setBlinkingPropertyId(prop.id);
+                      setTimeout(() => setBlinkingPropertyId(null), 4000);
+                    }}
+                    className={cn(
+                      "w-full bg-white dark:bg-slate-900 border rounded-2xl p-2.5 transition-all duration-200 cursor-pointer flex gap-3 group hover:border-[#f1a010] shadow-xs hover:shadow-md",
+                      isSelected ? "border-[#f1a010] ring-2 ring-[#f1a010]/30 bg-amber-500/5 shadow-md" : "border-slate-200 dark:border-slate-800"
+                    )}
+                  >
+                    {/* Thumbnail Image Carousel */}
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shrink-0 relative bg-slate-100 dark:bg-slate-800">
+                      <MapCardImageCarousel
+                        images={allImages}
+                        title={prop.title || (prop as any).name || "Property"}
+                        propertyType={propTypeLabel}
+                      />
+                    </div>
+
+                    {/* Card Details */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      <div>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[#f1a010] font-black text-sm sm:text-base tracking-tight leading-tight">
+                            {formatPriceCompact(prop.price)}
+                          </span>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+                            {propTypeLabel}
+                          </span>
+                        </div>
+                        <h4 className="text-slate-900 dark:text-white font-bold text-xs truncate group-hover:text-[#f1a010] transition-colors mt-1 leading-snug">
+                          {prop.title || (prop as any).name || "Property"}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                          📍 {prop.location?.locality || ""}, {prop.location?.city || ""}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-800/80 text-[10px] mt-1">
+                        {distStr ? (
+                          <span className="text-[#f1a010] font-extrabold flex items-center gap-1 truncate max-w-[80px]">
+                            <Navigation className="w-3 h-3 text-[#f1a010] shrink-0" /> {distStr}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-medium capitalize truncate max-w-[80px]">
+                            {(prop as any)._isProject ? "Project" : prop.listingType}
+                          </span>
+                        )}
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPropertyId(prop.id);
+                              if (mapRef.current) {
+                                mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
+                              }
+                              setBlinkingPropertyId(prop.id);
+                              setTimeout(() => setBlinkingPropertyId(null), 4000);
+                            }}
+                            className="px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[10px] rounded-lg flex items-center gap-1 transition-all border border-slate-200 dark:border-slate-700"
+                            title="Focus on map"
+                          >
+                            <MapPin className="w-3 h-3 text-[#f1a010]" />
+                            <span className="hidden sm:inline">Map</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if ((prop as any)._isProject) {
+                                openProject(prop, e);
+                              } else {
+                                router.push(`/properties/${prop.slug || prop.id}`);
+                              }
+                            }}
+                            className="px-2.5 py-1 bg-[#f1a010] hover:bg-[#d88c0a] text-slate-950 font-black text-[10px] rounded-lg flex items-center gap-0.5 transition-all shadow-xs cursor-pointer"
+                          >
+                            <span>View</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Load More Button */}
+              {displayedPropertiesFiltered.length > mobileTrayCount && (
+                <button
+                  type="button"
+                  onClick={() => setMobileTrayCount((prev) => prev + 12)}
+                  className="w-full py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500 font-bold text-xs text-slate-700 dark:text-slate-200 hover:text-amber-600 flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-98"
+                >
+                  <Plus className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Load More Listings (+{Math.min(12, displayedPropertiesFiltered.length - mobileTrayCount)})</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
         {/* The Leaflet Map Canvas Container */}
         <div
           className="flex-1 relative bg-slate-950 touch-none"
@@ -2502,8 +2706,8 @@ export default function PropertyMap({
           <div
             className={cn(
               "absolute left-1/2 -translate-x-1/2 z-[520] flex-col items-center gap-2 pointer-events-auto transition-all duration-300",
-              showMapExplorer ? "hidden md:flex" : "flex",
-              showPropertiesTray ? "bottom-[340px] md:bottom-[230px]" : "bottom-14 md:bottom-6"
+              showMapExplorer ? "hidden md:flex md:bottom-6" : "flex",
+              showPropertiesTray && !showMapExplorer ? "bottom-[340px]" : "bottom-14 md:bottom-6"
             )}
           >
             {showSearchThisArea && (
@@ -2556,7 +2760,7 @@ export default function PropertyMap({
           {displayedPropertiesFiltered.length > 0 && !isDrawing && (
             <div className={cn(
               "absolute bottom-3 left-2 right-2 sm:left-4 sm:right-4 z-[550] pointer-events-auto flex-col items-center gap-2",
-              showMapExplorer ? "hidden md:flex" : "flex md:hidden"
+              showMapExplorer ? "hidden" : "flex md:hidden"
             )}>
               {/* TRAY TOGGLE CAPSULE BUTTON */}
               <button
@@ -2763,8 +2967,8 @@ export default function PropertyMap({
           <div
             className={cn(
               "absolute right-3 md:right-4 z-[500] flex-col gap-1.5 pointer-events-auto transition-all duration-300",
-              showMapExplorer ? "hidden md:flex" : "flex",
-              showPropertiesTray ? "bottom-[340px] md:bottom-[230px]" : "bottom-16 md:bottom-8"
+              showMapExplorer ? "hidden md:flex md:bottom-8" : "flex",
+              showPropertiesTray && !showMapExplorer ? "bottom-[340px]" : "bottom-16 md:bottom-8"
             )}
           >
             <button
