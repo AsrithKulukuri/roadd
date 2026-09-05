@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Calendar,
   Clock,
@@ -18,23 +18,23 @@ import {
 } from "lucide-react";
 import { useSchedulesStore, SiteVisitSchedule } from "@/stores/schedules-store";
 
-interface TourBookingModalProps {
+interface ScheduleVisitModalProps {
   isOpen: boolean;
   onClose: () => void;
-  property?: {
+  project: {
     id?: string;
     slug?: string;
-    title: string;
-    location?: {
-      locality?: string;
-      city?: string;
-    } | string;
-    ownerName?: string;
-    ownerPhone?: string;
+    name: string;
+    location?: string;
+    builderName?: string;
+    builderPhone?: string;
+    builderWhatsapp?: string;
+    builder?: {
+      name?: string;
+      phone?: string;
+      whatsapp?: string;
+    };
   };
-  propertyName?: string;
-  propertyLocation?: string;
-  ownerPhone?: string;
 }
 
 const TIME_SLOTS = [
@@ -69,15 +69,8 @@ function getAvailableDates() {
   return dates;
 }
 
-export function TourBookingModal({
-  isOpen,
-  onClose,
-  property,
-  propertyName,
-  propertyLocation,
-  ownerPhone,
-}: TourBookingModalProps) {
-  const dates = useMemo(() => getAvailableDates(), []);
+export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitModalProps) {
+  const dates = React.useMemo(() => getAvailableDates(), []);
   const [selectedDate, setSelectedDate] = useState(dates[0]);
   const [selectedSlot, setSelectedSlot] = useState(TIME_SLOTS[0]);
 
@@ -91,13 +84,6 @@ export function TourBookingModal({
   const [scheduledResult, setScheduledResult] = useState<SiteVisitSchedule | null>(null);
 
   const addSchedule = useSchedulesStore((s) => s.addSchedule);
-
-  const resolvedTitle = property?.title || propertyName || "Property";
-  const resolvedLocation =
-    typeof property?.location === "object"
-      ? `${property.location.locality || ""}, ${property.location.city || ""}`.replace(/^,\s*|,\s*$/g, "")
-      : (typeof property?.location === "string" ? property.location : propertyLocation || "Vijayawada / Amaravati");
-  const resolvedOwnerPhone = property?.ownerPhone || ownerPhone || "";
 
   // Auto-fill from logged-in user profile if exists
   useEffect(() => {
@@ -132,16 +118,23 @@ export function TourBookingModal({
 
     setIsSubmitting(true);
 
+    const builderPhone =
+      project.builderWhatsapp ||
+      project.builderPhone ||
+      project.builder?.whatsapp ||
+      project.builder?.phone ||
+      "";
+
     const payload = {
-      projectId: property?.id || "",
-      projectSlug: property?.slug || "",
-      projectName: resolvedTitle,
-      projectLocation: resolvedLocation,
+      projectId: project.id || "",
+      projectSlug: project.slug || "",
+      projectName: project.name,
+      projectLocation: project.location || "Vijayawada / Amaravati",
       customerName: customerName.trim(),
       customerPhone: cleanPhone,
       customerEmail: customerEmail.trim() || undefined,
-      builderName: property?.ownerName || "Property Owner / Agent",
-      builderPhone: resolvedOwnerPhone,
+      builderName: project.builderName || project.builder?.name || "Project Site Team",
+      builderPhone,
       visitDate: selectedDate.formatted,
       timeSlot: selectedSlot,
       notes: notes.trim() || undefined,
@@ -217,8 +210,8 @@ export function TourBookingModal({
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-neutral-900">Schedule Private Site Visit</h3>
-              <p className="text-xs text-neutral-500 truncate max-w-xs">{resolvedTitle}</p>
+              <h3 className="text-lg font-bold text-neutral-900">Schedule Site Visit</h3>
+              <p className="text-xs text-neutral-500 truncate max-w-xs">{project.name}</p>
             </div>
           </div>
           <button
@@ -241,7 +234,7 @@ export function TourBookingModal({
               <div>
                 <h4 className="text-xl font-bold text-neutral-900">Site Visit Confirmed!</h4>
                 <p className="text-sm text-neutral-600 mt-1">
-                  Your private tour for <span className="font-semibold text-neutral-900">{resolvedTitle}</span> is booked.
+                  Your appointment for <span className="font-semibold text-neutral-900">{project.name}</span> is booked.
                 </p>
               </div>
 
@@ -282,7 +275,7 @@ export function TourBookingModal({
                     <span className="font-medium">Customer:</span> Confirmation sent to {scheduledResult.customerPhone}
                   </li>
                   <li>
-                    <span className="font-medium">Owner / Agent:</span> Tour request alert dispatched with your slot
+                    <span className="font-medium">Builder:</span> Tour request alert dispatched with your slot
                   </li>
                   <li>
                     <span className="font-medium">1-Hour Reminder:</span> Scheduled automatically before your visit
@@ -410,7 +403,7 @@ export function TourBookingModal({
                 <div>
                   <textarea
                     rows={2}
-                    placeholder="Specific requirements or questions for the property visit? (Optional)"
+                    placeholder="Specific requirements or questions for the site tour? (Optional)"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-xl text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
@@ -434,7 +427,7 @@ export function TourBookingModal({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Scheduling & Notifying Owner...</span>
+                    <span>Scheduling & Notifying Builder...</span>
                   </>
                 ) : (
                   <>

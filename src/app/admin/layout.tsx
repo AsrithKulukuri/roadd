@@ -12,7 +12,6 @@ import {
   LogOut,
   Menu,
   X,
-  MonitorPlay,
   FolderOpen,
   Image as ImageIcon,
   LayoutGrid,
@@ -21,16 +20,19 @@ import {
   LayoutList,
   Send,
   Bot,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useInquiriesStore } from "@/stores/inquiries-store";
+import { useSchedulesStore } from "@/stores/schedules-store";
 
 import { AdminGuard } from "@/components/shared/admin-guard";
 
 const sidebarLinks = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/schedules", label: "Site Visit Schedules", icon: Calendar, isScheduleBadge: true },
   { href: "/admin/support", label: "WhatsApp Support Desk", icon: Bot },
   { href: "/admin/broadcasts", label: "WhatsApp Broadcasts", icon: Send },
   { href: "/admin/inquiries", label: "Requirements", icon: MessageSquare, isBadge: true },
@@ -54,6 +56,7 @@ export default function AdminLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const unreadCount = useInquiriesStore((s) => s.getUnreadCount());
+  const upcomingSchedulesCount = useSchedulesStore((s) => s.getUpcomingCount());
 
   useEffect(() => {
     setMounted(true);
@@ -117,6 +120,11 @@ export default function AdminLayout({
                   {link.isBadge && mounted && unreadCount > 0 && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-slate-950 shadow-xs">
                       {unreadCount}
+                    </span>
+                  )}
+                  {link.isScheduleBadge && mounted && upcomingSchedulesCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-white shadow-xs">
+                      {upcomingSchedulesCount}
                     </span>
                   )}
                 </Link>

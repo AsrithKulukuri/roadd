@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { WatermarkOverlay } from "@/components/shared/watermark-overlay";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { triggerProjectViewNotification } from "@/lib/project-notifications";
+import { ScheduleVisitModal } from "@/components/project/schedule-visit-modal";
 
 // ─── Lazy map (SSR unsafe) ─────────────────────────────────────────────────────
 const ProjectMapView = dynamic(
@@ -172,6 +173,7 @@ export function ProjectDetailView({
   const [playingVideos, setPlayingVideos] = useState<Record<string, boolean>>({});
   const [builderContact, setBuilderContact] = useState<{ phone: string | null; whatsapp: string | null } | null>(null);
   const [builderContactError, setBuilderContactError] = useState<string | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   const scrollConfigLeft = () => {
     if (configSliderRef.current) {
@@ -1749,6 +1751,14 @@ export function ProjectDetailView({
                             <span>WhatsApp Builder</span>
                           </a>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => setIsScheduleModalOpen(true)}
+                          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-300 font-bold text-xs sm:text-sm transition-all shadow-xs cursor-pointer active:scale-95"
+                        >
+                          <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
+                          <span>Schedule a Visit</span>
+                        </button>
                       </div>
                       {!whatsapp && builderContactError && (
                         <p className="text-xs font-medium text-red-600 dark:text-red-400">{builderContactError}</p>
@@ -1792,6 +1802,15 @@ export function ProjectDetailView({
                 </p>
 
                 <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsScheduleModalOpen(true)}
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-300 font-bold text-sm shadow-xs transition-all cursor-pointer active:scale-98"
+                  >
+                    <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>Schedule a Visit</span>
+                  </button>
+
                   {!isLoggedIn ? (
                     <button
                       type="button"
@@ -1870,6 +1889,22 @@ export function ProjectDetailView({
           </div>
         </div>
       </div>
+
+      <ScheduleVisitModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        project={{
+          id: project.id,
+          slug: project.slug,
+          name: project.name,
+          location: typeof project.location === "object" && project.location
+            ? `${project.location.locality || ""}, ${project.location.city || ""}`.replace(/^,\s*|,\s*$/g, "")
+            : (typeof project.location === "string" ? project.location : ""),
+          builderName: project.builderName,
+          builderPhone: project.builderPhone,
+          builderWhatsapp: project.builderWhatsapp,
+        }}
+      />
     </>
   );
 }
