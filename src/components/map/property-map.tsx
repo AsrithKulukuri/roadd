@@ -1860,16 +1860,16 @@ export default function PropertyMap({
         {/* Sidebar Control Panel / Collapsible Drawer (Desktop left-side panel & Mobile bottom sheet) */}
         <div
           className={cn(
-            "text-slate-900 shadow-2xl flex flex-col md:flex-row transition-all duration-300 pointer-events-auto",
-            // Desktop: Opens strictly on the LEFT SIDE of the screen, split into 2 equal parts
+            "text-slate-900 shadow-2xl flex flex-col md:flex-row-reverse transition-all duration-300 pointer-events-auto",
+            // Desktop: Opens strictly on the LEFT SIDE of the screen, split into 2 equal parts (Properties/Projects on Left, Map Explorer on Right)
             "md:fixed md:left-0 md:top-[191px] md:bottom-0 md:w-[56%] lg:w-[52%] xl:w-[50%] md:z-[50] md:border-r md:border-slate-200 md:bg-white md:overflow-hidden md:shadow-2xl",
             // Mobile: modern bottom drawer modal with rounded top in clean white, overflow-hidden prevents any bleed
             "fixed inset-x-0 bottom-0 max-h-[85vh] rounded-t-3xl border-t border-slate-200 bg-white shadow-2xl overflow-hidden z-[9999]",
             showMapExplorer ? "flex animate-in slide-in-from-bottom duration-300 md:animate-none" : "hidden"
           )}
         >
-          {/* PART 1: Map Explorer Filters (Left equal part on desktop, full width on mobile) */}
-          <div className="w-full md:w-1/2 h-full flex flex-col min-w-0 bg-white md:border-r md:border-slate-200 overflow-hidden">
+          {/* PART 1: Map Explorer Filters (Right equal part on desktop, full width on mobile) */}
+          <div className="w-full md:w-1/2 h-full flex flex-col min-w-0 bg-white overflow-hidden">
             {/* 1. PERMANENT TOP HEADER - Fixed at top of drawer, never scrolls, zero gap */}
             <div className="bg-white border-b border-slate-100 px-4 sm:px-5 pt-3 pb-3 shrink-0 select-none">
             {/* Mobile pull handle */}
@@ -2367,8 +2367,8 @@ export default function PropertyMap({
           </div>
         </div>
 
-        {/* PART 2: Properties & Projects List (Right equal part on desktop in mobile view style, hidden on mobile sheet) */}
-        <div className="hidden md:flex md:w-1/2 h-full flex-col min-w-0 bg-slate-50 dark:bg-slate-950 overflow-hidden">
+        {/* PART 2: Properties & Projects List (Left equal part on desktop in mobile view style, hidden on mobile sheet) */}
+        <div className="hidden md:flex md:w-1/2 h-full flex-col min-w-0 bg-slate-50 dark:bg-slate-950 overflow-hidden md:border-r md:border-slate-200 dark:md:border-slate-800">
           {/* Part 2 Top Header */}
           <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between shrink-0 select-none">
             <div className="flex items-center gap-2">
@@ -2393,15 +2393,9 @@ export default function PropertyMap({
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowMapExplorer(false)}
-              className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-900 dark:text-slate-300 flex items-center justify-center cursor-pointer transition-colors shadow-xs"
-              title="Close Map Explorer"
-              aria-label="Close Map Explorer"
-            >
-              <X className="w-4 h-4 stroke-[2.5]" />
-            </button>
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+              {displayedPropertiesFiltered.length} Active
+            </span>
           </div>
 
           {/* Part 2 Scrollable Cards List */}
