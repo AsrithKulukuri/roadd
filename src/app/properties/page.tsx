@@ -371,7 +371,7 @@ function PropertiesPage() {
   return (
     <div
       className={cn(
-        "flex flex-col w-full bg-slate-50/50 text-slate-900 transition-all",
+        "flex flex-col w-full bg-slate-50/50 text-slate-900 transition-all pt-16",
         viewMode === "map" ? "h-[100dvh] max-h-[100dvh] overflow-hidden" : "min-h-screen pb-16"
       )}
     >

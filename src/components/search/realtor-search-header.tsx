@@ -229,7 +229,8 @@ export function RealtorSearchHeader({
     <>
       <header
         className={cn(
-          "sticky top-16 z-40 w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 transition-all duration-300",
+          "w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 transition-all duration-300",
+          viewMode === "map" ? "relative shrink-0 z-40" : "sticky top-16 z-40",
           isScrolled ? "shadow-md py-0.5" : "shadow-sm"
         )}
       >

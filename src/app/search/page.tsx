@@ -718,7 +718,7 @@ function UnifiedSearchPage() {
   if (!mounted) return <SearchPageSkeleton />;
 
   return (
-    <div className={cn("bg-bg-primary flex flex-col w-full", viewMode === "map" ? "h-[100dvh] max-h-[100dvh] overflow-hidden" : "min-h-screen")}>
+    <div className={cn("bg-bg-primary flex flex-col w-full pt-16", viewMode === "map" ? "h-[100dvh] max-h-[100dvh] overflow-hidden" : "min-h-screen")}>
       <RealtorSearchHeader 
         filters={filters}
         onFilterChange={handleFilterChange}
