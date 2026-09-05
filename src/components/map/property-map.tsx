@@ -1849,14 +1849,14 @@ export default function PropertyMap({
           />
         )}
 
-        {/* Sidebar Control Panel / Collapsible Drawer (Desktop side-panel & Mobile bottom sheet) */}
+        {/* Sidebar Control Panel / Collapsible Drawer (Desktop left-side panel & Mobile bottom sheet) */}
         <div
           className={cn(
-            "text-slate-900 z-[9999] shadow-2xl flex flex-col transition-all duration-300 pointer-events-auto",
-            // Desktop: sleek left sidebar panel with clean white background and light border
-            "md:relative md:w-96 md:flex-shrink-0 md:h-full md:border-r md:border-slate-200 md:bg-white md:overflow-hidden",
+            "text-slate-900 shadow-2xl flex flex-col transition-all duration-300 pointer-events-auto",
+            // Desktop: Opens strictly on the LEFT SIDE of the screen (over left pane), NOT on the map canvas
+            "md:fixed md:left-0 md:top-[191px] md:bottom-0 md:w-[50%] lg:md:w-[45%] xl:md:w-[45%] md:z-[50] md:border-r md:border-slate-200 md:bg-white md:overflow-hidden md:shadow-xl",
             // Mobile: modern bottom drawer modal with rounded top in clean white, overflow-hidden prevents any bleed
-            "fixed inset-x-0 bottom-0 max-h-[85vh] rounded-t-3xl border-t border-slate-200 bg-white shadow-2xl overflow-hidden",
+            "fixed inset-x-0 bottom-0 max-h-[85vh] rounded-t-3xl border-t border-slate-200 bg-white shadow-2xl overflow-hidden z-[9999]",
             showMapExplorer ? "flex animate-in slide-in-from-bottom duration-300 md:animate-none" : "hidden"
           )}
         >
@@ -2544,9 +2544,12 @@ export default function PropertyMap({
             </div>
           )}
 
-          {/* FLOATING BOTTOM FOUND PROPERTIES TRAY — mobile only, desktop has left list pane */}
-          {displayedPropertiesFiltered.length > 0 && !isDrawing && !showMapExplorer && (
-            <div className="md:hidden absolute bottom-3 left-2 right-2 sm:left-4 sm:right-4 z-[550] pointer-events-auto flex flex-col items-center gap-2">
+          {/* FLOATING BOTTOM FOUND PROPERTIES TRAY — mobile view style tray on map */}
+          {displayedPropertiesFiltered.length > 0 && !isDrawing && (
+            <div className={cn(
+              "absolute bottom-3 left-2 right-2 sm:left-4 sm:right-4 z-[550] pointer-events-auto flex-col items-center gap-2",
+              showMapExplorer ? "hidden md:flex" : "flex md:hidden"
+            )}>
               {/* TRAY TOGGLE CAPSULE BUTTON */}
               <button
                 type="button"
