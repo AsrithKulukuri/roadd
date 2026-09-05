@@ -578,16 +578,16 @@ export function Navbar() {
                     animate={{ scale: 1 }}
                     exit={{ scale: 0.98 }}
                     transition={{ duration: 0.22, ease: "easeOut" }}
-                    className="flex items-center gap-1"
+                    className="flex items-center gap-1 xl:gap-2 shrink-0"
                     role="navigation"
                     aria-label="Main navigation"
                   >
                     {navigationLinks.main.map((link) => (
-                      <div key={link.href} className="relative group">
+                      <div key={link.href} className="relative group shrink-0">
                         <Link
                           href={link.href}
                           className={cn(
-                            "relative px-4 py-2 text-sm font-bold rounded-xl transition-all duration-200 block",
+                            "relative px-2.5 xl:px-3.5 py-1.5 text-xs xl:text-[13px] font-bold rounded-xl transition-all duration-200 block whitespace-nowrap",
                             isActive(link.href)
                               ? "text-amber-500 font-black"
                               : isTransparent
@@ -595,14 +595,14 @@ export function Navbar() {
                                 : "text-white hover:text-amber-400 hover:bg-white/10"
                           )}
                         >
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 whitespace-nowrap">
                             {link.label}
-                            {(link as any).subItems && <ChevronDown strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-400 transition-transform group-hover:rotate-180" />}
+                            {(link as any).subItems && <ChevronDown strokeWidth={2.5} className="w-3 h-3 text-amber-400 transition-transform group-hover:rotate-180" />}
                           </span>
                           {isActive(link.href) && (
                             <motion.div
                               layoutId="navbarIndicator"
-                              className="absolute bottom-0 left-3 right-3 h-0.5 bg-amber-500 rounded-full"
+                              className="absolute bottom-0 left-2 right-2 h-0.5 bg-amber-500 rounded-full"
                               transition={{ type: "spring", stiffness: 500, damping: 35 }}
                             />
                           )}
@@ -616,7 +616,7 @@ export function Navbar() {
                                 <Link
                                   key={subItem.href}
                                   href={subItem.href}
-                                  className="block px-4 py-2 text-sm font-bold text-slate-900 hover:bg-amber-50 hover:text-amber-600 transition-colors"
+                                  className="block px-4 py-2 text-xs font-bold text-slate-900 hover:bg-amber-50 hover:text-amber-600 transition-colors whitespace-nowrap"
                                 >
                                   {subItem.label}
                                 </Link>
@@ -632,7 +632,7 @@ export function Navbar() {
             </div>
 
             {/* Right Action Icons & Controls */}
-            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <div className="hidden sm:block">
                 <ThemeToggle />
               </div>
