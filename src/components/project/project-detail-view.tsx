@@ -8,7 +8,7 @@ import { useProjectsStore } from "@/stores/projects-store";
 import { getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import {
-  MapPin, CheckCircle2, Phone, MessageCircle, Download, FileText, ExternalLink,
+  MapPin, CheckCircle2, MessageCircle, Download, FileText, ExternalLink,
   ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark,
   Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate, Film, Layers, Loader2, Copy, Share2, Lock, ShieldCheck, Navigation
 } from "lucide-react";
@@ -1684,7 +1684,7 @@ export function ProjectDetailView({
                             Log in to view builder contact
                           </h4>
                           <p className="text-xs text-slate-600 dark:text-slate-300">
-                            Sign in to call or WhatsApp builder
+                            Sign in to contact builder on WhatsApp
                           </p>
                         </div>
                       </div>
@@ -1700,15 +1700,6 @@ export function ProjectDetailView({
                   ) : (
                     <div className="space-y-3 pt-2">
                       <div className="flex flex-wrap gap-3">
-                        {phone && (
-                          <a
-                            href={phone}
-                            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all shadow-xs active:scale-95"
-                          >
-                            <Phone className="w-4 h-4 text-amber-500 shrink-0" />
-                            <span>Call Builder {displayBuilderPhone ? `(${displayBuilderPhone})` : ""}</span>
-                          </a>
-                        )}
                         {whatsapp && (
                           <a
                             href={whatsapp}
@@ -1721,7 +1712,7 @@ export function ProjectDetailView({
                           </a>
                         )}
                       </div>
-                      {!phone && !whatsapp && builderContactError && (
+                      {!whatsapp && builderContactError && (
                         <p className="text-xs font-medium text-red-600 dark:text-red-400">{builderContactError}</p>
                       )}
                     </div>
@@ -1759,7 +1750,7 @@ export function ProjectDetailView({
                 <p className="text-xs text-text-tertiary mb-4">
                   {isLoggedIn
                     ? "Get exact pricing, payment plans & site visit"
-                    : "Sign in to call or WhatsApp builder"}
+                    : "Sign in to message builder on WhatsApp"}
                 </p>
 
                 <div className="space-y-3">
@@ -1774,12 +1765,6 @@ export function ProjectDetailView({
                     </button>
                   ) : (
                     <>
-                      {phone && (
-                        <a href={phone} className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-sm active:scale-98">
-                          <Phone className="w-4 h-4 text-amber-500 shrink-0" />
-                          <span>Call Builder {displayBuilderPhone ? `(${displayBuilderPhone})` : ""}</span>
-                        </a>
-                      )}
                       {whatsapp && (
                         <a href={whatsapp} target="_blank" rel="noopener noreferrer"
                           className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm transition-all shadow-sm active:scale-98">
@@ -1790,7 +1775,7 @@ export function ProjectDetailView({
                     </>
                   )}
 
-                  {isLoggedIn && !phone && !whatsapp && builderContactError && (
+                  {isLoggedIn && !whatsapp && builderContactError && (
                     <p className="text-xs font-medium text-red-600 dark:text-red-400 text-center">{builderContactError}</p>
                   )}
 
