@@ -1051,7 +1051,7 @@ export function ProjectDetailView({
                 {hasBrochure && (
                   <button
                     onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all shadow-sm whitespace-nowrap cursor-pointer active:scale-95"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white dark:bg-bg-card hover:bg-slate-50 dark:hover:bg-slate-800 text-text-primary font-bold text-xs sm:text-sm border border-border-default transition-all shadow-xs whitespace-nowrap cursor-pointer active:scale-95"
                   >
                     <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download Brochure
                   </button>
@@ -1705,7 +1705,7 @@ export function ProjectDetailView({
                             href={whatsapp}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs sm:text-sm transition-all shadow-xs active:scale-95"
+                            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white dark:bg-bg-card hover:bg-slate-50 dark:hover:bg-slate-800 text-text-primary font-bold text-xs sm:text-sm border border-border-default transition-all shadow-xs active:scale-95"
                           >
                             <WhatsAppIcon className="w-4.5 h-4.5 shrink-0" />
                             <span>WhatsApp Builder</span>
@@ -1767,7 +1767,7 @@ export function ProjectDetailView({
                     <>
                       {whatsapp && (
                         <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm transition-all shadow-sm active:scale-98">
+                          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-white dark:bg-bg-card hover:bg-slate-50 dark:hover:bg-slate-800 text-text-primary font-bold text-sm border border-border-default transition-all shadow-xs active:scale-98">
                           <WhatsAppIcon className="w-4.5 h-4.5 shrink-0" />
                           <span>WhatsApp Builder</span>
                         </a>
@@ -1782,9 +1782,10 @@ export function ProjectDetailView({
                   {project.videoUrl && (
                     <button
                       onClick={() => openVideo(project.videoUrl)}
-                      className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all cursor-pointer shadow-sm active:scale-98"
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-white dark:bg-bg-card hover:bg-slate-50 dark:hover:bg-slate-800 text-text-primary font-bold text-sm border border-border-default transition-all cursor-pointer shadow-xs active:scale-98"
                     >
-                      <Play className="w-4 h-4 fill-amber-500 text-amber-500" /> Watch Tour Video
+                      <Play className="w-4 h-4 fill-amber-500 text-amber-500 shrink-0" />
+                      <span>Watch Tour Video</span>
                     </button>
                   )}
                   {hasBrochure && (
@@ -1793,17 +1794,18 @@ export function ProjectDetailView({
                         href={resolveMediaUrl(project.brochureUrl!)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl border border-border-default hover:bg-slate-100 dark:hover:bg-slate-800 text-text-primary font-bold text-sm transition-colors text-center shrink-0 cursor-pointer"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl bg-white dark:bg-bg-card border border-border-default hover:bg-slate-50 dark:hover:bg-slate-800 text-text-primary font-bold text-sm transition-colors text-center shrink-0 cursor-pointer shadow-xs active:scale-98"
                       >
-                        <ExternalLink className="w-3.5 h-3.5 text-amber-500" />
+                        <ExternalLink className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                         View
                       </a>
                       <button
                         type="button"
                         onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm border border-white/15 transition-all shadow-sm cursor-pointer active:scale-98"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl bg-white dark:bg-bg-card hover:bg-slate-50 dark:hover:bg-slate-800 text-text-primary font-bold text-sm border border-border-default transition-all shadow-xs cursor-pointer active:scale-98"
                       >
-                        <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download
+                        <Download className="w-4 h-4 text-amber-500 shrink-0" />
+                        Download
                       </button>
                     </div>
                   )}
