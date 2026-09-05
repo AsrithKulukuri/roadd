@@ -145,15 +145,15 @@ export function ProjectFacilitiesGrid({ facilities, projectName }: ProjectFacili
           return (
             <div
               key={`${facility}-${idx}`}
-              className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-bg-card border border-border-default hover:border-amber-500/30 flex flex-col items-center justify-center text-center gap-2.5 transition-all duration-300 hover:scale-105 hover:shadow-md cursor-default group"
+              className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-200 hover:border-amber-500/40 flex flex-col items-center justify-center text-center gap-2.5 transition-all duration-300 hover:scale-105 hover:shadow-md cursor-default group"
             >
               {/* Icon Container */}
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-slate-900 dark:bg-slate-800 shadow-xs group-hover:scale-110 transition-transform">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-slate-900 shadow-xs group-hover:scale-110 transition-transform">
                 <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${colorClass}`} />
               </div>
 
               {/* Title */}
-              <span className="text-[11px] sm:text-xs font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug">
+              <span className="text-[11px] sm:text-xs font-bold text-slate-900 dark:text-slate-900 line-clamp-2 leading-snug">
                 {facility}
               </span>
             </div>
@@ -163,13 +163,13 @@ export function ProjectFacilitiesGrid({ facilities, projectName }: ProjectFacili
 
       {/* "View All" Lightbox Dialog */}
       <Dialog open={isAllModalOpen} onOpenChange={setIsAllModalOpen}>
-        <DialogContent className="max-w-2xl bg-white dark:bg-bg-card border-border-default rounded-3xl p-6 shadow-2xl max-h-[85vh] overflow-y-auto">
-          <div className="flex items-center justify-between pb-3 border-b border-border-default">
+        <DialogContent className="max-w-2xl bg-white dark:bg-white border-slate-200 rounded-3xl p-6 shadow-2xl max-h-[85vh] overflow-y-auto">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div>
-              <DialogTitle className="text-lg sm:text-xl font-bold text-text-primary">
+              <DialogTitle className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-900">
                 All Facilities & Amenities
               </DialogTitle>
-              <DialogDescription className="text-xs text-text-secondary mt-0.5">
+              <DialogDescription className="text-xs text-slate-600 dark:text-slate-600 mt-0.5">
                 Complete list of {facilities.length} features available at {projectName}
               </DialogDescription>
             </div>
@@ -181,12 +181,12 @@ export function ProjectFacilitiesGrid({ facilities, projectName }: ProjectFacili
               return (
                 <div
                   key={`all-${facility}-${idx}`}
-                  className="p-3 rounded-2xl bg-white dark:bg-bg-card border border-border-default hover:border-amber-500/30 flex flex-col items-center justify-center text-center gap-2 hover:shadow-md transition-all group"
+                  className="p-3 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-200 hover:border-amber-500/40 flex flex-col items-center justify-center text-center gap-2 hover:shadow-md transition-all group"
                 >
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-900 dark:bg-slate-800 shadow-xs">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-900 shadow-xs">
                     <Icon className={`w-5 h-5 ${colorClass}`} />
                   </div>
-                  <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+                  <span className="text-xs font-bold text-slate-900 dark:text-slate-900 leading-tight">
                     {facility}
                   </span>
                 </div>
