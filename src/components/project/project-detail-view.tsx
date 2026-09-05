@@ -1559,7 +1559,7 @@ export function ProjectDetailView({
                   </div>
 
                   {/* Map */}
-                  <div style={{ height: "380px" }}>
+                  <div className="h-[240px] sm:h-[260px] w-full">
                     <ProjectMapView
                       latitude={project.location.latitude}
                       longitude={project.location.longitude}
