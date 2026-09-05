@@ -1305,7 +1305,8 @@ export default function PropertyMap({
   
   const activeUserLocation = externalUserLocation || internalUserLoc;
 
-  const [showPropertiesTray, setShowPropertiesTray] = useState(false);
+  const [showPropertiesTray, setShowPropertiesTray] = useState(true);
+  const trayScrollRef = useRef<HTMLDivElement>(null);
   const [mobileTrayCount, setMobileTrayCount] = useState<number>(12);
   const { toggleFavorite, isFavorite } = useFavoritesStore();
 
@@ -1374,6 +1375,13 @@ export default function PropertyMap({
       }
     }
   }, [activeFilters?.gatedCommunity, activeFilters?.propertyType]);
+
+  // Ensure properties and projects tray is opened when Map Explorer is active
+  useEffect(() => {
+    if (showMapExplorer) {
+      setShowPropertiesTray(true);
+    }
+  }, [showMapExplorer]);
 
   const handleSubtypeSelect = useCallback((key: string) => {
     const isCurrent = selectedSubtype === key;
@@ -2368,7 +2376,7 @@ export default function PropertyMap({
             <button
               onClick={() => {
                 setShowMapExplorer(true);
-                setShowPropertiesTray(false);
+                setShowPropertiesTray(true);
               }}
               className="absolute top-3 left-3 md:bottom-[140px] md:top-auto md:left-3 z-[500] bg-white/95 backdrop-blur-sm text-slate-900 p-2 sm:px-3 sm:py-2 rounded-xl shadow-lg border border-slate-200 flex items-center gap-1.5 hover:bg-slate-50 transition-colors pointer-events-auto cursor-pointer"
             >
@@ -2495,7 +2503,7 @@ export default function PropertyMap({
             className={cn(
               "absolute left-1/2 -translate-x-1/2 z-[520] flex-col items-center gap-2 pointer-events-auto transition-all duration-300",
               showMapExplorer ? "hidden md:flex" : "flex",
-              showPropertiesTray ? "bottom-[340px] md:bottom-8" : "bottom-14 md:bottom-6"
+              showPropertiesTray ? "bottom-[340px] md:bottom-[230px]" : "bottom-14 md:bottom-6"
             )}
           >
             {showSearchThisArea && (
@@ -2581,19 +2589,46 @@ export default function PropertyMap({
                   <div className="flex items-center justify-between px-2 pb-2 border-b border-slate-800/80 mb-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
                       <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>Found {displayedPropertiesFiltered.length > 0 && (displayedPropertiesFiltered[0] as any)?._isProject ? "Projects" : "Properties"} ({displayedPropertiesFiltered.length})</span>
+                      {(() => {
+                        const hasProj = displayedPropertiesFiltered.some((p: any) => p._isProject);
+                        const hasProp = displayedPropertiesFiltered.some((p: any) => !p._isProject);
+                        const entityLabel = hasProj && hasProp
+                          ? "Properties & Projects"
+                          : hasProj
+                          ? (displayedPropertiesFiltered.length === 1 ? "Project" : "Projects")
+                          : (displayedPropertiesFiltered.length === 1 ? "Property" : "Properties");
+                        return <span>Found {entityLabel} ({displayedPropertiesFiltered.length})</span>;
+                      })()}
                     </div>
-                    <button
-                      onClick={() => setShowPropertiesTray(false)}
-                      title="Close Carousel"
-                      className="px-3 py-1 rounded-xl bg-red-500/20 hover:bg-red-600 text-red-300 hover:text-white font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-red-500/40 shadow-sm shrink-0"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      <span>Close</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => trayScrollRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
+                        className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                        title="Scroll Left"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => trayScrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
+                        className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                        title="Scroll Right"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setShowPropertiesTray(false)}
+                        title="Close Carousel"
+                        className="px-3 py-1 rounded-xl bg-red-500/20 hover:bg-red-600 text-red-300 hover:text-white font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-red-500/40 shadow-sm shrink-0 ml-1"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Close</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1 touch-pan-x">
+                  <div ref={trayScrollRef} className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1 touch-pan-x scroll-smooth">
                   {isLoading ? (
                     <>
                       <MapCardSkeleton />
@@ -2659,7 +2694,7 @@ export default function PropertyMap({
                                     <Navigation className="w-3 h-3 text-[#f1a010] shrink-0" /> {distStr}
                                   </span>
                                 ) : (
-                                  <span className="text-slate-400 font-medium capitalize">{prop.listingType}</span>
+                                  <span className="text-slate-400 font-medium capitalize">{(prop as any)._isProject ? "Project" : prop.listingType}</span>
                                 )}
 
                                 <div className="flex items-center gap-2 shrink-0">
@@ -2729,7 +2764,7 @@ export default function PropertyMap({
             className={cn(
               "absolute right-3 md:right-4 z-[500] flex-col gap-1.5 pointer-events-auto transition-all duration-300",
               showMapExplorer ? "hidden md:flex" : "flex",
-              showPropertiesTray ? "bottom-[340px] md:bottom-8" : "bottom-16 md:bottom-8"
+              showPropertiesTray ? "bottom-[340px] md:bottom-[230px]" : "bottom-16 md:bottom-8"
             )}
           >
             <button
