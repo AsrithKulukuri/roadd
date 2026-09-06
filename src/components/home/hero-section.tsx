@@ -37,7 +37,6 @@ import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import { findItemByRefId, getRefId } from "@/lib/ref-id";
 import { matchesPropertySearch, matchesProjectSearch } from "@/lib/search-engine";
 import { toast } from "sonner";
-import { Slider } from "@/components/ui/slider";
 import { ModernBudgetDropdown } from "@/components/ui/modern-budget-dropdown";
 import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
 import { SolidMapPin, SolidSearch } from "@/components/ui/solid-icons";
@@ -159,7 +158,7 @@ export function HeroSection() {
   useEffect(() => {
     try {
       router.prefetch("/search");
-    } catch {}
+    } catch { }
   }, [router]);
 
   const scrollToTopElement = (el: HTMLElement | null, offset = 65) => {
@@ -404,7 +403,7 @@ export function HeroSection() {
         if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
         const inBudget = p.price >= heroBudget[0] && (isAnyMax || p.price <= heroBudget[1]);
         if (!inBudget) return false;
-        
+
         if (cat.id === "new-listings") {
           // Only show properties created in the last 30 days
           const createdDate = new Date(p.createdAt);
@@ -412,9 +411,9 @@ export function HeroSection() {
         }
 
         if (cat.id === "resale") {
-           // Resale filter
-           if (p.saleType !== "resale") return false;
-           return true; // since it covers all types
+          // Resale filter
+          if (p.saleType !== "resale") return false;
+          return true; // since it covers all types
         }
 
         if (!types || types.length === 0) return true;
@@ -437,7 +436,7 @@ export function HeroSection() {
         }
 
         if (cat.id === "resale") {
-           return false; // Projects usually don't have resale
+          return false; // Projects usually don't have resale
         }
 
         if (!types || types.length === 0) return true;
@@ -506,8 +505,8 @@ export function HeroSection() {
                 return (
                   <>
                     <div className="md:hidden absolute inset-0">
-                      <Image 
-                        src={activeImg} 
+                      <Image
+                        src={activeImg}
                         alt={currentBanner?.title || 'Banner Mobile'}
                         fill
                         priority
@@ -525,8 +524,8 @@ export function HeroSection() {
                       />
                     </div>
                     <div className="hidden md:block absolute inset-0">
-                      <Image 
-                        src={desktopImg || activeImg} 
+                      <Image
+                        src={desktopImg || activeImg}
                         alt={currentBanner?.title || 'Banner Desktop'}
                         fill
                         priority
@@ -548,7 +547,7 @@ export function HeroSection() {
               {/* Directional Gradient: Darker behind headline/nav, light and clear over architecture */}
               <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/20 pointer-events-none" />
-              
+
               {/* Banner Content (SAFE IN BETWEEN ARROWS WITH GENEROUS HORIZONTAL PADDING) */}
               <div className="absolute inset-0 flex flex-col justify-center items-start text-left pt-16 sm:pt-20 md:pt-24">
                 <div className="w-full max-w-7xl mx-auto px-14 sm:px-20 md:px-24">
@@ -580,11 +579,11 @@ export function HeroSection() {
               </div>
             </motion.div>
           </AnimatePresence>
-          
+
           {/* Arrow Controls - positioned cleanly on outer margins */}
           {banners.length > 1 && (
             <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-between px-2 sm:px-5 md:px-6">
-              <button 
+              <button
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
@@ -595,8 +594,8 @@ export function HeroSection() {
               >
                 <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
-              
-              <button 
+
+              <button
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
@@ -618,13 +617,13 @@ export function HeroSection() {
 
         {/* Mobile backdrop to close menu when tapping outside */}
         {(showBuyMenu || showProjectsMenu) && (
-          <div 
-            className="fixed inset-0 z-40 bg-transparent sm:hidden" 
+          <div
+            className="fixed inset-0 z-40 bg-transparent sm:hidden"
             onClick={() => {
               setShowBuyMenu(false);
               setShowProjectsMenu(false);
               setActiveBuySub(null);
-            }} 
+            }}
           />
         )}
 
@@ -633,8 +632,8 @@ export function HeroSection() {
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
-              <div 
-                key={tab.id} 
+              <div
+                key={tab.id}
                 className="relative group shrink-0"
                 onMouseEnter={() => {
                   if (tab.id === "buy") setShowBuyMenu(true);
@@ -716,7 +715,7 @@ export function HeroSection() {
                 </button>
 
                 {tab.id === "buy" && (
-                  <div 
+                  <div
                     onMouseLeave={() => {
                       setActiveBuySub(null);
                     }}
@@ -727,7 +726,7 @@ export function HeroSection() {
                   >
                     <div className="bg-white text-slate-950 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-visible py-2 text-left relative">
                       {/* 1. Flats */}
-                      <div 
+                      <div
                         className="relative group"
                         onMouseEnter={() => setActiveBuySub("flats")}
                       >
@@ -739,27 +738,27 @@ export function HeroSection() {
                           <span>Flats</span>
                           <ChevronRight className={cn("w-4 h-4 text-amber-500 group-hover:text-amber-600 transition-transform", activeBuySub === "flats" && "rotate-90 sm:rotate-0")} />
                         </button>
-                        
+
                         {/* Flats Submenu */}
                         {activeBuySub === "flats" && (
                           <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
-                            <Link 
-                              href="/search?type=buy&propertyType=apartment&saleType=new" 
+                            <Link
+                              href="/search?type=buy&propertyType=apartment&saleType=new"
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
                               className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               New Flats
                             </Link>
-                            <Link 
-                              href="/search?type=buy&propertyType=apartment&saleType=resale" 
+                            <Link
+                              href="/search?type=buy&propertyType=apartment&saleType=resale"
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
                               className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               Resale Flats
                             </Link>
                             <div className="h-px bg-slate-100 my-1 mx-2" />
-                            <Link 
-                              href="/search?type=buy&propertyType=apartment" 
+                            <Link
+                              href="/search?type=buy&propertyType=apartment"
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
                               className="block px-3.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
@@ -770,7 +769,7 @@ export function HeroSection() {
                       </div>
 
                       {/* 2. Houses */}
-                      <div 
+                      <div
                         className="relative group"
                         onMouseEnter={() => setActiveBuySub("houses")}
                       >
@@ -782,27 +781,27 @@ export function HeroSection() {
                           <span>Houses</span>
                           <ChevronRight className={cn("w-4 h-4 text-amber-500 group-hover:text-amber-600 transition-transform", activeBuySub === "houses" && "rotate-90 sm:rotate-0")} />
                         </button>
-                        
+
                         {/* Houses Submenu */}
                         {activeBuySub === "houses" && (
                           <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
-                            <Link 
-                              href="/search?type=buy&propertyType=independent-house&saleType=new" 
+                            <Link
+                              href="/search?type=buy&propertyType=independent-house&saleType=new"
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
                               className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               New Houses
                             </Link>
-                            <Link 
-                              href="/search?type=buy&propertyType=independent-house&saleType=resale" 
+                            <Link
+                              href="/search?type=buy&propertyType=independent-house&saleType=resale"
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
                               className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               Resale Houses
                             </Link>
                             <div className="h-px bg-slate-100 my-1 mx-2" />
-                            <Link 
-                              href="/search?type=buy&propertyType=independent-house" 
+                            <Link
+                              href="/search?type=buy&propertyType=independent-house"
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
                               className="block px-3.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
@@ -813,7 +812,7 @@ export function HeroSection() {
                       </div>
 
                       {/* 3. Villas */}
-                      <div 
+                      <div
                         className="relative group"
                         onMouseEnter={() => setActiveBuySub("villas")}
                       >
@@ -825,27 +824,27 @@ export function HeroSection() {
                           <span>Villas</span>
                           <ChevronRight className={cn("w-4 h-4 text-amber-500 group-hover:text-amber-600 transition-transform", activeBuySub === "villas" && "rotate-90 sm:rotate-0")} />
                         </button>
-                        
+
                         {/* Villas Submenu */}
                         {activeBuySub === "villas" && (
                           <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
-                            <Link 
-                              href="/search?type=buy&propertyType=villa&saleType=new" 
+                            <Link
+                              href="/search?type=buy&propertyType=villa&saleType=new"
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
                               className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               New Villas
                             </Link>
-                            <Link 
-                              href="/search?type=buy&propertyType=villa&saleType=resale" 
+                            <Link
+                              href="/search?type=buy&propertyType=villa&saleType=resale"
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
                               className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
                               Resale Villas
                             </Link>
                             <div className="h-px bg-slate-100 my-1 mx-2" />
-                            <Link 
-                              href="/search?type=buy&propertyType=villa" 
+                            <Link
+                              href="/search?type=buy&propertyType=villa"
                               onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
                               className="block px-3.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
                             >
@@ -856,8 +855,8 @@ export function HeroSection() {
                       </div>
 
                       {/* 4. Plots */}
-                      <Link 
-                        href="/search?type=buy&propertyType=residential-plot" 
+                      <Link
+                        href="/search?type=buy&propertyType=residential-plot"
                         onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
                         className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors"
                       >
@@ -865,8 +864,8 @@ export function HeroSection() {
                       </Link>
 
                       {/* 5. Agriculture */}
-                      <Link 
-                        href="/search?type=buy&propertyType=agricultural-land" 
+                      <Link
+                        href="/search?type=buy&propertyType=agricultural-land"
                         onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
                         className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors"
                       >
@@ -875,7 +874,7 @@ export function HeroSection() {
                     </div>
                   </div>
                 )}
-                
+
                 {tab.id === "projects" && (
                   <div className={cn(
                     "absolute top-full left-0 sm:left-1/2 sm:-translate-x-1/2 pt-2 w-48 sm:w-52 transition-all duration-200 z-[100]",
@@ -1100,13 +1099,13 @@ export function HeroSection() {
 
         {/* Dynamic Location Pills from Admin Master Locations */}
         <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-4 text-left relative z-30">
-          <div 
+          <div
             className={cn(
               "grid gap-1.5 sm:gap-3 w-full pb-1 mb-1.5 sm:mb-2.5",
               heroCities.length === 1 ? "grid-cols-1" :
-              heroCities.length === 2 ? "grid-cols-2" :
-              heroCities.length === 3 ? "grid-cols-3" :
-              "grid-cols-2 sm:grid-cols-4"
+                heroCities.length === 2 ? "grid-cols-2" :
+                  heroCities.length === 3 ? "grid-cols-3" :
+                    "grid-cols-2 sm:grid-cols-4"
             )}
           >
             {heroCities.map((city) => {
@@ -1161,12 +1160,12 @@ export function HeroSection() {
                 return (
                   <>
                     {/* Click-outside dismissal backdrop (Desktop only) */}
-                    <div 
-                      className="fixed inset-0 z-[95]" 
+                    <div
+                      className="fixed inset-0 z-[95]"
                       onClick={() => {
                         setOpenLocationTab(null);
                         setSublocationSearch("");
-                      }} 
+                      }}
                     />
 
                     <motion.div
@@ -1326,7 +1325,7 @@ export function HeroSection() {
                   {/* Bottom Sheet Drawer with Smart Expand Animation */}
                   <motion.div
                     initial={{ y: "100%" }}
-                    animate={{ 
+                    animate={{
                       y: 0,
                       height: (isLocalityFocused || sublocationSearch.trim().length > 0) ? "88vh" : "55vh"
                     }}
@@ -1475,17 +1474,15 @@ export function HeroSection() {
           document.body
         )}
 
-        {/* ── Budget Filter Card (Compact & Modern Design) ── */}
+        {/* ── Budget Filter Card ── */}
         <div className="relative z-20 w-full max-w-[760px] mx-auto mt-2 sm:mt-3 text-left">
-          <div className="bg-white/95 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-2.5 sm:p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.05)] space-y-2 sm:space-y-2.5">
-            
-            {/* Row 1: BUDGET Selectors (Desktop: Apply button inline beside selectors; Mobile: full-width selectors) */}
-            <div className="flex items-center justify-between gap-2 sm:gap-3">
+          <div className="bg-white/95 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-2.5 sm:p-3 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
               <div className="flex items-center gap-2 sm:gap-2.5 flex-1 min-w-0">
                 <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider shrink-0">
                   BUDGET:
                 </span>
-                
+
                 <div className="flex-1 sm:max-w-[150px]">
                   <ModernBudgetDropdown
                     value={heroBudget[0]}
@@ -1514,20 +1511,20 @@ export function HeroSection() {
                   <button
                     type="button"
                     onClick={() => setHeroBudget([1000000, 30000000])}
-                    className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-slate-700 transition-colors cursor-pointer px-1.5 py-0.5 rounded-md hover:bg-slate-100 shrink-0"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-slate-700 transition-colors cursor-pointer px-1.5 py-0.5 rounded-md hover:bg-slate-100 shrink-0"
                     title="Reset budget to default"
                   >
                     <RotateCcw className="w-3 h-3" />
-                    <span>Reset</span>
+                    <span className="hidden sm:inline">Reset</span>
                   </button>
                 )}
               </div>
 
-              {/* Desktop Only: Smart Apply Button Beside Selectors */}
+              {/* Apply Button */}
               <button
                 type="button"
                 onClick={() => handleSearchSubmit()}
-                className="hidden sm:inline-flex h-8 sm:h-8.5 px-3.5 sm:px-4.5 bg-slate-950 hover:bg-slate-900 active:scale-95 text-white font-extrabold text-xs rounded-full items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all cursor-pointer shrink-0 ml-auto border border-white/10 group"
+                className="h-8 sm:h-8.5 px-3.5 sm:px-4.5 bg-slate-950 hover:bg-slate-900 active:scale-95 text-white font-extrabold text-xs rounded-full flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all cursor-pointer shrink-0 border border-white/10 group w-full sm:w-auto"
               >
                 <span>Apply</span>
                 <span className="px-1.5 py-0.2 min-w-[18px] h-[18px] rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-2xs group-hover:scale-105 transition-transform">
@@ -1535,52 +1532,6 @@ export function HeroSection() {
                 </span>
               </button>
             </div>
-
-            {/* Row 2: Range Slider (Teal Accent Track with Refined Knobs) */}
-            <div className="px-1 py-0.5">
-              <style>{`
-                .budget-slider [role="slider"] {
-                  background: #0f172a !important;
-                  border: 2px solid #ffffff !important;
-                  box-shadow: 0 1px 5px rgba(15, 23, 42, 0.35);
-                  width: 14px !important;
-                  height: 14px !important;
-                  transition: transform 0.15s ease;
-                }
-                .budget-slider [role="slider"]:hover {
-                  transform: scale(1.2);
-                }
-                .budget-slider [data-orientation="horizontal"] .radix-slider-track {
-                  height: 4px !important;
-                  border-radius: 9999px;
-                  background: #e2e8f0;
-                }
-                .budget-slider [data-orientation="horizontal"] .radix-slider-range {
-                  background: #0d9488 !important;
-                }
-              `}</style>
-              <Slider
-                min={1000000}
-                max={30000000}
-                step={500000}
-                value={heroBudget}
-                onValueChange={(val) => setHeroBudget(val as [number, number])}
-                className="w-full budget-slider cursor-pointer"
-              />
-            </div>
-
-            {/* Row 3: Mobile Only Apply Button (Kept exactly like before on mobile) */}
-            <button
-              type="button"
-              onClick={() => handleSearchSubmit()}
-              className="sm:hidden w-full h-8 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs rounded-full flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all active:scale-98 cursor-pointer"
-            >
-              <span>Apply</span>
-              <span className="px-1.5 py-0.2 min-w-[18px] h-[18px] rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-2xs">
-                {matchingCount}
-              </span>
-            </button>
-
           </div>
         </div>
 
