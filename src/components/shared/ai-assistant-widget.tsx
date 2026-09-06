@@ -26,6 +26,25 @@ export function AiAssistantWidget() {
   const isNavHidden = isDetailPage || isMapView;
 
   const [isOpen, setIsOpen] = useState(false);
+  const isDraggingRef = useRef(false);
+  const [constraints, setConstraints] = useState({ left: -10, right: 300, top: -500, bottom: 20 });
+
+  useEffect(() => {
+    const updateConstraints = () => {
+      if (typeof window !== "undefined") {
+        setConstraints({
+          left: -12,
+          right: Math.max(0, window.innerWidth - 68),
+          top: -Math.max(0, window.innerHeight - 130),
+          bottom: 40,
+        });
+      }
+    };
+    updateConstraints();
+    window.addEventListener("resize", updateConstraints);
+    return () => window.removeEventListener("resize", updateConstraints);
+  }, []);
+
   const [messages, setMessages] = useState<Message[]>([
     { id: "1", role: "assistant", content: "Hi! I'm your AI Real Estate Assistant. What kind of property are you looking for today? (e.g., 'Find me a 3 BHK under 2 Cr in Jubilee Hills')" }
   ]);
@@ -130,21 +149,38 @@ export function AiAssistantWidget() {
       <AnimatePresence>
         {!isOpen && (
           <motion.button
+            drag
+            dragMomentum={false}
+            dragElastic={0.12}
+            dragConstraints={constraints}
+            onDragStart={() => {
+              isDraggingRef.current = true;
+            }}
+            onDragEnd={() => {
+              setTimeout(() => {
+                isDraggingRef.current = false;
+              }, 120);
+            }}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.94 }}
-            onClick={() => setIsOpen(true)}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={() => {
+              if (!isDraggingRef.current) {
+                setIsOpen(true);
+              }
+            }}
             aria-label="Open AI Assistant"
+            style={{ touchAction: "none" }}
             className={cn(
-              "fixed left-4 lg:bottom-6 lg:left-auto lg:right-6 w-12 h-12 lg:w-14 lg:h-14 bg-slate-950 hover:bg-slate-900 rounded-full shadow-2xl flex items-center justify-center z-[45] text-white border border-white/20 ring-2 ring-white/10 cursor-pointer transition-all active:scale-95",
-              isMapView ? "bottom-16 left-3 sm:bottom-6 sm:left-4" : isNavHidden ? "bottom-6" : "bottom-20"
+              "fixed left-4 w-12 h-12 lg:w-14 lg:h-14 bg-slate-950 hover:bg-slate-900 rounded-full shadow-2xl flex items-center justify-center z-[45] text-white border border-white/20 ring-2 ring-white/10 cursor-grab active:cursor-grabbing transition-shadow select-none",
+              isMapView ? "bottom-16 sm:bottom-6" : isNavHidden ? "bottom-6" : "bottom-20 sm:bottom-6"
             )}
           >
-            <div className="relative flex items-center justify-center">
+            <div className="relative flex items-center justify-center pointer-events-none">
               <Bot className="w-6 h-6 lg:w-7 lg:h-7 stroke-[2.2] text-white" />
-              <Sparkles className="w-3 h-3 absolute -top-1 -right-1.5 text-white fill-white animate-pulse" />
+              <Sparkles className="w-3.5 h-3.5 absolute -top-1 -right-1.5 text-amber-400 fill-amber-400 animate-pulse" />
             </div>
           </motion.button>
         )}
@@ -158,8 +194,8 @@ export function AiAssistantWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className={cn(
-              "fixed left-4 lg:bottom-6 lg:left-auto lg:right-6 w-[90vw] max-w-sm h-[500px] max-h-[80vh] bg-bg-card border border-border-default shadow-elevated rounded-2xl flex flex-col overflow-hidden z-[100] transition-all",
-              isNavHidden ? "bottom-6" : "bottom-[calc(7.5rem+env(safe-area-inset-bottom,0px))]"
+              "fixed left-4 bottom-20 sm:bottom-6 w-[90vw] max-w-sm h-[500px] max-h-[80vh] bg-bg-card border border-border-default shadow-elevated rounded-2xl flex flex-col overflow-hidden z-[100] transition-all",
+              isNavHidden ? "bottom-6" : "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
             )}
           >
             {/* Header */}
