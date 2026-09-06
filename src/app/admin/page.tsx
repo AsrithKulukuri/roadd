@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePropertiesStore } from "@/stores/properties-store";
@@ -63,6 +63,8 @@ export default function AdminDashboardPage() {
     trendingLocations,
     homeCategories,
     apRegions,
+    fetchTrendingLocations,
+    fetchCategories,
     addLocation,
     updateLocation,
     deleteLocation,
@@ -75,6 +77,11 @@ export default function AdminDashboardPage() {
     addSubRegion,
     removeSubRegion,
   } = useContentStore();
+
+  useEffect(() => {
+    fetchCategories();
+    fetchTrendingLocations();
+  }, [fetchCategories, fetchTrendingLocations]);
 
   // Navigation Tab State
   const [activeTab, setActiveTab] = useState<"overview" | "properties" | "locations" | "categories" | "regions">("overview");
@@ -188,7 +195,7 @@ export default function AdminDashboardPage() {
   };
 
   // --- CATEGORY FORM SUBMIT ---
-  const handleSaveCategory = (e: React.FormEvent) => {
+  const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!catName.trim()) {
       toast.error("Category name is required!");
@@ -197,7 +204,7 @@ export default function AdminDashboardPage() {
     const fallbackImage = catImage || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80";
 
     if (editCatId) {
-      updateCategory(editCatId, {
+      await updateCategory(editCatId, {
         name: catName,
         subtitle: catSubtitle,
         badge: catBadge,
@@ -210,7 +217,7 @@ export default function AdminDashboardPage() {
       });
       setEditCatId(null);
     } else {
-      addCategory({
+      await addCategory({
         name: catName,
         subtitle: catSubtitle,
         badge: catBadge,
@@ -1114,7 +1121,11 @@ export default function AdminDashboardPage() {
                       <Edit3 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => deleteCategory(cat.id)}
+                      onClick={async () => {
+                        if (confirm(`Are you sure you want to delete category "${cat.name}"?`)) {
+                          await deleteCategory(cat.id);
+                        }
+                      }}
                       className="p-1.5 text-red-400 hover:text-red-300 bg-slate-800 rounded-lg cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />

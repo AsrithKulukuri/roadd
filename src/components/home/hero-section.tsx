@@ -177,7 +177,7 @@ export function HeroSection() {
   };
 
   // ── Typewriter / Typing Effect State & Logic (Connected to Admin Content Store) ──
-  const { searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile } = useContentStore();
+  const { searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile, fetchCategories } = useContentStore();
   const [typedText, setTypedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
@@ -237,7 +237,8 @@ export function HeroSection() {
   useEffect(() => {
     fetchBanners();
     fetchMasterLocations();
-  }, [fetchBanners, fetchMasterLocations]);
+    fetchCategories();
+  }, [fetchBanners, fetchMasterLocations, fetchCategories]);
 
   // Hero cities (only those marked as isHeroPill, or fallback to first 3)
   const heroCities = useMemo(() => {
@@ -1691,17 +1692,19 @@ export function HeroSection() {
           </div>
 
           {/* Mobile View All Categories Expand Button */}
-          <div className="sm:hidden pt-1 pb-4">
-            <button
-              type="button"
-              suppressHydrationWarning
-              onClick={() => setShowAllCategoriesMobile(!showAllCategoriesMobile)}
-              className="w-full py-3 px-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-400 text-slate-900 dark:text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-98 cursor-pointer"
-            >
-              <span>{showAllCategoriesMobile ? "Show Less" : "Click to View All Categories"}</span>
-              <ChevronDown className={cn("w-4 h-4 text-amber-500 transition-transform duration-300", showAllCategoriesMobile && "rotate-180")} />
-            </button>
-          </div>
+          {browseCategories.length > 4 && (
+            <div className="sm:hidden pt-1 pb-4">
+              <button
+                type="button"
+                suppressHydrationWarning
+                onClick={() => setShowAllCategoriesMobile(!showAllCategoriesMobile)}
+                className="w-full py-3 px-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-400 text-slate-900 dark:text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-98 cursor-pointer"
+              >
+                <span>{showAllCategoriesMobile ? "Show Less" : "Click to View All Categories"}</span>
+                <ChevronDown className={cn("w-4 h-4 text-amber-500 transition-transform duration-300", showAllCategoriesMobile && "rotate-180")} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </section>

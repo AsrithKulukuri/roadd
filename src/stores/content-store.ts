@@ -36,7 +36,7 @@ export interface ApRegion {
   propertyCount: number;
 }
 
-const initialCategories: HomeCategory[] = [
+export const ALL_PRESET_CATEGORIES: HomeCategory[] = [
   {
     id: "new-listings",
     name: "New Listings",
@@ -141,6 +141,8 @@ const initialCategories: HomeCategory[] = [
   },
 ];
 
+const initialCategories: HomeCategory[] = ALL_PRESET_CATEGORIES.slice(0, 4);
+
 
 const initialApRegions: ApRegion[] = [
   { id: "ap-1", name: "Vijayawada Central", tagline: "Commercial & Residential Hub of AP", image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80", subRegions: ["Benz Circle", "Poranki", "Kanuru", "Tadepalli", "Gollapudi", "Patamata"], propertyCount: 128 },
@@ -196,9 +198,11 @@ interface ContentState {
   deleteLocation: (id: string) => Promise<void>;
 
   // Home Categories Actions
-  addCategory: (category: Omit<HomeCategory, "id">) => void;
-  updateCategory: (id: string, category: Partial<HomeCategory>) => void;
-  deleteCategory: (id: string) => void;
+  fetchCategories: () => Promise<void>;
+  addCategory: (category: Omit<HomeCategory, "id">) => Promise<void>;
+  updateCategory: (id: string, category: Partial<HomeCategory>) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
+  resetCategories: () => Promise<void>;
 
   // Explore AP & Sub-regions Actions
   addApRegion: (region: Omit<ApRegion, "id">) => void;
@@ -348,31 +352,131 @@ export const useContentStore = create<ContentState>()(
       },
 
       // Categories CRUD
-      addCategory: (category) => {
+      fetchCategories: async () => {
+        try {
+          // 1. First try reading directly from Supabase homepage_layouts table
+          const { data, error } = await supabase
+            .from("homepage_layouts")
+            .select("sections")
+            .eq("id", "browse_categories")
+            .maybeSingle();
+
+          if (!error && data?.sections && Array.isArray(data.sections) && data.sections.length > 0) {
+            set({ homeCategories: data.sections as HomeCategory[] });
+            return;
+          }
+
+          // 2. Fallback to API route
+          const res = await fetch("/api/content/categories", { cache: "no-store" });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.categories && Array.isArray(json.categories)) {
+              set({ homeCategories: json.categories });
+            }
+          }
+        } catch (err) {
+          console.warn("[ContentStore] fetchCategories warning:", err);
+        }
+      },
+
+      addCategory: async (category) => {
         const newCat: HomeCategory = {
           id: `cat-${Date.now()}`,
           subtitle: category.description || category.subtitle,
           href: category.href || "/search?type=buy",
           ...category,
         };
-        set((state) => ({ homeCategories: [...state.homeCategories, newCat] }));
-        toast.success("Home Category added!");
+        const previous = get().homeCategories;
+        const updated = [...previous, newCat];
+        set({ homeCategories: updated });
+
+        try {
+          const res = await fetch("/api/content/categories", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ categories: updated }),
+          });
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || "Failed to persist category to server");
+          }
+          toast.success("Home Category added!");
+        } catch (err: any) {
+          console.error("[ContentStore] addCategory error:", err);
+          set({ homeCategories: previous });
+          toast.error(err.message || "Failed to save category to server");
+        }
       },
 
-      updateCategory: (id, category) => {
-        set((state) => ({
-          homeCategories: state.homeCategories.map((c) =>
-            c.id === id ? { ...c, ...category, subtitle: category.subtitle || category.description || c.subtitle } : c
-          ),
-        }));
-        toast.success("Home Category card updated!");
+      updateCategory: async (id, category) => {
+        const previous = get().homeCategories;
+        const updated = previous.map((c) =>
+          c.id === id ? { ...c, ...category, subtitle: category.subtitle || category.description || c.subtitle } : c
+        );
+        set({ homeCategories: updated });
+
+        try {
+          const res = await fetch("/api/content/categories", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ categories: updated }),
+          });
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || "Failed to persist category to server");
+          }
+          toast.success("Home Category card updated!");
+        } catch (err: any) {
+          console.error("[ContentStore] updateCategory error:", err);
+          set({ homeCategories: previous });
+          toast.error(err.message || "Failed to save category update to server");
+        }
       },
 
-      deleteCategory: (id) => {
-        set((state) => ({
-          homeCategories: state.homeCategories.filter((c) => c.id !== id),
-        }));
-        toast.success("Home Category deleted!");
+      deleteCategory: async (id) => {
+        const previous = get().homeCategories;
+        const updated = previous.filter((c) => c.id !== id);
+        set({ homeCategories: updated });
+
+        try {
+          const res = await fetch("/api/content/categories", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ categories: updated }),
+          });
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || "Failed to delete category on server");
+          }
+          toast.success("Home Category deleted!");
+        } catch (err: any) {
+          console.error("[ContentStore] deleteCategory error:", err);
+          set({ homeCategories: previous });
+          toast.error(err.message || "Failed to delete category");
+        }
+      },
+
+      resetCategories: async () => {
+        const previous = get().homeCategories;
+        const defaults = ALL_PRESET_CATEGORIES;
+        set({ homeCategories: defaults });
+
+        try {
+          const res = await fetch("/api/content/categories", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ categories: defaults }),
+          });
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || "Failed to reset categories on server");
+          }
+          toast.success("Categories reset to defaults!");
+        } catch (err: any) {
+          console.error("[ContentStore] resetCategories error:", err);
+          set({ homeCategories: previous });
+          toast.error(err.message || "Failed to reset categories");
+        }
       },
 
       // AP Regions CRUD

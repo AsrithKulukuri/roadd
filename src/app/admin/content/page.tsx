@@ -28,7 +28,7 @@ export default function ContentAdminPage() {
   const {
     trendingLocations, isLoading, fetchTrendingLocations,
     addLocation, updateLocation, deleteLocation,
-    homeCategories, addCategory, updateCategory, deleteCategory,
+    homeCategories, fetchCategories, addCategory, updateCategory, deleteCategory, resetCategories,
     searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile,
     setSearchTypewriterPhrases, addDesktopPhrase, removeDesktopPhrase,
     addMobilePhrase, removeMobilePhrase,
@@ -120,7 +120,8 @@ export default function ContentAdminPage() {
 
   useEffect(() => { 
     fetchTrendingLocations(); 
-  }, [fetchTrendingLocations]);
+    fetchCategories();
+  }, [fetchTrendingLocations, fetchCategories]);
 
   // Helper to upload image to AWS S3 Storage or convert to DataURL
   const uploadImage = async (file: File, folder: "categories" | "properties"): Promise<string> => {
@@ -220,10 +221,10 @@ export default function ContentAdminPage() {
     };
 
     if (isAddingCat) {
-      addCategory(payload as Omit<HomeCategory, "id">);
+      await addCategory(payload as Omit<HomeCategory, "id">);
       setIsAddingCat(false);
     } else if (editingCatId) {
-      updateCategory(editingCatId, payload);
+      await updateCategory(editingCatId, payload);
       setEditingCatId(null);
     }
 
@@ -563,9 +564,9 @@ export default function ContentAdminPage() {
                       size="sm" 
                       variant="outline" 
                       className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10" 
-                      onClick={() => { 
+                      onClick={async () => { 
                         if (confirm(`Are you sure you want to delete category "${cat.name}"?`)) {
-                          deleteCategory(cat.id); 
+                          await deleteCategory(cat.id); 
                         }
                       }}
                     >
