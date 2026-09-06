@@ -40,14 +40,14 @@ export function PhoneInput({ onSubmit, isLoading, initialValue = "", error }: Ph
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="space-y-2">
-        <label htmlFor="whatsapp-phone-input" className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 ml-1">
+      <div className="space-y-2 text-left">
+        <label htmlFor="whatsapp-phone-input" className="text-xs font-black uppercase tracking-wider text-slate-950 ml-1">
           WhatsApp Mobile Number
         </label>
         
         <div className="relative flex items-center">
           {/* India Flag & Prefix Badge */}
-          <div className="absolute left-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-sm font-black text-slate-900 dark:text-white z-10 select-none shadow-2xs">
+          <div className="absolute left-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 border border-slate-300 text-sm font-black text-slate-950 z-10 select-none shadow-2xs">
             <span>🇮🇳</span>
             <span>+91</span>
           </div>
@@ -64,12 +64,12 @@ export function PhoneInput({ onSubmit, isLoading, initialValue = "", error }: Ph
             placeholder="98765 43210"
             value={rawPhone}
             onChange={(e) => handlePhoneChange(e.target.value)}
-            className="h-13 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-950 dark:text-white placeholder:text-slate-400 pl-24 pr-4 rounded-xl text-base font-bold tracking-wide focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 shadow-xs"
+            className="h-13 !bg-white !border-slate-300 !text-slate-950 placeholder:text-slate-400 pl-24 pr-4 rounded-xl text-base font-bold tracking-wide focus:!border-amber-500 focus:ring-2 focus:ring-amber-500/20 shadow-xs"
           />
         </div>
 
         {displayError && (
-          <p id="phone-input-error" role="alert" aria-live="polite" className="text-xs text-red-500 font-medium ml-1 animate-fadeIn break-words">
+          <p id="phone-input-error" role="alert" aria-live="polite" className="text-xs text-red-600 font-bold ml-1 animate-fadeIn break-words">
             {displayError}
           </p>
         )}
@@ -77,24 +77,23 @@ export function PhoneInput({ onSubmit, isLoading, initialValue = "", error }: Ph
 
       <Button
         type="submit"
-        variant="amber"
         disabled={isLoading || rawPhone.length !== 10}
-        className="w-full h-13 rounded-xl text-base font-extrabold shadow-amber-glow gap-2 cursor-pointer transition-all active:scale-[0.98]"
+        className="w-full h-13 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-black rounded-xl text-base shadow-md shadow-amber-500/20 gap-2 cursor-pointer transition-all active:scale-[0.98]"
       >
         {isLoading ? (
-          <span className="flex items-center gap-2">
-            <span className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
-            Sending WhatsApp Code...
+          <span className="flex items-center justify-center gap-2">
+            <span className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-amber-500 animate-spin" />
+            <span>Sending WhatsApp Code...</span>
           </span>
         ) : (
           <>
             <span>Send OTP via WhatsApp</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 text-slate-950 stroke-[2.5]" />
           </>
         )}
       </Button>
 
-      <p className="text-[11px] text-text-tertiary text-center leading-relaxed">
+      <p className="text-xs text-slate-500 text-center leading-relaxed font-medium">
         We will send a secure 6-digit verification code directly to your WhatsApp app. Standard message rates may apply.
       </p>
     </form>

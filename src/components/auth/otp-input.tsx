@@ -106,23 +106,23 @@ export function OTPInput({
   return (
     <form onSubmit={handleFormSubmit} className="space-y-6">
       {/* Header Info */}
-      <div className="space-y-1">
+      <div className="space-y-1 text-left">
         <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={onBack}
             disabled={isLoading}
-            className="flex items-center gap-1 text-xs text-amber-primary font-semibold hover:underline cursor-pointer"
+            className="flex items-center gap-1.5 text-xs text-slate-900 hover:text-slate-950 font-bold cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Change Number</span>
+            <ArrowLeft className="w-3.5 h-3.5 text-amber-500 stroke-[2.5]" />
+            <span className="hover:underline">Change Number</span>
           </button>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+          <span className="text-[11px] font-black uppercase tracking-wider text-amber-700 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30">
             WhatsApp OTP
           </span>
         </div>
-        <p className="text-xs text-slate-600 dark:text-slate-400 pt-1">
-          Enter the 6-digit code sent to <strong className="text-slate-950 dark:text-white font-mono font-bold">{phone}</strong>
+        <p className="text-xs text-slate-600 pt-1 font-medium">
+          Enter the 6-digit code sent to <strong className="text-slate-950 font-mono font-black">{phone}</strong>
         </p>
       </div>
 
@@ -143,17 +143,17 @@ export function OTPInput({
             onChange={(e) => handleChange(index, e.target.value)}
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
-            className={`w-11 sm:w-12 h-14 text-center text-xl font-extrabold font-mono rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs ${
+            className={`w-11 sm:w-12 h-14 text-center text-xl font-black font-mono rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/30 shadow-xs ${
               digit
-                ? "border-amber-500 text-slate-950 dark:text-white shadow-amber-500/20 bg-amber-500/10"
-                : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-950 dark:text-white focus:border-amber-500"
+                ? "!border-amber-500 !bg-amber-50/70 !text-slate-950 shadow-xs"
+                : "!border-slate-300 !bg-white !text-slate-950 focus:!border-amber-500"
             }`}
           />
         ))}
       </div>
 
       {error && (
-        <p className="text-xs text-red-500 font-medium text-center animate-fadeIn">
+        <p className="text-xs text-red-600 font-bold text-center animate-fadeIn">
           {error}
         </p>
       )}
@@ -161,39 +161,38 @@ export function OTPInput({
       {/* Verify Button */}
       <Button
         type="submit"
-        variant="amber"
         disabled={isLoading || !isComplete}
-        className="w-full h-13 rounded-xl text-base font-extrabold shadow-amber-glow gap-2 cursor-pointer transition-all active:scale-[0.98]"
+        className="w-full h-13 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-black rounded-xl text-base shadow-md shadow-amber-500/20 gap-2 cursor-pointer transition-all active:scale-[0.98]"
       >
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">
-            <span className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
-            Verifying Code...
+            <span className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-amber-500 animate-spin" />
+            <span>Verifying Code...</span>
           </span>
         ) : (
           <span className="flex items-center justify-center gap-2">
-            <ShieldCheck className="w-5 h-5" />
-            Verify & Continue
+            <ShieldCheck className="w-5 h-5 text-slate-950 stroke-[2.5]" />
+            <span>Verify & Continue</span>
           </span>
         )}
       </Button>
 
       {/* Resend Countdown Footer */}
-      <div className="flex items-center justify-between pt-2 border-t border-border-default/40 text-xs">
-        <span className="text-text-tertiary">Didn't receive code?</span>
+      <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-xs">
+        <span className="text-slate-500 font-medium">Didn&apos;t receive code?</span>
         {canResend ? (
           <button
             type="button"
             onClick={onResend}
             disabled={isLoading}
-            className="flex items-center gap-1.5 font-bold text-amber-primary hover:underline cursor-pointer"
+            className="flex items-center gap-1.5 font-black text-amber-600 hover:text-amber-700 hover:underline cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
             <span>Resend WhatsApp OTP</span>
           </button>
         ) : (
-          <span className="text-text-tertiary font-mono font-medium">
-            Resend code in <strong className="text-amber-primary font-bold">{resendTimer}s</strong>
+          <span className="text-slate-500 font-mono font-medium">
+            Resend code in <strong className="text-amber-600 font-black">{resendTimer}s</strong>
           </span>
         )}
       </div>

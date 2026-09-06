@@ -118,24 +118,24 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg-primary p-4 pt-28 pb-12 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 pt-28 pb-12 relative overflow-hidden">
       {/* Background Ambient Accents */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-primary/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-[150px] pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-md glass border border-glass-border rounded-3xl p-8 shadow-elevated relative z-10"
+        className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl relative z-10"
       >
         {/* ROAD Branding Header */}
         <div className="flex flex-col items-center mb-6 text-center">
           <Logo size="xl" showText={false} className="mb-3" />
-          <h1 className="font-heading text-2xl font-bold text-text-primary tracking-tight">
+          <h1 className="font-heading text-2xl font-black text-slate-950 tracking-tight">
             {activeStep === "profile" ? "Complete Profile" : "Welcome"}
           </h1>
-          <p className="text-text-secondary text-sm text-center mt-2">
+          <p className="text-slate-600 text-sm text-center mt-2 font-medium">
             {activeStep === "phone" && "Enter your mobile number to sign in via WhatsApp OTP."}
             {activeStep === "otp" && `Enter 6-digit code sent to ${phone}`}
             {activeStep === "profile" && "Please enter your name to complete your profile."}
@@ -180,14 +180,14 @@ function LoginForm() {
         )}
 
         {/* Footer Security Note & Admin Link */}
-        <div className="mt-8 pt-4 border-t border-border-default/40 flex flex-col items-center gap-2">
-          <div className="flex items-center justify-center gap-1.5 text-xs text-text-tertiary">
-            <Lock className="w-3.5 h-3.5 text-amber-primary" />
+        <div className="mt-8 pt-4 border-t border-slate-200 flex flex-col items-center gap-2">
+          <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 font-medium">
+            <Lock className="w-3.5 h-3.5 text-amber-500 stroke-[2.5]" />
             <span>Encrypted & Secured by WasenderAPI</span>
           </div>
           <a
             href="/admin/login"
-            className="text-[11px] font-bold text-slate-400 hover:text-amber-400 transition-colors flex items-center gap-1 mt-1"
+            className="text-[11px] font-bold text-slate-500 hover:text-amber-600 transition-colors flex items-center gap-1 mt-1"
           >
             <span>Admin Portal Login (Email & Password) →</span>
           </a>

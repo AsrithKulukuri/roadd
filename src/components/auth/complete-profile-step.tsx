@@ -104,11 +104,11 @@ export function CompleteProfileStep({
     <div className="space-y-4">
       {/* Progress Header */}
       <div className="space-y-1.5 pb-2">
-        <div className="flex justify-between items-center text-[11px] text-amber-600 dark:text-amber-400 font-extrabold uppercase tracking-wider">
+        <div className="flex justify-between items-center text-[11px] text-amber-700 font-black uppercase tracking-wider">
           <span>Account Setup</span>
           <span>Phase {step} of 2</span>
         </div>
-        <div className="grid grid-cols-2 gap-1.5 h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+        <div className="grid grid-cols-2 gap-1.5 h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
           <div className={`h-full rounded-full transition-all duration-300 ${step >= 1 ? "bg-amber-500" : "bg-transparent"}`} />
           <div className={`h-full rounded-full transition-all duration-300 ${step >= 2 ? "bg-amber-500" : "bg-transparent"}`} />
         </div>
@@ -117,10 +117,10 @@ export function CompleteProfileStep({
       {step === 1 ? (
         <form onSubmit={handleNext} className="space-y-4">
           <div className="space-y-1 text-left">
-            <h3 className="font-heading text-base font-extrabold text-slate-900 dark:text-white leading-tight">
+            <h3 className="font-heading text-base font-black text-slate-950 leading-tight">
               Phase 1: Choose Your Role
             </h3>
-            <p className="text-slate-600 dark:text-slate-400 text-xs leading-normal">
+            <p className="text-slate-600 text-xs leading-normal font-medium">
               Select the classification that best matches your real estate needs.
             </p>
           </div>
@@ -135,26 +135,26 @@ export function CompleteProfileStep({
                   key={r.id}
                   type="button"
                   onClick={() => setRole(r.id)}
-                  className={`p-3.5 text-left rounded-2xl border transition-all flex items-start gap-3 active:scale-[0.98] cursor-pointer relative ${
+                  className={`p-3.5 text-left rounded-2xl border-2 transition-all flex items-start gap-3 active:scale-[0.98] cursor-pointer relative ${
                     isSelected
-                      ? "bg-amber-500/10 border-2 border-amber-500 shadow-md ring-2 ring-amber-500/20 text-slate-900 dark:text-white"
-                      : "bg-slate-50/80 hover:bg-slate-100 border-slate-200/90 dark:bg-slate-800/80 dark:border-slate-700 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-2xs"
+                      ? "!bg-amber-50/80 !border-amber-500 shadow-md ring-2 ring-amber-500/20 !text-slate-950"
+                      : "!bg-white hover:!bg-slate-50 !border-slate-200 !text-slate-950 shadow-xs"
                   }`}
                 >
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                       isSelected
                         ? "bg-amber-500 text-slate-950 shadow-xs"
-                        : "bg-slate-200/80 dark:bg-slate-900 text-slate-700 dark:text-slate-400"
+                        : "bg-amber-500/15 text-amber-600 border border-amber-500/20"
                     }`}
                   >
-                    <Icon className="w-4.5 h-4.5" />
+                    <Icon className="w-4.5 h-4.5 stroke-[2.5]" />
                   </div>
                   <div className="space-y-0.5 leading-normal flex-1 min-w-0 pr-4">
-                    <div className={`font-extrabold text-sm ${isSelected ? "text-slate-950 dark:text-amber-300" : "text-slate-900 dark:text-white"}`}>
+                    <div className="font-black text-sm text-slate-950">
                       {r.title}
                     </div>
-                    <div className={`text-xs leading-tight ${isSelected ? "text-amber-950/80 dark:text-amber-100/80 font-medium" : "text-slate-500 dark:text-slate-400"}`}>
+                    <div className="text-xs leading-tight text-slate-600 font-medium">
                       {r.desc}
                     </div>
                   </div>
@@ -175,32 +175,32 @@ export function CompleteProfileStep({
             className="w-full h-12 bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-slate-950 rounded-xl text-sm font-black gap-2 cursor-pointer transition-all mt-4 shadow-md shadow-amber-500/20"
           >
             <span>Next: Name & Details</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 text-slate-950 stroke-[2.5]" />
           </Button>
         </form>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1 text-left">
-            <h3 className="font-heading text-base font-extrabold text-slate-900 dark:text-white leading-tight">
+            <h3 className="font-heading text-base font-black text-slate-950 leading-tight">
               Phase 2: Contact Details
             </h3>
-            <p className="text-slate-600 dark:text-slate-400 text-xs leading-normal">
+            <p className="text-slate-600 text-xs leading-normal font-medium">
               Enter your name. Password is not required—login anytime securely with WhatsApp OTP.
             </p>
           </div>
 
           {/* Active Role Capsule */}
-          <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-900 dark:text-amber-300">
+          <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-slate-950">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
               <span>
-                Signing in as: <strong className="text-slate-950 dark:text-white font-black">{activeRoleObj.title}</strong>
+                Signing in as: <strong className="text-slate-950 font-black">{activeRoleObj.title}</strong>
               </span>
             </div>
             <button
               type="button"
               onClick={() => setStep(1)}
-              className="text-[11px] font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+              className="text-[11px] font-black text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
             >
               Change
             </button>
@@ -208,11 +208,11 @@ export function CompleteProfileStep({
 
           {/* Full Name (Required) */}
           <div className="space-y-1 text-left">
-            <label htmlFor="profile-full-name" className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 ml-1">
+            <label htmlFor="profile-full-name" className="text-xs font-black uppercase tracking-wider text-slate-950 ml-1">
               Full Name <span className="text-amber-600">*</span>
             </label>
             <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500 pointer-events-none stroke-[2.5]" />
               <Input
                 id="profile-full-name"
                 name="name"
@@ -221,7 +221,7 @@ export function CompleteProfileStep({
                 placeholder="e.g. Ramesh Kumar"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="bg-slate-50 hover:bg-white focus:bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-950 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 pl-11 h-12 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all font-medium text-sm shadow-xs"
+                className="!bg-white !border-slate-300 !text-slate-950 placeholder:text-slate-400 pl-11 h-12 rounded-xl focus:!border-amber-500 focus:ring-2 focus:ring-amber-500/20 font-bold text-sm shadow-xs"
                 disabled={isLoading}
               />
             </div>
@@ -229,11 +229,11 @@ export function CompleteProfileStep({
 
           {/* Email Address (OPTIONAL) */}
           <div className="space-y-1 text-left">
-            <label htmlFor="profile-email" className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 ml-1">
-              Email Address <span className="text-slate-400 text-[11px] font-medium normal-case tracking-normal">(Optional)</span>
+            <label htmlFor="profile-email" className="text-xs font-black uppercase tracking-wider text-slate-950 ml-1">
+              Email Address <span className="text-slate-500 text-[11px] font-bold normal-case tracking-normal">(Optional)</span>
             </label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500 pointer-events-none stroke-[2.5]" />
               <Input
                 id="profile-email"
                 name="email"
@@ -241,7 +241,7 @@ export function CompleteProfileStep({
                 placeholder="e.g. ramesh@example.com (optional)"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-slate-50 hover:bg-white focus:bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-950 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 pl-11 h-12 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all font-medium text-sm shadow-xs"
+                className="!bg-white !border-slate-300 !text-slate-950 placeholder:text-slate-400 pl-11 h-12 rounded-xl focus:!border-amber-500 focus:ring-2 focus:ring-amber-500/20 font-bold text-sm shadow-xs"
                 disabled={isLoading}
               />
             </div>
@@ -254,9 +254,9 @@ export function CompleteProfileStep({
               variant="outline"
               onClick={() => setStep(1)}
               disabled={isLoading}
-              className="h-12 px-4 rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 gap-1.5 cursor-pointer font-bold text-xs shadow-xs transition-all"
+              className="h-12 px-4 rounded-xl !border-slate-300 !bg-white !text-slate-950 hover:!bg-slate-100 gap-1.5 cursor-pointer font-black text-xs shadow-xs transition-all"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 text-amber-500 stroke-[2.5]" />
               <span>Back</span>
             </Button>
             <Button
@@ -266,13 +266,13 @@ export function CompleteProfileStep({
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
-                  Saving Profile...
+                  <span className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-amber-500 animate-spin" />
+                  <span>Saving Profile...</span>
                 </span>
               ) : (
                 <>
                   <span>Complete & Start Browsing</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 text-slate-950 stroke-[2.5]" />
                 </>
               )}
             </Button>
