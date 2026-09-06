@@ -130,6 +130,7 @@ export function HomeCategories() {
         id: section.id,
         title: section.title,
         icon: HOME_SECTION_ICONS[section.icon],
+        cardStyle: section.cardStyle,
         items: section.items.flatMap((item): MixedItem[] => {
           if (item.type === "property") {
             const property = propertyMap.get(item.id);
@@ -140,9 +141,9 @@ export function HomeCategories() {
         }),
       }))
     : [
-        { id: "recommended", title: "Recommended", icon: HOME_SECTION_ICONS.ThumbsUp, items: recommendedMixed },
-        { id: "featured", title: "Featured", icon: HOME_SECTION_ICONS.Star, items: featuredMixed },
-        { id: "budget-friendly", title: "Budget Friendly", icon: HOME_SECTION_ICONS.IndianRupee, items: budgetMixed },
+        { id: "recommended", title: "Recommended", icon: HOME_SECTION_ICONS.ThumbsUp, cardStyle: "compact-marketplace" as const, items: recommendedMixed },
+        { id: "featured", title: "Featured", icon: HOME_SECTION_ICONS.Star, cardStyle: "tall-portrait" as const, items: featuredMixed },
+        { id: "budget-friendly", title: "Budget Friendly", icon: HOME_SECTION_ICONS.IndianRupee, cardStyle: "bottom-floating" as const, items: budgetMixed },
       ];
 
   return (
@@ -157,7 +158,7 @@ export function HomeCategories() {
             items={section.items}
             hideHeader={false}
             autoSlide={true}
-            cardVariant="compact"
+            cardStyle={section.cardStyle || "compact-marketplace"}
           />
         ))}
 

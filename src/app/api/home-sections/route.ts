@@ -3,11 +3,16 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/server-auth-guard";
 import {
   HOME_SECTION_ICON_NAMES,
+  HOME_CARD_STYLES,
+  DEFAULT_CARD_STYLE,
   MAX_HOME_SECTION_ITEMS,
   MAX_HOME_SECTIONS,
   type HomeSection,
   type HomeSectionItem,
+  type HomeCardStyleId,
 } from "@/types/home-section";
+
+const VALID_CARD_STYLES = new Set<string>(HOME_CARD_STYLES.map((s) => s.id));
 
 function validateSections(input: unknown): HomeSection[] | null {
   if (!Array.isArray(input) || input.length > MAX_HOME_SECTIONS) return null;
@@ -22,6 +27,10 @@ function validateSections(input: unknown): HomeSection[] | null {
     const title = typeof value.title === "string" ? value.title.trim() : "";
     const icon = typeof value.icon === "string" ? value.icon : "";
     const items = Array.isArray(value.items) ? value.items : null;
+    const rawCardStyle = typeof value.cardStyle === "string" ? value.cardStyle.trim() : "";
+    const cardStyle: HomeCardStyleId = VALID_CARD_STYLES.has(rawCardStyle)
+      ? (rawCardStyle as HomeCardStyleId)
+      : DEFAULT_CARD_STYLE;
 
     if (!id || ids.has(id) || !title || title.length > 40 || !HOME_SECTION_ICON_NAMES.includes(icon as HomeSection["icon"]) || !items || items.length > MAX_HOME_SECTION_ITEMS) {
       return null;
@@ -41,7 +50,14 @@ function validateSections(input: unknown): HomeSection[] | null {
 
     if (cleanItems.length !== items.length) return null;
     ids.add(id);
-    sections.push({ id, title, icon: icon as HomeSection["icon"], isActive: value.isActive !== false, items: cleanItems });
+    sections.push({
+      id,
+      title,
+      icon: icon as HomeSection["icon"],
+      isActive: value.isActive !== false,
+      items: cleanItems,
+      cardStyle,
+    });
   }
 
   return sections;

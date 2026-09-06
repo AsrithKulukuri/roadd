@@ -8,10 +8,12 @@ import {
   Check,
   Eye,
   EyeOff,
+  Layers,
   LayoutList,
   Plus,
   Save,
   Search,
+  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -24,11 +26,17 @@ import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import {
   HOME_SECTION_ICON_NAMES,
+  HOME_CARD_STYLES,
+  DEFAULT_CARD_STYLE,
   MAX_HOME_SECTION_ITEMS,
   MAX_HOME_SECTIONS,
   type HomeSection,
   type HomeSectionItem,
+  type HomeCardStyleId,
 } from "@/types/home-section";
+import { CardStyleGalleryModal } from "@/components/home/shelves/card-style-preview";
+import { ShelfCard } from "@/components/home/shelves/shelf-card";
+import type { MixedItem } from "@/components/home/mixed-carousel-row";
 import type { Property } from "@/types/property";
 import type { Project } from "@/types/project";
 
@@ -55,9 +63,9 @@ function createLegacySections(properties: Property[], projects: Project[]): Home
   ].slice(0, MAX_HOME_SECTION_ITEMS);
 
   return [
-    { id: "recommended", title: "Recommended", icon: "ThumbsUp", isActive: true, items: makeItems("recommended") },
-    { id: "featured", title: "Featured", icon: "Star", isActive: true, items: makeItems("featured") },
-    { id: "budget-friendly", title: "Budget Friendly", icon: "IndianRupee", isActive: true, items: makeItems("budget_friendly") },
+    { id: "recommended", title: "Recommended", icon: "ThumbsUp", isActive: true, cardStyle: "compact-marketplace", items: makeItems("recommended") },
+    { id: "featured", title: "Featured", icon: "Star", isActive: true, cardStyle: "tall-portrait", items: makeItems("featured") },
+    { id: "budget-friendly", title: "Budget Friendly", icon: "IndianRupee", isActive: true, cardStyle: "bottom-floating", items: makeItems("budget_friendly") },
   ];
 }
 
@@ -68,6 +76,7 @@ export default function HomepageShelvesAdminPage() {
   const [layoutLoaded, setLayoutLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [pickerSectionId, setPickerSectionId] = useState<string | null>(null);
+  const [stylePickerSectionId, setStylePickerSectionId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "property" | "project">("all");
 
@@ -146,7 +155,7 @@ export default function HomepageShelvesAdminPage() {
   const addSection = () => {
     if (sections.length >= MAX_HOME_SECTIONS) return toast.error(`You can add up to ${MAX_HOME_SECTIONS} homepage shelves.`);
     const id = `section-${Date.now()}`;
-    setSections((current) => [...current, { id, title: "New collection", icon: "Sparkles", isActive: true, items: [] }]);
+    setSections((current) => [...current, { id, title: "New collection", icon: "Sparkles", isActive: true, cardStyle: DEFAULT_CARD_STYLE, items: [] }]);
   };
 
   const toggleItem = (sectionId: string, item: HomeSectionItem) => {
@@ -204,19 +213,39 @@ export default function HomepageShelvesAdminPage() {
       <div className="space-y-4">
         {sections.map((section, index) => {
           const Icon = HOME_SECTION_ICONS[section.icon];
+          const currentStyleId = section.cardStyle || DEFAULT_CARD_STYLE;
+          const cardStyleMeta = HOME_CARD_STYLES.find((s) => s.id === currentStyleId) || HOME_CARD_STYLES[0];
+
           return (
-            <section key={section.id} className={cn("rounded-lg border bg-bg-card p-4 shadow-sm sm:p-5", section.isActive ? "border-border-default" : "border-dashed border-slate-300 opacity-75")}>
+            <section key={section.id} className={cn("rounded-2xl border bg-bg-card p-4 shadow-sm sm:p-5 transition-all", section.isActive ? "border-border-default" : "border-dashed border-slate-300 opacity-75")}>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
                 <div className="flex min-w-0 flex-1 items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-[#faad13]"><Icon className="h-5 w-5" /></div>
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-[#faad13] shadow-xs"><Icon className="h-5 w-5" /></div>
                   <div className="min-w-0 flex-1 space-y-3">
-                    <Input value={section.title} maxLength={40} aria-label="Shelf title" onChange={(event) => updateSection(section.id, { title: event.target.value })} className="h-10 max-w-md font-extrabold" />
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <Input value={section.title} maxLength={40} aria-label="Shelf title" onChange={(event) => updateSection(section.id, { title: event.target.value })} className="h-10 max-w-md font-extrabold text-sm" />
+                      
+                      {/* Card Style Selector Button */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setStylePickerSectionId(section.id)}
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-border-default bg-slate-100 dark:bg-slate-800/90 hover:border-[#faad13] text-slate-900 dark:text-white text-xs font-black shadow-xs transition-all cursor-pointer"
+                        >
+                          <Layers className="w-3.5 h-3.5 text-[#faad13]" />
+                          <span>{cardStyleMeta.label}</span>
+                          <span className="text-[10px] text-slate-400 font-normal">({cardStyleMeta.minWidth}–{cardStyleMeta.maxWidth}px)</span>
+                          <span className="text-amber-500 font-bold ml-1 hover:underline">Change Style ▾</span>
+                        </button>
+                      </div>
+                    </div>
+
                     <div>
                       <p className="mb-2 text-[11px] font-extrabold uppercase text-text-tertiary">Choose icon</p>
                       <div className="flex flex-wrap gap-1.5">
                         {HOME_SECTION_ICON_NAMES.map((name) => {
                           const ChoiceIcon = HOME_SECTION_ICONS[name];
-                          return <button key={name} type="button" title={name} aria-label={`Use ${name} icon`} onClick={() => updateSection(section.id, { icon: name })} className={cn("flex h-9 w-9 items-center justify-center rounded-md border transition-colors", section.icon === name ? "border-[#faad13] bg-[#faad13] text-slate-950" : "border-border-default text-text-secondary hover:border-[#faad13]")}><ChoiceIcon className="h-4 w-4" /></button>;
+                          return <button key={name} type="button" title={name} aria-label={`Use ${name} icon`} onClick={() => updateSection(section.id, { icon: name })} className={cn("flex h-8 w-8 items-center justify-center rounded-lg border transition-colors", section.icon === name ? "border-[#faad13] bg-[#faad13] text-slate-950" : "border-border-default text-text-secondary hover:border-[#faad13]")}><ChoiceIcon className="h-3.5 w-3.5" /></button>;
                         })}
                       </div>
                     </div>
@@ -239,15 +268,43 @@ export default function HomepageShelvesAdminPage() {
                 {section.items.length === 0 ? (
                   <button type="button" onClick={() => setPickerSectionId(section.id)} className="w-full rounded-lg border border-dashed border-slate-300 py-8 text-sm font-bold text-text-tertiary hover:border-[#faad13] hover:text-text-primary">Choose properties or projects</button>
                 ) : (
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                    {section.items.map((item) => {
-                      const listing = candidateMap.get(`${item.type}:${item.id}`);
-                      return <div key={`${item.type}:${item.id}`} className="flex min-w-0 items-center gap-3 rounded-lg border border-border-default p-2.5">
-                        <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">{listing?.image && <Image src={listing.image} alt="" fill unoptimized className="object-cover" sizes="64px" />}</div>
-                        <div className="min-w-0 flex-1"><p className="truncate text-xs font-extrabold text-text-primary">{listing?.title || "Unavailable listing"}</p><p className="mt-0.5 text-[10px] uppercase text-text-tertiary">{item.type}</p></div>
-                        <button type="button" aria-label={`Remove ${listing?.title || "listing"}`} onClick={() => toggleItem(section.id, item)} className="text-text-tertiary hover:text-red-600"><X className="h-4 w-4" /></button>
-                      </div>;
-                    })}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                      {section.items.map((item) => {
+                        const listing = candidateMap.get(`${item.type}:${item.id}`);
+                        return <div key={`${item.type}:${item.id}`} className="flex min-w-0 items-center gap-3 rounded-lg border border-border-default p-2.5 bg-white dark:bg-slate-900">
+                          <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">{listing?.image && <Image src={listing.image} alt="" fill unoptimized className="object-cover" sizes="64px" />}</div>
+                          <div className="min-w-0 flex-1"><p className="truncate text-xs font-extrabold text-text-primary">{listing?.title || "Unavailable listing"}</p><p className="mt-0.5 text-[10px] uppercase text-text-tertiary">{item.type}</p></div>
+                          <button type="button" aria-label={`Remove ${listing?.title || "listing"}`} onClick={() => toggleItem(section.id, item)} className="text-text-tertiary hover:text-red-600"><X className="h-4 w-4" /></button>
+                        </div>;
+                      })}
+                    </div>
+
+                    {/* LIVE SHELF PREVIEW */}
+                    <div className="pt-3 border-t border-dashed border-border-default">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-[#faad13]" /> Live Shelf Preview ({cardStyleMeta.label})
+                        </span>
+                        <span className="text-[10px] text-slate-400">Preview with actual card design</span>
+                      </div>
+                      <div className="w-full overflow-x-auto pb-3 pt-1 flex gap-4 no-scrollbar">
+                        {section.items.map((item, idx) => {
+                          const prop = properties.find((p) => p.id === item.id);
+                          const proj = projects.find((p) => p.id === item.id);
+                          if (!prop && !proj) return null;
+                          const mixedItem: MixedItem = prop
+                            ? { ...prop, itemType: "property" }
+                            : { ...proj!, itemType: "project" };
+
+                          return (
+                            <div key={`${item.type}:${item.id}-preview`} className="shrink-0 w-[280px] sm:w-[320px] pointer-events-none">
+                              <ShelfCard item={mixedItem} cardStyle={currentStyleId} index={idx} />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -281,6 +338,23 @@ export default function HomepageShelvesAdminPage() {
           </div>
         </div>
       )}
+
+      {stylePickerSectionId && (
+        <CardStyleGalleryModal
+          isOpen={Boolean(stylePickerSectionId)}
+          shelfTitle={sections.find((s) => s.id === stylePickerSectionId)?.title || "Shelf"}
+          currentStyle={sections.find((s) => s.id === stylePickerSectionId)?.cardStyle || DEFAULT_CARD_STYLE}
+          onClose={() => setStylePickerSectionId(null)}
+          onSelectStyle={(styleId) => {
+            if (stylePickerSectionId) {
+              updateSection(stylePickerSectionId, { cardStyle: styleId });
+              const label = HOME_CARD_STYLES.find((s) => s.id === styleId)?.label;
+              toast.success(`Card style set to "${label}"`);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
+

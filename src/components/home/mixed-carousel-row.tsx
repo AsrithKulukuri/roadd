@@ -4,8 +4,10 @@ import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Sparkles, type LucideIcon } from "lucide-react";
 import { PropertyCard } from "@/components/property/property-card";
 import { ProjectCard } from "@/components/project/project-card";
+import { ShelfCard } from "@/components/home/shelves/shelf-card";
 import type { Property } from "@/types/property";
 import type { Project } from "@/types/project";
+import type { HomeCardStyleId } from "@/types/home-section";
 import { cn } from "@/lib/utils";
 
 export type MixedItem = 
@@ -19,6 +21,36 @@ interface MixedCarouselRowProps {
   autoSlide?: boolean;
   hideHeader?: boolean;
   cardVariant?: "default" | "compact" | "horizontal" | "category-style";
+  cardStyle?: HomeCardStyleId;
+}
+
+function getStyleWidthClass(cardStyle?: HomeCardStyleId, legacyVariant?: string) {
+  if (cardStyle) {
+    switch (cardStyle) {
+      case "compact-marketplace":
+        return "w-[300px] sm:w-[360px] md:w-[410px]";
+      case "tall-portrait":
+        return "w-[260px] sm:w-[290px] md:w-[320px]";
+      case "luxury-banner":
+        return "w-[88vw] sm:w-[620px] lg:w-[840px]";
+      case "split-feature":
+        return "w-[88vw] sm:w-[560px] lg:w-[700px]";
+      case "bottom-floating":
+        return "w-[290px] sm:w-[400px] md:w-[480px]";
+      case "modern-villa":
+        return "w-[280px] sm:w-[390px] md:w-[460px]";
+      case "construction-progress":
+        return "w-[260px] sm:w-[300px] md:w-[330px]";
+      case "dark-editorial":
+        return "w-[88vw] sm:w-[480px] lg:w-[580px]";
+      default:
+        return "w-[300px] sm:w-[360px] md:w-[410px]";
+    }
+  }
+
+  if (legacyVariant === "compact") return "w-[170px] sm:w-[220px] md:w-[260px]";
+  if (legacyVariant === "category-style") return "w-[160px] sm:w-[220px]";
+  return "w-[220px] sm:w-[280px] md:w-[320px]";
 }
 
 export function MixedCarouselRow({
@@ -28,6 +60,7 @@ export function MixedCarouselRow({
   autoSlide = false,
   hideHeader = false,
   cardVariant = "default",
+  cardStyle,
 }: MixedCarouselRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -211,7 +244,9 @@ export function MixedCarouselRow({
             onMouseLeave={() => setIsHovered(false)}
             className={cn(
               "flex overflow-x-auto snap-x snap-mandatory no-scrollbar",
-              cardVariant === "compact"
+              cardStyle
+                ? "gap-3 sm:gap-5 md:gap-6 pb-4 sm:pb-6"
+                : cardVariant === "compact"
                 ? "gap-2.5 sm:gap-4 md:gap-5 pb-1 sm:pb-3"
                 : "gap-4 sm:gap-6 pb-4 sm:pb-6"
             )}
@@ -222,14 +257,16 @@ export function MixedCarouselRow({
                   key={`${item.id}-loop-${loopIndex}-${itemIndex}`} 
                   className={cn(
                     "shrink-0 snap-start",
-                    cardVariant === "compact"
-                      ? "w-[170px] sm:w-[220px] md:w-[260px]"
-                      : cardVariant === "category-style" 
-                      ? "w-[160px] sm:w-[220px]" 
-                      : "w-[220px] sm:w-[280px] md:w-[320px]"
+                    getStyleWidthClass(cardStyle, cardVariant)
                   )}
                 >
-                  {item.itemType === 'property' ? (
+                  {cardStyle ? (
+                    <ShelfCard
+                      item={item}
+                      cardStyle={cardStyle}
+                      index={itemIndex}
+                    />
+                  ) : item.itemType === 'property' ? (
                     <PropertyCard
                       property={item}
                       index={itemIndex}
