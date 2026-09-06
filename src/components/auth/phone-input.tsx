@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -39,7 +39,15 @@ export function PhoneInput({ onSubmit, isLoading, initialValue = "", error }: Ph
   const displayError = localError || error;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Project Privacy Notice Banner */}
+      <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5 text-left shadow-2xs">
+        <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 stroke-[2.5]" />
+        <p className="text-xs text-amber-950 font-medium leading-relaxed">
+          <strong className="font-black text-amber-900">Project Privacy Notice:</strong> By viewing project details, your name and phone may be shared with the builder for follow-up.
+        </p>
+      </div>
+
       <div className="space-y-2 text-left">
         <label htmlFor="whatsapp-phone-input" className="text-xs font-black uppercase tracking-wider text-slate-950 ml-1">
           WhatsApp Mobile Number

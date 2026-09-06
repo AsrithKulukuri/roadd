@@ -18,8 +18,8 @@ interface CompleteProfileStepProps {
 const ROLES = [
   {
     id: "buyer",
-    title: "Buyer / Tenant",
-    desc: "Looking to buy, rent, or invest in properties",
+    title: "Buyer",
+    desc: "Looking to buy or invest in properties",
     icon: Home,
   },
   {
