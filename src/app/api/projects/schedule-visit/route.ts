@@ -87,10 +87,10 @@ export async function POST(req: NextRequest) {
       console.warn("[SCHEDULE VISIT] Failed to send WhatsApp to builder:", bldErr);
     }
 
-    // 3. Save to Supabase if table exists
+    // 3. Save to Supabase (primary project_site_visits + backup project_leads)
     if (supabaseAdmin) {
       try {
-        await supabaseAdmin.from("project_site_visits").insert({
+        const { error: insertErr } = await supabaseAdmin.from("project_site_visits").insert({
           id: scheduleId,
           project_id: projectId || null,
           project_slug: projectSlug || null,
@@ -110,8 +110,30 @@ export async function POST(req: NextRequest) {
           notes: notes || null,
           created_at: createdAt,
         });
+
+        if (insertErr) {
+          console.warn("[SCHEDULE VISIT] Supabase project_site_visits insert warning:", insertErr.message || insertErr);
+        }
       } catch (dbErr) {
         console.warn("[SCHEDULE VISIT] Supabase insert skipped or table not present:", dbErr);
+      }
+
+      // Dual-record in project_leads as reliable failover so visits are never lost
+      try {
+        await supabaseAdmin.from("project_leads").insert({
+          project_id: projectId || null,
+          project_slug: projectSlug || null,
+          project_name: projectName,
+          builder_phone: cleanBuilderPhone || builderPhone || "site-team",
+          builder_whatsapp: cleanBuilderPhone || builderPhone || null,
+          viewer_name: customerName,
+          viewer_phone: cleanCustomerPhone || customerPhone,
+          viewer_email: customerEmail || null,
+          delivery_status: `scheduled_visit:${visitDate}:${timeSlot}`,
+          created_at: createdAt,
+        });
+      } catch (leadErr) {
+        console.warn("[SCHEDULE VISIT] project_leads fallback record skipped:", leadErr);
       }
     }
 

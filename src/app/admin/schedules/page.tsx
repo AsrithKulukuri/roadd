@@ -23,6 +23,7 @@ import {
   Send,
   Bell,
   Sparkles,
+  Copy,
 } from "lucide-react";
 import { useSchedulesStore, SiteVisitSchedule } from "@/stores/schedules-store";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
@@ -32,6 +33,8 @@ export default function AdminSchedulesPage() {
   const {
     schedules,
     isLoading,
+    tableMissing,
+    sqlFix,
     fetchSchedules,
     updateStatus,
     deleteSchedule,
@@ -166,6 +169,38 @@ export default function AdminSchedulesPage() {
           <span>Refresh</span>
         </button>
       </div>
+
+      {/* Missing Database Table Diagnostic Banner */}
+      {tableMissing && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 sm:p-5 text-neutral-900 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-bold text-amber-950">
+                  Supabase Table <code className="font-mono bg-amber-500/20 px-1.5 py-0.5 rounded text-xs text-amber-900">project_site_visits</code> Not Found
+                </h4>
+                <p className="text-xs text-neutral-600 mt-1">
+                  To ensure site visits from public project pages are permanently stored and visible on all devices, run the setup SQL in your Supabase SQL Editor.
+                </p>
+              </div>
+            </div>
+            {sqlFix && (
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(sqlFix);
+                  toast.success("SQL setup script copied! Paste and run in Supabase SQL Editor");
+                }}
+                className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>Copy SQL Setup Script</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

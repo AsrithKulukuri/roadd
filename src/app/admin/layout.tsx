@@ -60,6 +60,7 @@ export default function AdminLayout({
 
   useEffect(() => {
     setMounted(true);
+    useSchedulesStore.getState().fetchSchedules();
   }, []);
 
   const signOut = async () => {

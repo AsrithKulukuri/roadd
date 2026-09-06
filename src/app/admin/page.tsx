@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useContentStore, TrendingLocation, HomeCategory, ApRegion } from "@/stores/content-store";
 import { useProjectsStore } from "@/stores/projects-store";
+import { useSchedulesStore } from "@/stores/schedules-store";
 import { getRefId, getPropertyRefId, findItemByRefId } from "@/lib/ref-id";
 import { formatPriceCompact, formatINR } from "@/lib/utils";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ import {
   Compass,
   Zap,
   FolderOpen,
+  Calendar,
 } from "lucide-react";
 import { AnalyticsCharts } from "@/components/admin/analytics-charts";
 import { AiWriter } from "@/components/admin/ai-writer";
@@ -55,6 +57,7 @@ export default function AdminDashboardPage() {
   } = usePropertiesStore();
 
   const { projects } = useProjectsStore();
+  const { schedules, getUpcomingCount } = useSchedulesStore();
 
   const {
     trendingLocations,
@@ -126,6 +129,8 @@ export default function AdminDashboardPage() {
     .reduce((acc, curr) => acc + curr.price, 0);
   const totalProjects = projects.length;
   const publishedProjects = projects.filter((p) => p.isPublished).length;
+  const totalSchedules = schedules.length;
+  const upcomingSchedules = getUpcomingCount();
 
   // Live Reference ID Search Tester
   const liveRefMatch = useMemo(() => {
@@ -359,7 +364,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Projects quick stat */}
-        <Link href="/admin/projects" className="col-span-2 lg:col-span-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-3.5 sm:p-5 shadow-sm flex items-center justify-between gap-4 hover:from-amber-500/20 hover:to-orange-500/20 transition-all">
+        <Link href="/admin/projects" className="col-span-2 lg:col-span-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-3.5 sm:p-5 shadow-sm flex items-center justify-between gap-4 hover:from-amber-500/20 hover:to-orange-500/20 transition-all">
           <div className="space-y-1">
             <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Builder Projects</span>
             <div className="flex items-center gap-3">
@@ -375,8 +380,30 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <FolderOpen className="w-8 h-8 text-amber-500" />
+            <FolderOpen className="w-7 h-7 text-amber-500" />
             <ArrowRight className="w-4 h-4 text-amber-500" />
+          </div>
+        </Link>
+
+        {/* Site Visit Schedules quick stat */}
+        <Link href="/admin/schedules" className="col-span-2 lg:col-span-2 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/20 rounded-2xl p-3.5 sm:p-5 shadow-sm flex items-center justify-between gap-4 hover:from-blue-500/20 hover:to-indigo-500/20 transition-all">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">Site Visit Schedules</span>
+            <div className="flex items-center gap-3">
+              <div>
+                <span className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading">{totalSchedules}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 ml-1.5">booked</span>
+              </div>
+              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
+              <div>
+                <span className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 font-heading">{upcomingSchedules}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 ml-1.5">upcoming</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Calendar className="w-7 h-7 text-blue-500" />
+            <ArrowRight className="w-4 h-4 text-blue-500" />
           </div>
         </Link>
       </div>

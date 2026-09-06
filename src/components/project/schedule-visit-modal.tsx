@@ -167,6 +167,7 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
 
       // 2. Add to client Zustand store
       const scheduleRecord = await addSchedule({
+        id: data?.schedule?.id,
         projectId: payload.projectId,
         projectSlug: payload.projectSlug,
         projectName: payload.projectName,
