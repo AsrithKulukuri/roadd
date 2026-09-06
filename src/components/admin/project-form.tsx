@@ -219,6 +219,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     initialData?.displayCategory ?? (initialData?.isFeatured ? "featured" : "none")
   );
   const [isFeatured, setIsFeatured] = useState<boolean>(initialData?.isFeatured ?? false);
+  const [isSoldOut, setIsSoldOut] = useState<boolean>(initialData?.isSoldOut ?? false);
   const [constructionUpdates, setConstructionUpdates] = useState<ConstructionUpdate[]>(initialData?.constructionUpdates ?? []);
 
   // ─── Upload handlers ─────────────────────────────────────────────────────────
@@ -504,6 +505,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       isFeatured: displayCategory === "featured" || isFeatured,
       displayCategory,
       isPublished: publish,
+      isSoldOut,
       viewCount: initialData?.viewCount ?? 0,
       createdAt: initialData?.createdAt ?? new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -827,6 +829,31 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Sold Out Option */}
+                  <div 
+                    className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                      isSoldOut ? "bg-rose-500/15 border-rose-500 text-white" : "bg-slate-950 border-slate-800 text-slate-300"
+                    }`}
+                    onClick={() => setIsSoldOut(!isSoldOut)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={isSoldOut}
+                        onChange={(e) => setIsSoldOut(e.target.checked)}
+                        className="w-5 h-5 accent-rose-500 rounded cursor-pointer"
+                        id="check-sold-out"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <label htmlFor="check-sold-out" className="text-sm font-bold text-white cursor-pointer select-none">
+                        🏷️ Mark as Sold Out
+                      </label>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2 pl-8">
+                      Marks this project as completely sold out with a prominent badge across the website and admin dashboard.
+                    </p>
+                  </div>
+
                   {/* CRDA Venture Option */}
                   <div 
                     className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${

@@ -101,7 +101,7 @@ export function HomeCategories() {
     return p;
   });
 
-  const activeProjects = normalizedProjects.filter((p) => p.isPublished);
+  const activeProjects = normalizedProjects.filter((p) => p.isPublished && !p.isSoldOut);
 
   const recommendedProjs = activeProjects.filter((p) => p.displayCategory === 'recommended');
   const featuredProjs = activeProjects.filter((p) => p.displayCategory === 'featured');

@@ -648,6 +648,11 @@ export function ProjectDetailView({
             
             {/* Top-Left: Status Badge */}
             <div className="absolute top-3 left-3 flex items-center gap-2 z-10 pointer-events-none">
+              {project.isSoldOut && (
+                <span className="bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full border border-rose-700 shadow-md uppercase tracking-wider">
+                  Sold Out
+                </span>
+              )}
               <span className="bg-slate-950 backdrop-blur-md text-white font-extrabold text-[11px] px-3 py-1 rounded-full border border-[#faad13] shadow-md">
                 {STATUS_LABELS[project.constructionStatus] || "Under Construction"}
               </span>
@@ -695,6 +700,11 @@ export function ProjectDetailView({
               
               {/* Badge top-left: Status */}
               <div className="absolute top-3.5 left-3.5 flex items-center gap-2 z-10 pointer-events-none">
+                {project.isSoldOut && (
+                  <span className="bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full border border-rose-700 shadow-md uppercase tracking-wider">
+                    Sold Out
+                  </span>
+                )}
                 <span className="bg-slate-950 backdrop-blur-md text-white font-extrabold text-[11px] px-3 py-1 rounded-full border border-[#faad13] shadow-md">
                   {STATUS_LABELS[project.constructionStatus] || "Under Construction"}
                 </span>
@@ -865,6 +875,11 @@ export function ProjectDetailView({
                         <h1 className="text-xl sm:text-2xl font-black font-heading text-text-primary tracking-tight">
                           {project.name}
                         </h1>
+                        {project.isSoldOut && (
+                          <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-black bg-rose-600 text-white shadow-xs uppercase tracking-wider">
+                            Sold Out
+                          </span>
+                        )}
                         {project.reraApproved && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-xs">
                             <CheckCircle2 className="w-3 h-3 text-emerald-400 dark:text-emerald-600" /> RERA Approved

@@ -176,8 +176,13 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-              {/* Monochromatic White Badge */}
-              <div className="absolute top-1.5 left-1.5">
+              {/* Monochromatic White Badge & Sold Out */}
+              <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
+                {project.isSoldOut && (
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-600 text-white shadow-sm border border-rose-700 uppercase tracking-wider">
+                    Sold Out
+                  </span>
+                )}
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md">
                   {TC.label}
                 </span>
@@ -226,7 +231,12 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
+        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 flex items-center gap-1">
+          {project.isSoldOut && (
+            <span className="bg-rose-600 text-white shadow-md font-extrabold text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider border border-rose-700">
+              Sold Out
+            </span>
+          )}
           <span className="bg-white text-slate-900 shadow-md border border-slate-200/80 font-extrabold text-[10px] sm:text-xs px-2.5 py-1 rounded-full">
             {priceLabel}
           </span>
@@ -263,12 +273,19 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
           {/* Top Badges (Max 2 badges + '+N' chip, with dedicated margin so it never collides with actions) */}
           {(() => {
             const badges: React.ReactNode[] = [];
+            if (project.isSoldOut) {
+              badges.push(
+                <span key="soldout" className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-600 text-white shadow-md border border-rose-700 tracking-wide uppercase">
+                  Sold Out
+                </span>
+              );
+            }
             badges.push(
               <span key="type" className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight truncate max-w-[120px]">
                 {TC.label}
               </span>
             );
-            const visibleBadges = badges.slice(0, 1);
+            const visibleBadges = badges.slice(0, 2);
 
             return (
               <div className="absolute top-2.5 left-2.5 max-w-[calc(100%-74px)] flex items-center gap-1 overflow-hidden z-10">

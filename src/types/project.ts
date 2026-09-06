@@ -150,6 +150,7 @@ export interface Project {
   isFeatured: boolean;
   displayCategory?: "featured" | "recommended" | "budget_friendly" | "none";
   isPublished: boolean;
+  isSoldOut?: boolean;
   viewCount?: number;
 
   createdAt: string;

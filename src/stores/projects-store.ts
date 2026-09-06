@@ -79,6 +79,23 @@ export function toSupabaseProject(proj: Partial<Project>): Record<string, unknow
   if (!p.createdAt) p.createdAt = new Date().toISOString();
   if (!p.updatedAt) p.updatedAt = new Date().toISOString();
 
+  // Persist isSoldOut state safely across Supabase JSONB fields
+  if (p.isSoldOut !== undefined) {
+    const isSoldOutVal = Boolean(p.isSoldOut);
+    if (p.location && typeof p.location === 'object') {
+      p.location = { ...(p.location as Record<string, unknown>), isSoldOut: isSoldOutVal };
+    }
+    const currentHighlights = Array.isArray(p.highlights) ? [...p.highlights] : [];
+    if (isSoldOutVal) {
+      if (!currentHighlights.includes("__SOLD_OUT__")) {
+        currentHighlights.push("__SOLD_OUT__");
+      }
+    } else {
+      const filtered = currentHighlights.filter((h) => h !== "__SOLD_OUT__");
+      p.highlights = filtered;
+    }
+  }
+
   // Strip keys that are not valid columns in Supabase
   const cleaned: Record<string, unknown> = {};
   for (const key of Object.keys(p)) {
@@ -107,6 +124,18 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
   const rawMasterPlan = (typeof p.masterPlanUrl === 'string' ? p.masterPlanUrl : (typeof p.master_plan_url === 'string' ? p.master_plan_url : masterPlanFromImages));
   const masterPlanUrl = rawMasterPlan && !rawMasterPlan.startsWith('blob:') ? rawMasterPlan : undefined;
 
+  const rawLocation = (p.location && typeof p.location === 'object' ? p.location as Record<string, unknown> : {}) as Record<string, unknown>;
+  const isSoldOut = Boolean(
+    p.isSoldOut ?? 
+    p.is_sold_out ?? 
+    rawLocation?.isSoldOut ?? 
+    (Array.isArray(p.highlights) && p.highlights.includes("__SOLD_OUT__"))
+  );
+
+  const cleanHighlights = Array.isArray(p.highlights)
+    ? (p.highlights as string[]).filter((h) => typeof h === 'string' && h !== '__SOLD_OUT__')
+    : [];
+
   const cleanObj = { ...p };
   delete cleanObj.builderPhone;
   delete cleanObj.builderWhatsapp;
@@ -124,6 +153,8 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
     coverImage,
     videoUrl,
     masterPlanUrl,
+    isSoldOut,
+    highlights: cleanHighlights,
     constructionStatus: (p.constructionStatus as "under-construction" | "ready-to-move" | "new-launch" | undefined) || 'under-construction',
     builderName: (typeof p.builderName === 'string' ? p.builderName : (builderObj?.name ?? 'Independent Developer')),
     builderLogoUrl: (typeof p.builderLogoUrl === 'string' ? p.builderLogoUrl : (builderObj?.logoUrl ?? undefined)),
@@ -145,6 +176,7 @@ interface ProjectsState {
   toggleFeatured: (id: string) => Promise<boolean>;
   updateDisplayCategory: (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => Promise<boolean>;
   togglePublished: (id: string) => Promise<boolean>;
+  toggleSoldOut: (id: string) => Promise<boolean>;
 }
 
 let activeProjectsRequestId = 0;
@@ -417,6 +449,44 @@ export const useProjectsStore = create<ProjectsState>()(
             ),
           }));
           toast.error(error instanceof Error ? error.message : "Publish status was not saved.");
+          return false;
+        }
+      },
+
+      // ─── Toggle Sold Out ──────────────────────────────────────────────────
+      toggleSoldOut: async (id: string) => {
+        const project = get().projects.find((item) => item.id === id);
+        if (!project) return false;
+        const nextValue = !project.isSoldOut;
+
+        set((state) => ({
+          projects: state.projects.map((item) =>
+            item.id === id ? { ...item, isSoldOut: nextValue } : item
+          ),
+        }));
+
+        try {
+          const updatedLocation = {
+            ...(project.location || {}),
+            isSoldOut: nextValue,
+          };
+          const currentHighlights = Array.isArray(project.highlights) ? [...project.highlights] : [];
+          const updatedHighlights = nextValue
+            ? Array.from(new Set([...currentHighlights, "__SOLD_OUT__"]))
+            : currentHighlights.filter((h) => h !== "__SOLD_OUT__");
+
+          await saveProjectMutation(id, {
+            location: updatedLocation,
+            highlights: updatedHighlights,
+          });
+          return true;
+        } catch (error: unknown) {
+          set((state) => ({
+            projects: state.projects.map((item) =>
+              item.id === id ? { ...item, isSoldOut: project.isSoldOut } : item
+            ),
+          }));
+          toast.error(error instanceof Error ? error.message : "Sold out status was not saved.");
           return false;
         }
       },

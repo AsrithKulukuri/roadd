@@ -1026,7 +1026,7 @@ export default function PropertyMap({
   const defaultAllItems = useMemo((): SharedMapItem[] => {
     const propItems = properties.filter((p) => p.showOnMap !== false && p.status !== 'sold');
     const projItems: SharedMapItem[] = projects
-      .filter((p) => p.isPublished !== false && p.location?.latitude && p.location?.longitude)
+      .filter((p) => p.isPublished !== false && !p.isSoldOut && p.location?.latitude && p.location?.longitude)
       .map((p) => ({
         id: p.id,
         slug: p.slug,

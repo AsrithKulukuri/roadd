@@ -350,6 +350,7 @@ export function HeroSection() {
 
     // Always count projects since all tabs (buy, nearme, projects) involve buying
     count += projects.filter((p) => {
+      if (p.isSoldOut || p.isPublished === false) return false;
       if (!p.configurations || p.configurations.length === 0) return false;
       return p.configurations.some((cfg) => {
         const pMin = cfg.priceMin || 0;

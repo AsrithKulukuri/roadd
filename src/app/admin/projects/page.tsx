@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import {
   Plus, Trash2, Edit3, Star, Eye, EyeOff,
   Building2, Home, Landmark, MoreHorizontal,
-  MapPin, CheckCircle2, AlertCircle, Play, Copy, Search
+  MapPin, CheckCircle2, AlertCircle, Play, Copy, Search, PowerOff
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -68,7 +68,7 @@ function ConfirmDeleteModal({
 }
 
 export default function AdminProjectsPage() {
-  const { projects, fetchProjects, deleteProject, toggleFeatured, togglePublished, updateDisplayCategory } = useProjectsStore();
+  const { projects, fetchProjects, deleteProject, toggleFeatured, togglePublished, updateDisplayCategory, toggleSoldOut } = useProjectsStore();
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [whatsAppModalProject, setWhatsAppModalProject] = useState<Project | null>(null);
   const [activityModalProject, setActivityModalProject] = useState<Project | null>(null);
@@ -247,11 +247,25 @@ export default function AdminProjectsPage() {
                             {project.configurations.length} config{project.configurations.length !== 1 ? "s" : ""}
                           </div>
                         </td>
-                        {/* Construction status */}
+                        {/* Construction status & Sold Out */}
                         <td className="px-4 py-4">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${SC.color}`}>
-                            {SC.label}
-                          </span>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const wasSaved = await toggleSoldOut(project.id);
+                              if (wasSaved) {
+                                toast.success(project.isSoldOut ? "Project marked as Active" : "Project marked as Sold Out");
+                              }
+                            }}
+                            className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+                              project.isSoldOut
+                                ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/25"
+                                : `${SC.color} border-transparent hover:opacity-80`
+                            }`}
+                            title="Click to toggle Sold Out status"
+                          >
+                            {project.isSoldOut ? "● Sold Out" : SC.label}
+                          </button>
                         </td>
                         {/* Flags */}
                         <td className="px-4 py-4">
@@ -343,6 +357,22 @@ export default function AdminProjectsPage() {
                                   </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
+                                  className={`cursor-pointer flex items-center gap-2 font-medium ${
+                                    project.isSoldOut
+                                      ? "text-emerald-600 focus:text-emerald-600 focus:bg-emerald-500/10"
+                                      : "text-rose-600 focus:text-rose-600 focus:bg-rose-500/10"
+                                  }`}
+                                  onClick={async () => {
+                                    const wasSaved = await toggleSoldOut(project.id);
+                                    if (wasSaved) {
+                                      toast.success(project.isSoldOut ? "Project marked as Active" : "Project marked as Sold Out");
+                                    }
+                                  }}
+                                >
+                                  <PowerOff className="w-4 h-4" />
+                                  {project.isSoldOut ? "Mark Active" : "Mark Sold Out"}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                   className="text-red-500 focus:text-red-500 flex items-center gap-2"
                                   onClick={() => setDeleteTarget(project)}
                                 >
@@ -410,9 +440,15 @@ export default function AdminProjectsPage() {
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${TC.color}`}>
                             <Icon className="w-2.5 h-2.5" />{TC.label}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${SC.color}`}>
-                            {SC.label}
-                          </span>
+                          {project.isSoldOut ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                              ● Sold Out
+                            </span>
+                          ) : (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${SC.color}`}>
+                              {SC.label}
+                            </span>
+                          )}
                           {project.displayCategory && project.displayCategory !== "none" && (
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                               project.displayCategory === "featured"
@@ -449,6 +485,21 @@ export default function AdminProjectsPage() {
                     <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
                       <span className="text-amber-primary font-bold text-sm">{getPriceRange(project)}</span>
                       <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const wasSaved = await toggleSoldOut(project.id);
+                            if (wasSaved) toast.success(project.isSoldOut ? "Project marked as Active" : "Project marked as Sold Out");
+                          }}
+                          title={project.isSoldOut ? "Mark Active" : "Mark Sold Out"}
+                          className={`px-2 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer border ${
+                            project.isSoldOut
+                              ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
+                              : "bg-bg-primary text-text-tertiary border-border-default hover:text-text-primary"
+                          }`}
+                        >
+                          {project.isSoldOut ? "Sold Out" : "Active"}
+                        </button>
                         <button
                           type="button"
                           onClick={() => setActivityModalProject(project)}

@@ -11,7 +11,7 @@ export function FeaturedProjects() {
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
-  const featured = projects.filter((p) => p.isPublished && p.isFeatured).slice(0, 6);
+  const featured = projects.filter((p) => p.isPublished && p.isFeatured && !p.isSoldOut).slice(0, 6);
 
   if (featured.length === 0) return null;
 
