@@ -41,13 +41,13 @@ export function PhoneInput({ onSubmit, isLoading, initialValue = "", error }: Ph
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-2">
-        <label htmlFor="whatsapp-phone-input" className="text-xs font-semibold uppercase tracking-wider text-text-secondary ml-1">
+        <label htmlFor="whatsapp-phone-input" className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 ml-1">
           WhatsApp Mobile Number
         </label>
         
         <div className="relative flex items-center">
           {/* India Flag & Prefix Badge */}
-          <div className="absolute left-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-bg-primary/80 border border-border-default/60 text-sm font-bold text-text-primary z-10 select-none">
+          <div className="absolute left-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-sm font-black text-slate-900 dark:text-white z-10 select-none shadow-2xs">
             <span>🇮🇳</span>
             <span>+91</span>
           </div>
@@ -64,7 +64,7 @@ export function PhoneInput({ onSubmit, isLoading, initialValue = "", error }: Ph
             placeholder="98765 43210"
             value={rawPhone}
             onChange={(e) => handlePhoneChange(e.target.value)}
-            className="h-13 bg-bg-primary/50 border-border-default/60 pl-24 pr-4 rounded-xl text-base font-bold tracking-wide focus:border-amber-primary focus:ring-1 focus:ring-amber-primary/50"
+            className="h-13 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-950 dark:text-white placeholder:text-slate-400 pl-24 pr-4 rounded-xl text-base font-bold tracking-wide focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 shadow-xs"
           />
         </div>
 

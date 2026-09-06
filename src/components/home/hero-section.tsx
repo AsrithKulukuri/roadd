@@ -53,10 +53,12 @@ const HERO_BUDGET_MIN_OPTS = [
   { label: "₹ 2 Cr", value: 20000000 },
   { label: "₹ 2.5 Cr", value: 25000000 },
   { label: "₹ 3 Cr", value: 30000000 },
+  { label: "₹ 5 Cr", value: 50000000 },
+  { label: "₹ 10 Cr", value: 100000000 },
 ];
 
 const HERO_BUDGET_MAX_OPTS = [
-  { label: "Any Price", value: 30000000 },
+  { label: "Any Price", value: 500000000 },
   { label: "₹ 20 L", value: 2000000 },
   { label: "₹ 30 L", value: 3000000 },
   { label: "₹ 40 L", value: 4000000 },
@@ -67,6 +69,8 @@ const HERO_BUDGET_MAX_OPTS = [
   { label: "₹ 2 Cr", value: 20000000 },
   { label: "₹ 2.5 Cr", value: 25000000 },
   { label: "₹ 3 Cr", value: 30000000 },
+  { label: "₹ 5 Cr", value: 50000000 },
+  { label: "₹ 10 Cr", value: 100000000 },
 ];
 
 // Search Tabs: Buy, Projects, New Launches and Near me
@@ -145,7 +149,7 @@ export function HeroSection() {
   const [isFocused, setIsFocused] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
-  const [heroBudget, setHeroBudget] = useState<[number, number]>([1000000, 30000000]);
+  const [heroBudget, setHeroBudget] = useState<[number, number]>([1000000, 500000000]);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -306,9 +310,9 @@ export function HeroSection() {
     } else {
       params.set("focus", "search");
     }
-    const isAnyMax = b[1] >= 30000000;
+    const isAnyMax = b[1] >= 500000000;
     if (b[0] > 1000000 || !isAnyMax) {
-      params.set("budget", `${b[0]},${isAnyMax ? 100000000 : b[1]}`);
+      params.set("budget", `${b[0]},${isAnyMax ? 1000000000 : b[1]}`);
     }
 
     router.push(`/search?${params.toString()}`);
@@ -339,7 +343,7 @@ export function HeroSection() {
 
   const matchingCount = useMemo(() => {
     let count = 0;
-    const isAnyMax = heroBudget[1] >= 30000000;
+    const isAnyMax = heroBudget[1] >= 500000000;
     if (activeTab !== "projects") {
       count = properties.filter((p) => {
         if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
@@ -362,7 +366,7 @@ export function HeroSection() {
   }, [properties, projects, heroBudget, activeTab]);
 
   /** true whenever the user has moved either slider handle away from the full range */
-  const budgetActive = heroBudget[0] > 1000000 || heroBudget[1] < 30000000;
+  const budgetActive = heroBudget[0] > 1000000 || heroBudget[1] < 500000000;
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -395,7 +399,7 @@ export function HeroSection() {
     const counts: Record<string, number> = {};
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const isAnyMax = heroBudget[1] >= 30000000;
+    const isAnyMax = heroBudget[1] >= 500000000;
 
     for (const cat of homeCategories) {
       const types = CATEGORY_TYPE_MAP[cat.id];
@@ -1525,6 +1529,7 @@ export function HeroSection() {
                     placeholder="Any Price"
                     align="right"
                     isMax
+                    maxCap={500000000}
                     prefix="Max"
                   />
                 </div>
@@ -1532,10 +1537,10 @@ export function HeroSection() {
 
               {/* 3. Right: Reset & Apply CTA */}
               <div className="flex items-center gap-2 shrink-0">
-                {(heroBudget[0] !== 1000000 || heroBudget[1] !== 30000000) && (
+                {(heroBudget[0] !== 1000000 || heroBudget[1] !== 500000000) && (
                   <button
                     type="button"
-                    onClick={() => setHeroBudget([1000000, 30000000])}
+                    onClick={() => setHeroBudget([1000000, 500000000])}
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-slate-800 transition-colors cursor-pointer px-2.5 py-1.5 rounded-lg hover:bg-slate-100 shrink-0"
                     title="Reset budget to default"
                   >
@@ -1560,8 +1565,8 @@ export function HeroSection() {
 
             {/* Mobile View (< 640px): Clean Stacked Card */}
             <div className="sm:hidden space-y-2.5">
-              {/* Header row on mobile: Budget badge + Reset button */}
-              <div className="flex items-center justify-between">
+              {/* Header row on mobile: Centered Budget badge + Absolute Reset button */}
+              <div className="relative flex items-center justify-center py-0.5">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
                     <IndianRupee className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -1571,11 +1576,11 @@ export function HeroSection() {
                   </span>
                 </div>
 
-                {(heroBudget[0] !== 1000000 || heroBudget[1] !== 30000000) && (
+                {(heroBudget[0] !== 1000000 || heroBudget[1] !== 500000000) && (
                   <button
                     type="button"
-                    onClick={() => setHeroBudget([1000000, 30000000])}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-slate-800 transition-colors cursor-pointer px-1.5 py-0.5 rounded-md hover:bg-slate-100"
+                    onClick={() => setHeroBudget([1000000, 500000000])}
+                    className="absolute right-0 inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-slate-800 transition-colors cursor-pointer px-1.5 py-0.5 rounded-md hover:bg-slate-100"
                   >
                     <RotateCcw className="w-3 h-3 text-amber-500" />
                     <span>Reset</span>
@@ -1604,6 +1609,7 @@ export function HeroSection() {
                   placeholder="Any Price"
                   align="right"
                   isMax
+                  maxCap={500000000}
                   prefix="Max"
                 />
               </div>
@@ -1688,6 +1694,7 @@ export function HeroSection() {
           <div className="sm:hidden pt-1 pb-4">
             <button
               type="button"
+              suppressHydrationWarning
               onClick={() => setShowAllCategoriesMobile(!showAllCategoriesMobile)}
               className="w-full py-3 px-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-400 text-slate-900 dark:text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-98 cursor-pointer"
             >

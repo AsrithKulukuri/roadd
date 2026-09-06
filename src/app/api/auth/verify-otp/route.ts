@@ -210,12 +210,12 @@ export async function POST(request: Request) {
     // 7. Indexed User Lookup
     let userPayload: { id: string; phone: string; name: string; email: string; role: string } | null = null;
     let userId: string | null = null;
-    let existingProfile: { id?: string; full_name?: string; email?: string; role?: string; phone?: string } | null = null;
+    let existingProfile: { id?: string; full_name?: string; email?: string; role?: string; phone?: string; is_profile_complete?: boolean } | null = null;
 
     try {
       const { data: profile } = await supabaseAdmin
         .from("profiles")
-        .select("id, full_name, email, role, phone")
+        .select("id, full_name, email, role, phone, is_profile_complete")
         .or(`phone.eq.${cleanPhone},phone.eq.${cleanPhone.replace(/\D/g, "")}`)
         .maybeSingle();
 
@@ -257,7 +257,7 @@ export async function POST(request: Request) {
     const isInternalEmail = rawEmail.endsWith("@road.internal");
     const cleanEmail = isInternalEmail ? "" : rawEmail;
     const userRole = existingProfile?.role || "buyer";
-    const isProfileComplete = Boolean(existingName.length >= 2 && cleanEmail && cleanEmail.includes("@"));
+    const isProfileComplete = Boolean(existingProfile?.is_profile_complete || existingName.length >= 2);
 
     userPayload = {
       id: userId,

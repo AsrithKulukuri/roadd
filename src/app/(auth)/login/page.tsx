@@ -138,7 +138,7 @@ function LoginForm() {
           <p className="text-text-secondary text-sm text-center mt-2">
             {activeStep === "phone" && "Enter your mobile number to sign in via WhatsApp OTP."}
             {activeStep === "otp" && `Enter 6-digit code sent to ${phone}`}
-            {activeStep === "profile" && "Please enter your name and email to complete your account."}
+            {activeStep === "profile" && "Please enter your name to complete your profile."}
           </p>
         </div>
 

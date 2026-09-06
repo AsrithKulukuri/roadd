@@ -121,8 +121,8 @@ export function OTPInput({
             WhatsApp OTP
           </span>
         </div>
-        <p className="text-xs text-text-secondary pt-1">
-          Enter the 6-digit code sent to <strong className="text-text-primary font-mono">{phone}</strong>
+        <p className="text-xs text-slate-600 dark:text-slate-400 pt-1">
+          Enter the 6-digit code sent to <strong className="text-slate-950 dark:text-white font-mono font-bold">{phone}</strong>
         </p>
       </div>
 
@@ -143,10 +143,10 @@ export function OTPInput({
             onChange={(e) => handleChange(index, e.target.value)}
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
-            className={`w-11 sm:w-12 h-14 text-center text-xl font-extrabold font-mono rounded-xl border bg-bg-primary/80 transition-all focus:outline-none focus:ring-2 focus:ring-amber-primary ${
+            className={`w-11 sm:w-12 h-14 text-center text-xl font-extrabold font-mono rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs ${
               digit
-                ? "border-amber-primary text-text-primary shadow-amber-glow/20 bg-amber-500/10"
-                : "border-border-default/60 text-text-primary focus:border-amber-primary"
+                ? "border-amber-500 text-slate-950 dark:text-white shadow-amber-500/20 bg-amber-500/10"
+                : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-950 dark:text-white focus:border-amber-500"
             }`}
           />
         ))}

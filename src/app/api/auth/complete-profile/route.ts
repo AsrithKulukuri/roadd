@@ -17,9 +17,14 @@ const completeProfileSchema = z.object({
   email: z
     .string()
     .trim()
-    .email("Please enter a valid email address"),
+    .optional()
+    .transform((val) => val || "")
+    .refine((val) => !val || (val.includes("@") && val.includes(".")), {
+      message: "Please enter a valid email address or leave it blank",
+    })
+    .default(""),
   role: z
-    .enum(["buyer", "owner", "agent", "builder"])
+    .enum(["buyer", "agent", "owner", "builder"])
     .optional()
     .default("buyer"),
 });
@@ -59,13 +64,15 @@ export async function POST(request: Request) {
 
     // 2. Upsert profile into public.profiles and user_profiles tables
     try {
+      const cleanEmail = email ? email.toLowerCase() : null;
+
       await Promise.allSettled([
         supabaseAdmin.from("profiles").upsert(
           {
             id: userId,
             phone: cleanPhone,
             full_name: name,
-            email: email,
+            email: cleanEmail,
             role: userRole,
             is_verified: true,
             is_profile_complete: true,
@@ -78,7 +85,7 @@ export async function POST(request: Request) {
             id: userId,
             phone: cleanPhone,
             full_name: name,
-            email: email,
+            email: cleanEmail,
             role: userRole,
             is_verified: true,
             is_profile_complete: true,
@@ -102,7 +109,7 @@ export async function POST(request: Request) {
       id: userId,
       phone: cleanPhone,
       name: name,
-      email: email,
+      email: email ? email.toLowerCase() : "",
       role: userRole,
       isVerified: true,
       isProfileComplete: true,

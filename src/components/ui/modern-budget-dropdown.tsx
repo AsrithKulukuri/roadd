@@ -12,7 +12,7 @@ export interface BudgetOption {
   value: number;
 }
 
-function formatDropdownPrice(val: number, isMax: boolean, placeholder?: string, maxCap = 100000000): string {
+function formatDropdownPrice(val: number, isMax: boolean, placeholder?: string, maxCap = 500000000): string {
   if (isMax && val >= maxCap) return "Any Price";
   if (!isMax && val <= 0) return placeholder || "₹ 0";
   if (val >= 10000000) {
@@ -55,7 +55,7 @@ export function ModernBudgetDropdown({
   triggerClassName,
   align = "left",
   isMax = false,
-  maxCap = 100000000,
+  maxCap = 500000000,
   prefix,
 }: ModernBudgetDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);

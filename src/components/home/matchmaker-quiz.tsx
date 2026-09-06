@@ -156,6 +156,8 @@ export function MatchmakerQuiz() {
                     return (
                       <button
                         key={opt.value}
+                        type="button"
+                        suppressHydrationWarning
                         onClick={() => handleSelect(QUESTIONS[step].id, opt.value)}
                         className={`text-left p-3 sm:p-3.5 rounded-2xl border transition-all duration-200 flex items-center justify-between group cursor-pointer ${
                           isSelected

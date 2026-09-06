@@ -155,7 +155,7 @@ export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthMo
             <p className="text-xs text-slate-400 mt-1 max-w-xs">
               {activeStep === "phone" && "Enter your mobile number to receive a WhatsApp OTP code."}
               {activeStep === "otp" && `Enter 6-digit code sent to ${phone}`}
-              {activeStep === "profile" && "Please enter your name and email to complete your account."}
+              {activeStep === "profile" && "Please enter your name to complete your profile."}
             </p>
           </div>
 
