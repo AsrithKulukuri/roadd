@@ -1474,29 +1474,50 @@ export function HeroSection() {
           document.body
         )}
 
-        {/* ── Budget Filter Card ── */}
-        <div className="relative z-20 w-full max-w-[760px] mx-auto mt-2 sm:mt-3 text-left">
-          <div className="bg-white/95 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-2.5 sm:p-3 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
-              <div className="flex items-center gap-2 sm:gap-2.5 flex-1 min-w-0">
-                <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider shrink-0">
-                  BUDGET:
-                </span>
+        {/* ── Budget Filter Card (Executive Luxury Design) ── */}
+        <div className="relative z-20 w-full max-w-[760px] mx-auto mt-2.5 sm:mt-3.5 text-left">
+          <div className="bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-2.5 sm:p-3 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
 
-                <div className="flex-1 sm:max-w-[150px]">
+            {/* Desktop & Tablet: Balanced Single-Row Capsule */}
+            <div className="hidden sm:flex items-center justify-between gap-3 md:gap-4">
+
+              {/* 1. Left: Brand Icon + Budget Label */}
+              <div className="flex items-center gap-2.5 shrink-0 pl-1">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500/15 to-amber-500/5 border border-amber-500/25 flex items-center justify-center text-amber-600 shadow-2xs">
+                  <IndianRupee className="w-4 h-4 stroke-[2.5]" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none">
+                    Filter By
+                  </span>
+                  <span className="text-xs font-black text-slate-900 leading-tight">
+                    Budget
+                  </span>
+                </div>
+              </div>
+
+              {/* Vertical Divider */}
+              <div className="h-6 w-[1px] bg-slate-200/80 shrink-0" />
+
+              {/* 2. Middle: Symmetrical Expanded Price Range Selectors */}
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <div className="flex-1">
                   <ModernBudgetDropdown
                     value={heroBudget[0]}
                     options={HERO_BUDGET_MIN_OPTS}
                     onChange={(val) => setHeroBudget([val, Math.max(val, heroBudget[1])])}
                     placeholder="Min Price"
+                    prefix="Min"
                   />
                 </div>
 
-                <span className="text-slate-600 font-extrabold text-[10px] uppercase tracking-wider shrink-0">
-                  TO
-                </span>
+                <div className="flex items-center justify-center shrink-0 px-0.5">
+                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                    to
+                  </span>
+                </div>
 
-                <div className="flex-1 sm:max-w-[150px]">
+                <div className="flex-1">
                   <ModernBudgetDropdown
                     value={heroBudget[1]}
                     options={HERO_BUDGET_MAX_OPTS}
@@ -1504,34 +1525,102 @@ export function HeroSection() {
                     placeholder="Any Price"
                     align="right"
                     isMax
+                    prefix="Max"
                   />
+                </div>
+              </div>
+
+              {/* 3. Right: Reset & Apply CTA */}
+              <div className="flex items-center gap-2 shrink-0">
+                {(heroBudget[0] !== 1000000 || heroBudget[1] !== 30000000) && (
+                  <button
+                    type="button"
+                    onClick={() => setHeroBudget([1000000, 30000000])}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-slate-800 transition-colors cursor-pointer px-2.5 py-1.5 rounded-lg hover:bg-slate-100 shrink-0"
+                    title="Reset budget to default"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="hidden lg:inline">Reset</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => handleSearchSubmit()}
+                  className="h-9 sm:h-9.5 px-4.5 bg-slate-950 hover:bg-slate-900 active:scale-95 text-white font-extrabold text-xs sm:text-[13px] rounded-full flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer shrink-0 border border-white/10 group"
+                >
+                  <span>Apply</span>
+                  <span className="px-2 py-0.5 min-w-[20px] h-[20px] rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-2xs group-hover:scale-105 transition-transform">
+                    {matchingCount}
+                  </span>
+                </button>
+              </div>
+
+            </div>
+
+            {/* Mobile View (< 640px): Clean Stacked Card */}
+            <div className="sm:hidden space-y-2.5">
+              {/* Header row on mobile: Budget badge + Reset button */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
+                    <IndianRupee className="w-3.5 h-3.5 stroke-[2.5]" />
+                  </div>
+                  <span className="text-xs font-black text-slate-900">
+                    Filter by Budget
+                  </span>
                 </div>
 
                 {(heroBudget[0] !== 1000000 || heroBudget[1] !== 30000000) && (
                   <button
                     type="button"
                     onClick={() => setHeroBudget([1000000, 30000000])}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-slate-700 transition-colors cursor-pointer px-1.5 py-0.5 rounded-md hover:bg-slate-100 shrink-0"
-                    title="Reset budget to default"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-slate-800 transition-colors cursor-pointer px-1.5 py-0.5 rounded-md hover:bg-slate-100"
                   >
-                    <RotateCcw className="w-3 h-3" />
-                    <span className="hidden sm:inline">Reset</span>
+                    <RotateCcw className="w-3 h-3 text-amber-500" />
+                    <span>Reset</span>
                   </button>
                 )}
               </div>
 
-              {/* Apply Button */}
+              {/* Price Range inputs row */}
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                <ModernBudgetDropdown
+                  value={heroBudget[0]}
+                  options={HERO_BUDGET_MIN_OPTS}
+                  onChange={(val) => setHeroBudget([val, Math.max(val, heroBudget[1])])}
+                  placeholder="Min Price"
+                  prefix="Min"
+                />
+
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                  to
+                </span>
+
+                <ModernBudgetDropdown
+                  value={heroBudget[1]}
+                  options={HERO_BUDGET_MAX_OPTS}
+                  onChange={(val) => setHeroBudget([Math.min(heroBudget[0], val), val])}
+                  placeholder="Any Price"
+                  align="right"
+                  isMax
+                  prefix="Max"
+                />
+              </div>
+
+              {/* Full-width mobile Apply Button */}
               <button
                 type="button"
                 onClick={() => handleSearchSubmit()}
-                className="h-8 sm:h-8.5 px-3.5 sm:px-4.5 bg-slate-950 hover:bg-slate-900 active:scale-95 text-white font-extrabold text-xs rounded-full flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all cursor-pointer shrink-0 border border-white/10 group w-full sm:w-auto"
+                className="w-full h-9 bg-slate-950 hover:bg-slate-900 active:scale-98 text-white font-extrabold text-xs rounded-full flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
               >
-                <span>Apply</span>
-                <span className="px-1.5 py-0.2 min-w-[18px] h-[18px] rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-2xs group-hover:scale-105 transition-transform">
+                <span>Apply Budget Filter</span>
+                <span className="px-2 py-0.5 min-w-[20px] h-[20px] rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-2xs">
                   {matchingCount}
                 </span>
               </button>
             </div>
+
           </div>
         </div>
 

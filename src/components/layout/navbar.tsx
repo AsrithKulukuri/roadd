@@ -347,7 +347,7 @@ export function Navbar() {
                 role="button"
                 tabIndex={0}
                 aria-label="Search properties and projects"
-                className="flex-1 min-w-0 h-9.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 flex items-center px-3 gap-2 transition-all cursor-pointer shadow-xs lg:hidden"
+                className="flex-1 min-w-0 h-9.5 rounded-full bg-slate-900/95 hover:bg-slate-900 border border-slate-700/80 flex items-center pl-3.5 pr-2.5 gap-2 transition-all cursor-pointer shadow-xs lg:hidden overflow-hidden"
               >
                 <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                 <span className="text-xs text-slate-300 font-medium truncate flex-1 select-none">
@@ -361,9 +361,9 @@ export function Navbar() {
                   }}
                   title="Open Filters"
                   aria-label="Open Filters"
-                  className="w-6 h-6 rounded-full bg-slate-800 text-amber-500 flex items-center justify-center shrink-0 border border-slate-700 active:scale-90"
+                  className="w-7 h-7 -mr-1 flex items-center justify-center text-amber-400 hover:text-amber-300 hover:bg-white/10 rounded-full shrink-0 transition-all cursor-pointer active:scale-90"
                 >
-                  <SlidersHorizontal strokeWidth={2.5} className="w-3 h-3 text-amber-500" />
+                  <SlidersHorizontal strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-400" />
                 </button>
               </div>
             )}
