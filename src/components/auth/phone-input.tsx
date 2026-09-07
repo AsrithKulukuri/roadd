@@ -102,7 +102,7 @@ export function PhoneInput({ onSubmit, isLoading, initialValue = "", error }: Ph
       </Button>
 
       <p className="text-xs text-slate-500 text-center leading-relaxed font-medium">
-        We will send a secure 6-digit verification code directly to your WhatsApp app. Standard message rates may apply.
+        We will send a secure 6-digit verification code directly to your WhatsApp app.
       </p>
     </form>
   );
