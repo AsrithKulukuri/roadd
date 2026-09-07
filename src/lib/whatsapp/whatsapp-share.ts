@@ -184,7 +184,31 @@ export function formatWhatsAppPhone(phone?: string | null): string {
 }
 
 /**
+ * Generates the clean WhatsApp wa.me share URL with formatted listing text
+ */
+export function getWhatsAppShareUrl({
+  item,
+  type,
+  recipientPhone,
+}: WhatsAppShareOptions): string {
+  if (!item) return "";
+
+  const { text } = formatWhatsAppPropertyMessage(item, type);
+  const encodedText = encodeURIComponent(text);
+
+  if (recipientPhone && recipientPhone.trim()) {
+    const cleanPhone = formatWhatsAppPhone(recipientPhone);
+    return `https://wa.me/${cleanPhone}?text=${encodedText}`;
+  }
+
+  return `https://wa.me/?text=${encodedText}`;
+}
+
+/**
  * Mode 1: Opens WhatsApp share with encoded message or direct recipient phone
+ * Desktop: opens in a new tab.
+ * Mobile: triggers WhatsApp app if installed, or web fallback in a new tab.
+ * The active page and scroll position remain completely intact.
  */
 export function shareOnWhatsApp({
   item,
@@ -194,27 +218,53 @@ export function shareOnWhatsApp({
 }: WhatsAppShareOptions) {
   if (!item) return;
 
-  const { text, refId, title } = formatWhatsAppPropertyMessage(item, type);
+  const { refId, title } = formatWhatsAppPropertyMessage(item, type);
   trackWhatsAppShare(item.id, refId, source);
 
-  const encodedText = encodeURIComponent(text);
+  const whatsappUrl = getWhatsAppShareUrl({ item, type, recipientPhone });
+  if (!whatsappUrl || typeof window === "undefined") return;
 
-  let whatsappUrl = "";
-  if (recipientPhone && recipientPhone.trim()) {
-    const cleanPhone = formatWhatsAppPhone(recipientPhone);
-    whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedText}`;
-  } else {
-    // Standard WhatsApp Share deep link
-    whatsappUrl = `https://wa.me/?text=${encodedText}`;
+  // CRITICAL RULE: Under NO circumstances redirect the active window/tab (`window.location.href`).
+  // The current ROAD property page must always remain completely intact and active.
+  let opened = false;
+
+  // Method 1: Programmatic anchor dispatch with target="_blank" and rel="noopener noreferrer"
+  // This triggers mobile OS Universal Links / App Links while guaranteeing the current tab is untouched.
+  try {
+    const anchor = document.createElement("a");
+    anchor.href = whatsappUrl;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    anchor.style.position = "fixed";
+    anchor.style.top = "-9999px";
+    anchor.style.left = "-9999px";
+    anchor.style.opacity = "0";
+    anchor.style.pointerEvents = "none";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    opened = true;
+  } catch {
+    opened = false;
   }
 
-  if (typeof window !== "undefined") {
-    // Try opening WhatsApp in new tab/window
-    const newWindow = window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-    if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
-      // Fallback redirect if popup blocked
-      window.location.href = whatsappUrl;
+  // Method 2: Fallback to window.open in a new tab if anchor click was not allowed
+  if (!opened) {
+    try {
+      const newWin = window.open(whatsappUrl, "_blank");
+      if (newWin) {
+        newWin.opener = null;
+        opened = true;
+      }
+    } catch {
+      opened = false;
     }
+  }
+
+  if (opened) {
     toast.success(`Opening WhatsApp for ${refId} (${title})`);
+  } else {
+    toast.info(`Opening WhatsApp... If blocked by browser, please allow popups.`);
   }
 }
+

@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { shareOnWhatsApp } from "@/lib/whatsapp/whatsapp-share";
-import { shareItem } from "@/lib/share-utils";
-import { MessageCircle, Share2, Send, Check, Copy } from "lucide-react";
+import { useMemo } from "react";
+import {
+  shareOnWhatsApp,
+  getWhatsAppShareUrl,
+  formatWhatsAppPropertyMessage,
+  trackWhatsAppShare,
+} from "@/lib/whatsapp/whatsapp-share";
 import { toast } from "sonner";
+import { haptic } from "@/lib/haptics";
 import type { Property } from "@/types/property";
 import type { Project } from "@/types/project";
 
@@ -41,50 +45,66 @@ export function WhatsAppShareButton({
   className = "",
   source = "card",
 }: WhatsAppShareButtonProps) {
-  const [isCopied, setIsCopied] = useState(false);
+  const shareUrl = useMemo(() => {
+    return getWhatsAppShareUrl({ item, type });
+  }, [item, type]);
 
-  const handleWhatsAppShare = (e: React.MouseEvent) => {
+  const { refId, title } = useMemo(() => {
+    return formatWhatsAppPropertyMessage(item, type);
+  }, [item, type]);
+
+  const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    e.preventDefault();
-    shareOnWhatsApp({ item, type, source });
+    haptic.medium();
+    if (item?.id) {
+      trackWhatsAppShare(item.id, refId, source);
+    }
+    toast.success(`Opening WhatsApp for ${refId} (${title})`);
   };
 
   if (variant === "pill") {
     return (
-      <button
-        type="button"
-        onClick={handleWhatsAppShare}
+      <a
+        href={shareUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={handleClick}
         className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95 ${className}`}
         title="Share on WhatsApp"
       >
         <WhatsAppIcon className="w-3.5 h-3.5 fill-emerald-500/20 text-emerald-500" />
         <span>Share on WhatsApp</span>
-      </button>
+      </a>
     );
   }
 
   if (variant === "full") {
     return (
-      <button
-        type="button"
-        onClick={handleWhatsAppShare}
+      <a
+        href={shareUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={handleClick}
         className={`w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-all shadow-md active:scale-[0.98] cursor-pointer ${className}`}
       >
         <WhatsAppIcon className="w-4 h-4 fill-white/20 text-white" />
         <span>Share via WhatsApp</span>
-      </button>
+      </a>
     );
   }
 
   // Default: circular icon button for cards & overlays
   return (
-    <button
-      type="button"
-      onClick={handleWhatsAppShare}
+    <a
+      href={shareUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={handleClick}
       className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:border-emerald-500/50 cursor-pointer ${className}`}
       title="Share property on WhatsApp"
     >
       <WhatsAppIcon className="w-4 h-4 fill-emerald-500/20 text-emerald-600 dark:text-emerald-400 stroke-[2.2]" />
-    </button>
+    </a>
   );
 }
+
