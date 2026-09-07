@@ -1019,16 +1019,16 @@ export function HeroSection() {
                       }
                     }}
                     className={cn(
-                      "h-[34px] px-2 rounded-full text-[11px] flex items-center justify-center gap-1 transition-all duration-200 cursor-pointer shadow-2xs border w-full text-center whitespace-nowrap",
+                      "h-[34px] px-2 rounded-full text-[11px] flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-2xs border w-full text-center whitespace-nowrap",
                       isOpen
-                        ? "bg-slate-950 border-amber-400 text-white font-extrabold shadow-md ring-2 ring-amber-500/20"
-                        : "bg-slate-900/90 hover:bg-slate-900 border-slate-700/60 text-slate-100 font-semibold"
+                        ? "bg-white border-amber-500 text-slate-950 font-black shadow-md ring-2 ring-amber-500/25"
+                        : "bg-white/95 hover:bg-white border-slate-200/90 text-slate-950 font-bold shadow-xs hover:border-amber-400"
                     )}
                   >
-                    <SolidMapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span className="whitespace-nowrap tracking-tight">{city.name}</span>
+                    <SolidMapPin className="w-3.5 h-3.5 text-[#faad13] shrink-0" />
+                    <span className="whitespace-nowrap tracking-tight text-slate-950 font-bold">{city.name}</span>
                     {hasSublocations && (
-                      <ChevronDown className={cn("w-3 h-3 text-amber-400 shrink-0 transition-transform duration-200", isOpen && "rotate-180")} />
+                      <ChevronDown className={cn("w-3 h-3 text-[#faad13] shrink-0 transition-transform duration-200", isOpen && "rotate-180")} />
                     )}
                   </button>
                 );
@@ -1686,16 +1686,16 @@ export function HeroSection() {
                       }
                     }}
                     className={cn(
-                      "h-[36px] sm:h-[40px] px-2.5 sm:px-4 rounded-full text-xs sm:text-[13px] flex items-center justify-center gap-1 sm:gap-1.5 transition-all duration-200 cursor-pointer shadow-sm border w-full text-center whitespace-nowrap",
+                      "h-[36px] sm:h-[40px] px-2.5 sm:px-4 rounded-full text-xs sm:text-[13px] flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border w-full text-center whitespace-nowrap",
                       isOpen
-                        ? "bg-slate-950 border-amber-400 text-white font-extrabold shadow-md ring-2 ring-amber-500/20"
-                        : "bg-[#0f172a]/90 hover:bg-[#0f172a] border-slate-700/60 text-white font-medium hover:border-slate-500"
+                        ? "bg-white border-amber-500 text-slate-950 font-black shadow-md ring-2 ring-amber-500/25"
+                        : "bg-white/95 hover:bg-white border-slate-200/90 hover:border-amber-400 text-slate-950 font-bold hover:shadow-md shadow-[0_2px_12px_rgba(0,0,0,0.08)]"
                     )}
                   >
-                    <SolidMapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span className="whitespace-nowrap tracking-tight">{city.name}</span>
+                    <SolidMapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#faad13] shrink-0" />
+                    <span className="whitespace-nowrap tracking-tight text-slate-950 font-bold">{city.name}</span>
                     {hasSublocations && (
-                      <ChevronDown strokeWidth={2.5} className={cn("w-3 h-3 text-amber-400 transition-transform shrink-0", isOpen && "rotate-180")} />
+                      <ChevronDown strokeWidth={2.5} className={cn("w-3 h-3 text-[#faad13] transition-transform shrink-0", isOpen && "rotate-180")} />
                     )}
                   </button>
                 );
