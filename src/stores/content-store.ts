@@ -182,14 +182,19 @@ interface ContentState {
   apRegions: ApRegion[];
   searchTypewriterPhrasesDesktop: string[];
   searchTypewriterPhrasesMobile: string[];
+  searchTypewriterSpeed: number;
+  searchTypewriterPause: number;
+  searchPhrasesConfigured?: boolean;
   isLoading: boolean;
   
   // Search Bar Typewriter Phrases Actions
-  setSearchTypewriterPhrases: (desktop: string[], mobile: string[]) => void;
-  addDesktopPhrase: (phrase: string) => void;
-  removeDesktopPhrase: (index: number) => void;
-  addMobilePhrase: (phrase: string) => void;
-  removeMobilePhrase: (index: number) => void;
+  fetchSearchPhrases: () => Promise<void>;
+  setSearchTypewriterPhrases: (desktop: string[], mobile: string[], speed?: number, pause?: number) => Promise<void>;
+  setSearchTypewriterSpeed: (speed: number, pause?: number) => Promise<void>;
+  addDesktopPhrase: (phrase: string) => Promise<void>;
+  removeDesktopPhrase: (index: number) => Promise<void>;
+  addMobilePhrase: (phrase: string) => Promise<void>;
+  removeMobilePhrase: (index: number) => Promise<void>;
 
   // Trending Locations Actions
   fetchTrendingLocations: () => Promise<void>;
@@ -226,43 +231,175 @@ export const useContentStore = create<ContentState>()(
       apRegions: initialApRegions,
       searchTypewriterPhrasesDesktop: DEFAULT_DESKTOP_SEARCH_PHRASES,
       searchTypewriterPhrasesMobile: DEFAULT_MOBILE_SEARCH_PHRASES,
+      searchTypewriterSpeed: 60,
+      searchTypewriterPause: 2200,
+      searchPhrasesConfigured: false,
       isLoading: false,
 
       // Typewriter phrases actions
-      setSearchTypewriterPhrases: (desktop, mobile) => {
+      fetchSearchPhrases: async () => {
+        try {
+          const res = await fetch("/api/content/search-phrases", { cache: "no-store" });
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data.desktop) && Array.isArray(data.mobile)) {
+              set({
+                searchTypewriterPhrasesDesktop: data.desktop,
+                searchTypewriterPhrasesMobile: data.mobile,
+                searchTypewriterSpeed: typeof data.typingSpeed === "number" ? data.typingSpeed : 60,
+                searchTypewriterPause: typeof data.pauseDuration === "number" ? data.pauseDuration : 2200,
+                searchPhrasesConfigured: true,
+              });
+            }
+          }
+        } catch (err) {
+          console.warn("[ContentStore] fetchSearchPhrases error:", err);
+        }
+      },
+
+      setSearchTypewriterPhrases: async (desktop, mobile, speed, pause) => {
+        const nextSpeed = speed ?? get().searchTypewriterSpeed ?? 60;
+        const nextPause = pause ?? get().searchTypewriterPause ?? 2200;
         set({
           searchTypewriterPhrasesDesktop: desktop,
           searchTypewriterPhrasesMobile: mobile,
+          searchTypewriterSpeed: nextSpeed,
+          searchTypewriterPause: nextPause,
+          searchPhrasesConfigured: true,
         });
-        toast.success("Search typewriter phrases updated successfully!");
+        toast.success("Search typewriter settings saved!");
+        try {
+          await fetch("/api/content/search-phrases", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              desktop,
+              mobile,
+              typingSpeed: nextSpeed,
+              pauseDuration: nextPause,
+            }),
+          });
+        } catch (err) {
+          console.error("[ContentStore] Save phrases error:", err);
+        }
       },
 
-      addDesktopPhrase: (phrase) => {
+      setSearchTypewriterSpeed: async (speed, pause) => {
+        const desktop = get().searchTypewriterPhrasesDesktop ?? [];
+        const mobile = get().searchTypewriterPhrasesMobile ?? [];
+        const nextPause = pause ?? get().searchTypewriterPause ?? 2200;
+        set({
+          searchTypewriterSpeed: speed,
+          searchTypewriterPause: nextPause,
+          searchPhrasesConfigured: true,
+        });
+        toast.success(`Typing speed updated to ${speed}ms!`);
+        try {
+          await fetch("/api/content/search-phrases", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              desktop,
+              mobile,
+              typingSpeed: speed,
+              pauseDuration: nextPause,
+            }),
+          });
+        } catch (err) {
+          console.error("[ContentStore] Save speed error:", err);
+        }
+      },
+
+      addDesktopPhrase: async (phrase) => {
         const clean = phrase.trim();
         if (!clean) return;
-        const current = get().searchTypewriterPhrasesDesktop || DEFAULT_DESKTOP_SEARCH_PHRASES;
-        set({ searchTypewriterPhrasesDesktop: [...current, clean] });
+        const current = get().searchTypewriterPhrasesDesktop ?? [];
+        const nextDesktop = [...current, clean];
+        const mobile = get().searchTypewriterPhrasesMobile ?? [];
+        set({ searchTypewriterPhrasesDesktop: nextDesktop, searchPhrasesConfigured: true });
         toast.success(`Added desktop phrase: "${clean}"`);
+        try {
+          await fetch("/api/content/search-phrases", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              desktop: nextDesktop,
+              mobile,
+              typingSpeed: get().searchTypewriterSpeed ?? 60,
+              pauseDuration: get().searchTypewriterPause ?? 2200,
+            }),
+          });
+        } catch (err) {
+          console.error("[ContentStore] Add desktop phrase error:", err);
+        }
       },
 
-      removeDesktopPhrase: (index) => {
-        const current = get().searchTypewriterPhrasesDesktop || DEFAULT_DESKTOP_SEARCH_PHRASES;
-        set({ searchTypewriterPhrasesDesktop: current.filter((_, i) => i !== index) });
+      removeDesktopPhrase: async (index) => {
+        const current = get().searchTypewriterPhrasesDesktop ?? [];
+        const nextDesktop = current.filter((_, i) => i !== index);
+        const mobile = get().searchTypewriterPhrasesMobile ?? [];
+        set({ searchTypewriterPhrasesDesktop: nextDesktop, searchPhrasesConfigured: true });
         toast.success("Desktop phrase removed");
+        try {
+          await fetch("/api/content/search-phrases", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              desktop: nextDesktop,
+              mobile,
+              typingSpeed: get().searchTypewriterSpeed ?? 60,
+              pauseDuration: get().searchTypewriterPause ?? 2200,
+            }),
+          });
+        } catch (err) {
+          console.error("[ContentStore] Remove desktop phrase error:", err);
+        }
       },
 
-      addMobilePhrase: (phrase) => {
+      addMobilePhrase: async (phrase) => {
         const clean = phrase.trim();
         if (!clean) return;
-        const current = get().searchTypewriterPhrasesMobile || DEFAULT_MOBILE_SEARCH_PHRASES;
-        set({ searchTypewriterPhrasesMobile: [...current, clean] });
+        const desktop = get().searchTypewriterPhrasesDesktop ?? [];
+        const current = get().searchTypewriterPhrasesMobile ?? [];
+        const nextMobile = [...current, clean];
+        set({ searchTypewriterPhrasesMobile: nextMobile, searchPhrasesConfigured: true });
         toast.success(`Added mobile phrase: "${clean}"`);
+        try {
+          await fetch("/api/content/search-phrases", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              desktop,
+              mobile: nextMobile,
+              typingSpeed: get().searchTypewriterSpeed ?? 60,
+              pauseDuration: get().searchTypewriterPause ?? 2200,
+            }),
+          });
+        } catch (err) {
+          console.error("[ContentStore] Add mobile phrase error:", err);
+        }
       },
 
-      removeMobilePhrase: (index) => {
-        const current = get().searchTypewriterPhrasesMobile || DEFAULT_MOBILE_SEARCH_PHRASES;
-        set({ searchTypewriterPhrasesMobile: current.filter((_, i) => i !== index) });
+      removeMobilePhrase: async (index) => {
+        const desktop = get().searchTypewriterPhrasesDesktop ?? [];
+        const current = get().searchTypewriterPhrasesMobile ?? [];
+        const nextMobile = current.filter((_, i) => i !== index);
+        set({ searchTypewriterPhrasesMobile: nextMobile, searchPhrasesConfigured: true });
         toast.success("Mobile phrase removed");
+        try {
+          await fetch("/api/content/search-phrases", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              desktop,
+              mobile: nextMobile,
+              typingSpeed: get().searchTypewriterSpeed ?? 60,
+              pauseDuration: get().searchTypewriterPause ?? 2200,
+            }),
+          });
+        } catch (err) {
+          console.error("[ContentStore] Remove mobile phrase error:", err);
+        }
       },
 
       fetchTrendingLocations: async () => {

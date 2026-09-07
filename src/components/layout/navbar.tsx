@@ -113,43 +113,60 @@ export function Navbar() {
   }, [properties, projects, navBudget]);
 
   // ── Animated Typewriter Effect in Sticky Search Bar ──
-  const { searchTypewriterPhrasesDesktop } = useContentStore();
+  const {
+    searchTypewriterPhrasesDesktop,
+    searchTypewriterSpeed,
+    searchTypewriterPause,
+    searchPhrasesConfigured,
+    fetchSearchPhrases,
+  } = useContentStore();
   const [navTypedText, setNavTypedText] = useState("");
   const [navIsDeleting, setNavIsDeleting] = useState(false);
   const [navLoopNum, setNavLoopNum] = useState(0);
   const [navTypingSpeed, setNavTypingSpeed] = useState(60);
 
+  useEffect(() => {
+    fetchSearchPhrases?.();
+  }, [fetchSearchPhrases]);
+
   const activeNavSuggestions = useMemo(() => {
-    return (searchTypewriterPhrasesDesktop && searchTypewriterPhrasesDesktop.length > 0)
-      ? searchTypewriterPhrasesDesktop
-      : DEFAULT_DESKTOP_SEARCH_PHRASES;
-  }, [searchTypewriterPhrasesDesktop]);
+    if (searchPhrasesConfigured || Array.isArray(searchTypewriterPhrasesDesktop)) {
+      return searchTypewriterPhrasesDesktop || [];
+    }
+    return DEFAULT_DESKTOP_SEARCH_PHRASES;
+  }, [searchTypewriterPhrasesDesktop, searchPhrasesConfigured]);
 
   useEffect(() => {
-    if (!activeNavSuggestions || activeNavSuggestions.length === 0) return;
+    if (!activeNavSuggestions || activeNavSuggestions.length === 0) {
+      setNavTypedText("");
+      return;
+    }
     const currentFullText = activeNavSuggestions[navLoopNum % activeNavSuggestions.length];
+    const forwardSpeed = searchTypewriterSpeed || 60;
+    const deletingSpeed = Math.max(15, Math.round(forwardSpeed * 0.45));
+    const pauseTime = searchTypewriterPause || 2200;
 
     const handleType = () => {
       if (navIsDeleting) {
         setNavTypedText(currentFullText.substring(0, navTypedText.length - 1));
-        setNavTypingSpeed(25);
+        setNavTypingSpeed(deletingSpeed);
       } else {
         setNavTypedText(currentFullText.substring(0, navTypedText.length + 1));
-        setNavTypingSpeed(55);
+        setNavTypingSpeed(forwardSpeed);
       }
 
       if (!navIsDeleting && navTypedText === currentFullText) {
-        setTimeout(() => setNavIsDeleting(true), 2200);
+        setTimeout(() => setNavIsDeleting(true), pauseTime);
       } else if (navIsDeleting && navTypedText === "") {
         setNavIsDeleting(false);
         setNavLoopNum((prev) => prev + 1);
-        setNavTypingSpeed(350);
+        setNavTypingSpeed(Math.max(200, Math.round(forwardSpeed * 3)));
       }
     };
 
     const timer = setTimeout(handleType, navTypingSpeed);
     return () => clearTimeout(timer);
-  }, [navTypedText, navIsDeleting, navLoopNum, navTypingSpeed, activeNavSuggestions]);
+  }, [navTypedText, navIsDeleting, navLoopNum, navTypingSpeed, activeNavSuggestions, searchTypewriterSpeed, searchTypewriterPause]);
 
   const handleNavSearchSubmit = (e?: React.FormEvent, customLocation?: string) => {
     if (e) e.preventDefault();
@@ -391,7 +408,13 @@ export function Navbar() {
                         type="text"
                         value={navSearchQuery}
                         onChange={(e) => setNavSearchQuery(e.target.value)}
-                        placeholder={navTypedText.toLowerCase().startsWith("search") ? navTypedText : `Search "${navTypedText}"...`}
+                        placeholder={
+                          activeNavSuggestions.length === 0
+                            ? "Search properties, projects, locations..."
+                            : navTypedText.toLowerCase().startsWith("search")
+                            ? navTypedText
+                            : `Search "${navTypedText}"...`
+                        }
                         style={{ outline: "none", boxShadow: "none" }}
                         className="w-full bg-transparent text-xs font-semibold text-white placeholder:text-slate-400 border-none outline-none ring-0 shadow-none focus:outline-none focus:ring-0 focus:border-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-none focus-visible:shadow-none p-0"
                       />

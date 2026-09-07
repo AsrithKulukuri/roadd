@@ -5,11 +5,13 @@ import { useContentStore, TrendingLocation, HomeCategory, DEFAULT_DESKTOP_SEARCH
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Edit2, Plus, Trash2, MapPin, LayoutGrid, UploadCloud, X, Sparkles, ExternalLink, Image as ImageIcon, Laptop, Smartphone, Check, RotateCcw, Search } from "lucide-react";
+import { Edit2, Plus, Trash2, MapPin, LayoutGrid, UploadCloud, X, Sparkles, ExternalLink, Image as ImageIcon, Laptop, Smartphone, Check, RotateCcw, Search, Gauge, Zap, Clock } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { uploadToS3 } from "@/lib/aws/storage-utils";
+import { IconPicker } from "@/components/admin/icon-picker";
+import { getLucideIcon } from "@/lib/home-section-icons";
 
 type Tab = "categories" | "locations" | "search-phrases";
 
@@ -29,8 +31,10 @@ export default function ContentAdminPage() {
     trendingLocations, isLoading, fetchTrendingLocations,
     addLocation, updateLocation, deleteLocation,
     homeCategories, fetchCategories, addCategory, updateCategory, deleteCategory, resetCategories,
-    searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile,
-    setSearchTypewriterPhrases, addDesktopPhrase, removeDesktopPhrase,
+    searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile, searchPhrasesConfigured,
+    searchTypewriterSpeed, searchTypewriterPause,
+    fetchSearchPhrases, setSearchTypewriterPhrases, setSearchTypewriterSpeed,
+    addDesktopPhrase, removeDesktopPhrase,
     addMobilePhrase, removeMobilePhrase,
   } = useContentStore();
 
@@ -44,18 +48,59 @@ export default function ContentAdminPage() {
   const [editingMobileIdx, setEditingMobileIdx] = useState<number | null>(null);
   const [editingMobileText, setEditingMobileText] = useState("");
 
-  const desktopList = searchTypewriterPhrasesDesktop || DEFAULT_DESKTOP_SEARCH_PHRASES;
-  const mobileList = searchTypewriterPhrasesMobile || DEFAULT_MOBILE_SEARCH_PHRASES;
+  // Typing speed & sentence hold duration controls
+  const [typingSpeedVal, setTypingSpeedVal] = useState<number>(searchTypewriterSpeed || 60);
+  const [pauseDurationVal, setPauseDurationVal] = useState<number>(searchTypewriterPause || 2200);
+  const [isSavingSpeed, setIsSavingSpeed] = useState(false);
 
-  // Live Typewriter Preview for Admin Laptop View
+  useEffect(() => {
+    if (typeof searchTypewriterSpeed === "number" && searchTypewriterSpeed > 0) {
+      setTypingSpeedVal(searchTypewriterSpeed);
+    }
+  }, [searchTypewriterSpeed]);
+
+  useEffect(() => {
+    if (typeof searchTypewriterPause === "number" && searchTypewriterPause > 0) {
+      setPauseDurationVal(searchTypewriterPause);
+    }
+  }, [searchTypewriterPause]);
+
+  const handleApplySpeed = async (newSpeed: number, newPause: number) => {
+    setTypingSpeedVal(newSpeed);
+    setPauseDurationVal(newPause);
+    setIsSavingSpeed(true);
+    try {
+      await setSearchTypewriterSpeed(newSpeed, newPause);
+    } catch (err) {
+      console.error("Failed to save typing speed:", err);
+      toast.error("Failed to save speed settings");
+    } finally {
+      setIsSavingSpeed(false);
+    }
+  };
+
+  const desktopList = (searchPhrasesConfigured || Array.isArray(searchTypewriterPhrasesDesktop))
+    ? (searchTypewriterPhrasesDesktop ?? [])
+    : DEFAULT_DESKTOP_SEARCH_PHRASES;
+  const mobileList = (searchPhrasesConfigured || Array.isArray(searchTypewriterPhrasesMobile))
+    ? (searchTypewriterPhrasesMobile ?? [])
+    : DEFAULT_MOBILE_SEARCH_PHRASES;
+
+  // Live Typewriter Preview for Admin Laptop View (uses dynamic speed)
   const [previewDesktopText, setPreviewDesktopText] = useState("");
   const [previewDesktopDeleting, setPreviewDesktopDeleting] = useState(false);
   const [previewDesktopLoop, setPreviewDesktopLoop] = useState(0);
 
   useEffect(() => {
-    if (!desktopList || desktopList.length === 0) return;
+    if (!desktopList || desktopList.length === 0) {
+      setPreviewDesktopText("");
+      return;
+    }
     const fullText = desktopList[previewDesktopLoop % desktopList.length];
-    const speed = previewDesktopDeleting ? 30 : 60;
+    const forwardSpeed = typingSpeedVal || 60;
+    const deletingSpeed = Math.max(15, Math.round(forwardSpeed * 0.45));
+    const pauseTime = pauseDurationVal || 2200;
+    const speed = previewDesktopDeleting ? deletingSpeed : forwardSpeed;
 
     const timer = setTimeout(() => {
       if (previewDesktopDeleting) {
@@ -65,7 +110,7 @@ export default function ContentAdminPage() {
       }
 
       if (!previewDesktopDeleting && previewDesktopText === fullText) {
-        setTimeout(() => setPreviewDesktopDeleting(true), 2000);
+        setTimeout(() => setPreviewDesktopDeleting(true), pauseTime);
       } else if (previewDesktopDeleting && previewDesktopText === "") {
         setPreviewDesktopDeleting(false);
         setPreviewDesktopLoop((prev) => prev + 1);
@@ -73,17 +118,23 @@ export default function ContentAdminPage() {
     }, speed);
 
     return () => clearTimeout(timer);
-  }, [previewDesktopText, previewDesktopDeleting, previewDesktopLoop, desktopList]);
+  }, [previewDesktopText, previewDesktopDeleting, previewDesktopLoop, desktopList, typingSpeedVal, pauseDurationVal]);
 
-  // Live Typewriter Preview for Admin Mobile View
+  // Live Typewriter Preview for Admin Mobile View (uses dynamic speed)
   const [previewMobileText, setPreviewMobileText] = useState("");
   const [previewMobileDeleting, setPreviewMobileDeleting] = useState(false);
   const [previewMobileLoop, setPreviewMobileLoop] = useState(0);
 
   useEffect(() => {
-    if (!mobileList || mobileList.length === 0) return;
+    if (!mobileList || mobileList.length === 0) {
+      setPreviewMobileText("");
+      return;
+    }
     const fullText = mobileList[previewMobileLoop % mobileList.length];
-    const speed = previewMobileDeleting ? 30 : 60;
+    const forwardSpeed = typingSpeedVal || 60;
+    const deletingSpeed = Math.max(15, Math.round(forwardSpeed * 0.45));
+    const pauseTime = pauseDurationVal || 2200;
+    const speed = previewMobileDeleting ? deletingSpeed : forwardSpeed;
 
     const timer = setTimeout(() => {
       if (previewMobileDeleting) {
@@ -93,7 +144,7 @@ export default function ContentAdminPage() {
       }
 
       if (!previewMobileDeleting && previewMobileText === fullText) {
-        setTimeout(() => setPreviewMobileDeleting(true), 2000);
+        setTimeout(() => setPreviewMobileDeleting(true), pauseTime);
       } else if (previewMobileDeleting && previewMobileText === "") {
         setPreviewMobileDeleting(false);
         setPreviewMobileLoop((prev) => prev + 1);
@@ -101,7 +152,7 @@ export default function ContentAdminPage() {
     }, speed);
 
     return () => clearTimeout(timer);
-  }, [previewMobileText, previewMobileDeleting, previewMobileLoop, mobileList]);
+  }, [previewMobileText, previewMobileDeleting, previewMobileLoop, mobileList, typingSpeedVal, pauseDurationVal]);
 
   // ─── Trending Locations state ───────────────────────────────────────────────
   const [editingLocId, setEditingLocId] = useState<string | null>(null);
@@ -121,7 +172,8 @@ export default function ContentAdminPage() {
   useEffect(() => { 
     fetchTrendingLocations(); 
     fetchCategories();
-  }, [fetchTrendingLocations, fetchCategories]);
+    fetchSearchPhrases();
+  }, [fetchTrendingLocations, fetchCategories, fetchSearchPhrases]);
 
   // Helper to upload image to AWS S3 Storage or convert to DataURL
   const uploadImage = async (file: File, folder: "categories" | "properties"): Promise<string> => {
@@ -251,6 +303,7 @@ export default function ContentAdminPage() {
       badge: "",
       count: 0,
       image: "",
+      icon: "Building2",
     });
     setCatImagePreview(null);
     setCatImageFile(null);
@@ -448,6 +501,15 @@ export default function ContentAdminPage() {
                     />
                   </div>
 
+                  {/* Category Floating Icon Selector */}
+                  <div className="pt-2 border-t border-border-default">
+                    <IconPicker
+                      value={catForm.icon || "Building2"}
+                      onChange={(newIcon) => setCatForm({ ...catForm, icon: newIcon })}
+                      label="Category Icon Badge (Homepage Card) *"
+                    />
+                  </div>
+
                   {/* Actions */}
                   <div className="flex gap-3 pt-4 border-t border-border-default">
                     <Button 
@@ -491,14 +553,24 @@ export default function ContentAdminPage() {
                       </div>
                     )}
 
-                    {/* Text Overlay */}
-                    <div className="absolute bottom-3 left-3 right-3 text-left">
-                      <h4 className="font-extrabold text-white text-base leading-tight drop-shadow-md">
-                        {catForm.name || "Category Title"}
-                      </h4>
-                      <p className="text-[11px] text-slate-300 font-medium line-clamp-1 mt-0.5">
-                        {catForm.subtitle || "Category Subtitle / Description"}
-                      </p>
+                    {/* Text Overlay with Floating Icon Badge matching Homepage */}
+                    <div className="absolute bottom-3 left-3 right-3 text-left flex items-center gap-2.5">
+                      {(() => {
+                        const IconComponent = getLucideIcon(catForm.icon || "Building2");
+                        return (
+                          <div className="w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 flex items-center justify-center text-[#78350f] shrink-0">
+                            <IconComponent className="w-4 h-4 stroke-[2.2]" />
+                          </div>
+                        );
+                      })()}
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-extrabold text-white text-sm leading-tight drop-shadow-md truncate">
+                          {catForm.name || "Category Title"}
+                        </h4>
+                        <p className="text-[11px] text-slate-300 font-medium line-clamp-1 mt-0.5">
+                          {catForm.subtitle || "Category Subtitle / Description"}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -540,8 +612,16 @@ export default function ContentAdminPage() {
                   </div>
                 </div>
 
-                {/* Body */}
-                <div className="flex-1 flex flex-col justify-between p-4 space-y-3">
+                {/* Body with Floating Icon Badge */}
+                <div className="flex-1 flex flex-col justify-between p-4 pt-2 space-y-3 relative">
+                  {/* Floating Circular Icon Badge */}
+                  <div className="-mt-7 w-9 h-9 rounded-full bg-white shadow-md border border-slate-100 flex items-center justify-center text-[#78350f] relative z-10 shrink-0">
+                    {(() => {
+                      const CatIconComp = getLucideIcon(cat.icon || "Building2");
+                      return <CatIconComp className="w-4 h-4 stroke-[2.2]" />;
+                    })()}
+                  </div>
+
                   <div>
                     <h3 className="font-black text-base text-text-primary leading-tight">
                       {cat.name}
@@ -685,18 +765,243 @@ export default function ContentAdminPage() {
               </p>
             </div>
             
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (confirm("Reset all search typing phrases to defaults?")) {
-                  setSearchTypewriterPhrases(DEFAULT_DESKTOP_SEARCH_PHRASES, DEFAULT_MOBILE_SEARCH_PHRASES);
-                  toast.success("Reset to default search phrases!");
-                }
-              }}
-              className="font-bold text-xs gap-2 border-slate-700 hover:border-amber-500/50 hover:bg-amber-500/10 shrink-0"
-            >
-              <RotateCcw className="w-3.5 h-3.5" /> Reset to Defaults
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  if (confirm("Clear all search typing phrases? Search bars will display standard placeholder with no typewriter animation.")) {
+                    await setSearchTypewriterPhrases([], []);
+                    toast.success("Cleared all search typing phrases!");
+                  }
+                }}
+                className="font-bold text-xs gap-1.5 text-rose-400 border-rose-500/30 hover:bg-rose-500/10 hover:border-rose-500 shrink-0 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Clear All
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  if (confirm("Reset all search typing phrases to defaults?")) {
+                    await setSearchTypewriterPhrases(DEFAULT_DESKTOP_SEARCH_PHRASES, DEFAULT_MOBILE_SEARCH_PHRASES);
+                    toast.success("Reset to default search phrases!");
+                  }
+                }}
+                className="font-bold text-xs gap-2 border-slate-700 hover:border-amber-500/50 hover:bg-amber-500/10 shrink-0 cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Reset to Defaults
+              </Button>
+            </div>
+          </div>
+
+          {/* ⚡ TYPING SPEED & SENTENCE PACING CONTROLS */}
+          <div className="bg-bg-card border border-border-default rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-default pb-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                    <Gauge className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-text-primary flex items-center gap-2">
+                      Typing Speed & Sentence Length Pacing
+                    </h3>
+                    <p className="text-xs text-text-secondary">
+                      Fine-tune typing velocity and how long sentences remain visible before erasing across all search bars.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Indicator Badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono font-bold text-amber-400 flex items-center gap-1.5 shadow-sm">
+                  <Zap className="w-3.5 h-3.5" />
+                  {typingSpeedVal}ms / char
+                  <span className="text-[10px] text-slate-400 font-normal">
+                    (~{Math.round(1000 / (typingSpeedVal || 60))} cps)
+                  </span>
+                </span>
+                <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono font-bold text-sky-400 flex items-center gap-1.5 shadow-sm">
+                  <Clock className="w-3.5 h-3.5" />
+                  {(pauseDurationVal / 1000).toFixed(1)}s screen hold
+                </span>
+              </div>
+            </div>
+
+            {/* Controls Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* 1. Character Typing Speed */}
+              <div className="bg-bg-secondary/40 border border-border-default rounded-2xl p-5 space-y-4 flex flex-col justify-between">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-text-primary flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-amber-400" />
+                      Character Typing Speed
+                    </label>
+                    <span className="font-mono text-xs font-black text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-md border border-amber-500/20">
+                      {typingSpeedVal} ms
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-text-secondary leading-relaxed">
+                    Delay between characters. Lower values type faster; higher values feel more human and deliberate.
+                  </p>
+                  
+                  {/* Slider */}
+                  <div className="pt-2">
+                    <input
+                      type="range"
+                      min={20}
+                      max={150}
+                      step={5}
+                      value={typingSpeedVal}
+                      onChange={(e) => setTypingSpeedVal(Number(e.target.value))}
+                      onMouseUp={() => handleApplySpeed(typingSpeedVal, pauseDurationVal)}
+                      onTouchEnd={() => handleApplySpeed(typingSpeedVal, pauseDurationVal)}
+                      className="w-full accent-amber-500 cursor-pointer h-2 bg-slate-800 rounded-lg"
+                    />
+                    <div className="flex justify-between text-[10px] text-slate-400 font-mono pt-1.5">
+                      <span>20ms (Ultra Fast)</span>
+                      <span>60ms (Standard)</span>
+                      <span>150ms (Slow)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Presets */}
+                <div className="space-y-1.5 pt-3 border-t border-border-default/60">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
+                    Speed Presets:
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {[
+                      { label: "Ultra Fast", speed: 30 },
+                      { label: "Brisk", speed: 45 },
+                      { label: "Standard (60ms)", speed: 60 },
+                      { label: "Relaxed", speed: 85 },
+                      { label: "Slow", speed: 120 },
+                    ].map((preset) => {
+                      const isActive = typingSpeedVal === preset.speed;
+                      return (
+                        <button
+                          key={preset.speed}
+                          type="button"
+                          onClick={() => handleApplySpeed(preset.speed, pauseDurationVal)}
+                          className={cn(
+                            "px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border",
+                            isActive
+                              ? "bg-amber-500 text-slate-950 border-amber-400 font-black shadow-sm"
+                              : "bg-bg-card text-text-secondary hover:text-text-primary border-border-default hover:border-slate-700"
+                          )}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Sentence Screen Hold Duration */}
+              <div className="bg-bg-secondary/40 border border-border-default rounded-2xl p-5 space-y-4 flex flex-col justify-between">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-text-primary flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-sky-400" />
+                      Screen Hold Duration (Sentence Pause)
+                    </label>
+                    <span className="font-mono text-xs font-black text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-md border border-sky-500/20">
+                      {(pauseDurationVal / 1000).toFixed(1)}s ({pauseDurationVal} ms)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-text-secondary leading-relaxed">
+                    How long each completed sentence stays visible on screen before backspacing to the next phrase.
+                  </p>
+
+                  {/* Slider */}
+                  <div className="pt-2">
+                    <input
+                      type="range"
+                      min={800}
+                      max={5000}
+                      step={100}
+                      value={pauseDurationVal}
+                      onChange={(e) => setPauseDurationVal(Number(e.target.value))}
+                      onMouseUp={() => handleApplySpeed(typingSpeedVal, pauseDurationVal)}
+                      onTouchEnd={() => handleApplySpeed(typingSpeedVal, pauseDurationVal)}
+                      className="w-full accent-sky-500 cursor-pointer h-2 bg-slate-800 rounded-lg"
+                    />
+                    <div className="flex justify-between text-[10px] text-slate-400 font-mono pt-1.5">
+                      <span>0.8s (Brief)</span>
+                      <span>2.2s (Standard)</span>
+                      <span>5.0s (Long)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Presets */}
+                <div className="space-y-1.5 pt-3 border-t border-border-default/60">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
+                    Hold Duration Presets:
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {[
+                      { label: "Quick (1.2s)", pause: 1200 },
+                      { label: "Brisk (1.8s)", pause: 1800 },
+                      { label: "Standard (2.2s)", pause: 2200 },
+                      { label: "Extended (3.2s)", pause: 3200 },
+                      { label: "Long (4.5s)", pause: 4500 },
+                    ].map((preset) => {
+                      const isActive = pauseDurationVal === preset.pause;
+                      return (
+                        <button
+                          key={preset.pause}
+                          type="button"
+                          onClick={() => handleApplySpeed(typingSpeedVal, preset.pause)}
+                          className={cn(
+                            "px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border",
+                            isActive
+                              ? "bg-sky-500 text-slate-950 border-sky-400 font-black shadow-sm"
+                              : "bg-bg-card text-text-secondary hover:text-text-primary border-border-default hover:border-slate-700"
+                          )}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer actions & live feedback */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-border-default text-xs">
+              <div className="flex items-center gap-2 text-text-secondary text-[11px]">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>The live Laptop and Mobile preview boxes below type at this exact velocity in real-time.</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleApplySpeed(60, 2200)}
+                  className="text-xs font-bold gap-1.5 border-slate-700 hover:border-slate-600 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" /> Reset Speed (60ms / 2.2s)
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={isSavingSpeed}
+                  onClick={() => handleApplySpeed(typingSpeedVal, pauseDurationVal)}
+                  className="text-xs font-black gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  {isSavingSpeed ? "Saving..." : "Save Speed & Pacing"}
+                </Button>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -855,8 +1160,14 @@ export default function ContentAdminPage() {
                 <div className="h-12 w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-4 flex items-center shadow-inner gap-2 text-xs">
                   <Search className="w-4 h-4 text-slate-400 shrink-0" />
                   <span className="text-slate-500 dark:text-slate-400 font-medium truncate flex items-center">
-                    Search &ldquo;{previewDesktopText}&rdquo;
-                    <span className="inline-block w-[2px] h-[14px] bg-amber-500 ml-0.5 animate-pulse" />
+                    {desktopList.length === 0 ? (
+                      <span className="italic text-slate-400">Search properties, projects, locations... (Standard placeholder, no typing)</span>
+                    ) : (
+                      <>
+                        Search &ldquo;{previewDesktopText}&rdquo;
+                        <span className="inline-block w-[2px] h-[14px] bg-amber-500 ml-0.5 animate-pulse" />
+                      </>
+                    )}
                   </span>
                 </div>
               </div>
@@ -1016,8 +1327,14 @@ export default function ContentAdminPage() {
                 <div className="max-w-[280px] mx-auto h-10 w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-full px-3 flex items-center shadow-inner gap-2 text-xs">
                   <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span className="text-slate-500 dark:text-slate-400 font-medium truncate flex items-center text-[11px]">
-                    Search &ldquo;{previewMobileText}&rdquo;
-                    <span className="inline-block w-[1.5px] h-[12px] bg-amber-500 ml-0.5 animate-pulse" />
+                    {mobileList.length === 0 ? (
+                      <span className="italic text-slate-400">Search properties... (No typing)</span>
+                    ) : (
+                      <>
+                        Search &ldquo;{previewMobileText}&rdquo;
+                        <span className="inline-block w-[1.5px] h-[12px] bg-amber-500 ml-0.5 animate-pulse" />
+                      </>
+                    )}
                   </span>
                 </div>
               </div>

@@ -26,6 +26,7 @@ import {
   Mic,
   RotateCcw,
 } from "lucide-react";
+import { HOME_SECTION_ICONS } from "@/lib/home-section-icons";
 import { cn, formatINR, formatINRWords, formatPriceCompact } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePropertiesStore } from "@/stores/properties-store";
@@ -129,7 +130,10 @@ const popularQuickFilters = [
   { label: "Owner Listings", postedBy: ["owner"] },
 ];
 
-const getCategoryIcon = (id: string, name: string) => {
+const getCategoryIcon = (id: string, name: string, iconName?: string) => {
+  if (iconName && (HOME_SECTION_ICONS as Record<string, any>)[iconName]) {
+    return (HOME_SECTION_ICONS as Record<string, any>)[iconName];
+  }
   const lower = (id + " " + name).toLowerCase();
   if (lower.includes("apartment") || lower.includes("flat") || lower.includes("floor")) return Building2;
   if (lower.includes("project") || lower.includes("listing")) return Building2;
@@ -187,12 +191,24 @@ export function HeroSection() {
   };
 
   // ── Typewriter / Typing Effect State & Logic (Connected to Admin Content Store) ──
-  const { searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile, fetchCategories } = useContentStore();
+  const {
+    searchTypewriterPhrasesDesktop,
+    searchTypewriterPhrasesMobile,
+    searchTypewriterSpeed,
+    searchTypewriterPause,
+    searchPhrasesConfigured,
+    fetchCategories,
+    fetchSearchPhrases,
+  } = useContentStore();
   const [typedText, setTypedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
   const [typingSpeed, setTypingSpeed] = useState(60);
   const [isMobileScreen, setIsMobileScreen] = useState(false);
+
+  useEffect(() => {
+    fetchSearchPhrases?.();
+  }, [fetchSearchPhrases]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobileScreen(window.innerWidth < 768);
@@ -203,42 +219,50 @@ export function HeroSection() {
 
   const activeSuggestions = useMemo(() => {
     if (isMobileScreen) {
-      return (searchTypewriterPhrasesMobile && searchTypewriterPhrasesMobile.length > 0)
-        ? searchTypewriterPhrasesMobile
-        : DEFAULT_MOBILE_SEARCH_PHRASES;
+      if (searchPhrasesConfigured || Array.isArray(searchTypewriterPhrasesMobile)) {
+        return searchTypewriterPhrasesMobile || [];
+      }
+      return DEFAULT_MOBILE_SEARCH_PHRASES;
     }
-    return (searchTypewriterPhrasesDesktop && searchTypewriterPhrasesDesktop.length > 0)
-      ? searchTypewriterPhrasesDesktop
-      : DEFAULT_DESKTOP_SEARCH_PHRASES;
-  }, [isMobileScreen, searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile]);
+    if (searchPhrasesConfigured || Array.isArray(searchTypewriterPhrasesDesktop)) {
+      return searchTypewriterPhrasesDesktop || [];
+    }
+    return DEFAULT_DESKTOP_SEARCH_PHRASES;
+  }, [isMobileScreen, searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile, searchPhrasesConfigured]);
 
   useEffect(() => {
-    if (!activeSuggestions || activeSuggestions.length === 0) return;
+    if (!activeSuggestions || activeSuggestions.length === 0) {
+      setTypedText("");
+      return;
+    }
     const currentFullText = activeSuggestions[loopNum % activeSuggestions.length];
+    const forwardSpeed = searchTypewriterSpeed || 60;
+    const deletingSpeed = Math.max(15, Math.round(forwardSpeed * 0.45));
+    const pauseTime = searchTypewriterPause || 2200;
 
     const handleType = () => {
       if (isDeleting) {
         setTypedText(currentFullText.substring(0, typedText.length - 1));
-        setTypingSpeed(25);
+        setTypingSpeed(deletingSpeed);
       } else {
         setTypedText(currentFullText.substring(0, typedText.length + 1));
-        setTypingSpeed(55);
+        setTypingSpeed(forwardSpeed);
       }
 
       if (!isDeleting && typedText === currentFullText) {
         // Pauses when word is fully typed
-        setTimeout(() => setIsDeleting(true), 2200);
+        setTimeout(() => setIsDeleting(true), pauseTime);
       } else if (isDeleting && typedText === "") {
         // Finished deleting - move to next suggestion
         setIsDeleting(false);
         setLoopNum((prev) => prev + 1);
-        setTypingSpeed(350);
+        setTypingSpeed(Math.max(200, Math.round(forwardSpeed * 3)));
       }
     };
 
     const timer = setTimeout(handleType, typingSpeed);
     return () => clearTimeout(timer);
-  }, [typedText, isDeleting, loopNum, typingSpeed, activeSuggestions]);
+  }, [typedText, isDeleting, loopNum, typingSpeed, activeSuggestions, searchTypewriterSpeed, searchTypewriterPause]);
 
   const { banners, fetchBanners } = useBannersStore();
   const { cities, fetchLocations: fetchMasterLocations } = useLocationsStore();
@@ -504,6 +528,7 @@ export function HeroSection() {
         badgeClass: cat.badgeClass,
         image: cat.image,
         baseHref: href,
+        icon: cat.icon,
       };
     });
   }, [homeCategories]);
@@ -792,8 +817,14 @@ export function HeroSection() {
               {!searchQuery && (
                 <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
                   <span className="text-sm text-slate-400 font-medium truncate select-none flex items-center w-full">
-                    <span>{typedText.toLowerCase().startsWith("search") ? typedText : `Search "${typedText}"`}</span>
-                    <span className="inline-block w-[2px] h-[16px] bg-amber-500 ml-1 animate-pulse" />
+                    {activeSuggestions.length === 0 ? (
+                      <span>Search properties, projects, locations...</span>
+                    ) : (
+                      <>
+                        <span>{typedText.toLowerCase().startsWith("search") ? typedText : `Search "${typedText}"`}</span>
+                        <span className="inline-block w-[2px] h-[16px] bg-amber-500 ml-1 animate-pulse" />
+                      </>
+                    )}
                   </span>
                 </div>
               )}
@@ -1066,8 +1097,10 @@ export function HeroSection() {
       </div>
 
       {/* ── DESKTOP & TABLET VIEW: Integrated Hero Banner & Search Overlay (Slightly Reduced Height) ── */}
-      <div className="hidden sm:flex relative z-10 w-full mb-6 sm:mb-8 shadow-2xl min-h-[560px] md:min-h-[590px] lg:min-h-[600px] overflow-hidden flex-col justify-between">
-        <AnimatePresence mode="wait">
+      <div className="hidden sm:flex relative z-10 w-full mb-6 sm:mb-8 shadow-2xl min-h-[560px] md:min-h-[590px] lg:min-h-[600px] overflow-visible flex-col justify-between">
+        {/* Background Banner Container with overflow-hidden for sliding animations */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <AnimatePresence mode="wait">
           <motion.div
             key={currentBanner?.id || 'banner-fallback'}
             initial={{ opacity: 0, x: 50 }}
@@ -1130,9 +1163,10 @@ export function HeroSection() {
             <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/25 to-black/60 pointer-events-none" />
           </motion.div>
         </AnimatePresence>
+        </div>
 
         {/* Upper/Center Hero Content: The Search Widget */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-30 w-full flex flex-col items-center text-center pt-20 sm:pt-24 md:pt-28 lg:pt-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-40 w-full flex flex-col items-center text-center pt-20 sm:pt-24 md:pt-28 lg:pt-32">
           {/* Ambient Aurora Mesh Glow behind search bar */}
           <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[350px] sm:w-[750px] h-[200px] bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-yellow-500/20 blur-[80px] rounded-full pointer-events-none -z-10" />
 
@@ -1445,8 +1479,14 @@ export function HeroSection() {
               {!searchQuery && (
                 <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
                   <span className="text-sm sm:text-base text-slate-400 font-medium truncate select-none flex items-center w-full">
-                    <span>{typedText.toLowerCase().startsWith("search") ? typedText : `Search "${typedText}"`}</span>
-                    <span className="inline-block w-[2px] h-[16px] sm:h-[18px] bg-amber-500 ml-1 animate-pulse" />
+                    {activeSuggestions.length === 0 ? (
+                      <span>Search properties, projects, locations...</span>
+                    ) : (
+                      <>
+                        <span>{typedText.toLowerCase().startsWith("search") ? typedText : `Search "${typedText}"`}</span>
+                        <span className="inline-block w-[2px] h-[16px] sm:h-[18px] bg-amber-500 ml-1 animate-pulse" />
+                      </>
+                    )}
                   </span>
                 </div>
               )}
@@ -1619,7 +1659,7 @@ export function HeroSection() {
           </form>
 
           {/* Dynamic Location Pills (Row of 3 Dark Rounded Pills) */}
-          <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-3 text-left relative z-30">
+          <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-3 text-left relative z-50">
             <div
               className={cn(
                 "grid gap-2 sm:gap-3 w-full pb-1 mb-1 sm:mb-1.5",
@@ -1695,7 +1735,7 @@ export function HeroSection() {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.96, y: -4 }}
                         transition={{ duration: 0.18, ease: "easeOut" }}
-                        className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[380px] bg-white border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden z-[100] max-h-[380px] flex flex-col"
+                        className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[390px] max-w-[92vw] bg-white border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden z-[100] max-h-[360px] flex flex-col pointer-events-auto"
                       >
                         {/* Header */}
                         <div className="px-4 py-2.5 border-b border-amber-500/20 text-[11px] uppercase font-black tracking-wider text-slate-950 flex items-center justify-between gap-3 sticky top-0 bg-white z-10 shrink-0">
@@ -1711,7 +1751,8 @@ export function HeroSection() {
                             </span>
                             <button
                               type="button"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setOpenLocationTab(null);
                                 setSublocationSearch("");
                               }}
@@ -1739,7 +1780,10 @@ export function HeroSection() {
                             {sublocationSearch && (
                               <button
                                 type="button"
-                                onClick={() => setSublocationSearch("")}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSublocationSearch("");
+                                }}
                                 className="p-0.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors shrink-0 cursor-pointer ml-1"
                                 aria-label="Clear sublocation search"
                               >
@@ -1750,12 +1794,14 @@ export function HeroSection() {
                         </div>
 
                         {/* Localities List */}
-                        <div className="overflow-y-auto divide-y divide-slate-100 no-scrollbar flex-1 py-1 bg-white">
+                        <div className="overflow-y-auto min-h-0 divide-y divide-slate-100 flex-1 py-1 bg-white overscroll-contain scrollbar-thin scrollbar-thumb-slate-300 hover:scrollbar-thumb-amber-500">
                           {filteredSublocations.length > 0 ? (
                             filteredSublocations.map((sub) => (
-                              <div
+                              <button
                                 key={sub.id}
-                                onClick={() => {
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setOpenLocationTab(null);
                                   setSublocationSearch("");
                                   router.push(
@@ -1764,19 +1810,20 @@ export function HeroSection() {
                                     )}&locality=${encodeURIComponent(sub.name)}`
                                   );
                                 }}
-                                className="px-4 py-2.5 hover:bg-amber-500/10 cursor-pointer flex flex-col transition-colors group"
+                                className="w-full text-left px-4 py-2.5 hover:bg-amber-500/10 cursor-pointer flex items-center justify-between transition-colors group border-none bg-transparent"
                               >
-                                <div className="flex items-center justify-between gap-3">
-                                  <span className="font-bold text-xs text-slate-950 group-hover:text-amber-600 transition-colors whitespace-nowrap">
+                                <div className="flex flex-col min-w-0 pr-2">
+                                  <span className="font-bold text-xs text-slate-950 group-hover:text-amber-600 transition-colors truncate">
                                     {sub.name}
                                   </span>
+                                  {sub.tagline && (
+                                    <span className="text-[10px] text-slate-500 block mt-0.5 truncate">
+                                      {sub.tagline}
+                                    </span>
+                                  )}
                                 </div>
-                                {sub.tagline && (
-                                  <span className="text-[10px] text-slate-500 block mt-0.5 whitespace-nowrap">
-                                    {sub.tagline}
-                                  </span>
-                                )}
-                              </div>
+                                <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-amber-500 transition-colors shrink-0" />
+                              </button>
                             ))
                           ) : (
                             <div className="py-6 px-4 text-center">
@@ -1785,7 +1832,8 @@ export function HeroSection() {
                               </p>
                               <button
                                 type="button"
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   const term = sublocationSearch;
                                   setOpenLocationTab(null);
                                   setSublocationSearch("");
@@ -1932,12 +1980,13 @@ export function HeroSection() {
                       </div>
 
                       {/* Localities List */}
-                      <div className="overflow-y-auto divide-y divide-slate-100 no-scrollbar flex-1 py-1 px-2 bg-white">
+                      <div className="overflow-y-auto min-h-0 divide-y divide-slate-100 flex-1 py-1 px-2 bg-white overscroll-contain">
                         {filteredSublocations.length > 0 ? (
                           filteredSublocations.map((sub) => (
                             <div
                               key={sub.id}
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setOpenLocationTab(null);
                                 setSublocationSearch("");
                                 router.push(
@@ -2082,7 +2131,7 @@ export function HeroSection() {
         </div>
 
         {/* Lower Hero Content: Banner Headline, Subtitle, and CTA Button (Bottom-Left) */}
-        <div className="relative z-30 w-full max-w-7xl mx-auto px-6 sm:px-12 md:px-16 text-left pt-3 sm:pt-4 pb-4 sm:pb-5 mt-auto pointer-events-auto">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-12 md:px-16 text-left pt-3 sm:pt-4 pb-4 sm:pb-5 mt-auto pointer-events-auto">
           {(() => {
             const rawTitle = currentBanner?.title || "";
             const cleanTitle = rawTitle.replace(/\bVillaments\b/gi, "Villas");
@@ -2185,7 +2234,7 @@ export function HeroSection() {
           className="flex items-stretch gap-3 sm:gap-4 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory py-2 -mx-4 px-4 sm:mx-0 sm:px-0"
         >
           {browseCategories.map((cat, idx) => {
-            const IconComp = getCategoryIcon(cat.id, cat.title);
+            const IconComp = getCategoryIcon(cat.id, cat.title, cat.icon);
 
             return (
               <Link

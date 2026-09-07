@@ -40,9 +40,11 @@ import {
   type HomeSection,
   type HomeSectionItem,
   type HomeCardStyleId,
+  type HomeSectionIconName,
 } from "@/types/home-section";
 import { CardStyleGalleryModal } from "@/components/home/shelves/card-style-preview";
 import { ShelfCard } from "@/components/home/shelves/shelf-card";
+import { IconPicker } from "@/components/admin/icon-picker";
 import type { MixedItem } from "@/components/home/mixed-carousel-row";
 import type { Property } from "@/types/property";
 import type { Project } from "@/types/project";
@@ -254,17 +256,38 @@ export default function HomepageShelvesAdminPage() {
     });
   };
 
-  const addSection = () => {
-    if (sections.length >= MAX_HOME_SECTIONS) return toast.error(`You can add up to ${MAX_HOME_SECTIONS} homepage shelves.`);
+  const [isAddShelfOpen, setIsAddShelfOpen] = useState(false);
+  const [newShelfTitle, setNewShelfTitle] = useState("");
+  const [newShelfIcon, setNewShelfIcon] = useState<HomeSectionIconName>("Sparkles");
+  const [newShelfCardStyle, setNewShelfCardStyle] = useState<HomeCardStyleId>(DEFAULT_CARD_STYLE);
+
+  const handleOpenAddShelf = () => {
+    if (sections.length >= MAX_HOME_SECTIONS) {
+      return toast.error(`You can add up to ${MAX_HOME_SECTIONS} homepage shelves.`);
+    }
+    setNewShelfTitle("");
+    setNewShelfIcon("Sparkles");
+    setNewShelfCardStyle(DEFAULT_CARD_STYLE);
+    setIsAddShelfOpen(true);
+  };
+
+  const handleConfirmAddShelf = () => {
+    const title = newShelfTitle.trim();
+    if (!title) {
+      return toast.error("Please enter a title for the shelf.");
+    }
+    if (sections.length >= MAX_HOME_SECTIONS) {
+      return toast.error(`You can add up to ${MAX_HOME_SECTIONS} homepage shelves.`);
+    }
     const id = `section-${Date.now()}`;
     setSections((current) => [
       ...current,
       {
         id,
-        title: "New collection",
-        icon: "Sparkles",
+        title,
+        icon: newShelfIcon,
         isActive: true,
-        cardStyle: DEFAULT_CARD_STYLE,
+        cardStyle: newShelfCardStyle,
         cardBgColor: "#ffffff",
         cardTextColor: "#0f172a",
         cardAccentColor: "#faad13",
@@ -273,6 +296,12 @@ export default function HomepageShelvesAdminPage() {
         items: [],
       },
     ]);
+    setIsAddShelfOpen(false);
+    toast.success(`Added shelf "${title}" with ${newShelfIcon} icon.`);
+  };
+
+  const addSection = () => {
+    handleOpenAddShelf();
   };
 
   const toggleItem = (sectionId: string, item: HomeSectionItem) => {
@@ -339,7 +368,7 @@ export default function HomepageShelvesAdminPage() {
           <p className="mt-1 max-w-2xl text-sm text-text-secondary">Create and order up to eight curated shelves. Each shelf can mix up to eight published properties and projects.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={addSection} disabled={sections.length >= MAX_HOME_SECTIONS}><Plus className="h-4 w-4" /> Add shelf</Button>
+          <Button variant="outline" onClick={handleOpenAddShelf} disabled={sections.length >= MAX_HOME_SECTIONS}><Plus className="h-4 w-4" /> Add shelf</Button>
           <Button onClick={saveLayout} disabled={isSaving} className="bg-[#faad13] font-extrabold text-slate-950 hover:bg-[#e89d08]"><Save className="h-4 w-4" /> {isSaving ? "Publishing..." : "Publish layout"}</Button>
         </div>
       </header>
@@ -713,14 +742,13 @@ export default function HomepageShelvesAdminPage() {
                       </div>
                     )}
 
-                    <div>
-                      <p className="mb-2 text-[11px] font-extrabold uppercase text-text-tertiary">Choose icon</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {HOME_SECTION_ICON_NAMES.map((name) => {
-                          const ChoiceIcon = HOME_SECTION_ICONS[name];
-                          return <button key={name} type="button" title={name} aria-label={`Use ${name} icon`} onClick={() => updateSection(section.id, { icon: name })} className={cn("flex h-8 w-8 items-center justify-center rounded-lg border transition-colors", section.icon === name ? "border-[#faad13] bg-[#faad13] text-slate-950" : "border-border-default text-text-secondary hover:border-[#faad13]")}><ChoiceIcon className="h-3.5 w-3.5" /></button>;
-                        })}
-                      </div>
+                    <div className="pt-2">
+                      <IconPicker
+                        value={section.icon}
+                        onChange={(name) => updateSection(section.id, { icon: name as HomeSectionIconName })}
+                        label="Shelf Icon (Header Badge)"
+                        compact
+                      />
                     </div>
                   </div>
                 </div>
@@ -2582,6 +2610,105 @@ export default function HomepageShelvesAdminPage() {
           </div>
         );
       })()}
+
+      {/* ADD SHELF MODAL WITH ICON OPTIONS */}
+      {isAddShelfOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-xl rounded-2xl bg-bg-card border border-border-default shadow-2xl p-5 sm:p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border-default pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-[#faad13]">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-text-primary">Add New Homepage Shelf</h3>
+                  <p className="text-xs text-text-secondary">Configure the title, card style, and icon for this shelf</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddShelfOpen(false)}
+                className="w-8 h-8 rounded-lg border border-border-default flex items-center justify-center text-text-secondary hover:text-text-primary cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Shelf Title */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-text-primary">Shelf Title *</label>
+              <Input
+                value={newShelfTitle}
+                onChange={(e) => setNewShelfTitle(e.target.value)}
+                placeholder="e.g. Luxury Villas & Estates"
+                maxLength={40}
+                className="font-extrabold text-sm"
+                autoFocus
+              />
+
+              {/* Quick Title Suggestion Pills */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] font-bold text-text-tertiary">Quick ideas:</span>
+                {[
+                  "Featured Residences",
+                  "Luxury Villas",
+                  "Under ₹50 Lakhs",
+                  "Ready to Move",
+                  "New Launches",
+                  "Gated Communities",
+                ].map((sugg) => (
+                  <button
+                    key={sugg}
+                    type="button"
+                    onClick={() => setNewShelfTitle(sugg)}
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-text-secondary hover:text-amber-500 hover:border-amber-500/40 border border-border-default cursor-pointer transition-colors"
+                  >
+                    {sugg}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Icon Picker */}
+            <div className="space-y-2">
+              <IconPicker
+                value={newShelfIcon}
+                onChange={(icon) => setNewShelfIcon(icon as HomeSectionIconName)}
+                label="Choose Shelf Icon *"
+              />
+            </div>
+
+            {/* Card Style Selector */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-text-primary">Initial Card Layout Style</label>
+              <select
+                value={newShelfCardStyle}
+                onChange={(e) => setNewShelfCardStyle(e.target.value as HomeCardStyleId)}
+                className="w-full h-10 px-3 border border-border-default rounded-xl bg-bg-surface text-xs font-bold text-text-primary outline-none cursor-pointer"
+              >
+                {HOME_CARD_STYLES.map((style) => (
+                  <option key={style.id} value={style.id}>
+                    {style.label} ({style.recommendedUse})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border-default">
+              <Button variant="outline" onClick={() => setIsAddShelfOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmAddShelf}
+                className="bg-[#faad13] font-black text-slate-950 hover:bg-[#e89d08] shadow-md px-5"
+              >
+                <Plus className="w-4 h-4 mr-1 stroke-[3]" /> Add Shelf
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

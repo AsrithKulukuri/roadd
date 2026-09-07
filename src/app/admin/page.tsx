@@ -41,6 +41,8 @@ import {
 } from "lucide-react";
 import { AnalyticsCharts } from "@/components/admin/analytics-charts";
 import { AiWriter } from "@/components/admin/ai-writer";
+import { IconPicker } from "@/components/admin/icon-picker";
+import { getLucideIcon } from "@/lib/home-section-icons";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -973,6 +975,7 @@ export default function AdminDashboardPage() {
                 setEditCatId(null);
                 setCatName("");
                 setCatDesc("");
+                setCatIcon("Building2");
               }}
               className="py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
             >
@@ -1058,6 +1061,14 @@ export default function AdminDashboardPage() {
                     <option value="commercial-spaces">commercial-spaces</option>
                   </select>
                 </div>
+
+                <div className="sm:col-span-2 pt-2 border-t border-slate-800">
+                  <IconPicker
+                    value={catIcon}
+                    onChange={(newIcon) => setCatIcon(newIcon)}
+                    label="Category Icon Badge (Homepage Card) *"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center gap-2 pt-1">
@@ -1091,6 +1102,12 @@ export default function AdminDashboardPage() {
                           {cat.badge}
                         </span>
                       )}
+                      <div className="absolute bottom-1 left-1 w-6 h-6 rounded-full bg-white shadow-md flex items-center justify-center text-[#78350f]">
+                        {(() => {
+                          const CatIconComp = getLucideIcon(cat.icon || "Building2");
+                          return <CatIconComp className="w-3 h-3 stroke-[2.2]" />;
+                        })()}
+                      </div>
                     </div>
                     <div>
                       <h4 className="font-extrabold text-slate-900 dark:text-white text-base">
@@ -1114,6 +1131,7 @@ export default function AdminDashboardPage() {
                         setCatDesc(cat.description);
                         setCatImage(cat.image || "");
                         setCatCount(cat.count);
+                        setCatIcon(cat.icon || "Building2");
                         setShowCategoryForm(true);
                       }}
                       className="p-1.5 text-slate-400 hover:text-white bg-slate-800 rounded-lg cursor-pointer"
