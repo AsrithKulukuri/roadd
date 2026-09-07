@@ -1132,7 +1132,7 @@ export function HeroSection() {
         </AnimatePresence>
 
         {/* Upper/Center Hero Content: The Search Widget */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-30 w-full flex flex-col items-center text-center pt-16 sm:pt-18 md:pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-30 w-full flex flex-col items-center text-center pt-20 sm:pt-24 md:pt-28 lg:pt-32">
           {/* Ambient Aurora Mesh Glow behind search bar */}
           <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[350px] sm:w-[750px] h-[200px] bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-yellow-500/20 blur-[80px] rounded-full pointer-events-none -z-10" />
 
