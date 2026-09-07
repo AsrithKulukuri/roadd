@@ -42,6 +42,13 @@ interface ShelfCardProps {
   customHeadline?: string;
   customTagline?: string;
   progressPercentage?: number;
+  isEditable?: boolean;
+  onEditBadge?: () => void;
+  onEditHeadline?: () => void;
+  onEditTagline?: () => void;
+  onEditBgColor?: () => void;
+  onEditTextColor?: () => void;
+  onEditAccentColor?: () => void;
 }
 
 export function ShelfCard({
@@ -56,6 +63,13 @@ export function ShelfCard({
   customHeadline,
   customTagline,
   progressPercentage: propProgressPercentage,
+  isEditable = false,
+  onEditBadge,
+  onEditHeadline,
+  onEditTagline,
+  onEditBgColor,
+  onEditTextColor,
+  onEditAccentColor,
 }: ShelfCardProps) {
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const isSaved = isFavorite(item.id);
@@ -249,10 +263,16 @@ export function ShelfCard({
   if (cardStyle === "compact-marketplace") {
     return (
       <Link
-        href={data.href}
+        href={isEditable ? "#" : data.href}
+        onClick={(e) => {
+          if (isEditable) {
+            e.preventDefault();
+          }
+        }}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col sm:flex-row h-full min-h-[190px] rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-amber-400/60 transition-all duration-300",
+          isEditable && "select-none",
           className
         )}
       >
@@ -287,29 +307,67 @@ export function ShelfCard({
         </div>
 
         {/* Right Info Section */}
-        <div className="p-3.5 sm:p-4 flex flex-col justify-between flex-1 min-w-0" style={containerStyle}>
+        <div
+          className={cn(
+            "p-3.5 sm:p-4 flex flex-col justify-between flex-1 min-w-0 transition-all",
+            isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/30 cursor-pointer"
+          )}
+          style={containerStyle}
+          onClick={isEditable ? (e) => {
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+              onEditBgColor?.();
+            }
+          } : undefined}
+          title={isEditable ? "Click to choose card background color" : undefined}
+        >
           <div className="space-y-1">
             {/* Badges Row */}
             <div className="flex items-center gap-1.5 flex-wrap">
               {activeBadge ? (
                 <span
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-xs"
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-xs transition-all",
+                    isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+                  )}
                   style={accentBgStyle}
+                  title={isEditable ? "Click to edit badge text & color" : undefined}
+                  onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
                 >
+                  {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
                   <Sparkles className="w-3 h-3" /> {activeBadge}
                 </span>
               ) : data.isVerified ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-[10px] font-bold text-emerald-700">
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-[10px] font-bold text-emerald-700 transition-all",
+                    isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400"
+                  )}
+                  title={isEditable ? "Click to edit badge text & color" : undefined}
+                  onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+                >
                   <BadgeCheck className="w-3 h-3" /> Verified
                 </span>
               ) : data.isRera ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200/80 text-[10px] font-bold text-blue-700">
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200/80 text-[10px] font-bold text-blue-700 transition-all",
+                    isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400"
+                  )}
+                  title={isEditable ? "Click to edit badge text & color" : undefined}
+                  onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+                >
                   <ShieldCheck className="w-3 h-3" /> RERA
                 </span>
               ) : (
                 <span
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-xs"
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-xs transition-all",
+                    isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105"
+                  )}
                   style={accentBgStyle}
+                  title={isEditable ? "Click to edit badge text & color" : undefined}
+                  onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
                 >
                   <Sparkles className="w-3 h-3" /> Featured
                 </span>
@@ -317,12 +375,28 @@ export function ShelfCard({
             </div>
 
             {/* Title */}
-            <h3 style={textStyle} className="font-extrabold text-sm sm:text-base text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors">
+            <h3
+              style={textStyle}
+              className={cn(
+                "font-extrabold text-sm sm:text-base text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
+                isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
+              )}
+              title={isEditable ? "Click to edit headline & text color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+            >
+              {isEditable && <span className="mr-1 text-[10px] opacity-75">✏️</span>}
               {data.title}
             </h3>
 
             {/* Location */}
-            <p className="text-[11px] text-slate-500 flex items-center gap-1 line-clamp-1 font-medium">
+            <p
+              className={cn(
+                "text-[11px] text-slate-500 flex items-center gap-1 line-clamp-1 font-medium",
+                isEditable && "cursor-pointer hover:underline"
+              )}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               <MapPin className="w-3 h-3 shrink-0" style={accentTextStyle} />
               <span>{data.locationStr}</span>
             </p>
@@ -330,12 +404,24 @@ export function ShelfCard({
 
           {/* Price & Specs */}
           <div className="pt-2 border-t border-slate-100 space-y-1">
-            <div style={textStyle} className="text-base sm:text-lg font-black tracking-tight text-slate-950">
+            <div
+              style={textStyle}
+              className={cn(
+                "text-base sm:text-lg font-black tracking-tight text-slate-950",
+                isEditable && "cursor-pointer hover:underline"
+              )}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               ₹{data.priceStr}
             </div>
 
             <div className="flex items-center justify-between gap-2 text-[11px] text-slate-600 font-semibold">
-              <div className="flex items-center gap-2 truncate">
+              <div
+                className={cn("flex items-center gap-2 truncate", isEditable && "cursor-pointer hover:underline")}
+                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+                title={isEditable ? "Click to choose text color" : undefined}
+              >
                 {data.bhkStr && <span style={textStyle}>{data.bhkStr}</span>}
                 {data.bhkStr && data.areaStr && <span>•</span>}
                 {data.areaStr && <span>{data.areaStr}</span>}
@@ -349,8 +435,13 @@ export function ShelfCard({
                   </span>
                 )}
                 <div
-                  className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center transition-colors"
+                  className={cn(
+                    "w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center transition-all",
+                    isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105"
+                  )}
                   style={{ backgroundColor: `${effectiveAccent}25`, color: effectiveAccent }}
+                  title={isEditable ? "Click to choose accent color" : undefined}
+                  onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </div>
@@ -368,10 +459,16 @@ export function ShelfCard({
   if (cardStyle === "tall-portrait") {
     return (
       <Link
-        href={data.href}
+        href={isEditable ? "#" : data.href}
+        onClick={(e) => {
+          if (isEditable) {
+            e.preventDefault();
+          }
+        }}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
+          isEditable && "select-none",
           className
         )}
       >
@@ -389,9 +486,15 @@ export function ShelfCard({
           {/* Top Overlays */}
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
             <span
-              className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider shadow-md flex items-center gap-1"
+              className={cn(
+                "px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 transition-all",
+                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              )}
               style={accentBgStyle}
+              title={isEditable ? "Click to edit badge text & color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
             >
+              {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               <Sparkles className="w-3 h-3" /> {activeBadge || (data.isNewLaunch ? "New Launch" : "Premium")}
             </span>
 
@@ -415,15 +518,46 @@ export function ShelfCard({
         </div>
 
         {/* Lower White Specifications Card */}
-        <div style={containerStyle} className="p-4 sm:p-5 bg-white flex flex-col justify-between flex-1 space-y-3">
+        <div
+          style={containerStyle}
+          className={cn(
+            "p-4 sm:p-5 bg-white flex flex-col justify-between flex-1 space-y-3 transition-all",
+            isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
+          )}
+          onClick={isEditable ? (e) => {
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+              onEditBgColor?.();
+            }
+          } : undefined}
+          title={isEditable ? "Click to choose card background color" : undefined}
+        >
           <div className="space-y-1">
-            <div style={textStyle} className="text-2xl font-black tracking-tight text-slate-950">
+            <div
+              style={textStyle}
+              className={cn("text-2xl font-black tracking-tight text-slate-950", isEditable && "cursor-pointer hover:underline")}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               ₹{data.priceStr}
             </div>
-            <h3 style={textStyle} className="font-heading font-extrabold text-base sm:text-lg line-clamp-1 text-slate-900 group-hover:text-amber-600 transition-colors">
+            <h3
+              style={textStyle}
+              className={cn(
+                "font-heading font-extrabold text-base sm:text-lg line-clamp-1 text-slate-900 group-hover:text-amber-600 transition-colors",
+                isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
+              )}
+              title={isEditable ? "Click to edit headline & text color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+            >
+              {isEditable && <span className="mr-1 text-[10px] opacity-75">✏️</span>}
               {data.title}
             </h3>
-            <p className="text-xs text-slate-500 font-medium flex items-center gap-1">
+            <p
+              className={cn("text-xs text-slate-500 font-medium flex items-center gap-1", isEditable && "cursor-pointer hover:underline")}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               <MapPin className="w-3.5 h-3.5 shrink-0" style={accentTextStyle} />
               <span className="line-clamp-1">{data.locationStr}</span>
             </p>
@@ -471,10 +605,16 @@ export function ShelfCard({
   if (cardStyle === "luxury-banner") {
     return (
       <Link
-        href={data.href}
+        href={isEditable ? "#" : data.href}
+        onClick={(e) => {
+          if (isEditable) {
+            e.preventDefault();
+          }
+        }}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col md:flex-row h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xl hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
+          isEditable && "select-none",
           className
         )}
       >
@@ -490,12 +630,18 @@ export function ShelfCard({
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-slate-950/20" />
 
           {/* Editorial Banner Headline Overlay */}
-          <div className="absolute inset-0 p-6 flex flex-col justify-between text-white">
+          <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-between text-white">
             <div className="flex items-center justify-between">
               <span
-                className="px-3.5 py-1 rounded-full font-black text-[11px] tracking-wide shadow-md"
+                className={cn(
+                  "px-3.5 py-1 rounded-full font-black text-[11px] tracking-wide shadow-md transition-all",
+                  isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+                )}
                 style={accentBgStyle}
+                title={isEditable ? "Click to edit badge text & color" : undefined}
+                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
               >
+                {isEditable && <span className="mr-1 text-[10px]">✏️</span>}
                 {activeBadge || "Featured Campaign"}
               </span>
               <button
@@ -509,10 +655,28 @@ export function ShelfCard({
             </div>
 
             <div className="space-y-1">
-              <p className="font-serif text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight">
+              <p
+                style={item.cardTextColor ? { color: effectiveText } : undefined}
+                className={cn(
+                  "font-serif text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight transition-all",
+                  isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-black/30 rounded-lg p-1"
+                )}
+                title={isEditable ? "Click to edit headline & text color" : undefined}
+                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+              >
+                {isEditable && <span className="inline-block mr-1 text-xs opacity-75">✏️</span>}
                 {customHeadline || "A Higher Standard of Living"}
               </p>
-              <p className="text-xs sm:text-sm text-slate-200 font-medium max-w-md line-clamp-1">
+              <p
+                style={item.cardTextColor ? { color: effectiveText } : undefined}
+                className={cn(
+                  "text-xs sm:text-sm text-slate-200 font-medium max-w-md line-clamp-1 transition-all",
+                  isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-black/30 rounded-lg p-1"
+                )}
+                title={isEditable ? "Click to edit tagline & text color" : undefined}
+                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTagline?.(); } : undefined}
+              >
+                {isEditable && <span className="inline-block mr-1 text-[10px] opacity-75">✏️</span>}
                 {customTagline || data.tagline}
               </p>
             </div>
@@ -520,11 +684,29 @@ export function ShelfCard({
         </div>
 
         {/* Right / Bottom Luxury Information Strip */}
-        <div style={containerStyle} className="md:w-[40%] p-5 sm:p-6 bg-white flex flex-col justify-between space-y-4 min-w-[260px]">
+        <div
+          style={containerStyle}
+          className={cn(
+            "md:w-[40%] p-5 sm:p-6 bg-white flex flex-col justify-between space-y-4 min-w-[260px] transition-all",
+            isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
+          )}
+          onClick={isEditable ? (e) => {
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+              onEditBgColor?.();
+            }
+          } : undefined}
+          title={isEditable ? "Click to choose card background color" : undefined}
+        >
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className="w-12 h-12 rounded-2xl bg-slate-50 font-heading font-black text-lg flex items-center justify-center border shadow-sm shrink-0"
+              className={cn(
+                "w-12 h-12 rounded-2xl bg-slate-50 font-heading font-black text-lg flex items-center justify-center border shadow-sm shrink-0 transition-all",
+                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              )}
               style={{ borderColor: `${effectiveAccent}60`, color: effectiveAccent }}
+              title={isEditable ? "Click to choose accent color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
             >
               {data.developerLogo ? (
                 <img
@@ -537,16 +719,38 @@ export function ShelfCard({
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <h3 style={textStyle} className="font-black text-lg text-slate-900 line-clamp-1 group-hover:text-amber-500 transition-colors">
+              <h3
+                style={textStyle}
+                className={cn(
+                  "font-black text-lg text-slate-900 line-clamp-1 group-hover:text-amber-500 transition-colors",
+                  isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1"
+                )}
+                title={isEditable ? "Click to edit title override & text color" : undefined}
+                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+              >
                 {data.title}
               </h3>
-              <p className="text-xs text-slate-500 font-medium truncate">
+              <p
+                className={cn(
+                  "text-xs text-slate-500 font-medium truncate",
+                  isEditable && "cursor-pointer hover:underline"
+                )}
+                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+                title={isEditable ? "Click to choose text color" : undefined}
+              >
                 By {data.developer}
               </p>
             </div>
           </div>
 
-          <div className="space-y-1.5 min-w-0">
+          <div
+            className={cn(
+              "space-y-1.5 min-w-0",
+              isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400/30 rounded p-1"
+            )}
+            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+            title={isEditable ? "Click to choose text color" : undefined}
+          >
             <div style={textStyle} className="text-2xl font-black tracking-tight text-slate-950">
               ₹{data.priceStr}
             </div>
@@ -557,7 +761,14 @@ export function ShelfCard({
           </div>
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs min-w-0">
-            <div className="space-y-0.5 min-w-0 flex-1">
+            <div
+              className={cn(
+                "space-y-0.5 min-w-0 flex-1",
+                isEditable && "cursor-pointer hover:underline"
+              )}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               <span style={textStyle} className="font-extrabold text-slate-800 block truncate">
                 {data.bhkStr || "Multi-size"}
               </span>
@@ -567,8 +778,13 @@ export function ShelfCard({
             </div>
 
             <div
-              className="px-3 py-1.5 rounded-xl font-extrabold text-[11px] flex items-center gap-1 transition-colors shadow-xs shrink-0"
+              className={cn(
+                "px-3 py-1.5 rounded-xl font-extrabold text-[11px] flex items-center gap-1 transition-colors shadow-xs shrink-0",
+                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              )}
               style={accentBgStyle}
+              title={isEditable ? "Click to choose button & accent color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
             >
               <span>Explore</span>
               <ArrowRight className="w-3 h-3" />
@@ -585,10 +801,16 @@ export function ShelfCard({
   if (cardStyle === "split-feature") {
     return (
       <Link
-        href={data.href}
+        href={isEditable ? "#" : data.href}
+        onClick={(e) => {
+          if (isEditable) {
+            e.preventDefault();
+          }
+        }}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col md:flex-row h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xl hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
+          isEditable && "select-none",
           className
         )}
       >
@@ -603,9 +825,15 @@ export function ShelfCard({
               className="object-cover transition-transform duration-700 ease-out group-hover:scale-108"
             />
             <div
-              className="absolute top-3 left-3 px-3 py-1 rounded-full font-black text-[11px] shadow-md flex items-center gap-1"
+              className={cn(
+                "absolute top-3 left-3 px-3 py-1 rounded-full font-black text-[11px] shadow-md flex items-center gap-1 transition-all",
+                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              )}
               style={accentBgStyle}
+              title={isEditable ? "Click to edit badge text & color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
             >
+              {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               <Sparkles className="w-3 h-3" /> {activeBadge || "Premium"}
             </div>
           </div>
@@ -621,10 +849,32 @@ export function ShelfCard({
         </div>
 
         {/* Right: Spec Panel */}
-        <div style={containerStyle} className="md:w-[50%] p-5 sm:p-6 bg-white flex flex-col justify-between space-y-4">
+        <div
+          style={containerStyle}
+          className={cn(
+            "md:w-[50%] p-5 sm:p-6 bg-white flex flex-col justify-between space-y-4 transition-all",
+            isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
+          )}
+          onClick={isEditable ? (e) => {
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+              onEditBgColor?.();
+            }
+          } : undefined}
+          title={isEditable ? "Click to choose card background color" : undefined}
+        >
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider" style={accentTextStyle}>
+              <span
+                className={cn(
+                  "text-[11px] font-bold uppercase tracking-wider",
+                  isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1"
+                )}
+                style={accentTextStyle}
+                title={isEditable ? "Click to edit tagline & text color" : undefined}
+                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTagline?.(); } : undefined}
+              >
+                {isEditable && <span className="mr-1 text-[9px]">✏️</span>}
                 {customTagline || "Live Above Ordinary"}
               </span>
               <button
@@ -637,20 +887,42 @@ export function ShelfCard({
               </button>
             </div>
 
-            <h3 style={textStyle} className="font-heading font-black text-xl text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors">
+            <h3
+              style={textStyle}
+              className={cn(
+                "font-heading font-black text-xl text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
+                isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
+              )}
+              title={isEditable ? "Click to edit headline & text color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+            >
+              {isEditable && <span className="mr-1 text-[10px] opacity-75">✏️</span>}
               {data.title}
             </h3>
-            <p className="text-xs text-slate-500 flex items-center gap-1">
+            <p
+              className={cn("text-xs text-slate-500 flex items-center gap-1", isEditable && "cursor-pointer hover:underline")}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               <MapPin className="w-3 h-3 shrink-0" style={accentTextStyle} />
               <span>{data.locationStr}</span>
             </p>
           </div>
 
           <div className="space-y-1">
-            <div style={textStyle} className="text-2xl font-black tracking-tight text-slate-950">
+            <div
+              style={textStyle}
+              className={cn("text-2xl font-black tracking-tight text-slate-950", isEditable && "cursor-pointer hover:underline")}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               ₹{data.priceStr}
             </div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+            <div
+              className={cn("flex items-center gap-2 text-xs font-semibold text-slate-600", isEditable && "cursor-pointer hover:underline")}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               {data.bhkStr && <span style={textStyle}>{data.bhkStr}</span>}
               {data.bhkStr && data.areaStr && <span>•</span>}
               {data.areaStr && <span>{data.areaStr}</span>}
@@ -664,19 +936,23 @@ export function ShelfCard({
                 <Building2 className="w-3 h-3" style={accentTextStyle} /> Clubhouse
               </span>
               <span className="flex items-center gap-1">
-                <Waves className="w-3 h-3" style={accentTextStyle} /> Pool
-              </span>
-              <span className="flex items-center gap-1">
-                <Shield className="w-3 h-3" style={accentTextStyle} /> 24/7 Security
+                <Waves className="w-3 h-3" style={accentTextStyle} /> Swimming Pool
               </span>
             </div>
-
-            <div
-              className="w-full py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-colors shadow-xs"
-              style={accentBgStyle}
-            >
-              <span>View Residence</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-slate-500 font-semibold">{data.developer}</span>
+              <span
+                className={cn(
+                  "px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1 shadow-xs transition-all",
+                  isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+                )}
+                style={accentBgStyle}
+                title={isEditable ? "Click to choose button & accent color" : undefined}
+                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
+              >
+                <span>View Details</span>
+                <ArrowRight className="w-3 h-3" />
+              </span>
             </div>
           </div>
         </div>
@@ -685,15 +961,21 @@ export function ShelfCard({
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // 5. BOTTOM FLOATING PANEL (Style 05: 480–640px wide, 420–520px high)
+  // 5. BOTTOM FLOATING CARD (Style 05: 420–520px wide, ~400–480px high)
   // ──────────────────────────────────────────────────────────────────────────
   if (cardStyle === "bottom-floating") {
     return (
       <Link
-        href={data.href}
+        href={isEditable ? "#" : data.href}
+        onClick={(e) => {
+          if (isEditable) {
+            e.preventDefault();
+          }
+        }}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xl hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
+          isEditable && "select-none",
           className
         )}
       >
@@ -711,9 +993,15 @@ export function ShelfCard({
           {/* Top Overlays */}
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
             <span
-              className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wide shadow-md"
+              className={cn(
+                "px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wide shadow-md transition-all",
+                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              )}
               style={accentBgStyle}
+              title={isEditable ? "Click to edit badge text & color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
             >
+              {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               {activeBadge || "Featured"}
             </span>
             <button
@@ -728,11 +1016,29 @@ export function ShelfCard({
         </div>
 
         {/* Floating White Overlay Panel overlapping the photo */}
-        <div style={containerStyle} className="relative -mt-10 sm:-mt-12 mx-3 sm:mx-4 mb-3 p-4 sm:p-5 rounded-2xl bg-white shadow-xl border border-slate-200 z-10 space-y-3">
+        <div
+          style={containerStyle}
+          className={cn(
+            "relative -mt-10 sm:-mt-12 mx-3 sm:mx-4 mb-3 p-4 sm:p-5 rounded-2xl bg-white shadow-xl border border-slate-200 z-10 space-y-3 transition-all",
+            isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
+          )}
+          onClick={isEditable ? (e) => {
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+              onEditBgColor?.();
+            }
+          } : undefined}
+          title={isEditable ? "Click to choose card background color" : undefined}
+        >
           {/* Overlapping Circular Project Logo */}
           <div
-            className="absolute -top-7 left-4 sm:left-5 w-14 h-14 rounded-full border-2 shadow-md bg-white flex items-center justify-center overflow-hidden"
+            className={cn(
+              "absolute -top-7 left-4 sm:left-5 w-14 h-14 rounded-full border-2 shadow-md bg-white flex items-center justify-center overflow-hidden transition-all",
+              isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+            )}
             style={{ borderColor: effectiveAccent, color: effectiveAccent }}
+            title={isEditable ? "Click to choose accent color" : undefined}
+            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
           >
             {data.developerLogo ? (
               <img
@@ -748,22 +1054,45 @@ export function ShelfCard({
           </div>
 
           <div className="pt-5 space-y-1">
-            <h3 style={textStyle} className="font-heading font-black text-lg sm:text-xl text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors">
+            <h3
+              style={textStyle}
+              className={cn(
+                "font-heading font-black text-lg sm:text-xl text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
+                isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
+              )}
+              title={isEditable ? "Click to edit headline & text color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+            >
+              {isEditable && <span className="mr-1 text-[10px] opacity-75">✏️</span>}
               {data.title}
             </h3>
-            <p className="text-xs text-slate-500 font-medium">
+            <p
+              className={cn("text-xs text-slate-500 font-medium", isEditable && "cursor-pointer hover:underline")}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               {data.bhkStr ? `${data.bhkStr}, ` : ""}
               {data.locationStr}
             </p>
           </div>
 
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-            <div style={textStyle} className="text-lg sm:text-xl font-black tracking-tight text-slate-950">
+            <div
+              style={textStyle}
+              className={cn("text-lg sm:text-xl font-black tracking-tight text-slate-950", isEditable && "cursor-pointer hover:underline")}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               ₹{data.priceStr}
             </div>
             <div
-              className="w-7 h-7 rounded-full bg-slate-100 text-slate-900 transition-colors flex items-center justify-center"
+              className={cn(
+                "w-7 h-7 rounded-full bg-slate-100 text-slate-900 transition-all flex items-center justify-center",
+                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105"
+              )}
               style={{ backgroundColor: `${effectiveAccent}25`, color: effectiveAccent }}
+              title={isEditable ? "Click to choose accent color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
             >
               <ChevronRight className="w-4 h-4" />
             </div>
@@ -779,10 +1108,16 @@ export function ShelfCard({
   if (cardStyle === "modern-villa") {
     return (
       <Link
-        href={data.href}
+        href={isEditable ? "#" : data.href}
+        onClick={(e) => {
+          if (isEditable) {
+            e.preventDefault();
+          }
+        }}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
+          isEditable && "select-none",
           className
         )}
       >
@@ -800,9 +1135,15 @@ export function ShelfCard({
           {/* Badges */}
           <div className="absolute top-3 left-3 flex items-center gap-1.5">
             <span
-              className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-md"
+              className={cn(
+                "px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-md transition-all",
+                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              )}
               style={accentBgStyle}
+              title={isEditable ? "Click to edit badge text & color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
             >
+              {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               <Compass className="w-3 h-3" /> {activeBadge || "3D Tour"}
             </span>
             <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold shadow-sm">
@@ -821,17 +1162,48 @@ export function ShelfCard({
         </div>
 
         {/* Villa Details & Amenities */}
-        <div style={containerStyle} className="p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-3 bg-white">
+        <div
+          style={containerStyle}
+          className={cn(
+            "p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-3 bg-white transition-all",
+            isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
+          )}
+          onClick={isEditable ? (e) => {
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+              onEditBgColor?.();
+            }
+          } : undefined}
+          title={isEditable ? "Click to choose card background color" : undefined}
+        >
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <h3 style={textStyle} className="font-heading font-black text-base sm:text-lg text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors">
+              <h3
+                style={textStyle}
+                className={cn(
+                  "font-heading font-black text-base sm:text-lg text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
+                  isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
+                )}
+                title={isEditable ? "Click to edit headline & text color" : undefined}
+                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+              >
+                {isEditable && <span className="mr-1 text-[10px] opacity-75">✏️</span>}
                 {data.title}
               </h3>
-              <span style={textStyle} className="text-base sm:text-lg font-black shrink-0 ml-2 text-slate-950">
+              <span
+                style={textStyle}
+                className={cn("text-base sm:text-lg font-black shrink-0 ml-2 text-slate-950", isEditable && "cursor-pointer hover:underline")}
+                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+                title={isEditable ? "Click to choose text color" : undefined}
+              >
                 ₹{data.priceStr}
               </span>
             </div>
-            <p className="text-xs text-slate-500 flex items-center gap-1">
+            <p
+              className={cn("text-xs text-slate-500 flex items-center gap-1", isEditable && "cursor-pointer hover:underline")}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               <MapPin className="w-3 h-3 shrink-0" style={accentTextStyle} />
               <span>{data.locationStr}</span>
             </p>
@@ -851,11 +1223,21 @@ export function ShelfCard({
           </div>
 
           <div className="flex items-center justify-between text-xs pt-1">
-            <span style={textStyle} className="text-slate-600 font-semibold">
+            <span
+              style={textStyle}
+              className={cn("text-slate-600 font-semibold", isEditable && "cursor-pointer hover:underline")}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               {data.bhkStr || "4 BHK"} • {data.areaStr || "3200 sq.ft."}
             </span>
 
-            <span style={accentTextStyle} className="font-black flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+            <span
+              style={accentTextStyle}
+              className={cn("font-black flex items-center gap-1 group-hover:translate-x-0.5 transition-transform", isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 p-1 rounded-lg")}
+              title={isEditable ? "Click to choose accent color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
+            >
               Know More <ArrowRight className="w-3.5 h-3.5" />
             </span>
           </div>
@@ -870,10 +1252,16 @@ export function ShelfCard({
   if (cardStyle === "construction-progress") {
     return (
       <Link
-        href={data.href}
+        href={isEditable ? "#" : data.href}
+        onClick={(e) => {
+          if (isEditable) {
+            e.preventDefault();
+          }
+        }}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-md hover:shadow-xl hover:border-amber-400/60 transition-all duration-500",
+          isEditable && "select-none",
           className
         )}
       >
@@ -890,9 +1278,15 @@ export function ShelfCard({
 
           <div className="absolute top-3 left-3 flex items-center gap-1.5">
             <span
-              className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-md"
+              className={cn(
+                "px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-md transition-all",
+                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              )}
               style={accentBgStyle}
+              title={isEditable ? "Click to edit badge text & color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
             >
+              {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               <Zap className="w-3 h-3" /> {activeBadge || "UNDER CONSTRUCTION"}
             </span>
           </div>
@@ -914,22 +1308,58 @@ export function ShelfCard({
         </div>
 
         {/* Content & Progress Bar */}
-        <div style={containerStyle} className="p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-4 bg-white">
+        <div
+          style={containerStyle}
+          className={cn(
+            "p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-4 bg-white transition-all",
+            isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
+          )}
+          onClick={isEditable ? (e) => {
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+              onEditBgColor?.();
+            }
+          } : undefined}
+          title={isEditable ? "Click to choose card background color" : undefined}
+        >
           <div className="space-y-1">
-            <h3 style={textStyle} className="font-heading font-black text-base sm:text-lg text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors">
+            <h3
+              style={textStyle}
+              className={cn(
+                "font-heading font-black text-base sm:text-lg text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
+                isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
+              )}
+              title={isEditable ? "Click to edit headline & text color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+            >
+              {isEditable && <span className="mr-1 text-[10px] opacity-75">✏️</span>}
               {data.title}
             </h3>
-            <p className="text-xs text-slate-500 flex items-center gap-1 font-medium">
+            <p
+              className={cn("text-xs text-slate-500 flex items-center gap-1 font-medium", isEditable && "cursor-pointer hover:underline")}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               <MapPin className="w-3 h-3 shrink-0" style={accentTextStyle} />
               <span>{data.locationStr}</span>
             </p>
           </div>
 
           <div className="flex items-center justify-between">
-            <div style={textStyle} className="text-xl font-black text-slate-950">
+            <div
+              style={textStyle}
+              className={cn("text-xl font-black text-slate-950", isEditable && "cursor-pointer hover:underline")}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               ₹{data.priceStr}
             </div>
-            <div style={textStyle} className="text-xs font-bold text-slate-700">
+            <div
+              style={textStyle}
+              className={cn("text-xs font-bold text-slate-700", isEditable && "cursor-pointer hover:underline")}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+              title={isEditable ? "Click to choose text color" : undefined}
+            >
               {data.bhkStr}
             </div>
           </div>
@@ -959,44 +1389,97 @@ export function ShelfCard({
   // ──────────────────────────────────────────────────────────────────────────
   return (
     <Link
-      href={data.href}
+      href={isEditable ? "#" : data.href}
+      onClick={(e) => {
+        if (isEditable) {
+          e.preventDefault();
+        }
+      }}
       style={containerStyle}
       className={cn(
         "group relative flex flex-col md:flex-row h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xl hover:border-amber-500/60 transition-all duration-500",
+        isEditable && "select-none",
         className
       )}
     >
       {/* Left Editorial Information Panel */}
-      <div style={containerStyle} className="md:w-[45%] p-5 sm:p-6 flex flex-col justify-between space-y-4 bg-white">
+      <div
+        style={containerStyle}
+        className={cn(
+          "md:w-[45%] p-5 sm:p-6 flex flex-col justify-between space-y-4 bg-white transition-all",
+          isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
+        )}
+        onClick={isEditable ? (e) => {
+          if (e.target === e.currentTarget) {
+            e.preventDefault();
+            onEditBgColor?.();
+          }
+        } : undefined}
+        title={isEditable ? "Click to choose card background color" : undefined}
+      >
         <div className="space-y-2">
           <span
-            className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider inline-block shadow-xs"
+            className={cn(
+              "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider inline-block shadow-xs transition-all",
+              isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+            )}
             style={accentBgStyle}
+            title={isEditable ? "Click to edit badge text & color" : undefined}
+            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
           >
+            {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
             {activeBadge || "Signature Collection"}
           </span>
-          <h3 style={textStyle} className="font-serif text-xl sm:text-2xl font-black text-slate-900 leading-tight">
+          <h3
+            style={textStyle}
+            className={cn(
+              "font-serif text-xl sm:text-2xl font-black text-slate-900 leading-tight transition-all",
+              isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded p-1"
+            )}
+            title={isEditable ? "Click to edit headline & text color" : undefined}
+            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+          >
+            {isEditable && <span className="mr-1 text-xs opacity-75">✏️</span>}
             {customHeadline || "Premium Living by the Lake"}
           </h3>
-          <p className="text-xs text-slate-600 font-medium">
+          <p
+            className={cn("text-xs text-slate-600 font-medium transition-all", isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1")}
+            title={isEditable ? "Click to edit tagline & text color" : undefined}
+            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTagline?.(); } : undefined}
+          >
+            {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
             {customTagline || (data.bhkStr ? `${data.bhkStr} • ${data.areaStr || "2200–3800 sq.ft."}` : "Exclusive waterfront residences...")}
           </p>
         </div>
 
         <div className="space-y-1">
-          <p className="text-xs text-slate-500 flex items-center gap-1 font-medium">
+          <p
+            className={cn("text-xs text-slate-500 flex items-center gap-1 font-medium", isEditable && "cursor-pointer hover:underline")}
+            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+            title={isEditable ? "Click to choose text color" : undefined}
+          >
             <MapPin className="w-3.5 h-3.5 shrink-0" style={accentTextStyle} />
             <span>{data.locationStr}</span>
           </p>
-          <div style={textStyle} className="text-2xl font-black tracking-tight text-slate-950">
+          <div
+            style={textStyle}
+            className={cn("text-2xl font-black tracking-tight text-slate-950", isEditable && "cursor-pointer hover:underline")}
+            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
+            title={isEditable ? "Click to choose text color" : undefined}
+          >
             ₹{data.priceStr}
           </div>
         </div>
 
         <div className="pt-2">
           <span
-            className="w-full sm:w-auto px-4 py-2 rounded-xl font-black text-xs inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+            className={cn(
+              "w-full sm:w-auto px-4 py-2 rounded-xl font-black text-xs inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs",
+              isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+            )}
             style={accentBgStyle}
+            title={isEditable ? "Click to choose button & accent color" : undefined}
+            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
           >
             <span>Discover</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -1027,3 +1510,4 @@ export function ShelfCard({
     </Link>
   );
 }
+

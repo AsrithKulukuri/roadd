@@ -172,6 +172,9 @@ export default function HomepageShelvesAdminPage() {
     itemId: string;
     itemType: "property" | "project";
   } | null>(null);
+  const [activeCardEditField, setActiveCardEditField] = useState<
+    "badge" | "headline" | "tagline" | "bgColor" | "textColor" | "accentColor" | null
+  >("headline");
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "property" | "project">("all");
 
@@ -707,13 +710,26 @@ export default function HomepageShelvesAdminPage() {
                         );
 
                         return (
-                          <div key={`${item.type}:${item.id}`} className="flex flex-col min-w-0 rounded-xl border border-border-default p-3 bg-white dark:bg-slate-900 shadow-xs space-y-2.5">
+                          <div
+                            key={`${item.type}:${item.id}`}
+                            className="flex flex-col min-w-0 rounded-xl border border-border-default hover:border-amber-400/80 p-3 bg-white dark:bg-slate-900 shadow-xs space-y-2.5 transition-all"
+                          >
                             <div className="flex min-w-0 items-center gap-3">
-                              <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                              <div
+                                onClick={() => setEditingCardTarget({ sectionId: section.id, itemId: item.id, itemType: item.type })}
+                                className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100 cursor-pointer hover:opacity-90"
+                                title="Click to customize text & colors"
+                              >
                                 {listing?.image && <Image src={listing.image} alt="" fill unoptimized className="object-cover" sizes="64px" />}
                               </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-xs font-extrabold text-text-primary">{listing?.title || "Unavailable listing"}</p>
+                              <div
+                                onClick={() => setEditingCardTarget({ sectionId: section.id, itemId: item.id, itemType: item.type })}
+                                className="min-w-0 flex-1 cursor-pointer group"
+                                title="Click to customize text & colors"
+                              >
+                                <p className="truncate text-xs font-extrabold text-text-primary group-hover:text-amber-500 transition-colors">
+                                  {listing?.title || "Unavailable listing"}
+                                </p>
                                 <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
                                   <span className={cn("px-1.5 py-0.2 rounded text-[9px] font-black uppercase", item.type === "project" ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300")}>
                                     {item.type}
@@ -726,7 +742,7 @@ export default function HomepageShelvesAdminPage() {
                                   )}
                                 </div>
                               </div>
-                              <button type="button" aria-label={`Remove ${listing?.title || "listing"}`} onClick={() => toggleItem(section.id, item)} className="text-text-tertiary hover:text-red-600">
+                              <button type="button" aria-label={`Remove ${listing?.title || "listing"}`} onClick={() => toggleItem(section.id, item)} className="text-text-tertiary hover:text-red-600 cursor-pointer">
                                 <X className="h-4 w-4" />
                               </button>
                             </div>
@@ -974,7 +990,14 @@ export default function HomepageShelvesAdminPage() {
                     </p>
 
                     {/* Card Background Color */}
-                    <div className="space-y-1.5">
+                    <div
+                      className={cn(
+                        "space-y-1.5 p-2.5 rounded-xl border transition-all",
+                        activeCardEditField === "bgColor"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 ring-1 ring-amber-500/40"
+                          : "border-transparent"
+                      )}
+                    >
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-extrabold text-slate-900 dark:text-white">Card Background</span>
                         <span className="font-mono text-[11px] text-slate-500">
@@ -1033,7 +1056,14 @@ export default function HomepageShelvesAdminPage() {
                     </div>
 
                     {/* Text Color */}
-                    <div className="space-y-1.5">
+                    <div
+                      className={cn(
+                        "space-y-1.5 p-2.5 rounded-xl border transition-all",
+                        activeCardEditField === "textColor"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 ring-1 ring-amber-500/40"
+                          : "border-transparent"
+                      )}
+                    >
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-extrabold text-slate-900 dark:text-white">Text Color</span>
                         <span className="font-mono text-[11px] text-slate-500">
@@ -1091,7 +1121,14 @@ export default function HomepageShelvesAdminPage() {
                     </div>
 
                     {/* Logo & Accent Color */}
-                    <div className="space-y-1.5">
+                    <div
+                      className={cn(
+                        "space-y-1.5 p-2.5 rounded-xl border transition-all",
+                        activeCardEditField === "accentColor"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 ring-1 ring-amber-500/40"
+                          : "border-transparent"
+                      )}
+                    >
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-extrabold text-slate-900 dark:text-white">Logo & Accent Icons</span>
                         <span className="font-mono text-[11px] text-slate-500">
@@ -1156,7 +1193,14 @@ export default function HomepageShelvesAdminPage() {
                     </p>
 
                     {/* Badge Pill */}
-                    <div className="space-y-1">
+                    <div
+                      className={cn(
+                        "space-y-1 p-2.5 rounded-xl border transition-all",
+                        activeCardEditField === "badge"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 ring-1 ring-amber-500/40"
+                          : "border-transparent"
+                      )}
+                    >
                       <label className="text-xs font-extrabold text-slate-900 dark:text-white block">Badge Pill Text</label>
                       <Input
                         value={targetItem.customBadge ?? targetSection.customBadge ?? ""}
@@ -1193,7 +1237,14 @@ export default function HomepageShelvesAdminPage() {
                     </div>
 
                     {/* Title / Headline Override */}
-                    <div className="space-y-1">
+                    <div
+                      className={cn(
+                        "space-y-1 p-2.5 rounded-xl border transition-all",
+                        activeCardEditField === "headline"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 ring-1 ring-amber-500/40"
+                          : "border-transparent"
+                      )}
+                    >
                       <label className="text-xs font-extrabold text-slate-900 dark:text-white block">Card Headline / Title Override</label>
                       <Input
                         value={targetItem.customHeadline ?? ""}
@@ -1209,7 +1260,14 @@ export default function HomepageShelvesAdminPage() {
                     </div>
 
                     {/* Tagline Override */}
-                    <div className="space-y-1">
+                    <div
+                      className={cn(
+                        "space-y-1 p-2.5 rounded-xl border transition-all",
+                        activeCardEditField === "tagline"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 ring-1 ring-amber-500/40"
+                          : "border-transparent"
+                      )}
+                    >
                       <label className="text-xs font-extrabold text-slate-900 dark:text-white block">Card Tagline Override</label>
                       <Input
                         value={targetItem.customTagline ?? ""}
@@ -1290,6 +1348,442 @@ export default function HomepageShelvesAdminPage() {
                     </span>
                   </div>
 
+                  {/* Interactive WYSIWYG Header & Quick Selector Pills */}
+                  <div className="w-full space-y-2.5 bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-amber-500/30 shadow-xs">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-black text-amber-600 dark:text-amber-400">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Interactive Card WYSIWYG:</span>
+                      </div>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        Click directly on any text, badge, or color on the card below to edit!
+                      </span>
+                    </div>
+
+                    {/* Quick Target Switcher Tabs */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {[
+                        { id: "headline", label: "✏️ Headline / Title", active: activeCardEditField === "headline" },
+                        { id: "badge", label: "🏷️ Badge Pill", active: activeCardEditField === "badge" },
+                        { id: "tagline", label: "💬 Tagline", active: activeCardEditField === "tagline" },
+                        { id: "bgColor", label: "🎨 Card Bg", active: activeCardEditField === "bgColor" },
+                        { id: "textColor", label: "🔤 Text Color", active: activeCardEditField === "textColor" },
+                        { id: "accentColor", label: "✨ Accent / Button", active: activeCardEditField === "accentColor" },
+                      ].map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setActiveCardEditField(tab.id as any)}
+                          className={cn(
+                            "px-2.5 py-1 text-xs font-black rounded-lg border transition-all cursor-pointer flex items-center gap-1",
+                            tab.active
+                              ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs ring-2 ring-amber-400/40"
+                              : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400"
+                          )}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Active Field Live Inline Editor */}
+                    {activeCardEditField === "headline" && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            ✏️ Edit Headline Text:
+                          </label>
+                          <span className="text-[10px] text-slate-400">Updates live on card below</span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={targetItem.customHeadline ?? ""}
+                            placeholder={targetListing?.title || "e.g. A Higher Standard of Living"}
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                customHeadline: e.target.value,
+                              })
+                            }
+                            className="h-8.5 text-xs font-bold flex-1 bg-amber-50/20 dark:bg-amber-950/20 border-amber-500/40"
+                          />
+                          {targetItem.customHeadline && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customHeadline: undefined,
+                                })
+                              }
+                              className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-red-500 underline cursor-pointer shrink-0"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Quick Text Color in Headline Editor */}
+                        <div className="flex items-center gap-2 pt-0.5 flex-wrap text-xs">
+                          <span className="font-bold text-slate-600 dark:text-slate-300 text-[11px]">Choose Text Color:</span>
+                          <input
+                            type="color"
+                            value={targetItem.cardTextColor || targetSection.cardTextColor || "#0f172a"}
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                cardTextColor: e.target.value,
+                              })
+                            }
+                            className="h-6 w-6 rounded cursor-pointer border border-slate-300 dark:border-slate-700 p-0.5 bg-transparent"
+                            title="Pick custom text color"
+                          />
+                          {[
+                            { label: "Black", color: "#0f172a" },
+                            { label: "White", color: "#ffffff" },
+                            { label: "Slate", color: "#334155" },
+                            { label: "Amber", color: "#d97706" },
+                            { label: "Navy", color: "#1e3a8a" },
+                          ].map((c) => (
+                            <button
+                              key={c.color}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  cardTextColor: c.color,
+                                })
+                              }
+                              className="px-2 py-0.5 text-[10px] font-extrabold rounded border transition-all cursor-pointer shadow-2xs"
+                              style={{
+                                backgroundColor: c.color,
+                                color: c.color === "#ffffff" ? "#0f172a" : "#ffffff",
+                                borderColor: (targetItem.cardTextColor || "").toLowerCase() === c.color.toLowerCase() ? "#faad13" : "#cbd5e1",
+                              }}
+                            >
+                              {c.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeCardEditField === "badge" && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            🏷️ Edit Badge Pill Text:
+                          </label>
+                          <span className="text-[10px] text-slate-400">Updates live on card badge</span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={targetItem.customBadge ?? targetSection.customBadge ?? ""}
+                            placeholder="e.g. Hot Deal, ✨ Premium, New Launch"
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                customBadge: e.target.value,
+                              })
+                            }
+                            className="h-8.5 text-xs font-bold flex-1 bg-amber-50/20 dark:bg-amber-950/20 border-amber-500/40"
+                          />
+                          {(targetItem.customBadge || targetSection.customBadge) && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customBadge: undefined,
+                                })
+                              }
+                              className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-red-500 underline cursor-pointer shrink-0"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Badge suggestions */}
+                        <div className="flex flex-wrap gap-1 items-center pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 mr-1">Suggestions:</span>
+                          {["Hot Deal", "✨ Premium", "⚡ UNDER CONSTRUCTION", "Featured Campaign", "New Launch", "Ready to Move"].map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customBadge: preset,
+                                })
+                              }
+                              className="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-amber-500 hover:text-amber-600 transition-colors cursor-pointer shadow-2xs"
+                            >
+                              {preset}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Badge / Accent Color */}
+                        <div className="flex items-center gap-2 pt-0.5 flex-wrap text-xs">
+                          <span className="font-bold text-slate-600 dark:text-slate-300 text-[11px]">Badge &amp; Accent Color:</span>
+                          <input
+                            type="color"
+                            value={targetItem.cardAccentColor || targetSection.cardAccentColor || "#faad13"}
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                cardAccentColor: e.target.value,
+                              })
+                            }
+                            className="h-6 w-6 rounded cursor-pointer border border-slate-300 dark:border-slate-700 p-0.5 bg-transparent"
+                          />
+                          {[
+                            { label: "Gold", color: "#faad13" },
+                            { label: "Purple", color: "#9333ea" },
+                            { label: "Emerald", color: "#10b981" },
+                            { label: "Sky", color: "#0284c7" },
+                            { label: "Rose", color: "#f43f5e" },
+                          ].map((c) => (
+                            <button
+                              key={c.color}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  cardAccentColor: c.color,
+                                })
+                              }
+                              className="px-2 py-0.5 text-[10px] font-extrabold rounded-md text-white border transition-all cursor-pointer shadow-2xs"
+                              style={{
+                                backgroundColor: c.color,
+                                borderColor: (targetItem.cardAccentColor || "").toLowerCase() === c.color.toLowerCase() ? "#000" : "transparent",
+                              }}
+                            >
+                              {c.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeCardEditField === "tagline" && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            💬 Edit Card Tagline:
+                          </label>
+                          <span className="text-[10px] text-slate-400">Subtitle under headline</span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={targetItem.customTagline ?? ""}
+                            placeholder="e.g. Verified Luxury Residence, Prime Lakeview Property"
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                customTagline: e.target.value,
+                              })
+                            }
+                            className="h-8.5 text-xs font-medium flex-1 bg-amber-50/20 dark:bg-amber-950/20 border-amber-500/40"
+                          />
+                          {targetItem.customTagline && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customTagline: undefined,
+                                })
+                              }
+                              className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-red-500 underline cursor-pointer shrink-0"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeCardEditField === "bgColor" && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            🎨 Choose Card Background Color:
+                          </label>
+                          <span className="font-mono text-[10px] text-slate-500">
+                            {targetItem.cardBgColor || `Shelf default: ${targetSection.cardBgColor || "#ffffff"}`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <input
+                            type="color"
+                            value={targetItem.cardBgColor || targetSection.cardBgColor || "#ffffff"}
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                cardBgColor: e.target.value,
+                              })
+                            }
+                            className="h-8 w-8 rounded-lg cursor-pointer border border-slate-300 dark:border-slate-700 p-0.5 bg-transparent"
+                          />
+                          {[
+                            { label: "White", color: "#ffffff", textColor: "#0f172a" },
+                            { label: "Dark Luxury", color: "#090d16", textColor: "#ffffff" },
+                            { label: "Midnight", color: "#0f172a", textColor: "#ffffff" },
+                            { label: "Deep Indigo", color: "#1e1b4b", textColor: "#ffffff" },
+                            { label: "Warm Cream", color: "#faf8f5", textColor: "#0f172a" },
+                            { label: "Emerald Mist", color: "#064e3b", textColor: "#ffffff" },
+                          ].map((c) => (
+                            <button
+                              key={c.color}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  cardBgColor: c.color,
+                                })
+                              }
+                              className="px-2.5 py-1 text-xs font-bold rounded-lg border shadow-xs transition-all cursor-pointer"
+                              style={{
+                                backgroundColor: c.color,
+                                color: c.textColor,
+                                borderColor: (targetItem.cardBgColor || "").toLowerCase() === c.color.toLowerCase() ? "#faad13" : "#cbd5e1",
+                              }}
+                            >
+                              {c.label}
+                            </button>
+                          ))}
+                          {targetItem.cardBgColor && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  cardBgColor: undefined,
+                                })
+                              }
+                              className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-red-500 underline cursor-pointer"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeCardEditField === "textColor" && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            🔤 Choose Card Text Color:
+                          </label>
+                          <span className="font-mono text-[10px] text-slate-500">
+                            {targetItem.cardTextColor || `Shelf default: ${targetSection.cardTextColor || "#0f172a"}`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <input
+                            type="color"
+                            value={targetItem.cardTextColor || targetSection.cardTextColor || "#0f172a"}
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                cardTextColor: e.target.value,
+                              })
+                            }
+                            className="h-8 w-8 rounded-lg cursor-pointer border border-slate-300 dark:border-slate-700 p-0.5 bg-transparent"
+                          />
+                          {[
+                            { label: "Black", color: "#0f172a" },
+                            { label: "White", color: "#ffffff" },
+                            { label: "Slate", color: "#334155" },
+                            { label: "Amber", color: "#d97706" },
+                            { label: "Navy", color: "#1e3a8a" },
+                          ].map((c) => (
+                            <button
+                              key={c.color}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  cardTextColor: c.color,
+                                })
+                              }
+                              className="px-2.5 py-1 text-xs font-bold rounded-lg border shadow-xs transition-all cursor-pointer"
+                              style={{
+                                backgroundColor: c.color,
+                                color: c.color === "#ffffff" ? "#0f172a" : "#ffffff",
+                                borderColor: (targetItem.cardTextColor || "").toLowerCase() === c.color.toLowerCase() ? "#faad13" : "#cbd5e1",
+                              }}
+                            >
+                              {c.label}
+                            </button>
+                          ))}
+                          {targetItem.cardTextColor && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  cardTextColor: undefined,
+                                })
+                              }
+                              className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-red-500 underline cursor-pointer"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeCardEditField === "accentColor" && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            ✨ Choose Button &amp; Accent Color:
+                          </label>
+                          <span className="font-mono text-[11px] text-slate-500">
+                            {targetItem.cardAccentColor || `Shelf default: ${targetSection.cardAccentColor || "#faad13"}`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <input
+                            type="color"
+                            value={targetItem.cardAccentColor || targetSection.cardAccentColor || "#faad13"}
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                cardAccentColor: e.target.value,
+                              })
+                            }
+                            className="h-8 w-8 rounded-lg cursor-pointer border border-slate-300 dark:border-slate-700 p-0.5 bg-transparent"
+                          />
+                          {[
+                            { label: "Gold", color: "#faad13" },
+                            { label: "Purple", color: "#9333ea" },
+                            { label: "Emerald", color: "#10b981" },
+                            { label: "Sky", color: "#0284c7" },
+                            { label: "Rose", color: "#f43f5e" },
+                          ].map((c) => (
+                            <button
+                              key={c.color}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  cardAccentColor: c.color,
+                                })
+                              }
+                              className="px-2.5 py-1 text-xs font-bold rounded-lg border text-white shadow-xs transition-all cursor-pointer"
+                              style={{
+                                backgroundColor: c.color,
+                                borderColor: (targetItem.cardAccentColor || "").toLowerCase() === c.color.toLowerCase() ? "#000" : "transparent",
+                              }}
+                            >
+                              {c.label}
+                            </button>
+                          ))}
+                          {targetItem.cardAccentColor && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  cardAccentColor: undefined,
+                                })
+                              }
+                              className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-red-500 underline cursor-pointer"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="w-full overflow-x-auto py-2 px-1 flex justify-center items-center">
                     {liveMixedItem && (
                       <div className={cn("transition-all duration-300", getPreviewCardWidthClass(currentStyle))}>
@@ -1303,6 +1797,13 @@ export default function HomepageShelvesAdminPage() {
                           customHeadline={targetItem.customHeadline || targetSection.customHeadline}
                           customTagline={targetItem.customTagline || targetSection.customTagline}
                           progressPercentage={targetItem.progressPercentage}
+                          isEditable={true}
+                          onEditBadge={() => setActiveCardEditField("badge")}
+                          onEditHeadline={() => setActiveCardEditField("headline")}
+                          onEditTagline={() => setActiveCardEditField("tagline")}
+                          onEditBgColor={() => setActiveCardEditField("bgColor")}
+                          onEditTextColor={() => setActiveCardEditField("textColor")}
+                          onEditAccentColor={() => setActiveCardEditField("accentColor")}
                         />
                       </div>
                     )}
