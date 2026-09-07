@@ -7,7 +7,11 @@ import { ProjectCard } from "@/components/project/project-card";
 import { ShelfCard } from "@/components/home/shelves/shelf-card";
 import type { Property } from "@/types/property";
 import type { Project } from "@/types/project";
-import type { HomeCardStyleId } from "@/types/home-section";
+import {
+  type HomeCardStyleId,
+  type HomeCardSize,
+  getValidCardSize,
+} from "@/types/home-section";
 import { cn } from "@/lib/utils";
 
 export type MixedItem = 
@@ -56,6 +60,8 @@ interface MixedCarouselRowProps {
   hideHeader?: boolean;
   cardVariant?: "default" | "compact" | "horizontal" | "category-style";
   cardStyle?: HomeCardStyleId;
+  cardSizeDesktop?: HomeCardSize;
+  cardSizeMobile?: HomeCardSize;
   cardBgColor?: string;
   cardTextColor?: string;
   cardAccentColor?: string;
@@ -71,35 +77,137 @@ interface MixedCarouselRowProps {
   customCtaText?: string;
 }
 
-function getStyleWidthClass(cardStyle?: HomeCardStyleId, legacyVariant?: string) {
-  if (cardStyle) {
-    switch (cardStyle) {
-      case "classic-default":
-        return "w-[260px] sm:w-[290px] md:w-[320px]";
-      case "compact-marketplace":
-        return "w-[300px] sm:w-[360px] md:w-[410px]";
-      case "tall-portrait":
-        return "w-[260px] sm:w-[290px] md:w-[320px]";
-      case "luxury-banner":
-        return "w-[88vw] sm:w-[620px] lg:w-[840px]";
-      case "split-feature":
-        return "w-[88vw] sm:w-[560px] lg:w-[700px]";
-      case "bottom-floating":
-        return "w-[290px] sm:w-[400px] md:w-[480px]";
-      case "modern-villa":
-        return "w-[280px] sm:w-[390px] md:w-[460px]";
-      case "construction-progress":
-        return "w-[260px] sm:w-[300px] md:w-[330px]";
-      case "dark-editorial":
-        return "w-[88vw] sm:w-[480px] lg:w-[580px]";
-      default:
-        return "w-[260px] sm:w-[290px] md:w-[320px]";
-    }
+export function getResponsiveShelfCardWidthClass(
+  cardStyle?: HomeCardStyleId,
+  cardSizeDesktop?: HomeCardSize,
+  cardSizeMobile?: HomeCardSize,
+  legacyVariant?: string
+) {
+  if (!cardStyle) {
+    if (legacyVariant === "compact") return "w-[170px] sm:w-[220px] md:w-[260px]";
+    if (legacyVariant === "category-style") return "w-[160px] sm:w-[220px]";
+    return "w-[220px] sm:w-[280px] md:w-[320px]";
   }
 
-  if (legacyVariant === "compact") return "w-[170px] sm:w-[220px] md:w-[260px]";
-  if (legacyVariant === "category-style") return "w-[160px] sm:w-[220px]";
-  return "w-[220px] sm:w-[280px] md:w-[320px]";
+  const dSize = getValidCardSize(cardStyle, "desktop", cardSizeDesktop);
+  const mSize = getValidCardSize(cardStyle, "mobile", cardSizeMobile);
+
+  switch (cardStyle) {
+    case "classic-default": {
+      const mobileW =
+        mSize === "very-small" ? "w-[200px]" :
+        mSize === "small" ? "w-[230px]" :
+        mSize === "big" ? "w-[300px]" : "w-[260px]";
+      const desktopW =
+        dSize === "very-small" ? "sm:w-[230px] md:w-[250px]" :
+        dSize === "small" ? "sm:w-[260px] md:w-[280px]" :
+        dSize === "big" ? "sm:w-[340px] md:w-[380px]" :
+        dSize === "very-big" ? "sm:w-[390px] md:w-[440px]" :
+        "sm:w-[290px] md:w-[320px]";
+      return `${mobileW} ${desktopW}`;
+    }
+
+    case "compact-marketplace": {
+      const mobileW =
+        mSize === "very-small" ? "w-[240px]" :
+        mSize === "small" ? "w-[270px]" :
+        mSize === "big" ? "w-[340px]" : "w-[300px]";
+      const desktopW =
+        dSize === "very-small" ? "sm:w-[280px] md:w-[320px]" :
+        dSize === "small" ? "sm:w-[320px] md:w-[360px]" :
+        dSize === "big" ? "sm:w-[420px] md:w-[480px]" :
+        "sm:w-[360px] md:w-[410px]";
+      return `${mobileW} ${desktopW}`;
+    }
+
+    case "tall-portrait": {
+      const mobileW =
+        mSize === "very-small" ? "w-[200px]" :
+        mSize === "small" ? "w-[230px]" :
+        mSize === "big" ? "w-[300px]" : "w-[260px]";
+      const desktopW =
+        dSize === "very-small" ? "sm:w-[230px] md:w-[250px]" :
+        dSize === "small" ? "sm:w-[260px] md:w-[280px]" :
+        dSize === "big" ? "sm:w-[340px] md:w-[380px]" :
+        dSize === "very-big" ? "sm:w-[390px] md:w-[440px]" :
+        "sm:w-[290px] md:w-[320px]";
+      return `${mobileW} ${desktopW}`;
+    }
+
+    case "luxury-banner": {
+      const mobileW =
+        mSize === "small" ? "w-[82vw]" :
+        mSize === "big" ? "w-[94vw]" : "w-[88vw]";
+      const desktopW =
+        dSize === "big" ? "sm:w-[720px] lg:w-[960px]" :
+        dSize === "very-big" ? "sm:w-[820px] lg:w-[1100px]" :
+        "sm:w-[620px] lg:w-[840px]";
+      return `${mobileW} ${desktopW}`;
+    }
+
+    case "split-feature": {
+      const mobileW =
+        mSize === "small" ? "w-[82vw]" :
+        mSize === "big" ? "w-[94vw]" : "w-[88vw]";
+      const desktopW =
+        dSize === "big" ? "sm:w-[660px] lg:w-[820px]" :
+        dSize === "very-big" ? "sm:w-[760px] lg:w-[940px]" :
+        "sm:w-[560px] lg:w-[700px]";
+      return `${mobileW} ${desktopW}`;
+    }
+
+    case "bottom-floating": {
+      const mobileW =
+        mSize === "very-small" ? "w-[230px]" :
+        mSize === "small" ? "w-[260px]" :
+        mSize === "big" ? "w-[340px]" : "w-[290px]";
+      const desktopW =
+        dSize === "small" ? "sm:w-[340px] md:w-[400px]" :
+        dSize === "big" ? "sm:w-[460px] md:w-[540px]" :
+        dSize === "very-big" ? "sm:w-[520px] md:w-[620px]" :
+        "sm:w-[400px] md:w-[480px]";
+      return `${mobileW} ${desktopW}`;
+    }
+
+    case "modern-villa": {
+      const mobileW =
+        mSize === "small" ? "w-[250px]" :
+        mSize === "big" ? "w-[330px]" : "w-[280px]";
+      const desktopW =
+        dSize === "small" ? "sm:w-[340px] md:w-[390px]" :
+        dSize === "big" ? "sm:w-[460px] md:w-[540px]" :
+        dSize === "very-big" ? "sm:w-[520px] md:w-[620px]" :
+        "sm:w-[390px] md:w-[460px]";
+      return `${mobileW} ${desktopW}`;
+    }
+
+    case "construction-progress": {
+      const mobileW =
+        mSize === "very-small" ? "w-[210px]" :
+        mSize === "small" ? "w-[235px]" :
+        mSize === "big" ? "w-[300px]" : "w-[260px]";
+      const desktopW =
+        dSize === "very-small" ? "sm:w-[240px] md:w-[260px]" :
+        dSize === "small" ? "sm:w-[270px] md:w-[295px]" :
+        dSize === "big" ? "sm:w-[340px] md:w-[380px]" :
+        "sm:w-[300px] md:w-[330px]";
+      return `${mobileW} ${desktopW}`;
+    }
+
+    case "dark-editorial": {
+      const mobileW =
+        mSize === "small" ? "w-[82vw]" :
+        mSize === "big" ? "w-[94vw]" : "w-[88vw]";
+      const desktopW =
+        dSize === "big" ? "sm:w-[580px] lg:w-[700px]" :
+        dSize === "very-big" ? "sm:w-[680px] lg:w-[820px]" :
+        "sm:w-[480px] lg:w-[580px]";
+      return `${mobileW} ${desktopW}`;
+    }
+
+    default:
+      return "w-[260px] sm:w-[290px] md:w-[320px]";
+  }
 }
 
 export function MixedCarouselRow({
@@ -112,6 +220,8 @@ export function MixedCarouselRow({
   hideHeader = false,
   cardVariant = "default",
   cardStyle,
+  cardSizeDesktop,
+  cardSizeMobile,
   cardBgColor,
   cardTextColor,
   cardAccentColor,
@@ -322,13 +432,15 @@ export function MixedCarouselRow({
                   key={`${item.id}-loop-${loopIndex}-${itemIndex}`} 
                   className={cn(
                     "shrink-0 snap-start",
-                    getStyleWidthClass(cardStyle, cardVariant)
+                    getResponsiveShelfCardWidthClass(cardStyle, cardSizeDesktop, cardSizeMobile, cardVariant)
                   )}
                 >
                   {cardStyle ? (
                     <ShelfCard
                       item={item}
                       cardStyle={cardStyle}
+                      cardSizeDesktop={cardSizeDesktop}
+                      cardSizeMobile={cardSizeMobile}
                       index={itemIndex}
                       cardBgColor={item.cardBgColor || cardBgColor}
                       cardTextColor={item.cardTextColor || cardTextColor}

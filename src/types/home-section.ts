@@ -127,6 +127,133 @@ export type HomeCardStyleId = (typeof HOME_CARD_STYLES)[number]["id"];
 
 export const DEFAULT_CARD_STYLE: HomeCardStyleId = "classic-default";
 
+// Box sizes available for shelves on mobile & desktop
+export type HomeCardSize = "very-small" | "small" | "medium" | "big" | "very-big";
+
+export interface HomeCardSizeOption {
+  id: HomeCardSize;
+  label: string;
+  shortLabel: string;
+  description: string;
+}
+
+export const HOME_CARD_SIZES: HomeCardSizeOption[] = [
+  {
+    id: "very-small",
+    label: "Very Small",
+    shortLabel: "XS",
+    description: "Ultra-compact high-density footprint",
+  },
+  {
+    id: "small",
+    label: "Small",
+    shortLabel: "S",
+    description: "Compact modern card with tight spacing",
+  },
+  {
+    id: "medium",
+    label: "Medium",
+    shortLabel: "M",
+    description: "Balanced standard size (recommended default)",
+  },
+  {
+    id: "big",
+    label: "Big",
+    shortLabel: "L",
+    description: "Spacious card with prominent imagery",
+  },
+  {
+    id: "very-big",
+    label: "Very Big",
+    shortLabel: "XL",
+    description: "Extra-large flagship display",
+  },
+];
+
+// Compatibility matrix: only show possible sizes for the chosen card style
+export const CARD_STYLE_SIZE_OPTIONS: Record<
+  HomeCardStyleId,
+  {
+    desktop: HomeCardSize[];
+    mobile: HomeCardSize[];
+    defaultDesktop: HomeCardSize;
+    defaultMobile: HomeCardSize;
+  }
+> = {
+  "classic-default": {
+    desktop: ["very-small", "small", "medium", "big", "very-big"],
+    mobile: ["very-small", "small", "medium", "big"],
+    defaultDesktop: "medium",
+    defaultMobile: "medium",
+  },
+  "compact-marketplace": {
+    desktop: ["very-small", "small", "medium", "big"],
+    mobile: ["very-small", "small", "medium", "big"],
+    defaultDesktop: "medium",
+    defaultMobile: "medium",
+  },
+  "tall-portrait": {
+    desktop: ["very-small", "small", "medium", "big", "very-big"],
+    mobile: ["very-small", "small", "medium", "big"],
+    defaultDesktop: "medium",
+    defaultMobile: "medium",
+  },
+  "luxury-banner": {
+    // Wide panoramic banner requires substantial width
+    desktop: ["medium", "big", "very-big"],
+    mobile: ["small", "medium", "big"],
+    defaultDesktop: "medium",
+    defaultMobile: "medium",
+  },
+  "split-feature": {
+    // Dual stacked layout requires wide container
+    desktop: ["medium", "big", "very-big"],
+    mobile: ["small", "medium", "big"],
+    defaultDesktop: "medium",
+    defaultMobile: "medium",
+  },
+  "bottom-floating": {
+    desktop: ["small", "medium", "big", "very-big"],
+    mobile: ["very-small", "small", "medium", "big"],
+    defaultDesktop: "medium",
+    defaultMobile: "medium",
+  },
+  "modern-villa": {
+    desktop: ["small", "medium", "big", "very-big"],
+    mobile: ["small", "medium", "big"],
+    defaultDesktop: "medium",
+    defaultMobile: "medium",
+  },
+  "construction-progress": {
+    desktop: ["very-small", "small", "medium", "big"],
+    mobile: ["very-small", "small", "medium", "big"],
+    defaultDesktop: "medium",
+    defaultMobile: "medium",
+  },
+  "dark-editorial": {
+    // Two-column dark editorial banner
+    desktop: ["medium", "big", "very-big"],
+    mobile: ["small", "medium", "big"],
+    defaultDesktop: "medium",
+    defaultMobile: "medium",
+  },
+};
+
+export function getValidCardSize(
+  cardStyle: HomeCardStyleId = "classic-default",
+  device: "desktop" | "mobile",
+  currentSize?: HomeCardSize
+): HomeCardSize {
+  const meta = CARD_STYLE_SIZE_OPTIONS[cardStyle] || CARD_STYLE_SIZE_OPTIONS["classic-default"];
+  const allowed = device === "desktop" ? meta.desktop : meta.mobile;
+  const fallback = device === "desktop" ? meta.defaultDesktop : meta.defaultMobile;
+
+  if (currentSize && (allowed as readonly string[]).includes(currentSize)) {
+    return currentSize;
+  }
+  return fallback;
+}
+
 export interface HomeSectionItem {
   id: string;
   type: "property" | "project";
@@ -153,6 +280,8 @@ export interface HomeSection {
   isActive: boolean;
   items: HomeSectionItem[];
   cardStyle?: HomeCardStyleId;
+  cardSizeDesktop?: HomeCardSize; // Desktop card size: very-small | small | medium | big | very-big
+  cardSizeMobile?: HomeCardSize;  // Mobile card size: very-small | small | medium | big | very-big
   cardBgColor?: string;       // default: "#ffffff" (white box)
   cardTextColor?: string;     // default: "#0f172a" (black text)
   cardAccentColor?: string;   // default: "#faad13" (logo/icon color)

@@ -13,12 +13,14 @@ import {
   EyeOff,
   Layers,
   LayoutList,
+  Monitor,
   Palette,
   Plus,
   RotateCcw,
   Save,
   Search,
   Sliders,
+  Smartphone,
   Sparkles,
   Trash2,
   X,
@@ -37,9 +39,13 @@ import {
   DEFAULT_CARD_STYLE,
   MAX_HOME_SECTION_ITEMS,
   MAX_HOME_SECTIONS,
+  HOME_CARD_SIZES,
+  CARD_STYLE_SIZE_OPTIONS,
+  getValidCardSize,
   type HomeSection,
   type HomeSectionItem,
   type HomeCardStyleId,
+  type HomeCardSize,
   type HomeSectionIconName,
 } from "@/types/home-section";
 import { CardStyleGalleryModal } from "@/components/home/shelves/card-style-preview";
@@ -78,6 +84,8 @@ function createLegacySections(properties: Property[], projects: Project[]): Home
       icon: "ThumbsUp",
       isActive: true,
       cardStyle: "compact-marketplace",
+      cardSizeDesktop: "medium",
+      cardSizeMobile: "medium",
       cardBgColor: "#ffffff",
       cardTextColor: "#0f172a",
       cardAccentColor: "#faad13",
@@ -91,6 +99,8 @@ function createLegacySections(properties: Property[], projects: Project[]): Home
       icon: "Star",
       isActive: true,
       cardStyle: "tall-portrait",
+      cardSizeDesktop: "medium",
+      cardSizeMobile: "medium",
       cardBgColor: "#ffffff",
       cardTextColor: "#0f172a",
       cardAccentColor: "#faad13",
@@ -104,6 +114,8 @@ function createLegacySections(properties: Property[], projects: Project[]): Home
       icon: "IndianRupee",
       isActive: true,
       cardStyle: "bottom-floating",
+      cardSizeDesktop: "medium",
+      cardSizeMobile: "medium",
       cardBgColor: "#ffffff",
       cardTextColor: "#0f172a",
       cardAccentColor: "#faad13",
@@ -114,28 +126,62 @@ function createLegacySections(properties: Property[], projects: Project[]): Home
   ];
 }
 
-function getPreviewShelfCardWidthClass(cardStyle?: HomeCardStyleId) {
+function getPreviewShelfCardWidthClass(
+  cardStyle?: HomeCardStyleId,
+  cardSizeDesktop?: HomeCardSize,
+  cardSizeMobile?: HomeCardSize,
+  deviceMode: "desktop" | "mobile" = "desktop"
+) {
+  const dSize = getValidCardSize(cardStyle, "desktop", cardSizeDesktop);
+  const mSize = getValidCardSize(cardStyle, "mobile", cardSizeMobile);
+
+  if (deviceMode === "mobile") {
+    switch (cardStyle) {
+      case "classic-default":
+        return mSize === "very-small" ? "w-[200px]" : mSize === "small" ? "w-[230px]" : mSize === "big" ? "w-[300px]" : "w-[260px]";
+      case "compact-marketplace":
+        return mSize === "very-small" ? "w-[240px]" : mSize === "small" ? "w-[270px]" : mSize === "big" ? "w-[340px]" : "w-[300px]";
+      case "tall-portrait":
+        return mSize === "very-small" ? "w-[200px]" : mSize === "small" ? "w-[230px]" : mSize === "big" ? "w-[300px]" : "w-[260px]";
+      case "luxury-banner":
+        return mSize === "small" ? "w-[340px]" : mSize === "big" ? "w-[440px]" : "w-[380px]";
+      case "split-feature":
+        return mSize === "small" ? "w-[320px]" : mSize === "big" ? "w-[420px]" : "w-[360px]";
+      case "bottom-floating":
+        return mSize === "very-small" ? "w-[230px]" : mSize === "small" ? "w-[260px]" : mSize === "big" ? "w-[340px]" : "w-[290px]";
+      case "modern-villa":
+        return mSize === "small" ? "w-[250px]" : mSize === "big" ? "w-[330px]" : "w-[280px]";
+      case "construction-progress":
+        return mSize === "very-small" ? "w-[210px]" : mSize === "small" ? "w-[235px]" : mSize === "big" ? "w-[300px]" : "w-[260px]";
+      case "dark-editorial":
+        return mSize === "small" ? "w-[320px]" : mSize === "big" ? "w-[420px]" : "w-[360px]";
+      default:
+        return "w-[260px]";
+    }
+  }
+
+  // Desktop preview width
   switch (cardStyle) {
     case "classic-default":
-      return "w-[260px] sm:w-[300px]";
-    case "luxury-banner":
-      return "w-[720px] sm:w-[820px]";
-    case "split-feature":
-      return "w-[620px] sm:w-[720px]";
-    case "dark-editorial":
-      return "w-[520px] sm:w-[600px]";
-    case "bottom-floating":
-      return "w-[360px] sm:w-[440px]";
-    case "modern-villa":
-      return "w-[340px] sm:w-[420px]";
+      return dSize === "very-small" ? "w-[240px]" : dSize === "small" ? "w-[280px]" : dSize === "big" ? "w-[380px]" : dSize === "very-big" ? "w-[440px]" : "w-[320px]";
     case "compact-marketplace":
-      return "w-[320px] sm:w-[380px]";
+      return dSize === "very-small" ? "w-[310px]" : dSize === "small" ? "w-[360px]" : dSize === "big" ? "w-[480px]" : "w-[410px]";
     case "tall-portrait":
-      return "w-[260px] sm:w-[300px]";
+      return dSize === "very-small" ? "w-[240px]" : dSize === "small" ? "w-[280px]" : dSize === "big" ? "w-[380px]" : dSize === "very-big" ? "w-[440px]" : "w-[320px]";
+    case "luxury-banner":
+      return dSize === "big" ? "w-[880px]" : dSize === "very-big" ? "w-[980px]" : "w-[760px]";
+    case "split-feature":
+      return dSize === "big" ? "w-[760px]" : dSize === "very-big" ? "w-[860px]" : "w-[660px]";
+    case "bottom-floating":
+      return dSize === "small" ? "w-[380px]" : dSize === "big" ? "w-[540px]" : dSize === "very-big" ? "w-[620px]" : "w-[460px]";
+    case "modern-villa":
+      return dSize === "small" ? "w-[380px]" : dSize === "big" ? "w-[540px]" : dSize === "very-big" ? "w-[620px]" : "w-[460px]";
     case "construction-progress":
-      return "w-[280px] sm:w-[320px]";
+      return dSize === "very-small" ? "w-[260px]" : dSize === "small" ? "w-[295px]" : dSize === "big" ? "w-[380px]" : "w-[330px]";
+    case "dark-editorial":
+      return dSize === "big" ? "w-[660px]" : dSize === "very-big" ? "w-[760px]" : "w-[580px]";
     default:
-      return "w-[260px] sm:w-[300px]";
+      return "w-[320px]";
   }
 }
 
@@ -260,6 +306,9 @@ export default function HomepageShelvesAdminPage() {
   const [newShelfTitle, setNewShelfTitle] = useState("");
   const [newShelfIcon, setNewShelfIcon] = useState<HomeSectionIconName>("Sparkles");
   const [newShelfCardStyle, setNewShelfCardStyle] = useState<HomeCardStyleId>(DEFAULT_CARD_STYLE);
+  const [newShelfCardSizeDesktop, setNewShelfCardSizeDesktop] = useState<HomeCardSize>("medium");
+  const [newShelfCardSizeMobile, setNewShelfCardSizeMobile] = useState<HomeCardSize>("medium");
+  const [previewDeviceMode, setPreviewDeviceMode] = useState<"desktop" | "mobile">("desktop");
 
   const handleOpenAddShelf = () => {
     if (sections.length >= MAX_HOME_SECTIONS) {
@@ -268,6 +317,8 @@ export default function HomepageShelvesAdminPage() {
     setNewShelfTitle("");
     setNewShelfIcon("Sparkles");
     setNewShelfCardStyle(DEFAULT_CARD_STYLE);
+    setNewShelfCardSizeDesktop(getValidCardSize(DEFAULT_CARD_STYLE, "desktop"));
+    setNewShelfCardSizeMobile(getValidCardSize(DEFAULT_CARD_STYLE, "mobile"));
     setIsAddShelfOpen(true);
   };
 
@@ -288,6 +339,8 @@ export default function HomepageShelvesAdminPage() {
         icon: newShelfIcon,
         isActive: true,
         cardStyle: newShelfCardStyle,
+        cardSizeDesktop: newShelfCardSizeDesktop,
+        cardSizeMobile: newShelfCardSizeMobile,
         cardBgColor: "#ffffff",
         cardTextColor: "#0f172a",
         cardAccentColor: "#faad13",
@@ -383,6 +436,9 @@ export default function HomepageShelvesAdminPage() {
           const Icon = HOME_SECTION_ICONS[section.icon];
           const currentStyleId = section.cardStyle || DEFAULT_CARD_STYLE;
           const cardStyleMeta = HOME_CARD_STYLES.find((s) => s.id === currentStyleId) || HOME_CARD_STYLES[0];
+          const sizeMeta = CARD_STYLE_SIZE_OPTIONS[currentStyleId] || CARD_STYLE_SIZE_OPTIONS["classic-default"];
+          const currentDesktopSize = getValidCardSize(currentStyleId, "desktop", section.cardSizeDesktop);
+          const currentMobileSize = getValidCardSize(currentStyleId, "mobile", section.cardSizeMobile);
 
           return (
             <section key={section.id} className={cn("rounded-2xl border bg-bg-card p-4 shadow-sm sm:p-5 transition-all", section.isActive ? "border-border-default" : "border-dashed border-slate-300 opacity-75")}>
@@ -405,6 +461,71 @@ export default function HomepageShelvesAdminPage() {
                           <span className="text-[10px] text-slate-400 font-normal">({cardStyleMeta.minWidth}–{cardStyleMeta.maxWidth}px)</span>
                           <span className="text-amber-500 font-bold ml-1 hover:underline">Change Style ▾</span>
                         </button>
+
+                        {/* Separate Desktop & Mobile Size Selector Chips (Only possible sizes for chosen card style) */}
+                        <div className="flex items-center gap-2 flex-wrap bg-slate-100 dark:bg-slate-800/70 p-1 rounded-xl border border-slate-200 dark:border-slate-700/80 text-xs">
+                          {/* Desktop Size Picker */}
+                          <div className="flex items-center gap-1">
+                            <span className="text-[11px] font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1 pl-1.5 pr-0.5">
+                              <Monitor className="w-3.5 h-3.5 text-blue-500" />
+                              <span>Desktop:</span>
+                            </span>
+                            <div className="flex items-center gap-0.5 bg-white dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200/80 dark:border-slate-800">
+                              {sizeMeta.desktop.map((sizeId) => {
+                                const isSelected = currentDesktopSize === sizeId;
+                                const opt = HOME_CARD_SIZES.find((s) => s.id === sizeId);
+                                return (
+                                  <button
+                                    key={`desktop-${sizeId}`}
+                                    type="button"
+                                    onClick={() => updateSection(section.id, { cardSizeDesktop: sizeId })}
+                                    className={cn(
+                                      "px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer",
+                                      isSelected
+                                        ? "bg-blue-600 text-white shadow-xs font-black"
+                                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    )}
+                                    title={`Desktop size: ${opt?.label || sizeId} (${opt?.description || ""})`}
+                                  >
+                                    {opt?.label || sizeId}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
+
+                          {/* Mobile Size Picker */}
+                          <div className="flex items-center gap-1">
+                            <span className="text-[11px] font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1 pl-1.5 pr-0.5">
+                              <Smartphone className="w-3.5 h-3.5 text-emerald-500" />
+                              <span>Mobile:</span>
+                            </span>
+                            <div className="flex items-center gap-0.5 bg-white dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200/80 dark:border-slate-800">
+                              {sizeMeta.mobile.map((sizeId) => {
+                                const isSelected = currentMobileSize === sizeId;
+                                const opt = HOME_CARD_SIZES.find((s) => s.id === sizeId);
+                                return (
+                                  <button
+                                    key={`mobile-${sizeId}`}
+                                    type="button"
+                                    onClick={() => updateSection(section.id, { cardSizeMobile: sizeId })}
+                                    className={cn(
+                                      "px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer",
+                                      isSelected
+                                        ? "bg-emerald-600 text-white shadow-xs font-black"
+                                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    )}
+                                    title={`Mobile size: ${opt?.label || sizeId} (${opt?.description || ""})`}
+                                  >
+                                    {opt?.label || sizeId}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
 
                         {/* Custom Colors, Labels & Carousel Drawer Toggle Button */}
                         <button
@@ -438,6 +559,8 @@ export default function HomepageShelvesAdminPage() {
                             type="button"
                             onClick={() => {
                               updateSection(section.id, {
+                                cardSizeDesktop: undefined,
+                                cardSizeMobile: undefined,
                                 cardBgColor: undefined,
                                 cardTextColor: undefined,
                                 cardAccentColor: undefined,
@@ -447,7 +570,7 @@ export default function HomepageShelvesAdminPage() {
                                 enableCarousel: true,
                                 carouselInterval: 4,
                               });
-                              toast.success("Reset shelf styles to default (White box, Dark text, Gold logo)");
+                              toast.success("Reset shelf styles to default (White box, Dark text, Gold logo, Standard Medium sizes)");
                             }}
                             className="text-[11px] font-bold text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 flex items-center gap-1 cursor-pointer"
                           >
@@ -455,7 +578,86 @@ export default function HomepageShelvesAdminPage() {
                           </button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {/* 0. Card Sizing Panel (Desktop & Mobile) */}
+                          <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-border-default space-y-3 shadow-xs">
+                            <div className="flex items-center justify-between">
+                              <p className="text-[11px] font-black uppercase text-slate-500 flex items-center gap-1.5">
+                                <Sliders className="w-3.5 h-3.5 text-amber-500" /> Box Sizes
+                              </p>
+                              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-extrabold bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                Filtered
+                              </span>
+                            </div>
+
+                            {/* Desktop Size */}
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-text-primary flex items-center gap-1">
+                                  <Monitor className="w-3.5 h-3.5 text-blue-500" /> Desktop Size
+                                </span>
+                                <span className="font-black text-[10px] text-blue-600 dark:text-blue-400 uppercase bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded">
+                                  {HOME_CARD_SIZES.find((s) => s.id === currentDesktopSize)?.label || currentDesktopSize}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
+                                {sizeMeta.desktop.map((sizeId) => {
+                                  const isSelected = currentDesktopSize === sizeId;
+                                  const opt = HOME_CARD_SIZES.find((s) => s.id === sizeId);
+                                  return (
+                                    <button
+                                      key={`drawer-d-${sizeId}`}
+                                      type="button"
+                                      onClick={() => updateSection(section.id, { cardSizeDesktop: sizeId })}
+                                      className={cn(
+                                        "px-2 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer text-left flex flex-col",
+                                        isSelected
+                                          ? "border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-black shadow-xs ring-1 ring-blue-500"
+                                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300"
+                                      )}
+                                    >
+                                      <span>{opt?.label || sizeId}</span>
+                                      <span className="text-[9px] font-normal opacity-70 truncate">{opt?.shortLabel}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Mobile Size */}
+                            <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-text-primary flex items-center gap-1">
+                                  <Smartphone className="w-3.5 h-3.5 text-emerald-500" /> Mobile Size
+                                </span>
+                                <span className="font-black text-[10px] text-emerald-600 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
+                                  {HOME_CARD_SIZES.find((s) => s.id === currentMobileSize)?.label || currentMobileSize}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
+                                {sizeMeta.mobile.map((sizeId) => {
+                                  const isSelected = currentMobileSize === sizeId;
+                                  const opt = HOME_CARD_SIZES.find((s) => s.id === sizeId);
+                                  return (
+                                    <button
+                                      key={`drawer-m-${sizeId}`}
+                                      type="button"
+                                      onClick={() => updateSection(section.id, { cardSizeMobile: sizeId })}
+                                      className={cn(
+                                        "px-2 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer text-left flex flex-col",
+                                        isSelected
+                                          ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-black shadow-xs ring-1 ring-emerald-500"
+                                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300"
+                                      )}
+                                    >
+                                      <span>{opt?.label || sizeId}</span>
+                                      <span className="text-[9px] font-normal opacity-70 truncate">{opt?.shortLabel}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
                           {/* 1. Colors */}
                           <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-border-default space-y-3 shadow-xs">
                             <p className="text-[11px] font-black uppercase text-slate-500 flex items-center gap-1.5">
@@ -865,13 +1067,47 @@ export default function HomepageShelvesAdminPage() {
 
                     {/* LIVE SHELF PREVIEW (Cards are clickable to customize text & colors) */}
                     <div className="pt-3 border-t border-dashed border-border-default">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                          <Sparkles className="w-3.5 h-3.5 text-[#faad13]" /> Live Shelf Preview ({cardStyleMeta.label})
-                        </span>
-                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">
-                          💡 Click any card below to edit its text &amp; colors
-                        </span>
+                      <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-[#faad13]" /> Live Shelf Preview ({cardStyleMeta.label})
+                          </span>
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold hidden sm:inline">
+                            💡 Click any card below to edit its text &amp; colors
+                          </span>
+                        </div>
+
+                        {/* Desktop / Mobile Preview Mode Switcher */}
+                        <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewDeviceMode("desktop")}
+                            className={cn(
+                              "px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all text-xs cursor-pointer",
+                              previewDeviceMode === "desktop"
+                                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs font-black"
+                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                            )}
+                            title="Preview with Desktop sizing"
+                          >
+                            <Monitor className="w-3.5 h-3.5" />
+                            <span>Desktop ({currentDesktopSize})</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewDeviceMode("mobile")}
+                            className={cn(
+                              "px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all text-xs cursor-pointer",
+                              previewDeviceMode === "mobile"
+                                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs font-black"
+                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                            )}
+                            title="Preview with Mobile sizing"
+                          >
+                            <Smartphone className="w-3.5 h-3.5" />
+                            <span>Mobile ({currentMobileSize})</span>
+                          </button>
+                        </div>
                       </div>
                       <div className="w-full overflow-x-auto pb-3 pt-1 flex gap-4 no-scrollbar">
                         {section.items.map((item, idx) => {
@@ -926,7 +1162,7 @@ export default function HomepageShelvesAdminPage() {
                               }}
                               className={cn(
                                 "relative shrink-0 cursor-pointer group/previewCard rounded-3xl transition-all hover:scale-[1.01] hover:ring-2 hover:ring-amber-500 shadow-sm select-none",
-                                getPreviewShelfCardWidthClass(currentStyleId)
+                                getPreviewShelfCardWidthClass(currentStyleId, section.cardSizeDesktop, section.cardSizeMobile, previewDeviceMode)
                               )}
                               title="Click this card to edit text and colors"
                             >
@@ -937,6 +1173,8 @@ export default function HomepageShelvesAdminPage() {
                                 <ShelfCard
                                   item={mixedItem}
                                   cardStyle={currentStyleId}
+                                  cardSizeDesktop={section.cardSizeDesktop}
+                                  cardSizeMobile={section.cardSizeMobile}
                                   cardBgColor={item.cardBgColor || section.cardBgColor}
                                   cardTextColor={item.cardTextColor || section.cardTextColor}
                                   cardAccentColor={item.cardAccentColor || section.cardAccentColor}
@@ -1002,7 +1240,14 @@ export default function HomepageShelvesAdminPage() {
           onClose={() => setStylePickerSectionId(null)}
           onSelectStyle={(styleId) => {
             if (stylePickerSectionId) {
-              updateSection(stylePickerSectionId, { cardStyle: styleId });
+              const sec = sections.find((s) => s.id === stylePickerSectionId);
+              const validDesktop = getValidCardSize(styleId, "desktop", sec?.cardSizeDesktop);
+              const validMobile = getValidCardSize(styleId, "mobile", sec?.cardSizeMobile);
+              updateSection(stylePickerSectionId, {
+                cardStyle: styleId,
+                cardSizeDesktop: validDesktop,
+                cardSizeMobile: validMobile,
+              });
               const label = HOME_CARD_STYLES.find((s) => s.id === styleId)?.label;
               toast.success(`Card style set to "${label}"`);
             }
@@ -2683,7 +2928,12 @@ export default function HomepageShelvesAdminPage() {
               <label className="text-xs font-bold text-text-primary">Initial Card Layout Style</label>
               <select
                 value={newShelfCardStyle}
-                onChange={(e) => setNewShelfCardStyle(e.target.value as HomeCardStyleId)}
+                onChange={(e) => {
+                  const s = e.target.value as HomeCardStyleId;
+                  setNewShelfCardStyle(s);
+                  setNewShelfCardSizeDesktop(getValidCardSize(s, "desktop", newShelfCardSizeDesktop));
+                  setNewShelfCardSizeMobile(getValidCardSize(s, "mobile", newShelfCardSizeMobile));
+                }}
                 className="w-full h-10 px-3 border border-border-default rounded-xl bg-bg-surface text-xs font-bold text-text-primary outline-none cursor-pointer"
               >
                 {HOME_CARD_STYLES.map((style) => (
@@ -2693,6 +2943,54 @@ export default function HomepageShelvesAdminPage() {
                 ))}
               </select>
             </div>
+
+            {/* Initial Box Sizes */}
+            {(() => {
+              const modalSizeMeta = CARD_STYLE_SIZE_OPTIONS[newShelfCardStyle] || CARD_STYLE_SIZE_OPTIONS["classic-default"];
+              return (
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-text-primary flex items-center gap-1">
+                      <Monitor className="w-3.5 h-3.5 text-blue-500" /> Desktop Size
+                    </label>
+                    <select
+                      value={newShelfCardSizeDesktop}
+                      onChange={(e) => setNewShelfCardSizeDesktop(e.target.value as HomeCardSize)}
+                      className="w-full h-9 px-2.5 border border-border-default rounded-xl bg-bg-surface text-xs font-bold text-text-primary outline-none cursor-pointer"
+                    >
+                      {modalSizeMeta.desktop.map((sizeId) => {
+                        const opt = HOME_CARD_SIZES.find((s) => s.id === sizeId);
+                        return (
+                          <option key={`modal-d-${sizeId}`} value={sizeId}>
+                            {opt?.label || sizeId}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-text-primary flex items-center gap-1">
+                      <Smartphone className="w-3.5 h-3.5 text-emerald-500" /> Mobile Size
+                    </label>
+                    <select
+                      value={newShelfCardSizeMobile}
+                      onChange={(e) => setNewShelfCardSizeMobile(e.target.value as HomeCardSize)}
+                      className="w-full h-9 px-2.5 border border-border-default rounded-xl bg-bg-surface text-xs font-bold text-text-primary outline-none cursor-pointer"
+                    >
+                      {modalSizeMeta.mobile.map((sizeId) => {
+                        const opt = HOME_CARD_SIZES.find((s) => s.id === sizeId);
+                        return (
+                          <option key={`modal-m-${sizeId}`} value={sizeId}>
+                            {opt?.label || sizeId}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Modal Actions */}
             <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border-default">

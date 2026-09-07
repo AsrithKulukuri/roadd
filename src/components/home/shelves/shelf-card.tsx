@@ -27,7 +27,11 @@ import {
 import { cn, formatPriceCompact, formatPropertyType } from "@/lib/utils";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import type { MixedItem } from "@/components/home/mixed-carousel-row";
-import type { HomeCardStyleId } from "@/types/home-section";
+import {
+  type HomeCardStyleId,
+  type HomeCardSize,
+  getValidCardSize,
+} from "@/types/home-section";
 
 interface ShelfCardProps {
   item: MixedItem & {
@@ -44,6 +48,8 @@ interface ShelfCardProps {
     customCtaText?: string;
   };
   cardStyle?: HomeCardStyleId;
+  cardSizeDesktop?: HomeCardSize;
+  cardSizeMobile?: HomeCardSize;
   className?: string;
   index?: number;
   cardBgColor?: string;
@@ -80,6 +86,8 @@ interface ShelfCardProps {
 export function ShelfCard({
   item,
   cardStyle = "classic-default",
+  cardSizeDesktop,
+  cardSizeMobile,
   className,
   index = 0,
   cardBgColor,
@@ -112,6 +120,12 @@ export function ShelfCard({
   onEditAccentColor,
   onClick,
 }: ShelfCardProps) {
+  const dSize = getValidCardSize(cardStyle, "desktop", cardSizeDesktop);
+  const mSize = getValidCardSize(cardStyle, "mobile", cardSizeMobile);
+  const isCompactMobile = mSize === "very-small" || mSize === "small";
+  const isCompactDesktop = dSize === "very-small" || dSize === "small";
+  const isLargeDesktop = dSize === "big" || dSize === "very-big";
+
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const isSaved = isFavorite(item.id);
 
@@ -437,7 +451,9 @@ export function ShelfCard({
         {/* Card Body below image */}
         <div
           className={cn(
-            "flex flex-col justify-between flex-1 p-3 sm:p-4 gap-2.5 transition-all",
+            "flex flex-col justify-between flex-1 transition-all",
+            isCompactMobile ? "p-2.5 gap-1.5" : "p-3 gap-2",
+            isCompactDesktop ? "sm:p-3 sm:gap-2" : isLargeDesktop ? "sm:p-4.5 sm:gap-3" : "sm:p-4 sm:gap-2.5",
             isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/30 cursor-pointer"
           )}
           style={containerStyle}
@@ -454,7 +470,9 @@ export function ShelfCard({
             <h4
               style={textStyle}
               className={cn(
-                "font-extrabold text-sm sm:text-base text-slate-900 line-clamp-1 transition-colors group-hover:text-amber-600",
+                "font-extrabold text-slate-900 line-clamp-1 transition-colors group-hover:text-amber-600",
+                isCompactMobile ? "text-xs" : "text-sm",
+                isCompactDesktop ? "sm:text-sm" : isLargeDesktop ? "sm:text-base font-black" : "sm:text-base",
                 isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 rounded px-1"
               )}
               title={isEditable ? "Click to edit title / headline" : undefined}
@@ -468,7 +486,8 @@ export function ShelfCard({
             {(activeTagline || data.tagline) && (
               <p
                 className={cn(
-                  "text-[11px] text-slate-500 line-clamp-1 mt-0.5 transition-all",
+                  "text-slate-500 line-clamp-1 transition-all",
+                  isCompactMobile ? "text-[10px] mt-0.5" : "text-[11px] mt-0.5",
                   isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1"
                 )}
                 title={isEditable ? "Click to edit tagline / subtitle" : undefined}
@@ -482,22 +501,28 @@ export function ShelfCard({
             {/* Location */}
             <p
               className={cn(
-                "text-xs text-slate-500 truncate mt-1.5 flex items-center gap-1 transition-all",
+                "text-slate-500 truncate flex items-center gap-1 transition-all font-medium",
+                isCompactMobile ? "text-[10px] mt-1" : "text-xs mt-1.5",
                 isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1"
               )}
               title={isEditable ? "Click to edit location text" : undefined}
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditLocation || onEditTextColor)?.(); } : undefined}
             >
-              <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <MapPin className={cn("text-amber-500 shrink-0", isCompactMobile ? "w-3 h-3" : "w-3.5 h-3.5")} />
               {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               <span className="truncate">{data.locationStr}</span>
             </p>
 
             {/* Specs row: BHK & Area */}
-            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100 text-xs font-semibold text-slate-700">
+            <div className={cn(
+              "flex items-center gap-1.5 border-t border-slate-100 font-semibold text-slate-700",
+              isCompactMobile ? "mt-1 pt-1.5 text-[10px]" : "mt-2 pt-2 text-xs",
+              isCompactDesktop ? "sm:text-xs" : isLargeDesktop ? "sm:text-sm" : "sm:text-xs"
+            )}>
               <span
                 className={cn(
-                  "px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 text-[11px] transition-all",
+                  "px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 transition-all font-bold",
+                  isCompactMobile ? "text-[10px]" : "text-[11px]",
                   isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400"
                 )}
                 title={isEditable ? "Click to edit BHK / configuration" : undefined}
@@ -512,7 +537,8 @@ export function ShelfCard({
                   <span className="text-slate-300">•</span>
                   <span
                     className={cn(
-                      "text-slate-600 text-[11px] transition-all",
+                      "text-slate-600 transition-all",
+                      isCompactMobile ? "text-[10px]" : "text-[11px]",
                       isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 rounded px-1"
                     )}
                     title={isEditable ? "Click to edit area / size" : undefined}
@@ -527,23 +553,29 @@ export function ShelfCard({
           </div>
 
           {/* Footer: Developer / Status + CTA */}
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs mt-1">
+          <div className={cn(
+            "flex items-center justify-between border-t border-slate-100 mt-1",
+            isCompactMobile ? "pt-1.5 text-[10px]" : "pt-2 text-xs"
+          )}>
             <span
               className={cn(
-                "text-[11px] text-slate-500 font-medium truncate max-w-[140px] flex items-center gap-1 transition-all",
+                "text-slate-500 font-medium truncate flex items-center gap-1 transition-all",
+                isCompactMobile ? "max-w-[95px] text-[10px]" : "max-w-[140px] text-[11px]",
                 isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1"
               )}
               title={isEditable ? "Click to edit developer / partner text" : undefined}
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditDeveloper || onEditTextColor)?.(); } : undefined}
             >
-              <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
+              <ShieldCheck className={cn("text-emerald-500 shrink-0", isCompactMobile ? "w-2.5 h-2.5" : "w-3 h-3")} />
               {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               <span className="truncate">{data.developer}</span>
             </span>
 
             <span
               className={cn(
-                "px-2.5 py-1 rounded-lg text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/70 transition-colors flex items-center gap-1 shrink-0",
+                "rounded-lg font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/70 transition-colors flex items-center gap-1 shrink-0",
+                isCompactMobile ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
+                isCompactDesktop ? "sm:px-2.5 sm:py-1 sm:text-xs" : isLargeDesktop ? "sm:px-3.5 sm:py-1.5 sm:text-xs" : "sm:px-2.5 sm:py-1 sm:text-xs",
                 isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105"
               )}
               style={accentBgStyle}
@@ -607,7 +639,9 @@ export function ShelfCard({
         {/* Right Info Section */}
         <div
           className={cn(
-            "p-3.5 sm:p-4 flex flex-col justify-between flex-1 min-w-0 transition-all",
+            "flex flex-col justify-between flex-1 min-w-0 transition-all",
+            isCompactMobile ? "p-2.5" : "p-3",
+            isCompactDesktop ? "sm:p-3" : isLargeDesktop ? "sm:p-4.5" : "sm:p-3.5",
             isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/30 cursor-pointer"
           )}
           style={containerStyle}
@@ -676,7 +710,9 @@ export function ShelfCard({
             <h3
               style={textStyle}
               className={cn(
-                "font-extrabold text-sm sm:text-base text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
+                "font-extrabold text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
+                isCompactMobile ? "text-xs" : "text-sm",
+                isCompactDesktop ? "sm:text-sm" : isLargeDesktop ? "sm:text-base font-black" : "sm:text-sm",
                 isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
               )}
               title={isEditable ? "Click to edit headline & text color" : undefined}
@@ -689,7 +725,8 @@ export function ShelfCard({
             {/* Location */}
             <p
               className={cn(
-                "text-[11px] text-slate-500 flex items-center gap-1 line-clamp-1 font-medium",
+                "text-slate-500 flex items-center gap-1 line-clamp-1 font-medium",
+                isCompactMobile ? "text-[10px]" : "text-[11px]",
                 isEditable && "cursor-pointer hover:underline hover:text-amber-500"
               )}
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditLocation || onEditTextColor)?.(); } : undefined}
@@ -705,7 +742,9 @@ export function ShelfCard({
             <div
               style={textStyle}
               className={cn(
-                "text-base sm:text-lg font-black tracking-tight text-slate-950",
+                "font-black tracking-tight text-slate-950",
+                isCompactMobile ? "text-sm" : "text-base",
+                isCompactDesktop ? "sm:text-base" : isLargeDesktop ? "sm:text-xl" : "sm:text-lg",
                 isEditable && "cursor-pointer hover:underline hover:text-amber-500"
               )}
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditPrice || onEditTextColor)?.(); } : undefined}
@@ -714,9 +753,12 @@ export function ShelfCard({
               {data.priceStr}
             </div>
 
-            <div className="flex items-center justify-between gap-2 text-[11px] text-slate-600 font-semibold">
+            <div className={cn(
+              "flex items-center justify-between gap-2 text-slate-600 font-semibold",
+              isCompactMobile ? "text-[10px]" : "text-[11px]"
+            )}>
               <div
-                className={cn("flex items-center gap-2 truncate", isEditable && "cursor-pointer hover:underline hover:text-amber-500")}
+                className={cn("flex items-center gap-1.5 truncate", isEditable && "cursor-pointer hover:underline hover:text-amber-500")}
                 onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditBhk || onEditTextColor)?.(); } : undefined}
                 title={isEditable ? "Click to edit BHK & area" : undefined}
               >
@@ -821,7 +863,9 @@ export function ShelfCard({
         <div
           style={containerStyle}
           className={cn(
-            "p-4 sm:p-5 bg-white flex flex-col justify-between flex-1 space-y-3 transition-all",
+            "bg-white flex flex-col justify-between flex-1 transition-all",
+            isCompactMobile ? "p-3 space-y-2" : "p-3.5 space-y-2.5",
+            isCompactDesktop ? "sm:p-3.5 sm:space-y-2.5" : isLargeDesktop ? "sm:p-5 sm:space-y-3.5" : "sm:p-4 sm:space-y-3",
             isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
           )}
           onClick={isEditable ? (e) => {
@@ -835,7 +879,12 @@ export function ShelfCard({
           <div className="space-y-1">
             <div
               style={textStyle}
-              className={cn("text-2xl font-black tracking-tight text-slate-950", isEditable && "cursor-pointer hover:underline")}
+              className={cn(
+                "font-black tracking-tight text-slate-950",
+                isCompactMobile ? "text-lg" : "text-xl",
+                isCompactDesktop ? "sm:text-xl" : isLargeDesktop ? "sm:text-3xl" : "sm:text-2xl",
+                isEditable && "cursor-pointer hover:underline"
+              )}
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
               title={isEditable ? "Click to choose text color" : undefined}
             >
@@ -844,7 +893,9 @@ export function ShelfCard({
             <h3
               style={textStyle}
               className={cn(
-                "font-heading font-extrabold text-base sm:text-lg line-clamp-1 text-slate-900 group-hover:text-amber-600 transition-colors",
+                "font-heading font-extrabold line-clamp-1 text-slate-900 group-hover:text-amber-600 transition-colors",
+                isCompactMobile ? "text-xs" : "text-sm",
+                isCompactDesktop ? "sm:text-sm" : isLargeDesktop ? "sm:text-lg" : "sm:text-base",
                 isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
               )}
               title={isEditable ? "Click to edit headline & text color" : undefined}
@@ -854,7 +905,11 @@ export function ShelfCard({
               {data.title}
             </h3>
             <p
-              className={cn("text-xs text-slate-500 font-medium flex items-center gap-1", isEditable && "cursor-pointer hover:underline")}
+              className={cn(
+                "text-slate-500 font-medium flex items-center gap-1",
+                isCompactMobile ? "text-[10px]" : "text-xs",
+                isEditable && "cursor-pointer hover:underline"
+              )}
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
               title={isEditable ? "Click to choose text color" : undefined}
             >
@@ -863,16 +918,16 @@ export function ShelfCard({
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-              <span className="text-[10px] uppercase font-bold text-slate-500 block">Config</span>
-              <span style={textStyle} className="font-extrabold text-slate-900 truncate block text-sm">
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-xs">
+            <div className={cn("rounded-xl bg-slate-50 border border-slate-200/80", isCompactMobile ? "p-1.5" : "p-2 sm:p-2.5")}>
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 block">Config</span>
+              <span style={textStyle} className={cn("font-extrabold text-slate-900 truncate block", isCompactMobile ? "text-xs" : "text-xs sm:text-sm")}>
                 {data.bhkStr || "Available"}
               </span>
             </div>
-            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-              <span className="text-[10px] uppercase font-bold text-slate-500 block">Area</span>
-              <span style={textStyle} className="font-extrabold text-slate-900 truncate block text-sm">
+            <div className={cn("rounded-xl bg-slate-50 border border-slate-200/80", isCompactMobile ? "p-1.5" : "p-2 sm:p-2.5")}>
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 block">Area</span>
+              <span style={textStyle} className={cn("font-extrabold text-slate-900 truncate block", isCompactMobile ? "text-xs" : "text-xs sm:text-sm")}>
                 {data.areaStr || "Spacious"}
               </span>
             </div>
@@ -1648,7 +1703,9 @@ export function ShelfCard({
         <div
           style={containerStyle}
           className={cn(
-            "p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-4 bg-white transition-all",
+            "flex flex-col justify-between flex-1 bg-white transition-all",
+            isCompactMobile ? "p-3 space-y-2.5" : "p-3.5 space-y-3",
+            isCompactDesktop ? "sm:p-3.5 sm:space-y-3" : isLargeDesktop ? "sm:p-5 sm:space-y-4" : "sm:p-4 sm:space-y-3.5",
             isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
           )}
           onClick={isEditable ? (e) => {
@@ -1663,7 +1720,9 @@ export function ShelfCard({
             <h3
               style={textStyle}
               className={cn(
-                "font-heading font-black text-base sm:text-lg text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
+                "font-heading font-black text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
+                isCompactMobile ? "text-xs" : "text-sm",
+                isCompactDesktop ? "sm:text-sm" : isLargeDesktop ? "sm:text-lg" : "sm:text-base",
                 isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
               )}
               title={isEditable ? "Click to edit headline & text color" : undefined}
@@ -1673,7 +1732,11 @@ export function ShelfCard({
               {data.title}
             </h3>
             <p
-              className={cn("text-xs text-slate-500 flex items-center gap-1 font-medium", isEditable && "cursor-pointer hover:underline")}
+              className={cn(
+                "text-slate-500 flex items-center gap-1 font-medium",
+                isCompactMobile ? "text-[10px]" : "text-xs",
+                isEditable && "cursor-pointer hover:underline"
+              )}
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
               title={isEditable ? "Click to choose text color" : undefined}
             >
@@ -1685,7 +1748,12 @@ export function ShelfCard({
           <div className="flex items-center justify-between">
             <div
               style={textStyle}
-              className={cn("text-xl font-black text-slate-950", isEditable && "cursor-pointer hover:underline")}
+              className={cn(
+                "font-black text-slate-950",
+                isCompactMobile ? "text-base" : "text-lg",
+                isCompactDesktop ? "sm:text-lg" : isLargeDesktop ? "sm:text-2xl" : "sm:text-xl",
+                isEditable && "cursor-pointer hover:underline"
+              )}
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
               title={isEditable ? "Click to choose text color" : undefined}
             >
@@ -1693,7 +1761,11 @@ export function ShelfCard({
             </div>
             <div
               style={textStyle}
-              className={cn("text-xs font-bold text-slate-700", isEditable && "cursor-pointer hover:underline")}
+              className={cn(
+                "font-bold text-slate-700",
+                isCompactMobile ? "text-[10px]" : "text-xs",
+                isEditable && "cursor-pointer hover:underline"
+              )}
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
               title={isEditable ? "Click to choose text color" : undefined}
             >
@@ -1702,14 +1774,14 @@ export function ShelfCard({
           </div>
 
           {/* Construction Progress Bar (Admin Configurable per Project) */}
-          <div className="pt-3 border-t border-slate-100 space-y-1.5">
+          <div className="pt-2 sm:pt-3 border-t border-slate-100 space-y-1.5">
             <div className="flex items-center justify-between text-xs font-extrabold">
-              <span style={textStyle} className="text-slate-700">Construction Progress</span>
-              <span className="font-black" style={{ color: "#10b981" }}>
+              <span style={textStyle} className={cn("text-slate-700", isCompactMobile ? "text-[10px]" : "text-xs")}>Construction Progress</span>
+              <span className="font-black" style={{ color: "#10b981", fontSize: isCompactMobile ? "11px" : "12px" }}>
                 {data.progressPercentage ?? 70}%
               </span>
             </div>
-            <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden border border-slate-200/80">
+            <div className={cn("w-full rounded-full bg-slate-100 overflow-hidden border border-slate-200/80", isCompactMobile ? "h-2" : "h-2.5")}>
               <div
                 className="h-full rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-emerald-400 transition-all duration-1000 shadow-sm"
                 style={{ width: `${Math.min(100, Math.max(0, data.progressPercentage ?? 70))}%` }}

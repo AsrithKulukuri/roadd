@@ -7,9 +7,11 @@ import {
   DEFAULT_CARD_STYLE,
   MAX_HOME_SECTION_ITEMS,
   MAX_HOME_SECTIONS,
+  getValidCardSize,
   type HomeSection,
   type HomeSectionItem,
   type HomeCardStyleId,
+  type HomeCardSize,
 } from "@/types/home-section";
 
 const VALID_CARD_STYLES = new Set<string>(HOME_CARD_STYLES.map((s) => s.id));
@@ -31,6 +33,18 @@ function validateSections(input: unknown): HomeSection[] | null {
     const cardStyle: HomeCardStyleId = VALID_CARD_STYLES.has(rawCardStyle)
       ? (rawCardStyle as HomeCardStyleId)
       : DEFAULT_CARD_STYLE;
+
+    // Card sizes: separate for desktop and mobile, validated against card style compatibility
+    const cardSizeDesktop: HomeCardSize = getValidCardSize(
+      cardStyle,
+      "desktop",
+      typeof value.cardSizeDesktop === "string" ? (value.cardSizeDesktop as HomeCardSize) : undefined
+    );
+    const cardSizeMobile: HomeCardSize = getValidCardSize(
+      cardStyle,
+      "mobile",
+      typeof value.cardSizeMobile === "string" ? (value.cardSizeMobile as HomeCardSize) : undefined
+    );
 
     if (!id || ids.has(id) || !title || title.length > 40 || !HOME_SECTION_ICON_NAMES.includes(icon as HomeSection["icon"]) || !items || items.length > MAX_HOME_SECTION_ITEMS) {
       return null;
@@ -151,6 +165,8 @@ function validateSections(input: unknown): HomeSection[] | null {
       isActive: value.isActive !== false,
       items: cleanItems,
       cardStyle,
+      cardSizeDesktop,
+      cardSizeMobile,
       cardBgColor,
       cardTextColor,
       cardAccentColor,

@@ -8,13 +8,15 @@ import { useState } from "react";
 import { useIsMounted } from "@/hooks/use-is-mounted";
 import { HOME_SECTION_ICONS } from "@/lib/home-section-icons";
 import type { LucideIcon } from "lucide-react";
-import type { HomeCardStyleId, HomeSection } from "@/types/home-section";
+import type { HomeCardStyleId, HomeCardSize, HomeSection } from "@/types/home-section";
 
 type RenderSection = {
   id: string;
   title: string;
   icon: LucideIcon;
   cardStyle?: HomeCardStyleId;
+  cardSizeDesktop?: HomeCardSize;
+  cardSizeMobile?: HomeCardSize;
   cardBgColor?: string;
   cardTextColor?: string;
   cardAccentColor?: string;
@@ -155,6 +157,8 @@ export function HomeCategories() {
         title: section.title,
         icon: HOME_SECTION_ICONS[section.icon],
         cardStyle: section.cardStyle,
+        cardSizeDesktop: section.cardSizeDesktop,
+        cardSizeMobile: section.cardSizeMobile,
         cardBgColor: section.cardBgColor,
         cardTextColor: section.cardTextColor,
         cardAccentColor: section.cardAccentColor,
@@ -218,9 +222,9 @@ export function HomeCategories() {
         }),
       }))
     : [
-        { id: "recommended", title: "Recommended", icon: HOME_SECTION_ICONS.ThumbsUp, cardStyle: "classic-default" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: recommendedMixed },
-        { id: "featured", title: "Featured", icon: HOME_SECTION_ICONS.Star, cardStyle: "tall-portrait" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: featuredMixed },
-        { id: "budget-friendly", title: "Budget Friendly", icon: HOME_SECTION_ICONS.IndianRupee, cardStyle: "bottom-floating" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: budgetMixed },
+        { id: "recommended", title: "Recommended", icon: HOME_SECTION_ICONS.ThumbsUp, cardStyle: "classic-default" as const, cardSizeDesktop: "medium" as const, cardSizeMobile: "medium" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: recommendedMixed },
+        { id: "featured", title: "Featured", icon: HOME_SECTION_ICONS.Star, cardStyle: "tall-portrait" as const, cardSizeDesktop: "medium" as const, cardSizeMobile: "medium" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: featuredMixed },
+        { id: "budget-friendly", title: "Budget Friendly", icon: HOME_SECTION_ICONS.IndianRupee, cardStyle: "bottom-floating" as const, cardSizeDesktop: "medium" as const, cardSizeMobile: "medium" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: budgetMixed },
       ];
 
   return (
@@ -238,6 +242,8 @@ export function HomeCategories() {
             enableCarousel={section.enableCarousel !== false}
             carouselInterval={section.carouselInterval || 4}
             cardStyle={section.cardStyle || "classic-default"}
+            cardSizeDesktop={section.cardSizeDesktop}
+            cardSizeMobile={section.cardSizeMobile}
             cardBgColor={section.cardBgColor}
             cardTextColor={section.cardTextColor}
             cardAccentColor={section.cardAccentColor}
