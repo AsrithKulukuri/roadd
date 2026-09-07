@@ -96,26 +96,42 @@ export default function ContentAdminPage() {
       setPreviewDesktopText("");
       return;
     }
-    const fullText = desktopList[previewDesktopLoop % desktopList.length];
-    const forwardSpeed = typingSpeedVal || 60;
-    const deletingSpeed = Math.max(15, Math.round(forwardSpeed * 0.45));
-    const pauseTime = pauseDurationVal || 2200;
-    const speed = previewDesktopDeleting ? deletingSpeed : forwardSpeed;
+    const currentPhrase = desktopList[previewDesktopLoop % desktopList.length] || "";
+    const forwardSpeed = Math.max(30, typingSpeedVal || 60);
+    const pauseTime = Math.max(1000, pauseDurationVal || 2200);
 
-    const timer = setTimeout(() => {
-      if (previewDesktopDeleting) {
-        setPreviewDesktopText(fullText.substring(0, previewDesktopText.length - 1));
+    if (desktopList.length === 1 && previewDesktopText === currentPhrase && !previewDesktopDeleting) {
+      return;
+    }
+
+    let timer: NodeJS.Timeout;
+
+    if (!previewDesktopDeleting) {
+      if (previewDesktopText.length < currentPhrase.length) {
+        timer = setTimeout(() => {
+          setPreviewDesktopText(currentPhrase.slice(0, previewDesktopText.length + 1));
+        }, forwardSpeed);
       } else {
-        setPreviewDesktopText(fullText.substring(0, previewDesktopText.length + 1));
+        timer = setTimeout(() => {
+          if (desktopList.length > 1) {
+            setPreviewDesktopDeleting(true);
+          }
+        }, pauseTime);
       }
-
-      if (!previewDesktopDeleting && previewDesktopText === fullText) {
-        setTimeout(() => setPreviewDesktopDeleting(true), pauseTime);
-      } else if (previewDesktopDeleting && previewDesktopText === "") {
-        setPreviewDesktopDeleting(false);
-        setPreviewDesktopLoop((prev) => prev + 1);
+    } else {
+      if (previewDesktopText.length > 0) {
+        const step = currentPhrase.length > 35 && previewDesktopText.length > 8 ? 2 : 1;
+        const deleteDelay = Math.max(25, Math.round(forwardSpeed * 0.48));
+        timer = setTimeout(() => {
+          setPreviewDesktopText(currentPhrase.slice(0, Math.max(0, previewDesktopText.length - step)));
+        }, deleteDelay);
+      } else {
+        timer = setTimeout(() => {
+          setPreviewDesktopDeleting(false);
+          setPreviewDesktopLoop((prev) => (prev + 1) % desktopList.length);
+        }, 320);
       }
-    }, speed);
+    }
 
     return () => clearTimeout(timer);
   }, [previewDesktopText, previewDesktopDeleting, previewDesktopLoop, desktopList, typingSpeedVal, pauseDurationVal]);
@@ -130,26 +146,42 @@ export default function ContentAdminPage() {
       setPreviewMobileText("");
       return;
     }
-    const fullText = mobileList[previewMobileLoop % mobileList.length];
-    const forwardSpeed = typingSpeedVal || 60;
-    const deletingSpeed = Math.max(15, Math.round(forwardSpeed * 0.45));
-    const pauseTime = pauseDurationVal || 2200;
-    const speed = previewMobileDeleting ? deletingSpeed : forwardSpeed;
+    const currentPhrase = mobileList[previewMobileLoop % mobileList.length] || "";
+    const forwardSpeed = Math.max(30, typingSpeedVal || 60);
+    const pauseTime = Math.max(1000, pauseDurationVal || 2200);
 
-    const timer = setTimeout(() => {
-      if (previewMobileDeleting) {
-        setPreviewMobileText(fullText.substring(0, previewMobileText.length - 1));
+    if (mobileList.length === 1 && previewMobileText === currentPhrase && !previewMobileDeleting) {
+      return;
+    }
+
+    let timer: NodeJS.Timeout;
+
+    if (!previewMobileDeleting) {
+      if (previewMobileText.length < currentPhrase.length) {
+        timer = setTimeout(() => {
+          setPreviewMobileText(currentPhrase.slice(0, previewMobileText.length + 1));
+        }, forwardSpeed);
       } else {
-        setPreviewMobileText(fullText.substring(0, previewMobileText.length + 1));
+        timer = setTimeout(() => {
+          if (mobileList.length > 1) {
+            setPreviewMobileDeleting(true);
+          }
+        }, pauseTime);
       }
-
-      if (!previewMobileDeleting && previewMobileText === fullText) {
-        setTimeout(() => setPreviewMobileDeleting(true), pauseTime);
-      } else if (previewMobileDeleting && previewMobileText === "") {
-        setPreviewMobileDeleting(false);
-        setPreviewMobileLoop((prev) => prev + 1);
+    } else {
+      if (previewMobileText.length > 0) {
+        const step = currentPhrase.length > 35 && previewMobileText.length > 8 ? 2 : 1;
+        const deleteDelay = Math.max(25, Math.round(forwardSpeed * 0.48));
+        timer = setTimeout(() => {
+          setPreviewMobileText(currentPhrase.slice(0, Math.max(0, previewMobileText.length - step)));
+        }, deleteDelay);
+      } else {
+        timer = setTimeout(() => {
+          setPreviewMobileDeleting(false);
+          setPreviewMobileLoop((prev) => (prev + 1) % mobileList.length);
+        }, 320);
       }
-    }, speed);
+    }
 
     return () => clearTimeout(timer);
   }, [previewMobileText, previewMobileDeleting, previewMobileLoop, mobileList, typingSpeedVal, pauseDurationVal]);
@@ -1163,10 +1195,12 @@ export default function ContentAdminPage() {
                     {desktopList.length === 0 ? (
                       <span className="italic text-slate-400">Search properties, projects, locations... (Standard placeholder, no typing)</span>
                     ) : (
-                      <>
-                        Search &ldquo;{previewDesktopText}&rdquo;
-                        <span className="inline-block w-[2px] h-[14px] bg-amber-500 ml-0.5 animate-pulse" />
-                      </>
+                      <span className="flex items-center min-w-0 truncate text-slate-400">
+                        <span className="shrink-0 text-slate-400">Search&nbsp;&ldquo;</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-semibold truncate">{previewDesktopText}</span>
+                        <span className="inline-block w-[2px] h-[14px] bg-amber-500 ml-0.5 animate-pulse shrink-0 rounded-full" />
+                        <span className="shrink-0 text-slate-400">&rdquo;</span>
+                      </span>
                     )}
                   </span>
                 </div>
@@ -1330,10 +1364,12 @@ export default function ContentAdminPage() {
                     {mobileList.length === 0 ? (
                       <span className="italic text-slate-400">Search properties... (No typing)</span>
                     ) : (
-                      <>
-                        Search &ldquo;{previewMobileText}&rdquo;
-                        <span className="inline-block w-[1.5px] h-[12px] bg-amber-500 ml-0.5 animate-pulse" />
-                      </>
+                      <span className="flex items-center min-w-0 truncate text-slate-400">
+                        <span className="shrink-0 text-slate-400">Search&nbsp;&ldquo;</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-semibold truncate">{previewMobileText}</span>
+                        <span className="inline-block w-[1.5px] h-[12px] bg-amber-500 ml-0.5 animate-pulse shrink-0 rounded-full" />
+                        <span className="shrink-0 text-slate-400">&rdquo;</span>
+                      </span>
                     )}
                   </span>
                 </div>

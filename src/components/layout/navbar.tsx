@@ -123,7 +123,6 @@ export function Navbar() {
   const [navTypedText, setNavTypedText] = useState("");
   const [navIsDeleting, setNavIsDeleting] = useState(false);
   const [navLoopNum, setNavLoopNum] = useState(0);
-  const [navTypingSpeed, setNavTypingSpeed] = useState(60);
 
   useEffect(() => {
     fetchSearchPhrases?.();
@@ -141,32 +140,50 @@ export function Navbar() {
       setNavTypedText("");
       return;
     }
-    const currentFullText = activeNavSuggestions[navLoopNum % activeNavSuggestions.length];
-    const forwardSpeed = searchTypewriterSpeed || 60;
-    const deletingSpeed = Math.max(15, Math.round(forwardSpeed * 0.45));
-    const pauseTime = searchTypewriterPause || 2200;
 
-    const handleType = () => {
-      if (navIsDeleting) {
-        setNavTypedText(currentFullText.substring(0, navTypedText.length - 1));
-        setNavTypingSpeed(deletingSpeed);
+    const currentPhrase = activeNavSuggestions[navLoopNum % activeNavSuggestions.length] || "";
+    const forwardSpeed = Math.max(30, searchTypewriterSpeed || 60);
+    const pauseTime = Math.max(1000, searchTypewriterPause || 2200);
+
+    // If only 1 phrase, stay resting once typed without deleting and retyping
+    if (activeNavSuggestions.length === 1 && navTypedText === currentPhrase && !navIsDeleting) {
+      return;
+    }
+
+    let timer: NodeJS.Timeout;
+
+    if (!navIsDeleting) {
+      // FORWARD TYPING
+      if (navTypedText.length < currentPhrase.length) {
+        timer = setTimeout(() => {
+          setNavTypedText(currentPhrase.slice(0, navTypedText.length + 1));
+        }, forwardSpeed);
       } else {
-        setNavTypedText(currentFullText.substring(0, navTypedText.length + 1));
-        setNavTypingSpeed(forwardSpeed);
+        // Entire sentence typed: Hold for configured pauseTime
+        timer = setTimeout(() => {
+          if (activeNavSuggestions.length > 1) {
+            setNavIsDeleting(true);
+          }
+        }, pauseTime);
       }
-
-      if (!navIsDeleting && navTypedText === currentFullText) {
-        setTimeout(() => setNavIsDeleting(true), pauseTime);
-      } else if (navIsDeleting && navTypedText === "") {
-        setNavIsDeleting(false);
-        setNavLoopNum((prev) => prev + 1);
-        setNavTypingSpeed(Math.max(200, Math.round(forwardSpeed * 3)));
+    } else {
+      // SMOOTH BACKSPACING
+      if (navTypedText.length > 0) {
+        const step = currentPhrase.length > 35 && navTypedText.length > 8 ? 2 : 1;
+        const deleteDelay = Math.max(25, Math.round(forwardSpeed * 0.48));
+        timer = setTimeout(() => {
+          setNavTypedText(currentPhrase.slice(0, Math.max(0, navTypedText.length - step)));
+        }, deleteDelay);
+      } else {
+        timer = setTimeout(() => {
+          setNavIsDeleting(false);
+          setNavLoopNum((prev) => (prev + 1) % activeNavSuggestions.length);
+        }, 320);
       }
-    };
+    }
 
-    const timer = setTimeout(handleType, navTypingSpeed);
     return () => clearTimeout(timer);
-  }, [navTypedText, navIsDeleting, navLoopNum, navTypingSpeed, activeNavSuggestions, searchTypewriterSpeed, searchTypewriterPause]);
+  }, [navTypedText, navIsDeleting, navLoopNum, activeNavSuggestions, searchTypewriterSpeed, searchTypewriterPause]);
 
   const handleNavSearchSubmit = (e?: React.FormEvent, customLocation?: string) => {
     if (e) e.preventDefault();
@@ -368,7 +385,7 @@ export function Navbar() {
               >
                 <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                 <span className="text-xs text-slate-300 font-medium truncate flex-1 select-none">
-                  {navTypedText ? (navTypedText.toLowerCase().startsWith("search") ? navTypedText : `Search "${navTypedText}"...`) : 'Search location, project...'}
+                  {navTypedText ? (navTypedText.toLowerCase().startsWith("search") ? navTypedText : `Search “${navTypedText}”`) : 'Search location, project...'}
                 </span>
                 <button
                   type="button"
@@ -413,7 +430,7 @@ export function Navbar() {
                             ? "Search properties, projects, locations..."
                             : navTypedText.toLowerCase().startsWith("search")
                             ? navTypedText
-                            : `Search "${navTypedText}"...`
+                            : `Search “${navTypedText}”`
                         }
                         style={{ outline: "none", boxShadow: "none" }}
                         className="w-full bg-transparent text-xs font-semibold text-white placeholder:text-slate-400 border-none outline-none ring-0 shadow-none focus:outline-none focus:ring-0 focus:border-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:shadow-none focus-visible:shadow-none p-0"

@@ -203,7 +203,6 @@ export function HeroSection() {
   const [typedText, setTypedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
-  const [typingSpeed, setTypingSpeed] = useState(60);
   const [isMobileScreen, setIsMobileScreen] = useState(false);
 
   useEffect(() => {
@@ -235,34 +234,52 @@ export function HeroSection() {
       setTypedText("");
       return;
     }
-    const currentFullText = activeSuggestions[loopNum % activeSuggestions.length];
-    const forwardSpeed = searchTypewriterSpeed || 60;
-    const deletingSpeed = Math.max(15, Math.round(forwardSpeed * 0.45));
-    const pauseTime = searchTypewriterPause || 2200;
 
-    const handleType = () => {
-      if (isDeleting) {
-        setTypedText(currentFullText.substring(0, typedText.length - 1));
-        setTypingSpeed(deletingSpeed);
+    const currentPhrase = activeSuggestions[loopNum % activeSuggestions.length] || "";
+    const forwardSpeed = Math.max(30, searchTypewriterSpeed || 60);
+    const pauseTime = Math.max(1000, searchTypewriterPause || 2200);
+
+    // If only 1 phrase and it has finished typing, stay resting calmly without deleting and retyping
+    if (activeSuggestions.length === 1 && typedText === currentPhrase && !isDeleting) {
+      return;
+    }
+
+    let timer: NodeJS.Timeout;
+
+    if (!isDeleting) {
+      // FORWARD TYPING
+      if (typedText.length < currentPhrase.length) {
+        timer = setTimeout(() => {
+          setTypedText(currentPhrase.slice(0, typedText.length + 1));
+        }, forwardSpeed);
       } else {
-        setTypedText(currentFullText.substring(0, typedText.length + 1));
-        setTypingSpeed(forwardSpeed);
+        // Entire sentence typed: Hold for the configured pauseTime
+        timer = setTimeout(() => {
+          if (activeSuggestions.length > 1) {
+            setIsDeleting(true);
+          }
+        }, pauseTime);
       }
-
-      if (!isDeleting && typedText === currentFullText) {
-        // Pauses when word is fully typed
-        setTimeout(() => setIsDeleting(true), pauseTime);
-      } else if (isDeleting && typedText === "") {
-        // Finished deleting - move to next suggestion
-        setIsDeleting(false);
-        setLoopNum((prev) => prev + 1);
-        setTypingSpeed(Math.max(200, Math.round(forwardSpeed * 3)));
+    } else {
+      // SMOOTH BACKSPACING
+      if (typedText.length > 0) {
+        // Delete smoothly: 1 char at a time, or 2 chars when deleting long middle text
+        const step = currentPhrase.length > 35 && typedText.length > 8 ? 2 : 1;
+        const deleteDelay = Math.max(25, Math.round(forwardSpeed * 0.48));
+        timer = setTimeout(() => {
+          setTypedText(currentPhrase.slice(0, Math.max(0, typedText.length - step)));
+        }, deleteDelay);
+      } else {
+        // Finished erasing: short natural breath before typing next sentence
+        timer = setTimeout(() => {
+          setIsDeleting(false);
+          setLoopNum((prev) => (prev + 1) % activeSuggestions.length);
+        }, 320);
       }
-    };
+    }
 
-    const timer = setTimeout(handleType, typingSpeed);
     return () => clearTimeout(timer);
-  }, [typedText, isDeleting, loopNum, typingSpeed, activeSuggestions, searchTypewriterSpeed, searchTypewriterPause]);
+  }, [typedText, isDeleting, loopNum, activeSuggestions, searchTypewriterSpeed, searchTypewriterPause]);
 
   const { banners, fetchBanners } = useBannersStore();
   const { cities, fetchLocations: fetchMasterLocations } = useLocationsStore();
@@ -816,14 +833,20 @@ export function HeroSection() {
             <div className="relative flex-1 min-w-0 h-full flex items-center">
               {!searchQuery && (
                 <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
-                  <span className="text-sm text-slate-400 font-medium truncate select-none flex items-center w-full">
+                  <span className="text-sm font-medium truncate select-none flex items-center w-full">
                     {activeSuggestions.length === 0 ? (
-                      <span>Search properties, projects, locations...</span>
+                      <span className="text-slate-400">Search properties, projects, locations...</span>
                     ) : (
-                      <>
-                        <span>{typedText.toLowerCase().startsWith("search") ? typedText : `Search "${typedText}"`}</span>
-                        <span className="inline-block w-[2px] h-[16px] bg-amber-500 ml-1 animate-pulse" />
-                      </>
+                      <span className="flex items-center min-w-0 truncate text-slate-400">
+                        {!typedText.toLowerCase().startsWith("search") && (
+                          <span className="shrink-0 text-slate-400">Search&nbsp;&ldquo;</span>
+                        )}
+                        <span className="text-slate-200 font-semibold truncate">{typedText}</span>
+                        <span className="inline-block w-[2px] h-[15px] bg-amber-500 ml-0.5 animate-pulse shrink-0 rounded-full" />
+                        {!typedText.toLowerCase().startsWith("search") && (
+                          <span className="shrink-0 text-slate-400">&rdquo;</span>
+                        )}
+                      </span>
                     )}
                   </span>
                 </div>
@@ -1478,14 +1501,20 @@ export function HeroSection() {
               {/* Animated placeholder overlay - shown only when searchQuery is empty */}
               {!searchQuery && (
                 <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
-                  <span className="text-sm sm:text-base text-slate-400 font-medium truncate select-none flex items-center w-full">
+                  <span className="text-sm sm:text-base font-medium truncate select-none flex items-center w-full">
                     {activeSuggestions.length === 0 ? (
-                      <span>Search properties, projects, locations...</span>
+                      <span className="text-slate-400">Search properties, projects, locations...</span>
                     ) : (
-                      <>
-                        <span>{typedText.toLowerCase().startsWith("search") ? typedText : `Search "${typedText}"`}</span>
-                        <span className="inline-block w-[2px] h-[16px] sm:h-[18px] bg-amber-500 ml-1 animate-pulse" />
-                      </>
+                      <span className="flex items-center min-w-0 truncate text-slate-400">
+                        {!typedText.toLowerCase().startsWith("search") && (
+                          <span className="shrink-0 text-slate-400">Search&nbsp;&ldquo;</span>
+                        )}
+                        <span className="text-slate-800 dark:text-slate-100 font-semibold truncate">{typedText}</span>
+                        <span className="inline-block w-[2px] h-[16px] sm:h-[18px] bg-amber-500 ml-0.5 animate-pulse shrink-0 rounded-full" />
+                        {!typedText.toLowerCase().startsWith("search") && (
+                          <span className="shrink-0 text-slate-400">&rdquo;</span>
+                        )}
+                      </span>
                     )}
                   </span>
                 </div>
