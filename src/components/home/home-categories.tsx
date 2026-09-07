@@ -165,6 +165,11 @@ export function HomeCategories() {
                   itemType: "property" as const,
                   progressPercentage: item.progressPercentage,
                   customBadge: item.customBadge,
+                  customHeadline: item.customHeadline,
+                  customTagline: item.customTagline,
+                  cardBgColor: item.cardBgColor,
+                  cardTextColor: item.cardTextColor,
+                  cardAccentColor: item.cardAccentColor,
                 }]
               : [];
           }
@@ -175,6 +180,11 @@ export function HomeCategories() {
                 itemType: "project" as const,
                 progressPercentage: item.progressPercentage,
                 customBadge: item.customBadge,
+                customHeadline: item.customHeadline,
+                customTagline: item.customTagline,
+                cardBgColor: item.cardBgColor,
+                cardTextColor: item.cardTextColor,
+                cardAccentColor: item.cardAccentColor,
               }]
             : [];
         }),

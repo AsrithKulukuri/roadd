@@ -98,7 +98,12 @@ export interface HomeSectionItem {
   id: string;
   type: "property" | "project";
   progressPercentage?: number; // 0-100 (admin can set progress per item/project)
-  customBadge?: string;        // optional per-item badge
+  customBadge?: string;        // optional per-item badge override
+  customHeadline?: string;     // optional per-item headline / title override
+  customTagline?: string;      // optional per-item tagline override
+  cardBgColor?: string;        // optional per-item background color override
+  cardTextColor?: string;      // optional per-item text color override
+  cardAccentColor?: string;    // optional per-item accent / logo color override
 }
 
 export interface HomeSection {

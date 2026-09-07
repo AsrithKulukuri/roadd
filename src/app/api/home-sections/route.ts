@@ -53,6 +53,21 @@ function validateSections(input: unknown): HomeSection[] | null {
       if (typeof entry.customBadge === "string" && entry.customBadge.trim()) {
         cleanItem.customBadge = entry.customBadge.trim().slice(0, 50);
       }
+      if (typeof entry.customHeadline === "string" && entry.customHeadline.trim()) {
+        cleanItem.customHeadline = entry.customHeadline.trim().slice(0, 100);
+      }
+      if (typeof entry.customTagline === "string" && entry.customTagline.trim()) {
+        cleanItem.customTagline = entry.customTagline.trim().slice(0, 120);
+      }
+      if (typeof entry.cardBgColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(entry.cardBgColor.trim())) {
+        cleanItem.cardBgColor = entry.cardBgColor.trim();
+      }
+      if (typeof entry.cardTextColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(entry.cardTextColor.trim())) {
+        cleanItem.cardTextColor = entry.cardTextColor.trim();
+      }
+      if (typeof entry.cardAccentColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(entry.cardAccentColor.trim())) {
+        cleanItem.cardAccentColor = entry.cardAccentColor.trim();
+      }
       return [cleanItem];
     });
 

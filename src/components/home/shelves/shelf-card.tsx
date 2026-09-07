@@ -67,6 +67,8 @@ export function ShelfCard({
   };
 
   const activeBadge = item.customBadge || customBadge;
+  const activeHeadline = item.customHeadline || customHeadline;
+  const activeTagline = item.customTagline || customTagline;
   const activeProgress =
     typeof item.progressPercentage === "number"
       ? item.progressPercentage
@@ -74,10 +76,10 @@ export function ShelfCard({
       ? propProgressPercentage
       : null;
 
-  // Dynamic styling tokens (admin configurable with default white box, black text, gold logo/accent)
-  const effectiveBg = cardBgColor || "#ffffff";
-  const effectiveText = cardTextColor || "#0f172a";
-  const effectiveAccent = cardAccentColor || "#faad13";
+  // Dynamic styling tokens (item-level override first, then shelf-level, then default white box, black text, gold logo)
+  const effectiveBg = item.cardBgColor || cardBgColor || "#ffffff";
+  const effectiveText = item.cardTextColor || cardTextColor || "#0f172a";
+  const effectiveAccent = item.cardAccentColor || cardAccentColor || "#faad13";
 
   const containerStyle: React.CSSProperties = {
     backgroundColor: effectiveBg,
@@ -92,7 +94,8 @@ export function ShelfCard({
 
   const data = useMemo(() => {
     const isProject = item.itemType === "project";
-    const title = isProject ? item.name : item.title;
+    const defaultTitle = isProject ? item.name : item.title;
+    const title = activeHeadline || defaultTitle;
     const href = isProject
       ? `/projects/${item.slug || item.id}`
       : `/properties/${item.slug || item.id}`;
@@ -182,9 +185,9 @@ export function ShelfCard({
       areaStr = `${item.area} sq.ft.`;
     }
 
-    const tagline = isProject
+    const tagline = activeTagline || (isProject
       ? item.tagline || "Modern Homes. Greater Possibilities."
-      : "Verified Luxury Residence";
+      : "Verified Luxury Residence");
 
     const developer = isProject
       ? item.builderName || "Premium Developer"
@@ -238,7 +241,7 @@ export function ShelfCard({
       isUnderConstruction,
       progressPercentage,
     };
-  }, [item, activeProgress, cardStyle]);
+  }, [item, activeProgress, cardStyle, activeHeadline, activeTagline]);
 
   // ──────────────────────────────────────────────────────────────────────────
   // 1. COMPACT MARKETPLACE (Style 01: 360–430px wide, ~190–220px high)

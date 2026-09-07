@@ -11,8 +11,26 @@ import type { HomeCardStyleId } from "@/types/home-section";
 import { cn } from "@/lib/utils";
 
 export type MixedItem = 
-  | (Property & { itemType: 'property'; progressPercentage?: number; customBadge?: string })
-  | (Project & { itemType: 'project'; progressPercentage?: number; customBadge?: string });
+  | (Property & {
+      itemType: 'property';
+      progressPercentage?: number;
+      customBadge?: string;
+      customHeadline?: string;
+      customTagline?: string;
+      cardBgColor?: string;
+      cardTextColor?: string;
+      cardAccentColor?: string;
+    })
+  | (Project & {
+      itemType: 'project';
+      progressPercentage?: number;
+      customBadge?: string;
+      customHeadline?: string;
+      customTagline?: string;
+      cardBgColor?: string;
+      cardTextColor?: string;
+      cardAccentColor?: string;
+    });
 
 interface MixedCarouselRowProps {
   title: string;
@@ -282,12 +300,12 @@ export function MixedCarouselRow({
                       item={item}
                       cardStyle={cardStyle}
                       index={itemIndex}
-                      cardBgColor={cardBgColor}
-                      cardTextColor={cardTextColor}
-                      cardAccentColor={cardAccentColor}
-                      customBadge={customBadge}
-                      customHeadline={customHeadline}
-                      customTagline={customTagline}
+                      cardBgColor={item.cardBgColor || cardBgColor}
+                      cardTextColor={item.cardTextColor || cardTextColor}
+                      cardAccentColor={item.cardAccentColor || cardAccentColor}
+                      customBadge={item.customBadge || customBadge}
+                      customHeadline={item.customHeadline || customHeadline}
+                      customTagline={item.customTagline || customTagline}
                       progressPercentage={item.progressPercentage}
                     />
                   ) : item.itemType === 'property' ? (
