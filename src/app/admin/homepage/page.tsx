@@ -831,9 +831,13 @@ export default function HomepageShelvesAdminPage() {
                           return (
                             <div
                               key={`${item.type}:${item.id}-preview`}
-                              onClick={() => setEditingCardTarget({ sectionId: section.id, itemId: item.id, itemType: item.type })}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setEditingCardTarget({ sectionId: section.id, itemId: item.id, itemType: item.type });
+                              }}
                               className={cn(
-                                "relative shrink-0 cursor-pointer group/previewCard rounded-3xl transition-all hover:scale-[1.01] hover:ring-2 hover:ring-amber-500 shadow-sm",
+                                "relative shrink-0 cursor-pointer group/previewCard rounded-3xl transition-all hover:scale-[1.01] hover:ring-2 hover:ring-amber-500 shadow-sm select-none",
                                 getPreviewShelfCardWidthClass(currentStyleId)
                               )}
                               title="Click this card to edit text and colors"
@@ -841,18 +845,21 @@ export default function HomepageShelvesAdminPage() {
                               <div className="absolute top-3 right-3 z-30 px-2.5 py-1 rounded-full bg-slate-950/85 backdrop-blur-md text-[11px] font-black text-white flex items-center gap-1.5 opacity-0 group-hover/previewCard:opacity-100 transition-opacity shadow-lg pointer-events-none">
                                 <Palette className="w-3.5 h-3.5 text-amber-400" /> Click to edit card
                               </div>
-                              <ShelfCard
-                                item={mixedItem}
-                                cardStyle={currentStyleId}
-                                cardBgColor={item.cardBgColor || section.cardBgColor}
-                                cardTextColor={item.cardTextColor || section.cardTextColor}
-                                cardAccentColor={item.cardAccentColor || section.cardAccentColor}
-                                customBadge={item.customBadge || section.customBadge}
-                                customHeadline={item.customHeadline || section.customHeadline}
-                                customTagline={item.customTagline || section.customTagline}
-                                progressPercentage={item.progressPercentage}
-                                index={idx}
-                              />
+                              <div className="pointer-events-none w-full h-full">
+                                <ShelfCard
+                                  item={mixedItem}
+                                  cardStyle={currentStyleId}
+                                  cardBgColor={item.cardBgColor || section.cardBgColor}
+                                  cardTextColor={item.cardTextColor || section.cardTextColor}
+                                  cardAccentColor={item.cardAccentColor || section.cardAccentColor}
+                                  customBadge={item.customBadge || section.customBadge}
+                                  customHeadline={item.customHeadline || section.customHeadline}
+                                  customTagline={item.customTagline || section.customTagline}
+                                  progressPercentage={item.progressPercentage}
+                                  index={idx}
+                                  isEditable={true}
+                                />
+                              </div>
                             </div>
                           );
                         })}

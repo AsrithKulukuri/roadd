@@ -49,6 +49,7 @@ interface ShelfCardProps {
   onEditBgColor?: () => void;
   onEditTextColor?: () => void;
   onEditAccentColor?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
 export function ShelfCard({
@@ -70,6 +71,7 @@ export function ShelfCard({
   onEditBgColor,
   onEditTextColor,
   onEditAccentColor,
+  onClick,
 }: ShelfCardProps) {
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const isSaved = isFavorite(item.id);
@@ -268,7 +270,9 @@ export function ShelfCard({
         "aria-label": `Card preview: ${data.title}`,
         onClick: (e: React.MouseEvent) => {
           e.preventDefault();
-          e.stopPropagation();
+          if (onClick) {
+            onClick(e);
+          }
         },
       }
     : {
