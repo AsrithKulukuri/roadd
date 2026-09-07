@@ -1195,10 +1195,10 @@ export default function HomepageShelvesAdminPage() {
                     {/* Badge Pill */}
                     <div
                       className={cn(
-                        "space-y-1 p-2.5 rounded-xl border transition-all",
+                        "space-y-1.5 p-3 rounded-xl border transition-all",
                         activeCardEditField === "badge"
-                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 ring-1 ring-amber-500/40"
-                          : "border-transparent"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/30 ring-1 ring-amber-500/40"
+                          : "border-slate-200/60 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60"
                       )}
                     >
                       <label className="text-xs font-extrabold text-slate-900 dark:text-white block">Badge Pill Text</label>
@@ -1210,39 +1210,47 @@ export default function HomepageShelvesAdminPage() {
                             customBadge: e.target.value,
                           })
                         }
-                        className="h-9 text-xs font-medium"
+                        className="h-10 text-xs font-bold bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border-slate-300 dark:border-slate-700 focus:border-amber-500"
                       />
-                      <div className="flex flex-wrap gap-1 pt-1">
+                      <div className="flex flex-wrap gap-1.5 pt-1">
                         {[
                           "Hot Deal",
                           "✨ Premium",
                           "⚡ UNDER CONSTRUCTION",
                           "Featured Campaign",
                           "New Launch",
-                        ].map((preset) => (
-                          <button
-                            key={preset}
-                            type="button"
-                            onClick={() =>
-                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
-                                customBadge: preset,
-                              })
-                            }
-                            className="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-amber-500 hover:text-amber-600 transition-colors cursor-pointer shadow-2xs"
-                          >
-                            {preset}
-                          </button>
-                        ))}
+                        ].map((preset) => {
+                          const isSelected = (targetItem.customBadge || targetSection.customBadge) === preset;
+                          return (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customBadge: preset,
+                                })
+                              }
+                              className={cn(
+                                "px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer shadow-xs",
+                                isSelected
+                                  ? "bg-amber-500 text-slate-950 border-amber-500 font-black shadow-sm ring-2 ring-amber-400/40"
+                                  : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400"
+                              )}
+                            >
+                              {preset}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
                     {/* Title / Headline Override */}
                     <div
                       className={cn(
-                        "space-y-1 p-2.5 rounded-xl border transition-all",
+                        "space-y-1.5 p-3 rounded-xl border transition-all",
                         activeCardEditField === "headline"
-                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 ring-1 ring-amber-500/40"
-                          : "border-transparent"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/30 ring-1 ring-amber-500/40"
+                          : "border-slate-200/60 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60"
                       )}
                     >
                       <label className="text-xs font-extrabold text-slate-900 dark:text-white block">Card Headline / Title Override</label>
@@ -1254,18 +1262,18 @@ export default function HomepageShelvesAdminPage() {
                             customHeadline: e.target.value,
                           })
                         }
-                        className="h-9 text-xs font-medium"
+                        className="h-10 text-xs font-bold bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border-slate-300 dark:border-slate-700 focus:border-amber-500"
                       />
-                      <p className="text-[10px] text-slate-400">Leave blank to use default listing title: &ldquo;{targetListing?.title}&rdquo;</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Leave blank to use default listing title: &ldquo;{targetListing?.title}&rdquo;</p>
                     </div>
 
                     {/* Tagline Override */}
                     <div
                       className={cn(
-                        "space-y-1 p-2.5 rounded-xl border transition-all",
+                        "space-y-1.5 p-3 rounded-xl border transition-all",
                         activeCardEditField === "tagline"
-                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 ring-1 ring-amber-500/40"
-                          : "border-transparent"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/30 ring-1 ring-amber-500/40"
+                          : "border-slate-200/60 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60"
                       )}
                     >
                       <label className="text-xs font-extrabold text-slate-900 dark:text-white block">Card Tagline Override</label>
@@ -1277,7 +1285,7 @@ export default function HomepageShelvesAdminPage() {
                             customTagline: e.target.value,
                           })
                         }
-                        className="h-9 text-xs font-medium"
+                        className="h-10 text-xs font-bold bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border-slate-300 dark:border-slate-700 focus:border-amber-500"
                       />
                     </div>
                   </div>
@@ -1404,7 +1412,7 @@ export default function HomepageShelvesAdminPage() {
                                 customHeadline: e.target.value,
                               })
                             }
-                            className="h-8.5 text-xs font-bold flex-1 bg-amber-50/20 dark:bg-amber-950/20 border-amber-500/40"
+                            className="h-9 text-xs font-bold flex-1 bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border border-slate-300 dark:border-slate-700 focus:border-amber-500"
                           />
                           {targetItem.customHeadline && (
                             <button
@@ -1481,7 +1489,7 @@ export default function HomepageShelvesAdminPage() {
                                 customBadge: e.target.value,
                               })
                             }
-                            className="h-8.5 text-xs font-bold flex-1 bg-amber-50/20 dark:bg-amber-950/20 border-amber-500/40"
+                            className="h-9 text-xs font-bold flex-1 bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border border-slate-300 dark:border-slate-700 focus:border-amber-500"
                           />
                           {(targetItem.customBadge || targetSection.customBadge) && (
                             <button
@@ -1499,22 +1507,30 @@ export default function HomepageShelvesAdminPage() {
                         </div>
 
                         {/* Badge suggestions */}
-                        <div className="flex flex-wrap gap-1 items-center pt-0.5">
+                        <div className="flex flex-wrap gap-1.5 items-center pt-0.5">
                           <span className="text-[10px] font-bold text-slate-400 mr-1">Suggestions:</span>
-                          {["Hot Deal", "✨ Premium", "⚡ UNDER CONSTRUCTION", "Featured Campaign", "New Launch", "Ready to Move"].map((preset) => (
-                            <button
-                              key={preset}
-                              type="button"
-                              onClick={() =>
-                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
-                                  customBadge: preset,
-                                })
-                              }
-                              className="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-amber-500 hover:text-amber-600 transition-colors cursor-pointer shadow-2xs"
-                            >
-                              {preset}
-                            </button>
-                          ))}
+                          {["Hot Deal", "✨ Premium", "⚡ UNDER CONSTRUCTION", "Featured Campaign", "New Launch", "Ready to Move"].map((preset) => {
+                            const isSelected = (targetItem.customBadge || targetSection.customBadge) === preset;
+                            return (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={() =>
+                                  updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                    customBadge: preset,
+                                  })
+                                }
+                                className={cn(
+                                  "px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer shadow-xs",
+                                  isSelected
+                                    ? "bg-amber-500 text-slate-950 border-amber-500 font-black shadow-sm ring-1 ring-amber-400/40"
+                                    : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400"
+                                )}
+                              >
+                                {preset}
+                              </button>
+                            );
+                          })}
                         </div>
 
                         {/* Badge / Accent Color */}
@@ -1545,7 +1561,7 @@ export default function HomepageShelvesAdminPage() {
                                   cardAccentColor: c.color,
                                 })
                               }
-                              className="px-2 py-0.5 text-[10px] font-extrabold rounded-md text-white border transition-all cursor-pointer shadow-2xs"
+                              className="px-2.5 py-1 text-xs font-bold rounded-lg border text-white shadow-xs transition-all cursor-pointer"
                               style={{
                                 backgroundColor: c.color,
                                 borderColor: (targetItem.cardAccentColor || "").toLowerCase() === c.color.toLowerCase() ? "#000" : "transparent",
@@ -1575,7 +1591,7 @@ export default function HomepageShelvesAdminPage() {
                                 customTagline: e.target.value,
                               })
                             }
-                            className="h-8.5 text-xs font-medium flex-1 bg-amber-50/20 dark:bg-amber-950/20 border-amber-500/40"
+                            className="h-9 text-xs font-bold flex-1 bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border border-slate-300 dark:border-slate-700 focus:border-amber-500"
                           />
                           {targetItem.customTagline && (
                             <button
