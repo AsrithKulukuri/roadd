@@ -708,7 +708,7 @@ export function ShelfCard({
           <div className="flex items-center gap-3 min-w-0">
             <div
               className={cn(
-                "w-12 h-12 rounded-2xl bg-slate-50 font-heading font-black text-lg flex items-center justify-center border shadow-sm shrink-0 transition-all",
+                "w-12 h-12 rounded-2xl bg-white font-heading font-black text-lg flex items-center justify-center border shadow-sm shrink-0 transition-all p-1.5 overflow-hidden",
                 isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
               )}
               style={{ borderColor: `${effectiveAccent}60`, color: effectiveAccent }}
@@ -719,7 +719,7 @@ export function ShelfCard({
                 <img
                   src={data.developerLogo}
                   alt={data.developer}
-                  className="w-full h-full object-cover rounded-2xl"
+                  className="w-full h-full object-contain object-center rounded-xl"
                 />
               ) : (
                 <Building2 className="w-6 h-6" />
@@ -1030,7 +1030,7 @@ export function ShelfCard({
           {/* Overlapping Circular Project Logo */}
           <div
             className={cn(
-              "absolute -top-7 left-4 sm:left-5 w-14 h-14 rounded-full border-2 shadow-md bg-white flex items-center justify-center overflow-hidden transition-all",
+              "absolute -top-8 left-4 sm:left-5 w-16 h-16 sm:w-18 sm:h-18 rounded-full border-2 shadow-xl bg-white p-2 flex items-center justify-center overflow-hidden transition-all z-20",
               isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
             )}
             style={{ borderColor: effectiveAccent, color: effectiveAccent }}
@@ -1041,7 +1041,7 @@ export function ShelfCard({
               <img
                 src={data.developerLogo}
                 alt={data.developer}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain object-center"
               />
             ) : (
               <span className="text-[11px] font-black text-center leading-tight px-1 uppercase" style={accentTextStyle}>
@@ -1050,7 +1050,7 @@ export function ShelfCard({
             )}
           </div>
 
-          <div className="pt-5 space-y-1">
+          <div className="pt-6 sm:pt-7 space-y-1">
             <h3
               style={textStyle}
               className={cn(
