@@ -74,12 +74,12 @@ const HERO_BUDGET_MAX_OPTS = [
   { label: "₹ 10 Cr", value: 100000000 },
 ];
 
-// Search Tabs: Buy, Projects, New Launches and Near me
+// Search Tabs: Buy, Projects, New Launches and Map View
 const tabs = [
   { id: "buy", label: "Buy" },
   { id: "projects", label: "Projects" },
   { id: "new-launch", label: "New Launches" },
-  { id: "nearme", label: "Near me" },
+  { id: "map", label: "Map View" },
 ];
 
 const CAROUSEL_SUGGESTIONS = [
@@ -349,9 +349,8 @@ export function HeroSection() {
     } else if (activeTab === "new-launch") {
       params.set("type", "projects");
       params.set("status", "new-launch");
-    } else if (activeTab === "nearme") {
+    } else if (activeTab === "map" || activeTab === "nearme") {
       params.set("type", "buy");
-      params.set("nearMe", "true");
       params.set("view", "map");
     } else {
       params.set("type", "buy");
@@ -645,7 +644,7 @@ export function HeroSection() {
           {/* Mobile backdrop to close menu when tapping outside */}
           {(showBuyMenu || showProjectsMenu) && (
             <div
-              className="fixed inset-0 z-40 bg-transparent"
+              className="fixed inset-0 z-[80] bg-transparent"
               onClick={() => {
                 setShowBuyMenu(false);
                 setShowProjectsMenu(false);
@@ -655,7 +654,7 @@ export function HeroSection() {
           )}
 
           {/* Mobile Tabs with Dark Text & Dark/Amber Underline */}
-          <div className="flex items-center justify-center gap-2 mb-3 px-1 max-w-full relative z-50 overflow-visible">
+          <div className="flex items-center justify-center gap-2 mb-3 px-1 max-w-full relative z-[100] overflow-visible">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -666,9 +665,13 @@ export function HeroSection() {
                       if (tab.id === "buy") {
                         setShowBuyMenu((prev) => !prev);
                         setShowProjectsMenu(false);
+                        setOpenLocationTab(null);
+                        setIsFocused(false);
                       } else if (tab.id === "projects") {
                         setShowProjectsMenu((prev) => !prev);
                         setShowBuyMenu(false);
+                        setOpenLocationTab(null);
+                        setIsFocused(false);
                       } else {
                         setShowBuyMenu(false);
                         setShowProjectsMenu(false);
@@ -680,31 +683,8 @@ export function HeroSection() {
                       if (tab.id === "pre-approval") {
                         router.push("/mortgage-calculator");
                       }
-                      if (tab.id === "nearme") {
-                        if (typeof window === "undefined" || !navigator.geolocation) {
-                          toast.error("Geolocation is not supported by your browser. Showing map.");
-                          router.push("/search?view=map");
-                          return;
-                        }
-                        setIsLocating(true);
-                        navigator.geolocation.getCurrentPosition(
-                          (pos) => {
-                            setIsLocating(false);
-                            router.push(`/search?nearMe=true&view=map&lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
-                          },
-                          (err) => {
-                            setIsLocating(false);
-                            if (err.code === err.PERMISSION_DENIED) {
-                              toast.error("Location permission denied. Showing all listings near AP.");
-                            } else if (err.code === err.TIMEOUT) {
-                              toast.error("Location request timed out. Showing all listings.");
-                            } else {
-                              toast.error("Location unavailable. Showing all listings.");
-                            }
-                            router.push("/search?view=map");
-                          },
-                          { timeout: 8000 }
-                        );
+                      if (tab.id === "map" || tab.id === "nearme") {
+                        router.push("/search?view=map");
                       }
                     }}
                     className={cn(
@@ -1029,6 +1009,8 @@ export function HeroSection() {
                     key={`m-city-${city.id}`}
                     type="button"
                     onClick={() => {
+                      setShowBuyMenu(false);
+                      setShowProjectsMenu(false);
                       if (hasSublocations) {
                         setOpenLocationTab(isOpen ? null : city.id);
                         setSublocationSearch("");
@@ -1193,10 +1175,10 @@ export function HeroSection() {
           {/* Ambient Aurora Mesh Glow behind search bar */}
           <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[350px] sm:w-[750px] h-[200px] bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-yellow-500/20 blur-[80px] rounded-full pointer-events-none -z-10" />
 
-          {/* Mobile backdrop to close menu when tapping outside */}
+          {/* Backdrop to close menu when clicking outside */}
           {(showBuyMenu || showProjectsMenu) && (
             <div
-              className="fixed inset-0 z-40 bg-transparent sm:hidden"
+              className="fixed inset-0 z-[80] bg-transparent"
               onClick={() => {
                 setShowBuyMenu(false);
                 setShowProjectsMenu(false);
@@ -1206,7 +1188,7 @@ export function HeroSection() {
           )}
 
           {/* Realtor.com Search Options Bar (Tabs over Dark Hero Banner) */}
-          <div className="flex items-center justify-center gap-3 sm:gap-8 mb-3.5 sm:mb-4.5 px-1 max-w-full relative z-50 overflow-visible">
+          <div className="flex items-center justify-center gap-3 sm:gap-8 mb-3.5 sm:mb-4.5 px-1 max-w-full relative z-[100] overflow-visible">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -1214,8 +1196,14 @@ export function HeroSection() {
                   key={tab.id}
                   className="relative group shrink-0"
                   onMouseEnter={() => {
-                    if (tab.id === "buy") setShowBuyMenu(true);
-                    if (tab.id === "projects") setShowProjectsMenu(true);
+                    if (tab.id === "buy") {
+                      setShowBuyMenu(true);
+                      setOpenLocationTab(null);
+                    }
+                    if (tab.id === "projects") {
+                      setShowProjectsMenu(true);
+                      setOpenLocationTab(null);
+                    }
                   }}
                   onMouseLeave={() => {
                     if (tab.id === "buy") setShowBuyMenu(false);
@@ -1228,9 +1216,13 @@ export function HeroSection() {
                       if (tab.id === "buy") {
                         setShowBuyMenu((prev) => !prev);
                         setShowProjectsMenu(false);
+                        setOpenLocationTab(null);
+                        setIsFocused(false);
                       } else if (tab.id === "projects") {
                         setShowProjectsMenu((prev) => !prev);
                         setShowBuyMenu(false);
+                        setOpenLocationTab(null);
+                        setIsFocused(false);
                       } else {
                         setShowBuyMenu(false);
                         setShowProjectsMenu(false);
@@ -1242,31 +1234,8 @@ export function HeroSection() {
                       if (tab.id === "pre-approval") {
                         router.push("/mortgage-calculator");
                       }
-                      if (tab.id === "nearme") {
-                        if (typeof window === "undefined" || !navigator.geolocation) {
-                          toast.error("Geolocation is not supported by your browser. Showing map.");
-                          router.push("/search?view=map");
-                          return;
-                        }
-                        setIsLocating(true);
-                        navigator.geolocation.getCurrentPosition(
-                          (pos) => {
-                            setIsLocating(false);
-                            router.push(`/search?nearMe=true&view=map&lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
-                          },
-                          (err) => {
-                            setIsLocating(false);
-                            if (err.code === err.PERMISSION_DENIED) {
-                              toast.error("Location permission denied. Showing all listings near AP.");
-                            } else if (err.code === err.TIMEOUT) {
-                              toast.error("Location request timed out. Showing all listings.");
-                            } else {
-                              toast.error("Location unavailable. Showing all listings.");
-                            }
-                            router.push("/search?view=map");
-                          },
-                          { timeout: 8000 }
-                        );
+                      if (tab.id === "map" || tab.id === "nearme") {
+                        router.push("/search?view=map");
                       }
                     }}
                     className={cn(
@@ -1319,7 +1288,7 @@ export function HeroSection() {
 
                           {/* Flats Submenu */}
                           {activeBuySub === "flats" && (
-                            <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
+                            <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-[110] animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
                               <Link
                                 href="/search?type=buy&propertyType=apartment&saleType=new"
                                 onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
@@ -1362,7 +1331,7 @@ export function HeroSection() {
 
                           {/* Houses Submenu */}
                           {activeBuySub === "houses" && (
-                            <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
+                            <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-[110] animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
                               <Link
                                 href="/search?type=buy&propertyType=independent-house&saleType=new"
                                 onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
@@ -1405,7 +1374,7 @@ export function HeroSection() {
 
                           {/* Villas Submenu */}
                           {activeBuySub === "villas" && (
-                            <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
+                            <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-[110] animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
                               <Link
                                 href="/search?type=buy&propertyType=villa&saleType=new"
                                 onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
@@ -1688,7 +1657,7 @@ export function HeroSection() {
           </form>
 
           {/* Dynamic Location Pills (Row of 3 Dark Rounded Pills) */}
-          <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-3 text-left relative z-50">
+          <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-3 text-left relative z-40">
             <div
               className={cn(
                 "grid gap-2 sm:gap-3 w-full pb-1 mb-1 sm:mb-1.5",
@@ -1707,6 +1676,8 @@ export function HeroSection() {
                     key={city.id}
                     type="button"
                     onClick={() => {
+                      setShowBuyMenu(false);
+                      setShowProjectsMenu(false);
                       if (hasSublocations) {
                         setOpenLocationTab(isOpen ? null : city.id);
                         setSublocationSearch("");

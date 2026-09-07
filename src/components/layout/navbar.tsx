@@ -694,10 +694,10 @@ export function Navbar() {
               {user ? (
                 /* Compact User Account Dropdown for Desktop */
                 <div className="hidden sm:block relative group">
-                  <Link
-                    href="/dashboard"
+                  <button
+                    type="button"
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border",
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border cursor-pointer",
                       isTransparent
                         ? "bg-black/35 text-white hover:bg-black/55 border-white/20 backdrop-blur-md"
                         : "bg-white/10 text-white hover:bg-white/15 border-white/20 backdrop-blur-md"
@@ -706,20 +706,15 @@ export function Navbar() {
                     <User strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-400" />
                     <span className="max-w-[75px] truncate">{user.name || "Account"}</span>
                     <ChevronDown strokeWidth={2.5} className="w-3 h-3 text-amber-400 group-hover:rotate-180 transition-transform" />
-                  </Link>
+                  </button>
 
                   {/* Dropdown Menu */}
-                  <div className="absolute top-full right-0 pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
-                    <div className="bg-white border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden py-1.5 divide-y divide-slate-100 text-xs">
-                      <Link href="/dashboard" className="flex items-center gap-2.5 px-4 py-2.5 text-slate-900 hover:bg-amber-50 hover:text-amber-600 font-bold transition-colors">
-                        <User className="w-4 h-4 text-amber-500" /> Dashboard
-                      </Link>
-                      <Link href="/dashboard/listings" className="flex items-center gap-2.5 px-4 py-2.5 text-slate-900 hover:bg-amber-50 hover:text-amber-600 font-bold transition-colors">
-                        <Building2 className="w-4 h-4 text-amber-500" /> My Listings
-                      </Link>
+                  <div className="absolute top-full right-0 pt-2 w-44 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+                    <div className="bg-white border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden p-1.5 text-xs">
                       <button
+                        type="button"
                         onClick={handleSignOut}
-                        className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-red-600 hover:bg-red-50 font-bold cursor-pointer transition-colors"
+                        className="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl font-bold cursor-pointer transition-colors"
                       >
                         <LogOut className="w-4 h-4 text-red-500" /> Sign Out
                       </button>
