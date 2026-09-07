@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS public.homepage_layouts (
   id TEXT PRIMARY KEY DEFAULT 'default',
   sections JSONB NOT NULL DEFAULT '[]'::jsonb,
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
-  CONSTRAINT homepage_layouts_sections_is_array CHECK (jsonb_typeof(sections) = 'array')
+  CONSTRAINT homepage_layouts_sections_is_valid_json CHECK (jsonb_typeof(sections) IN ('array', 'object'))
 );
 
 -- 2. GIN index for high-performance sub-millisecond JSON lookups
@@ -121,6 +121,7 @@ SELECT
   item->>'customHeadline' AS custom_headline,
   item->>'customBadge' AS custom_badge,
   (item->>'progressPercentage')::numeric AS progress_percentage
-FROM public.homepage_layouts l,
-     jsonb_array_elements(l.sections) AS section,
-     jsonb_array_elements(COALESCE(section->'items', '[]'::jsonb)) AS item;
+FROM public.homepage_layouts l
+CROSS JOIN LATERAL jsonb_array_elements(l.sections) AS section
+CROSS JOIN LATERAL jsonb_array_elements(COALESCE(section->'items', '[]'::jsonb)) AS item
+WHERE jsonb_typeof(l.sections) = 'array';

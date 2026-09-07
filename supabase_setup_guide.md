@@ -46,15 +46,13 @@ To support Google Sign-In, you need to configure credentials in both the Google 
 
 ---
 
-## 3. Database Schema & Sync Triggers
+## 3. Database Schema & Production Setup (Single 1-Click Script)
 
-Open the **SQL Editor** in your Supabase Dashboard, create a new query, paste the script below, and click **Run**. 
+For a complete production setup, open `supabase/master_production_schema.sql` in your project repository, copy its entire contents, paste it into the **SQL Editor** in your Supabase Dashboard, and click **Run**.
 
-This script:
-1. Creates a public `profiles` table to store public user profiles.
-2. Sets up **Row Level Security (RLS)** so users can only modify their own profiles.
-3. Creates a **Postgres Trigger Function** that automatically generates a public profile record when a user signs up (via Google OAuth, Email, or Phone).
-4. Creates a trigger that automatically updates the profile name/phone when updated via the dashboard.
+This master script initializes all 22 tables (`properties`, `projects`, `profiles`, `user_profiles`, `banners`, `inquiries`, `saved_properties`, `trending_locations`, `homepage_layouts`, `project_leads`, `project_site_visits`, `activity_logs`, `phone_otps`, WhatsApp CRM tables), RLS policies, B-Tree and GIN indexes, storage buckets, and auto-sync triggers.
+
+Alternatively, if you only need the baseline user profiles table and trigger:
 
 ```sql
 -- 1. Create a table for public profiles linked to auth.users
