@@ -112,6 +112,52 @@ function createLegacySections(properties: Property[], projects: Project[]): Home
   ];
 }
 
+function getPreviewShelfCardWidthClass(cardStyle?: HomeCardStyleId) {
+  switch (cardStyle) {
+    case "luxury-banner":
+      return "w-[720px] sm:w-[820px]";
+    case "split-feature":
+      return "w-[620px] sm:w-[720px]";
+    case "dark-editorial":
+      return "w-[520px] sm:w-[600px]";
+    case "bottom-floating":
+      return "w-[360px] sm:w-[440px]";
+    case "modern-villa":
+      return "w-[340px] sm:w-[420px]";
+    case "compact-marketplace":
+      return "w-[320px] sm:w-[380px]";
+    case "tall-portrait":
+      return "w-[260px] sm:w-[300px]";
+    case "construction-progress":
+      return "w-[280px] sm:w-[320px]";
+    default:
+      return "w-[300px] sm:w-[360px]";
+  }
+}
+
+function getPreviewCardWidthClass(cardStyle?: HomeCardStyleId) {
+  switch (cardStyle) {
+    case "luxury-banner":
+      return "w-[760px] sm:w-[820px] max-w-full";
+    case "split-feature":
+      return "w-[680px] sm:w-[740px] max-w-full";
+    case "dark-editorial":
+      return "w-[560px] sm:w-[620px] max-w-full";
+    case "bottom-floating":
+      return "w-[420px] sm:w-[460px] max-w-full";
+    case "modern-villa":
+      return "w-[400px] sm:w-[440px] max-w-full";
+    case "compact-marketplace":
+      return "w-[360px] sm:w-[400px] max-w-full";
+    case "tall-portrait":
+      return "w-[300px] sm:w-[330px] max-w-full";
+    case "construction-progress":
+      return "w-[300px] sm:w-[340px] max-w-full";
+    default:
+      return "w-[400px] max-w-full";
+  }
+}
+
 export default function HomepageShelvesAdminPage() {
   const { properties, fetchProperties } = usePropertiesStore();
   const { projects, fetchProjects } = useProjectsStore();
@@ -770,7 +816,10 @@ export default function HomepageShelvesAdminPage() {
                             <div
                               key={`${item.type}:${item.id}-preview`}
                               onClick={() => setEditingCardTarget({ sectionId: section.id, itemId: item.id, itemType: item.type })}
-                              className="relative shrink-0 w-[280px] sm:w-[320px] cursor-pointer group/previewCard rounded-3xl transition-all hover:scale-[1.02] hover:ring-2 hover:ring-amber-500 shadow-sm"
+                              className={cn(
+                                "relative shrink-0 cursor-pointer group/previewCard rounded-3xl transition-all hover:scale-[1.01] hover:ring-2 hover:ring-amber-500 shadow-sm",
+                                getPreviewShelfCardWidthClass(currentStyleId)
+                              )}
                               title="Click this card to edit text and colors"
                             >
                               <div className="absolute top-3 right-3 z-30 px-2.5 py-1 rounded-full bg-slate-950/85 backdrop-blur-md text-[11px] font-black text-white flex items-center gap-1.5 opacity-0 group-hover/previewCard:opacity-100 transition-opacity shadow-lg pointer-events-none">
@@ -855,6 +904,7 @@ export default function HomepageShelvesAdminPage() {
 
         const currentStyle = targetSection.cardStyle || DEFAULT_CARD_STYLE;
         const currentProgress = targetItem.progressPercentage ?? 70;
+        const targetCardStyleMeta = HOME_CARD_STYLES.find((s) => s.id === currentStyle) || HOME_CARD_STYLES[0];
 
         const liveMixedItem: MixedItem | null = targetProp
           ? {
@@ -888,7 +938,7 @@ export default function HomepageShelvesAdminPage() {
             role="dialog"
             aria-modal="true"
           >
-            <div className="flex max-h-[92vh] w-full max-w-4xl flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+            <div className="flex max-h-[94vh] w-full max-w-6xl xl:max-w-7xl flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
               {/* Modal Header */}
               <div className="flex items-center justify-between border-b border-border-default px-5 py-4 bg-slate-50 dark:bg-slate-950/50">
                 <div className="flex items-center gap-3">
@@ -914,9 +964,9 @@ export default function HomepageShelvesAdminPage() {
               </div>
 
               {/* Modal Body: Controls & Live Card Preview */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-5 overflow-y-auto max-h-[calc(92vh-140px)]">
-                {/* Left Controls (7 cols) */}
-                <div className="lg:col-span-7 space-y-5">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-5 overflow-y-auto max-h-[calc(94vh-130px)]">
+                {/* Left Controls (5 cols) */}
+                <div className="lg:col-span-5 space-y-5">
                   {/* Section 1: Colors */}
                   <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 space-y-4">
                     <p className="text-xs font-black uppercase text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
@@ -1229,14 +1279,20 @@ export default function HomepageShelvesAdminPage() {
                   </div>
                 </div>
 
-                {/* Right Preview Column (5 cols) */}
-                <div className="lg:col-span-5 flex flex-col items-center justify-start p-4 rounded-xl border border-border-default bg-slate-100/50 dark:bg-slate-950/60 space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Live Card Preview
-                  </span>
-                  <div className="w-full flex justify-center py-2">
+                {/* Right Preview Column (7 cols) */}
+                <div className="lg:col-span-7 flex flex-col items-center justify-start p-4 sm:p-6 rounded-2xl border border-border-default bg-slate-100/70 dark:bg-slate-950/70 space-y-4 min-w-0">
+                  <div className="w-full flex items-center justify-between flex-wrap gap-2 border-b border-slate-200/80 dark:border-slate-800/80 pb-3">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-amber-500" /> Full Card Live Preview ({targetCardStyleMeta.label})
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-800">
+                      {targetCardStyleMeta.minWidth}–{targetCardStyleMeta.maxWidth}px &bull; Exact Shelf Dimensions
+                    </span>
+                  </div>
+
+                  <div className="w-full overflow-x-auto py-2 px-1 flex justify-center items-center">
                     {liveMixedItem && (
-                      <div className="w-full max-w-[320px]">
+                      <div className={cn("transition-all duration-300", getPreviewCardWidthClass(currentStyle))}>
                         <ShelfCard
                           item={liveMixedItem}
                           cardStyle={currentStyle}
@@ -1251,6 +1307,9 @@ export default function HomepageShelvesAdminPage() {
                       </div>
                     )}
                   </div>
+                  <p className="text-[11px] text-slate-400 text-center font-medium">
+                    This is the exact full card as it will appear in the &ldquo;{targetSection.title}&rdquo; shelf on the homepage.
+                  </p>
                 </div>
               </div>
 

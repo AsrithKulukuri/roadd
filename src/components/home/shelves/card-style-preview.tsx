@@ -273,6 +273,10 @@ export function CardStyleGalleryModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {HOME_CARD_STYLES.map((style) => {
               const isSelected = selectedId === style.id;
+              const isWide =
+                style.id === "luxury-banner" ||
+                style.id === "split-feature" ||
+                style.id === "dark-editorial";
 
               return (
                 <div
@@ -280,6 +284,7 @@ export function CardStyleGalleryModal({
                   onClick={() => setSelectedId(style.id)}
                   className={cn(
                     "group relative flex flex-col justify-between rounded-3xl p-5 border-2 transition-all cursor-pointer bg-white dark:bg-slate-950 shadow-sm hover:shadow-xl",
+                    isWide && "md:col-span-2",
                     isSelected
                       ? "border-amber-500 ring-4 ring-amber-500/15"
                       : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
@@ -317,7 +322,7 @@ export function CardStyleGalleryModal({
 
                   {/* LIVE REAL COMPONENT PREVIEW */}
                   <div className="w-full flex items-center justify-center p-3 sm:p-4 rounded-2xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto">
-                    <div className="w-full max-w-md pointer-events-none transform transition-transform group-hover:scale-[1.01]">
+                    <div className={cn("w-full pointer-events-none transform transition-transform group-hover:scale-[1.01]", isWide ? "max-w-3xl" : "max-w-md")}>
                       <ShelfCard
                         item={previewItem}
                         cardStyle={style.id}

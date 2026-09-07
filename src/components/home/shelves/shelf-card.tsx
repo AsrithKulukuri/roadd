@@ -520,8 +520,8 @@ export function ShelfCard({
         </div>
 
         {/* Right / Bottom Luxury Information Strip */}
-        <div style={containerStyle} className="md:w-[40%] p-5 sm:p-6 bg-white flex flex-col justify-between space-y-4">
-          <div className="flex items-center gap-3">
+        <div style={containerStyle} className="md:w-[40%] p-5 sm:p-6 bg-white flex flex-col justify-between space-y-4 min-w-[260px]">
+          <div className="flex items-center gap-3 min-w-0">
             <div
               className="w-12 h-12 rounded-2xl bg-slate-50 font-heading font-black text-lg flex items-center justify-center border shadow-sm shrink-0"
               style={{ borderColor: `${effectiveAccent}60`, color: effectiveAccent }}
@@ -536,7 +536,7 @@ export function ShelfCard({
                 <Building2 className="w-6 h-6" />
               )}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h3 style={textStyle} className="font-black text-lg text-slate-900 line-clamp-1 group-hover:text-amber-500 transition-colors">
                 {data.title}
               </h3>
@@ -546,19 +546,19 @@ export function ShelfCard({
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <div style={textStyle} className="text-2xl font-black tracking-tight text-slate-950">
               ₹{data.priceStr}
             </div>
-            <p className="text-xs text-slate-500 flex items-center gap-1 font-medium">
+            <p className="text-xs text-slate-500 flex items-center gap-1 font-medium truncate">
               <MapPin className="w-3.5 h-3.5 shrink-0" style={accentTextStyle} />
-              <span>{data.locationStr}</span>
+              <span className="truncate">{data.locationStr}</span>
             </p>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
-            <div className="space-y-0.5">
-              <span style={textStyle} className="font-extrabold text-slate-800 block">
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs min-w-0">
+            <div className="space-y-0.5 min-w-0 flex-1">
+              <span style={textStyle} className="font-extrabold text-slate-800 block truncate">
                 {data.bhkStr || "Multi-size"}
               </span>
               <span className="text-[11px] text-slate-500 block truncate">
@@ -567,7 +567,7 @@ export function ShelfCard({
             </div>
 
             <div
-              className="px-3 py-1.5 rounded-xl font-extrabold text-[11px] flex items-center gap-1 transition-colors shadow-xs"
+              className="px-3 py-1.5 rounded-xl font-extrabold text-[11px] flex items-center gap-1 transition-colors shadow-xs shrink-0"
               style={accentBgStyle}
             >
               <span>Explore</span>
