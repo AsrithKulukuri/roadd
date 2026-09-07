@@ -13,7 +13,7 @@ const VALID_PROJECT_COLUMNS = new Set([
   'configurations', 'images', 'coverImage', 'videoUrl',
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
-  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory', 'isRoadExclusive'
+  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory'
 ]);
 
 // Public projection columns excluding private builder contact numbers
@@ -25,7 +25,7 @@ const PUBLIC_PROJECT_SELECT = [
   'configurations', 'images', 'coverImage', 'videoUrl',
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
-  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory', 'isRoadExclusive'
+  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory'
 ].join(',');
 
 export function toSupabaseProject(proj: Partial<Project>): Record<string, unknown> {
@@ -526,7 +526,6 @@ export const useProjectsStore = create<ProjectsState>()(
           };
 
           await saveProjectMutation(id, {
-            isRoadExclusive: nextValue,
             location: updatedLocation,
           });
           return true;

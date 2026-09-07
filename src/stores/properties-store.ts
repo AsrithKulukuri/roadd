@@ -16,7 +16,7 @@ const VALID_PROPERTY_COLUMNS = new Set([
   'ownerEmail', 'ownerAvatar', 'ownerType', 'isOwnerVerified', 'viewCount', 'savedCount',
   'enquiryCount', 'createdAt', 'updatedAt', 'publishedAt', 'vastuCompliant', 'petFriendly',
   'gatedSecurity', 'refId', 'category', 'subtype', 'listingContext', 'attributes',
-  'layoutMapUrl', 'floorPlanUrl', 'brochureUrl', 'displayCategory', 'isRoadExclusive'
+  'layoutMapUrl', 'floorPlanUrl', 'brochureUrl', 'displayCategory'
 ]);
 
 export function toSupabaseProperty(prop: Partial<Property>): Record<string, unknown> {
@@ -380,7 +380,11 @@ export const usePropertiesStore = create<PropertiesState>()(
         }));
 
         try {
-          await savePropertyToServer("update", { isRoadExclusive: nextValue }, id);
+          const updatedAttributes = {
+            ...((property.attributes as Record<string, unknown>) || {}),
+            isRoadExclusive: nextValue,
+          };
+          await savePropertyToServer("update", { attributes: updatedAttributes }, id);
           return true;
         } catch (error: unknown) {
           set((state) => ({

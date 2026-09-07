@@ -23,24 +23,44 @@ export async function POST(request: Request) {
 
   const { mode, id, payload } = parsed.data;
   try {
-    if (mode === "create") {
-      const { data, error } = await supabaseAdmin.from("properties").insert(payload).select("id, slug").single();
-      if (error) throw error;
-      return NextResponse.json({ success: true, property: data });
+    const cleanPayload = { ...payload };
+
+    // Always mirror isRoadExclusive into attributes JSONB for fail-safe persistence
+    if (cleanPayload.isRoadExclusive !== undefined) {
+      const attr = (cleanPayload.attributes && typeof cleanPayload.attributes === "object")
+        ? { ...(cleanPayload.attributes as Record<string, unknown>), isRoadExclusive: Boolean(cleanPayload.isRoadExclusive) }
+        : { isRoadExclusive: Boolean(cleanPayload.isRoadExclusive) };
+      cleanPayload.attributes = attr;
     }
 
-    if (!id) {
+    if (mode === "update" && !id) {
       return NextResponse.json({ success: false, error: "Property identifier required." }, { status: 400 });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("properties")
-      .update({ ...payload, updatedAt: new Date().toISOString() })
-      .eq("id", id)
-      .select("id, slug")
-      .maybeSingle();
+    const executeSave = async (dataPayload: Record<string, unknown>) => {
+      if (mode === "create") {
+        return await supabaseAdmin.from("properties").insert(dataPayload).select("id, slug").single();
+      }
+      return await supabaseAdmin
+        .from("properties")
+        .update({ ...dataPayload, updatedAt: new Date().toISOString() })
+        .eq("id", id!)
+        .select("id, slug")
+        .maybeSingle();
+    };
+
+    let { data, error } = await executeSave(cleanPayload);
+
+    // If the physical isRoadExclusive column does not exist on Supabase, retry without it (already safely stored in attributes)
+    if (error && (error.message.includes("isRoadExclusive") || error.message.includes("does not exist"))) {
+      delete cleanPayload.isRoadExclusive;
+      const retryResult = await executeSave(cleanPayload);
+      data = retryResult.data;
+      error = retryResult.error;
+    }
+
     if (error) throw error;
-    if (!data) return NextResponse.json({ success: false, error: "Property not found." }, { status: 404 });
+    if (mode === "update" && !data) return NextResponse.json({ success: false, error: "Property not found." }, { status: 404 });
     return NextResponse.json({ success: true, property: data });
   } catch (error: unknown) {
     console.error("[PROPERTY SAVE ERROR]", error);

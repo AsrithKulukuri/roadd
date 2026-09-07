@@ -22,27 +22,47 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    if (body.mode === "create") {
-      const { data, error } = await supabaseAdmin
-        .from("projects")
-        .insert(body.payload)
-        .select("id, slug")
-        .single();
-      if (error) throw error;
-      return NextResponse.json({ success: true, project: data });
+    const payload = { ...body.payload };
+
+    // Always mirror isRoadExclusive into location JSONB for fail-safe persistence
+    if (payload.isRoadExclusive !== undefined) {
+      const loc = (payload.location && typeof payload.location === "object")
+        ? { ...(payload.location as Record<string, unknown>), isRoadExclusive: Boolean(payload.isRoadExclusive) }
+        : { isRoadExclusive: Boolean(payload.isRoadExclusive) };
+      payload.location = loc;
     }
 
-    if (!body.id && !body.slug) {
+    if (body.mode === "update" && !body.id && !body.slug) {
       return NextResponse.json({ success: false, error: "Project identifier required" }, { status: 400 });
     }
 
-    let query = supabaseAdmin
-      .from("projects")
-      .update({ ...body.payload, updatedAt: new Date().toISOString() });
-    query = body.id ? query.eq("id", body.id) : query.eq("slug", body.slug!);
-    const { data, error } = await query.select("id, slug").maybeSingle();
+    const executeSave = async (dataPayload: Record<string, unknown>) => {
+      if (body.mode === "create") {
+        return await supabaseAdmin
+          .from("projects")
+          .insert(dataPayload)
+          .select("id, slug")
+          .single();
+      }
+      let query = supabaseAdmin
+        .from("projects")
+        .update({ ...dataPayload, updatedAt: new Date().toISOString() });
+      query = body.id ? query.eq("id", body.id) : query.eq("slug", body.slug!);
+      return await query.select("id, slug").maybeSingle();
+    };
+
+    let { data, error } = await executeSave(payload);
+
+    // If the physical isRoadExclusive column does not exist on Supabase, retry without it (already safely stored in location)
+    if (error && (error.message.includes("isRoadExclusive") || error.message.includes("does not exist"))) {
+      delete payload.isRoadExclusive;
+      const retryResult = await executeSave(payload);
+      data = retryResult.data;
+      error = retryResult.error;
+    }
+
     if (error) throw error;
-    if (!data) {
+    if (body.mode === "update" && !data) {
       return NextResponse.json({ success: false, error: "Project was not found" }, { status: 404 });
     }
     return NextResponse.json({ success: true, project: data });
