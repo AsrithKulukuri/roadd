@@ -38,11 +38,14 @@ export async function GET() {
         ? Math.max(500, Math.min(6000, Math.round(payload.pauseDuration)))
         : 2200;
 
+      const textColor = (payload as any).textColor === "light" ? "light" : "dark";
+
       return NextResponse.json({
         desktop,
         mobile,
         typingSpeed,
         pauseDuration,
+        textColor,
         configured: true,
         updatedAt: data.updated_at,
         source: "database",
@@ -55,6 +58,7 @@ export async function GET() {
       mobile: DEFAULT_MOBILE_SEARCH_PHRASES,
       typingSpeed: 60,
       pauseDuration: 2200,
+      textColor: "dark",
       configured: false,
       updatedAt: null,
       source: "fallback",
@@ -68,6 +72,7 @@ export async function GET() {
         mobile: DEFAULT_MOBILE_SEARCH_PHRASES,
         typingSpeed: 60,
         pauseDuration: 2200,
+        textColor: "dark",
       },
       { status: 500 }
     );
@@ -106,6 +111,7 @@ export async function PUT(request: NextRequest) {
     const pauseDuration = typeof body?.pauseDuration === "number" && !isNaN(body.pauseDuration)
       ? Math.max(500, Math.min(6000, Math.round(body.pauseDuration)))
       : 2200;
+    const textColor = body?.textColor === "light" ? "light" : "dark";
 
     const { error } = await supabaseAdmin.from("homepage_layouts").upsert({
       id: "search_phrases",
@@ -114,6 +120,7 @@ export async function PUT(request: NextRequest) {
         mobile: cleanMobile,
         typingSpeed,
         pauseDuration,
+        textColor,
       },
       updated_at: new Date().toISOString(),
     });
@@ -129,6 +136,7 @@ export async function PUT(request: NextRequest) {
       mobile: cleanMobile,
       typingSpeed,
       pauseDuration,
+      textColor,
       configured: true,
     });
   } catch (err: any) {

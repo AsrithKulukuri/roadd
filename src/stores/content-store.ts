@@ -184,13 +184,15 @@ interface ContentState {
   searchTypewriterPhrasesMobile: string[];
   searchTypewriterSpeed: number;
   searchTypewriterPause: number;
+  searchTypewriterTextColor: "dark" | "light";
   searchPhrasesConfigured?: boolean;
   isLoading: boolean;
   
   // Search Bar Typewriter Phrases Actions
   fetchSearchPhrases: () => Promise<void>;
-  setSearchTypewriterPhrases: (desktop: string[], mobile: string[], speed?: number, pause?: number) => Promise<void>;
+  setSearchTypewriterPhrases: (desktop: string[], mobile: string[], speed?: number, pause?: number, textColor?: "dark" | "light") => Promise<void>;
   setSearchTypewriterSpeed: (speed: number, pause?: number) => Promise<void>;
+  setSearchTypewriterTextColor: (textColor: "dark" | "light") => Promise<void>;
   addDesktopPhrase: (phrase: string) => Promise<void>;
   removeDesktopPhrase: (index: number) => Promise<void>;
   addMobilePhrase: (phrase: string) => Promise<void>;
@@ -233,6 +235,7 @@ export const useContentStore = create<ContentState>()(
       searchTypewriterPhrasesMobile: DEFAULT_MOBILE_SEARCH_PHRASES,
       searchTypewriterSpeed: 60,
       searchTypewriterPause: 2200,
+      searchTypewriterTextColor: "dark",
       searchPhrasesConfigured: false,
       isLoading: false,
 
@@ -248,6 +251,7 @@ export const useContentStore = create<ContentState>()(
                 searchTypewriterPhrasesMobile: data.mobile,
                 searchTypewriterSpeed: typeof data.typingSpeed === "number" ? data.typingSpeed : 60,
                 searchTypewriterPause: typeof data.pauseDuration === "number" ? data.pauseDuration : 2200,
+                searchTypewriterTextColor: data.textColor === "light" ? "light" : "dark",
                 searchPhrasesConfigured: true,
               });
             }
@@ -257,14 +261,16 @@ export const useContentStore = create<ContentState>()(
         }
       },
 
-      setSearchTypewriterPhrases: async (desktop, mobile, speed, pause) => {
+      setSearchTypewriterPhrases: async (desktop, mobile, speed, pause, textColor) => {
         const nextSpeed = speed ?? get().searchTypewriterSpeed ?? 60;
         const nextPause = pause ?? get().searchTypewriterPause ?? 2200;
+        const nextTextColor = textColor ?? get().searchTypewriterTextColor ?? "dark";
         set({
           searchTypewriterPhrasesDesktop: desktop,
           searchTypewriterPhrasesMobile: mobile,
           searchTypewriterSpeed: nextSpeed,
           searchTypewriterPause: nextPause,
+          searchTypewriterTextColor: nextTextColor,
           searchPhrasesConfigured: true,
         });
         toast.success("Search typewriter settings saved!");
@@ -277,6 +283,7 @@ export const useContentStore = create<ContentState>()(
               mobile,
               typingSpeed: nextSpeed,
               pauseDuration: nextPause,
+              textColor: nextTextColor,
             }),
           });
         } catch (err) {
@@ -288,6 +295,7 @@ export const useContentStore = create<ContentState>()(
         const desktop = get().searchTypewriterPhrasesDesktop ?? [];
         const mobile = get().searchTypewriterPhrasesMobile ?? [];
         const nextPause = pause ?? get().searchTypewriterPause ?? 2200;
+        const textColor = get().searchTypewriterTextColor ?? "dark";
         set({
           searchTypewriterSpeed: speed,
           searchTypewriterPause: nextPause,
@@ -303,10 +311,38 @@ export const useContentStore = create<ContentState>()(
               mobile,
               typingSpeed: speed,
               pauseDuration: nextPause,
+              textColor,
             }),
           });
         } catch (err) {
           console.error("[ContentStore] Save speed error:", err);
+        }
+      },
+
+      setSearchTypewriterTextColor: async (textColor) => {
+        const desktop = get().searchTypewriterPhrasesDesktop ?? [];
+        const mobile = get().searchTypewriterPhrasesMobile ?? [];
+        const speed = get().searchTypewriterSpeed ?? 60;
+        const pause = get().searchTypewriterPause ?? 2200;
+        set({
+          searchTypewriterTextColor: textColor,
+          searchPhrasesConfigured: true,
+        });
+        toast.success(`Search typewriter text set to ${textColor === "light" ? "Light Text" : "Dark Text"}!`);
+        try {
+          await fetch("/api/content/search-phrases", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              desktop,
+              mobile,
+              typingSpeed: speed,
+              pauseDuration: pause,
+              textColor,
+            }),
+          });
+        } catch (err) {
+          console.error("[ContentStore] Save textColor error:", err);
         }
       },
 
@@ -327,6 +363,7 @@ export const useContentStore = create<ContentState>()(
               mobile,
               typingSpeed: get().searchTypewriterSpeed ?? 60,
               pauseDuration: get().searchTypewriterPause ?? 2200,
+              textColor: get().searchTypewriterTextColor ?? "dark",
             }),
           });
         } catch (err) {
@@ -349,6 +386,7 @@ export const useContentStore = create<ContentState>()(
               mobile,
               typingSpeed: get().searchTypewriterSpeed ?? 60,
               pauseDuration: get().searchTypewriterPause ?? 2200,
+              textColor: get().searchTypewriterTextColor ?? "dark",
             }),
           });
         } catch (err) {
@@ -373,6 +411,7 @@ export const useContentStore = create<ContentState>()(
               mobile: nextMobile,
               typingSpeed: get().searchTypewriterSpeed ?? 60,
               pauseDuration: get().searchTypewriterPause ?? 2200,
+              textColor: get().searchTypewriterTextColor ?? "dark",
             }),
           });
         } catch (err) {
@@ -395,6 +434,7 @@ export const useContentStore = create<ContentState>()(
               mobile: nextMobile,
               typingSpeed: get().searchTypewriterSpeed ?? 60,
               pauseDuration: get().searchTypewriterPause ?? 2200,
+              textColor: get().searchTypewriterTextColor ?? "dark",
             }),
           });
         } catch (err) {

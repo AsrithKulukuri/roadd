@@ -5,7 +5,7 @@ import { useContentStore, TrendingLocation, HomeCategory, DEFAULT_DESKTOP_SEARCH
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Edit2, Plus, Trash2, MapPin, LayoutGrid, UploadCloud, X, Sparkles, ExternalLink, Image as ImageIcon, Laptop, Smartphone, Check, RotateCcw, Search, Gauge, Zap, Clock } from "lucide-react";
+import { Edit2, Plus, Trash2, MapPin, LayoutGrid, UploadCloud, X, Sparkles, ExternalLink, Image as ImageIcon, Laptop, Smartphone, Check, RotateCcw, Search, Gauge, Zap, Clock, Palette } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -32,8 +32,8 @@ export default function ContentAdminPage() {
     addLocation, updateLocation, deleteLocation,
     homeCategories, fetchCategories, addCategory, updateCategory, deleteCategory, resetCategories,
     searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile, searchPhrasesConfigured,
-    searchTypewriterSpeed, searchTypewriterPause,
-    fetchSearchPhrases, setSearchTypewriterPhrases, setSearchTypewriterSpeed,
+    searchTypewriterSpeed, searchTypewriterPause, searchTypewriterTextColor,
+    fetchSearchPhrases, setSearchTypewriterPhrases, setSearchTypewriterSpeed, setSearchTypewriterTextColor,
     addDesktopPhrase, removeDesktopPhrase,
     addMobilePhrase, removeMobilePhrase,
   } = useContentStore();
@@ -53,6 +53,10 @@ export default function ContentAdminPage() {
   const [pauseDurationVal, setPauseDurationVal] = useState<number>(searchTypewriterPause || 2200);
   const [isSavingSpeed, setIsSavingSpeed] = useState(false);
 
+  // Typing text appearance: Light Text vs Dark Text
+  const [textColorVal, setTextColorVal] = useState<"dark" | "light">(searchTypewriterTextColor || "dark");
+  const [isSavingTextColor, setIsSavingTextColor] = useState(false);
+
   useEffect(() => {
     if (typeof searchTypewriterSpeed === "number" && searchTypewriterSpeed > 0) {
       setTypingSpeedVal(searchTypewriterSpeed);
@@ -65,6 +69,12 @@ export default function ContentAdminPage() {
     }
   }, [searchTypewriterPause]);
 
+  useEffect(() => {
+    if (searchTypewriterTextColor) {
+      setTextColorVal(searchTypewriterTextColor);
+    }
+  }, [searchTypewriterTextColor]);
+
   const handleApplySpeed = async (newSpeed: number, newPause: number) => {
     setTypingSpeedVal(newSpeed);
     setPauseDurationVal(newPause);
@@ -76,6 +86,19 @@ export default function ContentAdminPage() {
       toast.error("Failed to save speed settings");
     } finally {
       setIsSavingSpeed(false);
+    }
+  };
+
+  const handleApplyTextColor = async (newColor: "dark" | "light") => {
+    setTextColorVal(newColor);
+    setIsSavingTextColor(true);
+    try {
+      await setSearchTypewriterTextColor(newColor);
+    } catch (err) {
+      console.error("Failed to save text color:", err);
+      toast.error("Failed to save text color");
+    } finally {
+      setIsSavingTextColor(false);
     }
   };
 
@@ -858,11 +881,20 @@ export default function ContentAdminPage() {
                   <Clock className="w-3.5 h-3.5" />
                   {(pauseDurationVal / 1000).toFixed(1)}s screen hold
                 </span>
+                <span className={cn(
+                  "px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm",
+                  textColorVal === "light"
+                    ? "bg-slate-900 border-slate-700 text-slate-300"
+                    : "bg-slate-900 border-amber-500/40 text-amber-400"
+                )}>
+                  <Palette className="w-3.5 h-3.5" />
+                  {textColorVal === "light" ? "Light Text Mode" : "Dark Text Mode"}
+                </span>
               </div>
             </div>
 
             {/* Controls Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
               {/* 1. Character Typing Speed */}
               <div className="bg-bg-secondary/40 border border-border-default rounded-2xl p-5 space-y-4 flex flex-col justify-between">
@@ -894,7 +926,7 @@ export default function ContentAdminPage() {
                       className="w-full accent-amber-500 cursor-pointer h-2 bg-slate-800 rounded-lg"
                     />
                     <div className="flex justify-between text-[10px] text-slate-400 font-mono pt-1.5">
-                      <span>20ms (Ultra Fast)</span>
+                      <span>20ms (Fast)</span>
                       <span>60ms (Standard)</span>
                       <span>150ms (Slow)</span>
                     </div>
@@ -941,7 +973,7 @@ export default function ContentAdminPage() {
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-black text-text-primary flex items-center gap-2">
                       <Clock className="w-4 h-4 text-sky-400" />
-                      Screen Hold Duration (Sentence Pause)
+                      Screen Hold Duration
                     </label>
                     <span className="font-mono text-xs font-black text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-md border border-sky-500/20">
                       {(pauseDurationVal / 1000).toFixed(1)}s ({pauseDurationVal} ms)
@@ -1002,6 +1034,81 @@ export default function ContentAdminPage() {
                         </button>
                       );
                     })}
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Typing Text Color Tone (Light Text vs Dark Text) */}
+              <div className="bg-bg-secondary/40 border border-border-default rounded-2xl p-5 space-y-4 flex flex-col justify-between">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-text-primary flex items-center gap-2">
+                      <Palette className="w-4 h-4 text-emerald-400" />
+                      Typing Text Color Tone
+                    </label>
+                    <span className={cn(
+                      "font-mono text-xs font-black px-2.5 py-0.5 rounded-md border uppercase",
+                      textColorVal === "light"
+                        ? "text-slate-300 bg-slate-800 border-slate-700"
+                        : "text-amber-400 bg-amber-500/10 border-amber-500/20"
+                    )}>
+                      {textColorVal === "light" ? "Light Text" : "Dark Text"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-text-secondary leading-relaxed">
+                    Admin decision: Choose whether typed sentences appear in bold dark text or subtle light gray placeholder style.
+                  </p>
+
+                  {/* Light vs Dark Toggle Buttons */}
+                  <div className="grid grid-cols-2 gap-2 pt-2">
+                    <button
+                      type="button"
+                      disabled={isSavingTextColor}
+                      onClick={() => handleApplyTextColor("dark")}
+                      className={cn(
+                        "p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all cursor-pointer text-center select-none",
+                        textColorVal === "dark"
+                          ? "bg-slate-900 border-amber-500 text-white ring-2 ring-amber-500/25 shadow-sm"
+                          : "bg-bg-card border-border-default text-text-secondary hover:border-slate-700 hover:text-text-primary"
+                      )}
+                    >
+                      <div className="w-4 h-4 rounded-full bg-slate-950 border border-slate-700 flex items-center justify-center">
+                        <div className={cn("w-2 h-2 rounded-full", textColorVal === "dark" ? "bg-amber-400" : "bg-transparent")} />
+                      </div>
+                      <span className="text-xs font-black text-white">Dark Text</span>
+                      <span className="text-[10px] text-slate-400 leading-tight">Bold & high contrast</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isSavingTextColor}
+                      onClick={() => handleApplyTextColor("light")}
+                      className={cn(
+                        "p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all cursor-pointer text-center select-none",
+                        textColorVal === "light"
+                          ? "bg-slate-900 border-amber-500 text-white ring-2 ring-amber-500/25 shadow-sm"
+                          : "bg-bg-card border-border-default text-text-secondary hover:border-slate-700 hover:text-text-primary"
+                      )}
+                    >
+                      <div className="w-4 h-4 rounded-full bg-slate-300 border border-slate-400 flex items-center justify-center">
+                        <div className={cn("w-2 h-2 rounded-full", textColorVal === "light" ? "bg-amber-500" : "bg-transparent")} />
+                      </div>
+                      <span className="text-xs font-black text-slate-300">Light Text</span>
+                      <span className="text-[10px] text-slate-400 leading-tight">Soft light placeholder</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Footer status */}
+                <div className="space-y-1.5 pt-3 border-t border-border-default/60">
+                  <div className="flex items-center justify-between text-[11px] text-text-secondary">
+                    <span>Active Decision:</span>
+                    <strong className="text-text-primary capitalize">
+                      {textColorVal === "light" ? "Light Text (Muted)" : "Dark Text (High Contrast)"}
+                    </strong>
+                  </div>
+                  <div className="text-[10px] text-slate-500">
+                    Controls character color inside the search bar on live site.
                   </div>
                 </div>
               </div>
@@ -1196,10 +1303,10 @@ export default function ContentAdminPage() {
                       <span className="italic text-slate-400">Search properties, projects, locations... (Standard placeholder, no typing)</span>
                     ) : (
                       <span className="flex items-center min-w-0 truncate text-slate-400">
-                        <span className="shrink-0 text-slate-400">Search&nbsp;&ldquo;</span>
-                        <span className="text-slate-800 dark:text-slate-200 font-semibold truncate">{previewDesktopText}</span>
+                        <span className={cn("shrink-0", textColorVal === "light" ? "text-slate-400" : "text-slate-500")}>Search&nbsp;&ldquo;</span>
+                        <span className={cn("font-semibold truncate", textColorVal === "light" ? "text-slate-400 font-medium" : "text-slate-900 dark:text-slate-100 font-bold")}>{previewDesktopText}</span>
                         <span className="inline-block w-[2px] h-[14px] bg-amber-500 ml-0.5 animate-pulse shrink-0 rounded-full" />
-                        <span className="shrink-0 text-slate-400">&rdquo;</span>
+                        <span className={cn("shrink-0", textColorVal === "light" ? "text-slate-400" : "text-slate-500")}>&rdquo;</span>
                       </span>
                     )}
                   </span>
@@ -1365,10 +1472,10 @@ export default function ContentAdminPage() {
                       <span className="italic text-slate-400">Search properties... (No typing)</span>
                     ) : (
                       <span className="flex items-center min-w-0 truncate text-slate-400">
-                        <span className="shrink-0 text-slate-400">Search&nbsp;&ldquo;</span>
-                        <span className="text-slate-800 dark:text-slate-200 font-semibold truncate">{previewMobileText}</span>
+                        <span className={cn("shrink-0", textColorVal === "light" ? "text-slate-400" : "text-slate-500")}>Search&nbsp;&ldquo;</span>
+                        <span className={cn("font-semibold truncate", textColorVal === "light" ? "text-slate-400 font-medium" : "text-slate-900 dark:text-slate-100 font-bold")}>{previewMobileText}</span>
                         <span className="inline-block w-[1.5px] h-[12px] bg-amber-500 ml-0.5 animate-pulse shrink-0 rounded-full" />
-                        <span className="shrink-0 text-slate-400">&rdquo;</span>
+                        <span className={cn("shrink-0", textColorVal === "light" ? "text-slate-400" : "text-slate-500")}>&rdquo;</span>
                       </span>
                     )}
                   </span>

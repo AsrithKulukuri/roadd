@@ -196,10 +196,12 @@ export function HeroSection() {
     searchTypewriterPhrasesMobile,
     searchTypewriterSpeed,
     searchTypewriterPause,
+    searchTypewriterTextColor,
     searchPhrasesConfigured,
     fetchCategories,
     fetchSearchPhrases,
   } = useContentStore();
+  const isLightTypewriter = searchTypewriterTextColor === "light";
   const [typedText, setTypedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
@@ -819,12 +821,17 @@ export function HeroSection() {
                     ) : (
                       <span className="flex items-center min-w-0 truncate text-slate-400">
                         {!typedText.toLowerCase().startsWith("search") && (
-                          <span className="shrink-0 text-slate-400">Search&nbsp;&ldquo;</span>
+                          <span className={cn("shrink-0", isLightTypewriter ? "text-slate-400" : "text-slate-500")}>Search&nbsp;&ldquo;</span>
                         )}
-                        <span className="text-slate-200 font-semibold truncate">{typedText}</span>
+                        <span className={cn(
+                          "font-semibold truncate",
+                          isLightTypewriter ? "text-slate-400 font-medium" : "text-slate-900 font-bold"
+                        )}>
+                          {typedText}
+                        </span>
                         <span className="inline-block w-[2px] h-[15px] bg-amber-500 ml-0.5 animate-pulse shrink-0 rounded-full" />
                         {!typedText.toLowerCase().startsWith("search") && (
-                          <span className="shrink-0 text-slate-400">&rdquo;</span>
+                          <span className={cn("shrink-0", isLightTypewriter ? "text-slate-400" : "text-slate-500")}>&rdquo;</span>
                         )}
                       </span>
                     )}
@@ -1476,12 +1483,17 @@ export function HeroSection() {
                     ) : (
                       <span className="flex items-center min-w-0 truncate text-slate-400">
                         {!typedText.toLowerCase().startsWith("search") && (
-                          <span className="shrink-0 text-slate-400">Search&nbsp;&ldquo;</span>
+                          <span className={cn("shrink-0", isLightTypewriter ? "text-slate-400" : "text-slate-500")}>Search&nbsp;&ldquo;</span>
                         )}
-                        <span className="text-slate-800 dark:text-slate-100 font-semibold truncate">{typedText}</span>
+                        <span className={cn(
+                          "font-semibold truncate",
+                          isLightTypewriter ? "text-slate-400 font-medium" : "text-slate-900 font-bold"
+                        )}>
+                          {typedText}
+                        </span>
                         <span className="inline-block w-[2px] h-[16px] sm:h-[18px] bg-amber-500 ml-0.5 animate-pulse shrink-0 rounded-full" />
                         {!typedText.toLowerCase().startsWith("search") && (
-                          <span className="shrink-0 text-slate-400">&rdquo;</span>
+                          <span className={cn("shrink-0", isLightTypewriter ? "text-slate-400" : "text-slate-500")}>&rdquo;</span>
                         )}
                       </span>
                     )}
