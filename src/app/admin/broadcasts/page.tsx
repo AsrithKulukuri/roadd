@@ -130,6 +130,7 @@ export default function AdminBroadcastsPage() {
   const [consentEvidence, setConsentEvidence] = useState("");
   const [consentConfirmed, setConsentConfirmed] = useState(false);
   const [restrictedModalInfo, setRestrictedModalInfo] = useState<{ name: string; phone: string; unlockDate: string } | null>(null);
+  const [currentTimeMs, setCurrentTimeMs] = useState(0);
 
   const loadAudience = useCallback(async () => {
     const response = await fetch("/api/admin/whatsapp/audience", { cache: "no-store" });
@@ -163,6 +164,13 @@ export default function AdminBroadcastsPage() {
       queueAbortRef.current = true;
     };
   }, [loadAudience, loadCampaigns]);
+
+  useEffect(() => {
+    const updateTime = () => setCurrentTimeMs(Date.now());
+    updateTime();
+    const timer = window.setInterval(updateTime, 60000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const eligibleContacts = useMemo(() => {
     const merged = [
@@ -520,7 +528,7 @@ export default function AdminBroadcastsPage() {
                   const selectableId = audienceTab === "registered" ? contact.contactId : contact.id;
                   const checked = Boolean(selectableId && selectedContactIds.has(selectableId));
                   const isRestricted = Boolean(
-                    contact.restrictionUntil && new Date(contact.restrictionUntil).getTime() > Date.now()
+                    contact.restrictionUntil && new Date(contact.restrictionUntil).getTime() > currentTimeMs
                   );
                   const formattedUnlock = contact.restrictionUntil
                     ? new Date(contact.restrictionUntil).toLocaleDateString("en-IN", {

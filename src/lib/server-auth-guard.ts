@@ -20,11 +20,30 @@ export interface AuthenticatedUser {
   [key: string]: unknown;
 }
 
+const DEFAULT_ADMIN_EMAILS = [
+  "admin@road.com",
+  "admin@roadapp.com",
+  "aasrith@road.com",
+  "kulukuri@road.com",
+];
+
+function getAllowedAdminEmails(): Set<string> {
+  const configuredEmails = (process.env.ADMIN_ALLOWED_EMAILS || "")
+    .split(",")
+    .map((email) => email.toLowerCase().trim())
+    .filter(Boolean);
+  return new Set([...DEFAULT_ADMIN_EMAILS, ...configuredEmails]);
+}
+
+function isExplicitAdminEmail(email?: string): boolean {
+  if (!email) return false;
+  return getAllowedAdminEmails().has(email.toLowerCase().trim());
+}
+
 function getSessionSecret(): string {
   const secret =
     process.env.SESSION_SECRET ||
-    process.env.ADMIN_SECRET_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY;
+    process.env.ADMIN_SECRET_KEY;
 
   if (!secret || secret.length < 32) {
     throw new Error("SESSION_SECRET must be configured with at least 32 characters.");
@@ -270,16 +289,9 @@ export async function authenticateServerRequest(
       }
     } catch {}
 
-    const normalizedEmail = (email || "").toLowerCase().trim();
-    const isExplicitAdminEmail = Boolean(
-      normalizedEmail === "admin@road.com" ||
-      normalizedEmail === "admin@roadapp.com" ||
-      normalizedEmail === "aasrith@road.com" ||
-      normalizedEmail.endsWith("@road.com")
-    );
     const isAdmin =
       (profileFound && role === "admin") ||
-      isExplicitAdminEmail ||
+      isExplicitAdminEmail(email) ||
       (typeof user.app_metadata === "object" && (user.app_metadata as Record<string, unknown>)?.role === "admin");
 
     const resolvedUser = {

@@ -41,12 +41,23 @@ for (const entry of protectedRequests) {
   });
 }
 
-for (const path of ["/api/admin/whatsapp/audience", "/api/admin/whatsapp/campaigns"]) {
+for (const path of ["/api/admin/whatsapp/audience", "/api/admin/whatsapp/campaigns", "/api/admin/schedules"]) {
   test(`${path} rejects anonymous reads`, async ({ request }) => {
     const response = await request.get(path);
     expect(response.status()).toBe(403);
   });
 }
+
+test("maps resolver rejects non-Google URLs before fetching", async ({ request }) => {
+  const response = await request.get(
+    "/api/resolve-maps-url?url=http%3A%2F%2F127.0.0.1%3A3100%2Fapi%2Fadmin%2Fschedules",
+  );
+
+  expect(response.status()).toBe(400);
+  await expect(response.json()).resolves.toMatchObject({
+    error: "Only HTTPS Google Maps links can be resolved.",
+  });
+});
 
 test("Wasender webhook rejects an invalid signature", async ({ request }) => {
   const response = await request.post("/api/webhooks/wasender", {

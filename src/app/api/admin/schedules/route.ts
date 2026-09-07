@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/server-auth-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,16 +29,16 @@ CREATE TABLE IF NOT EXISTS public.project_site_visits (
 CREATE INDEX IF NOT EXISTS idx_site_visits_status ON public.project_site_visits(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_site_visits_created ON public.project_site_visits(created_at DESC);
 ALTER TABLE public.project_site_visits ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public insert on project_site_visits" ON public.project_site_visits FOR INSERT TO public WITH CHECK (true);
-CREATE POLICY "Allow public select on project_site_visits" ON public.project_site_visits FOR SELECT TO public USING (true);
-CREATE POLICY "Allow public update on project_site_visits" ON public.project_site_visits FOR UPDATE TO public USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public delete on project_site_visits" ON public.project_site_visits FOR DELETE TO public USING (true);`;
+CREATE POLICY "Allow service role full access on project_site_visits" ON public.project_site_visits FOR ALL TO service_role USING (true) WITH CHECK (true);`;
 
 /**
  * GET: Retrieve all site visit schedules with fallback to project_leads table
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { errorResponse } = await requireAdmin(req);
+    if (errorResponse) return errorResponse;
+
     if (!supabaseAdmin) {
       return NextResponse.json({
         success: false,
@@ -90,7 +91,7 @@ export async function GET() {
     }
 
     // 2. Also check project_leads for any visits logged as leads
-    let fallbackSchedules: any[] = [];
+    const fallbackSchedules: any[] = [];
     try {
       const { data: leadVisits } = await supabaseAdmin
         .from("project_leads")
@@ -165,6 +166,9 @@ export async function GET() {
  */
 export async function PATCH(req: NextRequest) {
   try {
+    const { errorResponse } = await requireAdmin(req);
+    if (errorResponse) return errorResponse;
+
     if (!supabaseAdmin) {
       return NextResponse.json({ success: false, error: "Database unavailable" }, { status: 500 });
     }
@@ -201,6 +205,9 @@ export async function PATCH(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
+    const { errorResponse } = await requireAdmin(req);
+    if (errorResponse) return errorResponse;
+
     if (!supabaseAdmin) {
       return NextResponse.json({ success: false, error: "Database unavailable" }, { status: 500 });
     }

@@ -283,7 +283,6 @@ export async function POST(request: Request) {
         isProfileComplete,
         message: "WhatsApp OTP verified successfully.",
         user: userPayload,
-        token: authToken,
         requestId,
       },
       { status: 200 }

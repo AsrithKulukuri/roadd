@@ -1,11 +1,97 @@
 import { NextResponse } from "next/server";
 import { parseGoogleMapsUrl } from "@/lib/utils";
 
+const ALLOWED_MAPS_HOSTS = new Set([
+  "maps.app.goo.gl",
+  "goo.gl",
+  "google.com",
+  "www.google.com",
+  "maps.google.com",
+  "google.co.in",
+  "www.google.co.in",
+  "maps.google.co.in",
+]);
+const MAX_REDIRECTS = 5;
+const MAX_MAPS_RESPONSE_BYTES = 2 * 1024 * 1024;
+
 function isValidFetchedCoords(lat: number, lng: number): boolean {
   if (isNaN(lat) || isNaN(lng)) return false;
   // Ignore US default center 39.0268, -77.8443
   if (Math.abs(lat - 39.0268) < 0.1 && Math.abs(lng - (-77.8443)) < 0.1) return false;
   return true;
+}
+
+function isAllowedMapsUrl(url: URL): boolean {
+  return url.protocol === "https:" && ALLOWED_MAPS_HOSTS.has(url.hostname.toLowerCase());
+}
+
+function parseAllowedMapsUrl(value: string): URL | null {
+  try {
+    const url = new URL(value);
+    return isAllowedMapsUrl(url) ? url : null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchAllowedMapsUrl(initialUrl: URL): Promise<{ response: Response; finalUrl: string }> {
+  let currentUrl = initialUrl;
+
+  for (let redirectCount = 0; redirectCount <= MAX_REDIRECTS; redirectCount++) {
+    if (!isAllowedMapsUrl(currentUrl)) {
+      throw new Error("Only Google Maps links can be resolved.");
+    }
+
+    const response = await fetch(currentUrl, {
+      method: "GET",
+      redirect: "manual",
+      signal: AbortSignal.timeout(8000),
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+    });
+
+    if (![301, 302, 303, 307, 308].includes(response.status)) {
+      return { response, finalUrl: currentUrl.toString() };
+    }
+
+    const location = response.headers.get("location");
+    if (!location) {
+      return { response, finalUrl: currentUrl.toString() };
+    }
+
+    currentUrl = new URL(location, currentUrl);
+  }
+
+  throw new Error("Too many Google Maps redirects.");
+}
+
+async function readTextWithLimit(response: Response): Promise<string> {
+  const contentLength = Number(response.headers.get("content-length") || "0");
+  if (contentLength > MAX_MAPS_RESPONSE_BYTES) {
+    throw new Error("Google Maps response is too large.");
+  }
+
+  if (!response.body) return response.text();
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let totalBytes = 0;
+  let text = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    totalBytes += value.byteLength;
+    if (totalBytes > MAX_MAPS_RESPONSE_BYTES) {
+      await reader.cancel();
+      throw new Error("Google Maps response is too large.");
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+
+  return text + decoder.decode();
 }
 
 export async function GET(request: Request) {
@@ -24,18 +110,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, ...directMatch, resolvedUrl: trimmed });
   }
 
+  const allowedTargetUrl = parseAllowedMapsUrl(trimmed);
+  if (!allowedTargetUrl) {
+    return NextResponse.json(
+      { error: "Only HTTPS Google Maps links can be resolved." },
+      { status: 400 }
+    );
+  }
+
   // 2. Resolve shortened Google Maps URL redirect (e.g. maps.app.goo.gl / goo.gl)
   try {
-    const response = await fetch(trimmed, {
-      method: "GET",
-      redirect: "follow",
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      },
-    });
-
-    const finalUrl = response.url;
+    const { response, finalUrl } = await fetchAllowedMapsUrl(allowedTargetUrl);
     let coords = parseGoogleMapsUrl(finalUrl);
     if (coords && !isValidFetchedCoords(coords.latitude, coords.longitude)) {
       coords = null;
@@ -147,7 +232,7 @@ export async function GET(request: Request) {
 
     // 5. Final Fallback: Parse Google Maps HTML body ONLY for explicit pin coordinates (!3dlat!4dlng)
     if (!coords) {
-      const htmlText = await response.text();
+      const htmlText = await readTextWithLimit(response);
       const dMatch = htmlText.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
       if (dMatch) {
         const lat = parseFloat(dMatch[1]);

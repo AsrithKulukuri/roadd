@@ -124,7 +124,6 @@ export async function POST(request: Request) {
         success: true,
         message: "Profile completed successfully.",
         user: userPayload,
-        token: authToken,
       },
       { status: 200 }
     );

@@ -1,13 +1,185 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { WasenderService } from "@/lib/wasender";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
+import { sanitizeIndianPhoneNumber } from "@/lib/validations/auth";
 
 export const dynamic = "force-dynamic";
 
+const SUPPORT_WHATSAPP_PHONE = "+91 8977311418";
+const MAX_BODY_BYTES = 12 * 1024;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const MAX_VISITS_PER_WINDOW = 3;
+
+const scheduleVisitRateMap = new Map<string, { count: number; resetAt: number }>();
+
+const safeIdSchema = z
+  .string()
+  .trim()
+  .max(160)
+  .regex(/^[a-zA-Z0-9_-]*$/, "Invalid listing identifier")
+  .optional()
+  .default("");
+
+const scheduleVisitSchema = z.object({
+  projectId: safeIdSchema,
+  projectSlug: safeIdSchema,
+  projectName: z.string().trim().min(2, "Project name is required").max(180),
+  projectLocation: z.string().trim().max(240).optional().default(""),
+  customerName: z.string().trim().min(2, "Customer name is required").max(80),
+  customerPhone: z
+    .string()
+    .trim()
+    .transform((value) => sanitizeIndianPhoneNumber(value))
+    .refine((value) => /^\+91[6-9]\d{9}$/.test(value), "Enter a valid Indian WhatsApp number"),
+  customerEmail: z
+    .string()
+    .trim()
+    .max(160)
+    .optional()
+    .transform((value) => value || "")
+    .refine((value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), "Enter a valid email address"),
+  builderName: z.string().trim().max(120).optional().default(""),
+  builderPhone: z.string().trim().max(40).optional().default(""),
+  visitDate: z.string().trim().min(2, "Visit date is required").max(80),
+  timeSlot: z.string().trim().min(2, "Time slot is required").max(80),
+  notes: z.string().trim().max(500).optional().default(""),
+});
+
+type ScheduleVisitInput = z.infer<typeof scheduleVisitSchema>;
+
+type ListingContact = {
+  projectId: string;
+  projectSlug: string;
+  projectName: string;
+  projectLocation: string;
+  builderName: string;
+  builderPhone: string;
+};
+
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-real-ip") ||
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "local-development"
+  );
+}
+
+function checkScheduleVisitRateLimit(req: NextRequest, customerPhone: string): { allowed: boolean; retryAfterSeconds?: number } {
+  const now = Date.now();
+  for (const [key, entry] of scheduleVisitRateMap.entries()) {
+    if (entry.resetAt <= now) scheduleVisitRateMap.delete(key);
+  }
+
+  const key = `${getClientIp(req)}:${customerPhone}`;
+  const existing = scheduleVisitRateMap.get(key);
+  if (!existing || existing.resetAt <= now) {
+    scheduleVisitRateMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true };
+  }
+
+  if (existing.count >= MAX_VISITS_PER_WINDOW) {
+    return {
+      allowed: false,
+      retryAfterSeconds: Math.max(1, Math.ceil((existing.resetAt - now) / 1000)),
+    };
+  }
+
+  existing.count += 1;
+  return { allowed: true };
+}
+
+function normalizeLocation(value: unknown): string {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value !== "object") return "";
+  const location = value as Record<string, unknown>;
+  return [location.locality, location.city, location.address]
+    .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    .join(", ");
+}
+
+function normalizeListingContact(record: Record<string, any>, fallback: ScheduleVisitInput): ListingContact {
+  const builder = typeof record.builder === "object" && record.builder ? record.builder : {};
+  const recordLocation =
+    normalizeLocation(record.location) ||
+    String(record.projectLocation || record.project_location || record.locationText || record.location_text || "");
+
+  return {
+    projectId: String(record.id || fallback.projectId || ""),
+    projectSlug: String(record.slug || fallback.projectSlug || ""),
+    projectName: String(record.name || record.title || fallback.projectName),
+    projectLocation: recordLocation || fallback.projectLocation,
+    builderName: String(
+      record.builderName ||
+        record.builder_name ||
+        record.ownerName ||
+        record.owner_name ||
+        builder.name ||
+        fallback.builderName ||
+        "Project Site Team"
+    ),
+    builderPhone: String(
+      record.builderWhatsapp ||
+        record.builder_whatsapp ||
+        record.builderPhone ||
+        record.builder_phone ||
+        record.ownerPhone ||
+        record.owner_phone ||
+        builder.whatsapp ||
+        builder.phone ||
+        ""
+    ),
+  };
+}
+
+async function getListingContact(input: ScheduleVisitInput): Promise<ListingContact | null> {
+  const findInTable = async (table: "projects" | "properties") => {
+    if (input.projectId) {
+      const { data } = await supabaseAdmin.from(table).select("*").eq("id", input.projectId).maybeSingle();
+      if (data) return data as Record<string, any>;
+    }
+    if (input.projectSlug) {
+      const { data } = await supabaseAdmin.from(table).select("*").eq("slug", input.projectSlug).maybeSingle();
+      if (data) return data as Record<string, any>;
+    }
+    return null;
+  };
+
+  try {
+    const project = await findInTable("projects");
+    if (project) return normalizeListingContact(project, input);
+
+    const property = await findInTable("properties");
+    if (property) return normalizeListingContact(property, input);
+  } catch (error) {
+    console.warn("[SCHEDULE VISIT] Listing lookup skipped:", error);
+  }
+
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const contentLength = Number(req.headers.get("content-length") || "0");
+    if (contentLength > MAX_BODY_BYTES) {
+      return NextResponse.json(
+        { success: false, error: "Schedule request is too large" },
+        { status: 413 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
+    const parsed = scheduleVisitSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { success: false, error: parsed.error.issues[0]?.message || "Invalid schedule request" },
+        { status: 400 }
+      );
+    }
+
     const {
       projectId,
       projectSlug,
@@ -17,22 +189,31 @@ export async function POST(req: NextRequest) {
       customerPhone,
       customerEmail,
       builderName,
-      builderPhone,
       visitDate,
       timeSlot,
       notes,
-    } = body;
+    } = parsed.data;
 
-    // Validate required fields
-    if (!projectName || !customerName || !customerPhone || !visitDate || !timeSlot) {
+    const cleanCustomerPhone = formatWhatsAppPhone(customerPhone);
+    const rateLimit = checkScheduleVisitRateLimit(req, cleanCustomerPhone);
+    if (!rateLimit.allowed) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields (project name, customer name, phone, date, time slot)" },
-        { status: 400 }
+        {
+          success: false,
+          error: "Too many site visit requests. Please try again later.",
+          retryAfterSeconds: rateLimit.retryAfterSeconds,
+        },
+        { status: 429 }
       );
     }
 
-    const cleanCustomerPhone = formatWhatsAppPhone(customerPhone);
-    const cleanBuilderPhone = builderPhone ? formatWhatsAppPhone(builderPhone) : "";
+    const listingContact = await getListingContact(parsed.data);
+    const resolvedProjectId = listingContact?.projectId || projectId;
+    const resolvedProjectSlug = listingContact?.projectSlug || projectSlug;
+    const resolvedProjectName = listingContact?.projectName || projectName;
+    const resolvedProjectLocation = listingContact?.projectLocation || projectLocation || "Vijayawada / Amaravati";
+    const resolvedBuilderName = listingContact?.builderName || builderName || "Project Site Team";
+    const cleanBuilderPhone = listingContact?.builderPhone ? formatWhatsAppPhone(listingContact.builderPhone) : "";
 
     const scheduleId = `visit-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const createdAt = new Date().toISOString();
@@ -44,10 +225,10 @@ export async function POST(req: NextRequest) {
     try {
       const customerMsg =
         `Hello ${customerName}! 🏡\n\n` +
-        `Your site visit for *${projectName}* is *CONFIRMED*!\n\n` +
+        `Your site visit for *${resolvedProjectName}* is *CONFIRMED*!\n\n` +
         `📅 *Date:* ${visitDate}\n` +
         `⏰ *Time Slot:* ${timeSlot}\n` +
-        `📍 *Location:* ${projectLocation || "Project Site"}\n\n` +
+        `📍 *Location:* ${resolvedProjectLocation || "Project Site"}\n\n` +
         `Our project team will be ready to guide you through the property. We will also send you a reminder 1 hour before your visit.\n\n` +
         `Thank you for using ROAD Facing!`;
 
@@ -63,17 +244,17 @@ export async function POST(req: NextRequest) {
 
     // 2. Send WhatsApp notification to Builder
     try {
-      const targetBuilderPhone = cleanBuilderPhone || formatWhatsAppPhone("+91 8977311418"); // platform support fallback
+      const targetBuilderPhone = cleanBuilderPhone || formatWhatsAppPhone(SUPPORT_WHATSAPP_PHONE);
       if (targetBuilderPhone) {
         const builderMsg =
           `New Site Visit Scheduled! 🔔\n\n` +
-          `Project: *${projectName}*\n` +
+          `Project: *${resolvedProjectName}*\n` +
           `Customer: *${customerName}*\n` +
-          `Phone: ${cleanCustomerPhone || customerPhone}\n` +
+          `Phone: ${cleanCustomerPhone}\n` +
           (customerEmail ? `Email: ${customerEmail}\n` : "") +
           `📅 *Date:* ${visitDate}\n` +
           `⏰ *Time Slot:* ${timeSlot}\n` +
-          `📍 *Location:* ${projectLocation || "Site"}\n` +
+          `📍 *Location:* ${resolvedProjectLocation || "Site"}\n` +
           (notes ? `📝 *Notes:* ${notes}\n` : "") +
           `\nPlease ensure a site executive is available for the visit.\n\n` +
           `ROAD Facing Admin`;
@@ -92,15 +273,15 @@ export async function POST(req: NextRequest) {
       try {
         const { error: insertErr } = await supabaseAdmin.from("project_site_visits").insert({
           id: scheduleId,
-          project_id: projectId || null,
-          project_slug: projectSlug || null,
-          project_name: projectName,
-          project_location: projectLocation || null,
+          project_id: resolvedProjectId || null,
+          project_slug: resolvedProjectSlug || null,
+          project_name: resolvedProjectName,
+          project_location: resolvedProjectLocation || null,
           customer_name: customerName,
-          customer_phone: cleanCustomerPhone || customerPhone,
+          customer_phone: cleanCustomerPhone,
           customer_email: customerEmail || null,
-          builder_name: builderName || null,
-          builder_phone: cleanBuilderPhone || builderPhone || null,
+          builder_name: resolvedBuilderName || null,
+          builder_phone: cleanBuilderPhone || null,
           visit_date: visitDate,
           time_slot: timeSlot,
           status: "scheduled",
@@ -121,13 +302,13 @@ export async function POST(req: NextRequest) {
       // Dual-record in project_leads as reliable failover so visits are never lost
       try {
         await supabaseAdmin.from("project_leads").insert({
-          project_id: projectId || null,
-          project_slug: projectSlug || null,
-          project_name: projectName,
-          builder_phone: cleanBuilderPhone || builderPhone || "site-team",
-          builder_whatsapp: cleanBuilderPhone || builderPhone || null,
+          project_id: resolvedProjectId || null,
+          project_slug: resolvedProjectSlug || null,
+          project_name: resolvedProjectName,
+          builder_phone: cleanBuilderPhone || "site-team",
+          builder_whatsapp: cleanBuilderPhone || null,
           viewer_name: customerName,
-          viewer_phone: cleanCustomerPhone || customerPhone,
+          viewer_phone: cleanCustomerPhone,
           viewer_email: customerEmail || null,
           delivery_status: `scheduled_visit:${visitDate}:${timeSlot}`,
           created_at: createdAt,
@@ -139,15 +320,15 @@ export async function POST(req: NextRequest) {
 
     const schedule = {
       id: scheduleId,
-      projectId: projectId || "",
-      projectSlug: projectSlug || "",
-      projectName,
-      projectLocation: projectLocation || "",
+      projectId: resolvedProjectId || "",
+      projectSlug: resolvedProjectSlug || "",
+      projectName: resolvedProjectName,
+      projectLocation: resolvedProjectLocation || "",
       customerName,
-      customerPhone: cleanCustomerPhone || customerPhone,
+      customerPhone: cleanCustomerPhone,
       customerEmail,
-      builderName,
-      builderPhone: cleanBuilderPhone || builderPhone,
+      builderName: resolvedBuilderName,
+      builderPhone: cleanBuilderPhone,
       visitDate,
       timeSlot,
       status: "scheduled" as const,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
   Calendar,
@@ -89,6 +89,12 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
     setMounted(true);
   }, []);
 
+  const handleResetAndClose = useCallback(() => {
+    setScheduledResult(null);
+    setErrorMessage(null);
+    onClose();
+  }, [onClose]);
+
   // Auto-fill from logged-in user profile if exists
   useEffect(() => {
     if (typeof window !== "undefined" && isOpen) {
@@ -113,7 +119,7 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
+  }, [handleResetAndClose, isOpen]);
 
   if (!isOpen || !mounted) return null;
 
@@ -164,6 +170,9 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
       });
 
       const data = await res.json();
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || "Unable to schedule this visit right now.");
+      }
 
       // 2. Add to client Zustand store
       const scheduleRecord = await addSchedule({
@@ -185,35 +194,12 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
       });
 
       setScheduledResult(scheduleRecord);
-    } catch (err: any) {
-      console.warn("Schedule request completed with fallback:", err);
-      // Even if network blip, save in local store
-      const scheduleRecord = await addSchedule({
-        projectId: payload.projectId,
-        projectSlug: payload.projectSlug,
-        projectName: payload.projectName,
-        projectLocation: payload.projectLocation,
-        customerName: payload.customerName,
-        customerPhone: payload.customerPhone,
-        customerEmail: payload.customerEmail,
-        builderName: payload.builderName,
-        builderPhone: payload.builderPhone,
-        visitDate: payload.visitDate,
-        timeSlot: payload.timeSlot,
-        customerNotified: true,
-        builderNotified: true,
-        notes: payload.notes,
-      });
-      setScheduledResult(scheduleRecord);
+    } catch (err: unknown) {
+      console.warn("Schedule request failed:", err);
+      setErrorMessage(err instanceof Error ? err.message : "Unable to schedule this visit right now.");
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleResetAndClose = () => {
-    setScheduledResult(null);
-    setErrorMessage(null);
-    onClose();
   };
 
   const modalContent = (

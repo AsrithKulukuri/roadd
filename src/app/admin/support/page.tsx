@@ -83,6 +83,17 @@ export default function AdminSupportPage() {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const prevPhoneRef = useRef<string | null>(null);
 
+  const loadTicketDetails = useCallback(async (phone: string) => {
+    const res = await fetch(`/api/admin/whatsapp/support?phone=${encodeURIComponent(phone)}`);
+    const json = await res.json();
+    if (json.success) {
+      setConversations(json.conversations || []);
+      setCustomerProfile(json.customerProfile || null);
+      setSavedProperties(json.savedProperties || []);
+      setAiCopilot(json.aiCopilot || null);
+    }
+  }, []);
+
   const loadData = useCallback(async (phoneToSelect?: string, isManual?: boolean) => {
     if (isManual) setIsRefreshing(true);
     try {
@@ -103,8 +114,9 @@ export default function AdminSupportPage() {
         } else if (json.tickets?.length > 0 && !selectedTicket) {
           // On desktop auto-select first ticket, on mobile keep in tickets list
           if (window.innerWidth >= 1024) {
-            setSelectedTicket(json.tickets[0]);
-            loadData(json.tickets[0].phone);
+            const firstTicket = json.tickets[0];
+            setSelectedTicket(firstTicket);
+            await loadTicketDetails(firstTicket.phone);
           }
         }
         if (isManual) toast.success("Support desk refreshed!");
@@ -115,7 +127,7 @@ export default function AdminSupportPage() {
     } finally {
       if (isManual) setIsRefreshing(false);
     }
-  }, [selectedTicket?.phone]);
+  }, [loadTicketDetails, selectedTicket?.phone]);
 
   useEffect(() => {
     loadData();

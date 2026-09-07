@@ -14,7 +14,11 @@ const ADMIN_EMAILS = [
 function isAdminEmail(email?: string): boolean {
   if (!email) return false;
   const normalized = email.toLowerCase().trim();
-  return ADMIN_EMAILS.includes(normalized) || normalized.endsWith("@road.com");
+  const configuredEmails = (process.env.ADMIN_ALLOWED_EMAILS || "")
+    .split(",")
+    .map((item) => item.toLowerCase().trim())
+    .filter(Boolean);
+  return new Set([...ADMIN_EMAILS, ...configuredEmails]).has(normalized);
 }
 
 export async function POST(request: Request) {

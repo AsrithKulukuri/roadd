@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -218,7 +219,7 @@ export default function AdminLoginPage() {
 
         {/* Option 1: Email & Password Form */}
         {authMethod === "password" && (
-          <form onSubmit={handleAdminPasswordLogin} className="space-y-4">
+          <form method="post" action="/admin/login" onSubmit={handleAdminPasswordLogin} className="space-y-4">
             <div className="space-y-1.5">
               <label htmlFor="admin-email" className="text-xs font-bold text-slate-300 ml-1">Admin Email Address</label>
               <div className="relative">
@@ -228,6 +229,7 @@ export default function AdminLoginPage() {
                   name="email"
                   type="email"
                   required
+                  autoComplete="username"
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}
@@ -248,6 +250,7 @@ export default function AdminLoginPage() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
+                  autoComplete="current-password"
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}
@@ -314,12 +317,12 @@ export default function AdminLoginPage() {
 
         {/* Back Link */}
         <div className="pt-2 border-t border-slate-800/80 text-center">
-          <a
+          <Link
             href="/"
             className="text-xs text-slate-400 hover:text-amber-400 transition-colors inline-flex items-center gap-1 font-semibold"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Return to ROAD Portal
-          </a>
+          </Link>
         </div>
       </motion.div>
     </div>

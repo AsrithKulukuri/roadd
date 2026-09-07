@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Search, Check } from "lucide-react";
 import {
   ICON_OPTIONS_META,
   HOME_SECTION_ICONS,
-  getLucideIcon,
-  type IconOptionMeta,
 } from "@/lib/home-section-icons";
 import type { HomeSectionIconName } from "@/types/home-section";
 import { cn } from "@/lib/utils";
@@ -30,6 +28,7 @@ export function IconPicker({
   const [activeCategory, setActiveCategory] = useState<string>("All");
 
   const categories = ["All", "Properties", "Badges", "Finance", "Lifestyle"];
+  const selectedIconName = value in HOME_SECTION_ICONS ? (value as HomeSectionIconName) : "Home";
 
   const filteredIcons = useMemo(() => {
     return ICON_OPTIONS_META.filter((opt) => {
@@ -42,7 +41,6 @@ export function IconPicker({
     });
   }, [search, activeCategory]);
 
-  const SelectedIcon = getLucideIcon(value);
   const selectedMeta = ICON_OPTIONS_META.find((m) => m.name === value);
 
   return (
@@ -63,7 +61,9 @@ export function IconPicker({
       {/* Selected Icon Showcase Header */}
       <div className="flex items-center gap-3 p-2.5 bg-slate-900 border border-slate-800 rounded-xl shadow-xs">
         <div className="w-10 h-10 rounded-full bg-white shadow-md border border-slate-100 flex items-center justify-center text-[#78350f] shrink-0">
-          <SelectedIcon className="w-5 h-5 stroke-[2.2]" />
+          {React.createElement(HOME_SECTION_ICONS[selectedIconName], {
+            className: "w-5 h-5 stroke-[2.2]",
+          })}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

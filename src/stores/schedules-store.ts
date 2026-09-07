@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { supabase } from "@/lib/supabase";
 
 export interface SiteVisitSchedule {
   id: string;
@@ -47,7 +46,6 @@ export const useSchedulesStore = create<SchedulesStore>()(
       fetchSchedules: async () => {
         set({ isLoading: true });
 
-        // 1. Primary: Server-side Admin Schedules API (bypasses RLS, checks project_leads fallback, detects table missing)
         try {
           const res = await fetch("/api/admin/schedules", {
             cache: "no-store",
@@ -67,45 +65,7 @@ export const useSchedulesStore = create<SchedulesStore>()(
             }
           }
         } catch (apiErr) {
-          console.warn("[SchedulesStore] Admin API fetch skipped, trying direct Supabase fallback:", apiErr);
-        }
-
-        // 2. Fallback: Direct client Supabase query if table exists
-        try {
-          if (supabase) {
-            const { data, error } = await supabase
-              .from("project_site_visits")
-              .select("*")
-              .order("created_at", { ascending: false });
-
-            if (!error && Array.isArray(data)) {
-              const mapped: SiteVisitSchedule[] = data.map((d: any) => ({
-                id: d.id,
-                projectId: d.project_id || "",
-                projectSlug: d.project_slug || "",
-                projectName: d.project_name || "Tour",
-                projectLocation: d.project_location || "",
-                customerName: d.customer_name || "Customer",
-                customerPhone: d.customer_phone || "",
-                customerEmail: d.customer_email || undefined,
-                builderName: d.builder_name || undefined,
-                builderPhone: d.builder_phone || undefined,
-                visitDate: d.visit_date,
-                timeSlot: d.time_slot,
-                status: d.status || "scheduled",
-                customerNotified: Boolean(d.customer_notified),
-                builderNotified: Boolean(d.builder_notified),
-                reminderSent: Boolean(d.reminder_sent),
-                notes: d.notes || undefined,
-                createdAt: d.created_at || new Date().toISOString(),
-              }));
-
-              set({ schedules: mapped, isLoading: false, tableMissing: false });
-              return;
-            }
-          }
-        } catch (err) {
-          console.warn("[SchedulesStore] Supabase direct query error:", err);
+          console.warn("[SchedulesStore] Admin schedules fetch failed:", apiErr);
         }
 
         set({ isLoading: false });
@@ -126,38 +86,12 @@ export const useSchedulesStore = create<SchedulesStore>()(
           return { schedules: [newRecord, ...filtered] };
         });
 
-        // 2. Sync to Supabase if table exists
-        try {
-          if (supabase) {
-            await supabase.from("project_site_visits").insert({
-              id: newRecord.id,
-              project_id: newRecord.projectId || null,
-              project_slug: newRecord.projectSlug || null,
-              project_name: newRecord.projectName,
-              project_location: newRecord.projectLocation || null,
-              customer_name: newRecord.customerName,
-              customer_phone: newRecord.customerPhone,
-              customer_email: newRecord.customerEmail || null,
-              builder_name: newRecord.builderName || null,
-              builder_phone: newRecord.builderPhone || null,
-              visit_date: newRecord.visitDate,
-              time_slot: newRecord.timeSlot,
-              status: newRecord.status,
-              customer_notified: newRecord.customerNotified,
-              builder_notified: newRecord.builderNotified,
-              reminder_sent: newRecord.reminderSent,
-              notes: newRecord.notes || null,
-              created_at: newRecord.createdAt,
-            });
-          }
-        } catch (err) {
-          console.warn("[SchedulesStore] Supabase direct insert skipped:", err);
-        }
-
         return newRecord;
       },
 
       updateStatus: async (id, status) => {
+        const previousSchedules = get().schedules;
+
         // Optimistic UI update
         set((state) => ({
           schedules: state.schedules.map((s) => (s.id === id ? { ...s, status } : s)),
@@ -175,20 +109,13 @@ export const useSchedulesStore = create<SchedulesStore>()(
           console.warn("[SchedulesStore] Admin API status update error:", err);
         }
 
-        // 2. Direct Supabase fallback
-        try {
-          if (supabase) {
-            await supabase
-              .from("project_site_visits")
-              .update({ status })
-              .eq("id", id);
-          }
-        } catch (err) {
-          console.warn("[SchedulesStore] Supabase fallback status update error:", err);
-        }
+        set({ schedules: previousSchedules });
+        throw new Error("Admin schedule status update failed.");
       },
 
       deleteSchedule: async (id) => {
+        const previousSchedules = get().schedules;
+
         // Optimistic UI update
         set((state) => ({
           schedules: state.schedules.filter((s) => s.id !== id),
@@ -204,14 +131,8 @@ export const useSchedulesStore = create<SchedulesStore>()(
           console.warn("[SchedulesStore] Admin API delete error:", err);
         }
 
-        // 2. Direct Supabase fallback
-        try {
-          if (supabase) {
-            await supabase.from("project_site_visits").delete().eq("id", id);
-          }
-        } catch (err) {
-          console.warn("[SchedulesStore] Supabase fallback delete error:", err);
-        }
+        set({ schedules: previousSchedules });
+        throw new Error("Admin schedule delete failed.");
       },
 
       getUpcomingCount: () => {
