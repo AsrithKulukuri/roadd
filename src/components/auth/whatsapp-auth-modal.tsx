@@ -46,6 +46,11 @@ export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthMo
       const user = res.user;
       setCurrentUser(user);
 
+      const isComplete = Boolean(
+        res.isProfileComplete ||
+        (user?.name && user.name.trim().length >= 2 && !user.name.toLowerCase().includes("user"))
+      );
+
       // Save session to localStorage
       if (typeof window !== "undefined") {
         localStorage.setItem(
@@ -55,19 +60,22 @@ export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthMo
             id: user?.id,
             phone: user?.phone,
             name: user?.name,
-            email: user?.email,
+            email: user?.email || "",
             role: user?.role || "buyer",
+            isProfileComplete: isComplete,
+            isVerified: (user as any)?.isVerified ?? true,
           })
         );
+        window.dispatchEvent(new Event("road_auth_changed"));
       }
 
-      if (res.isProfileComplete) {
+      if (isComplete) {
         // User details exist! Complete login immediately
         if (onSuccess) onSuccess(user);
         setTimeout(() => {
           handleClose();
-          if (typeof window !== "undefined") {
-            window.location.href = "/dashboard";
+          if (!onSuccess && typeof window !== "undefined") {
+            window.location.reload();
           }
         }, 500);
       } else {
@@ -86,16 +94,19 @@ export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthMo
           id: updatedUser?.id,
           phone: updatedUser?.phone || phone,
           name: updatedUser?.name,
-          email: updatedUser?.email,
+          email: updatedUser?.email || "",
           role: updatedUser?.role || "buyer",
+          isProfileComplete: true,
+          isVerified: updatedUser?.isVerified ?? true,
         })
       );
+      window.dispatchEvent(new Event("road_auth_changed"));
     }
     if (onSuccess) onSuccess(updatedUser);
     setTimeout(() => {
       handleClose();
-      if (typeof window !== "undefined") {
-        window.location.href = "/dashboard";
+      if (!onSuccess && typeof window !== "undefined") {
+        window.location.reload();
       }
     }, 500);
   };

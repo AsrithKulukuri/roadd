@@ -62,7 +62,13 @@ export default function DashboardLayout({
       const stored = localStorage.getItem("road_user");
       if (stored) {
         try {
-          setUser(JSON.parse(stored));
+          const parsed = JSON.parse(stored);
+          const hasName = Boolean(parsed.name && parsed.name.trim().length >= 2 && !parsed.name.toLowerCase().includes("user"));
+          const hasPhone = Boolean(parsed.phone && parsed.phone.trim().length >= 8);
+          if (parsed.isProfileComplete === undefined || (hasName && hasPhone)) {
+            parsed.isProfileComplete = true;
+          }
+          setUser(parsed);
         } catch (e) {}
       }
     };
@@ -93,7 +99,12 @@ export default function DashboardLayout({
     window.location.href = "/login";
   };
 
-  const isProfileIncomplete = user && !user.isProfileComplete && user.role !== "admin";
+  const isProfileIncomplete = Boolean(
+    user && 
+    !user.isProfileComplete && 
+    !(user.name && user.name.trim().length >= 2) && 
+    user.role !== "admin"
+  );
   const isAdminUser = user?.role === "admin" || user?.email === "admin@road.com";
 
   const displayedLinks = [...sidebarLinks];

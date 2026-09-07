@@ -28,7 +28,7 @@ function LoginForm() {
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const searchParams = useSearchParams();
-  const redirectTarget = searchParams.get("redirect") || searchParams.get("redirectTo") || "/dashboard";
+  const redirectTarget = searchParams.get("redirect") || searchParams.get("redirectTo") || "/";
 
   // Check if user is already logged in
   useEffect(() => {
@@ -58,6 +58,11 @@ function LoginForm() {
       const user = res.user;
       setCurrentUser(user);
 
+      const isComplete = Boolean(
+        res.isProfileComplete ||
+        (user?.name && user.name.trim().length >= 2 && !user.name.toLowerCase().includes("user"))
+      );
+
       if (typeof window !== "undefined") {
         localStorage.setItem(
           "road_user",
@@ -66,14 +71,17 @@ function LoginForm() {
             id: user?.id,
             phone: user?.phone,
             name: user?.name,
-            email: user?.email,
+            email: user?.email || "",
             role: user?.role || "buyer",
+            isProfileComplete: isComplete,
+            isVerified: (user as any)?.isVerified ?? true,
           })
         );
+        window.dispatchEvent(new Event("road_auth_changed"));
       }
 
-      if (res.isProfileComplete) {
-        // User has full details (name & email)! Redirect to target property or dashboard
+      if (isComplete) {
+        // User has full details (name & email)! Redirect to target property or homepage
         setTimeout(() => {
           if (typeof window !== "undefined") {
             window.location.href = redirectTarget;
@@ -97,10 +105,13 @@ function LoginForm() {
           id: updatedUser?.id,
           phone: updatedUser?.phone || phone,
           name: updatedUser?.name,
-          email: updatedUser?.email,
+          email: updatedUser?.email || "",
           role: updatedUser?.role || "buyer",
+          isProfileComplete: true,
+          isVerified: updatedUser?.isVerified ?? true,
         })
       );
+      window.dispatchEvent(new Event("road_auth_changed"));
     }
     setTimeout(() => {
       if (typeof window !== "undefined") {

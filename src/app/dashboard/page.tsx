@@ -103,10 +103,19 @@ export default function DashboardPage() {
           }
         }
 
+        // A user's profile is complete if flagged, OR if they already have a valid name & phone
+        const hasName = Boolean(parsed.name && parsed.name.trim().length >= 2 && !parsed.name.toLowerCase().includes("user"));
+        const hasPhone = Boolean(parsed.phone && parsed.phone.trim().length >= 8);
+        const isComplete = parsed.isProfileComplete !== undefined
+          ? Boolean(parsed.isProfileComplete)
+          : (hasName && hasPhone);
+        parsed.isProfileComplete = isComplete || (hasName && hasPhone);
+
         setUser(parsed);
         if (parsed.email) setEmail(parsed.email);
         if (parsed.phone) setPhone(parsed.phone);
         if (parsed.role) setSelectedRole(parsed.role);
+        if (parsed.name) setFullName(parsed.name);
       } catch (e) {
         console.error("Error reading fallback local user session:", e);
       }
@@ -199,10 +208,20 @@ export default function DashboardPage() {
     fetchSessionUser();
   }, []);
 
-  // Automatically pop open the Complete Profile modal if user session is loaded and profile is incomplete
+  // Automatically pop open the Complete Profile modal only if user session is loaded and profile is genuinely incomplete
   useEffect(() => {
-    if (user && !user.isProfileComplete && user.role !== "admin") {
-      setIsModalOpen(true);
+    if (user && user.role !== "admin") {
+      const hasName = Boolean(user.name && user.name.trim().length >= 2 && !user.name.toLowerCase().includes("user"));
+      const hasPhone = Boolean(user.phone && user.phone.trim().length >= 8);
+      if (hasName && hasPhone) {
+        if (!user.isProfileComplete) {
+          setUser((prev) => (prev ? { ...prev, isProfileComplete: true } : null));
+        }
+        return;
+      }
+      if (!user.isProfileComplete) {
+        setIsModalOpen(true);
+      }
     }
   }, [user]);
 
@@ -382,7 +401,11 @@ export default function DashboardPage() {
   }
 
   const isAdmin = user?.role === "admin";
-  const isProfileSetupForced = user && !user.isProfileComplete;
+  const isProfileSetupForced = Boolean(
+    user &&
+    !user.isProfileComplete &&
+    !(user.name && user.name.trim().length >= 2 && !user.name.toLowerCase().includes("user"))
+  );
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto relative">
@@ -630,15 +653,13 @@ export default function DashboardPage() {
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Modal backdrop - disable exit click if forced setup */}
+            {/* Modal backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => {
-                if (!isProfileSetupForced) setIsModalOpen(false);
-              }}
-              className={`absolute inset-0 bg-black/70 backdrop-blur-md ${isProfileSetupForced ? "cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-black/70 backdrop-blur-md cursor-pointer"
             />
             
             {/* Modal window */}
@@ -649,16 +670,15 @@ export default function DashboardPage() {
               transition={{ type: "spring", stiffness: 260, damping: 25 }}
               className="w-full max-w-lg glass border border-glass-border bg-bg-card rounded-3xl p-6 md:p-8 shadow-elevated relative z-10 overflow-hidden"
             >
-              {/* Close Button - hide if setup is forced */}
-              {!isProfileSetupForced && (
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="absolute right-4 top-4 text-text-tertiary hover:text-text-primary p-1 bg-bg-primary/50 rounded-full border border-border-default/50 transition-all hover:scale-105 active:scale-95"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              )}
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="absolute right-4 top-4 text-text-tertiary hover:text-text-primary p-1.5 bg-bg-primary/50 rounded-full border border-border-default/50 transition-all hover:scale-105 active:scale-95 cursor-pointer z-20"
+                aria-label="Close modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
               {/* Step indicator header */}
               <div className="mb-6 space-y-1.5">
