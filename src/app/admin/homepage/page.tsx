@@ -70,9 +70,45 @@ function createLegacySections(properties: Property[], projects: Project[]): Home
   ].slice(0, MAX_HOME_SECTION_ITEMS);
 
   return [
-    { id: "recommended", title: "Recommended", icon: "ThumbsUp", isActive: true, cardStyle: "compact-marketplace", items: makeItems("recommended") },
-    { id: "featured", title: "Featured", icon: "Star", isActive: true, cardStyle: "tall-portrait", items: makeItems("featured") },
-    { id: "budget-friendly", title: "Budget Friendly", icon: "IndianRupee", isActive: true, cardStyle: "bottom-floating", items: makeItems("budget_friendly") },
+    {
+      id: "recommended",
+      title: "Recommended",
+      icon: "ThumbsUp",
+      isActive: true,
+      cardStyle: "compact-marketplace",
+      cardBgColor: "#ffffff",
+      cardTextColor: "#0f172a",
+      cardAccentColor: "#faad13",
+      enableCarousel: true,
+      carouselInterval: 4,
+      items: makeItems("recommended"),
+    },
+    {
+      id: "featured",
+      title: "Featured",
+      icon: "Star",
+      isActive: true,
+      cardStyle: "tall-portrait",
+      cardBgColor: "#ffffff",
+      cardTextColor: "#0f172a",
+      cardAccentColor: "#faad13",
+      enableCarousel: true,
+      carouselInterval: 4,
+      items: makeItems("featured"),
+    },
+    {
+      id: "budget-friendly",
+      title: "Budget Friendly",
+      icon: "IndianRupee",
+      isActive: true,
+      cardStyle: "bottom-floating",
+      cardBgColor: "#ffffff",
+      cardTextColor: "#0f172a",
+      cardAccentColor: "#faad13",
+      enableCarousel: true,
+      carouselInterval: 4,
+      items: makeItems("budget_friendly"),
+    },
   ];
 }
 
@@ -163,7 +199,22 @@ export default function HomepageShelvesAdminPage() {
   const addSection = () => {
     if (sections.length >= MAX_HOME_SECTIONS) return toast.error(`You can add up to ${MAX_HOME_SECTIONS} homepage shelves.`);
     const id = `section-${Date.now()}`;
-    setSections((current) => [...current, { id, title: "New collection", icon: "Sparkles", isActive: true, cardStyle: DEFAULT_CARD_STYLE, items: [] }]);
+    setSections((current) => [
+      ...current,
+      {
+        id,
+        title: "New collection",
+        icon: "Sparkles",
+        isActive: true,
+        cardStyle: DEFAULT_CARD_STYLE,
+        cardBgColor: "#ffffff",
+        cardTextColor: "#0f172a",
+        cardAccentColor: "#faad13",
+        enableCarousel: true,
+        carouselInterval: 4,
+        items: [],
+      },
+    ]);
   };
 
   const toggleItem = (sectionId: string, item: HomeSectionItem) => {

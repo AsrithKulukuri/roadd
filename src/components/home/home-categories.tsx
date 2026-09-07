@@ -180,9 +180,9 @@ export function HomeCategories() {
         }),
       }))
     : [
-        { id: "recommended", title: "Recommended", icon: HOME_SECTION_ICONS.ThumbsUp, cardStyle: "compact-marketplace" as const, items: recommendedMixed },
-        { id: "featured", title: "Featured", icon: HOME_SECTION_ICONS.Star, cardStyle: "tall-portrait" as const, items: featuredMixed },
-        { id: "budget-friendly", title: "Budget Friendly", icon: HOME_SECTION_ICONS.IndianRupee, cardStyle: "bottom-floating" as const, items: budgetMixed },
+        { id: "recommended", title: "Recommended", icon: HOME_SECTION_ICONS.ThumbsUp, cardStyle: "compact-marketplace" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: recommendedMixed },
+        { id: "featured", title: "Featured", icon: HOME_SECTION_ICONS.Star, cardStyle: "tall-portrait" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: featuredMixed },
+        { id: "budget-friendly", title: "Budget Friendly", icon: HOME_SECTION_ICONS.IndianRupee, cardStyle: "bottom-floating" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: budgetMixed },
       ];
 
   return (
