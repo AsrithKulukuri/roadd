@@ -77,6 +77,7 @@ export function ShelfCard({
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isEditable) return;
     toggleFavorite(item.id);
   };
 
@@ -257,18 +258,30 @@ export function ShelfCard({
     };
   }, [item, activeProgress, cardStyle, activeHeadline, activeTagline]);
 
+  // In editable / preview mode in admin dashboard:
+  // Render purely as a <div> with NO Link, NO <a> tag, and NO href.
+  // This physically forbids any click navigation or redirect to /properties/... or /projects/...
+  const CardRoot = (isEditable ? "div" : Link) as React.ElementType;
+  const cardRootProps: Record<string, any> = isEditable
+    ? {
+        role: "region",
+        "aria-label": `Card preview: ${data.title}`,
+        onClick: (e: React.MouseEvent) => {
+          e.preventDefault();
+          e.stopPropagation();
+        },
+      }
+    : {
+        href: data.href,
+      };
+
   // ──────────────────────────────────────────────────────────────────────────
   // 1. COMPACT MARKETPLACE (Style 01: 360–430px wide, ~190–220px high)
   // ──────────────────────────────────────────────────────────────────────────
   if (cardStyle === "compact-marketplace") {
     return (
-      <Link
-        href={isEditable ? "#" : data.href}
-        onClick={(e) => {
-          if (isEditable) {
-            e.preventDefault();
-          }
-        }}
+      <CardRoot
+        {...cardRootProps}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col sm:flex-row h-full min-h-[190px] rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-amber-400/60 transition-all duration-300",
@@ -449,7 +462,7 @@ export function ShelfCard({
             </div>
           </div>
         </div>
-      </Link>
+      </CardRoot>
     );
   }
 
@@ -458,13 +471,8 @@ export function ShelfCard({
   // ──────────────────────────────────────────────────────────────────────────
   if (cardStyle === "tall-portrait") {
     return (
-      <Link
-        href={isEditable ? "#" : data.href}
-        onClick={(e) => {
-          if (isEditable) {
-            e.preventDefault();
-          }
-        }}
+      <CardRoot
+        {...cardRootProps}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
@@ -595,7 +603,7 @@ export function ShelfCard({
             )}
           </div>
         </div>
-      </Link>
+      </CardRoot>
     );
   }
 
@@ -604,13 +612,8 @@ export function ShelfCard({
   // ──────────────────────────────────────────────────────────────────────────
   if (cardStyle === "luxury-banner") {
     return (
-      <Link
-        href={isEditable ? "#" : data.href}
-        onClick={(e) => {
-          if (isEditable) {
-            e.preventDefault();
-          }
-        }}
+      <CardRoot
+        {...cardRootProps}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col md:flex-row h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xl hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
@@ -791,7 +794,7 @@ export function ShelfCard({
             </div>
           </div>
         </div>
-      </Link>
+      </CardRoot>
     );
   }
 
@@ -800,13 +803,8 @@ export function ShelfCard({
   // ──────────────────────────────────────────────────────────────────────────
   if (cardStyle === "split-feature") {
     return (
-      <Link
-        href={isEditable ? "#" : data.href}
-        onClick={(e) => {
-          if (isEditable) {
-            e.preventDefault();
-          }
-        }}
+      <CardRoot
+        {...cardRootProps}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col md:flex-row h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xl hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
@@ -956,7 +954,7 @@ export function ShelfCard({
             </div>
           </div>
         </div>
-      </Link>
+      </CardRoot>
     );
   }
 
@@ -965,13 +963,8 @@ export function ShelfCard({
   // ──────────────────────────────────────────────────────────────────────────
   if (cardStyle === "bottom-floating") {
     return (
-      <Link
-        href={isEditable ? "#" : data.href}
-        onClick={(e) => {
-          if (isEditable) {
-            e.preventDefault();
-          }
-        }}
+      <CardRoot
+        {...cardRootProps}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xl hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
@@ -1098,7 +1091,7 @@ export function ShelfCard({
             </div>
           </div>
         </div>
-      </Link>
+      </CardRoot>
     );
   }
 
@@ -1107,13 +1100,8 @@ export function ShelfCard({
   // ──────────────────────────────────────────────────────────────────────────
   if (cardStyle === "modern-villa") {
     return (
-      <Link
-        href={isEditable ? "#" : data.href}
-        onClick={(e) => {
-          if (isEditable) {
-            e.preventDefault();
-          }
-        }}
+      <CardRoot
+        {...cardRootProps}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
@@ -1242,7 +1230,7 @@ export function ShelfCard({
             </span>
           </div>
         </div>
-      </Link>
+      </CardRoot>
     );
   }
 
@@ -1251,13 +1239,8 @@ export function ShelfCard({
   // ──────────────────────────────────────────────────────────────────────────
   if (cardStyle === "construction-progress") {
     return (
-      <Link
-        href={isEditable ? "#" : data.href}
-        onClick={(e) => {
-          if (isEditable) {
-            e.preventDefault();
-          }
-        }}
+      <CardRoot
+        {...cardRootProps}
         style={containerStyle}
         className={cn(
           "group relative flex flex-col h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-md hover:shadow-xl hover:border-amber-400/60 transition-all duration-500",
@@ -1380,7 +1363,7 @@ export function ShelfCard({
             </div>
           </div>
         </div>
-      </Link>
+      </CardRoot>
     );
   }
 
@@ -1388,13 +1371,8 @@ export function ShelfCard({
   // 8. LUXURY EDITORIAL (Style 08: 520–680px wide, 300–400px high)
   // ──────────────────────────────────────────────────────────────────────────
   return (
-    <Link
-      href={isEditable ? "#" : data.href}
-      onClick={(e) => {
-        if (isEditable) {
-          e.preventDefault();
-        }
-      }}
+    <CardRoot
+      {...cardRootProps}
       style={containerStyle}
       className={cn(
         "group relative flex flex-col md:flex-row h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xl hover:border-amber-500/60 transition-all duration-500",
@@ -1507,7 +1485,7 @@ export function ShelfCard({
           <Heart className={cn("w-4 h-4", isSaved && "fill-red-500 text-red-500")} />
         </button>
       </div>
-    </Link>
+    </CardRoot>
   );
 }
 
