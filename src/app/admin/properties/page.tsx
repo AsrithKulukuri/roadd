@@ -56,34 +56,34 @@ export default function AdminPropertiesPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold font-heading text-text-primary">Properties ({properties.length})</h1>
-          <p className="text-text-secondary mt-1">Manage all listings, feature them, or update their status.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-text-primary">Properties ({properties.length})</h1>
+          <p className="text-text-secondary text-xs sm:text-sm mt-0.5">Manage all listings, feature them, or update their status.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
           {properties.length > 0 && (
             <Button 
               variant="outline" 
               onClick={handleDeleteAll}
-              className="border-red-500/30 text-red-500 hover:bg-red-500/10 hover:text-red-400 gap-2 cursor-pointer"
+              className="border-red-500/30 text-red-500 hover:bg-red-500/10 hover:text-red-400 gap-1.5 cursor-pointer text-xs flex-1 sm:flex-initial"
             >
               <Trash2 className="w-4 h-4" />
               Delete All
             </Button>
           )}
-          <Button variant="amber" asChild>
-            <Link href="/admin/properties/new" className="gap-2">
+          <Button variant="amber" asChild className="flex-1 sm:flex-initial">
+            <Link href="/admin/properties/new" className="gap-1.5 text-xs sm:text-sm">
               <Plus className="w-4 h-4" />
-              Add New Property
+              Add Property
             </Link>
           </Button>
         </div>
       </div>
 
-      {/* Stats & Category Filter Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+      {/* Stats & Category Filter Tabs with Horizontal Touch Scroll on Mobile */}
+      <div className="flex sm:grid sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-6 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-none touch-pan-x">
         {[
           { type: "all", label: "All Properties", count: properties.length },
           { type: "exclusive", label: "ROAD Exclusive ⭐", count: properties.filter((p: any) => Boolean(p.isRoadExclusive)).length },
@@ -97,14 +97,14 @@ export default function AdminPropertiesPage() {
             <button
               key={item.type}
               onClick={() => setFilterType(item.type as any)}
-              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+              className={`p-3 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer shrink-0 min-w-[130px] sm:min-w-0 ${
                 active
                   ? "border-amber-500/60 bg-amber-500/10 shadow-xs"
                   : "border-border-default bg-bg-card hover:border-amber-500/30"
               }`}
             >
-              <div className="text-2xl font-bold font-heading text-text-primary">{item.count}</div>
-              <div className="text-xs text-text-secondary capitalize mt-0.5 font-medium">
+              <div className="text-xl sm:text-2xl font-bold font-heading text-text-primary">{item.count}</div>
+              <div className="text-xs text-text-secondary capitalize mt-0.5 font-medium whitespace-nowrap sm:whitespace-normal">
                 {item.label}
               </div>
             </button>

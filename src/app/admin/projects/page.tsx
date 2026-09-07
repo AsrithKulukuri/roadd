@@ -112,24 +112,24 @@ export default function AdminProjectsPage() {
         />
       )}
 
-      <div className="p-6 lg:p-10 max-w-7xl mx-auto">
+      <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold font-heading text-text-primary">Projects</h1>
-            <p className="text-text-secondary mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold font-heading text-text-primary">Projects ({projects.length})</h1>
+            <p className="text-text-secondary text-xs sm:text-sm mt-0.5">
               Manage builder projects — Apartments, Villas & Ventures.
             </p>
           </div>
-          <Button variant="amber" asChild>
-            <Link href="/admin/projects/new" className="gap-2">
+          <Button variant="amber" asChild className="w-full sm:w-auto">
+            <Link href="/admin/projects/new" className="gap-2 text-xs sm:text-sm">
               <Plus className="w-4 h-4" /> Add New Project
             </Link>
           </Button>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
+        {/* Stats Row with Horizontal Touch Scrolling on Mobile */}
+        <div className="flex sm:grid sm:grid-cols-5 gap-2.5 sm:gap-4 mb-6 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-none touch-pan-x">
           {(
             [
               { type: "all", label: "All Projects", count: projects.length },
@@ -144,14 +144,14 @@ export default function AdminProjectsPage() {
               <button
                 key={item.type}
                 onClick={() => setFilterType(item.type)}
-                className={`p-4 rounded-2xl border text-left transition-all ${
+                className={`p-3 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer shrink-0 min-w-[130px] sm:min-w-0 ${
                   active
                     ? "border-amber-primary/50 bg-amber-primary/10 shadow-xs"
                     : "border-border-default bg-bg-card hover:border-amber-primary/30"
                 }`}
               >
-                <div className={`text-2xl font-bold font-heading ${item.type === "exclusive" ? "text-amber-500" : "text-text-primary"}`}>{item.count}</div>
-                <div className="text-sm text-text-secondary capitalize mt-0.5 font-medium">
+                <div className={`text-xl sm:text-2xl font-bold font-heading ${item.type === "exclusive" ? "text-amber-500" : "text-text-primary"}`}>{item.count}</div>
+                <div className="text-xs sm:text-sm text-text-secondary capitalize mt-0.5 font-medium whitespace-nowrap sm:whitespace-normal">
                   {item.label}
                 </div>
               </button>
