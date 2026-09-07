@@ -561,11 +561,11 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative w-full text-slate-900 pb-2 sm:pb-4 min-h-[480px]">
+    <section id="home-hero-section" className="relative w-full text-slate-900 pb-2 sm:pb-4 min-h-[480px]">
       <h1 className="sr-only">Verified properties and new projects in Vijayawada, Guntur and Amaravati</h1>
 
       {/* ── MOBILE VIEW: Exact Previous Mobile UI (Banner on Top, Search Box & Filters Below) ── */}
-      <div className="sm:hidden w-full pb-3">
+      <div id="hero-banner-mobile" className="sm:hidden w-full pb-3">
         {/* Full-Width Dynamic Banner on Mobile */}
         {banners.length > 0 && (
           <div className="relative z-10 w-full mb-3 shadow-md h-[240px] overflow-hidden">
@@ -1109,7 +1109,7 @@ export function HeroSection() {
       </div>
 
       {/* ── DESKTOP & TABLET VIEW: Integrated Hero Banner & Search Overlay (Slightly Reduced Height) ── */}
-      <div className="hidden sm:flex relative z-10 w-full mb-6 sm:mb-8 shadow-2xl min-h-[560px] md:min-h-[590px] lg:min-h-[600px] overflow-visible flex-col justify-between">
+      <div id="hero-banner-desktop" className="hidden sm:flex relative z-10 w-full mb-6 sm:mb-8 shadow-2xl min-h-[560px] md:min-h-[590px] lg:min-h-[600px] overflow-visible flex-col justify-between">
         {/* Background Banner Container with overflow-hidden for sliding animations */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <AnimatePresence mode="wait">

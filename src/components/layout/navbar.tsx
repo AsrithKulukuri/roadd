@@ -56,6 +56,7 @@ export function Navbar() {
   const searchParams = useSearchParams();
 
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isPastBanner, setIsPastBanner] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
   const [openMobileSubmenus, setOpenMobileSubmenus] = useState<Record<string, boolean>>({});
@@ -235,15 +236,69 @@ export function Navbar() {
   };
 
   useEffect(() => {
-    const handleScroll = () => {
-      // On home page, trigger sticky search bar smoothly once scrolled past top banner area (70px)
-      const threshold = pathname === "/" ? 70 : 20;
-      setIsScrolled(window.scrollY > threshold);
+    let ticking = false;
+    let isPastBannerRef = false;
+
+    const checkScroll = () => {
+      const scrollY = window.scrollY;
+      setIsScrolled(scrollY > 30);
+
+      if (pathname === "/") {
+        const isMobile = window.innerWidth < 640;
+        const bannerEl = isMobile
+          ? (document.getElementById("hero-banner-mobile") || document.getElementById("home-hero-section"))
+          : (document.getElementById("hero-banner-desktop") || document.getElementById("home-hero-section"));
+
+        if (bannerEl) {
+          const rect = bannerEl.getBoundingClientRect();
+          // Navbar is 64px (h-16). Banner has scrolled out of view once its bottom reaches the navbar (64px).
+          // We use a small hysteresis buffer (<= 64 on scroll down, > 84 on scroll up) to guarantee zero jitter.
+          const shouldShow = isPastBannerRef ? rect.bottom <= 84 : rect.bottom <= 64;
+          if (shouldShow !== isPastBannerRef) {
+            isPastBannerRef = shouldShow;
+            setIsPastBanner(shouldShow);
+          }
+        } else {
+          // Fallback based on typical banner heights
+          const fallbackThreshold = isMobile ? 420 : 580;
+          const shouldShow = scrollY > fallbackThreshold;
+          if (shouldShow !== isPastBannerRef) {
+            isPastBannerRef = shouldShow;
+            setIsPastBanner(shouldShow);
+          }
+        }
+      } else {
+        if (isPastBannerRef) {
+          isPastBannerRef = false;
+          setIsPastBanner(false);
+        }
+      }
+      ticking = false;
     };
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(checkScroll);
+        ticking = true;
+      }
+    };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleScroll, { passive: true });
+    checkScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
   }, [pathname]);
+
+  // Close dropdown if user scrolls back into banner area
+  useEffect(() => {
+    if (!isPastBanner) {
+      setOpenNavDropdown(null);
+    }
+  }, [isPastBanner]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -362,18 +417,18 @@ export function Navbar() {
           <div className="flex items-center justify-between gap-2 sm:gap-3">
             {/* Left: Brand Logo */}
             <div className="shrink-0">
-              <div className={cn(pathname === "/" && isScrolled && "max-sm:hidden")}>
+              <div className={cn(pathname === "/" && isPastBanner && "max-sm:hidden")}>
                 <Logo size="md" textColor="text-white" isDarkBg />
               </div>
-              {pathname === "/" && isScrolled && (
+              {pathname === "/" && isPastBanner && (
                 <div className="sm:hidden">
                   <Logo size="sm" showText={false} href="/" />
                 </div>
               )}
             </div>
 
-            {/* Mobile / Tablet Compact Search Pill on Home Scroll (always visible when scrolled) */}
-            {pathname === "/" && isScrolled && (
+            {/* Mobile / Tablet Compact Search Pill on Home Scroll (Only after scrolling past banner) */}
+            {pathname === "/" && isPastBanner && (
               <div
                 onClick={() => {
                   router.push("/search?openFilters=true");
@@ -402,10 +457,10 @@ export function Navbar() {
               </div>
             )}
 
-            {/* Center: Interactive Search Bar on Scroll OR Navigation Links */}
+            {/* Center: Interactive Search Bar on Scroll PAST BANNER OR Navigation Links */}
             <div ref={navDropdownRef} className="flex-1 min-w-0 max-w-5xl mx-2 sm:mx-4 hidden lg:flex items-center justify-center">
               <AnimatePresence mode="wait">
-                {pathname === "/" && isScrolled ? (
+                {pathname === "/" && isPastBanner ? (
                   <motion.div
                     key="nav-compact-search"
                     initial={{ opacity: 0, scale: 0.95, y: -6 }}
