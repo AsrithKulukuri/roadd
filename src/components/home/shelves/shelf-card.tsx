@@ -28,10 +28,20 @@ import type { MixedItem } from "@/components/home/mixed-carousel-row";
 import type { HomeCardStyleId } from "@/types/home-section";
 
 interface ShelfCardProps {
-  item: MixedItem;
+  item: MixedItem & {
+    progressPercentage?: number;
+    customBadge?: string;
+  };
   cardStyle?: HomeCardStyleId;
   className?: string;
   index?: number;
+  cardBgColor?: string;
+  cardTextColor?: string;
+  cardAccentColor?: string;
+  customBadge?: string;
+  customHeadline?: string;
+  customTagline?: string;
+  progressPercentage?: number;
 }
 
 export function ShelfCard({
@@ -39,6 +49,13 @@ export function ShelfCard({
   cardStyle = "compact-marketplace",
   className,
   index = 0,
+  cardBgColor,
+  cardTextColor,
+  cardAccentColor = "#faad13",
+  customBadge,
+  customHeadline,
+  customTagline,
+  progressPercentage: propProgressPercentage,
 }: ShelfCardProps) {
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const isSaved = isFavorite(item.id);
@@ -48,6 +65,22 @@ export function ShelfCard({
     e.stopPropagation();
     toggleFavorite(item.id);
   };
+
+  const activeBadge = item.customBadge || customBadge;
+  const activeProgress =
+    typeof item.progressPercentage === "number"
+      ? item.progressPercentage
+      : typeof propProgressPercentage === "number"
+      ? propProgressPercentage
+      : null;
+
+  // Dynamic styling tokens (admin configurable with default white box, dark text, gold logo/accent)
+  const containerStyle: React.CSSProperties = {
+    ...(cardBgColor ? { backgroundColor: cardBgColor } : {}),
+    ...(cardTextColor ? { color: cardTextColor } : {}),
+  };
+  const textStyle: React.CSSProperties = cardTextColor ? { color: cardTextColor } : {};
+  const accentTextStyle: React.CSSProperties = cardAccentColor ? { color: cardAccentColor } : {};
 
   const data = useMemo(() => {
     const isProject = item.itemType === "project";
@@ -167,9 +200,11 @@ export function ShelfCard({
       : false;
 
     // Construction progress percentage if available
-    let progressPercentage: number | null = null;
-    if (isUnderConstruction) {
-      progressPercentage = 70; // Sensible default for active projects
+    let progressPercentage: number | null = activeProgress;
+    if (progressPercentage === null) {
+      if (isUnderConstruction || cardStyle === "construction-progress") {
+        progressPercentage = 70; // Sensible default for active projects
+      }
     }
 
     return {
@@ -195,7 +230,7 @@ export function ShelfCard({
       isUnderConstruction,
       progressPercentage,
     };
-  }, [item]);
+  }, [item, activeProgress, cardStyle]);
 
   // ──────────────────────────────────────────────────────────────────────────
   // 1. COMPACT MARKETPLACE (Style 01: 360–430px wide, ~190–220px high)
@@ -204,6 +239,7 @@ export function ShelfCard({
     return (
       <Link
         href={data.href}
+        style={containerStyle}
         className={cn(
           "group relative flex flex-col sm:flex-row h-full min-h-[190px] rounded-2xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-amber-400/60 dark:hover:border-amber-400/40 transition-all duration-300",
           className
@@ -244,12 +280,20 @@ export function ShelfCard({
           <div className="space-y-1">
             {/* Badges Row */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              {data.isVerified && (
+              {activeBadge && (
+                <span
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-xs"
+                  style={cardAccentColor ? { backgroundColor: `${cardAccentColor}20`, color: cardAccentColor, borderColor: `${cardAccentColor}40` } : { backgroundColor: "#fef3c7", color: "#b45309" }}
+                >
+                  <Sparkles className="w-3 h-3" /> {activeBadge}
+                </span>
+              )}
+              {!activeBadge && data.isVerified && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
                   <BadgeCheck className="w-3 h-3" /> Verified
                 </span>
               )}
-              {data.isRera && (
+              {!activeBadge && data.isRera && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800 text-[10px] font-bold text-blue-700 dark:text-blue-300">
                   <ShieldCheck className="w-3 h-3" /> RERA
                 </span>
@@ -257,7 +301,7 @@ export function ShelfCard({
             </div>
 
             {/* Title */}
-            <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+            <h3 style={textStyle} className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
               {data.title}
             </h3>
 
@@ -270,13 +314,13 @@ export function ShelfCard({
 
           {/* Price & Specs */}
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1">
-            <div className="text-base sm:text-lg font-black text-slate-950 dark:text-white tracking-tight">
+            <div style={accentTextStyle} className="text-base sm:text-lg font-black tracking-tight">
               ₹{data.priceStr}
             </div>
 
             <div className="flex items-center justify-between gap-2 text-[11px] text-slate-600 dark:text-slate-400 font-semibold">
               <div className="flex items-center gap-2 truncate">
-                {data.bhkStr && <span>{data.bhkStr}</span>}
+                {data.bhkStr && <span style={textStyle}>{data.bhkStr}</span>}
                 {data.bhkStr && data.areaStr && <span>•</span>}
                 {data.areaStr && <span>{data.areaStr}</span>}
               </div>
@@ -288,7 +332,10 @@ export function ShelfCard({
                     Ready
                   </span>
                 )}
-                <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 group-hover:bg-amber-500 group-hover:text-slate-950 flex items-center justify-center transition-colors">
+                <div
+                  className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center transition-colors"
+                  style={cardAccentColor ? { backgroundColor: `${cardAccentColor}30`, color: cardAccentColor } : undefined}
+                >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </div>
               </div>
@@ -324,7 +371,14 @@ export function ShelfCard({
 
           {/* Top Overlays */}
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-            {data.isNewLaunch ? (
+            {activeBadge ? (
+              <span
+                className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider shadow-md flex items-center gap-1"
+                style={cardAccentColor ? { backgroundColor: cardAccentColor, color: "#0f172a" } : { backgroundColor: "#faad13", color: "#0f172a" }}
+              >
+                <Sparkles className="w-3 h-3" /> {activeBadge}
+              </span>
+            ) : data.isNewLaunch ? (
               <span className="px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-white border border-white/20 text-[11px] font-black uppercase tracking-wider shadow-md">
                 New Launch
               </span>
@@ -367,17 +421,17 @@ export function ShelfCard({
         </div>
 
         {/* Lower White Specifications Card */}
-        <div className="p-4 bg-white dark:bg-slate-900 flex flex-col justify-between flex-1 space-y-3">
+        <div style={containerStyle} className="p-4 bg-white dark:bg-slate-900 flex flex-col justify-between flex-1 space-y-3">
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-800">
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Config</span>
-              <span className="font-extrabold text-slate-800 dark:text-slate-100 truncate block">
+              <span style={textStyle} className="font-extrabold text-slate-800 dark:text-slate-100 truncate block">
                 {data.bhkStr || "Available"}
               </span>
             </div>
             <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-800">
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Area</span>
-              <span className="font-extrabold text-slate-800 dark:text-slate-100 truncate block">
+              <span style={textStyle} className="font-extrabold text-slate-800 dark:text-slate-100 truncate block">
                 {data.areaStr || "Spacious"}
               </span>
             </div>
@@ -394,7 +448,7 @@ export function ShelfCard({
                 <CheckCircle2 className="w-3.5 h-3.5" /> RERA Approved
               </span>
             ) : (
-              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-extrabold flex items-center gap-1">
+              <span className="text-[11px] font-extrabold flex items-center gap-1" style={accentTextStyle}>
                 <Sparkles className="w-3.5 h-3.5" /> Premium
               </span>
             )}
@@ -430,8 +484,11 @@ export function ShelfCard({
           {/* Editorial Banner Headline Overlay */}
           <div className="absolute inset-0 p-6 flex flex-col justify-between text-white">
             <div className="flex items-center justify-between">
-              <span className="px-3.5 py-1 rounded-full bg-purple-600 text-white font-extrabold text-[11px] tracking-wide shadow-md">
-                Featured Campaign
+              <span
+                className="px-3.5 py-1 rounded-full text-white font-extrabold text-[11px] tracking-wide shadow-md"
+                style={cardAccentColor ? { backgroundColor: cardAccentColor, color: "#0f172a" } : { backgroundColor: "#9333ea", color: "#ffffff" }}
+              >
+                {activeBadge || "Featured Campaign"}
               </span>
               <button
                 type="button"
@@ -445,19 +502,22 @@ export function ShelfCard({
 
             <div className="space-y-1">
               <p className="font-serif text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight">
-                A Higher Standard of Living
+                {customHeadline || "A Higher Standard of Living"}
               </p>
               <p className="text-xs sm:text-sm text-slate-200 font-medium max-w-md line-clamp-1">
-                {data.tagline}
+                {customTagline || data.tagline}
               </p>
             </div>
           </div>
         </div>
 
         {/* Right / Bottom Luxury Information Strip */}
-        <div className="md:w-[40%] p-5 sm:p-6 bg-white dark:bg-slate-900 flex flex-col justify-between space-y-4">
+        <div style={containerStyle} className="md:w-[40%] p-5 sm:p-6 bg-white dark:bg-slate-900 flex flex-col justify-between space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-slate-950 text-amber-400 font-heading font-black text-lg flex items-center justify-center border border-amber-400/30 shadow-md shrink-0">
+            <div
+              className="w-12 h-12 rounded-2xl bg-slate-950 font-heading font-black text-lg flex items-center justify-center border shadow-md shrink-0"
+              style={{ borderColor: cardAccentColor ? `${cardAccentColor}60` : "rgba(251, 191, 36, 0.4)", color: cardAccentColor || "#faad13" }}
+            >
               {data.developerLogo ? (
                 <img
                   src={data.developerLogo}
@@ -469,7 +529,7 @@ export function ShelfCard({
               )}
             </div>
             <div className="min-w-0">
-              <h3 className="font-black text-lg text-slate-900 dark:text-white line-clamp-1 group-hover:text-amber-500 transition-colors">
+              <h3 style={textStyle} className="font-black text-lg text-slate-900 dark:text-white line-clamp-1 group-hover:text-amber-500 transition-colors">
                 {data.title}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
@@ -479,18 +539,18 @@ export function ShelfCard({
           </div>
 
           <div className="space-y-1.5">
-            <div className="text-2xl font-black text-slate-950 dark:text-white tracking-tight">
+            <div style={accentTextStyle} className="text-2xl font-black tracking-tight">
               ₹{data.priceStr}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 font-medium">
-              <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <MapPin className="w-3.5 h-3.5 shrink-0" style={accentTextStyle} />
               <span>{data.locationStr}</span>
             </p>
           </div>
 
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 text-xs">
             <div className="space-y-0.5">
-              <span className="font-extrabold text-slate-800 dark:text-slate-200 block">
+              <span style={textStyle} className="font-extrabold text-slate-800 dark:text-slate-200 block">
                 {data.bhkStr || "Multi-size"}
               </span>
               <span className="text-[11px] text-slate-400 block truncate">
@@ -498,7 +558,10 @@ export function ShelfCard({
               </span>
             </div>
 
-            <div className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold text-[11px] flex items-center gap-1 group-hover:bg-amber-500 group-hover:text-slate-950 transition-colors">
+            <div
+              className="px-3 py-1.5 rounded-xl font-extrabold text-[11px] flex items-center gap-1 transition-colors"
+              style={cardAccentColor ? { backgroundColor: cardAccentColor, color: "#0f172a" } : { backgroundColor: "#f1f5f9", color: "#0f172a" }}
+            >
               <span>Explore</span>
               <ArrowRight className="w-3 h-3" />
             </div>
@@ -530,8 +593,11 @@ export function ShelfCard({
               sizes="(max-width: 768px) 100vw, 400px"
               className="object-cover transition-transform duration-700 ease-out group-hover:scale-108"
             />
-            <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-amber-500 text-slate-950 font-black text-[11px] shadow-md flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> Premium
+            <div
+              className="absolute top-3 left-3 px-3 py-1 rounded-full font-black text-[11px] shadow-md flex items-center gap-1"
+              style={cardAccentColor ? { backgroundColor: cardAccentColor, color: "#0f172a" } : { backgroundColor: "#f59e0b", color: "#0f172a" }}
+            >
+              <Sparkles className="w-3 h-3" /> {activeBadge || "Premium"}
             </div>
           </div>
           <div className="relative h-1/2 w-full overflow-hidden bg-slate-950">
@@ -546,11 +612,11 @@ export function ShelfCard({
         </div>
 
         {/* Right: Floating Luxury Spec Panel */}
-        <div className="md:w-[50%] p-5 sm:p-6 bg-white dark:bg-slate-900 flex flex-col justify-between space-y-4">
+        <div style={containerStyle} className="md:w-[50%] p-5 sm:p-6 bg-white dark:bg-slate-900 flex flex-col justify-between space-y-4">
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                Live Above Ordinary
+              <span className="text-[11px] font-bold uppercase tracking-wider" style={accentTextStyle}>
+                {customTagline || "Live Above Ordinary"}
               </span>
               <button
                 type="button"
@@ -562,7 +628,7 @@ export function ShelfCard({
               </button>
             </div>
 
-            <h3 className="font-heading font-black text-xl text-slate-900 dark:text-white line-clamp-1 group-hover:text-amber-600 transition-colors">
+            <h3 style={textStyle} className="font-heading font-black text-xl text-slate-900 dark:text-white line-clamp-1 group-hover:text-amber-600 transition-colors">
               {data.title}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
@@ -572,11 +638,11 @@ export function ShelfCard({
           </div>
 
           <div className="space-y-1">
-            <div className="text-2xl font-black text-slate-950 dark:text-white tracking-tight">
+            <div style={accentTextStyle} className="text-2xl font-black tracking-tight">
               ₹{data.priceStr}
             </div>
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-              {data.bhkStr && <span>{data.bhkStr}</span>}
+              {data.bhkStr && <span style={textStyle}>{data.bhkStr}</span>}
               {data.bhkStr && data.areaStr && <span>•</span>}
               {data.areaStr && <span>{data.areaStr}</span>}
             </div>
@@ -586,17 +652,20 @@ export function ShelfCard({
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between gap-1 text-[10px] font-extrabold text-slate-500 dark:text-slate-400 mb-2">
               <span className="flex items-center gap-1">
-                <Building2 className="w-3 h-3 text-amber-500" /> Clubhouse
+                <Building2 className="w-3 h-3" style={accentTextStyle} /> Clubhouse
               </span>
               <span className="flex items-center gap-1">
-                <Waves className="w-3 h-3 text-amber-500" /> Pool
+                <Waves className="w-3 h-3" style={accentTextStyle} /> Pool
               </span>
               <span className="flex items-center gap-1">
-                <Shield className="w-3 h-3 text-amber-500" /> 24/7 Security
+                <Shield className="w-3 h-3" style={accentTextStyle} /> 24/7 Security
               </span>
             </div>
 
-            <div className="w-full py-2 px-3 rounded-xl bg-slate-950 text-white dark:bg-white dark:text-slate-950 font-black text-xs flex items-center justify-center gap-2 group-hover:bg-amber-500 group-hover:text-slate-950 transition-colors">
+            <div
+              className="w-full py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-colors"
+              style={cardAccentColor ? { backgroundColor: cardAccentColor, color: "#0f172a" } : { backgroundColor: "#0f172a", color: "#ffffff" }}
+            >
               <span>View Residence</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
@@ -631,8 +700,11 @@ export function ShelfCard({
 
           {/* Top Overlays */}
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-            <span className="px-3 py-1 rounded-full bg-purple-600 text-white text-[11px] font-black uppercase tracking-wide shadow-md">
-              Featured
+            <span
+              className="px-3 py-1 rounded-full text-white text-[11px] font-black uppercase tracking-wide shadow-md"
+              style={cardAccentColor ? { backgroundColor: cardAccentColor, color: "#0f172a" } : { backgroundColor: "#9333ea", color: "#ffffff" }}
+            >
+              {activeBadge || "Featured"}
             </span>
             <button
               type="button"
@@ -646,9 +718,12 @@ export function ShelfCard({
         </div>
 
         {/* Floating White Overlay Panel overlapping the photo */}
-        <div className="relative -mt-10 sm:-mt-12 mx-3 sm:mx-4 mb-3 p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800 z-10 space-y-3">
+        <div style={containerStyle} className="relative -mt-10 sm:-mt-12 mx-3 sm:mx-4 mb-3 p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800 z-10 space-y-3">
           {/* Overlapping Circular Project Logo */}
-          <div className="absolute -top-7 left-4 sm:left-5 w-14 h-14 rounded-full border-2 border-white dark:border-slate-900 shadow-xl bg-slate-950 flex items-center justify-center overflow-hidden">
+          <div
+            className="absolute -top-7 left-4 sm:left-5 w-14 h-14 rounded-full border-2 shadow-xl bg-slate-950 flex items-center justify-center overflow-hidden"
+            style={{ borderColor: cardAccentColor || "#faad13" }}
+          >
             {data.developerLogo ? (
               <img
                 src={data.developerLogo}
@@ -656,14 +731,14 @@ export function ShelfCard({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-[11px] font-black text-amber-400 text-center leading-tight px-1 uppercase">
+              <span className="text-[11px] font-black text-amber-400 text-center leading-tight px-1 uppercase" style={accentTextStyle}>
                 {data.title.substring(0, 8)}
               </span>
             )}
           </div>
 
           <div className="pt-5 space-y-1">
-            <h3 className="font-heading font-black text-lg sm:text-xl text-slate-900 dark:text-white line-clamp-1 group-hover:text-amber-600 transition-colors">
+            <h3 style={textStyle} className="font-heading font-black text-lg sm:text-xl text-slate-900 dark:text-white line-clamp-1 group-hover:text-amber-600 transition-colors">
               {data.title}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
@@ -673,10 +748,13 @@ export function ShelfCard({
           </div>
 
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <div className="text-lg sm:text-xl font-black text-slate-950 dark:text-white">
+            <div style={accentTextStyle} className="text-lg sm:text-xl font-black tracking-tight">
               ₹{data.priceStr}
             </div>
-            <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white group-hover:bg-amber-500 group-hover:text-slate-950 transition-colors flex items-center justify-center">
+            <div
+              className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white transition-colors flex items-center justify-center"
+              style={cardAccentColor ? { backgroundColor: `${cardAccentColor}30`, color: cardAccentColor } : undefined}
+            >
               <ChevronRight className="w-4 h-4" />
             </div>
           </div>
@@ -710,8 +788,11 @@ export function ShelfCard({
 
           {/* Badges */}
           <div className="absolute top-3 left-3 flex items-center gap-1.5">
-            <span className="px-2.5 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-white border border-white/20 text-[10px] font-black uppercase flex items-center gap-1">
-              <Compass className="w-3 h-3 text-cyan-400" /> 3D Tour
+            <span
+              className="px-2.5 py-1 rounded-full text-white text-[10px] font-black uppercase flex items-center gap-1 shadow-md"
+              style={cardAccentColor ? { backgroundColor: cardAccentColor, color: "#0f172a" } : { backgroundColor: "#0f172a", color: "#38bdf8" }}
+            >
+              <Compass className="w-3 h-3" /> {activeBadge || "3D Tour"}
             </span>
             <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold">
               Gated Villa
@@ -729,13 +810,13 @@ export function ShelfCard({
         </div>
 
         {/* Villa Details & Amenities */}
-        <div className="p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-3">
+        <div style={containerStyle} className="p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-3">
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <h3 className="font-heading font-black text-base sm:text-lg text-slate-900 dark:text-white line-clamp-1 group-hover:text-amber-600 transition-colors">
+              <h3 style={textStyle} className="font-heading font-black text-base sm:text-lg text-slate-900 dark:text-white line-clamp-1 group-hover:text-amber-600 transition-colors">
                 {data.title}
               </h3>
-              <span className="text-base sm:text-lg font-black text-slate-950 dark:text-white shrink-0 ml-2">
+              <span style={accentTextStyle} className="text-base sm:text-lg font-black shrink-0 ml-2">
                 ₹{data.priceStr}
               </span>
             </div>
@@ -759,11 +840,11 @@ export function ShelfCard({
           </div>
 
           <div className="flex items-center justify-between text-xs pt-1">
-            <span className="text-slate-500 dark:text-slate-400 font-semibold">
+            <span style={textStyle} className="text-slate-500 dark:text-slate-400 font-semibold">
               {data.bhkStr || "4 BHK"} • {data.areaStr || "3200 sq.ft."}
             </span>
 
-            <span className="font-black text-amber-600 dark:text-amber-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+            <span style={accentTextStyle} className="font-black flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
               Know More <ArrowRight className="w-3.5 h-3.5" />
             </span>
           </div>
@@ -796,8 +877,11 @@ export function ShelfCard({
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-black/20" />
 
           <div className="absolute top-3 left-3 flex items-center gap-1.5">
-            <span className="px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black uppercase flex items-center gap-1 shadow-md">
-              <Zap className="w-3 h-3" /> Under Construction
+            <span
+              className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-md"
+              style={cardAccentColor ? { backgroundColor: cardAccentColor, color: "#0f172a" } : { backgroundColor: "#f59e0b", color: "#0f172a" }}
+            >
+              <Zap className="w-3 h-3" /> {activeBadge || "Under Construction"}
             </span>
           </div>
 
@@ -818,9 +902,9 @@ export function ShelfCard({
         </div>
 
         {/* Content & Progress Bar */}
-        <div className="p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-4">
+        <div style={containerStyle} className="p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-4">
           <div className="space-y-1">
-            <h3 className="font-heading font-black text-base sm:text-lg text-slate-900 dark:text-white line-clamp-1 group-hover:text-amber-600 transition-colors">
+            <h3 style={cardAccentColor ? accentTextStyle : textStyle} className="font-heading font-black text-base sm:text-lg text-slate-900 dark:text-white line-clamp-1 group-hover:text-amber-600 transition-colors">
               {data.title}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
@@ -830,26 +914,26 @@ export function ShelfCard({
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="text-xl font-black text-slate-950 dark:text-white">
+            <div style={textStyle} className="text-xl font-black text-slate-950 dark:text-white">
               ₹{data.priceStr}
             </div>
-            <div className="text-xs font-bold text-slate-600 dark:text-slate-400">
+            <div style={textStyle} className="text-xs font-bold text-slate-600 dark:text-slate-400">
               {data.bhkStr}
             </div>
           </div>
 
-          {/* Construction Progress Bar (Only rendered if progress is applicable) */}
+          {/* Construction Progress Bar (Admin Configurable per Project) */}
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
             <div className="flex items-center justify-between text-xs font-extrabold">
-              <span className="text-slate-600 dark:text-slate-400">Construction Progress</span>
-              <span className="text-emerald-600 dark:text-emerald-400">
-                {data.progressPercentage || 70}%
+              <span style={textStyle} className="text-slate-600 dark:text-slate-400">Construction Progress</span>
+              <span className="font-black" style={cardAccentColor ? { color: cardAccentColor } : { color: "#10b981" }}>
+                {data.progressPercentage ?? 70}%
               </span>
             </div>
-            <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+            <div className="w-full h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border border-black/5">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-1000"
-                style={{ width: `${data.progressPercentage || 70}%` }}
+                className="h-full rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-emerald-400 transition-all duration-1000 shadow-sm"
+                style={{ width: `${Math.min(100, Math.max(0, data.progressPercentage ?? 70))}%` }}
               />
             </div>
           </div>
@@ -870,31 +954,37 @@ export function ShelfCard({
       )}
     >
       {/* Left Dark Editorial Information Panel */}
-      <div className="md:w-[45%] p-5 sm:p-6 flex flex-col justify-between space-y-4 bg-slate-950">
+      <div style={containerStyle} className="md:w-[45%] p-5 sm:p-6 flex flex-col justify-between space-y-4 bg-slate-950">
         <div className="space-y-2">
-          <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-400/30 text-[10px] font-black uppercase tracking-wider inline-block">
-            Signature Collection
+          <span
+            className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider inline-block border"
+            style={cardAccentColor ? { backgroundColor: `${cardAccentColor}25`, color: cardAccentColor, borderColor: `${cardAccentColor}50` } : { backgroundColor: "rgba(245, 158, 11, 0.2)", color: "#fbbf24", borderColor: "rgba(251, 191, 36, 0.3)" }}
+          >
+            {activeBadge || "Signature Collection"}
           </span>
           <h3 className="font-serif text-xl sm:text-2xl font-black text-white leading-tight">
-            Premium Living by the Lake
+            {customHeadline || "Premium Living by the Lake"}
           </h3>
           <p className="text-xs text-slate-400 font-medium">
-            {data.bhkStr || "3 & 4 BHK"} • {data.areaStr || "2200–3800 sq.ft."}
+            {customTagline || (data.bhkStr ? `${data.bhkStr} • ${data.areaStr || "2200–3800 sq.ft."}` : "Exclusive waterfront residences...")}
           </p>
         </div>
 
         <div className="space-y-1">
           <p className="text-xs text-slate-400 flex items-center gap-1 font-medium">
-            <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <MapPin className="w-3.5 h-3.5 shrink-0" style={accentTextStyle} />
             <span>{data.locationStr}</span>
           </p>
-          <div className="text-2xl font-black text-amber-400 tracking-tight">
+          <div style={accentTextStyle} className="text-2xl font-black tracking-tight">
             ₹{data.priceStr}
           </div>
         </div>
 
         <div className="pt-2">
-          <span className="w-full sm:w-auto px-4 py-2 rounded-xl bg-white text-slate-950 font-black text-xs inline-flex items-center justify-center gap-1.5 group-hover:bg-amber-400 transition-colors">
+          <span
+            className="w-full sm:w-auto px-4 py-2 rounded-xl font-black text-xs inline-flex items-center justify-center gap-1.5 transition-colors"
+            style={cardAccentColor ? { backgroundColor: cardAccentColor, color: "#0f172a" } : { backgroundColor: "#ffffff", color: "#0f172a" }}
+          >
             <span>Discover</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </span>

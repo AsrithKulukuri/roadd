@@ -45,11 +45,48 @@ function validateSections(input: unknown): HomeSection[] | null {
       const key = `${type}:${itemId}`;
       if (!itemId || !type || itemKeys.has(key)) return [];
       itemKeys.add(key);
-      return [{ id: itemId, type }];
+
+      const cleanItem: HomeSectionItem = { id: itemId, type };
+      if (typeof entry.progressPercentage === "number" && !isNaN(entry.progressPercentage)) {
+        cleanItem.progressPercentage = Math.max(0, Math.min(100, Math.round(entry.progressPercentage)));
+      }
+      if (typeof entry.customBadge === "string" && entry.customBadge.trim()) {
+        cleanItem.customBadge = entry.customBadge.trim().slice(0, 50);
+      }
+      return [cleanItem];
     });
 
     if (cleanItems.length !== items.length) return null;
     ids.add(id);
+
+    // Color customizations (fallback to default white box, dark text, gold logo/icon)
+    const cardBgColor = typeof value.cardBgColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(value.cardBgColor.trim())
+      ? value.cardBgColor.trim()
+      : undefined;
+    const cardTextColor = typeof value.cardTextColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(value.cardTextColor.trim())
+      ? value.cardTextColor.trim()
+      : undefined;
+    const cardAccentColor = typeof value.cardAccentColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(value.cardAccentColor.trim())
+      ? value.cardAccentColor.trim()
+      : undefined;
+
+    // Label customizations
+    const customBadge = typeof value.customBadge === "string" && value.customBadge.trim()
+      ? value.customBadge.trim().slice(0, 50)
+      : undefined;
+    const customHeadline = typeof value.customHeadline === "string" && value.customHeadline.trim()
+      ? value.customHeadline.trim().slice(0, 100)
+      : undefined;
+    const customTagline = typeof value.customTagline === "string" && value.customTagline.trim()
+      ? value.customTagline.trim().slice(0, 120)
+      : undefined;
+
+    // Carousel controls
+    const enableCarousel = typeof value.enableCarousel === "boolean" ? value.enableCarousel : true;
+    const carouselInterval = typeof value.carouselInterval === "number" && !isNaN(value.carouselInterval)
+      ? Math.max(2, Math.min(30, Math.round(value.carouselInterval)))
+      : 4;
+
     sections.push({
       id,
       title,
@@ -57,6 +94,14 @@ function validateSections(input: unknown): HomeSection[] | null {
       isActive: value.isActive !== false,
       items: cleanItems,
       cardStyle,
+      cardBgColor,
+      cardTextColor,
+      cardAccentColor,
+      customBadge,
+      customHeadline,
+      customTagline,
+      enableCarousel,
+      carouselInterval,
     });
   }
 

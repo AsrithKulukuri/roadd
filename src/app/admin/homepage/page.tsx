@@ -6,16 +6,23 @@ import {
   ArrowDown,
   ArrowUp,
   Check,
+  ChevronDown,
+  ChevronUp,
+  Clock,
   Eye,
   EyeOff,
   Layers,
   LayoutList,
+  Palette,
   Plus,
+  RotateCcw,
   Save,
   Search,
+  Sliders,
   Sparkles,
   Trash2,
   X,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -77,6 +84,7 @@ export default function HomepageShelvesAdminPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [pickerSectionId, setPickerSectionId] = useState<string | null>(null);
   const [stylePickerSectionId, setStylePickerSectionId] = useState<string | null>(null);
+  const [expandedSettingsId, setExpandedSettingsId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "property" | "project">("all");
 
@@ -170,6 +178,28 @@ export default function HomepageShelvesAdminPage() {
     });
   };
 
+  const updateSectionItem = (
+    sectionId: string,
+    itemId: string,
+    itemType: "property" | "project",
+    itemUpdates: Partial<HomeSectionItem>
+  ) => {
+    setSections((current) =>
+      current.map((section) => {
+        if (section.id !== sectionId) return section;
+        return {
+          ...section,
+          items: section.items.map((item) => {
+            if (item.id === itemId && item.type === itemType) {
+              return { ...item, ...itemUpdates };
+            }
+            return item;
+          }),
+        };
+      })
+    );
+  };
+
   const saveLayout = async () => {
     if (sections.some((section) => !section.title.trim())) return toast.error("Every shelf needs a title.");
     if (sections.some((section) => section.isActive && section.items.length === 0)) return toast.error("Add at least one listing to every active shelf.");
@@ -222,11 +252,11 @@ export default function HomepageShelvesAdminPage() {
                 <div className="flex min-w-0 flex-1 items-start gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-[#faad13] shadow-xs"><Icon className="h-5 w-5" /></div>
                   <div className="min-w-0 flex-1 space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-wrap">
                       <Input value={section.title} maxLength={40} aria-label="Shelf title" onChange={(event) => updateSection(section.id, { title: event.target.value })} className="h-10 max-w-md font-extrabold text-sm" />
                       
                       {/* Card Style Selector Button */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <button
                           type="button"
                           onClick={() => setStylePickerSectionId(section.id)}
@@ -237,8 +267,300 @@ export default function HomepageShelvesAdminPage() {
                           <span className="text-[10px] text-slate-400 font-normal">({cardStyleMeta.minWidth}–{cardStyleMeta.maxWidth}px)</span>
                           <span className="text-amber-500 font-bold ml-1 hover:underline">Change Style ▾</span>
                         </button>
+
+                        {/* Custom Colors, Labels & Carousel Drawer Toggle Button */}
+                        <button
+                          type="button"
+                          onClick={() => setExpandedSettingsId(expandedSettingsId === section.id ? null : section.id)}
+                          className={cn(
+                            "inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-black shadow-xs transition-all cursor-pointer",
+                            expandedSettingsId === section.id
+                              ? "bg-amber-500 text-slate-950 border-amber-500 shadow-sm"
+                              : "border-border-default bg-slate-100 dark:bg-slate-800/90 hover:border-[#faad13] text-slate-800 dark:text-white"
+                          )}
+                        >
+                          <Palette className="w-3.5 h-3.5 text-[#faad13]" />
+                          <span>Custom Colors & Carousel</span>
+                          {expandedSettingsId === section.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        </button>
                       </div>
                     </div>
+
+                    {/* EXPANDABLE SHELF CUSTOMIZATION DRAWER */}
+                    {expandedSettingsId === section.id && (
+                      <div className="mt-2 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 space-y-4">
+                        <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
+                          <div className="flex items-center gap-2">
+                            <Sliders className="w-4 h-4 text-amber-500" />
+                            <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
+                              Shelf Style & Carousel Settings (Admin Only)
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateSection(section.id, {
+                                cardBgColor: undefined,
+                                cardTextColor: undefined,
+                                cardAccentColor: undefined,
+                                customBadge: undefined,
+                                customHeadline: undefined,
+                                customTagline: undefined,
+                                enableCarousel: true,
+                                carouselInterval: 4,
+                              });
+                              toast.success("Reset shelf styles to default (White box, Dark text, Gold logo)");
+                            }}
+                            className="text-[11px] font-bold text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 flex items-center gap-1 cursor-pointer"
+                          >
+                            <RotateCcw className="w-3 h-3" /> Reset Defaults
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* 1. Colors */}
+                          <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-border-default space-y-3 shadow-xs">
+                            <p className="text-[11px] font-black uppercase text-slate-500 flex items-center gap-1.5">
+                              <Palette className="w-3.5 h-3.5 text-amber-500" /> Colors (Default: White Box)
+                            </p>
+
+                            {/* Card Background */}
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-text-primary">Card Background</span>
+                                <span className="font-mono text-[10px] text-text-tertiary">{section.cardBgColor || "#ffffff (default)"}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <input
+                                  type="color"
+                                  value={section.cardBgColor || "#ffffff"}
+                                  onChange={(e) => updateSection(section.id, { cardBgColor: e.target.value })}
+                                  className="h-7 w-7 rounded cursor-pointer border border-border-default p-0.5 bg-transparent"
+                                  title="Pick custom card background color"
+                                />
+                                {[
+                                  { label: "White", color: "#ffffff" },
+                                  { label: "Dark", color: "#090d16" },
+                                  { label: "Navy", color: "#0f172a" },
+                                  { label: "Indigo", color: "#1e1b4b" },
+                                ].map((c) => (
+                                  <button
+                                    key={c.color}
+                                    type="button"
+                                    onClick={() => updateSection(section.id, { cardBgColor: c.color })}
+                                    className={cn(
+                                      "px-2 py-0.5 text-[10px] font-bold rounded border transition-all cursor-pointer",
+                                      (section.cardBgColor || "#ffffff").toLowerCase() === c.color.toLowerCase()
+                                        ? "border-amber-500 ring-1 ring-amber-500 font-black"
+                                        : "border-slate-200 dark:border-slate-700"
+                                    )}
+                                    style={{ backgroundColor: c.color, color: c.color === "#ffffff" ? "#000" : "#fff" }}
+                                  >
+                                    {c.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Text Color */}
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-text-primary">Text Color</span>
+                                <span className="font-mono text-[10px] text-text-tertiary">{section.cardTextColor || "#0f172a (default)"}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <input
+                                  type="color"
+                                  value={section.cardTextColor || "#0f172a"}
+                                  onChange={(e) => updateSection(section.id, { cardTextColor: e.target.value })}
+                                  className="h-7 w-7 rounded cursor-pointer border border-border-default p-0.5 bg-transparent"
+                                  title="Pick custom text color"
+                                />
+                                {[
+                                  { label: "Black", color: "#0f172a" },
+                                  { label: "White", color: "#ffffff" },
+                                  { label: "Slate", color: "#334155" },
+                                ].map((c) => (
+                                  <button
+                                    key={c.color}
+                                    type="button"
+                                    onClick={() => updateSection(section.id, { cardTextColor: c.color })}
+                                    className={cn(
+                                      "px-2 py-0.5 text-[10px] font-bold rounded border transition-all cursor-pointer",
+                                      (section.cardTextColor || "#0f172a").toLowerCase() === c.color.toLowerCase()
+                                        ? "border-amber-500 ring-1 ring-amber-500 font-black"
+                                        : "border-slate-200 dark:border-slate-700"
+                                    )}
+                                    style={{ backgroundColor: c.color, color: c.color === "#ffffff" ? "#000" : "#fff" }}
+                                  >
+                                    {c.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Logo & Accent Color */}
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-text-primary">Logo & Accent Icons</span>
+                                <span className="font-mono text-[10px] text-text-tertiary">{section.cardAccentColor || "#faad13 (default)"}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <input
+                                  type="color"
+                                  value={section.cardAccentColor || "#faad13"}
+                                  onChange={(e) => updateSection(section.id, { cardAccentColor: e.target.value })}
+                                  className="h-7 w-7 rounded cursor-pointer border border-border-default p-0.5 bg-transparent"
+                                  title="Pick custom logo and accent color"
+                                />
+                                {[
+                                  { label: "Gold", color: "#faad13" },
+                                  { label: "Purple", color: "#9333ea" },
+                                  { label: "Emerald", color: "#10b981" },
+                                  { label: "Sky", color: "#0284c7" },
+                                ].map((c) => (
+                                  <button
+                                    key={c.color}
+                                    type="button"
+                                    onClick={() => updateSection(section.id, { cardAccentColor: c.color })}
+                                    className={cn(
+                                      "px-2 py-0.5 text-[10px] font-bold rounded border transition-all cursor-pointer",
+                                      (section.cardAccentColor || "#faad13").toLowerCase() === c.color.toLowerCase()
+                                        ? "border-amber-500 ring-1 ring-amber-500 font-black"
+                                        : "border-slate-200 dark:border-slate-700"
+                                    )}
+                                    style={{ backgroundColor: c.color, color: "#fff" }}
+                                  >
+                                    {c.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 2. Labels & Copy */}
+                          <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-border-default space-y-3 shadow-xs">
+                            <p className="text-[11px] font-black uppercase text-slate-500 flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Badges & Editorial Copy
+                            </p>
+
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-text-primary block">Badge Pill Label</label>
+                              <Input
+                                value={section.customBadge || ""}
+                                placeholder="e.g. ✨ Premium, Featured Campaign"
+                                onChange={(e) => updateSection(section.id, { customBadge: e.target.value })}
+                                className="h-8 text-xs font-medium"
+                              />
+                              <div className="flex flex-wrap gap-1 pt-1">
+                                {[
+                                  "✨ Premium",
+                                  "Featured Campaign",
+                                  "⚡ UNDER CONSTRUCTION",
+                                  "Hot Deal",
+                                ].map((preset) => (
+                                  <button
+                                    key={preset}
+                                    type="button"
+                                    onClick={() => updateSection(section.id, { customBadge: preset })}
+                                    className="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-amber-500/20 hover:text-amber-600 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                                  >
+                                    {preset}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-text-primary block">Editorial Headline</label>
+                              <Input
+                                value={section.customHeadline || ""}
+                                placeholder="e.g. A Higher Standard of Living"
+                                onChange={(e) => updateSection(section.id, { customHeadline: e.target.value })}
+                                className="h-8 text-xs font-medium"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-text-primary block">Editorial Tagline</label>
+                              <Input
+                                value={section.customTagline || ""}
+                                placeholder="e.g. Verified Luxury Residence"
+                                onChange={(e) => updateSection(section.id, { customTagline: e.target.value })}
+                                className="h-8 text-xs font-medium"
+                              />
+                            </div>
+                          </div>
+
+                          {/* 3. Carousel Settings */}
+                          <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-border-default space-y-3 shadow-xs">
+                            <p className="text-[11px] font-black uppercase text-slate-500 flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-amber-500" /> Carousel Settings
+                            </p>
+
+                            <div className="space-y-1.5">
+                              <span className="text-xs font-bold text-text-primary block">Carousel Mode</span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => updateSection(section.id, { enableCarousel: true })}
+                                  className={cn(
+                                    "flex-1 py-1.5 px-2 rounded-lg text-xs font-extrabold border transition-all cursor-pointer",
+                                    section.enableCarousel !== false
+                                      ? "bg-emerald-500 text-white border-emerald-500 shadow-xs"
+                                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-transparent"
+                                  )}
+                                >
+                                  ✓ Carousel On
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => updateSection(section.id, { enableCarousel: false })}
+                                  className={cn(
+                                    "flex-1 py-1.5 px-2 rounded-lg text-xs font-extrabold border transition-all cursor-pointer",
+                                    section.enableCarousel === false
+                                      ? "bg-rose-500 text-white border-rose-500 shadow-xs"
+                                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-transparent"
+                                  )}
+                                >
+                                  ✕ Static Row
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-text-primary">Auto-Slide Time</span>
+                                <span className="font-black text-amber-600 dark:text-amber-400">{section.carouselInterval || 4}s</span>
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {[2, 3, 4, 6, 8, 10].map((sec) => (
+                                  <button
+                                    key={sec}
+                                    type="button"
+                                    onClick={() => updateSection(section.id, { carouselInterval: sec })}
+                                    className={cn(
+                                      "px-2.5 py-1 text-xs font-extrabold rounded-lg border transition-all cursor-pointer",
+                                      (section.carouselInterval || 4) === sec
+                                        ? "bg-[#faad13] text-slate-950 border-[#faad13] shadow-xs"
+                                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400"
+                                    )}
+                                  >
+                                    {sec}s
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <p className="text-[10px] text-text-tertiary pt-2 border-t border-border-default">
+                              {section.enableCarousel !== false
+                                ? `Cards auto-slide every ${section.carouselInterval || 4}s and loop infinitely.`
+                                : "Carousel auto-slide is paused. Users can still scroll smoothly with arrows or touch."}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div>
                       <p className="mb-2 text-[11px] font-extrabold uppercase text-text-tertiary">Choose icon</p>
@@ -269,14 +591,57 @@ export default function HomepageShelvesAdminPage() {
                   <button type="button" onClick={() => setPickerSectionId(section.id)} className="w-full rounded-lg border border-dashed border-slate-300 py-8 text-sm font-bold text-text-tertiary hover:border-[#faad13] hover:text-text-primary">Choose properties or projects</button>
                 ) : (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                       {section.items.map((item) => {
                         const listing = candidateMap.get(`${item.type}:${item.id}`);
-                        return <div key={`${item.type}:${item.id}`} className="flex min-w-0 items-center gap-3 rounded-lg border border-border-default p-2.5 bg-white dark:bg-slate-900">
-                          <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">{listing?.image && <Image src={listing.image} alt="" fill unoptimized className="object-cover" sizes="64px" />}</div>
-                          <div className="min-w-0 flex-1"><p className="truncate text-xs font-extrabold text-text-primary">{listing?.title || "Unavailable listing"}</p><p className="mt-0.5 text-[10px] uppercase text-text-tertiary">{item.type}</p></div>
-                          <button type="button" aria-label={`Remove ${listing?.title || "listing"}`} onClick={() => toggleItem(section.id, item)} className="text-text-tertiary hover:text-red-600"><X className="h-4 w-4" /></button>
-                        </div>;
+                        const currentProgress = item.progressPercentage ?? 70;
+                        return (
+                          <div key={`${item.type}:${item.id}`} className="flex flex-col min-w-0 rounded-xl border border-border-default p-3 bg-white dark:bg-slate-900 shadow-xs space-y-2.5">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                                {listing?.image && <Image src={listing.image} alt="" fill unoptimized className="object-cover" sizes="64px" />}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-xs font-extrabold text-text-primary">{listing?.title || "Unavailable listing"}</p>
+                                <div className="mt-0.5 flex items-center gap-1.5">
+                                  <span className={cn("px-1.5 py-0.2 rounded text-[9px] font-black uppercase", item.type === "project" ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300")}>
+                                    {item.type}
+                                  </span>
+                                  <span className="text-[11px] font-extrabold text-slate-800 dark:text-slate-200">{listing?.price}</span>
+                                </div>
+                              </div>
+                              <button type="button" aria-label={`Remove ${listing?.title || "listing"}`} onClick={() => toggleItem(section.id, item)} className="text-text-tertiary hover:text-red-600">
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+
+                            {/* Construction Progress Slider (Admin can set per Project / Listing) */}
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className="font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                                  <Zap className="w-3 h-3 text-amber-500" /> Progress Tracker:
+                                </span>
+                                <span className="font-black text-emerald-600 dark:text-emerald-400">
+                                  {currentProgress}%
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={currentProgress}
+                                onChange={(e) => updateSectionItem(section.id, item.id, item.type, { progressPercentage: Number(e.target.value) })}
+                                className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                              />
+                              <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-emerald-400 transition-all"
+                                  style={{ width: `${currentProgress}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
                       })}
                     </div>
 
@@ -286,7 +651,7 @@ export default function HomepageShelvesAdminPage() {
                         <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                           <Sparkles className="w-3.5 h-3.5 text-[#faad13]" /> Live Shelf Preview ({cardStyleMeta.label})
                         </span>
-                        <span className="text-[10px] text-slate-400">Preview with actual card design</span>
+                        <span className="text-[10px] text-slate-400">Live preview with selected colors, badges & progress</span>
                       </div>
                       <div className="w-full overflow-x-auto pb-3 pt-1 flex gap-4 no-scrollbar">
                         {section.items.map((item, idx) => {
@@ -294,12 +659,23 @@ export default function HomepageShelvesAdminPage() {
                           const proj = projects.find((p) => p.id === item.id);
                           if (!prop && !proj) return null;
                           const mixedItem: MixedItem = prop
-                            ? { ...prop, itemType: "property" }
-                            : { ...proj!, itemType: "project" };
+                            ? { ...prop, itemType: "property", progressPercentage: item.progressPercentage, customBadge: item.customBadge }
+                            : { ...proj!, itemType: "project", progressPercentage: item.progressPercentage, customBadge: item.customBadge };
 
                           return (
                             <div key={`${item.type}:${item.id}-preview`} className="shrink-0 w-[280px] sm:w-[320px] pointer-events-none">
-                              <ShelfCard item={mixedItem} cardStyle={currentStyleId} index={idx} />
+                              <ShelfCard
+                                item={mixedItem}
+                                cardStyle={currentStyleId}
+                                cardBgColor={section.cardBgColor}
+                                cardTextColor={section.cardTextColor}
+                                cardAccentColor={section.cardAccentColor}
+                                customBadge={section.customBadge}
+                                customHeadline={section.customHeadline}
+                                customTagline={section.customTagline}
+                                progressPercentage={item.progressPercentage}
+                                index={idx}
+                              />
                             </div>
                           );
                         })}

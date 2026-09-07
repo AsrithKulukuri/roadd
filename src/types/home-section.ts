@@ -97,6 +97,8 @@ export const DEFAULT_CARD_STYLE: HomeCardStyleId = "compact-marketplace";
 export interface HomeSectionItem {
   id: string;
   type: "property" | "project";
+  progressPercentage?: number; // 0-100 (admin can set progress per item/project)
+  customBadge?: string;        // optional per-item badge
 }
 
 export interface HomeSection {
@@ -106,6 +108,14 @@ export interface HomeSection {
   isActive: boolean;
   items: HomeSectionItem[];
   cardStyle?: HomeCardStyleId;
+  cardBgColor?: string;       // default: "#ffffff" (white box)
+  cardTextColor?: string;     // default: "#0f172a" (black text)
+  cardAccentColor?: string;   // default: "#faad13" (logo/icon color)
+  customBadge?: string;       // e.g. "✨ Premium", "Featured Campaign", "⚡ UNDER CONSTRUCTION"
+  customHeadline?: string;    // e.g. "A Higher Standard of Living"
+  customTagline?: string;     // e.g. "Verified Luxury Residence"
+  enableCarousel?: boolean;   // default: true (turn on / turn off carousel)
+  carouselInterval?: number;  // default: 4 (seconds per shelf rotation)
 }
 
 export const MAX_HOME_SECTIONS = 8;

@@ -11,17 +11,25 @@ import type { HomeCardStyleId } from "@/types/home-section";
 import { cn } from "@/lib/utils";
 
 export type MixedItem = 
-  | (Property & { itemType: 'property' })
-  | (Project & { itemType: 'project' });
+  | (Property & { itemType: 'property'; progressPercentage?: number; customBadge?: string })
+  | (Project & { itemType: 'project'; progressPercentage?: number; customBadge?: string });
 
 interface MixedCarouselRowProps {
   title: string;
   icon?: LucideIcon;
   items: MixedItem[];
   autoSlide?: boolean;
+  enableCarousel?: boolean;
+  carouselInterval?: number;
   hideHeader?: boolean;
   cardVariant?: "default" | "compact" | "horizontal" | "category-style";
   cardStyle?: HomeCardStyleId;
+  cardBgColor?: string;
+  cardTextColor?: string;
+  cardAccentColor?: string;
+  customBadge?: string;
+  customHeadline?: string;
+  customTagline?: string;
 }
 
 function getStyleWidthClass(cardStyle?: HomeCardStyleId, legacyVariant?: string) {
@@ -58,18 +66,26 @@ export function MixedCarouselRow({
   icon: Icon = Sparkles,
   items,
   autoSlide = false,
+  enableCarousel = true,
+  carouselInterval = 4,
   hideHeader = false,
   cardVariant = "default",
   cardStyle,
+  cardBgColor,
+  cardTextColor,
+  cardAccentColor,
+  customBadge,
+  customHeadline,
+  customTagline,
 }: MixedCarouselRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const interactionPauseUntil = useRef(0);
   const isInitialized = useRef(false);
 
+  // If carousel is disabled, only show 1 set of items without infinite loop
   const hasMultiple = items.length > 1;
-  // Duplicate 3 times for seamless infinite scroll
-  const loopCopies = hasMultiple ? [0, 1, 2] : [0];
+  const loopCopies = (enableCarousel && hasMultiple) ? [0, 1, 2] : [0];
 
   const getScrollStep = () => {
     const container = scrollRef.current;
@@ -130,11 +146,12 @@ export function MixedCarouselRow({
 
   // Infinite Auto-Slide
   useEffect(() => {
-    if (!autoSlide || !hasMultiple || isHovered) return;
+    if (!enableCarousel || !autoSlide || !hasMultiple || isHovered) return;
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
 
+    const ms = Math.max(2, Math.min(30, carouselInterval || 4)) * 1000;
     const interval = setInterval(() => {
       const container = scrollRef.current;
       if (!container || Date.now() < interactionPauseUntil.current) return;
@@ -149,10 +166,10 @@ export function MixedCarouselRow({
       }
 
       container.scrollBy({ left: step, behavior: "smooth" });
-    }, 3000);
+    }, ms);
 
     return () => clearInterval(interval);
-  }, [autoSlide, isHovered, items.length, hasMultiple]);
+  }, [enableCarousel, autoSlide, isHovered, items.length, hasMultiple, carouselInterval]);
 
   const scroll = (direction: "left" | "right") => {
     const container = scrollRef.current;
@@ -265,6 +282,13 @@ export function MixedCarouselRow({
                       item={item}
                       cardStyle={cardStyle}
                       index={itemIndex}
+                      cardBgColor={cardBgColor}
+                      cardTextColor={cardTextColor}
+                      cardAccentColor={cardAccentColor}
+                      customBadge={customBadge}
+                      customHeadline={customHeadline}
+                      customTagline={customTagline}
+                      progressPercentage={item.progressPercentage}
                     />
                   ) : item.itemType === 'property' ? (
                     <PropertyCard

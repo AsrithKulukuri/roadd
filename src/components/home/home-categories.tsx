@@ -7,7 +7,24 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { useIsMounted } from "@/hooks/use-is-mounted";
 import { HOME_SECTION_ICONS } from "@/lib/home-section-icons";
-import type { HomeSection } from "@/types/home-section";
+import type { LucideIcon } from "lucide-react";
+import type { HomeCardStyleId, HomeSection } from "@/types/home-section";
+
+type RenderSection = {
+  id: string;
+  title: string;
+  icon: LucideIcon;
+  cardStyle?: HomeCardStyleId;
+  cardBgColor?: string;
+  cardTextColor?: string;
+  cardAccentColor?: string;
+  customBadge?: string;
+  customHeadline?: string;
+  customTagline?: string;
+  enableCarousel?: boolean;
+  carouselInterval?: number;
+  items: MixedItem[];
+};
 
 export function HomeCategories() {
   const { properties, fetchProperties, isLoading: isPropsLoading, error: propsError } = usePropertiesStore();
@@ -125,19 +142,41 @@ export function HomeCategories() {
   const propertyMap = new Map(activeProperties.map((property) => [property.id, property]));
   const projectMap = new Map(activeProjects.map((project) => [project.id, project]));
 
-  const sectionsToRender = hasCustomLayout
+  const sectionsToRender: RenderSection[] = hasCustomLayout
     ? (customSections ?? []).filter((section) => section.isActive).map((section) => ({
         id: section.id,
         title: section.title,
         icon: HOME_SECTION_ICONS[section.icon],
         cardStyle: section.cardStyle,
+        cardBgColor: section.cardBgColor,
+        cardTextColor: section.cardTextColor,
+        cardAccentColor: section.cardAccentColor,
+        customBadge: section.customBadge,
+        customHeadline: section.customHeadline,
+        customTagline: section.customTagline,
+        enableCarousel: section.enableCarousel !== false,
+        carouselInterval: section.carouselInterval || 4,
         items: section.items.flatMap((item): MixedItem[] => {
           if (item.type === "property") {
             const property = propertyMap.get(item.id);
-            return property ? [{ ...property, itemType: "property" as const }] : [];
+            return property
+              ? [{
+                  ...property,
+                  itemType: "property" as const,
+                  progressPercentage: item.progressPercentage,
+                  customBadge: item.customBadge,
+                }]
+              : [];
           }
           const project = projectMap.get(item.id);
-          return project ? [{ ...project, itemType: "project" as const }] : [];
+          return project
+            ? [{
+                ...project,
+                itemType: "project" as const,
+                progressPercentage: item.progressPercentage,
+                customBadge: item.customBadge,
+              }]
+            : [];
         }),
       }))
     : [
@@ -157,8 +196,16 @@ export function HomeCategories() {
             icon={section.icon}
             items={section.items}
             hideHeader={false}
-            autoSlide={true}
+            autoSlide={section.enableCarousel !== false}
+            enableCarousel={section.enableCarousel !== false}
+            carouselInterval={section.carouselInterval || 4}
             cardStyle={section.cardStyle || "compact-marketplace"}
+            cardBgColor={section.cardBgColor}
+            cardTextColor={section.cardTextColor}
+            cardAccentColor={section.cardAccentColor}
+            customBadge={section.customBadge}
+            customHeadline={section.customHeadline}
+            customTagline={section.customTagline}
           />
         ))}
 
