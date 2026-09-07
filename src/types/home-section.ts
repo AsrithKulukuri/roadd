@@ -17,6 +17,15 @@ export type HomeSectionIconName = (typeof HOME_SECTION_ICON_NAMES)[number];
 
 export const HOME_CARD_STYLES = [
   {
+    id: "classic-default",
+    label: "Classic Default (Original)",
+    description: "Original real estate card design with landscape photo on top, badge, price, title, specs, and location.",
+    aspectRatio: "16:10 classic",
+    recommendedUse: "Recommended, Featured, Budget, Standard Marketplace Listings",
+    minWidth: 260,
+    maxWidth: 320,
+  },
+  {
     id: "compact-marketplace",
     label: "Compact Marketplace",
     description: "Horizontal listing with 40% photo split, Verified badge, price, BHK, and Ready to Move pill.",
@@ -92,7 +101,7 @@ export const HOME_CARD_STYLES = [
 
 export type HomeCardStyleId = (typeof HOME_CARD_STYLES)[number]["id"];
 
-export const DEFAULT_CARD_STYLE: HomeCardStyleId = "compact-marketplace";
+export const DEFAULT_CARD_STYLE: HomeCardStyleId = "classic-default";
 
 export interface HomeSectionItem {
   id: string;
@@ -101,6 +110,13 @@ export interface HomeSectionItem {
   customBadge?: string;        // optional per-item badge override
   customHeadline?: string;     // optional per-item headline / title override
   customTagline?: string;      // optional per-item tagline override
+  customPrice?: string;        // optional per-item price override (e.g. "₹1.4 Cr", "₹45 Lakhs")
+  customLocation?: string;     // optional per-item location override (e.g. "Poranki, Vijayawada")
+  customBhk?: string;          // optional per-item BHK / specs override (e.g. "3 BHK", "2 & 3 BHK")
+  customArea?: string;         // optional per-item area override (e.g. "2500 sq.ft.")
+  customDeveloper?: string;    // optional per-item developer / partner override (e.g. "By Verified Partner")
+  customStatus?: string;       // optional per-item status pill (e.g. "Ready to Move", "Possession Soon")
+  customCtaText?: string;      // optional per-item CTA button text (e.g. "Explore", "View Details")
   cardBgColor?: string;        // optional per-item background color override
   cardTextColor?: string;      // optional per-item text color override
   cardAccentColor?: string;    // optional per-item accent / logo color override
@@ -119,6 +135,13 @@ export interface HomeSection {
   customBadge?: string;       // e.g. "✨ Premium", "Featured Campaign", "⚡ UNDER CONSTRUCTION"
   customHeadline?: string;    // e.g. "A Higher Standard of Living"
   customTagline?: string;     // e.g. "Verified Luxury Residence"
+  customPrice?: string;       // default price override for shelf
+  customLocation?: string;    // default location override for shelf
+  customBhk?: string;         // default BHK override for shelf
+  customArea?: string;        // default area override for shelf
+  customDeveloper?: string;   // default developer override for shelf
+  customStatus?: string;      // default status pill for shelf
+  customCtaText?: string;     // default CTA button text for shelf
   enableCarousel?: boolean;   // default: true (turn on / turn off carousel)
   carouselInterval?: number;  // default: 4 (seconds per shelf rotation)
 }

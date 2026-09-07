@@ -31,6 +31,15 @@ interface ShelfCardProps {
   item: MixedItem & {
     progressPercentage?: number;
     customBadge?: string;
+    customHeadline?: string;
+    customTagline?: string;
+    customPrice?: string;
+    customLocation?: string;
+    customBhk?: string;
+    customArea?: string;
+    customDeveloper?: string;
+    customStatus?: string;
+    customCtaText?: string;
   };
   cardStyle?: HomeCardStyleId;
   className?: string;
@@ -41,11 +50,25 @@ interface ShelfCardProps {
   customBadge?: string;
   customHeadline?: string;
   customTagline?: string;
+  customPrice?: string;
+  customLocation?: string;
+  customBhk?: string;
+  customArea?: string;
+  customDeveloper?: string;
+  customStatus?: string;
+  customCtaText?: string;
   progressPercentage?: number;
   isEditable?: boolean;
   onEditBadge?: () => void;
   onEditHeadline?: () => void;
   onEditTagline?: () => void;
+  onEditPrice?: () => void;
+  onEditLocation?: () => void;
+  onEditBhk?: () => void;
+  onEditArea?: () => void;
+  onEditDeveloper?: () => void;
+  onEditStatus?: () => void;
+  onEditCtaText?: () => void;
   onEditBgColor?: () => void;
   onEditTextColor?: () => void;
   onEditAccentColor?: () => void;
@@ -54,7 +77,7 @@ interface ShelfCardProps {
 
 export function ShelfCard({
   item,
-  cardStyle = "compact-marketplace",
+  cardStyle = "classic-default",
   className,
   index = 0,
   cardBgColor,
@@ -63,11 +86,25 @@ export function ShelfCard({
   customBadge,
   customHeadline,
   customTagline,
+  customPrice,
+  customLocation,
+  customBhk,
+  customArea,
+  customDeveloper,
+  customStatus,
+  customCtaText,
   progressPercentage: propProgressPercentage,
   isEditable = false,
   onEditBadge,
   onEditHeadline,
   onEditTagline,
+  onEditPrice,
+  onEditLocation,
+  onEditBhk,
+  onEditArea,
+  onEditDeveloper,
+  onEditStatus,
+  onEditCtaText,
   onEditBgColor,
   onEditTextColor,
   onEditAccentColor,
@@ -86,6 +123,13 @@ export function ShelfCard({
   const activeBadge = item.customBadge || customBadge;
   const activeHeadline = item.customHeadline || customHeadline;
   const activeTagline = item.customTagline || customTagline;
+  const activePrice = item.customPrice || customPrice;
+  const activeLocation = item.customLocation || customLocation;
+  const activeBhk = item.customBhk || customBhk;
+  const activeArea = item.customArea || customArea;
+  const activeDeveloper = item.customDeveloper || customDeveloper;
+  const activeStatus = item.customStatus || customStatus;
+  const activeCtaText = item.customCtaText || customCtaText || "Explore";
   const activeProgress =
     typeof item.progressPercentage === "number"
       ? item.progressPercentage
@@ -119,7 +163,8 @@ export function ShelfCard({
 
     const locality = item.location?.locality || "";
     const city = item.location?.city || "";
-    const locationStr = [locality, city].filter(Boolean).join(", ") || "Andhra Pradesh";
+    const computedLocationStr = [locality, city].filter(Boolean).join(", ") || "Andhra Pradesh";
+    const locationStr = activeLocation || computedLocationStr;
 
     // Primary & secondary images
     let primaryImage = item.coverImage;
@@ -145,7 +190,7 @@ export function ShelfCard({
     const imageCount = item.images?.length || 1;
 
     // Price formatting
-    let priceStr = "";
+    let computedPriceStr = "";
     if (isProject) {
       const cfgs = item.configurations || [];
       const prices = cfgs
@@ -154,27 +199,28 @@ export function ShelfCard({
       if (prices.length > 0) {
         const min = Math.min(...prices);
         const max = Math.max(...prices);
-        priceStr =
+        computedPriceStr =
           min === max
             ? formatPriceCompact(min)
             : `${formatPriceCompact(min)} - ${formatPriceCompact(max)}`;
       } else {
-        priceStr = "Price on request";
+        computedPriceStr = "Price on request";
       }
     } else {
-      priceStr = item.price ? formatPriceCompact(item.price) : "Price on request";
+      computedPriceStr = item.price ? formatPriceCompact(item.price) : "Price on request";
     }
+    const priceStr = activePrice || computedPriceStr;
 
     // BHK formatting
-    let bhkStr = "";
+    let computedBhkStr = "";
     if (isProject) {
       const bedrooms = Array.from(
         new Set(item.configurations?.map((c) => c.bedrooms).filter(Boolean))
       ).sort((a, b) => Number(a) - Number(b));
       if (bedrooms.length > 0) {
-        bhkStr = `${bedrooms.join(", ")} BHK`;
+        computedBhkStr = `${bedrooms.join(", ")} BHK`;
       } else {
-        bhkStr =
+        computedBhkStr =
           item.projectType === "villa"
             ? "Luxury Villas"
             : item.projectType === "venture"
@@ -182,11 +228,12 @@ export function ShelfCard({
             : "Apartments";
       }
     } else {
-      bhkStr = item.bedrooms ? `${item.bedrooms} BHK` : formatPropertyType(item.propertyType);
+      computedBhkStr = item.bedrooms ? `${item.bedrooms} BHK` : formatPropertyType(item.propertyType);
     }
+    const bhkStr = activeBhk || computedBhkStr;
 
     // Area formatting
-    let areaStr = "";
+    let computedAreaStr = "";
     if (isProject) {
       const areas =
         item.configurations
@@ -195,22 +242,24 @@ export function ShelfCard({
       if (areas.length > 0) {
         const minArea = Math.min(...areas);
         const maxArea = Math.max(...areas);
-        areaStr =
+        computedAreaStr =
           minArea === maxArea ? `${minArea} sq.ft.` : `${minArea} - ${maxArea} sq.ft.`;
       }
     } else if (item.area) {
-      areaStr = `${item.area} sq.ft.`;
+      computedAreaStr = `${item.area} sq.ft.`;
     }
+    const areaStr = activeArea || computedAreaStr;
 
     const tagline = activeTagline || (isProject
       ? item.tagline || "Modern Homes. Greater Possibilities."
       : "Verified Luxury Residence");
 
-    const developer = isProject
+    const computedDeveloper = isProject
       ? item.builderName || "Premium Developer"
       : item.postedBy === "owner"
       ? "Owner Listed"
       : "Verified Partner";
+    const developer = activeDeveloper || computedDeveloper;
 
     const developerLogo = isProject ? item.builderLogoUrl : null;
 
@@ -226,6 +275,18 @@ export function ShelfCard({
     const isUnderConstruction = isProject
       ? item.constructionStatus === "under-construction"
       : false;
+
+    const statusText = activeStatus || (
+      isReadyToMove
+        ? "Ready to Move"
+        : isUnderConstruction
+        ? "Under Construction"
+        : isNewLaunch
+        ? "New Launch"
+        : "Verified Listing"
+    );
+
+    const ctaText = activeCtaText;
 
     // Construction progress percentage if available
     let progressPercentage: number | null = activeProgress;
@@ -256,9 +317,24 @@ export function ShelfCard({
       isNewLaunch,
       isReadyToMove,
       isUnderConstruction,
+      statusText,
+      ctaText,
       progressPercentage,
     };
-  }, [item, activeProgress, cardStyle, activeHeadline, activeTagline]);
+  }, [
+    item,
+    activeProgress,
+    cardStyle,
+    activeHeadline,
+    activeTagline,
+    activePrice,
+    activeLocation,
+    activeBhk,
+    activeArea,
+    activeDeveloper,
+    activeStatus,
+    activeCtaText,
+  ]);
 
   // In editable / preview mode in admin dashboard:
   // Render purely as a <div> with NO Link, NO <a> tag, and NO href.
@@ -278,6 +354,209 @@ export function ShelfCard({
     : {
         href: data.href,
       };
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 0. CLASSIC DEFAULT (Original Card Style before shelf revamp)
+  // ──────────────────────────────────────────────────────────────────────────
+  if (cardStyle === "classic-default" || cardStyle === ("default" as any)) {
+    return (
+      <CardRoot
+        {...cardRootProps}
+        style={containerStyle}
+        className={cn(
+          "group relative flex flex-col h-full rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-amber-400/60 transition-all duration-300",
+          isEditable && "select-none",
+          className
+        )}
+      >
+        {/* Top Image: Aspect 16:10 / 4:3 */}
+        <div className="relative w-full aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-slate-100 shrink-0">
+          <Image
+            src={data.primaryImage}
+            alt={data.title}
+            fill
+            sizes="(max-width: 640px) 260px, 320px"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+
+          {/* Top-Left Badge */}
+          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
+            <span
+              className={cn(
+                "px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold shadow-md tracking-wide transition-all border border-white/20 backdrop-blur-md",
+                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              )}
+              style={accentBgStyle}
+              title={isEditable ? "Click to edit badge text" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+            >
+              {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
+              {activeBadge || (data.isProject ? "New Project" : "Featured")}
+            </span>
+          </div>
+
+          {/* Top-Right Favorite Button */}
+          <button
+            type="button"
+            onClick={handleFavoriteClick}
+            aria-label="Save to favorites"
+            className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md text-slate-700 hover:text-red-500 transition-all flex items-center justify-center shadow-md z-10"
+          >
+            <Heart className={cn("w-4 h-4", isSaved && "fill-red-500 text-red-500")} />
+          </button>
+
+          {/* Price Tag Overlay on Image bottom-left */}
+          <div className="absolute bottom-2 left-2.5 z-10">
+            <span
+              className={cn(
+                "text-white font-extrabold text-base sm:text-lg drop-shadow-md tracking-tight block transition-all",
+                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:bg-black/40 rounded px-1"
+              )}
+              title={isEditable ? "Click to edit price text" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditPrice || onEditTextColor)?.(); } : undefined}
+            >
+              {isEditable && <span className="mr-1 text-xs opacity-80">✏️</span>}
+              {data.priceStr}
+            </span>
+          </div>
+
+          {/* Photo Count badge on bottom-right */}
+          {data.imageCount > 1 && (
+            <div className="absolute bottom-2 right-2.5 z-10">
+              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-black/60 backdrop-blur-md text-white border border-white/10 flex items-center gap-1">
+                <Camera className="w-3 h-3" />
+                {data.imageCount}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Card Body below image */}
+        <div
+          className={cn(
+            "flex flex-col justify-between flex-1 p-3 sm:p-4 gap-2.5 transition-all",
+            isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/30 cursor-pointer"
+          )}
+          style={containerStyle}
+          onClick={isEditable ? (e) => {
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+              onEditBgColor?.();
+            }
+          } : undefined}
+          title={isEditable ? "Click to choose card background color" : undefined}
+        >
+          <div>
+            {/* Title / Headline */}
+            <h4
+              style={textStyle}
+              className={cn(
+                "font-extrabold text-sm sm:text-base text-slate-900 line-clamp-1 transition-colors group-hover:text-amber-600",
+                isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 rounded px-1"
+              )}
+              title={isEditable ? "Click to edit title / headline" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+            >
+              {isEditable && <span className="mr-1 text-xs opacity-70">✏️</span>}
+              {data.title}
+            </h4>
+
+            {/* Tagline / Subtitle */}
+            {(activeTagline || data.tagline) && (
+              <p
+                className={cn(
+                  "text-[11px] text-slate-500 line-clamp-1 mt-0.5 transition-all",
+                  isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1"
+                )}
+                title={isEditable ? "Click to edit tagline / subtitle" : undefined}
+                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTagline?.(); } : undefined}
+              >
+                {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
+                {data.tagline}
+              </p>
+            )}
+
+            {/* Location */}
+            <p
+              className={cn(
+                "text-xs text-slate-500 truncate mt-1.5 flex items-center gap-1 transition-all",
+                isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1"
+              )}
+              title={isEditable ? "Click to edit location text" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditLocation || onEditTextColor)?.(); } : undefined}
+            >
+              <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
+              <span className="truncate">{data.locationStr}</span>
+            </p>
+
+            {/* Specs row: BHK & Area */}
+            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100 text-xs font-semibold text-slate-700">
+              <span
+                className={cn(
+                  "px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 text-[11px] transition-all",
+                  isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400"
+                )}
+                title={isEditable ? "Click to edit BHK / configuration" : undefined}
+                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditBhk || onEditTextColor)?.(); } : undefined}
+              >
+                {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
+                {data.bhkStr || "Residential"}
+              </span>
+
+              {data.areaStr && (
+                <>
+                  <span className="text-slate-300">•</span>
+                  <span
+                    className={cn(
+                      "text-slate-600 text-[11px] transition-all",
+                      isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 rounded px-1"
+                    )}
+                    title={isEditable ? "Click to edit area / size" : undefined}
+                    onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditArea || onEditTextColor)?.(); } : undefined}
+                  >
+                    {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
+                    {data.areaStr}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Footer: Developer / Status + CTA */}
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs mt-1">
+            <span
+              className={cn(
+                "text-[11px] text-slate-500 font-medium truncate max-w-[140px] flex items-center gap-1 transition-all",
+                isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1"
+              )}
+              title={isEditable ? "Click to edit developer / partner text" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditDeveloper || onEditTextColor)?.(); } : undefined}
+            >
+              <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
+              {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
+              <span className="truncate">{data.developer}</span>
+            </span>
+
+            <span
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/70 transition-colors flex items-center gap-1 shrink-0",
+                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105"
+              )}
+              style={accentBgStyle}
+              title={isEditable ? "Click to edit CTA button text" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditCtaText || onEditAccentColor)?.(); } : undefined}
+            >
+              {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
+              <span>{data.ctaText}</span>
+              <ArrowRight className="w-3 h-3" />
+            </span>
+          </div>
+        </div>
+      </CardRoot>
+    );
+  }
 
   // ──────────────────────────────────────────────────────────────────────────
   // 1. COMPACT MARKETPLACE (Style 01: 360–430px wide, ~190–220px high)
@@ -409,10 +688,10 @@ export function ShelfCard({
             <p
               className={cn(
                 "text-[11px] text-slate-500 flex items-center gap-1 line-clamp-1 font-medium",
-                isEditable && "cursor-pointer hover:underline"
+                isEditable && "cursor-pointer hover:underline hover:text-amber-500"
               )}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditLocation || onEditTextColor)?.(); } : undefined}
+              title={isEditable ? "Click to edit location" : undefined}
             >
               <MapPin className="w-3 h-3 shrink-0" style={accentTextStyle} />
               <span>{data.locationStr}</span>
@@ -425,19 +704,19 @@ export function ShelfCard({
               style={textStyle}
               className={cn(
                 "text-base sm:text-lg font-black tracking-tight text-slate-950",
-                isEditable && "cursor-pointer hover:underline"
+                isEditable && "cursor-pointer hover:underline hover:text-amber-500"
               )}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditPrice || onEditTextColor)?.(); } : undefined}
+              title={isEditable ? "Click to edit price" : undefined}
             >
               {data.priceStr}
             </div>
 
             <div className="flex items-center justify-between gap-2 text-[11px] text-slate-600 font-semibold">
               <div
-                className={cn("flex items-center gap-2 truncate", isEditable && "cursor-pointer hover:underline")}
-                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-                title={isEditable ? "Click to choose text color" : undefined}
+                className={cn("flex items-center gap-2 truncate", isEditable && "cursor-pointer hover:underline hover:text-amber-500")}
+                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditBhk || onEditTextColor)?.(); } : undefined}
+                title={isEditable ? "Click to edit BHK & area" : undefined}
               >
                 {data.bhkStr && <span style={textStyle}>{data.bhkStr}</span>}
                 {data.bhkStr && data.areaStr && <span>•</span>}
@@ -447,7 +726,14 @@ export function ShelfCard({
               {/* Ready pill / arrow */}
               <div className="flex items-center gap-1.5 shrink-0">
                 {data.isReadyToMove && (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold border border-emerald-200/60">
+                  <span
+                    className={cn(
+                      "px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold border border-emerald-200/60",
+                      isEditable && "cursor-pointer hover:ring-1 hover:ring-amber-400"
+                    )}
+                    onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditStatus || onEditTextColor)?.(); } : undefined}
+                    title={isEditable ? "Click to edit status" : undefined}
+                  >
                     Ready
                   </span>
                 )}
@@ -457,8 +743,8 @@ export function ShelfCard({
                     isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105"
                   )}
                   style={{ backgroundColor: `${effectiveAccent}25`, color: effectiveAccent }}
-                  title={isEditable ? "Click to choose accent color" : undefined}
-                  onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
+                  title={isEditable ? "Click to choose accent color / button" : undefined}
+                  onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditCtaText || onEditAccentColor)?.(); } : undefined}
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </div>

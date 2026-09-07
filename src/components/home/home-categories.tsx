@@ -21,6 +21,13 @@ type RenderSection = {
   customBadge?: string;
   customHeadline?: string;
   customTagline?: string;
+  customPrice?: string;
+  customLocation?: string;
+  customBhk?: string;
+  customArea?: string;
+  customDeveloper?: string;
+  customStatus?: string;
+  customCtaText?: string;
   enableCarousel?: boolean;
   carouselInterval?: number;
   items: MixedItem[];
@@ -154,6 +161,13 @@ export function HomeCategories() {
         customBadge: section.customBadge,
         customHeadline: section.customHeadline,
         customTagline: section.customTagline,
+        customPrice: section.customPrice,
+        customLocation: section.customLocation,
+        customBhk: section.customBhk,
+        customArea: section.customArea,
+        customDeveloper: section.customDeveloper,
+        customStatus: section.customStatus,
+        customCtaText: section.customCtaText,
         enableCarousel: section.enableCarousel !== false,
         carouselInterval: section.carouselInterval || 4,
         items: section.items.flatMap((item): MixedItem[] => {
@@ -167,6 +181,13 @@ export function HomeCategories() {
                   customBadge: item.customBadge,
                   customHeadline: item.customHeadline,
                   customTagline: item.customTagline,
+                  customPrice: item.customPrice,
+                  customLocation: item.customLocation,
+                  customBhk: item.customBhk,
+                  customArea: item.customArea,
+                  customDeveloper: item.customDeveloper,
+                  customStatus: item.customStatus,
+                  customCtaText: item.customCtaText,
                   cardBgColor: item.cardBgColor,
                   cardTextColor: item.cardTextColor,
                   cardAccentColor: item.cardAccentColor,
@@ -182,6 +203,13 @@ export function HomeCategories() {
                 customBadge: item.customBadge,
                 customHeadline: item.customHeadline,
                 customTagline: item.customTagline,
+                customPrice: item.customPrice,
+                customLocation: item.customLocation,
+                customBhk: item.customBhk,
+                customArea: item.customArea,
+                customDeveloper: item.customDeveloper,
+                customStatus: item.customStatus,
+                customCtaText: item.customCtaText,
                 cardBgColor: item.cardBgColor,
                 cardTextColor: item.cardTextColor,
                 cardAccentColor: item.cardAccentColor,
@@ -190,7 +218,7 @@ export function HomeCategories() {
         }),
       }))
     : [
-        { id: "recommended", title: "Recommended", icon: HOME_SECTION_ICONS.ThumbsUp, cardStyle: "compact-marketplace" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: recommendedMixed },
+        { id: "recommended", title: "Recommended", icon: HOME_SECTION_ICONS.ThumbsUp, cardStyle: "classic-default" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: recommendedMixed },
         { id: "featured", title: "Featured", icon: HOME_SECTION_ICONS.Star, cardStyle: "tall-portrait" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: featuredMixed },
         { id: "budget-friendly", title: "Budget Friendly", icon: HOME_SECTION_ICONS.IndianRupee, cardStyle: "bottom-floating" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: budgetMixed },
       ];
@@ -209,13 +237,20 @@ export function HomeCategories() {
             autoSlide={section.enableCarousel !== false}
             enableCarousel={section.enableCarousel !== false}
             carouselInterval={section.carouselInterval || 4}
-            cardStyle={section.cardStyle || "compact-marketplace"}
+            cardStyle={section.cardStyle || "classic-default"}
             cardBgColor={section.cardBgColor}
             cardTextColor={section.cardTextColor}
             cardAccentColor={section.cardAccentColor}
             customBadge={section.customBadge}
             customHeadline={section.customHeadline}
             customTagline={section.customTagline}
+            customPrice={section.customPrice}
+            customLocation={section.customLocation}
+            customBhk={section.customBhk}
+            customArea={section.customArea}
+            customDeveloper={section.customDeveloper}
+            customStatus={section.customStatus}
+            customCtaText={section.customCtaText}
           />
         ))}
 

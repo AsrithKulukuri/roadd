@@ -17,6 +17,13 @@ export type MixedItem =
       customBadge?: string;
       customHeadline?: string;
       customTagline?: string;
+      customPrice?: string;
+      customLocation?: string;
+      customBhk?: string;
+      customArea?: string;
+      customDeveloper?: string;
+      customStatus?: string;
+      customCtaText?: string;
       cardBgColor?: string;
       cardTextColor?: string;
       cardAccentColor?: string;
@@ -27,6 +34,13 @@ export type MixedItem =
       customBadge?: string;
       customHeadline?: string;
       customTagline?: string;
+      customPrice?: string;
+      customLocation?: string;
+      customBhk?: string;
+      customArea?: string;
+      customDeveloper?: string;
+      customStatus?: string;
+      customCtaText?: string;
       cardBgColor?: string;
       cardTextColor?: string;
       cardAccentColor?: string;
@@ -48,11 +62,20 @@ interface MixedCarouselRowProps {
   customBadge?: string;
   customHeadline?: string;
   customTagline?: string;
+  customPrice?: string;
+  customLocation?: string;
+  customBhk?: string;
+  customArea?: string;
+  customDeveloper?: string;
+  customStatus?: string;
+  customCtaText?: string;
 }
 
 function getStyleWidthClass(cardStyle?: HomeCardStyleId, legacyVariant?: string) {
   if (cardStyle) {
     switch (cardStyle) {
+      case "classic-default":
+        return "w-[260px] sm:w-[290px] md:w-[320px]";
       case "compact-marketplace":
         return "w-[300px] sm:w-[360px] md:w-[410px]";
       case "tall-portrait":
@@ -70,7 +93,7 @@ function getStyleWidthClass(cardStyle?: HomeCardStyleId, legacyVariant?: string)
       case "dark-editorial":
         return "w-[88vw] sm:w-[480px] lg:w-[580px]";
       default:
-        return "w-[300px] sm:w-[360px] md:w-[410px]";
+        return "w-[260px] sm:w-[290px] md:w-[320px]";
     }
   }
 
@@ -95,6 +118,13 @@ export function MixedCarouselRow({
   customBadge,
   customHeadline,
   customTagline,
+  customPrice,
+  customLocation,
+  customBhk,
+  customArea,
+  customDeveloper,
+  customStatus,
+  customCtaText,
 }: MixedCarouselRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -306,6 +336,13 @@ export function MixedCarouselRow({
                       customBadge={item.customBadge || customBadge}
                       customHeadline={item.customHeadline || customHeadline}
                       customTagline={item.customTagline || customTagline}
+                      customPrice={item.customPrice || customPrice}
+                      customLocation={item.customLocation || customLocation}
+                      customBhk={item.customBhk || customBhk}
+                      customArea={item.customArea || customArea}
+                      customDeveloper={item.customDeveloper || customDeveloper}
+                      customStatus={item.customStatus || customStatus}
+                      customCtaText={item.customCtaText || customCtaText}
                       progressPercentage={item.progressPercentage}
                     />
                   ) : item.itemType === 'property' ? (

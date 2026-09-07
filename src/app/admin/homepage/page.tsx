@@ -114,6 +114,8 @@ function createLegacySections(properties: Property[], projects: Project[]): Home
 
 function getPreviewShelfCardWidthClass(cardStyle?: HomeCardStyleId) {
   switch (cardStyle) {
+    case "classic-default":
+      return "w-[260px] sm:w-[300px]";
     case "luxury-banner":
       return "w-[720px] sm:w-[820px]";
     case "split-feature":
@@ -131,12 +133,14 @@ function getPreviewShelfCardWidthClass(cardStyle?: HomeCardStyleId) {
     case "construction-progress":
       return "w-[280px] sm:w-[320px]";
     default:
-      return "w-[300px] sm:w-[360px]";
+      return "w-[260px] sm:w-[300px]";
   }
 }
 
 function getPreviewCardWidthClass(cardStyle?: HomeCardStyleId) {
   switch (cardStyle) {
+    case "classic-default":
+      return "w-[280px] sm:w-[320px] max-w-full";
     case "luxury-banner":
       return "w-[760px] sm:w-[820px] max-w-full";
     case "split-feature":
@@ -154,7 +158,7 @@ function getPreviewCardWidthClass(cardStyle?: HomeCardStyleId) {
     case "construction-progress":
       return "w-[300px] sm:w-[340px] max-w-full";
     default:
-      return "w-[400px] max-w-full";
+      return "w-[320px] max-w-full";
   }
 }
 
@@ -173,7 +177,7 @@ export default function HomepageShelvesAdminPage() {
     itemType: "property" | "project";
   } | null>(null);
   const [activeCardEditField, setActiveCardEditField] = useState<
-    "badge" | "headline" | "tagline" | "bgColor" | "textColor" | "accentColor" | null
+    "badge" | "headline" | "tagline" | "price" | "location" | "bhk" | "area" | "developer" | "status" | "cta" | "bgColor" | "textColor" | "accentColor" | null
   >("headline");
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "property" | "project">("all");
@@ -595,6 +599,48 @@ export default function HomepageShelvesAdminPage() {
                                 className="h-8 text-xs font-medium"
                               />
                             </div>
+
+                            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                              <div className="space-y-1">
+                                <label className="text-xs font-bold text-text-primary block">Default Price</label>
+                                <Input
+                                  value={section.customPrice || ""}
+                                  placeholder="e.g. ₹1.4 Cr"
+                                  onChange={(e) => updateSection(section.id, { customPrice: e.target.value })}
+                                  className="h-8 text-xs font-medium"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-xs font-bold text-text-primary block">Default Location</label>
+                                <Input
+                                  value={section.customLocation || ""}
+                                  placeholder="e.g. Vijayawada"
+                                  onChange={(e) => updateSection(section.id, { customLocation: e.target.value })}
+                                  className="h-8 text-xs font-medium"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="space-y-1">
+                                <label className="text-xs font-bold text-text-primary block">Default BHK</label>
+                                <Input
+                                  value={section.customBhk || ""}
+                                  placeholder="e.g. 3 BHK"
+                                  onChange={(e) => updateSection(section.id, { customBhk: e.target.value })}
+                                  className="h-8 text-xs font-medium"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-xs font-bold text-text-primary block">Default CTA Button</label>
+                                <Input
+                                  value={section.customCtaText || ""}
+                                  placeholder="e.g. Explore"
+                                  onChange={(e) => updateSection(section.id, { customCtaText: e.target.value })}
+                                  className="h-8 text-xs font-medium"
+                                />
+                              </div>
+                            </div>
                           </div>
 
                           {/* 3. Carousel Settings */}
@@ -812,6 +858,13 @@ export default function HomepageShelvesAdminPage() {
                                 customBadge: item.customBadge,
                                 customHeadline: item.customHeadline,
                                 customTagline: item.customTagline,
+                                customPrice: item.customPrice,
+                                customLocation: item.customLocation,
+                                customBhk: item.customBhk,
+                                customArea: item.customArea,
+                                customDeveloper: item.customDeveloper,
+                                customStatus: item.customStatus,
+                                customCtaText: item.customCtaText,
                                 cardBgColor: item.cardBgColor,
                                 cardTextColor: item.cardTextColor,
                                 cardAccentColor: item.cardAccentColor,
@@ -823,6 +876,13 @@ export default function HomepageShelvesAdminPage() {
                                 customBadge: item.customBadge,
                                 customHeadline: item.customHeadline,
                                 customTagline: item.customTagline,
+                                customPrice: item.customPrice,
+                                customLocation: item.customLocation,
+                                customBhk: item.customBhk,
+                                customArea: item.customArea,
+                                customDeveloper: item.customDeveloper,
+                                customStatus: item.customStatus,
+                                customCtaText: item.customCtaText,
                                 cardBgColor: item.cardBgColor,
                                 cardTextColor: item.cardTextColor,
                                 cardAccentColor: item.cardAccentColor,
@@ -855,6 +915,13 @@ export default function HomepageShelvesAdminPage() {
                                   customBadge={item.customBadge || section.customBadge}
                                   customHeadline={item.customHeadline || section.customHeadline}
                                   customTagline={item.customTagline || section.customTagline}
+                                  customPrice={item.customPrice || section.customPrice}
+                                  customLocation={item.customLocation || section.customLocation}
+                                  customBhk={item.customBhk || section.customBhk}
+                                  customArea={item.customArea || section.customArea}
+                                  customDeveloper={item.customDeveloper || section.customDeveloper}
+                                  customStatus={item.customStatus || section.customStatus}
+                                  customCtaText={item.customCtaText || section.customCtaText}
                                   progressPercentage={item.progressPercentage}
                                   index={idx}
                                   isEditable={true}
@@ -937,6 +1004,13 @@ export default function HomepageShelvesAdminPage() {
               customBadge: targetItem.customBadge,
               customHeadline: targetItem.customHeadline,
               customTagline: targetItem.customTagline,
+              customPrice: targetItem.customPrice,
+              customLocation: targetItem.customLocation,
+              customBhk: targetItem.customBhk,
+              customArea: targetItem.customArea,
+              customDeveloper: targetItem.customDeveloper,
+              customStatus: targetItem.customStatus,
+              customCtaText: targetItem.customCtaText,
               cardBgColor: targetItem.cardBgColor,
               cardTextColor: targetItem.cardTextColor,
               cardAccentColor: targetItem.cardAccentColor,
@@ -949,6 +1023,13 @@ export default function HomepageShelvesAdminPage() {
               customBadge: targetItem.customBadge,
               customHeadline: targetItem.customHeadline,
               customTagline: targetItem.customTagline,
+              customPrice: targetItem.customPrice,
+              customLocation: targetItem.customLocation,
+              customBhk: targetItem.customBhk,
+              customArea: targetItem.customArea,
+              customDeveloper: targetItem.customDeveloper,
+              customStatus: targetItem.customStatus,
+              customCtaText: targetItem.customCtaText,
               cardBgColor: targetItem.cardBgColor,
               cardTextColor: targetItem.cardTextColor,
               cardAccentColor: targetItem.cardAccentColor,
@@ -1274,6 +1355,282 @@ export default function HomepageShelvesAdminPage() {
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Leave blank to use default listing title: &ldquo;{targetListing?.title}&rdquo;</p>
                     </div>
 
+                    {/* Price Override */}
+                    <div
+                      className={cn(
+                        "space-y-1.5 p-3 rounded-xl border transition-all",
+                        activeCardEditField === "price"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/30 ring-1 ring-amber-500/40"
+                          : "border-slate-200/60 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60"
+                      )}
+                    >
+                      <label className="text-xs font-extrabold text-slate-900 dark:text-white block">Price Override</label>
+                      <Input
+                        value={targetItem.customPrice ?? targetSection.customPrice ?? ""}
+                        placeholder="e.g. ₹1.4 Cr, ₹45 Lakhs, Price on Request"
+                        onChange={(e) =>
+                          updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                            customPrice: e.target.value,
+                          })
+                        }
+                        className="h-10 text-xs font-bold bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border-slate-300 dark:border-slate-700 focus:border-amber-500"
+                      />
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {["₹45 Lakhs", "₹85 Lakhs", "₹1.4 Cr", "₹2.2 Cr", "Price on Request"].map((preset) => {
+                          const isSelected = (targetItem.customPrice || targetSection.customPrice) === preset;
+                          return (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customPrice: preset,
+                                })
+                              }
+                              className={cn(
+                                "px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer shadow-xs",
+                                isSelected
+                                  ? "bg-amber-500 text-slate-950 border-amber-500 font-black ring-2 ring-amber-400/40"
+                                  : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 hover:border-amber-500"
+                              )}
+                            >
+                              {preset}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Location Override */}
+                    <div
+                      className={cn(
+                        "space-y-1.5 p-3 rounded-xl border transition-all",
+                        activeCardEditField === "location"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/30 ring-1 ring-amber-500/40"
+                          : "border-slate-200/60 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60"
+                      )}
+                    >
+                      <label className="text-xs font-extrabold text-slate-900 dark:text-white block">Location Override</label>
+                      <Input
+                        value={targetItem.customLocation ?? targetSection.customLocation ?? ""}
+                        placeholder="e.g. Poranki, Vijayawada"
+                        onChange={(e) =>
+                          updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                            customLocation: e.target.value,
+                          })
+                        }
+                        className="h-10 text-xs font-bold bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border-slate-300 dark:border-slate-700 focus:border-amber-500"
+                      />
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {["Poranki, Vijayawada", "Benz Circle", "Bhavanipuram", "Guntur", "Amaravati"].map((preset) => {
+                          const isSelected = (targetItem.customLocation || targetSection.customLocation) === preset;
+                          return (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customLocation: preset,
+                                })
+                              }
+                              className={cn(
+                                "px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer shadow-xs",
+                                isSelected
+                                  ? "bg-amber-500 text-slate-950 border-amber-500 font-black ring-2 ring-amber-400/40"
+                                  : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 hover:border-amber-500"
+                              )}
+                            >
+                              {preset}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* BHK / Configuration Override */}
+                    <div
+                      className={cn(
+                        "space-y-1.5 p-3 rounded-xl border transition-all",
+                        activeCardEditField === "bhk"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/30 ring-1 ring-amber-500/40"
+                          : "border-slate-200/60 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60"
+                      )}
+                    >
+                      <label className="text-xs font-extrabold text-slate-900 dark:text-white block">BHK / Configuration</label>
+                      <Input
+                        value={targetItem.customBhk ?? targetSection.customBhk ?? ""}
+                        placeholder="e.g. 2 BHK, 3 BHK, Luxury Villas, Plots"
+                        onChange={(e) =>
+                          updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                            customBhk: e.target.value,
+                          })
+                        }
+                        className="h-10 text-xs font-bold bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border-slate-300 dark:border-slate-700 focus:border-amber-500"
+                      />
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {["2 BHK", "3 BHK", "3 & 4 BHK", "Luxury Villas", "Plots"].map((preset) => {
+                          const isSelected = (targetItem.customBhk || targetSection.customBhk) === preset;
+                          return (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customBhk: preset,
+                                })
+                              }
+                              className={cn(
+                                "px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer shadow-xs",
+                                isSelected
+                                  ? "bg-amber-500 text-slate-950 border-amber-500 font-black ring-2 ring-amber-400/40"
+                                  : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 hover:border-amber-500"
+                              )}
+                            >
+                              {preset}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Area / Size Override */}
+                    <div
+                      className={cn(
+                        "space-y-1.5 p-3 rounded-xl border transition-all",
+                        activeCardEditField === "area"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/30 ring-1 ring-amber-500/40"
+                          : "border-slate-200/60 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60"
+                      )}
+                    >
+                      <label className="text-xs font-extrabold text-slate-900 dark:text-white block">Area / Size</label>
+                      <Input
+                        value={targetItem.customArea ?? targetSection.customArea ?? ""}
+                        placeholder="e.g. 1450 sq.ft., 2500 sq.ft., 200 sq.yds"
+                        onChange={(e) =>
+                          updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                            customArea: e.target.value,
+                          })
+                        }
+                        className="h-10 text-xs font-bold bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border-slate-300 dark:border-slate-700 focus:border-amber-500"
+                      />
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {["1200 sq.ft.", "1650 sq.ft.", "2200 sq.ft.", "200 sq.yds"].map((preset) => {
+                          const isSelected = (targetItem.customArea || targetSection.customArea) === preset;
+                          return (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customArea: preset,
+                                })
+                              }
+                              className={cn(
+                                "px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer shadow-xs",
+                                isSelected
+                                  ? "bg-amber-500 text-slate-950 border-amber-500 font-black ring-2 ring-amber-400/40"
+                                  : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 hover:border-amber-500"
+                              )}
+                            >
+                              {preset}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Developer / Partner Override */}
+                    <div
+                      className={cn(
+                        "space-y-1.5 p-3 rounded-xl border transition-all",
+                        activeCardEditField === "developer"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/30 ring-1 ring-amber-500/40"
+                          : "border-slate-200/60 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60"
+                      )}
+                    >
+                      <label className="text-xs font-extrabold text-slate-900 dark:text-white block">Developer / Partner Text</label>
+                      <Input
+                        value={targetItem.customDeveloper ?? targetSection.customDeveloper ?? ""}
+                        placeholder="e.g. Verified Partner, Vertex Homes, Owner Listed"
+                        onChange={(e) =>
+                          updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                            customDeveloper: e.target.value,
+                          })
+                        }
+                        className="h-10 text-xs font-bold bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border-slate-300 dark:border-slate-700 focus:border-amber-500"
+                      />
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {["Verified Partner", "Vertex Homes", "Owner Listed", "Premium Developer"].map((preset) => {
+                          const isSelected = (targetItem.customDeveloper || targetSection.customDeveloper) === preset;
+                          return (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customDeveloper: preset,
+                                })
+                              }
+                              className={cn(
+                                "px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer shadow-xs",
+                                isSelected
+                                  ? "bg-amber-500 text-slate-950 border-amber-500 font-black ring-2 ring-amber-400/40"
+                                  : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 hover:border-amber-500"
+                              )}
+                            >
+                              {preset}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* CTA Button Text Override */}
+                    <div
+                      className={cn(
+                        "space-y-1.5 p-3 rounded-xl border transition-all",
+                        activeCardEditField === "cta"
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/30 ring-1 ring-amber-500/40"
+                          : "border-slate-200/60 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60"
+                      )}
+                    >
+                      <label className="text-xs font-extrabold text-slate-900 dark:text-white block">CTA Button Text</label>
+                      <Input
+                        value={targetItem.customCtaText ?? targetSection.customCtaText ?? ""}
+                        placeholder="e.g. Explore, View Details, Enquire Now"
+                        onChange={(e) =>
+                          updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                            customCtaText: e.target.value,
+                          })
+                        }
+                        className="h-10 text-xs font-bold bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border-slate-300 dark:border-slate-700 focus:border-amber-500"
+                      />
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {["Explore", "View Details", "Enquire Now", "Book Visit"].map((preset) => {
+                          const isSelected = (targetItem.customCtaText || targetSection.customCtaText) === preset;
+                          return (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customCtaText: preset,
+                                })
+                              }
+                              className={cn(
+                                "px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer shadow-xs",
+                                isSelected
+                                  ? "bg-amber-500 text-slate-950 border-amber-500 font-black ring-2 ring-amber-400/40"
+                                  : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 hover:border-amber-500"
+                              )}
+                            >
+                              {preset}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
                     {/* Tagline Override */}
                     <div
                       className={cn(
@@ -1341,6 +1698,13 @@ export default function HomepageShelvesAdminPage() {
                           customBadge: undefined,
                           customHeadline: undefined,
                           customTagline: undefined,
+                          customPrice: undefined,
+                          customLocation: undefined,
+                          customBhk: undefined,
+                          customArea: undefined,
+                          customDeveloper: undefined,
+                          customStatus: undefined,
+                          customCtaText: undefined,
                         });
                         toast.success("Card reset to shelf default styling.");
                       }}
@@ -1378,8 +1742,14 @@ export default function HomepageShelvesAdminPage() {
                     {/* Quick Target Switcher Tabs */}
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {[
-                        { id: "headline", label: "✏️ Headline / Title", active: activeCardEditField === "headline" },
+                        { id: "headline", label: "✏️ Title / Headline", active: activeCardEditField === "headline" },
+                        { id: "price", label: "💰 Price", active: activeCardEditField === "price" },
+                        { id: "location", label: "📍 Location", active: activeCardEditField === "location" },
                         { id: "badge", label: "🏷️ Badge Pill", active: activeCardEditField === "badge" },
+                        { id: "bhk", label: "🛏️ BHK", active: activeCardEditField === "bhk" },
+                        { id: "area", label: "📐 Area", active: activeCardEditField === "area" },
+                        { id: "developer", label: "🏢 Developer", active: activeCardEditField === "developer" },
+                        { id: "cta", label: "👉 Button / CTA", active: activeCardEditField === "cta" },
                         { id: "tagline", label: "💬 Tagline", active: activeCardEditField === "tagline" },
                         { id: "bgColor", label: "🎨 Card Bg", active: activeCardEditField === "bgColor" },
                         { id: "textColor", label: "🔤 Text Color", active: activeCardEditField === "textColor" },
@@ -1473,6 +1843,122 @@ export default function HomepageShelvesAdminPage() {
                               }}
                             >
                               {c.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeCardEditField === "price" && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            💰 Edit Card Price:
+                          </label>
+                          <span className="text-[10px] text-slate-400">Updates live on card price</span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={targetItem.customPrice ?? targetSection.customPrice ?? ""}
+                            placeholder="e.g. ₹1.4 Cr, ₹45 Lakhs, Price on Request"
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                customPrice: e.target.value,
+                              })
+                            }
+                            className="h-9 text-xs font-bold flex-1 bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border border-slate-300 dark:border-slate-700 focus:border-amber-500"
+                          />
+                          {(targetItem.customPrice || targetSection.customPrice) && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customPrice: undefined,
+                                })
+                              }
+                              className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-red-500 underline cursor-pointer shrink-0"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 items-center pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 mr-1">Quick Values:</span>
+                          {["₹45 Lakhs", "₹85 Lakhs", "₹1.4 Cr", "₹2.2 Cr", "Price on Request"].map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customPrice: preset,
+                                })
+                              }
+                              className={cn(
+                                "px-2 py-0.5 text-[11px] font-bold rounded border transition-all cursor-pointer",
+                                (targetItem.customPrice || targetSection.customPrice) === preset
+                                  ? "bg-amber-500 text-slate-950 border-amber-500 ring-1 ring-amber-400/40"
+                                  : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700"
+                              )}
+                            >
+                              {preset}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeCardEditField === "location" && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            📍 Edit Card Location:
+                          </label>
+                          <span className="text-[10px] text-slate-400">Updates live on card location</span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={targetItem.customLocation ?? targetSection.customLocation ?? ""}
+                            placeholder="e.g. Poranki, Vijayawada"
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                customLocation: e.target.value,
+                              })
+                            }
+                            className="h-9 text-xs font-bold flex-1 bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border border-slate-300 dark:border-slate-700 focus:border-amber-500"
+                          />
+                          {(targetItem.customLocation || targetSection.customLocation) && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customLocation: undefined,
+                                })
+                              }
+                              className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-red-500 underline cursor-pointer shrink-0"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 items-center pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 mr-1">Quick Values:</span>
+                          {["Poranki, Vijayawada", "Benz Circle", "Bhavanipuram", "Guntur", "Amaravati"].map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customLocation: preset,
+                                })
+                              }
+                              className={cn(
+                                "px-2 py-0.5 text-[11px] font-bold rounded border transition-all cursor-pointer",
+                                (targetItem.customLocation || targetSection.customLocation) === preset
+                                  ? "bg-amber-500 text-slate-950 border-amber-500 ring-1 ring-amber-400/40"
+                                  : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700"
+                              )}
+                            >
+                              {preset}
                             </button>
                           ))}
                         </div>
@@ -1575,6 +2061,238 @@ export default function HomepageShelvesAdminPage() {
                               }}
                             >
                               {c.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeCardEditField === "bhk" && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            🛏️ Edit BHK / Configuration:
+                          </label>
+                          <span className="text-[10px] text-slate-400">Updates live on card specs</span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={targetItem.customBhk ?? targetSection.customBhk ?? ""}
+                            placeholder="e.g. 2 BHK, 3 BHK, Luxury Villas, Plots"
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                customBhk: e.target.value,
+                              })
+                            }
+                            className="h-9 text-xs font-bold flex-1 bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border border-slate-300 dark:border-slate-700 focus:border-amber-500"
+                          />
+                          {(targetItem.customBhk || targetSection.customBhk) && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customBhk: undefined,
+                                })
+                              }
+                              className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-red-500 underline cursor-pointer shrink-0"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 items-center pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 mr-1">Quick Values:</span>
+                          {["2 BHK", "3 BHK", "3 & 4 BHK", "Luxury Villas", "Plots"].map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customBhk: preset,
+                                })
+                              }
+                              className={cn(
+                                "px-2 py-0.5 text-[11px] font-bold rounded border transition-all cursor-pointer",
+                                (targetItem.customBhk || targetSection.customBhk) === preset
+                                  ? "bg-amber-500 text-slate-950 border-amber-500 ring-1 ring-amber-400/40"
+                                  : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700"
+                              )}
+                            >
+                              {preset}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeCardEditField === "area" && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            📐 Edit Area / Size:
+                          </label>
+                          <span className="text-[10px] text-slate-400">Updates live on card specs</span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={targetItem.customArea ?? targetSection.customArea ?? ""}
+                            placeholder="e.g. 1450 sq.ft., 2500 sq.ft., 200 sq.yds"
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                customArea: e.target.value,
+                              })
+                            }
+                            className="h-9 text-xs font-bold flex-1 bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border border-slate-300 dark:border-slate-700 focus:border-amber-500"
+                          />
+                          {(targetItem.customArea || targetSection.customArea) && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customArea: undefined,
+                                })
+                              }
+                              className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-red-500 underline cursor-pointer shrink-0"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 items-center pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 mr-1">Quick Values:</span>
+                          {["1200 sq.ft.", "1650 sq.ft.", "2200 sq.ft.", "200 sq.yds"].map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customArea: preset,
+                                })
+                              }
+                              className={cn(
+                                "px-2 py-0.5 text-[11px] font-bold rounded border transition-all cursor-pointer",
+                                (targetItem.customArea || targetSection.customArea) === preset
+                                  ? "bg-amber-500 text-slate-950 border-amber-500 ring-1 ring-amber-400/40"
+                                  : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700"
+                              )}
+                            >
+                              {preset}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeCardEditField === "developer" && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            🏢 Edit Developer / Partner:
+                          </label>
+                          <span className="text-[10px] text-slate-400">Footer partner label</span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={targetItem.customDeveloper ?? targetSection.customDeveloper ?? ""}
+                            placeholder="e.g. Verified Partner, Vertex Homes, Owner Listed"
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                customDeveloper: e.target.value,
+                              })
+                            }
+                            className="h-9 text-xs font-bold flex-1 bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border border-slate-300 dark:border-slate-700 focus:border-amber-500"
+                          />
+                          {(targetItem.customDeveloper || targetSection.customDeveloper) && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customDeveloper: undefined,
+                                })
+                              }
+                              className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-red-500 underline cursor-pointer shrink-0"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 items-center pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 mr-1">Quick Values:</span>
+                          {["Verified Partner", "Vertex Homes", "Owner Listed", "Premium Developer"].map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customDeveloper: preset,
+                                })
+                              }
+                              className={cn(
+                                "px-2 py-0.5 text-[11px] font-bold rounded border transition-all cursor-pointer",
+                                (targetItem.customDeveloper || targetSection.customDeveloper) === preset
+                                  ? "bg-amber-500 text-slate-950 border-amber-500 ring-1 ring-amber-400/40"
+                                  : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700"
+                              )}
+                            >
+                              {preset}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeCardEditField === "cta" && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            👉 Edit Button / CTA Text:
+                          </label>
+                          <span className="text-[10px] text-slate-400">Card action button</span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={targetItem.customCtaText ?? targetSection.customCtaText ?? ""}
+                            placeholder="e.g. Explore, View Details, Enquire Now"
+                            onChange={(e) =>
+                              updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                customCtaText: e.target.value,
+                              })
+                            }
+                            className="h-9 text-xs font-bold flex-1 bg-white dark:bg-slate-950 text-slate-950 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 border border-slate-300 dark:border-slate-700 focus:border-amber-500"
+                          />
+                          {(targetItem.customCtaText || targetSection.customCtaText) && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customCtaText: undefined,
+                                })
+                              }
+                              className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-red-500 underline cursor-pointer shrink-0"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 items-center pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 mr-1">Quick Values:</span>
+                          {["Explore", "View Details", "Enquire Now", "Book Visit"].map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() =>
+                                updateSectionItem(targetSection.id, targetItem.id, targetItem.type, {
+                                  customCtaText: preset,
+                                })
+                              }
+                              className={cn(
+                                "px-2 py-0.5 text-[11px] font-bold rounded border transition-all cursor-pointer",
+                                (targetItem.customCtaText || targetSection.customCtaText) === preset
+                                  ? "bg-amber-500 text-slate-950 border-amber-500 ring-1 ring-amber-400/40"
+                                  : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700"
+                              )}
+                            >
+                              {preset}
                             </button>
                           ))}
                         </div>
@@ -1819,11 +2537,25 @@ export default function HomepageShelvesAdminPage() {
                           customBadge={targetItem.customBadge || targetSection.customBadge}
                           customHeadline={targetItem.customHeadline || targetSection.customHeadline}
                           customTagline={targetItem.customTagline || targetSection.customTagline}
+                          customPrice={targetItem.customPrice || targetSection.customPrice}
+                          customLocation={targetItem.customLocation || targetSection.customLocation}
+                          customBhk={targetItem.customBhk || targetSection.customBhk}
+                          customArea={targetItem.customArea || targetSection.customArea}
+                          customDeveloper={targetItem.customDeveloper || targetSection.customDeveloper}
+                          customStatus={targetItem.customStatus || targetSection.customStatus}
+                          customCtaText={targetItem.customCtaText || targetSection.customCtaText}
                           progressPercentage={targetItem.progressPercentage}
                           isEditable={true}
                           onEditBadge={() => setActiveCardEditField("badge")}
                           onEditHeadline={() => setActiveCardEditField("headline")}
                           onEditTagline={() => setActiveCardEditField("tagline")}
+                          onEditPrice={() => setActiveCardEditField("price")}
+                          onEditLocation={() => setActiveCardEditField("location")}
+                          onEditBhk={() => setActiveCardEditField("bhk")}
+                          onEditArea={() => setActiveCardEditField("area")}
+                          onEditDeveloper={() => setActiveCardEditField("developer")}
+                          onEditStatus={() => setActiveCardEditField("status" as any)}
+                          onEditCtaText={() => setActiveCardEditField("cta")}
                           onEditBgColor={() => setActiveCardEditField("bgColor")}
                           onEditTextColor={() => setActiveCardEditField("textColor")}
                           onEditAccentColor={() => setActiveCardEditField("accentColor")}

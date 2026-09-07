@@ -59,6 +59,27 @@ function validateSections(input: unknown): HomeSection[] | null {
       if (typeof entry.customTagline === "string" && entry.customTagline.trim()) {
         cleanItem.customTagline = entry.customTagline.trim().slice(0, 120);
       }
+      if (typeof entry.customPrice === "string" && entry.customPrice.trim()) {
+        cleanItem.customPrice = entry.customPrice.trim().slice(0, 50);
+      }
+      if (typeof entry.customLocation === "string" && entry.customLocation.trim()) {
+        cleanItem.customLocation = entry.customLocation.trim().slice(0, 100);
+      }
+      if (typeof entry.customBhk === "string" && entry.customBhk.trim()) {
+        cleanItem.customBhk = entry.customBhk.trim().slice(0, 60);
+      }
+      if (typeof entry.customArea === "string" && entry.customArea.trim()) {
+        cleanItem.customArea = entry.customArea.trim().slice(0, 60);
+      }
+      if (typeof entry.customDeveloper === "string" && entry.customDeveloper.trim()) {
+        cleanItem.customDeveloper = entry.customDeveloper.trim().slice(0, 100);
+      }
+      if (typeof entry.customStatus === "string" && entry.customStatus.trim()) {
+        cleanItem.customStatus = entry.customStatus.trim().slice(0, 60);
+      }
+      if (typeof entry.customCtaText === "string" && entry.customCtaText.trim()) {
+        cleanItem.customCtaText = entry.customCtaText.trim().slice(0, 50);
+      }
       if (typeof entry.cardBgColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(entry.cardBgColor.trim())) {
         cleanItem.cardBgColor = entry.cardBgColor.trim();
       }
@@ -95,6 +116,27 @@ function validateSections(input: unknown): HomeSection[] | null {
     const customTagline = typeof value.customTagline === "string" && value.customTagline.trim()
       ? value.customTagline.trim().slice(0, 120)
       : undefined;
+    const customPrice = typeof value.customPrice === "string" && value.customPrice.trim()
+      ? value.customPrice.trim().slice(0, 50)
+      : undefined;
+    const customLocation = typeof value.customLocation === "string" && value.customLocation.trim()
+      ? value.customLocation.trim().slice(0, 100)
+      : undefined;
+    const customBhk = typeof value.customBhk === "string" && value.customBhk.trim()
+      ? value.customBhk.trim().slice(0, 60)
+      : undefined;
+    const customArea = typeof value.customArea === "string" && value.customArea.trim()
+      ? value.customArea.trim().slice(0, 60)
+      : undefined;
+    const customDeveloper = typeof value.customDeveloper === "string" && value.customDeveloper.trim()
+      ? value.customDeveloper.trim().slice(0, 100)
+      : undefined;
+    const customStatus = typeof value.customStatus === "string" && value.customStatus.trim()
+      ? value.customStatus.trim().slice(0, 60)
+      : undefined;
+    const customCtaText = typeof value.customCtaText === "string" && value.customCtaText.trim()
+      ? value.customCtaText.trim().slice(0, 50)
+      : undefined;
 
     // Carousel controls
     const enableCarousel = typeof value.enableCarousel === "boolean" ? value.enableCarousel : true;
@@ -115,6 +157,13 @@ function validateSections(input: unknown): HomeSection[] | null {
       customBadge,
       customHeadline,
       customTagline,
+      customPrice,
+      customLocation,
+      customBhk,
+      customArea,
+      customDeveloper,
+      customStatus,
+      customCtaText,
       enableCarousel,
       carouselInterval,
     });
