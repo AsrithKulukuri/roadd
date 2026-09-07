@@ -11,10 +11,10 @@ interface LogoProps {
 }
 
 const sizeMap = {
-  sm: { iconHeight: 26, textClass: "text-base" },
-  md: { iconHeight: 32, textClass: "text-lg sm:text-xl" },
-  lg: { iconHeight: 42, textClass: "text-2xl" },
-  xl: { iconHeight: 52, textClass: "text-3xl" },
+  sm: { iconHeight: 22, textClass: "text-sm sm:text-base" },
+  md: { iconHeight: 26, textClass: "text-base sm:text-lg" },
+  lg: { iconHeight: 38, textClass: "text-2xl" },
+  xl: { iconHeight: 48, textClass: "text-3xl" },
 };
 
 export function Logo({
@@ -35,7 +35,7 @@ export function Logo({
       : "text-slate-900 dark:text-white");
 
   const content = (
-    <div className={cn("flex items-center gap-2.5 group select-none", className)}>
+    <div className={cn("flex items-center gap-2 group select-none", className)}>
       <div 
         className="relative flex-shrink-0 flex items-center justify-center"
         style={{ height: `${iconHeight}px` }}
