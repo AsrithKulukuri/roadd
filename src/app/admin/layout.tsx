@@ -87,18 +87,23 @@ export default function AdminLayout({
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-bg-card border-r border-border-default transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static",
+        "fixed inset-y-0 left-0 z-50 w-64 bg-bg-card border-r border-border-default transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:max-h-screen flex flex-col shrink-0",
         isMobileOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full min-h-0 overflow-hidden">
           <div className="h-16 flex items-center px-6 border-b border-border-default shrink-0 justify-between">
             <Logo size="sm" />
-            <button type="button" aria-label="Close admin navigation" className="lg:hidden text-text-secondary" onClick={() => setIsMobileOpen(false)}>
+            <button 
+              type="button" 
+              aria-label="Close admin navigation" 
+              className="lg:hidden text-text-secondary hover:text-text-primary p-1.5 rounded-lg hover:bg-bg-primary transition-colors" 
+              onClick={() => setIsMobileOpen(false)}
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+          <nav className="flex-1 min-h-0 px-3 py-4 space-y-1 overflow-y-auto overscroll-contain focus:outline-none">
             {sidebarLinks.map((link) => {
               const isActive = pathname === link.href || (link.href !== "/admin" && pathname.startsWith(link.href));
               const Icon = link.icon;
@@ -108,23 +113,23 @@ export default function AdminLayout({
                   href={link.href}
                   onClick={() => setIsMobileOpen(false)}
                   className={cn(
-                    "flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all font-medium",
+                    "flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl transition-all font-medium text-sm group",
                     isActive
-                      ? "bg-amber-primary/10 text-amber-primary"
+                      ? "bg-amber-primary/10 text-amber-primary font-semibold shadow-xs"
                       : "text-text-secondary hover:bg-bg-primary hover:text-text-primary"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-5 h-5" />
-                    <span>{link.label}</span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Icon className={cn("w-4.5 h-4.5 shrink-0 transition-transform group-hover:scale-110", isActive ? "text-amber-primary" : "text-text-tertiary group-hover:text-text-primary")} />
+                    <span className="truncate">{link.label}</span>
                   </div>
                   {link.isBadge && mounted && unreadCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-slate-950 shadow-xs">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-slate-950 shadow-xs shrink-0">
                       {unreadCount}
                     </span>
                   )}
                   {link.isScheduleBadge && mounted && upcomingSchedulesCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-white shadow-xs">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-white shadow-xs shrink-0">
                       {upcomingSchedulesCount}
                     </span>
                   )}
@@ -133,14 +138,14 @@ export default function AdminLayout({
             })}
           </nav>
 
-          <div className="p-4 border-t border-border-default shrink-0">
+          <div className="p-4 border-t border-border-default shrink-0 bg-bg-card">
             <button
               type="button"
               onClick={() => void signOut()}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all font-medium"
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-red-500 hover:bg-red-500/10 transition-all font-medium text-sm"
             >
-              <LogOut className="w-5 h-5" />
-              Sign Out
+              <LogOut className="w-4.5 h-4.5 shrink-0" />
+              <span>Sign Out</span>
             </button>
           </div>
         </div>
