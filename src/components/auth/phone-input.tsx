@@ -40,11 +40,11 @@ export function PhoneInput({ onSubmit, isLoading, initialValue = "", error }: Ph
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Project Privacy Notice Banner */}
+      {/* Notice Banner */}
       <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5 text-left shadow-2xs">
         <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 stroke-[2.5]" />
         <p className="text-xs text-amber-950 font-medium leading-relaxed">
-          <strong className="font-black text-amber-900">Project Privacy Notice:</strong> By viewing project details, your name and phone may be shared with the builder for follow-up.
+          <strong className="font-black text-amber-900">Notice:</strong> By viewing project details, your name and phone may be shared with the builder for follow-up.
         </p>
       </div>
 
