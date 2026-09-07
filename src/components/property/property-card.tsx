@@ -173,7 +173,12 @@ export function PropertyCard({
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               
               {/* Badge */}
-              <div className="absolute top-1.5 left-1.5">
+              <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
+                {property.isRoadExclusive && (
+                  <span className="px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black bg-amber-500 text-slate-950 shadow-sm border border-amber-400">
+                    ⭐ Exclusive
+                  </span>
+                )}
                 <span className="px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black bg-slate-900/80 backdrop-blur-xs text-white border border-white/10">
                   {property.bedrooms ? `${property.bedrooms} BHK` : property.propertyType}
                 </span>
@@ -275,6 +280,13 @@ export function PropertyCard({
 
               {/* Glowing Badges */}
               <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10 pointer-events-none">
+                {property.isRoadExclusive && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-500 text-slate-950 shadow-xs border border-amber-300/60 backdrop-blur-md"
+                  >
+                    <Sparkles className="w-3 h-3 fill-slate-950 text-slate-950" /> ROAD Exclusive
+                  </span>
+                )}
                 {(property.displayCategory === "featured" || property.isFeatured) && (
                   <span
                     className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-950 shadow-xs border border-amber-300/60 backdrop-blur-md"
@@ -564,12 +576,19 @@ export function PropertyCard({
             {/* Top Image Badges (Max 2 badges + '+N' chip, with dedicated margin so it never collides with actions) */}
             {(() => {
               const badges: React.ReactNode[] = [];
+              if (property.isRoadExclusive) {
+                badges.push(
+                  <span key="exclusive" className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-500 text-slate-950 shadow-sm border border-amber-300/60 backdrop-blur-md tracking-tight">
+                    <Sparkles className="w-3 h-3 fill-slate-950 text-slate-950" /> Exclusive
+                  </span>
+                );
+              }
               badges.push(
                 <span key="type" className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-white/95 text-slate-900 shadow-sm border border-slate-200/80 backdrop-blur-md tracking-tight truncate max-w-[120px]">
                   {formatPropertyType(property.propertyType)}
                 </span>
               );
-              const visibleBadges = badges.slice(0, 1);
+              const visibleBadges = badges.slice(0, 2);
 
               return (
                 <div className="absolute top-2.5 left-2.5 max-w-[calc(100%-74px)] flex items-center gap-1 overflow-hidden z-10">

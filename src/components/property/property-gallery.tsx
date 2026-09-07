@@ -23,6 +23,7 @@ interface PropertyGalleryProps {
   videoUrl?: string;
   videoThumbnail?: string;
   isReadyToMove?: boolean;
+  isRoadExclusive?: boolean;
 }
 
 export function PropertyGallery({ 
@@ -30,7 +31,8 @@ export function PropertyGallery({
   title, 
   videoUrl, 
   videoThumbnail,
-  isReadyToMove = true 
+  isReadyToMove = true,
+  isRoadExclusive = false,
 }: PropertyGalleryProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -89,6 +91,11 @@ export function PropertyGallery({
 
           {/* Badge top-left */}
           <div className="absolute top-3.5 left-3.5 flex items-center gap-2 z-10">
+            {isRoadExclusive && (
+              <span className="bg-amber-500 text-slate-950 font-black text-[11px] px-3 py-1 rounded-full border border-amber-300 shadow-md flex items-center gap-1">
+                ⭐ ROAD Exclusive
+              </span>
+            )}
             <span className="bg-slate-950 backdrop-blur-md text-white font-extrabold text-[11px] px-3 py-1 rounded-full border border-[#faad13] shadow-md">
               {isReadyToMove ? "Ready to Move" : "Under Construction"}
             </span>

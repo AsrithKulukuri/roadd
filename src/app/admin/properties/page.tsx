@@ -3,7 +3,7 @@
 import { usePropertiesStore } from "@/stores/properties-store";
 import { Button } from "@/components/ui/button";
 import { formatPriceCompact } from "@/lib/utils";
-import { MoreHorizontal, Plus, Star, Trash2, PowerOff, MapPin, ThumbsUp, Edit3 } from "lucide-react";
+import { MoreHorizontal, Plus, Star, Trash2, PowerOff, MapPin, ThumbsUp, Edit3, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { 
   DropdownMenu, 
@@ -17,9 +17,9 @@ import { toast } from "sonner";
 import { useState } from "react";
 
 export default function AdminPropertiesPage() {
-  const { properties, toggleSoldOut, deleteProperty, deleteAllProperties, toggleShowOnMap, updateDisplayCategory } = usePropertiesStore();
+  const { properties, toggleSoldOut, deleteProperty, deleteAllProperties, toggleShowOnMap, toggleRoadExclusive, updateDisplayCategory } = usePropertiesStore();
   const [whatsAppModalItem, setWhatsAppModalItem] = useState<any | null>(null);
-  const [filterType, setFilterType] = useState<"all" | "apartment" | "villa" | "plot" | "commercial">("all");
+  const [filterType, setFilterType] = useState<"all" | "exclusive" | "apartment" | "villa" | "plot" | "commercial">("all");
 
   const isPlotOrLand = (p: any) => {
     const pType = (p.propertyType || "").toLowerCase();
@@ -39,6 +39,7 @@ export default function AdminPropertiesPage() {
 
   const filteredProperties = properties.filter((p: any) => {
     if (filterType === "all") return true;
+    if (filterType === "exclusive") return Boolean(p.isRoadExclusive);
     if (filterType === "plot") return isPlotOrLand(p);
     const pType = (p.propertyType || "").toLowerCase();
     const subtype = (p.subtype || "").toLowerCase();
@@ -82,9 +83,10 @@ export default function AdminPropertiesPage() {
       </div>
 
       {/* Stats & Category Filter Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
         {[
           { type: "all", label: "All Properties", count: properties.length },
+          { type: "exclusive", label: "ROAD Exclusive ⭐", count: properties.filter((p: any) => Boolean(p.isRoadExclusive)).length },
           { type: "apartment", label: "Apartments", count: properties.filter((p: any) => !isPlotOrLand(p) && ((p.subtype || "").toLowerCase() === "flat" || (p.propertyType || "").toLowerCase() === "apartment")).length },
           { type: "villa", label: "Houses & Villas", count: properties.filter((p: any) => !isPlotOrLand(p) && (["villa", "house"].includes((p.subtype || "").toLowerCase()) || ["villa", "independent-house"].includes((p.propertyType || "").toLowerCase()))).length },
           { type: "plot", label: "Plots & Land", count: properties.filter((p: any) => isPlotOrLand(p)).length },
@@ -97,7 +99,7 @@ export default function AdminPropertiesPage() {
               onClick={() => setFilterType(item.type as any)}
               className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                 active
-                  ? "border-amber-500/60 bg-amber-500/10"
+                  ? "border-amber-500/60 bg-amber-500/10 shadow-xs"
                   : "border-border-default bg-bg-card hover:border-amber-500/30"
               }`}
             >
@@ -126,234 +128,285 @@ export default function AdminPropertiesPage() {
           </Button>
         </div>
       ) : (
-      <div className="bg-bg-card border border-border-default rounded-2xl overflow-hidden shadow-sm">
-        
-        {/* Mobile View: Property Cards */}
-        <div className="block md:hidden divide-y divide-border-subtle">
-          {filteredProperties.map((property) => (
-            <div key={property.id} className="p-4 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-xl bg-border-default overflow-hidden shrink-0">
-                  <img src={property.images[0]?.url} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-text-primary text-sm truncate">
-                    {property.title}
-                  </h4>
-                  <div className="text-xs text-amber-primary font-black mt-0.5">
-                    {formatPriceCompact(property.price)}
+        <div className="bg-bg-card border border-border-default rounded-3xl overflow-hidden shadow-sm">
+          {/* Mobile View: Cards */}
+          <div className="block md:hidden divide-y divide-border-default">
+            {filteredProperties.map((property) => (
+              <div key={property.id} className="p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-xl bg-border-default overflow-hidden shrink-0">
+                    <img src={property.images[0]?.url} alt="" className="w-full h-full object-cover" />
                   </div>
-                  <div className="text-xs text-text-tertiary truncate">
-                    📍 {property.location.locality}, {property.location.city} • <span className="text-amber-500 font-semibold">{getPropertyTypeLabel(property)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Badges Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border-subtle text-xs">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <button 
-                    onClick={() => toggleShowOnMap(property.id)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                      property.showOnMap 
-                        ? 'border-amber-primary/50 text-amber-primary bg-amber-primary/10' 
-                        : 'border-border-default text-text-tertiary hover:text-text-primary'
-                    }`}
-                  >
-                    <MapPin className="w-3 h-3" />
-                    {property.showOnMap ? 'On Map' : 'Hidden'}
-                  </button>
-
-                  <div className="relative">
-                    <select
-                      value={property.displayCategory || (property.isFeatured ? "featured" : property.isRecommended ? "recommended" : "none")}
-                      onChange={async (e) => {
-                        const wasSaved = await updateDisplayCategory(property.id, e.target.value as any);
-                        if (wasSaved) toast.success("Property category updated!");
-                      }}
-                      className="bg-bg-primary border border-border-default text-text-primary text-xs rounded-full px-2.5 py-1 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-primary cursor-pointer"
-                    >
-                      <option value="none">None</option>
-                      <option value="featured">⭐ Featured</option>
-                      <option value="recommended">👍 Recommended</option>
-                      <option value="budget_friendly">💰 Budget Friendly</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setWhatsAppModalItem(property)}
-                    className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 flex items-center gap-1 hover:bg-emerald-500/20 transition-colors cursor-pointer"
-                    title="Share on WhatsApp"
-                  >
-                    <WhatsAppIcon className="w-3 h-3 fill-emerald-500/20" />
-                    <span>WhatsApp</span>
-                  </button>
-
-                  <Link
-                    href={`/admin/properties/${property.id}/edit`}
-                    className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center gap-1"
-                  >
-                    <Edit3 className="w-3 h-3" />
-                    <span>Edit</span>
-                  </Link>
-
-                  <button
-                    onClick={() => toggleSoldOut(property.id)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                      property.status === 'sold' ? 'bg-red-500/10 text-red-500' : 'bg-amber-500/10 text-amber-500'
-                    }`}
-                  >
-                    {property.status === 'sold' ? 'Sold Out' : 'Active'}
-                  </button>
-
-                  <button
-                    onClick={() => deleteProperty(property.id)}
-                    className="p-1 text-red-500 hover:bg-red-500/10 rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Desktop View: Table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left text-sm text-text-secondary">
-            <thead className="bg-bg-primary/50 text-text-primary border-b border-border-default uppercase text-xs font-semibold">
-              <tr>
-                <th className="px-6 py-4">Property</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Map Visibility</th>
-                <th className="px-6 py-4">Display Category</th>
-                <th className="px-6 py-4">Price</th>
-                <th className="px-6 py-4">Location</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {filteredProperties.map((property) => (
-                <tr key={property.id} className="hover:bg-bg-primary/30 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-md bg-border-default overflow-hidden shrink-0">
-                        <img src={property.images[0]?.url} alt="" className="w-full h-full object-cover" />
-                      </div>
-                      <div>
-                        <div className="font-bold text-text-primary truncate max-w-[200px]">
-                          {property.title}
-                        </div>
-                        <div className="text-xs text-text-tertiary capitalize">
-                          {property.listingType} • <span className="text-amber-500 font-semibold">{getPropertyTypeLabel(property)}</span>
-                        </div>
-                      </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-text-primary text-sm truncate">
+                      {property.title}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                      property.status === 'sold' 
-                        ? 'bg-red-500/10 text-red-500' 
-                        : 'bg-amber-500/10 text-amber-500'
-                    }`}>
-                      {property.status === 'sold' ? 'Sold Out' : 'Active'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-xs font-semibold text-amber-primary mt-0.5">
+                      {formatPriceCompact(property.price)}
+                    </div>
+                    <div className="text-xs text-text-tertiary truncate">
+                      📍 {property.location.locality}, {property.location.city} • <span className="text-amber-500 font-semibold">{getPropertyTypeLabel(property)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Badges Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border-subtle text-xs">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <button 
                       onClick={() => toggleShowOnMap(property.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors text-xs font-medium border ${
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
                         property.showOnMap 
                           ? 'border-amber-primary/50 text-amber-primary bg-amber-primary/10' 
-                          : 'border-border-default text-text-tertiary hover:text-text-primary hover:bg-bg-primary'
+                          : 'border-border-default text-text-tertiary hover:text-text-primary'
                       }`}
                     >
-                      <MapPin className="w-3.5 h-3.5" />
+                      <MapPin className="w-3 h-3" />
                       {property.showOnMap ? 'On Map' : 'Hidden'}
                     </button>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <select
-                      value={property.displayCategory || (property.isFeatured ? "featured" : property.isRecommended ? "recommended" : "none")}
-                      onChange={async (e) => {
-                        const wasSaved = await updateDisplayCategory(property.id, e.target.value as any);
-                        if (wasSaved) toast.success("Property category updated!");
-                      }}
-                      className="bg-bg-primary border border-border-default text-text-primary text-xs rounded-full px-3 py-1.5 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-primary transition-colors hover:bg-bg-card cursor-pointer"
-                    >
-                      <option value="none">None</option>
-                      <option value="featured">⭐ Featured</option>
-                      <option value="recommended">👍 Recommended</option>
-                      <option value="budget_friendly">💰 Budget Friendly</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap font-medium text-text-primary">
-                    {formatPriceCompact(property.price)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {property.location.locality}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setWhatsAppModalItem(property)}
-                        className="gap-1.5 text-xs border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer h-8"
-                        title="Share on WhatsApp"
-                      >
-                        <WhatsAppIcon className="w-3.5 h-3.5 fill-emerald-500/20" />
-                        <span className="hidden lg:inline">WhatsApp</span>
-                      </Button>
 
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-text-secondary">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 bg-bg-card border-border-default">
-                          <DropdownMenuItem 
-                            className="cursor-pointer gap-2 text-emerald-500 focus:text-emerald-500 focus:bg-emerald-500/10"
-                            onClick={() => setWhatsAppModalItem(property)}
-                          >
-                            <WhatsAppIcon className="w-4 h-4 fill-emerald-500/20" />
-                            Share on WhatsApp
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild className="cursor-pointer gap-2 text-amber-500 focus:text-amber-500 focus:bg-amber-500/10">
-                            <Link href={`/admin/properties/${property.id}/edit`}>
-                              <Edit3 className="w-4 h-4" />
-                              Edit Property
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="cursor-pointer gap-2"
-                            onClick={() => toggleSoldOut(property.id)}
-                          >
-                            <PowerOff className="w-4 h-4" />
-                            {property.status === 'sold' ? 'Mark Active' : 'Mark Sold Out'}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="cursor-pointer gap-2 text-red-500 focus:text-red-500 focus:bg-red-500/10"
-                            onClick={() => deleteProperty(property.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Delete Property
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const wasSaved = await toggleRoadExclusive(property.id);
+                        if (wasSaved) {
+                          toast.success(property.isRoadExclusive ? "Removed from ROAD Exclusive" : "Marked as ROAD Exclusive ⭐");
+                        }
+                      }}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                        property.isRoadExclusive
+                          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40 shadow-xs'
+                          : 'border-border-default text-text-tertiary hover:text-text-primary'
+                      }`}
+                      title="Toggle ROAD Exclusive"
+                    >
+                      <Sparkles className={`w-3 h-3 ${property.isRoadExclusive ? "text-amber-500 fill-amber-500/20" : "opacity-40"}`} />
+                      <span>{property.isRoadExclusive ? '⭐ Exclusive' : 'Exclusive: Off'}</span>
+                    </button>
+
+                    <div className="relative">
+                      <select
+                        value={property.displayCategory || (property.isFeatured ? "featured" : property.isRecommended ? "recommended" : "none")}
+                        onChange={async (e) => {
+                          const wasSaved = await updateDisplayCategory(property.id, e.target.value as any);
+                          if (wasSaved) toast.success("Property category updated!");
+                        }}
+                        className="bg-bg-primary border border-border-default text-text-primary text-xs rounded-full px-2.5 py-1 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-primary cursor-pointer"
+                      >
+                        <option value="none">None</option>
+                        <option value="featured">⭐ Featured</option>
+                        <option value="recommended">👍 Recommended</option>
+                        <option value="budget_friendly">💰 Budget Friendly</option>
+                      </select>
                     </div>
-                  </td>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setWhatsAppModalItem(property)}
+                      className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 flex items-center gap-1 hover:bg-emerald-500/20 transition-colors cursor-pointer"
+                      title="Share on WhatsApp"
+                    >
+                      <WhatsAppIcon className="w-3 h-3 fill-emerald-500/20" />
+                      <span>WhatsApp</span>
+                    </button>
+
+                    <Link
+                      href={`/admin/properties/${property.id}/edit`}
+                      className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center gap-1"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                      <span>Edit</span>
+                    </Link>
+
+                    <button
+                      onClick={() => toggleSoldOut(property.id)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                        property.status === 'sold' ? 'bg-red-500/10 text-red-500' : 'bg-amber-500/10 text-amber-500'
+                      }`}
+                    >
+                      {property.status === 'sold' ? 'Sold Out' : 'Active'}
+                    </button>
+
+                    <button
+                      onClick={() => deleteProperty(property.id)}
+                      className="p-1 text-red-500 hover:bg-red-500/10 rounded-lg"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop View: Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left text-sm text-text-secondary">
+              <thead className="bg-bg-primary/50 text-text-primary border-b border-border-default uppercase text-xs font-semibold">
+                <tr>
+                  <th className="px-6 py-4">Property</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Exclusive</th>
+                  <th className="px-6 py-4">Map Visibility</th>
+                  <th className="px-6 py-4">Display Category</th>
+                  <th className="px-6 py-4">Price</th>
+                  <th className="px-6 py-4">Location</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border-subtle">
+                {filteredProperties.map((property) => (
+                  <tr key={property.id} className="hover:bg-bg-primary/30 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-md bg-border-default overflow-hidden shrink-0">
+                          <img src={property.images[0]?.url} alt="" className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-text-primary truncate max-w-[200px]">
+                            {property.title}
+                          </div>
+                          <div className="text-xs text-text-tertiary capitalize">
+                            {property.listingType} • <span className="text-amber-500 font-semibold">{getPropertyTypeLabel(property)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                        property.status === 'sold' 
+                          ? 'bg-red-500/10 text-red-500' 
+                          : 'bg-amber-500/10 text-amber-500'
+                      }`}>
+                        {property.status === 'sold' ? 'Sold Out' : 'Active'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button 
+                        type="button"
+                        onClick={async () => {
+                          const wasSaved = await toggleRoadExclusive(property.id);
+                          if (wasSaved) {
+                            toast.success(property.isRoadExclusive ? "Removed from ROAD Exclusive" : "Marked as ROAD Exclusive ⭐");
+                          }
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                          property.isRoadExclusive 
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40 shadow-xs' 
+                            : 'border-border-default text-text-tertiary hover:text-text-primary hover:bg-bg-primary'
+                        }`}
+                        title="Click to toggle ROAD Exclusive"
+                      >
+                        <Sparkles className={`w-3.5 h-3.5 ${property.isRoadExclusive ? "text-amber-500 fill-amber-500/20" : "opacity-40"}`} />
+                        <span>{property.isRoadExclusive ? 'ROAD Exclusive' : 'Normal'}</span>
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button 
+                        onClick={() => toggleShowOnMap(property.id)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors text-xs font-medium border ${
+                          property.showOnMap 
+                            ? 'border-amber-primary/50 text-amber-primary bg-amber-primary/10' 
+                            : 'border-border-default text-text-tertiary hover:text-text-primary hover:bg-bg-primary'
+                        }`}
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                        {property.showOnMap ? 'On Map' : 'Hidden'}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <select
+                        value={property.displayCategory || (property.isFeatured ? "featured" : property.isRecommended ? "recommended" : "none")}
+                        onChange={async (e) => {
+                          const wasSaved = await updateDisplayCategory(property.id, e.target.value as any);
+                          if (wasSaved) toast.success("Property category updated!");
+                        }}
+                        className="bg-bg-primary border border-border-default text-text-primary text-xs rounded-full px-3 py-1.5 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-primary transition-colors hover:bg-bg-card cursor-pointer"
+                      >
+                        <option value="none">None</option>
+                        <option value="featured">⭐ Featured</option>
+                        <option value="recommended">👍 Recommended</option>
+                        <option value="budget_friendly">💰 Budget Friendly</option>
+                      </select>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap font-medium text-text-primary">
+                      {formatPriceCompact(property.price)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {property.location.locality}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setWhatsAppModalItem(property)}
+                          className="gap-1.5 text-xs border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer h-8"
+                          title="Share on WhatsApp"
+                        >
+                          <WhatsAppIcon className="w-3.5 h-3.5 fill-emerald-500/20" />
+                          <span className="hidden lg:inline">WhatsApp</span>
+                        </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-text-secondary">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 bg-bg-card border-border-default">
+                            <DropdownMenuItem 
+                              className="cursor-pointer gap-2 text-emerald-500 focus:text-emerald-500 focus:bg-emerald-500/10"
+                              onClick={() => setWhatsAppModalItem(property)}
+                            >
+                              <WhatsAppIcon className="w-4 h-4 fill-emerald-500/20" />
+                              Share on WhatsApp
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="cursor-pointer gap-2 text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
+                              onClick={async () => {
+                                const wasSaved = await toggleRoadExclusive(property.id);
+                                if (wasSaved) {
+                                  toast.success(property.isRoadExclusive ? "Removed from ROAD Exclusive" : "Marked as ROAD Exclusive ⭐");
+                                }
+                              }}
+                            >
+                              <Sparkles className="w-4 h-4" />
+                              {property.isRoadExclusive ? "Remove ROAD Exclusive" : "Mark as ROAD Exclusive"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild className="cursor-pointer gap-2 text-amber-500 focus:text-amber-500 focus:bg-amber-500/10">
+                              <Link href={`/admin/properties/${property.id}/edit`}>
+                                <Edit3 className="w-4 h-4" />
+                                Edit Property
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="cursor-pointer gap-2"
+                              onClick={() => toggleSoldOut(property.id)}
+                            >
+                              <PowerOff className="w-4 h-4" />
+                              {property.status === 'sold' ? 'Mark Active' : 'Mark Sold Out'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="cursor-pointer gap-2 text-red-500 focus:text-red-500 focus:bg-red-500/10"
+                              onClick={() => deleteProperty(property.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete Property
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
       )}
 
       {/* WhatsApp Sharing & Business API Modal */}

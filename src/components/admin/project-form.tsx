@@ -182,6 +182,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const [reraId, setReraId]                   = useState(initialData?.reraId ?? "");
   const [reraApproved, setReraApproved]       = useState(initialData?.reraApproved ?? false);
   const [crdaApproved, setCrdaApproved]       = useState(initialData?.crdaApproved ?? false);
+  const [isRoadExclusive, setIsRoadExclusive] = useState<boolean>(initialData?.isRoadExclusive ?? false);
   const [noBrokerage, setNoBrokerage]         = useState(initialData?.noBrokerage ?? false);
   const [constructionStatus, setConstructionStatus] = useState<ConstructionStatus>(initialData?.constructionStatus ?? "under-construction");
   const [totalUnits, setTotalUnits]           = useState(initialData?.totalUnits?.toString() ?? "");
@@ -486,7 +487,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       builderProjectsCount: builderProjectsCount.trim() || undefined,
       location: { address: address.trim(), locality: locality.trim(), city: city.trim(), state: locState.trim(), pincode: pincode.trim() || undefined, latitude: lat, longitude: lng },
       reraId: reraId.trim() || undefined,
-      reraApproved, crdaApproved, noBrokerage,
+      reraApproved, crdaApproved, isRoadExclusive, noBrokerage,
       constructionStatus,
       totalUnits: totalUnits ? parseInt(totalUnits) : undefined,
       totalTowers: totalTowers ? parseInt(totalTowers) : undefined,
@@ -829,6 +830,31 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* ROAD Exclusive Option */}
+                  <div 
+                    className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                      isRoadExclusive ? "bg-amber-500/20 border-amber-500 text-white shadow-xs" : "bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700"
+                    }`}
+                    onClick={() => setIsRoadExclusive(!isRoadExclusive)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={isRoadExclusive}
+                        onChange={(e) => setIsRoadExclusive(e.target.checked)}
+                        className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
+                        id="check-road-exclusive"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <label htmlFor="check-road-exclusive" className="text-sm font-bold text-amber-400 cursor-pointer select-none flex items-center gap-1.5">
+                        ⭐ ROAD Exclusive Project
+                      </label>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2 pl-8">
+                      Marks this project as an exclusive partner development managed directly by ROAD Facing. Tagged with exclusive badges and included in exclusive filters.
+                    </p>
+                  </div>
+
                   {/* Sold Out Option */}
                   <div 
                     className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${
@@ -1702,6 +1728,18 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 <option value="budget_friendly">💰 Budget Friendly</option>
               </select>
             </div>
+
+            <label className="flex items-center gap-1.5 sm:gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isRoadExclusive}
+                onChange={(e) => setIsRoadExclusive(e.target.checked)}
+                className="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
+              />
+              <span className="text-xs sm:text-sm font-bold text-amber-500 flex items-center gap-1">
+                ⭐ <span className="hidden sm:inline">ROAD</span> Exclusive
+              </span>
+            </label>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">

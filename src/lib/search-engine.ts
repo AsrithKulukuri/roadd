@@ -782,6 +782,11 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
     }
   }
 
+  // 21. ROAD Exclusive Filter
+  if (filters.roadExclusive && !property.isRoadExclusive) {
+    return false;
+  }
+
   return true;
 }
 
@@ -1038,6 +1043,11 @@ export function evaluateProjectFilters(
         return false;
       }
     }
+  }
+
+  // 17. ROAD Exclusive Filter
+  if (filters.roadExclusive && !project.isRoadExclusive) {
+    return false;
   }
 
   return true;

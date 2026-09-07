@@ -70,7 +70,9 @@ export default function EditPropertyPage() {
     
     attributes: {} as Record<string, any>,
     slug: "", metaTitle: "", metaDescription: "", ogImage: "",
-    displayCategory: "none" as "featured" | "recommended" | "budget_friendly" | "none", status: "draft"
+    displayCategory: "none" as "featured" | "recommended" | "budget_friendly" | "none", 
+    status: "draft",
+    isRoadExclusive: false
   });
 
   // Pre-fill form when targetProperty is available
@@ -127,7 +129,8 @@ export default function EditPropertyPage() {
         metaTitle: "", metaDescription: "", ogImage: "",
         
         displayCategory: targetProperty.displayCategory || "none",
-        status: targetProperty.status || "draft"
+        status: targetProperty.status || "draft",
+        isRoadExclusive: Boolean(targetProperty.isRoadExclusive)
       });
     }
   }, [targetProperty]);
@@ -248,6 +251,7 @@ export default function EditPropertyPage() {
       isFeatured: formData.displayCategory === "featured",
       isRecommended: formData.displayCategory === "recommended",
       displayCategory: formData.displayCategory,
+      isRoadExclusive: Boolean(formData.isRoadExclusive),
       isReadyToMove: true,
       bedrooms: parseInt(formData.bedrooms) || 0,
       bathrooms: parseInt(formData.bathrooms) || 0,
@@ -792,6 +796,17 @@ export default function EditPropertyPage() {
                 <option value="hidden">Hidden</option>
               </select>
             </div>
+
+            <label className="flex items-center gap-2 cursor-pointer select-none px-2.5 py-1 sm:py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs sm:text-sm font-bold hover:bg-amber-500/20 transition-colors">
+              <input
+                type="checkbox"
+                name="isRoadExclusive"
+                checked={formData.isRoadExclusive}
+                onChange={handleChange}
+                className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
+              />
+              <span>⭐ ROAD Exclusive</span>
+            </label>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">

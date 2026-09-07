@@ -139,6 +139,7 @@ export interface Property {
   isRecommended?: boolean;
   displayCategory?: "featured" | "recommended" | "budget_friendly" | "none";
   isPremium?: boolean;
+  isRoadExclusive?: boolean;
   vastuCompliant?: boolean;
   petFriendly?: boolean;
   gatedSecurity?: boolean;

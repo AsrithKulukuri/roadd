@@ -648,6 +648,11 @@ export function ProjectDetailView({
             
             {/* Top-Left: Status Badge */}
             <div className="absolute top-3 left-3 flex items-center gap-2 z-10 pointer-events-none">
+              {project.isRoadExclusive && (
+                <span className="bg-amber-500 text-slate-950 font-black text-[11px] px-3 py-1 rounded-full border border-amber-300 shadow-md flex items-center gap-1">
+                  ⭐ ROAD Exclusive
+                </span>
+              )}
               {project.isSoldOut && (
                 <span className="bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full border border-rose-700 shadow-md uppercase tracking-wider">
                   Sold Out
@@ -700,6 +705,11 @@ export function ProjectDetailView({
               
               {/* Badge top-left: Status */}
               <div className="absolute top-3.5 left-3.5 flex items-center gap-2 z-10 pointer-events-none">
+                {project.isRoadExclusive && (
+                  <span className="bg-amber-500 text-slate-950 font-black text-[11px] px-3 py-1 rounded-full border border-amber-300 shadow-md flex items-center gap-1">
+                    ⭐ ROAD Exclusive
+                  </span>
+                )}
                 {project.isSoldOut && (
                   <span className="bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full border border-rose-700 shadow-md uppercase tracking-wider">
                     Sold Out
@@ -875,6 +885,11 @@ export function ProjectDetailView({
                         <h1 className="text-xl sm:text-2xl font-black font-heading text-text-primary tracking-tight">
                           {project.name}
                         </h1>
+                        {project.isRoadExclusive && (
+                          <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-black bg-amber-500 text-slate-950 shadow-xs border border-amber-400">
+                            ⭐ ROAD Exclusive
+                          </span>
+                        )}
                         {project.isSoldOut && (
                           <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-black bg-rose-600 text-white shadow-xs uppercase tracking-wider">
                             Sold Out

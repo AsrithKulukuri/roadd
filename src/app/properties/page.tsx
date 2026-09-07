@@ -288,9 +288,10 @@ function PropertiesPage() {
         if (!filters.facing.includes(property.facing.toLowerCase())) return false;
       }
 
-      // 9. Vastu & RERA Badges
+      // 9. Vastu, RERA & Exclusive Badges
       if (filters.vastuCompliant && !property.vastuCompliant) return false;
       if (filters.reraApproved && !property.reraId) return false;
+      if (filters.roadExclusive && !property.isRoadExclusive) return false;
 
       // 10. Posted Since Date Filter
       if (filters.postedSince && filters.postedSince !== "any" && filters.postedSince !== "") {

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import {
   Plus, Trash2, Edit3, Star, Eye, EyeOff,
   Building2, Home, Landmark, MoreHorizontal,
-  MapPin, CheckCircle2, AlertCircle, Play, Copy, Search, PowerOff
+  MapPin, CheckCircle2, AlertCircle, Play, Copy, Search, PowerOff, Sparkles
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -68,11 +68,11 @@ function ConfirmDeleteModal({
 }
 
 export default function AdminProjectsPage() {
-  const { projects, fetchProjects, deleteProject, toggleFeatured, togglePublished, updateDisplayCategory, toggleSoldOut } = useProjectsStore();
+  const { projects, fetchProjects, deleteProject, toggleFeatured, togglePublished, updateDisplayCategory, toggleSoldOut, toggleRoadExclusive } = useProjectsStore();
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [whatsAppModalProject, setWhatsAppModalProject] = useState<Project | null>(null);
   const [activityModalProject, setActivityModalProject] = useState<Project | null>(null);
-  const [filterType, setFilterType] = useState<ProjectType | "all">("all");
+  const [filterType, setFilterType] = useState<ProjectType | "all" | "exclusive">("all");
 
   useEffect(() => {
     fetchProjects();
@@ -80,6 +80,8 @@ export default function AdminProjectsPage() {
 
   const filtered = filterType === "all"
     ? projects
+    : filterType === "exclusive"
+    ? projects.filter((p) => p.isRoadExclusive)
     : projects.filter((p) => p.projectType === filterType);
 
   const handleDelete = async () => {
@@ -127,23 +129,30 @@ export default function AdminProjectsPage() {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          {(["all", "apartment", "villa", "venture"] as const).map((type) => {
-            const count = type === "all" ? projects.length : projects.filter((p) => p.projectType === type).length;
-            const active = filterType === type;
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
+          {(
+            [
+              { type: "all", label: "All Projects", count: projects.length },
+              { type: "exclusive", label: "ROAD Exclusive ⭐", count: projects.filter((p) => p.isRoadExclusive).length },
+              { type: "apartment", label: "Apartments", count: projects.filter((p) => p.projectType === "apartment").length },
+              { type: "villa", label: "Villas", count: projects.filter((p) => p.projectType === "villa").length },
+              { type: "venture", label: "CRDA Ventures", count: projects.filter((p) => p.projectType === "venture").length },
+            ] as const
+          ).map((item) => {
+            const active = filterType === item.type;
             return (
               <button
-                key={type}
-                onClick={() => setFilterType(type)}
+                key={item.type}
+                onClick={() => setFilterType(item.type)}
                 className={`p-4 rounded-2xl border text-left transition-all ${
                   active
-                    ? "border-amber-primary/50 bg-amber-primary/10"
+                    ? "border-amber-primary/50 bg-amber-primary/10 shadow-xs"
                     : "border-border-default bg-bg-card hover:border-amber-primary/30"
                 }`}
               >
-                <div className="text-2xl font-bold font-heading text-text-primary">{count}</div>
+                <div className={`text-2xl font-bold font-heading ${item.type === "exclusive" ? "text-amber-500" : "text-text-primary"}`}>{item.count}</div>
                 <div className="text-sm text-text-secondary capitalize mt-0.5 font-medium">
-                  {type === "all" ? "All Projects" : type === "venture" ? "CRDA Ventures" : `${type}s`}
+                  {item.label}
                 </div>
               </button>
             );
@@ -162,6 +171,7 @@ export default function AdminProjectsPage() {
                   <th className="text-left px-4 py-4 font-semibold text-text-secondary">Location</th>
                   <th className="text-left px-4 py-4 font-semibold text-text-secondary">Price Range</th>
                   <th className="text-left px-4 py-4 font-semibold text-text-secondary">Status</th>
+                  <th className="text-left px-4 py-4 font-semibold text-text-secondary">ROAD Exclusive</th>
                   <th className="text-left px-4 py-4 font-semibold text-text-secondary">Flags</th>
                   <th className="text-left px-4 py-4 font-semibold text-text-secondary">Display Category</th>
                   <th className="px-4 py-4" />
@@ -170,7 +180,7 @@ export default function AdminProjectsPage() {
               <tbody className="divide-y divide-border-default">
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-20 text-center text-text-secondary">
+                    <td colSpan={9} className="py-20 text-center text-text-secondary">
                       <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
                       <p className="font-medium">No projects yet.</p>
                       <Link href="/admin/projects/new" className="text-amber-primary text-sm mt-1 inline-block hover:underline">
@@ -267,6 +277,27 @@ export default function AdminProjectsPage() {
                             {project.isSoldOut ? "● Sold Out" : SC.label}
                           </button>
                         </td>
+                        {/* ROAD Exclusive */}
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const wasSaved = await toggleRoadExclusive(project.id);
+                              if (wasSaved) {
+                                toast.success(project.isRoadExclusive ? "Removed from ROAD Exclusive" : "Marked as ROAD Exclusive ⭐");
+                              }
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                              project.isRoadExclusive
+                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40 shadow-xs'
+                                : 'border-border-default text-text-tertiary hover:text-text-primary hover:bg-bg-primary'
+                            }`}
+                            title="Click to toggle ROAD Exclusive"
+                          >
+                            <Sparkles className={`w-3.5 h-3.5 ${project.isRoadExclusive ? "text-amber-500 fill-amber-500/20" : "opacity-40"}`} />
+                            <span>{project.isRoadExclusive ? 'ROAD Exclusive' : 'Normal'}</span>
+                          </button>
+                        </td>
                         {/* Flags */}
                         <td className="px-4 py-4">
                           <div className="flex items-center gap-2">
@@ -357,6 +388,18 @@ export default function AdminProjectsPage() {
                                   </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
+                                  className="cursor-pointer gap-2 text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
+                                  onClick={async () => {
+                                    const wasSaved = await toggleRoadExclusive(project.id);
+                                    if (wasSaved) {
+                                      toast.success(project.isRoadExclusive ? "Removed from ROAD Exclusive" : "Marked as ROAD Exclusive ⭐");
+                                    }
+                                  }}
+                                >
+                                  <Sparkles className="w-4 h-4" />
+                                  {project.isRoadExclusive ? "Remove ROAD Exclusive" : "Mark as ROAD Exclusive"}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                   className={`cursor-pointer flex items-center gap-2 font-medium ${
                                     project.isSoldOut
                                       ? "text-emerald-600 focus:text-emerald-600 focus:bg-emerald-500/10"
@@ -440,6 +483,11 @@ export default function AdminProjectsPage() {
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${TC.color}`}>
                             <Icon className="w-2.5 h-2.5" />{TC.label}
                           </span>
+                          {project.isRoadExclusive && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                              <Sparkles className="w-2.5 h-2.5 fill-amber-500/20" /> ROAD Exclusive
+                            </span>
+                          )}
                           {project.isSoldOut ? (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
                               ● Sold Out
@@ -464,22 +512,43 @@ export default function AdminProjectsPage() {
                       </div>
                     </div>
 
-                    {/* Category Selector Bar on Mobile */}
+                    {/* Category Selector & ROAD Exclusive Bar on Mobile */}
                     <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-bg-primary/60 border border-border-default/60 text-xs">
-                      <span className="text-[11px] font-medium text-text-secondary">Category:</span>
-                      <select
-                        value={project.displayCategory || (project.isFeatured ? "featured" : "none")}
-                        onChange={async (e) => {
-                          const wasSaved = await updateDisplayCategory(project.id, e.target.value as any);
-                          if (wasSaved) toast.success("Project category updated!");
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const wasSaved = await toggleRoadExclusive(project.id);
+                          if (wasSaved) {
+                            toast.success(project.isRoadExclusive ? "Removed from ROAD Exclusive" : "Marked as ROAD Exclusive ⭐");
+                          }
                         }}
-                        className="bg-bg-card border border-border-default text-text-primary text-xs rounded-lg px-2.5 py-1 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-primary cursor-pointer"
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                          project.isRoadExclusive
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40 shadow-xs'
+                            : 'border-border-default text-text-tertiary hover:text-text-primary bg-bg-card'
+                        }`}
+                        title="Toggle ROAD Exclusive"
                       >
-                        <option value="none">None (Regular)</option>
-                        <option value="featured">⭐ Featured</option>
-                        <option value="recommended">👍 Recommended</option>
-                        <option value="budget_friendly">💰 Budget Friendly</option>
-                      </select>
+                        <Sparkles className={`w-3 h-3 ${project.isRoadExclusive ? "text-amber-500 fill-amber-500/20" : "opacity-40"}`} />
+                        <span>{project.isRoadExclusive ? '⭐ Exclusive' : 'Exclusive: Off'}</span>
+                      </button>
+
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-medium text-text-secondary">Category:</span>
+                        <select
+                          value={project.displayCategory || (project.isFeatured ? "featured" : "none")}
+                          onChange={async (e) => {
+                            const wasSaved = await updateDisplayCategory(project.id, e.target.value as any);
+                            if (wasSaved) toast.success("Project category updated!");
+                          }}
+                          className="bg-bg-card border border-border-default text-text-primary text-xs rounded-lg px-2.5 py-1 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-primary cursor-pointer"
+                        >
+                          <option value="none">None (Regular)</option>
+                          <option value="featured">⭐ Featured</option>
+                          <option value="recommended">👍 Recommended</option>
+                          <option value="budget_friendly">💰 Budget Friendly</option>
+                        </select>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-border-subtle">

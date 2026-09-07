@@ -16,7 +16,7 @@ const VALID_PROPERTY_COLUMNS = new Set([
   'ownerEmail', 'ownerAvatar', 'ownerType', 'isOwnerVerified', 'viewCount', 'savedCount',
   'enquiryCount', 'createdAt', 'updatedAt', 'publishedAt', 'vastuCompliant', 'petFriendly',
   'gatedSecurity', 'refId', 'category', 'subtype', 'listingContext', 'attributes',
-  'layoutMapUrl', 'floorPlanUrl', 'brochureUrl', 'displayCategory'
+  'layoutMapUrl', 'floorPlanUrl', 'brochureUrl', 'displayCategory', 'isRoadExclusive'
 ]);
 
 export function toSupabaseProperty(prop: Partial<Property>): Record<string, unknown> {
@@ -52,6 +52,7 @@ export function toSupabaseProperty(prop: Partial<Property>): Record<string, unkn
     furnishingGrade: p.furnishingGrade,
     waterSource: p.waterSource,
     cultivationCrop: p.cultivationCrop,
+    isRoadExclusive: p.isRoadExclusive,
   };
 
   // Strip keys that are not valid columns in Supabase
@@ -68,6 +69,7 @@ export function fromSupabaseProperty(p: Record<string, unknown>): Property {
   const attr = (p.attributes as Record<string, unknown>) || {};
   return {
     ...(p as unknown as Property),
+    isRoadExclusive: Boolean((p.isRoadExclusive as boolean | undefined) ?? (attr.isRoadExclusive as boolean | undefined) ?? false),
     saleType: (p.saleType as "new" | "resale" | undefined) || (attr.saleType as "new" | "resale" | undefined) || "new",
     pricePerSqft: (p.pricePerSqft as number | undefined) ?? (p.pricePerSqFt as number | undefined) ?? 0,
     area: (p.area as number | undefined) ?? (p.areaSqFt as number | undefined) ?? 0,
@@ -104,6 +106,7 @@ interface PropertiesState {
   toggleSoldOut: (id: string) => Promise<boolean>;
   toggleShowOnMap: (id: string) => Promise<boolean>;
   toggleRecommended: (id: string) => Promise<boolean>;
+  toggleRoadExclusive: (id: string) => Promise<boolean>;
   updateDisplayCategory: (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => Promise<boolean>;
   updateRefId: (id: string, refId: string) => Promise<boolean>;
   updateProperty: (id: string, updatedProperty: Property) => Promise<void>;
@@ -361,6 +364,31 @@ export const usePropertiesStore = create<PropertiesState>()(
             ),
           }));
           toast.error(error instanceof Error ? error.message : "Recommended status was not saved.");
+          return false;
+        }
+      },
+
+      toggleRoadExclusive: async (id: string) => {
+        const property = get().properties.find((item) => item.id === id);
+        if (!property) return false;
+        const nextValue = !property.isRoadExclusive;
+
+        set((state) => ({
+          properties: state.properties.map((item) =>
+            item.id === id ? { ...item, isRoadExclusive: nextValue } : item
+          ),
+        }));
+
+        try {
+          await savePropertyToServer("update", { isRoadExclusive: nextValue }, id);
+          return true;
+        } catch (error: unknown) {
+          set((state) => ({
+            properties: state.properties.map((item) =>
+              item.id === id ? { ...item, isRoadExclusive: property.isRoadExclusive } : item
+            ),
+          }));
+          toast.error(error instanceof Error ? error.message : "Exclusive status was not saved.");
           return false;
         }
       },

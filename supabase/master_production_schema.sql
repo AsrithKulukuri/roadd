@@ -191,6 +191,7 @@ CREATE TABLE IF NOT EXISTS public.properties (
   "isFeatured" BOOLEAN DEFAULT false,
   "isRecommended" BOOLEAN DEFAULT false,
   "isPremium" BOOLEAN DEFAULT false,
+  "isRoadExclusive" BOOLEAN DEFAULT false,
   "showOnMap" BOOLEAN DEFAULT true,
   "vastuCompliant" BOOLEAN DEFAULT false,
   "petFriendly" BOOLEAN DEFAULT false,
@@ -222,6 +223,7 @@ ALTER TABLE public.properties
   ADD COLUMN IF NOT EXISTS "brochureUrl" TEXT,
   ADD COLUMN IF NOT EXISTS "displayCategory" TEXT,
   ADD COLUMN IF NOT EXISTS "pricePerSqft" NUMERIC,
+  ADD COLUMN IF NOT EXISTS "isRoadExclusive" BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS "vastuCompliant" BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS "petFriendly" BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS "gatedSecurity" BOOLEAN DEFAULT false;
@@ -231,6 +233,7 @@ CREATE INDEX IF NOT EXISTS idx_properties_price ON public.properties (price);
 CREATE INDEX IF NOT EXISTS idx_properties_owner ON public.properties ("ownerId");
 CREATE INDEX IF NOT EXISTS idx_properties_ref_id ON public.properties ("refId");
 CREATE INDEX IF NOT EXISTS idx_properties_featured ON public.properties ("isFeatured", "isVerified", "isRecommended");
+CREATE INDEX IF NOT EXISTS idx_properties_road_exclusive ON public.properties ("isRoadExclusive") WHERE "isRoadExclusive" = true;
 CREATE INDEX IF NOT EXISTS idx_properties_location_gin ON public.properties USING gin (location jsonb_path_ops);
 
 -- Saved Properties table
@@ -279,6 +282,7 @@ CREATE TABLE IF NOT EXISTS public.projects (
   "displayCategory" TEXT,
   "isFeatured" BOOLEAN DEFAULT false,
   "isPublished" BOOLEAN DEFAULT false,
+  "isRoadExclusive" BOOLEAN DEFAULT false,
   "viewCount" INTEGER DEFAULT 0,
   "createdAt" TEXT NOT NULL,
   "updatedAt" TEXT NOT NULL
@@ -294,11 +298,13 @@ ALTER TABLE public.projects
   ADD COLUMN IF NOT EXISTS "totalTowers" INTEGER,
   ADD COLUMN IF NOT EXISTS "facilities" JSONB DEFAULT '[]'::jsonb,
   ADD COLUMN IF NOT EXISTS "constructionUpdates" JSONB DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS "isRoadExclusive" BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS "displayCategory" TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_projects_slug ON public.projects (slug);
 CREATE INDEX IF NOT EXISTS idx_projects_status ON public.projects ("projectType", "constructionStatus");
 CREATE INDEX IF NOT EXISTS idx_projects_featured ON public.projects ("isFeatured", "isPublished");
+CREATE INDEX IF NOT EXISTS idx_projects_road_exclusive ON public.projects ("isRoadExclusive") WHERE "isRoadExclusive" = true;
 CREATE INDEX IF NOT EXISTS idx_projects_location_gin ON public.projects USING gin (location jsonb_path_ops);
 
 -- ==============================================================================

@@ -178,6 +178,11 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
 
               {/* Monochromatic White Badge & Sold Out */}
               <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
+                {project.isRoadExclusive && (
+                  <span className="px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black bg-amber-500 text-slate-950 shadow-sm border border-amber-400">
+                    ⭐ Exclusive
+                  </span>
+                )}
                 {project.isSoldOut && (
                   <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-600 text-white shadow-sm border border-rose-700 uppercase tracking-wider">
                     Sold Out
@@ -273,6 +278,13 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
           {/* Top Badges (Max 2 badges + '+N' chip, with dedicated margin so it never collides with actions) */}
           {(() => {
             const badges: React.ReactNode[] = [];
+            if (project.isRoadExclusive) {
+              badges.push(
+                <span key="exclusive" className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-500 text-slate-950 shadow-sm border border-amber-300/60 backdrop-blur-md tracking-tight">
+                  <Sparkles className="w-3 h-3 fill-slate-950 text-slate-950" /> Exclusive
+                </span>
+              );
+            }
             if (project.isSoldOut) {
               badges.push(
                 <span key="soldout" className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-600 text-white shadow-md border border-rose-700 tracking-wide uppercase">

@@ -13,7 +13,7 @@ const VALID_PROJECT_COLUMNS = new Set([
   'configurations', 'images', 'coverImage', 'videoUrl',
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
-  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory'
+  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory', 'isRoadExclusive'
 ]);
 
 // Public projection columns excluding private builder contact numbers
@@ -25,7 +25,7 @@ const PUBLIC_PROJECT_SELECT = [
   'configurations', 'images', 'coverImage', 'videoUrl',
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
-  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory'
+  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory', 'isRoadExclusive'
 ].join(',');
 
 export function toSupabaseProject(proj: Partial<Project>): Record<string, unknown> {
@@ -96,6 +96,14 @@ export function toSupabaseProject(proj: Partial<Project>): Record<string, unknow
     }
   }
 
+  // Persist isRoadExclusive safely across Supabase JSONB fields
+  if (p.isRoadExclusive !== undefined) {
+    const isRoadExclusiveVal = Boolean(p.isRoadExclusive);
+    if (p.location && typeof p.location === 'object') {
+      p.location = { ...(p.location as Record<string, unknown>), isRoadExclusive: isRoadExclusiveVal };
+    }
+  }
+
   // Strip keys that are not valid columns in Supabase
   const cleaned: Record<string, unknown> = {};
   for (const key of Object.keys(p)) {
@@ -131,6 +139,12 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
     rawLocation?.isSoldOut ?? 
     (Array.isArray(p.highlights) && p.highlights.includes("__SOLD_OUT__"))
   );
+  const isRoadExclusive = Boolean(
+    p.isRoadExclusive ??
+    p.is_road_exclusive ??
+    rawLocation?.isRoadExclusive ??
+    false
+  );
 
   const cleanHighlights = Array.isArray(p.highlights)
     ? (p.highlights as string[]).filter((h) => typeof h === 'string' && h !== '__SOLD_OUT__')
@@ -154,6 +168,7 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
     videoUrl,
     masterPlanUrl,
     isSoldOut,
+    isRoadExclusive,
     highlights: cleanHighlights,
     constructionStatus: (p.constructionStatus as "under-construction" | "ready-to-move" | "new-launch" | undefined) || 'under-construction',
     builderName: (typeof p.builderName === 'string' ? p.builderName : (builderObj?.name ?? 'Independent Developer')),
@@ -177,6 +192,7 @@ interface ProjectsState {
   updateDisplayCategory: (id: string, category: "featured" | "recommended" | "budget_friendly" | "none") => Promise<boolean>;
   togglePublished: (id: string) => Promise<boolean>;
   toggleSoldOut: (id: string) => Promise<boolean>;
+  toggleRoadExclusive: (id: string) => Promise<boolean>;
 }
 
 let activeProjectsRequestId = 0;
@@ -487,6 +503,40 @@ export const useProjectsStore = create<ProjectsState>()(
             ),
           }));
           toast.error(error instanceof Error ? error.message : "Sold out status was not saved.");
+          return false;
+        }
+      },
+
+      // ─── Toggle ROAD Exclusive ───────────────────────────────────────────
+      toggleRoadExclusive: async (id: string) => {
+        const project = get().projects.find((item) => item.id === id);
+        if (!project) return false;
+        const nextValue = !project.isRoadExclusive;
+
+        set((state) => ({
+          projects: state.projects.map((item) =>
+            item.id === id ? { ...item, isRoadExclusive: nextValue } : item
+          ),
+        }));
+
+        try {
+          const updatedLocation = {
+            ...(project.location || {}),
+            isRoadExclusive: nextValue,
+          };
+
+          await saveProjectMutation(id, {
+            isRoadExclusive: nextValue,
+            location: updatedLocation,
+          });
+          return true;
+        } catch (error: unknown) {
+          set((state) => ({
+            projects: state.projects.map((item) =>
+              item.id === id ? { ...item, isRoadExclusive: project.isRoadExclusive } : item
+            ),
+          }));
+          toast.error(error instanceof Error ? error.message : "Exclusive status was not saved.");
           return false;
         }
       },

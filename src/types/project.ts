@@ -151,6 +151,7 @@ export interface Project {
   displayCategory?: "featured" | "recommended" | "budget_friendly" | "none";
   isPublished: boolean;
   isSoldOut?: boolean;
+  isRoadExclusive?: boolean;
   viewCount?: number;
 
   createdAt: string;

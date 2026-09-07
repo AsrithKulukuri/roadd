@@ -136,7 +136,7 @@ export function ShelfCard({
     toggleFavorite(item.id);
   };
 
-  const activeBadge = item.customBadge || customBadge;
+  const activeBadge = item.customBadge || customBadge || ((item as any).isRoadExclusive ? "⭐ ROAD Exclusive" : undefined);
   const activeHeadline = item.customHeadline || customHeadline;
   const activeTagline = item.customTagline || customTagline;
   const activePrice = item.customPrice || customPrice;

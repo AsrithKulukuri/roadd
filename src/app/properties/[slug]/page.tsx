@@ -241,6 +241,7 @@ export default async function PropertyDetailPage({
             videoUrl={property.videoUrl}
             videoThumbnail={property.videoThumbnail}
             isReadyToMove={property.isReadyToMove}
+            isRoadExclusive={property.isRoadExclusive}
           />
         </div>
 
@@ -257,6 +258,12 @@ export default async function PropertyDetailPage({
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono font-black text-xs rounded-full border border-amber-500/40 shadow-xs">
                   Ref ID: {getRefId(property)}
                 </span>
+
+                {property.isRoadExclusive && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-slate-950 font-black text-xs rounded-full border border-amber-400 shadow-xs">
+                    ⭐ ROAD Exclusive
+                  </span>
+                )}
 
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold text-xs rounded-full border border-amber-500/30">
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
