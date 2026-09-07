@@ -13,7 +13,7 @@ import {
   Store,
   Shield,
   Sparkles,
-  Building,
+  Home,
   ChevronRight,
   ChevronLeft,
   ChevronDown,
@@ -128,6 +128,16 @@ const popularQuickFilters = [
   { label: "Residential Plots", propertyType: ["residential-land"] },
   { label: "Owner Listings", postedBy: ["owner"] },
 ];
+
+const getCategoryIcon = (id: string, name: string) => {
+  const lower = (id + " " + name).toLowerCase();
+  if (lower.includes("apartment") || lower.includes("flat") || lower.includes("floor")) return Building2;
+  if (lower.includes("project") || lower.includes("listing")) return Building2;
+  if (lower.includes("villa") || lower.includes("house") || lower.includes("individual") || lower.includes("home")) return Home;
+  if (lower.includes("resale")) return RotateCcw;
+  if (lower.includes("plot") || lower.includes("land") || lower.includes("farm")) return Trees;
+  return Home;
+};
 
 export function HeroSection() {
   const router = useRouter();
@@ -371,13 +381,13 @@ export function HeroSection() {
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -310, behavior: "smooth" });
+      scrollContainerRef.current.scrollBy({ left: -270, behavior: "smooth" });
     }
   };
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 310, behavior: "smooth" });
+      scrollContainerRef.current.scrollBy({ left: 270, behavior: "smooth" });
     }
   };
 
@@ -460,15 +470,37 @@ export function HeroSection() {
     return homeCategories.map((cat) => {
       let href = cat.href;
       if (cat.id === "new-listings") {
-        href = "/search?type=buy&sort=newest";
+        href = "/search?type=buy&propertyType=apartment";
       } else if (!href) {
         href = `/search?type=buy&propertyType=${cat.type}`;
       }
+
+      let title = cat.name;
+      let subtitle = cat.subtitle || cat.description;
+      let badge = cat.badge;
+
+      // Exact title & subtitle normalization to match reference screenshot
+      if (cat.id === "new-listings" && (title === "New Listings" || !title)) {
+        title = "Apartments";
+        subtitle = "Modern living spaces";
+        badge = badge || "Last 30 days";
+      } else if (cat.id === "new-apartments" && (title === "New Apartments" || !title)) {
+        title = "New Projects";
+        subtitle = "Launches & upcoming";
+      } else if (cat.id === "new-villas" && (title === "New Villas" || !title)) {
+        title = "Villas";
+        subtitle = "Ultra-luxury homes";
+        badge = badge || "Premium";
+      } else if (cat.id === "individual" && (title === "Individual Homes" || !title)) {
+        title = "Independent Houses";
+        subtitle = "Your own space";
+      }
+
       return {
         id: cat.id,
-        title: cat.name,
-        subtitle: cat.subtitle || cat.description,
-        badge: cat.badge,
+        title,
+        subtitle,
+        badge,
         badgeClass: cat.badgeClass,
         image: cat.image,
         baseHref: href,
@@ -486,30 +518,31 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative w-full text-slate-900 pt-20 sm:pt-24 md:pt-28 pb-12 md:pb-16 min-h-[480px]">
+    <section className="relative w-full text-slate-900 pb-2 sm:pb-4 min-h-[480px]">
       <h1 className="sr-only">Verified properties and new projects in Vijayawada, Guntur and Amaravati</h1>
-      {/* Full-Width Dynamic Banners Block */}
-      {banners.length > 0 && (
-        <div className="relative z-10 w-full -mt-20 sm:-mt-24 md:-mt-28 mb-2 sm:mb-4 shadow-2xl h-[250px] sm:h-[350px] md:h-[430px] overflow-hidden">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentBanner?.id || 'banner-fallback'}
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              transition={{ duration: 0.5 }}
-              className="absolute inset-0"
-            >
-              {/* Responsive Banner Images: Mobile image on mobile (with desktop fallback), Desktop image on desktop */}
-              {(() => {
-                const DEFAULT_FALLBACK = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1920&auto=format&fit=crop";
-                const desktopImg = resolveMediaUrl(currentBanner?.image_url);
-                const mobileImg = resolveMediaUrl(currentBanner?.mobile_image_url) || desktopImg;
-                const activeImg = mobileImg || desktopImg || DEFAULT_FALLBACK;
 
-                return (
-                  <>
-                    <div className="md:hidden absolute inset-0">
+      {/* ── MOBILE VIEW: Exact Previous Mobile UI (Banner on Top, Search Box & Filters Below) ── */}
+      <div className="sm:hidden w-full pb-3">
+        {/* Full-Width Dynamic Banner on Mobile */}
+        {banners.length > 0 && (
+          <div className="relative z-10 w-full mb-3 shadow-md h-[240px] overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentBanner?.id || 'banner-fallback-mobile'}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                transition={{ duration: 0.5 }}
+                className="absolute inset-0"
+              >
+                {(() => {
+                  const DEFAULT_FALLBACK = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1920&auto=format&fit=crop";
+                  const desktopImg = resolveMediaUrl(currentBanner?.image_url);
+                  const mobileImg = resolveMediaUrl(currentBanner?.mobile_image_url) || desktopImg;
+                  const activeImg = mobileImg || desktopImg || DEFAULT_FALLBACK;
+
+                  return (
+                    <div className="absolute inset-0">
                       <Image
                         src={activeImg}
                         alt={currentBanner?.title || 'Banner Mobile'}
@@ -520,1053 +553,456 @@ export function HeroSection() {
                         className="object-cover object-[center_32%]"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          if (desktopImg && !target.src.includes(desktopImg)) {
-                            target.src = desktopImg;
-                          } else if (!target.src.includes("unsplash.com")) {
-                            target.src = DEFAULT_FALLBACK;
-                          }
-                        }}
-                      />
-                    </div>
-                    <div className="hidden md:block absolute inset-0">
-                      <Image
-                        src={desktopImg || activeImg}
-                        alt={currentBanner?.title || 'Banner Desktop'}
-                        fill
-                        priority
-                        unoptimized
-                        sizes="100vw"
-                        className="object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
                           if (!target.src.includes("unsplash.com")) {
                             target.src = DEFAULT_FALLBACK;
                           }
                         }}
                       />
                     </div>
-                  </>
-                );
-              })()}
+                  );
+                })()}
 
-              {/* Directional Gradient: Darker behind headline/nav, light and clear over architecture */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/20 pointer-events-none" />
+                {/* Directional Gradients */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/25 pointer-events-none" />
 
-              {/* Banner Content (SAFE IN BETWEEN ARROWS WITH GENEROUS HORIZONTAL PADDING) */}
-              <div className="absolute inset-0 flex flex-col justify-center items-start text-left pt-16 sm:pt-20 md:pt-24">
-                <div className="w-full max-w-7xl mx-auto px-14 sm:px-20 md:px-24">
+                {/* Banner Content */}
+                <div className="absolute inset-0 flex flex-col justify-center items-start text-left pt-12 px-5">
                   {(() => {
                     const rawTitle = currentBanner?.title || "";
                     const cleanTitle = rawTitle.replace(/\bVillaments\b/gi, "Villas");
                     if (!cleanTitle) return null;
                     return (
-                      <h2 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-2 sm:mb-3 drop-shadow-xl max-w-[85%] sm:max-w-[70%] leading-tight tracking-tight">
+                      <h2 className="text-xl font-black text-white mb-1 drop-shadow-xl max-w-[90%] leading-tight tracking-tight">
                         {cleanTitle}
                       </h2>
                     );
                   })()}
                   {currentBanner?.subtitle && (
-                    <p className="text-xs sm:text-base md:text-lg text-slate-200 font-medium mb-3 sm:mb-5 max-w-[85%] sm:max-w-[65%] line-clamp-2 drop-shadow-md">
+                    <p className="text-xs text-slate-200 font-medium mb-3 max-w-[90%] line-clamp-2 drop-shadow-md">
                       {currentBanner.subtitle}
                     </p>
                   )}
                   {currentBanner?.link_url && (
                     <Link
                       href={currentBanner.link_url}
-                      className="inline-flex items-center gap-2 px-5 sm:px-8 py-2 sm:py-3 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs sm:text-base rounded-xl shadow-2xl transition-all hover:scale-105 active:scale-95 border border-white/20 hover:border-amber-400 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs rounded-xl shadow-2xl transition-all border border-white/20 active:scale-95"
                     >
                       <span>{currentBanner.button_text || "Explore Now"}</span>
-                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+                      <ChevronRight className="w-3.5 h-3.5 text-amber-400" />
                     </Link>
                   )}
                 </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Arrow Controls - positioned cleanly on outer margins */}
-          {banners.length > 1 && (
-            <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-between px-2 sm:px-5 md:px-6">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length);
-                }}
-                aria-label="Previous Banner"
-                className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full bg-black/45 hover:bg-black/75 backdrop-blur-md text-white shadow-2xl border border-white/25 transition-all hover:scale-110 active:scale-95 pointer-events-auto cursor-pointer"
-              >
-                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-              </button>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
-                }}
-                aria-label="Next Banner"
-                className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full bg-black/45 hover:bg-black/75 backdrop-blur-md text-white shadow-2xl border border-white/25 transition-all hover:scale-110 active:scale-95 pointer-events-auto cursor-pointer"
-              >
-                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-30 flex flex-col items-center text-center">
-        {/* Ambient Aurora Mesh Glow behind search bar */}
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[350px] sm:w-[750px] h-[200px] bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-yellow-500/20 blur-[80px] rounded-full pointer-events-none -z-10" />
-
-        {/* Mobile backdrop to close menu when tapping outside */}
-        {(showBuyMenu || showProjectsMenu) && (
-          <div
-            className="fixed inset-0 z-40 bg-transparent sm:hidden"
-            onClick={() => {
-              setShowBuyMenu(false);
-              setShowProjectsMenu(false);
-              setActiveBuySub(null);
-            }}
-          />
+              </motion.div>
+            </AnimatePresence>
+          </div>
         )}
 
-        {/* Realtor.com Search Options Bar */}
-        <div className="flex items-center justify-center gap-2 sm:gap-8 mb-3.5 sm:mb-4.5 px-1 max-w-full relative z-50 overflow-visible">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <div
-                key={tab.id}
-                className="relative group shrink-0"
-                onMouseEnter={() => {
-                  if (tab.id === "buy") setShowBuyMenu(true);
-                  if (tab.id === "projects") setShowProjectsMenu(true);
-                }}
-                onMouseLeave={() => {
-                  if (tab.id === "buy") setShowBuyMenu(false);
-                  if (tab.id === "projects") setShowProjectsMenu(false);
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (tab.id === "buy") {
-                      setShowBuyMenu((prev) => !prev);
-                      setShowProjectsMenu(false);
-                    } else if (tab.id === "projects") {
-                      setShowProjectsMenu((prev) => !prev);
-                      setShowBuyMenu(false);
-                    } else {
-                      setShowBuyMenu(false);
-                      setShowProjectsMenu(false);
-                    }
-                    setActiveTab(tab.id);
-                    if (tab.id === "new-launch") {
-                      router.push("/search?type=projects&status=new-launch");
-                    }
-                    if (tab.id === "pre-approval") {
-                      router.push("/mortgage-calculator");
-                    }
-                    if (tab.id === "nearme") {
-                      if (typeof window === "undefined" || !navigator.geolocation) {
-                        toast.error("Geolocation is not supported by your browser. Showing map.");
-                        router.push("/search?view=map");
-                        return;
-                      }
-                      setIsLocating(true);
-                      navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                          setIsLocating(false);
-                          router.push(`/search?nearMe=true&view=map&lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
-                        },
-                        (err) => {
-                          setIsLocating(false);
-                          if (err.code === err.PERMISSION_DENIED) {
-                            toast.error("Location permission denied. Showing all listings near AP.");
-                          } else if (err.code === err.TIMEOUT) {
-                            toast.error("Location request timed out. Showing all listings.");
-                          } else {
-                            toast.error("Location unavailable. Showing all listings.");
-                          }
-                          router.push("/search?view=map");
-                        },
-                        { timeout: 8000 }
-                      );
-                    }
-                  }}
-                  className={cn(
-                    "relative py-1.5 text-[13px] xs:text-sm sm:text-lg font-extrabold transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 whitespace-nowrap px-1.5 sm:px-2",
-                    isActive
-                      ? "text-slate-900"
-                      : "text-slate-500 hover:text-slate-900"
-                  )}
-                >
-                  {tab.label}
-                  {tab.id === "buy" && (
-                    <ChevronDown strokeWidth={2.5} className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 transition-transform duration-200", showBuyMenu && "rotate-180")} />
-                  )}
-                  {tab.id === "projects" && (
-                    <ChevronDown strokeWidth={2.5} className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 transition-transform duration-200", showProjectsMenu && "rotate-180")} />
-                  )}
-                  {isActive && (
-                    <motion.div
-                      layoutId="realtorTabLine"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 sm:h-1 bg-slate-900 rounded-full shadow-md"
-                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                    />
-                  )}
-                </button>
+        {/* Mobile Search & Filter Section (Kept exactly like before) */}
+        <div className="w-full px-4 relative z-30 flex flex-col items-center text-center">
+          {/* Mobile backdrop to close menu when tapping outside */}
+          {(showBuyMenu || showProjectsMenu) && (
+            <div
+              className="fixed inset-0 z-40 bg-transparent"
+              onClick={() => {
+                setShowBuyMenu(false);
+                setShowProjectsMenu(false);
+                setActiveBuySub(null);
+              }}
+            />
+          )}
 
-                {tab.id === "buy" && (
-                  <div
-                    onMouseLeave={() => {
-                      setActiveBuySub(null);
+          {/* Mobile Tabs with Dark Text & Dark/Amber Underline */}
+          <div className="flex items-center justify-center gap-2 mb-3 px-1 max-w-full relative z-50 overflow-visible">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <div key={`m-tab-${tab.id}`} className="relative group shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (tab.id === "buy") {
+                        setShowBuyMenu((prev) => !prev);
+                        setShowProjectsMenu(false);
+                      } else if (tab.id === "projects") {
+                        setShowProjectsMenu((prev) => !prev);
+                        setShowBuyMenu(false);
+                      } else {
+                        setShowBuyMenu(false);
+                        setShowProjectsMenu(false);
+                      }
+                      setActiveTab(tab.id);
+                      if (tab.id === "new-launch") {
+                        router.push("/search?type=projects&status=new-launch");
+                      }
+                      if (tab.id === "pre-approval") {
+                        router.push("/mortgage-calculator");
+                      }
+                      if (tab.id === "nearme") {
+                        if (typeof window === "undefined" || !navigator.geolocation) {
+                          toast.error("Geolocation is not supported by your browser. Showing map.");
+                          router.push("/search?view=map");
+                          return;
+                        }
+                        setIsLocating(true);
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            setIsLocating(false);
+                            router.push(`/search?nearMe=true&view=map&lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
+                          },
+                          (err) => {
+                            setIsLocating(false);
+                            if (err.code === err.PERMISSION_DENIED) {
+                              toast.error("Location permission denied. Showing all listings near AP.");
+                            } else if (err.code === err.TIMEOUT) {
+                              toast.error("Location request timed out. Showing all listings.");
+                            } else {
+                              toast.error("Location unavailable. Showing all listings.");
+                            }
+                            router.push("/search?view=map");
+                          },
+                          { timeout: 8000 }
+                        );
+                      }
                     }}
                     className={cn(
-                      "absolute top-full left-0 sm:left-1/2 sm:-translate-x-1/2 pt-2 w-52 sm:w-56 transition-all duration-200 z-[100]",
-                      showBuyMenu ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
+                      "relative py-1 text-xs xs:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap px-1.5",
+                      isActive
+                        ? "text-slate-950 font-black"
+                        : "text-slate-500 hover:text-slate-800"
                     )}
                   >
-                    <div className="bg-white text-slate-950 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-visible py-2 text-left relative">
-                      {/* 1. Flats */}
-                      <div
-                        className="relative group"
-                        onMouseEnter={() => setActiveBuySub("flats")}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setActiveBuySub(activeBuySub === "flats" ? null : "flats")}
-                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
-                        >
-                          <span>Flats</span>
-                          <ChevronRight className={cn("w-4 h-4 text-amber-500 group-hover:text-amber-600 transition-transform", activeBuySub === "flats" && "rotate-90 sm:rotate-0")} />
-                        </button>
+                    <span>{tab.label}</span>
+                    {tab.id === "buy" && (
+                      <ChevronDown strokeWidth={2.5} className={cn("w-3.5 h-3.5 text-amber-500 transition-transform duration-200", showBuyMenu && "rotate-180")} />
+                    )}
+                    {tab.id === "projects" && (
+                      <ChevronDown strokeWidth={2.5} className={cn("w-3.5 h-3.5 text-amber-500 transition-transform duration-200", showProjectsMenu && "rotate-180")} />
+                    )}
+                    {isActive && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500 rounded-full shadow-xs" />
+                    )}
+                  </button>
 
-                        {/* Flats Submenu */}
-                        {activeBuySub === "flats" && (
-                          <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
-                            <Link
-                              href="/search?type=buy&propertyType=apartment&saleType=new"
-                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
-                            >
-                              New Flats
-                            </Link>
-                            <Link
-                              href="/search?type=buy&propertyType=apartment&saleType=resale"
-                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
-                            >
-                              Resale Flats
-                            </Link>
-                            <div className="h-px bg-slate-100 my-1 mx-2" />
-                            <Link
-                              href="/search?type=buy&propertyType=apartment"
-                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
-                            >
-                              All Flats
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 2. Houses */}
-                      <div
-                        className="relative group"
-                        onMouseEnter={() => setActiveBuySub("houses")}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setActiveBuySub(activeBuySub === "houses" ? null : "houses")}
-                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
-                        >
-                          <span>Houses</span>
-                          <ChevronRight className={cn("w-4 h-4 text-amber-500 group-hover:text-amber-600 transition-transform", activeBuySub === "houses" && "rotate-90 sm:rotate-0")} />
-                        </button>
-
-                        {/* Houses Submenu */}
-                        {activeBuySub === "houses" && (
-                          <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
-                            <Link
-                              href="/search?type=buy&propertyType=independent-house&saleType=new"
-                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
-                            >
-                              New Houses
-                            </Link>
-                            <Link
-                              href="/search?type=buy&propertyType=independent-house&saleType=resale"
-                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
-                            >
-                              Resale Houses
-                            </Link>
-                            <div className="h-px bg-slate-100 my-1 mx-2" />
-                            <Link
-                              href="/search?type=buy&propertyType=independent-house"
-                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
-                            >
-                              All Houses
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 3. Villas */}
-                      <div
-                        className="relative group"
-                        onMouseEnter={() => setActiveBuySub("villas")}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setActiveBuySub(activeBuySub === "villas" ? null : "villas")}
-                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
-                        >
-                          <span>Villas</span>
-                          <ChevronRight className={cn("w-4 h-4 text-amber-500 group-hover:text-amber-600 transition-transform", activeBuySub === "villas" && "rotate-90 sm:rotate-0")} />
-                        </button>
-
-                        {/* Villas Submenu */}
-                        {activeBuySub === "villas" && (
-                          <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
-                            <Link
-                              href="/search?type=buy&propertyType=villa&saleType=new"
-                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
-                            >
-                              New Villas
-                            </Link>
-                            <Link
-                              href="/search?type=buy&propertyType=villa&saleType=resale"
-                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
-                            >
-                              Resale Villas
-                            </Link>
-                            <div className="h-px bg-slate-100 my-1 mx-2" />
-                            <Link
-                              href="/search?type=buy&propertyType=villa"
-                              onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                              className="block px-3.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
-                            >
-                              All Villas
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 4. Plots */}
-                      <Link
-                        href="/search?type=buy&propertyType=residential-plot"
-                        onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                        className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors"
-                      >
-                        Plots
-                      </Link>
-
-                      {/* 5. Agriculture */}
-                      <Link
-                        href="/search?type=buy&propertyType=agricultural-land"
-                        onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                        className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors"
-                      >
-                        Agriculture
-                      </Link>
-                    </div>
-                  </div>
-                )}
-
-                {tab.id === "projects" && (
-                  <div className={cn(
-                    "absolute top-full left-0 sm:left-1/2 sm:-translate-x-1/2 pt-2 w-48 sm:w-52 transition-all duration-200 z-[100]",
-                    showProjectsMenu ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
-                  )}>
-                    <div className="bg-white text-slate-950 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden py-2 text-left">
-                      <Link href="/search?type=projects&propertyType=apartment" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
-                        Apartments
-                      </Link>
-                      <Link href="/search?type=projects&propertyType=villa" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
-                        Villas
-                      </Link>
-                      <Link href="/search?type=projects&propertyType=venture" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
-                        CRDA Ventures
-                      </Link>
-                      <Link href="/search?type=projects" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 border-t border-slate-100 mt-1 pt-3">
-                        View All Projects →
-                      </Link>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Clean Modern Search Input Bar (Rectangular with subtle rounded edges & voice search) */}
-        <form
-          action="#"
-          method="POST"
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleSearchSubmit(e);
-          }}
-          className={cn(
-            "relative w-full max-w-[760px] h-[52px] sm:h-[58px] mx-auto flex items-center bg-white border border-slate-200/90 rounded-xl sm:rounded-2xl px-4 shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] transition-all duration-200 group",
-            isFocused ? "z-[60] border-slate-400 ring-2 ring-slate-200/60" : "z-30 hover:border-slate-300"
-          )}
-        >
-          {/* Left: Bold Brand Solid Search Icon */}
-          <SolidSearch className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-amber-500 mr-3 shrink-0 pointer-events-none transition-colors" />
-
-          {/* Input text wrapper */}
-          <div className="relative flex-1 min-w-0 h-full flex items-center">
-            {/* Animated placeholder overlay - shown only when searchQuery is empty */}
-            {!searchQuery && (
-              <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
-                <span className="text-sm sm:text-base text-slate-400 font-medium truncate select-none flex items-center w-full">
-                  <span>{typedText.toLowerCase().startsWith("search") ? typedText : `Search "${typedText}"`}</span>
-                  <span className="inline-block w-[2px] h-[16px] sm:h-[18px] bg-amber-500 ml-1 animate-pulse" />
-                </span>
-              </div>
-            )}
-
-            {/* Single Stable Interactive Input Element (No name attribute) */}
-            <input
-              ref={inputRef}
-              type="text"
-              id="hero-search-input"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleSearchSubmit();
-                }
-              }}
-              onFocus={(e) => {
-                setIsFocused(true);
-                setTimeout(() => {
-                  scrollToTopElement(e.target as HTMLElement, 75);
-                }, 120);
-              }}
-              onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-              autoComplete="off"
-              aria-label="Search properties and projects"
-              style={{ outline: "none", boxShadow: "none", border: "none" }}
-              className="w-full h-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-transparent font-medium border-none outline-none focus:outline-none focus:ring-0 shadow-none px-0 relative z-10"
-            />
-          </div>
-
-          {/* Clear button if searchQuery is not empty */}
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setSearchQuery("");
-                inputRef.current?.focus();
-              }}
-              className="p-1 rounded-full text-slate-400 hover:text-slate-600 mr-1 cursor-pointer"
-              aria-label="Clear search query"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* Right: Search Action Icon */}
-          <button
-            type="submit"
-            disabled={isNavigating}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleSearchSubmit(e);
-            }}
-            aria-label="Search properties"
-            title="Search"
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-[#f59e0b] hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all active:scale-90 cursor-pointer shrink-0 ml-1"
-          >
-            {isNavigating ? (
-              <Loader2 className="w-5 h-5 sm:w-5.5 sm:h-5.5 animate-spin text-[#f59e0b]" />
-            ) : (
-              <Search className="w-5 h-5 sm:w-5.5 sm:h-5.5 stroke-[2.5]" />
-            )}
-          </button>
-
-          {/* LIVE AUTO-SUGGESTIONS POPUP */}
-          {isFocused && liveHeroSuggestions && liveHeroSuggestions.hasResults && (
-            <div
-              onMouseDown={(e) => e.preventDefault()}
-              className="absolute left-0 right-0 top-full mt-2 z-[100] bg-white border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-100 text-left animate-in fade-in zoom-in-95 max-h-[60vh] overflow-y-auto no-scrollbar"
-            >
-              {/* Direct Ref ID Match Card */}
-              {liveHeroSuggestions.directRefMatch && (
-                <div
-                  onClick={(e) => {
-                    setIsFocused(false);
-                    const match = liveHeroSuggestions.directRefMatch!;
-                    if (match.type === "project") {
-                      openProject(match.item, e);
-                    } else {
-                      router.push(match.url);
-                    }
-                  }}
-                  className="px-4 py-3 bg-amber-50 hover:bg-amber-100/80 cursor-pointer flex items-center justify-between gap-3 border-b border-amber-500/30 transition-all"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-xs tracking-wider shadow-xs shrink-0">
-                      🎯 {liveHeroSuggestions.directRefMatch.refId}
-                    </span>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-black text-slate-950 truncate">
-                        {liveHeroSuggestions.directRefMatch.title}
-                      </span>
-                      <span className="text-[11px] font-bold text-amber-700">
-                        Exact Ref Match • Tap to Open Directly
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
-                </div>
-              )}
-
-              {/* Search All button */}
-              <button
-                type="button"
-                onClick={() => handleSearchSubmit()}
-                className="w-full text-left px-4 py-3 hover:bg-amber-500/10 flex items-center gap-3 transition-colors text-xs font-bold text-slate-950 bg-white"
-              >
-                <Search className="w-4 h-4 shrink-0 text-amber-500" />
-                <span className="truncate">Search all for &ldquo;<strong className="text-amber-600">{searchQuery}</strong>&rdquo;</span>
-              </button>
-
-              {/* Projects suggestions */}
-              {liveHeroSuggestions.projects.length > 0 && (
-                <div className="p-2 bg-white">
-                  <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50 rounded-lg mb-1">
-                    Builder Projects
-                  </div>
-                  {liveHeroSuggestions.projects.map((p) => (
+                  {tab.id === "buy" && (
                     <div
-                      key={`hero-proj-${p.id}`}
-                      onClick={(e) => {
-                        setIsFocused(false);
-                        openProject(p, e);
-                      }}
-                      className="px-2.5 py-2 hover:bg-amber-500/10 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                      className={cn(
+                        "absolute top-full left-0 pt-2 w-52 transition-all duration-200 z-[100]",
+                        showBuyMenu ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
+                      )}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 text-[10px] font-extrabold shrink-0">Project</span>
-                        <span className="text-xs font-bold text-slate-950 group-hover:text-amber-600 truncate">{p.name}</span>
-                        <span className="text-[11px] text-slate-500 truncate">({p.location?.locality || p.location?.city})</span>
+                      <div className="bg-white text-slate-950 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-visible py-2 text-left relative">
+                        {/* 1. Flats */}
+                        <div className="relative group">
+                          <button
+                            type="button"
+                            onClick={() => setActiveBuySub(activeBuySub === "flats" ? null : "flats")}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
+                          >
+                            <span>Flats</span>
+                            <ChevronRight className={cn("w-4 h-4 text-amber-500 transition-transform", activeBuySub === "flats" && "rotate-90")} />
+                          </button>
+                          {activeBuySub === "flats" && (
+                            <div className="bg-slate-50 py-1 px-2 border-y border-slate-200 space-y-0.5">
+                              <Link href="/search?type=buy&propertyType=apartment&saleType=new" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-3 py-1.5 text-xs font-bold text-slate-800 hover:text-amber-600">New Flats</Link>
+                              <Link href="/search?type=buy&propertyType=apartment&saleType=resale" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-3 py-1.5 text-xs font-bold text-slate-800 hover:text-amber-600">Resale Flats</Link>
+                              <Link href="/search?type=buy&propertyType=apartment" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-3 py-1.5 text-xs font-bold text-amber-600">All Flats</Link>
+                            </div>
+                          )}
+                        </div>
+                        {/* 2. Houses */}
+                        <div className="relative group">
+                          <button
+                            type="button"
+                            onClick={() => setActiveBuySub(activeBuySub === "houses" ? null : "houses")}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
+                          >
+                            <span>Houses</span>
+                            <ChevronRight className={cn("w-4 h-4 text-amber-500 transition-transform", activeBuySub === "houses" && "rotate-90")} />
+                          </button>
+                          {activeBuySub === "houses" && (
+                            <div className="bg-slate-50 py-1 px-2 border-y border-slate-200 space-y-0.5">
+                              <Link href="/search?type=buy&propertyType=independent-house&saleType=new" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-3 py-1.5 text-xs font-bold text-slate-800 hover:text-amber-600">New Houses</Link>
+                              <Link href="/search?type=buy&propertyType=independent-house&saleType=resale" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-3 py-1.5 text-xs font-bold text-slate-800 hover:text-amber-600">Resale Houses</Link>
+                              <Link href="/search?type=buy&propertyType=independent-house" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-3 py-1.5 text-xs font-bold text-amber-600">All Houses</Link>
+                            </div>
+                          )}
+                        </div>
+                        {/* 3. Villas */}
+                        <div className="relative group">
+                          <button
+                            type="button"
+                            onClick={() => setActiveBuySub(activeBuySub === "villas" ? null : "villas")}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
+                          >
+                            <span>Villas</span>
+                            <ChevronRight className={cn("w-4 h-4 text-amber-500 transition-transform", activeBuySub === "villas" && "rotate-90")} />
+                          </button>
+                          {activeBuySub === "villas" && (
+                            <div className="bg-slate-50 py-1 px-2 border-y border-slate-200 space-y-0.5">
+                              <Link href="/search?type=buy&propertyType=villa&saleType=new" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-3 py-1.5 text-xs font-bold text-slate-800 hover:text-amber-600">New Villas</Link>
+                              <Link href="/search?type=buy&propertyType=villa&saleType=resale" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-3 py-1.5 text-xs font-bold text-slate-800 hover:text-amber-600">Resale Villas</Link>
+                              <Link href="/search?type=buy&propertyType=villa" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-3 py-1.5 text-xs font-bold text-amber-600">All Villas</Link>
+                            </div>
+                          )}
+                        </div>
+                        <Link href="/search?type=buy&propertyType=residential-plot" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors">Plots</Link>
+                        <Link href="/search?type=buy&propertyType=agricultural-land" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors">Agriculture</Link>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {/* Properties suggestions */}
-              {liveHeroSuggestions.properties.length > 0 && (
-                <div className="p-2 bg-white">
-                  <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50 rounded-lg mb-1">
-                    Properties
-                  </div>
-                  {liveHeroSuggestions.properties.map((p) => (
+                  {tab.id === "projects" && (
                     <div
-                      key={`hero-prop-${p.id}`}
-                      onClick={(e) => {
-                        setIsFocused(false);
-                        router.push(`/properties/${p.slug || p.id}`);
-                      }}
-                      className="px-2.5 py-2 hover:bg-amber-500/10 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                      className={cn(
+                        "absolute top-full left-0 pt-2 w-48 transition-all duration-200 z-[100]",
+                        showProjectsMenu ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
+                      )}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold shrink-0">Property</span>
-                        <span className="text-xs font-bold text-slate-950 group-hover:text-amber-600 truncate">{p.title}</span>
-                        <span className="text-[11px] text-slate-500 truncate">({p.location?.locality || p.location?.city})</span>
+                      <div className="bg-white text-slate-950 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden py-2 text-left">
+                        <Link href="/search?type=projects&propertyType=apartment" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">Apartments</Link>
+                        <Link href="/search?type=projects&propertyType=villa" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">Villas</Link>
+                        <Link href="/search?type=projects&propertyType=venture" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">CRDA Ventures</Link>
+                        <Link href="/search?type=projects" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 border-t border-slate-100 mt-1 pt-3">View All Projects →</Link>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
-            </div>
-          )}
-        </form>
-
-        {/* Dynamic Location Pills from Admin Master Locations */}
-        <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-4 text-left relative z-30">
-          <div
-            className={cn(
-              "grid gap-1.5 sm:gap-3 w-full pb-1 mb-1.5 sm:mb-2.5",
-              heroCities.length === 1 ? "grid-cols-1" :
-                heroCities.length === 2 ? "grid-cols-2" :
-                  heroCities.length === 3 ? "grid-cols-3" :
-                    "grid-cols-2 sm:grid-cols-4"
-            )}
-          >
-            {heroCities.map((city) => {
-              const isOpen = openLocationTab === city.id;
-              const hasSublocations = city.sublocations && city.sublocations.length > 0;
-
-              return (
-                <button
-                  key={city.id}
-                  type="button"
-                  onClick={() => {
-                    if (hasSublocations) {
-                      setOpenLocationTab(isOpen ? null : city.id);
-                      setSublocationSearch("");
-                    } else {
-                      router.push(`/search?type=${activeTab}&location=${encodeURIComponent(city.name)}`);
-                    }
-                  }}
-                  className={cn(
-                    "h-[34px] sm:h-[40px] px-2 sm:px-3.5 rounded-full text-[11px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 transition-all duration-200 cursor-pointer shadow-2xs border w-full text-center whitespace-nowrap",
-                    isOpen
-                      ? "bg-slate-950 border-amber-400 text-white font-extrabold shadow-md ring-2 ring-amber-500/20"
-                      : "bg-slate-900/90 hover:bg-slate-900 border-slate-700/60 text-slate-100 font-semibold"
-                  )}
-                >
-                  <SolidMapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span className="whitespace-nowrap tracking-tight">{city.name}</span>
-                  {hasSublocations && (
-                    <ChevronDown strokeWidth={2.5} className={cn("w-3 h-3 text-amber-400 transition-transform shrink-0", isOpen && "rotate-180")} />
-                  )}
-                </button>
               );
             })}
           </div>
 
-          {/* ── DESKTOP Centered Sublocations Dropdown (Hidden on mobile to prevent layout shifts) ── */}
-          <div className="hidden sm:block">
-            <AnimatePresence>
-              {(() => {
-                const activeCity = heroCities.find((c) => c.id === openLocationTab);
-                if (!activeCity || !activeCity.sublocations || activeCity.sublocations.length === 0) return null;
+          {/* Clean Modern Search Input Bar (Rectangular with Solid Amber Search Icon - Exactly Like Before) */}
+          <form
+            action="#"
+            method="POST"
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleSearchSubmit(e);
+            }}
+            className={cn(
+              "relative w-full max-w-[760px] h-[52px] mx-auto flex items-center bg-white border border-slate-200/90 rounded-xl px-4 shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] transition-all duration-200 group",
+              isFocused ? "z-[60] border-slate-400 ring-2 ring-slate-200/60" : "z-30 hover:border-slate-300"
+            )}
+          >
+            <SolidSearch className="w-5 h-5 text-amber-500 mr-3 shrink-0 pointer-events-none transition-colors" />
 
-                const filteredSublocations = activeCity.sublocations.filter((sub) => {
-                  const q = sublocationSearch.trim().toLowerCase();
-                  if (!q) return true;
-                  return (
-                    sub.name.toLowerCase().includes(q) ||
-                    (sub.tagline && sub.tagline.toLowerCase().includes(q))
-                  );
-                });
+            <div className="relative flex-1 min-w-0 h-full flex items-center">
+              {!searchQuery && (
+                <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
+                  <span className="text-sm text-slate-400 font-medium truncate select-none flex items-center w-full">
+                    <span>{typedText.toLowerCase().startsWith("search") ? typedText : `Search "${typedText}"`}</span>
+                    <span className="inline-block w-[2px] h-[16px] bg-amber-500 ml-1 animate-pulse" />
+                  </span>
+                </div>
+              )}
 
-                return (
-                  <>
-                    {/* Click-outside dismissal backdrop (Desktop only) */}
-                    <div
-                      className="fixed inset-0 z-[95]"
-                      onClick={() => {
-                        setOpenLocationTab(null);
-                        setSublocationSearch("");
-                      }}
-                    />
+              <input
+                ref={(el) => { if (el) inputRef.current = el; }}
+                type="text"
+                id="hero-search-input-mobile"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSearchSubmit();
+                  }
+                }}
+                onFocus={(e) => {
+                  setIsFocused(true);
+                  setTimeout(() => {
+                    scrollToTopElement(e.target as HTMLElement, 75);
+                  }, 120);
+                }}
+                onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+                autoComplete="off"
+                aria-label="Search properties and projects"
+                style={{ outline: "none", boxShadow: "none", border: "none" }}
+                className="w-full h-full bg-transparent text-sm text-slate-900 placeholder-transparent font-medium border-none outline-none focus:outline-none focus:ring-0 shadow-none px-0 relative z-10"
+              />
+            </div>
 
-                    <motion.div
-                      key={activeCity.id}
-                      initial={{ opacity: 0, scale: 0.96, y: -4 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.96, y: -4 }}
-                      transition={{ duration: 0.18, ease: "easeOut" }}
-                      className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[380px] bg-white border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden z-[100] max-h-[380px] flex flex-col"
-                    >
-                      {/* Header */}
-                      <div className="px-4 py-2.5 border-b border-amber-500/20 text-[11px] uppercase font-black tracking-wider text-slate-950 flex items-center justify-between gap-3 sticky top-0 bg-white z-10 shrink-0">
-                        <span className="whitespace-nowrap flex items-center gap-1.5 text-slate-950 font-black">
-                          <MapPin className="w-3.5 h-3.5 text-amber-500" />
-                          {activeCity.name} Localities
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSearchQuery("");
+                  inputRef.current?.focus();
+                }}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 mr-1 cursor-pointer"
+                aria-label="Clear search query"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+
+            <button
+              type="submit"
+              disabled={isNavigating}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSearchSubmit(e);
+              }}
+              aria-label="Search properties"
+              title="Search"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-[#f59e0b] hover:text-amber-600 hover:bg-amber-50 transition-all active:scale-90 cursor-pointer shrink-0 ml-1"
+            >
+              {isNavigating ? (
+                <Loader2 className="w-5 h-5 animate-spin text-[#f59e0b]" />
+              ) : (
+                <Search className="w-5 h-5 stroke-[2.5]" />
+              )}
+            </button>
+
+            {/* Suggestions dropdown on mobile */}
+            {isFocused && liveHeroSuggestions && (searchQuery.trim().length > 0 || liveHeroSuggestions.directRefMatch) && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 text-left divide-y divide-slate-100">
+                {liveHeroSuggestions.directRefMatch && (
+                  <div
+                    onClick={(e) => {
+                      setIsFocused(false);
+                      const match = liveHeroSuggestions.directRefMatch!;
+                      if (match.type === "project") {
+                        openProject(match.item, e);
+                      } else {
+                        router.push(match.url);
+                      }
+                    }}
+                    className="px-4 py-3 bg-amber-50 hover:bg-amber-100/80 cursor-pointer flex items-center justify-between gap-3 border-b border-amber-500/30 transition-all"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-xs tracking-wider shadow-xs shrink-0">
+                        🎯 {liveHeroSuggestions.directRefMatch.refId}
+                      </span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-black text-slate-950 truncate">
+                          {liveHeroSuggestions.directRefMatch.title}
                         </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-500 font-bold text-[10px] whitespace-nowrap lowercase">
-                            {filteredSublocations.length === activeCity.sublocations.length
-                              ? `${activeCity.sublocations.length} areas`
-                              : `${filteredSublocations.length} of ${activeCity.sublocations.length}`}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setOpenLocationTab(null);
-                              setSublocationSearch("");
-                            }}
-                            className="w-6 h-6 rounded-full bg-slate-100 hover:bg-amber-500/15 border border-slate-200 text-slate-700 hover:text-amber-600 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-90 shadow-2xs"
-                            aria-label="Close"
-                          >
-                            <X className="w-3.5 h-3.5 stroke-[2.5]" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Search Bar */}
-                      <div className="p-2 border-b border-amber-500/20 bg-slate-50/80 shrink-0">
-                        <div className="relative flex items-center bg-white border border-amber-500/40 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 rounded-xl px-2.5 py-1.5 transition-colors">
-                          <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-500 shrink-0 mr-2" />
-                          <input
-                            type="text"
-                            value={sublocationSearch}
-                            onChange={(e) => setSublocationSearch(e.target.value)}
-                            placeholder={`Search ${activeCity.name} localities...`}
-                            style={{ outline: "none", boxShadow: "none", border: "none" }}
-                            className="w-full bg-transparent text-xs text-slate-950 placeholder-slate-400 font-semibold outline-none border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none p-0"
-                            autoFocus
-                          />
-                          {sublocationSearch && (
-                            <button
-                              type="button"
-                              onClick={() => setSublocationSearch("")}
-                              className="p-0.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors shrink-0 cursor-pointer ml-1"
-                              aria-label="Clear sublocation search"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Localities List */}
-                      <div className="overflow-y-auto divide-y divide-slate-100 no-scrollbar flex-1 py-1 bg-white">
-                        {filteredSublocations.length > 0 ? (
-                          filteredSublocations.map((sub) => (
-                            <div
-                              key={sub.id}
-                              onClick={() => {
-                                setOpenLocationTab(null);
-                                setSublocationSearch("");
-                                router.push(
-                                  `/search?type=${activeTab}&location=${encodeURIComponent(
-                                    activeCity.name
-                                  )}&locality=${encodeURIComponent(sub.name)}`
-                                );
-                              }}
-                              className="px-4 py-2.5 hover:bg-amber-500/10 cursor-pointer flex flex-col transition-colors group"
-                            >
-                              <div className="flex items-center justify-between gap-3">
-                                <span className="font-bold text-xs text-slate-950 group-hover:text-amber-600 transition-colors whitespace-nowrap">
-                                  {sub.name}
-                                </span>
-                              </div>
-                              {sub.tagline && (
-                                <span className="text-[10px] text-slate-500 block mt-0.5 whitespace-nowrap">
-                                  {sub.tagline}
-                                </span>
-                              )}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="py-6 px-4 text-center">
-                            <p className="text-xs text-slate-500 font-medium mb-2.5">
-                              No localities found for &ldquo;{sublocationSearch}&rdquo;
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const term = sublocationSearch;
-                                setOpenLocationTab(null);
-                                setSublocationSearch("");
-                                router.push(
-                                  `/search?type=${activeTab}&location=${encodeURIComponent(
-                                    activeCity.name
-                                  )}&locality=${encodeURIComponent(term)}`
-                                );
-                              }}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 text-[11px] font-bold transition-colors cursor-pointer"
-                            >
-                              <Search className="w-3 h-3 text-slate-950" />
-                              <span>Search &ldquo;{sublocationSearch}&rdquo; in {activeCity.name}</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  </>
-                );
-              })()}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* ── MOBILE Portal-based Luxury Localities Bottom Sheet (Prevents Layout Shifts) ── */}
-        {mounted && typeof document !== "undefined" && createPortal(
-          <AnimatePresence>
-            {(() => {
-              const activeCity = heroCities.find((c) => c.id === openLocationTab);
-              if (!activeCity || !activeCity.sublocations || activeCity.sublocations.length === 0) return null;
-
-              const filteredSublocations = activeCity.sublocations.filter((sub) => {
-                const q = sublocationSearch.trim().toLowerCase();
-                if (!q) return true;
-                return (
-                  sub.name.toLowerCase().includes(q) ||
-                  (sub.tagline && sub.tagline.toLowerCase().includes(q))
-                );
-              });
-
-              return (
-                <div data-location-portal="true" className="sm:hidden fixed inset-0 z-[99999]">
-                  {/* Solid Dim Backdrop */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    onClick={() => {
-                      setOpenLocationTab(null);
-                      setSublocationSearch("");
-                      setIsLocalityFocused(false);
-                    }}
-                    className="fixed inset-0 bg-black/80 backdrop-blur-xs"
-                  />
-
-                  {/* Bottom Sheet Drawer with Smart Expand Animation */}
-                  <motion.div
-                    initial={{ y: "100%" }}
-                    animate={{
-                      y: 0,
-                      height: (isLocalityFocused || sublocationSearch.trim().length > 0) ? "88vh" : "55vh"
-                    }}
-                    exit={{ y: "100%" }}
-                    transition={{ type: "spring", damping: 28, stiffness: 320 }}
-                    className={cn(
-                      "fixed bottom-0 left-0 right-0 z-[100000] bg-white border-t-2 border-amber-500 rounded-t-3xl shadow-2xl flex flex-col overflow-hidden pb-6 safe-bottom transition-all duration-300 ease-out",
-                      (isLocalityFocused || sublocationSearch.trim().length > 0)
-                        ? "h-[88vh] max-h-[92vh]"
-                        : "h-[55vh] max-h-[60vh]"
-                    )}
-                  >
-                    {/* Drag Handle */}
-                    <div className="pt-3 pb-1.5 flex justify-center shrink-0">
-                      <div className="w-10 h-1 rounded-full bg-slate-300" />
-                    </div>
-
-                    {/* Header */}
-                    <div className="px-5 py-3 border-b border-amber-500/20 flex items-center justify-between shrink-0 bg-white">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500">
-                          <MapPin className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-black text-slate-950 tracking-tight flex items-center gap-1.5">
-                            <span>{activeCity.name}</span>
-                            <span className="text-amber-600 uppercase text-[10px] tracking-wider">Localities</span>
-                          </h3>
-                          <p className="text-[10px] text-slate-500 font-medium">
-                            {filteredSublocations.length === activeCity.sublocations.length
-                              ? `${activeCity.sublocations.length} verified areas`
-                              : `${filteredSublocations.length} of ${activeCity.sublocations.length} areas`}
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setOpenLocationTab(null);
-                          setSublocationSearch("");
-                          setIsLocalityFocused(false);
-                        }}
-                        className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-950 flex items-center justify-center cursor-pointer active:scale-90"
-                        aria-label="Close"
-                      >
-                        <X className="w-4 h-4 stroke-[2.5]" />
-                      </button>
-                    </div>
-
-                    {/* Search Bar inside Bottom Sheet */}
-                    <div className="p-3 border-b border-amber-500/20 bg-slate-50/80 shrink-0">
-                      <div className="relative flex items-center bg-white border border-amber-500/40 focus-within:border-amber-500 rounded-xl px-3 py-2 transition-colors">
-                        <Search strokeWidth={2.5} className="w-4 h-4 text-amber-500 shrink-0 mr-2.5" />
-                        <input
-                          type="text"
-                          value={sublocationSearch}
-                          onChange={(e) => setSublocationSearch(e.target.value)}
-                          onFocus={() => setIsLocalityFocused(true)}
-                          onBlur={() => {
-                            if (!sublocationSearch) {
-                              setIsLocalityFocused(false);
-                            }
-                          }}
-                          placeholder={`Search ${activeCity.name} localities...`}
-                          style={{ outline: "none", boxShadow: "none", border: "none" }}
-                          className="w-full bg-transparent text-sm text-slate-950 placeholder-slate-400 font-semibold outline-none border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none p-0"
-                        />
-                        {sublocationSearch && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSublocationSearch("");
-                              setIsLocalityFocused(false);
-                            }}
-                            className="p-1 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors shrink-0 cursor-pointer ml-1"
-                            aria-label="Clear search"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        <span className="text-[11px] font-bold text-amber-700">
+                          Exact Ref Match • Tap to Open Directly
+                        </span>
                       </div>
                     </div>
-
-                    {/* Localities List */}
-                    <div className="overflow-y-auto divide-y divide-slate-100 no-scrollbar flex-1 py-1 px-2 bg-white">
-                      {filteredSublocations.length > 0 ? (
-                        filteredSublocations.map((sub) => (
-                          <div
-                            key={sub.id}
-                            onClick={() => {
-                              setOpenLocationTab(null);
-                              setSublocationSearch("");
-                              router.push(
-                                `/search?type=${activeTab}&location=${encodeURIComponent(
-                                  activeCity.name
-                                )}&locality=${encodeURIComponent(sub.name)}`
-                              );
-                            }}
-                            className="px-4 py-3 hover:bg-amber-500/10 rounded-xl cursor-pointer flex items-center justify-between transition-colors active:scale-[0.99]"
-                          >
-                            <div>
-                              <span className="font-bold text-sm text-slate-950 block">
-                                {sub.name}
-                              </span>
-                              {sub.tagline && (
-                                <span className="text-xs text-slate-500 block mt-0.5">
-                                  {sub.tagline}
-                                </span>
-                              )}
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-amber-500" />
-                          </div>
-                        ))
-                      ) : (
-                        <div className="py-8 px-4 text-center">
-                          <p className="text-sm text-slate-500 font-medium mb-3">
-                            No localities found for &ldquo;{sublocationSearch}&rdquo;
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const term = sublocationSearch;
-                              setOpenLocationTab(null);
-                              setSublocationSearch("");
-                              setIsLocalityFocused(false);
-                              router.push(
-                                `/search?type=${activeTab}&location=${encodeURIComponent(
-                                  activeCity.name
-                                )}&locality=${encodeURIComponent(term)}`
-                              );
-                            }}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black shadow-xs cursor-pointer transition-all"
-                          >
-                            <Search className="w-3.5 h-3.5" />
-                            <span>Search &ldquo;{sublocationSearch}&rdquo; in {activeCity.name}</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                </div>
-              );
-            })()}
-          </AnimatePresence>,
-          document.body
-        )}
-
-        {/* ── Budget Filter Card (Executive Luxury Design) ── */}
-        <div className="relative z-20 w-full max-w-[760px] mx-auto mt-2.5 sm:mt-3.5 text-left">
-          <div className="bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-2.5 sm:p-3 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
-
-            {/* Desktop & Tablet: Balanced Single-Row Capsule */}
-            <div className="hidden sm:flex items-center justify-between gap-3 md:gap-4">
-
-              {/* 1. Left: Brand Icon + Budget Label */}
-              <div className="flex items-center gap-2.5 shrink-0 pl-1">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500/15 to-amber-500/5 border border-amber-500/25 flex items-center justify-center text-amber-600 shadow-2xs">
-                  <IndianRupee className="w-4 h-4 stroke-[2.5]" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none">
-                    Filter By
-                  </span>
-                  <span className="text-xs font-black text-slate-900 leading-tight">
-                    Budget
-                  </span>
-                </div>
-              </div>
-
-              {/* Vertical Divider */}
-              <div className="h-6 w-[1px] bg-slate-200/80 shrink-0" />
-
-              {/* 2. Middle: Symmetrical Expanded Price Range Selectors */}
-              <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                <div className="flex-1">
-                  <ModernBudgetDropdown
-                    value={heroBudget[0]}
-                    options={HERO_BUDGET_MIN_OPTS}
-                    onChange={(val) => setHeroBudget([val, Math.max(val, heroBudget[1])])}
-                    placeholder="Min Price"
-                    prefix="Min"
-                  />
-                </div>
-
-                <div className="flex items-center justify-center shrink-0 px-0.5">
-                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-                    to
-                  </span>
-                </div>
-
-                <div className="flex-1">
-                  <ModernBudgetDropdown
-                    value={heroBudget[1]}
-                    options={HERO_BUDGET_MAX_OPTS}
-                    onChange={(val) => setHeroBudget([Math.min(heroBudget[0], val), val])}
-                    placeholder="Any Price"
-                    align="right"
-                    isMax
-                    maxCap={500000000}
-                    prefix="Max"
-                  />
-                </div>
-              </div>
-
-              {/* 3. Right: Reset & Apply CTA */}
-              <div className="flex items-center gap-2 shrink-0">
-                {(heroBudget[0] !== 1000000 || heroBudget[1] !== 500000000) && (
-                  <button
-                    type="button"
-                    onClick={() => setHeroBudget([1000000, 500000000])}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-slate-800 transition-colors cursor-pointer px-2.5 py-1.5 rounded-lg hover:bg-slate-100 shrink-0"
-                    title="Reset budget to default"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
-                    <span className="hidden lg:inline">Reset</span>
-                  </button>
+                    <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
+                  </div>
                 )}
 
                 <button
                   type="button"
                   onClick={() => handleSearchSubmit()}
-                  className="h-9 sm:h-9.5 px-4.5 bg-slate-950 hover:bg-slate-900 active:scale-95 text-white font-extrabold text-xs sm:text-[13px] rounded-full flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer shrink-0 border border-white/10 group"
+                  className="w-full text-left px-4 py-3 hover:bg-amber-500/10 flex items-center gap-3 transition-colors text-xs font-bold text-slate-950 bg-white"
                 >
-                  <span>Apply</span>
-                  <span className="px-2 py-0.5 min-w-[20px] h-[20px] rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-2xs group-hover:scale-105 transition-transform">
-                    {matchingCount}
-                  </span>
+                  <Search className="w-4 h-4 shrink-0 text-amber-500" />
+                  <span className="truncate">Search all for &ldquo;<strong className="text-amber-600">{searchQuery}</strong>&rdquo;</span>
                 </button>
+
+                {liveHeroSuggestions.projects.length > 0 && (
+                  <div className="p-2 bg-white">
+                    <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50 rounded-lg mb-1">
+                      Builder Projects
+                    </div>
+                    {liveHeroSuggestions.projects.map((p) => (
+                      <div
+                        key={`hero-m-proj-${p.id}`}
+                        onClick={(e) => {
+                          setIsFocused(false);
+                          openProject(p, e);
+                        }}
+                        className="px-2.5 py-2 hover:bg-amber-500/10 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 text-[10px] font-extrabold shrink-0">Project</span>
+                          <span className="text-xs font-bold text-slate-950 group-hover:text-amber-600 truncate">{p.name}</span>
+                          <span className="text-[11px] text-slate-500 truncate">({p.location?.locality || p.location?.city})</span>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {liveHeroSuggestions.properties.length > 0 && (
+                  <div className="p-2 bg-white">
+                    <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50 rounded-lg mb-1">
+                      Properties
+                    </div>
+                    {liveHeroSuggestions.properties.map((p) => (
+                      <div
+                        key={`hero-m-prop-${p.id}`}
+                        onClick={(e) => {
+                          setIsFocused(false);
+                          router.push(`/properties/${p.slug || p.id}`);
+                        }}
+                        className="px-2.5 py-2 hover:bg-amber-500/10 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold shrink-0">Property</span>
+                          <span className="text-xs font-bold text-slate-950 group-hover:text-amber-600 truncate">{p.title}</span>
+                          <span className="text-[11px] text-slate-500 truncate">({p.location?.locality || p.location?.city})</span>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+            )}
+          </form>
 
+          {/* Dynamic Location Pills on Mobile */}
+          <div className="w-full max-w-[760px] mx-auto mt-2.5 text-left relative z-30">
+            <div
+              className={cn(
+                "grid gap-1.5 w-full pb-1 mb-1.5",
+                heroCities.length === 1 ? "grid-cols-1" :
+                  heroCities.length === 2 ? "grid-cols-2" :
+                    heroCities.length === 3 ? "grid-cols-3" :
+                      "grid-cols-2"
+              )}
+            >
+              {heroCities.map((city) => {
+                const isOpen = openLocationTab === city.id;
+                const hasSublocations = city.sublocations && city.sublocations.length > 0;
+
+                return (
+                  <button
+                    key={`m-city-${city.id}`}
+                    type="button"
+                    onClick={() => {
+                      if (hasSublocations) {
+                        setOpenLocationTab(isOpen ? null : city.id);
+                        setSublocationSearch("");
+                      } else {
+                        router.push(`/search?type=${activeTab}&location=${encodeURIComponent(city.name)}`);
+                      }
+                    }}
+                    className={cn(
+                      "h-[34px] px-2 rounded-full text-[11px] flex items-center justify-center gap-1 transition-all duration-200 cursor-pointer shadow-2xs border w-full text-center whitespace-nowrap",
+                      isOpen
+                        ? "bg-slate-950 border-amber-400 text-white font-extrabold shadow-md ring-2 ring-amber-500/20"
+                        : "bg-slate-900/90 hover:bg-slate-900 border-slate-700/60 text-slate-100 font-semibold"
+                    )}
+                  >
+                    <SolidMapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="whitespace-nowrap tracking-tight">{city.name}</span>
+                    {hasSublocations && (
+                      <ChevronDown className={cn("w-3 h-3 text-amber-400 shrink-0 transition-transform duration-200", isOpen && "rotate-180")} />
+                    )}
+                  </button>
+                );
+              })}
             </div>
+          </div>
 
-            {/* Mobile View (< 640px): Clean Stacked Card */}
-            <div className="sm:hidden space-y-2.5">
-              {/* Header row on mobile: Centered Budget badge + Absolute Reset button */}
+          {/* Mobile Budget Filter Card */}
+          <div className="relative z-20 w-full max-w-[760px] mx-auto mt-2.5 text-left">
+            <div className="bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-2.5 space-y-2.5 shadow-sm">
               <div className="relative flex items-center justify-center py-0.5">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
@@ -1589,7 +1025,6 @@ export function HeroSection() {
                 )}
               </div>
 
-              {/* Price Range inputs row */}
               <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                 <ModernBudgetDropdown
                   value={heroBudget[0]}
@@ -1615,7 +1050,6 @@ export function HeroSection() {
                 />
               </div>
 
-              {/* Full-width mobile Apply Button */}
               <button
                 type="button"
                 onClick={() => handleSearchSubmit()}
@@ -1627,84 +1061,1177 @@ export function HeroSection() {
                 </span>
               </button>
             </div>
-
           </div>
         </div>
+      </div>
 
-        <div className="w-full mt-3 sm:mt-6 text-left space-y-3">
-          {/* Header row */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight">
-              Browse homes
-            </h2>
-            <Link
-              href="/search"
-              className="text-xs sm:text-sm font-semibold text-amber-600 hover:text-amber-500 flex items-center gap-1 hover:underline"
-            >
-              View all categories <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          {/* Category cards grid: 4 cards initially on mobile, all on desktop */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-            {browseCategories.map((cat, idx) => {
-              const isHiddenOnMobile = !showAllCategoriesMobile && idx >= 4;
+      {/* ── DESKTOP & TABLET VIEW: Integrated Hero Banner & Search Overlay (Slightly Reduced Height) ── */}
+      <div className="hidden sm:flex relative z-10 w-full mb-6 sm:mb-8 shadow-2xl min-h-[560px] md:min-h-[590px] lg:min-h-[600px] overflow-hidden flex-col justify-between">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentBanner?.id || 'banner-fallback'}
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0"
+          >
+            {/* Responsive Banner Images: Mobile image on mobile (with desktop fallback), Desktop image on desktop */}
+            {(() => {
+              const DEFAULT_FALLBACK = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1920&auto=format&fit=crop";
+              const desktopImg = resolveMediaUrl(currentBanner?.image_url);
+              const mobileImg = resolveMediaUrl(currentBanner?.mobile_image_url) || desktopImg;
+              const activeImg = mobileImg || desktopImg || DEFAULT_FALLBACK;
 
               return (
-                <Link
-                  key={cat.id}
-                  href={cat.baseHref}
-                  className={cn(
-                    "group relative h-40 sm:h-52 rounded-2xl overflow-hidden shadow-md bg-slate-950 border border-white/15 hover:border-white/40 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300",
-                    isHiddenOnMobile ? "hidden sm:block" : "block"
-                  )}
-                >
-                  <Image
-                    src={cat.image}
-                    alt={cat.title}
-                    fill
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    loading={idx < 2 ? "eager" : "lazy"}
-                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-108 opacity-95 group-hover:opacity-100"
-                  />
-                  {/* Clean deep gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300" />
+                <>
+                  <div className="md:hidden absolute inset-0">
+                    <Image
+                      src={activeImg}
+                      alt={currentBanner?.title || 'Banner Mobile'}
+                      fill
+                      priority
+                      unoptimized
+                      sizes="100vw"
+                      className="object-cover object-[center_32%]"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (desktopImg && !target.src.includes(desktopImg)) {
+                          target.src = desktopImg;
+                        } else if (!target.src.includes("unsplash.com")) {
+                          target.src = DEFAULT_FALLBACK;
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="hidden md:block absolute inset-0">
+                    <Image
+                      src={desktopImg || activeImg}
+                      alt={currentBanner?.title || 'Banner Desktop'}
+                      fill
+                      priority
+                      unoptimized
+                      sizes="100vw"
+                      className="object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (!target.src.includes("unsplash.com")) {
+                          target.src = DEFAULT_FALLBACK;
+                        }
+                      }}
+                    />
+                  </div>
+                </>
+              );
+            })()}
 
-                  {/* Luxury Monochromatic Badge (top-right) */}
-                  {cat.badge && (
-                    <div className="absolute top-3 right-3 text-[11px] font-bold px-3 py-1 rounded-full bg-white text-slate-900 shadow-md border border-slate-200/80 backdrop-blur-md tracking-tight">
-                      {cat.badge}
+            {/* Directional Gradient Scrims: Darker behind headline & navbar/tabs, clear over architecture */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-black/10" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/25 to-black/60 pointer-events-none" />
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Upper/Center Hero Content: The Search Widget */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-30 w-full flex flex-col items-center text-center pt-16 sm:pt-18 md:pt-20">
+          {/* Ambient Aurora Mesh Glow behind search bar */}
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[350px] sm:w-[750px] h-[200px] bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-yellow-500/20 blur-[80px] rounded-full pointer-events-none -z-10" />
+
+          {/* Mobile backdrop to close menu when tapping outside */}
+          {(showBuyMenu || showProjectsMenu) && (
+            <div
+              className="fixed inset-0 z-40 bg-transparent sm:hidden"
+              onClick={() => {
+                setShowBuyMenu(false);
+                setShowProjectsMenu(false);
+                setActiveBuySub(null);
+              }}
+            />
+          )}
+
+          {/* Realtor.com Search Options Bar (Tabs over Dark Hero Banner) */}
+          <div className="flex items-center justify-center gap-3 sm:gap-8 mb-3.5 sm:mb-4.5 px-1 max-w-full relative z-50 overflow-visible">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <div
+                  key={tab.id}
+                  className="relative group shrink-0"
+                  onMouseEnter={() => {
+                    if (tab.id === "buy") setShowBuyMenu(true);
+                    if (tab.id === "projects") setShowProjectsMenu(true);
+                  }}
+                  onMouseLeave={() => {
+                    if (tab.id === "buy") setShowBuyMenu(false);
+                    if (tab.id === "projects") setShowProjectsMenu(false);
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (tab.id === "buy") {
+                        setShowBuyMenu((prev) => !prev);
+                        setShowProjectsMenu(false);
+                      } else if (tab.id === "projects") {
+                        setShowProjectsMenu((prev) => !prev);
+                        setShowBuyMenu(false);
+                      } else {
+                        setShowBuyMenu(false);
+                        setShowProjectsMenu(false);
+                      }
+                      setActiveTab(tab.id);
+                      if (tab.id === "new-launch") {
+                        router.push("/search?type=projects&status=new-launch");
+                      }
+                      if (tab.id === "pre-approval") {
+                        router.push("/mortgage-calculator");
+                      }
+                      if (tab.id === "nearme") {
+                        if (typeof window === "undefined" || !navigator.geolocation) {
+                          toast.error("Geolocation is not supported by your browser. Showing map.");
+                          router.push("/search?view=map");
+                          return;
+                        }
+                        setIsLocating(true);
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            setIsLocating(false);
+                            router.push(`/search?nearMe=true&view=map&lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
+                          },
+                          (err) => {
+                            setIsLocating(false);
+                            if (err.code === err.PERMISSION_DENIED) {
+                              toast.error("Location permission denied. Showing all listings near AP.");
+                            } else if (err.code === err.TIMEOUT) {
+                              toast.error("Location request timed out. Showing all listings.");
+                            } else {
+                              toast.error("Location unavailable. Showing all listings.");
+                            }
+                            router.push("/search?view=map");
+                          },
+                          { timeout: 8000 }
+                        );
+                      }
+                    }}
+                    className={cn(
+                      "relative py-1.5 text-[13px] xs:text-sm sm:text-lg font-extrabold transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 whitespace-nowrap px-1.5 sm:px-2",
+                      isActive
+                        ? "text-white"
+                        : "text-white/80 hover:text-white"
+                    )}
+                  >
+                    {tab.label}
+                    {tab.id === "buy" && (
+                      <ChevronDown strokeWidth={2.5} className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 transition-transform duration-200", showBuyMenu && "rotate-180")} />
+                    )}
+                    {tab.id === "projects" && (
+                      <ChevronDown strokeWidth={2.5} className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 transition-transform duration-200", showProjectsMenu && "rotate-180")} />
+                    )}
+                    {isActive && (
+                      <motion.div
+                        layoutId="realtorTabLine"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 sm:h-1 bg-amber-400 rounded-full shadow-md"
+                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                      />
+                    )}
+                  </button>
+
+                  {tab.id === "buy" && (
+                    <div
+                      onMouseLeave={() => {
+                        setActiveBuySub(null);
+                      }}
+                      className={cn(
+                        "absolute top-full left-0 sm:left-1/2 sm:-translate-x-1/2 pt-2 w-52 sm:w-56 transition-all duration-200 z-[100]",
+                        showBuyMenu ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
+                      )}
+                    >
+                      <div className="bg-white text-slate-950 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-visible py-2 text-left relative">
+                        {/* 1. Flats */}
+                        <div
+                          className="relative group"
+                          onMouseEnter={() => setActiveBuySub("flats")}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setActiveBuySub(activeBuySub === "flats" ? null : "flats")}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
+                          >
+                            <span>Flats</span>
+                            <ChevronRight className={cn("w-4 h-4 text-amber-500 group-hover:text-amber-600 transition-transform", activeBuySub === "flats" && "rotate-90 sm:rotate-0")} />
+                          </button>
+
+                          {/* Flats Submenu */}
+                          {activeBuySub === "flats" && (
+                            <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
+                              <Link
+                                href="/search?type=buy&propertyType=apartment&saleType=new"
+                                onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                                className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
+                              >
+                                New Flats
+                              </Link>
+                              <Link
+                                href="/search?type=buy&propertyType=apartment&saleType=resale"
+                                onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                                className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
+                              >
+                                Resale Flats
+                              </Link>
+                              <div className="h-px bg-slate-100 my-1 mx-2" />
+                              <Link
+                                href="/search?type=buy&propertyType=apartment"
+                                onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                                className="block px-3.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
+                              >
+                                All Flats
+                              </Link>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 2. Houses */}
+                        <div
+                          className="relative group"
+                          onMouseEnter={() => setActiveBuySub("houses")}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setActiveBuySub(activeBuySub === "houses" ? null : "houses")}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
+                          >
+                            <span>Houses</span>
+                            <ChevronRight className={cn("w-4 h-4 text-amber-500 group-hover:text-amber-600 transition-transform", activeBuySub === "houses" && "rotate-90 sm:rotate-0")} />
+                          </button>
+
+                          {/* Houses Submenu */}
+                          {activeBuySub === "houses" && (
+                            <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
+                              <Link
+                                href="/search?type=buy&propertyType=independent-house&saleType=new"
+                                onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                                className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
+                              >
+                                New Houses
+                              </Link>
+                              <Link
+                                href="/search?type=buy&propertyType=independent-house&saleType=resale"
+                                onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                                className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
+                              >
+                                Resale Houses
+                              </Link>
+                              <div className="h-px bg-slate-100 my-1 mx-2" />
+                              <Link
+                                href="/search?type=buy&propertyType=independent-house"
+                                onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                                className="block px-3.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
+                              >
+                                All Houses
+                              </Link>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 3. Villas */}
+                        <div
+                          className="relative group"
+                          onMouseEnter={() => setActiveBuySub("villas")}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setActiveBuySub(activeBuySub === "villas" ? null : "villas")}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
+                          >
+                            <span>Villas</span>
+                            <ChevronRight className={cn("w-4 h-4 text-amber-500 group-hover:text-amber-600 transition-transform", activeBuySub === "villas" && "rotate-90 sm:rotate-0")} />
+                          </button>
+
+                          {/* Villas Submenu */}
+                          {activeBuySub === "villas" && (
+                            <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
+                              <Link
+                                href="/search?type=buy&propertyType=villa&saleType=new"
+                                onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                                className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
+                              >
+                                New Villas
+                              </Link>
+                              <Link
+                                href="/search?type=buy&propertyType=villa&saleType=resale"
+                                onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                                className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
+                              >
+                                Resale Villas
+                              </Link>
+                              <div className="h-px bg-slate-100 my-1 mx-2" />
+                              <Link
+                                href="/search?type=buy&propertyType=villa"
+                                onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                                className="block px-3.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
+                              >
+                                All Villas
+                              </Link>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 4. Plots */}
+                        <Link
+                          href="/search?type=buy&propertyType=residential-plot"
+                          onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                          className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors"
+                        >
+                          Plots
+                        </Link>
+
+                        {/* 5. Agriculture */}
+                        <Link
+                          href="/search?type=buy&propertyType=agricultural-land"
+                          onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                          className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors"
+                        >
+                          Agriculture
+                        </Link>
+                      </div>
                     </div>
                   )}
 
-                  {/* Bottom info: Crisp white typography */}
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <span className="font-heading font-extrabold text-base sm:text-lg block leading-snug text-white group-hover:translate-x-0.5 transition-transform drop-shadow-sm">
-                      {cat.title}
-                    </span>
-                    <span className="text-[11px] text-slate-200/90 block line-clamp-1 mt-0.5 font-medium">
-                      {cat.subtitle}
-                    </span>
-                  </div>
-                </Link>
+                  {tab.id === "projects" && (
+                    <div className={cn(
+                      "absolute top-full left-0 sm:left-1/2 sm:-translate-x-1/2 pt-2 w-48 sm:w-52 transition-all duration-200 z-[100]",
+                      showProjectsMenu ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
+                    )}>
+                      <div className="bg-white text-slate-950 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden py-2 text-left">
+                        <Link href="/search?type=projects&propertyType=apartment" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
+                          Apartments
+                        </Link>
+                        <Link href="/search?type=projects&propertyType=villa" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
+                          Villas
+                        </Link>
+                        <Link href="/search?type=projects&propertyType=venture" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
+                          CRDA Ventures
+                        </Link>
+                        <Link href="/search?type=projects" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 border-t border-slate-100 mt-1 pt-3">
+                          View All Projects →
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
 
-          {/* Mobile View All Categories Expand Button */}
-          {browseCategories.length > 4 && (
-            <div className="sm:hidden pt-1 pb-4">
+          {/* Clean Modern Search Input Bar (Fully Rounded Pill with Dark Outline Icon on Left & Amber on Right) */}
+          <form
+            action="#"
+            method="POST"
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleSearchSubmit(e);
+            }}
+            className={cn(
+              "relative w-full max-w-[760px] h-[52px] sm:h-[58px] mx-auto flex items-center bg-white border border-slate-200/90 rounded-full px-4 sm:px-5 shadow-[0_8px_30px_rgba(0,0,0,0.18)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-200 group",
+              isFocused ? "z-[60] ring-2 ring-amber-500/30 border-amber-500" : "z-30 hover:border-slate-300"
+            )}
+          >
+            {/* Left: Dark Outline Search Icon */}
+            <Search className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-slate-500 mr-3 shrink-0 pointer-events-none stroke-[2.2]" />
+
+            {/* Input text wrapper */}
+            <div className="relative flex-1 min-w-0 h-full flex items-center">
+              {/* Animated placeholder overlay - shown only when searchQuery is empty */}
+              {!searchQuery && (
+                <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
+                  <span className="text-sm sm:text-base text-slate-400 font-medium truncate select-none flex items-center w-full">
+                    <span>{typedText.toLowerCase().startsWith("search") ? typedText : `Search "${typedText}"`}</span>
+                    <span className="inline-block w-[2px] h-[16px] sm:h-[18px] bg-amber-500 ml-1 animate-pulse" />
+                  </span>
+                </div>
+              )}
+
+              {/* Single Stable Interactive Input Element (No name attribute) */}
+              <input
+                ref={inputRef}
+                type="text"
+                id="hero-search-input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSearchSubmit();
+                  }
+                }}
+                onFocus={(e) => {
+                  setIsFocused(true);
+                  setTimeout(() => {
+                    scrollToTopElement(e.target as HTMLElement, 75);
+                  }, 120);
+                }}
+                onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+                autoComplete="off"
+                aria-label="Search properties and projects"
+                style={{ outline: "none", boxShadow: "none", border: "none" }}
+                className="w-full h-full bg-transparent text-sm sm:text-base text-slate-900 placeholder-transparent font-medium border-none outline-none focus:outline-none focus:ring-0 shadow-none px-0 relative z-10"
+              />
+            </div>
+
+            {/* Clear button if searchQuery is not empty */}
+            {searchQuery && (
               <button
                 type="button"
-                suppressHydrationWarning
-                onClick={() => setShowAllCategoriesMobile(!showAllCategoriesMobile)}
-                className="w-full py-3 px-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-400 text-slate-900 dark:text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-98 cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSearchQuery("");
+                  inputRef.current?.focus();
+                }}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 mr-1 cursor-pointer"
+                aria-label="Clear search query"
               >
-                <span>{showAllCategoriesMobile ? "Show Less" : "Click to View All Categories"}</span>
-                <ChevronDown className={cn("w-4 h-4 text-amber-500 transition-transform duration-300", showAllCategoriesMobile && "rotate-180")} />
+                <X className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Right: Amber Search Action Icon */}
+            <button
+              type="submit"
+              disabled={isNavigating}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSearchSubmit(e);
+              }}
+              aria-label="Search properties"
+              title="Search"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[#f59e0b] hover:text-amber-600 hover:bg-amber-50 transition-all active:scale-90 cursor-pointer shrink-0 ml-1"
+            >
+              {isNavigating ? (
+                <Loader2 className="w-5 h-5 sm:w-5.5 sm:h-5.5 animate-spin text-[#f59e0b]" />
+              ) : (
+                <Search className="w-5 h-5 sm:w-5.5 sm:h-5.5 stroke-[2.5]" />
+              )}
+            </button>
+
+            {/* LIVE AUTO-SUGGESTIONS POPUP */}
+            {isFocused && liveHeroSuggestions && liveHeroSuggestions.hasResults && (
+              <div
+                onMouseDown={(e) => e.preventDefault()}
+                className="absolute left-0 right-0 top-full mt-2 z-[100] bg-white border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-100 text-left animate-in fade-in zoom-in-95 max-h-[60vh] overflow-y-auto no-scrollbar"
+              >
+                {/* Direct Ref ID Match Card */}
+                {liveHeroSuggestions.directRefMatch && (
+                  <div
+                    onClick={(e) => {
+                      setIsFocused(false);
+                      const match = liveHeroSuggestions.directRefMatch!;
+                      if (match.type === "project") {
+                        openProject(match.item, e);
+                      } else {
+                        router.push(match.url);
+                      }
+                    }}
+                    className="px-4 py-3 bg-amber-50 hover:bg-amber-100/80 cursor-pointer flex items-center justify-between gap-3 border-b border-amber-500/30 transition-all"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-xs tracking-wider shadow-xs shrink-0">
+                        🎯 {liveHeroSuggestions.directRefMatch.refId}
+                      </span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-black text-slate-950 truncate">
+                          {liveHeroSuggestions.directRefMatch.title}
+                        </span>
+                        <span className="text-[11px] font-bold text-amber-700">
+                          Exact Ref Match • Tap to Open Directly
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
+                  </div>
+                )}
+
+                {/* Search All button */}
+                <button
+                  type="button"
+                  onClick={() => handleSearchSubmit()}
+                  className="w-full text-left px-4 py-3 hover:bg-amber-500/10 flex items-center gap-3 transition-colors text-xs font-bold text-slate-950 bg-white"
+                >
+                  <Search className="w-4 h-4 shrink-0 text-amber-500" />
+                  <span className="truncate">Search all for &ldquo;<strong className="text-amber-600">{searchQuery}</strong>&rdquo;</span>
+                </button>
+
+                {/* Projects suggestions */}
+                {liveHeroSuggestions.projects.length > 0 && (
+                  <div className="p-2 bg-white">
+                    <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50 rounded-lg mb-1">
+                      Builder Projects
+                    </div>
+                    {liveHeroSuggestions.projects.map((p) => (
+                      <div
+                        key={`hero-proj-${p.id}`}
+                        onClick={(e) => {
+                          setIsFocused(false);
+                          openProject(p, e);
+                        }}
+                        className="px-2.5 py-2 hover:bg-amber-500/10 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 text-[10px] font-extrabold shrink-0">Project</span>
+                          <span className="text-xs font-bold text-slate-950 group-hover:text-amber-600 truncate">{p.name}</span>
+                          <span className="text-[11px] text-slate-500 truncate">({p.location?.locality || p.location?.city})</span>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Properties suggestions */}
+                {liveHeroSuggestions.properties.length > 0 && (
+                  <div className="p-2 bg-white">
+                    <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50 rounded-lg mb-1">
+                      Properties
+                    </div>
+                    {liveHeroSuggestions.properties.map((p) => (
+                      <div
+                        key={`hero-prop-${p.id}`}
+                        onClick={(e) => {
+                          setIsFocused(false);
+                          router.push(`/properties/${p.slug || p.id}`);
+                        }}
+                        className="px-2.5 py-2 hover:bg-amber-500/10 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold shrink-0">Property</span>
+                          <span className="text-xs font-bold text-slate-950 group-hover:text-amber-600 truncate">{p.title}</span>
+                          <span className="text-[11px] text-slate-500 truncate">({p.location?.locality || p.location?.city})</span>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </form>
+
+          {/* Dynamic Location Pills (Row of 3 Dark Rounded Pills) */}
+          <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-3 text-left relative z-30">
+            <div
+              className={cn(
+                "grid gap-2 sm:gap-3 w-full pb-1 mb-1 sm:mb-1.5",
+                heroCities.length === 1 ? "grid-cols-1" :
+                  heroCities.length === 2 ? "grid-cols-2" :
+                    heroCities.length === 3 ? "grid-cols-3" :
+                      "grid-cols-2 sm:grid-cols-4"
+              )}
+            >
+              {heroCities.map((city) => {
+                const isOpen = openLocationTab === city.id;
+                const hasSublocations = city.sublocations && city.sublocations.length > 0;
+
+                return (
+                  <button
+                    key={city.id}
+                    type="button"
+                    onClick={() => {
+                      if (hasSublocations) {
+                        setOpenLocationTab(isOpen ? null : city.id);
+                        setSublocationSearch("");
+                      } else {
+                        router.push(`/search?type=${activeTab}&location=${encodeURIComponent(city.name)}`);
+                      }
+                    }}
+                    className={cn(
+                      "h-[36px] sm:h-[40px] px-2.5 sm:px-4 rounded-full text-xs sm:text-[13px] flex items-center justify-center gap-1 sm:gap-1.5 transition-all duration-200 cursor-pointer shadow-sm border w-full text-center whitespace-nowrap",
+                      isOpen
+                        ? "bg-slate-950 border-amber-400 text-white font-extrabold shadow-md ring-2 ring-amber-500/20"
+                        : "bg-[#0f172a]/90 hover:bg-[#0f172a] border-slate-700/60 text-white font-medium hover:border-slate-500"
+                    )}
+                  >
+                    <SolidMapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="whitespace-nowrap tracking-tight">{city.name}</span>
+                    {hasSublocations && (
+                      <ChevronDown strokeWidth={2.5} className={cn("w-3 h-3 text-amber-400 transition-transform shrink-0", isOpen && "rotate-180")} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── DESKTOP Centered Sublocations Dropdown ── */}
+            <div className="hidden sm:block">
+              <AnimatePresence>
+                {(() => {
+                  const activeCity = heroCities.find((c) => c.id === openLocationTab);
+                  if (!activeCity || !activeCity.sublocations || activeCity.sublocations.length === 0) return null;
+
+                  const filteredSublocations = activeCity.sublocations.filter((sub) => {
+                    const q = sublocationSearch.trim().toLowerCase();
+                    if (!q) return true;
+                    return (
+                      sub.name.toLowerCase().includes(q) ||
+                      (sub.tagline && sub.tagline.toLowerCase().includes(q))
+                    );
+                  });
+
+                  return (
+                    <>
+                      {/* Click-outside dismissal backdrop (Desktop only) */}
+                      <div
+                        className="fixed inset-0 z-[95]"
+                        onClick={() => {
+                          setOpenLocationTab(null);
+                          setSublocationSearch("");
+                        }}
+                      />
+
+                      <motion.div
+                        key={activeCity.id}
+                        initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                        transition={{ duration: 0.18, ease: "easeOut" }}
+                        className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[380px] bg-white border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden z-[100] max-h-[380px] flex flex-col"
+                      >
+                        {/* Header */}
+                        <div className="px-4 py-2.5 border-b border-amber-500/20 text-[11px] uppercase font-black tracking-wider text-slate-950 flex items-center justify-between gap-3 sticky top-0 bg-white z-10 shrink-0">
+                          <span className="whitespace-nowrap flex items-center gap-1.5 text-slate-950 font-black">
+                            <MapPin className="w-3.5 h-3.5 text-amber-500" />
+                            {activeCity.name} Localities
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-500 font-bold text-[10px] whitespace-nowrap lowercase">
+                              {filteredSublocations.length === activeCity.sublocations.length
+                                ? `${activeCity.sublocations.length} areas`
+                                : `${filteredSublocations.length} of ${activeCity.sublocations.length}`}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenLocationTab(null);
+                                setSublocationSearch("");
+                              }}
+                              className="w-6 h-6 rounded-full bg-slate-100 hover:bg-amber-500/15 border border-slate-200 text-slate-700 hover:text-amber-600 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-90 shadow-2xs"
+                              aria-label="Close"
+                            >
+                              <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="p-2 border-b border-amber-500/20 bg-slate-50/80 shrink-0">
+                          <div className="relative flex items-center bg-white border border-amber-500/40 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 rounded-xl px-2.5 py-1.5 transition-colors">
+                            <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-500 shrink-0 mr-2" />
+                            <input
+                              type="text"
+                              value={sublocationSearch}
+                              onChange={(e) => setSublocationSearch(e.target.value)}
+                              placeholder={`Search ${activeCity.name} localities...`}
+                              style={{ outline: "none", boxShadow: "none", border: "none" }}
+                              className="w-full bg-transparent text-xs text-slate-950 placeholder-slate-400 font-semibold outline-none border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none p-0"
+                              autoFocus
+                            />
+                            {sublocationSearch && (
+                              <button
+                                type="button"
+                                onClick={() => setSublocationSearch("")}
+                                className="p-0.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors shrink-0 cursor-pointer ml-1"
+                                aria-label="Clear sublocation search"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Localities List */}
+                        <div className="overflow-y-auto divide-y divide-slate-100 no-scrollbar flex-1 py-1 bg-white">
+                          {filteredSublocations.length > 0 ? (
+                            filteredSublocations.map((sub) => (
+                              <div
+                                key={sub.id}
+                                onClick={() => {
+                                  setOpenLocationTab(null);
+                                  setSublocationSearch("");
+                                  router.push(
+                                    `/search?type=${activeTab}&location=${encodeURIComponent(
+                                      activeCity.name
+                                    )}&locality=${encodeURIComponent(sub.name)}`
+                                  );
+                                }}
+                                className="px-4 py-2.5 hover:bg-amber-500/10 cursor-pointer flex flex-col transition-colors group"
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className="font-bold text-xs text-slate-950 group-hover:text-amber-600 transition-colors whitespace-nowrap">
+                                    {sub.name}
+                                  </span>
+                                </div>
+                                {sub.tagline && (
+                                  <span className="text-[10px] text-slate-500 block mt-0.5 whitespace-nowrap">
+                                    {sub.tagline}
+                                  </span>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="py-6 px-4 text-center">
+                              <p className="text-xs text-slate-500 font-medium mb-2.5">
+                                No localities found for &ldquo;{sublocationSearch}&rdquo;
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const term = sublocationSearch;
+                                  setOpenLocationTab(null);
+                                  setSublocationSearch("");
+                                  router.push(
+                                    `/search?type=${activeTab}&location=${encodeURIComponent(
+                                      activeCity.name
+                                    )}&locality=${encodeURIComponent(term)}`
+                                  );
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 text-[11px] font-bold transition-colors cursor-pointer"
+                              >
+                                <Search className="w-3 h-3 text-slate-950" />
+                                <span>Search &ldquo;{sublocationSearch}&rdquo; in {activeCity.name}</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    </>
+                  );
+                })()}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* ── MOBILE Portal-based Luxury Localities Bottom Sheet ── */}
+          {mounted && typeof document !== "undefined" && createPortal(
+            <AnimatePresence>
+              {(() => {
+                const activeCity = heroCities.find((c) => c.id === openLocationTab);
+                if (!activeCity || !activeCity.sublocations || activeCity.sublocations.length === 0) return null;
+
+                const filteredSublocations = activeCity.sublocations.filter((sub) => {
+                  const q = sublocationSearch.trim().toLowerCase();
+                  if (!q) return true;
+                  return (
+                    sub.name.toLowerCase().includes(q) ||
+                    (sub.tagline && sub.tagline.toLowerCase().includes(q))
+                  );
+                });
+
+                return (
+                  <div data-location-portal="true" className="sm:hidden fixed inset-0 z-[99999]">
+                    {/* Solid Dim Backdrop */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      onClick={() => {
+                        setOpenLocationTab(null);
+                        setSublocationSearch("");
+                        setIsLocalityFocused(false);
+                      }}
+                      className="fixed inset-0 bg-black/80 backdrop-blur-xs"
+                    />
+
+                    {/* Bottom Sheet Drawer */}
+                    <motion.div
+                      initial={{ y: "100%" }}
+                      animate={{
+                        y: 0,
+                        height: (isLocalityFocused || sublocationSearch.trim().length > 0) ? "88vh" : "55vh"
+                      }}
+                      exit={{ y: "100%" }}
+                      transition={{ type: "spring", damping: 28, stiffness: 320 }}
+                      className={cn(
+                        "fixed bottom-0 left-0 right-0 z-[100000] bg-white border-t-2 border-amber-500 rounded-t-3xl shadow-2xl flex flex-col overflow-hidden pb-6 safe-bottom transition-all duration-300 ease-out",
+                        (isLocalityFocused || sublocationSearch.trim().length > 0)
+                          ? "h-[88vh] max-h-[92vh]"
+                          : "h-[55vh] max-h-[60vh]"
+                      )}
+                    >
+                      {/* Drag Handle */}
+                      <div className="pt-3 pb-1.5 flex justify-center shrink-0">
+                        <div className="w-10 h-1 rounded-full bg-slate-300" />
+                      </div>
+
+                      {/* Header */}
+                      <div className="px-5 py-3 border-b border-amber-500/20 flex items-center justify-between shrink-0 bg-white">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500">
+                            <MapPin className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-black text-slate-950 tracking-tight flex items-center gap-1.5">
+                              <span>{activeCity.name}</span>
+                              <span className="text-amber-600 uppercase text-[10px] tracking-wider">Localities</span>
+                            </h3>
+                            <p className="text-[10px] text-slate-500 font-medium">
+                              {filteredSublocations.length === activeCity.sublocations.length
+                                ? `${activeCity.sublocations.length} verified areas`
+                                : `${filteredSublocations.length} of ${activeCity.sublocations.length} areas`}
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenLocationTab(null);
+                            setSublocationSearch("");
+                            setIsLocalityFocused(false);
+                          }}
+                          className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-950 flex items-center justify-center cursor-pointer active:scale-90"
+                          aria-label="Close"
+                        >
+                          <X className="w-4 h-4 stroke-[2.5]" />
+                        </button>
+                      </div>
+
+                      {/* Search Bar inside Bottom Sheet */}
+                      <div className="p-3 border-b border-amber-500/20 bg-slate-50/80 shrink-0">
+                        <div className="relative flex items-center bg-white border border-amber-500/40 focus-within:border-amber-500 rounded-xl px-3 py-2 transition-colors">
+                          <Search strokeWidth={2.5} className="w-4 h-4 text-amber-500 shrink-0 mr-2.5" />
+                          <input
+                            type="text"
+                            value={sublocationSearch}
+                            onChange={(e) => setSublocationSearch(e.target.value)}
+                            onFocus={() => setIsLocalityFocused(true)}
+                            onBlur={() => {
+                              if (!sublocationSearch) {
+                                setIsLocalityFocused(false);
+                              }
+                            }}
+                            placeholder={`Search ${activeCity.name} localities...`}
+                            style={{ outline: "none", boxShadow: "none", border: "none" }}
+                            className="w-full bg-transparent text-sm text-slate-950 placeholder-slate-400 font-semibold outline-none border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none p-0"
+                          />
+                          {sublocationSearch && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSublocationSearch("");
+                                setIsLocalityFocused(false);
+                              }}
+                              className="p-1 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors shrink-0 cursor-pointer ml-1"
+                              aria-label="Clear search"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Localities List */}
+                      <div className="overflow-y-auto divide-y divide-slate-100 no-scrollbar flex-1 py-1 px-2 bg-white">
+                        {filteredSublocations.length > 0 ? (
+                          filteredSublocations.map((sub) => (
+                            <div
+                              key={sub.id}
+                              onClick={() => {
+                                setOpenLocationTab(null);
+                                setSublocationSearch("");
+                                router.push(
+                                  `/search?type=${activeTab}&location=${encodeURIComponent(
+                                    activeCity.name
+                                  )}&locality=${encodeURIComponent(sub.name)}`
+                                );
+                              }}
+                              className="px-4 py-3 hover:bg-amber-500/10 rounded-xl cursor-pointer flex items-center justify-between transition-colors active:scale-[0.99]"
+                            >
+                              <div>
+                                <span className="font-bold text-sm text-slate-950 block">
+                                  {sub.name}
+                                </span>
+                                {sub.tagline && (
+                                  <span className="text-xs text-slate-500 block mt-0.5">
+                                    {sub.tagline}
+                                  </span>
+                                )}
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-amber-500" />
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-8 px-4 text-center">
+                            <p className="text-sm text-slate-500 font-medium mb-3">
+                              No localities found for &ldquo;{sublocationSearch}&rdquo;
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const term = sublocationSearch;
+                                setOpenLocationTab(null);
+                                setSublocationSearch("");
+                                setIsLocalityFocused(false);
+                                router.push(
+                                  `/search?type=${activeTab}&location=${encodeURIComponent(
+                                    activeCity.name
+                                  )}&locality=${encodeURIComponent(term)}`
+                                );
+                              }}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black shadow-xs cursor-pointer transition-all"
+                            >
+                              <Search className="w-3.5 h-3.5" />
+                              <span>Search &ldquo;{sublocationSearch}&rdquo; in {activeCity.name}</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  </div>
+                );
+              })()}
+            </AnimatePresence>,
+            document.body
+          )}
+
+          {/* ── Budget Filter Capsule (Fully Rounded Pill Matching Reference Screenshot) ── */}
+          <div className="relative z-20 w-full max-w-[760px] mx-auto mt-2.5 sm:mt-3 text-left">
+            {/* Desktop & Tablet: Balanced Single-Row Full White Capsule */}
+            <div className="hidden sm:flex items-center justify-between gap-3 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-full px-3.5 sm:px-4 py-1.5 sm:py-2 shadow-[0_4px_24px_rgba(0,0,0,0.12)]">
+
+              {/* 1. Left: Beige/Gold ₹ Badge + FILTER BY Budget Label */}
+              <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 pl-1">
+                <div className="w-8 h-8 rounded-full bg-[#fef3c7] border border-amber-500/20 flex items-center justify-center text-amber-800 shadow-2xs">
+                  <IndianRupee className="w-4 h-4 stroke-[2.5]" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none">
+                    FILTER BY
+                  </span>
+                  <span className="text-xs font-black text-slate-900 leading-tight">
+                    Budget
+                  </span>
+                </div>
+              </div>
+
+              {/* Vertical Divider */}
+              <div className="h-6 w-[1px] bg-slate-200/90 shrink-0 mx-0.5" />
+
+              {/* 2. Middle: Symmetrical Expanded Price Range Selectors */}
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="flex-1">
+                  <ModernBudgetDropdown
+                    variant="capsule"
+                    value={heroBudget[0]}
+                    options={HERO_BUDGET_MIN_OPTS}
+                    onChange={(val) => setHeroBudget([val, Math.max(val, heroBudget[1])])}
+                    placeholder="Min Price"
+                    prefix="MIN"
+                  />
+                </div>
+
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider shrink-0 px-0.5">
+                  to
+                </span>
+
+                <div className="flex-1">
+                  <ModernBudgetDropdown
+                    variant="capsule"
+                    value={heroBudget[1]}
+                    options={HERO_BUDGET_MAX_OPTS}
+                    onChange={(val) => setHeroBudget([Math.min(heroBudget[0], val), val])}
+                    placeholder="Any Price"
+                    align="right"
+                    isMax
+                    maxCap={500000000}
+                    prefix="MAX"
+                  />
+                </div>
+              </div>
+
+              {/* 3. Right: Reset & Apply CTA */}
+              <div className="flex items-center gap-2 shrink-0">
+                {(heroBudget[0] !== 1000000 || heroBudget[1] !== 500000000) && (
+                  <button
+                    type="button"
+                    onClick={() => setHeroBudget([1000000, 500000000])}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-slate-800 transition-colors cursor-pointer px-2.5 py-1.5 rounded-full hover:bg-slate-100 shrink-0"
+                    title="Reset budget to default"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="hidden lg:inline">Reset</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => handleSearchSubmit()}
+                  className="h-9 sm:h-9.5 px-4.5 bg-slate-950 hover:bg-slate-900 active:scale-95 text-white font-extrabold text-xs sm:text-[13px] rounded-full flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer shrink-0 border border-white/10 group"
+                >
+                  <span>Apply</span>
+                  <span className="px-2 py-0.5 min-w-[20px] h-[20px] rounded-full bg-amber-400 text-slate-950 flex items-center justify-center text-[10px] sm:text-[11px] font-black shadow-2xs group-hover:scale-105 transition-transform">
+                    {matchingCount}
+                  </span>
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        {/* Lower Hero Content: Banner Headline, Subtitle, and CTA Button (Bottom-Left) */}
+        <div className="relative z-30 w-full max-w-7xl mx-auto px-6 sm:px-12 md:px-16 text-left pt-3 sm:pt-4 pb-4 sm:pb-5 mt-auto pointer-events-auto">
+          {(() => {
+            const rawTitle = currentBanner?.title || "";
+            const cleanTitle = rawTitle.replace(/\bVillaments\b/gi, "Villas");
+            if (!cleanTitle && !currentBanner?.subtitle) return null;
+            return (
+              <div className="max-w-[90%] sm:max-w-[70%]">
+                {cleanTitle && (
+                  <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white mb-1.5 sm:mb-2 drop-shadow-xl leading-tight tracking-tight">
+                    {cleanTitle}
+                  </h2>
+                )}
+                {currentBanner?.subtitle && (
+                  <p className="text-xs sm:text-sm md:text-base text-slate-200 font-medium mb-2.5 sm:mb-3.5 line-clamp-2 drop-shadow-md">
+                    {currentBanner.subtitle}
+                  </p>
+                )}
+                {currentBanner?.link_url && (
+                  <Link
+                    href={currentBanner.link_url}
+                    className="inline-flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-2xl transition-all hover:scale-105 active:scale-95 border border-white/20 hover:border-amber-400 cursor-pointer"
+                  >
+                    <span>{currentBanner.button_text || "Explore Now"}</span>
+                    <ChevronRight className="w-4 h-4 text-amber-400" />
+                  </Link>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Carousel Arrow Controls - positioned cleanly on outer margins */}
+        {banners.length > 1 && (
+          <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-between px-2 sm:px-5 md:px-6">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length);
+              }}
+              aria-label="Previous Banner"
+              className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full bg-black/45 hover:bg-black/75 backdrop-blur-md text-white shadow-2xl border border-white/25 transition-all hover:scale-110 active:scale-95 pointer-events-auto cursor-pointer"
+            >
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
+              }}
+              aria-label="Next Banner"
+              className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full bg-black/45 hover:bg-black/75 backdrop-blur-md text-white shadow-2xl border border-white/25 transition-all hover:scale-110 active:scale-95 pointer-events-auto cursor-pointer"
+            >
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-20 w-full mt-4 sm:mt-8 text-left space-y-3.5">
+        {/* Header row with Title, "View all categories >", and Desktop Slider Chevrons */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
+            Browse homes
+          </h2>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/search"
+              className="text-xs sm:text-sm font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 hover:underline transition-colors"
+            >
+              View all categories <ChevronRight className="w-4 h-4" />
+            </Link>
+
+            {/* Slide View Navigation Buttons */}
+            <div className="hidden sm:flex items-center gap-1.5 ml-1">
+              <button
+                type="button"
+                onClick={scrollLeft}
+                aria-label="Previous categories"
+                className="w-8 h-8 rounded-full border border-slate-200 hover:border-amber-400 bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-700 flex items-center justify-center transition-all shadow-2xs active:scale-90 cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+              </button>
+              <button
+                type="button"
+                onClick={scrollRight}
+                aria-label="Next categories"
+                className="w-8 h-8 rounded-full border border-slate-200 hover:border-amber-400 bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-700 flex items-center justify-center transition-all shadow-2xs active:scale-90 cursor-pointer"
+              >
+                <ChevronRight className="w-4 h-4 stroke-[2.5]" />
               </button>
             </div>
-          )}
+          </div>
+        </div>
+
+        {/* ── Slide View: Smooth Horizontal Carousel for Categories ── */}
+        <div
+          ref={scrollContainerRef}
+          className="flex items-stretch gap-3 sm:gap-4 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory py-2 -mx-4 px-4 sm:mx-0 sm:px-0"
+        >
+          {browseCategories.map((cat, idx) => {
+            const IconComp = getCategoryIcon(cat.id, cat.title);
+
+            return (
+              <Link
+                key={cat.id}
+                href={cat.baseHref}
+                className="group flex flex-col w-[220px] sm:w-[245px] md:w-[260px] shrink-0 snap-start bg-white rounded-xl sm:rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden cursor-pointer"
+              >
+                {/* Top Image area */}
+                <div className="relative w-full h-32 sm:h-38 bg-slate-100 overflow-hidden">
+                  <Image
+                    src={cat.image}
+                    alt={cat.title}
+                    fill
+                    sizes="(max-width: 640px) 220px, 260px"
+                    loading={idx < 4 ? "eager" : "lazy"}
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-108"
+                  />
+
+                  {/* Badge on top-right (e.g. "Last 30 days", "Premium", "Top Pick") */}
+                  {cat.badge && (
+                    <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 text-[10px] sm:text-[11px] font-extrabold px-2.5 py-0.5 sm:py-1 rounded-full bg-white/95 text-slate-900 shadow-md border border-slate-100 backdrop-blur-md tracking-tight">
+                      {cat.badge}
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom Bar: Overlapping Circular Icon Badge + Title & Subtitle */}
+                <div className="relative bg-white px-3 sm:px-3.5 pt-2 pb-3 sm:pb-3.5 flex items-center gap-2.5 flex-1">
+                  {/* Floating Circular Icon Badge */}
+                  <div className="-mt-6 sm:-mt-7 shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white shadow-md border border-slate-100 flex items-center justify-center text-[#78350f] relative z-10 group-hover:scale-110 transition-transform">
+                    <IconComp className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+                  </div>
+
+                  {/* Title & Subtitle */}
+                  <div className="flex flex-col min-w-0 pr-1 text-left">
+                    <span className="font-heading font-black text-xs sm:text-sm text-slate-950 group-hover:text-amber-600 transition-colors truncate">
+                      {cat.title}
+                    </span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium truncate mt-0.5">
+                      {cat.subtitle}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>

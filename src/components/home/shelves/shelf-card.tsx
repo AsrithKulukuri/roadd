@@ -430,7 +430,7 @@ export function ShelfCard({
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
               title={isEditable ? "Click to choose text color" : undefined}
             >
-              ₹{data.priceStr}
+              {data.priceStr}
             </div>
 
             <div className="flex items-center justify-between gap-2 text-[11px] text-slate-600 font-semibold">
@@ -551,7 +551,7 @@ export function ShelfCard({
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
               title={isEditable ? "Click to choose text color" : undefined}
             >
-              ₹{data.priceStr}
+              {data.priceStr}
             </div>
             <h3
               style={textStyle}
@@ -759,7 +759,7 @@ export function ShelfCard({
             title={isEditable ? "Click to choose text color" : undefined}
           >
             <div style={textStyle} className="text-2xl font-black tracking-tight text-slate-950">
-              ₹{data.priceStr}
+              {data.priceStr}
             </div>
             <p className="text-xs text-slate-500 flex items-center gap-1 font-medium truncate">
               <MapPin className="w-3.5 h-3.5 shrink-0" style={accentTextStyle} />
@@ -918,7 +918,7 @@ export function ShelfCard({
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
               title={isEditable ? "Click to choose text color" : undefined}
             >
-              ₹{data.priceStr}
+              {data.priceStr}
             </div>
             <div
               className={cn("flex items-center gap-2 text-xs font-semibold text-slate-600", isEditable && "cursor-pointer hover:underline")}
@@ -1080,7 +1080,7 @@ export function ShelfCard({
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
               title={isEditable ? "Click to choose text color" : undefined}
             >
-              ₹{data.priceStr}
+              {data.priceStr}
             </div>
             <div
               className={cn(
@@ -1188,7 +1188,7 @@ export function ShelfCard({
                 onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
                 title={isEditable ? "Click to choose text color" : undefined}
               >
-                ₹{data.priceStr}
+                {data.priceStr}
               </span>
             </div>
             <p
@@ -1339,7 +1339,7 @@ export function ShelfCard({
               onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
               title={isEditable ? "Click to choose text color" : undefined}
             >
-              ₹{data.priceStr}
+              {data.priceStr}
             </div>
             <div
               style={textStyle}
@@ -1449,7 +1449,7 @@ export function ShelfCard({
             onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
             title={isEditable ? "Click to choose text color" : undefined}
           >
-            ₹{data.priceStr}
+            {data.priceStr}
           </div>
         </div>
 

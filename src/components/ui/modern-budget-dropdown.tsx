@@ -44,6 +44,7 @@ interface ModernBudgetDropdownProps {
   isMax?: boolean;
   maxCap?: number;
   prefix?: string;
+  variant?: "default" | "capsule";
 }
 
 export function ModernBudgetDropdown({
@@ -57,6 +58,7 @@ export function ModernBudgetDropdown({
   isMax = false,
   maxCap = 500000000,
   prefix,
+  variant = "default",
 }: ModernBudgetDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const mounted = useIsMounted();
@@ -137,25 +139,36 @@ export function ModernBudgetDropdown({
           setIsOpen(!isOpen);
         }}
         className={cn(
-          "w-full h-8 sm:h-9 px-3 sm:px-3.5 pr-7 bg-white hover:bg-slate-50/80 border rounded-full text-xs font-bold text-slate-950 flex items-center justify-between outline-none cursor-pointer transition-all shadow-xs text-left select-none",
-          isOpen
-            ? "border-amber-500 ring-2 ring-amber-500/20 bg-white"
-            : "border-slate-200/90 hover:border-amber-500/70 hover:shadow-2xs",
+          variant === "capsule"
+            ? cn(
+                "w-full h-8 sm:h-9 px-2.5 sm:px-3 pr-6 bg-transparent hover:bg-slate-100/70 rounded-full text-xs font-bold text-slate-950 flex items-center justify-between outline-none cursor-pointer transition-all text-left select-none",
+                isOpen && "bg-slate-100 ring-1 ring-amber-500/40"
+              )
+            : cn(
+                "w-full h-8 sm:h-9 px-3 sm:px-3.5 pr-7 bg-white hover:bg-slate-50/80 border rounded-full text-xs font-bold text-slate-950 flex items-center justify-between outline-none cursor-pointer transition-all shadow-xs text-left select-none",
+                isOpen
+                  ? "border-amber-500 ring-2 ring-amber-500/20 bg-white"
+                  : "border-slate-200/90 hover:border-amber-500/70 hover:shadow-2xs"
+              ),
           triggerClassName
         )}
       >
         <span className="truncate flex items-center gap-1.5 min-w-0">
           {prefix && (
-            <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
+            <span className={cn(
+              "text-[10px] sm:text-[11px] uppercase tracking-wider shrink-0",
+              variant === "capsule" ? "font-extrabold text-slate-500" : "font-bold text-slate-400"
+            )}>
               {prefix}
             </span>
           )}
-          <span className="truncate font-extrabold text-slate-900 text-xs sm:text-[13px]">{displayLabel}</span>
+          <span className="truncate font-black text-slate-900 text-xs sm:text-[13px]">{displayLabel}</span>
         </span>
         <ChevronDown
           strokeWidth={2.5}
           className={cn(
-            "w-3.5 h-3.5 text-amber-500 absolute right-2.5 top-1/2 -translate-y-1/2 transition-transform duration-200 pointer-events-none shrink-0",
+            "w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 transition-transform duration-200 pointer-events-none shrink-0",
+            variant === "capsule" ? "text-slate-600" : "text-amber-500",
             isOpen && "rotate-180 text-amber-600"
           )}
         />

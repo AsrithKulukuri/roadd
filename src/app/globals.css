@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ========================================================================
    ROAD Design System — Tailwind v4 Custom Theme
    ======================================================================== */

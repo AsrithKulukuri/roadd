@@ -196,7 +196,7 @@ export function HomeCategories() {
       ];
 
   return (
-    <section className="py-2 sm:py-6 w-full">
+    <section className="pt-0 sm:pt-1 pb-4 sm:pb-8 w-full">
       <div className="container-road space-y-3 sm:space-y-6">
         
         {sectionsToRender.map((section) => section.items.length > 0 && (

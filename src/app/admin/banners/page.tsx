@@ -198,11 +198,11 @@ export default function AdminBannersPage() {
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-sm text-white">Desktop Banner Size</span>
               <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                1920 × 550 px
+                1920 × 600 px (or 1920 × 620 px)
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              Recommended Aspect Ratio <strong className="text-slate-200">16:5</strong>. Use landscape photography with focal points centered or right-aligned so text on the left stays legible.
+              Recommended Aspect Ratio <strong className="text-slate-200">16:5 / ~3:1</strong>. Optimized for desktop hero banner height to cleanly frame the search controls and title overlay.
             </p>
           </div>
         </div>
@@ -219,7 +219,7 @@ export default function AdminBannersPage() {
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              Recommended Aspect Ratio <strong className="text-slate-200">2:1 Landscape</strong>. Perfect for modern mobile viewports without crowding search controls.
+              Recommended Aspect Ratio <strong className="text-slate-200">2:1 Landscape</strong>. Perfect for mobile viewports without crowding search controls.
             </p>
           </div>
         </div>
@@ -255,7 +255,7 @@ export default function AdminBannersPage() {
                     Desktop Banner Image {isAdding && <span className="text-red-500">*</span>}
                   </label>
                   <span className="text-[11px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">
-                    1920 × 550 px
+                    1920 × 600 px
                   </span>
                 </div>
                 <div className="relative border-2 border-dashed border-border-default hover:border-blue-500/60 rounded-2xl p-4 flex flex-col items-center justify-center bg-bg-surface transition-colors">
