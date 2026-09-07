@@ -357,6 +357,54 @@ CREATE INDEX IF NOT EXISTS idx_projects_featured ON public.projects ("isFeatured
 CREATE INDEX IF NOT EXISTS idx_projects_location_gin ON public.projects USING gin (location jsonb_path_ops);
 
 -- ------------------------------------------------------------------------------
+-- 7.5 RLS FOR PHONE OTPS AND WHATSAPP TABLES
+-- ------------------------------------------------------------------------------
+ALTER TABLE public.phone_otps ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Service role access for phone_otps" ON public.phone_otps;
+CREATE POLICY "Service role access for phone_otps" ON public.phone_otps FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+ALTER TABLE public.whatsapp_contacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.whatsapp_campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.whatsapp_campaign_recipients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.whatsapp_inbound_idempotency ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.whatsapp_conversation_state ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.whatsapp_leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.whatsapp_site_visits ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.whatsapp_saved_properties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.whatsapp_support_conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.whatsapp_support_tickets ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admin access for whatsapp_contacts" ON public.whatsapp_contacts;
+CREATE POLICY "Admin access for whatsapp_contacts" ON public.whatsapp_contacts FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admin access for whatsapp_campaigns" ON public.whatsapp_campaigns;
+CREATE POLICY "Admin access for whatsapp_campaigns" ON public.whatsapp_campaigns FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admin access for whatsapp_campaign_recipients" ON public.whatsapp_campaign_recipients;
+CREATE POLICY "Admin access for whatsapp_campaign_recipients" ON public.whatsapp_campaign_recipients FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admin access for whatsapp_leads" ON public.whatsapp_leads;
+CREATE POLICY "Admin access for whatsapp_leads" ON public.whatsapp_leads FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admin access for whatsapp_site_visits" ON public.whatsapp_site_visits;
+CREATE POLICY "Admin access for whatsapp_site_visits" ON public.whatsapp_site_visits FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admin access for whatsapp_saved_properties" ON public.whatsapp_saved_properties;
+CREATE POLICY "Admin access for whatsapp_saved_properties" ON public.whatsapp_saved_properties FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admin access for whatsapp_conversation_state" ON public.whatsapp_conversation_state;
+CREATE POLICY "Admin access for whatsapp_conversation_state" ON public.whatsapp_conversation_state FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admin access for whatsapp_inbound_idempotency" ON public.whatsapp_inbound_idempotency;
+CREATE POLICY "Admin access for whatsapp_inbound_idempotency" ON public.whatsapp_inbound_idempotency FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admin access for whatsapp_support_conversations" ON public.whatsapp_support_conversations;
+CREATE POLICY "Admin access for whatsapp_support_conversations" ON public.whatsapp_support_conversations FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admin access for whatsapp_support_tickets" ON public.whatsapp_support_tickets;
+CREATE POLICY "Admin access for whatsapp_support_tickets" ON public.whatsapp_support_tickets FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- ------------------------------------------------------------------------------
 -- 8. STORAGE BUCKETS CONFIGURATION
 -- ------------------------------------------------------------------------------
 INSERT INTO storage.buckets (id, name, public)
