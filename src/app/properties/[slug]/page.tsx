@@ -7,6 +7,7 @@ import { PropertyGallery } from "@/components/property/property-gallery";
 import { PropertySpecs } from "@/components/property/property-specs";
 import { PropertyAmenities } from "@/components/property/property-amenities";
 import { PropertyContact } from "@/components/property/property-contact";
+import { MobilePropertyCta } from "@/components/property/mobile-property-cta";
 import { PropertySimilar } from "@/components/property/property-similar";
 import { PropertyActions } from "@/components/property/property-actions";
 import { MapPin, Shield, ChevronLeft, Building2, Tag, Percent, ArrowDownRight, Sparkles, Play, Compass } from "lucide-react";
@@ -438,6 +439,7 @@ export default async function PropertyDetailPage({
           </div>
         </div>
       </div>
+      <MobilePropertyCta property={property} />
     </div>
   );
 }
