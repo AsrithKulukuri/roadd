@@ -67,44 +67,75 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      if (!isSupabaseConfigured()) {
-        throw new Error("Admin authentication is not configured.");
+      let adminAuthSuccess = false;
+      let sessionResult: any = null;
+
+      try {
+        if (isSupabaseConfigured()) {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: inputEmail,
+            password,
+          });
+          if (!error && data.session?.access_token) {
+            const sessionResponse = await fetch("/api/auth/admin-session", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${data.session.access_token}` },
+            });
+            sessionResult = await sessionResponse.json();
+            if (sessionResponse.ok && sessionResult.success) {
+              adminAuthSuccess = true;
+            }
+          }
+        }
+      } catch {}
+
+      if (adminAuthSuccess && sessionResult) {
+        const adminSessionPayload = {
+          isLoggedIn: true,
+          role: "admin",
+          email: sessionResult.user.email,
+          name: sessionResult.user.name || "Administrator",
+          id: sessionResult.user.id,
+          timestamp: new Date().toISOString(),
+        };
+
+        localStorage.setItem("road_user", JSON.stringify(adminSessionPayload));
+
+        toast.success("Welcome back, Administrator!", {
+          description: "Redirecting to Admin Control Center...",
+        });
+
+        window.location.href = redirectTo;
+        return;
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: inputEmail,
-        password,
-      });
-      if (error || !data.session?.access_token) {
-        throw new Error(error?.message || "Invalid administrator credentials.");
-      }
+      // Check if this is a registered Builder Partner logging in
+      try {
+        const builderRes = await fetch("/api/builder/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: inputEmail, password }),
+        });
+        const builderData = await builderRes.json();
+        if (builderData.success && builderData.builder) {
+          localStorage.setItem("road_builder_user", JSON.stringify(builderData.user));
+          localStorage.setItem("road_user", JSON.stringify(builderData.user));
+          document.cookie = `road_builder_id=${builderData.builder.id}; path=/; max-age=2592000`;
+          document.cookie = `road_user=true; path=/; max-age=2592000`;
+          window.dispatchEvent(new Event("storage"));
+          window.dispatchEvent(new CustomEvent("road_auth_changed"));
 
-      const sessionResponse = await fetch("/api/auth/admin-session", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${data.session.access_token}` },
-      });
-      const sessionResult = await sessionResponse.json();
-      if (!sessionResponse.ok || !sessionResult.success) {
-        await supabase.auth.signOut();
-        throw new Error(sessionResult.error || "This account does not have administrator access.");
-      }
+          toast.success(`Builder account recognized: Welcome ${builderData.builder.companyName}!`, {
+            description: "Routing to your Enterprise Builder Portal...",
+          });
+          setTimeout(() => {
+            window.location.href = "/builder";
+          }, 400);
+          return;
+        }
+      } catch {}
 
-      const adminSessionPayload = {
-        isLoggedIn: true,
-        role: "admin",
-        email: sessionResult.user.email,
-        name: sessionResult.user.name || "Administrator",
-        id: sessionResult.user.id,
-        timestamp: new Date().toISOString(),
-      };
-
-      localStorage.setItem("road_user", JSON.stringify(adminSessionPayload));
-
-      toast.success("Welcome back, Administrator!", {
-        description: "Redirecting to Admin Control Center...",
-      });
-
-      window.location.href = redirectTo;
+      throw new Error("Invalid login credentials.");
     } catch (err: unknown) {
       console.error("[AUTH DEBUG] Admin Login Exception:", err);
       const message = err instanceof Error ? err.message : "An unexpected error occurred during admin authentication.";
@@ -315,14 +346,24 @@ export default function AdminLoginPage() {
           </div>
         )}
 
-        {/* Back Link */}
-        <div className="pt-2 border-t border-slate-800/80 text-center">
-          <Link
-            href="/"
-            className="text-xs text-slate-400 hover:text-amber-400 transition-colors inline-flex items-center gap-1 font-semibold"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" /> Return to ROAD Portal
-          </Link>
+        {/* Builder Portal Link & Back Link */}
+        <div className="pt-3 border-t border-slate-800/80 text-center space-y-2">
+          <div>
+            <Link
+              href="/builder/login"
+              className="text-xs text-amber-500 hover:text-amber-400 font-bold transition-colors inline-flex items-center gap-1"
+            >
+              Are you a Builder Partner? Sign in to Builder Portal →
+            </Link>
+          </div>
+          <div>
+            <Link
+              href="/"
+              className="text-xs text-slate-400 hover:text-amber-400 transition-colors inline-flex items-center gap-1 font-semibold"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Return to ROAD Portal
+            </Link>
+          </div>
         </div>
       </motion.div>
     </div>

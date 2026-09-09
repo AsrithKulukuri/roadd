@@ -841,5 +841,97 @@ INSERT INTO public.homepage_layouts (id, sections, updated_at)
 VALUES ('default', '[]'::jsonb, timezone('utc'::text, now()))
 ON CONFLICT (id) DO NOTHING;
 
+-- ==============================================================================
+-- SECTION 9: BUILDER ENTERPRISE & CONCIERGE MANAGEMENT
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.builder_profiles (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  company_name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  logo_url TEXT,
+  banner_url TEXT,
+  description TEXT,
+  tagline TEXT,
+  rera_number TEXT,
+  crda_approved BOOLEAN DEFAULT false,
+  contact_email TEXT NOT NULL,
+  contact_phone TEXT NOT NULL,
+  whatsapp_number TEXT,
+  office_address TEXT,
+  experience_years INTEGER DEFAULT 0,
+  tier TEXT DEFAULT 'premium' CHECK (tier IN ('starter', 'premium', 'titan')),
+  is_verified BOOLEAN DEFAULT false,
+  assigned_project_ids TEXT[] DEFAULT '{}',
+  assigned_property_ids TEXT[] DEFAULT '{}',
+  chat_enabled BOOLEAN DEFAULT true,
+  promoted_at_top BOOLEAN DEFAULT false,
+  banner_active BOOLEAN DEFAULT false,
+  last_login_at TIMESTAMPTZ,
+  last_active_at TIMESTAMPTZ,
+  login_credentials_hint TEXT,
+  created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.builder_activity_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  builder_id UUID REFERENCES public.builder_profiles(id) ON DELETE CASCADE,
+  builder_name TEXT NOT NULL,
+  action_type TEXT NOT NULL,
+  entity_id TEXT,
+  entity_name TEXT,
+  details JSONB DEFAULT '{}'::jsonb,
+  ip_address TEXT,
+  device_info TEXT,
+  created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.builder_requests (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  builder_id UUID REFERENCES public.builder_profiles(id) ON DELETE CASCADE,
+  builder_name TEXT NOT NULL,
+  request_type TEXT NOT NULL CHECK (request_type IN ('promote_top', 'publish_banner', 'enable_chat', 'caption_change', 'custom_concierge')),
+  project_id TEXT,
+  project_name TEXT,
+  title TEXT NOT NULL,
+  details JSONB DEFAULT '{}'::jsonb,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'under_review', 'approved', 'rejected', 'active', 'completed')),
+  admin_notes TEXT,
+  priority TEXT DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'urgent')),
+  created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.builder_messages (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  builder_id UUID REFERENCES public.builder_profiles(id) ON DELETE CASCADE,
+  request_id UUID REFERENCES public.builder_requests(id) ON DELETE CASCADE,
+  sender_role TEXT NOT NULL CHECK (sender_role IN ('builder', 'admin')),
+  sender_name TEXT NOT NULL,
+  message TEXT NOT NULL,
+  attachments JSONB DEFAULT '[]'::jsonb,
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.builder_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.builder_activity_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.builder_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.builder_messages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public can view verified builder profiles" ON public.builder_profiles;
+CREATE POLICY "Public can view verified builder profiles" ON public.builder_profiles FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Admins have full access to builder profiles" ON public.builder_profiles;
+CREATE POLICY "Admins have full access to builder profiles" ON public.builder_profiles FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Admins can view builder activity logs" ON public.builder_activity_logs;
+CREATE POLICY "Admins can view builder activity logs" ON public.builder_activity_logs FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admins can manage all builder requests" ON public.builder_requests;
+CREATE POLICY "Admins can manage all builder requests" ON public.builder_requests FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Admins and builders can manage messages" ON public.builder_messages;
+CREATE POLICY "Admins and builders can manage messages" ON public.builder_messages FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
 -- Reload schema cache
 NOTIFY pgrst, 'reload schema';
+

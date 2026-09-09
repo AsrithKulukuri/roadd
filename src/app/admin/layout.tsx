@@ -22,6 +22,7 @@ import {
   Bot,
   Calendar,
   ExternalLink,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -37,6 +38,7 @@ const sidebarLinks = [
   { href: "/admin/inquiries", label: "Requirements & Leads", icon: MessageSquare, isBadge: true },
   { href: "/admin/properties", label: "Properties", icon: Building2 },
   { href: "/admin/projects", label: "Projects", icon: FolderOpen },
+  { href: "/admin/builders", label: "Builders & Portals", icon: Briefcase },
   { href: "/admin/locations", label: "Locations & Localities", icon: MapPin },
   { href: "/admin/banners", label: "Banners", icon: ImageIcon },
   { href: "/admin/users", label: "Users", icon: Users },
@@ -66,6 +68,9 @@ const getAdminPageInfo = (path: string) => {
   }
   if (path.startsWith("/admin/projects")) {
     return { title: "Projects", badge: "Ventures", icon: FolderOpen };
+  }
+  if (path.startsWith("/admin/builders")) {
+    return { title: "Builder Partners", badge: "Enterprise", icon: Briefcase };
   }
   if (path.startsWith("/admin/schedules")) {
     return { title: "Site Visits", badge: "Schedules", icon: Calendar };

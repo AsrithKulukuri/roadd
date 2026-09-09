@@ -32,9 +32,9 @@ function ConditionalFooter() {
 
 export function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAdmin = pathname.startsWith("/admin");
+  const isStandalonePortal = pathname.startsWith("/admin") || pathname.startsWith("/builder");
   const hasNestedMain =
-    isAdmin ||
+    isStandalonePortal ||
     pathname.startsWith("/dashboard") ||
     pathname === "/search" ||
     pathname === "/properties";
@@ -56,7 +56,7 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
       <Suspense fallback={null}>
         <SmartPageLoader />
       </Suspense>
-      {!isAdmin && (
+      {!isStandalonePortal && (
         <>
           <Suspense fallback={<div className="h-[72px]" />}>
             <Navbar />
@@ -67,7 +67,7 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
         </>
       )}
       <ContentElement className={`flex-1 ${isDetailPage ? "pb-0" : "pb-16 sm:pb-0"}`}>{children}</ContentElement>
-      {!isAdmin && (
+      {!isStandalonePortal && (
         <>
           <Suspense fallback={null}>
             <ConditionalFooter />

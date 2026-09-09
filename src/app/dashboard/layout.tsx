@@ -15,6 +15,7 @@ import {
   Lock,
   Shield,
   Users,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -108,6 +109,9 @@ export default function DashboardLayout({
   const isAdminUser = user?.role === "admin" || user?.email === "admin@road.com";
 
   const displayedLinks = [...sidebarLinks];
+  if (user?.role === "developer" || isAdminUser) {
+    displayedLinks.push({ href: "/builder", label: "Builder Portal", icon: Briefcase });
+  }
   if (isAdminUser) {
     displayedLinks.push({ href: "/admin/users", label: "Admin Portal", icon: Shield });
   }
