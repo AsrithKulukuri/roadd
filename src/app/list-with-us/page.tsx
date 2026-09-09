@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   ArrowRight
 } from "lucide-react";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Logo } from "@/components/shared/logo";
 
 export default function ListWithUsPage() {

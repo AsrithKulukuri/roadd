@@ -23,7 +23,7 @@ import {
   Award
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
+
 import { useBuilderStore, BuilderProfile } from "@/stores/builder-store";
 import { useSchedulesStore } from "@/stores/schedules-store";
 import { cn } from "@/lib/utils";
@@ -203,8 +203,6 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
               <LogOut className="h-3.5 w-3.5" />
               Sign Out
             </button>
-
-            <ThemeToggle />
 
             {/* Mobile Menu Button */}
             <button

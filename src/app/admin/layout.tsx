@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/shared/logo";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
+
 import { 
   LayoutDashboard, 
   Building2, 
@@ -278,7 +278,6 @@ export default function AdminLayout({
                 <span>Live Site</span>
               </Link>
 
-              <ThemeToggle />
 
               <button
                 type="button"

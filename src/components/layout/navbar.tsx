@@ -28,7 +28,6 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn, formatINRWords } from "@/lib/utils";
 import { navigationLinks } from "@/config/site";
@@ -732,9 +731,6 @@ export function Navbar() {
 
             {/* Right Action Icons & Controls */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              <div className="hidden sm:block">
-                <ThemeToggle />
-              </div>
 
               {/* Saved Items Heart Button */}
               <Link
