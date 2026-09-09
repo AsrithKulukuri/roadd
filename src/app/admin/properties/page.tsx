@@ -1,4 +1,5 @@
 "use client";
+import { ListingQualityPanel } from "@/components/admin/listing-quality-panel";
 
 import { usePropertiesStore } from "@/stores/properties-store";
 import { Button } from "@/components/ui/button";
@@ -82,6 +83,7 @@ export default function AdminPropertiesPage() {
         </div>
       </div>
 
+      <ListingQualityPanel scope="properties" />
       {/* Stats & Category Filter Tabs with Horizontal Touch Scroll on Mobile */}
       <div className="flex sm:grid sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-6 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-none touch-pan-x">
         {[

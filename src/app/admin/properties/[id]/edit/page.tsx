@@ -1,5 +1,7 @@
 "use client";
 
+import { cleanPropertySpecifications, normalizeLegacyPropertyType } from "@/lib/property-specifications";
+import { SpecificationFields } from "@/components/admin/specification-fields";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -88,7 +90,7 @@ export default function EditPropertyPage() {
         refId: getPropertyRefId(targetProperty),
         title: targetProperty.title || "",
         description: targetProperty.description || "",
-        propertyType: targetProperty.propertyType || "apartment",
+        propertyType: normalizeLegacyPropertyType(targetProperty.propertyType || "apartment"),
         listingType: targetProperty.listingType || "sale",
         saleType: (targetProperty.saleType as "new" | "resale") || "new",
         price: String(targetProperty.price || ""),
@@ -244,6 +246,9 @@ export default function EditPropertyPage() {
       description: formData.description,
       price: parseInt(formData.price) || 0,
       pricePerSqft: parseInt(formData.price) / (parseInt(formData.area) || 1),
+      attributes: formData.attributes,
+      category: formData.propertyType === targetProperty.propertyType ? targetProperty.category : undefined,
+      subtype: formData.propertyType === targetProperty.propertyType ? targetProperty.subtype : undefined,
       propertyType: formData.propertyType as any,
       listingType: formData.listingType as any,
       saleType: formData.saleType,
@@ -303,7 +308,7 @@ export default function EditPropertyPage() {
     };
 
     try {
-      await updateProperty(targetProperty.id, updatedProperty);
+      await updateProperty(targetProperty.id, cleanPropertySpecifications(updatedProperty));
       toast.success("Property updated successfully!");
       
       setTimeout(() => {
@@ -439,15 +444,28 @@ export default function EditPropertyPage() {
                 />
               </div>
 
+              <div className="md:col-span-2 space-y-4">
+                <h3 className="font-bold">Property Specifications</h3>
+                <SpecificationFields
+                  property={{
+                    ...(formData.propertyType === targetProperty?.propertyType ? targetProperty : {}),
+                    propertyType: formData.propertyType as Property["propertyType"],
+                    attributes: formData.attributes,
+                  }}
+                  onChange={attributes => setFormData(prev => ({ ...prev, attributes }))}
+                />
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-secondary">Property Type</label>
-                <select name="propertyType" value={formData.propertyType} onChange={handleChange} className="w-full h-12 rounded-xl bg-bg-primary border border-border-default/50 px-4 text-text-primary focus:outline-none focus:ring-2 focus:ring-amber-primary">
+                <select name="propertyType" value={formData.propertyType} onChange={e => setFormData(prev => ({ ...prev, propertyType: e.target.value, attributes: {}, bedrooms: "", bathrooms: "", furnishing: "", facing: "", carpetArea: "", builtUpArea: "", parking: "" }))} className="w-full h-12 rounded-xl bg-bg-primary border border-border-default/50 px-4 text-text-primary focus:outline-none focus:ring-2 focus:ring-amber-primary">
                   <option value="apartment">Apartment</option>
                   <option value="villa">Villa</option>
                   <option value="independent-house">Independent House</option>
-                  <option value="plot">Plot / Land</option>
-                  <option value="commercial">Commercial</option>
-                  <option value="agricultural-land">Agricultural Land</option>
+                  <option value="residential-land">Residential Plot / Land</option>
+                  <option value="commercial-spaces">Commercial Space</option>
+                  <option value="shops">Shop</option><option value="buildings">Building</option><option value="commercial-lands">Commercial Land</option><option value="industrial-lands">Industrial Land</option><option value="farmhouse">Farmhouse</option><option value="pg-coliving">PG / Co-living</option>
+                  <option value="agricultural-lands">Agricultural Land</option>
                 </select>
               </div>
 

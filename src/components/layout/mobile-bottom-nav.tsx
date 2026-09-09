@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
+import { searchNavigationCategory } from "@/lib/search-navigation";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { X, Sparkles, Plus, User, LogOut, LogIn } from "lucide-react";
 import { SolidHome, SolidSearch, SolidMapPin, SolidHeart, SolidMenu } from "@/components/ui/solid-icons";
@@ -461,6 +462,7 @@ export function MobileBottomNav() {
                     <Link
                       key={link.href}
                       href={link.href}
+                      aria-current={pathname === "/search" && searchNavigationCategory(new URLSearchParams(link.href.split("?")[1])) === searchNavigationCategory(searchParams) ? "page" : undefined}
                       onClick={() => setIsMenuOpen(false)}
                       className="font-bold text-[15px] text-slate-800 dark:text-slate-200 hover:text-amber-500 transition-colors"
                     >

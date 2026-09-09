@@ -1,5 +1,6 @@
 import type { Property } from "@/types/property";
 import type { Project } from "@/types/project";
+import { isCrdaVerified } from "@/lib/listing-quality";
 import type { FilterState } from "@/components/search/search-filters";
 
 export interface ParsedSearchIntent {
@@ -226,6 +227,9 @@ export function matchesStructuredLocation(
  * Strict verification of explicit gated community evidence for Properties
  */
 export function hasGatedEvidenceProperty(property: Property): boolean {
+  const structuredGated = property.attributes?.gatedCommunity;
+  if (structuredGated === false || structuredGated === "no") return false;
+  if (structuredGated === true || structuredGated === "yes") return true;
   const pRecord = property as unknown as Record<string, unknown>;
   if (pRecord.gatedCommunity === true || pRecord.isGatedCommunity === true || pRecord.gatedSecurity === true) {
     return true;
@@ -578,11 +582,9 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
       if ((rt === "residential-land" || rt === "plot" || rt === "residential-plot" || rt === "venture-plot") && (pType.includes("land") || pType.includes("plot") || pSubtype === "venture-plot" || pSubtype === "land")) return true;
       
       // CRDA Ventures & CRDA Approved matches
-      if (rt === "crda-ventures" || rt === "crda" || rt === "crda-venture") {
-        const landApproved = String((property as any).landApprovedBy || (property as any).approvedBy || "").toLowerCase();
-        const titleLower = (property.title || "").toLowerCase();
-        const descLower = (property.description || "").toLowerCase();
-        return landApproved.includes("crda") || Boolean((property as any).crdaApproved) || titleLower.includes("crda") || descLower.includes("crda");
+      if (rt === "venture" || rt === "crda-ventures" || rt === "crda" || rt === "crda-venture") {
+        const landApproved = String(property.attributes?.landApprovedBy ?? (property as unknown as Record<string, unknown>).landApprovedBy ?? "").toLowerCase();
+        return (pType.includes("land") || pSubtype === "venture-plot" || pSubtype === "land") && (landApproved === "crda" || (property as unknown as Record<string, unknown>).crdaApproved === true);
       }
 
       // Commercial matches
@@ -847,13 +849,14 @@ export function evaluateProjectFilters(
   if (rawPropType.length > 0) {
     const matchesType = rawPropType.some((t: string) => {
       const tt = t.toLowerCase();
+      if (tt === "venture") return pType === "venture" && isCrdaVerified(project);
       if (tt === pType) return true;
       if (tt === "apartment" && pType.includes("apartment")) return true;
       if (tt === "villa" && (pType.includes("villa") || pType.includes("independent-house"))) return true;
       if ((tt === "independent-house" || tt === "house" || tt === "houses") && (pType.includes("house") || (project.name || "").toLowerCase().includes("house"))) return true;
       if (["venture", "crda-ventures", "crda-venture", "crda", "residential-land", "plot", "venture-plot", "land"].includes(tt)) {
         if (tt === "crda-ventures" || tt === "crda" || tt === "crda-venture") {
-          return pType === "venture" || Boolean(project.crdaApproved) || (project.name || "").toLowerCase().includes("crda") || (project.description || "").toLowerCase().includes("crda");
+          return pType === "venture" && isCrdaVerified(project);
         }
         return pType === "venture" || pType === "plot" || pType === "land";
       }
@@ -1052,4 +1055,3 @@ export function evaluateProjectFilters(
 
   return true;
 }
-

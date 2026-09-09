@@ -9,6 +9,9 @@ export type ConstructionStatus =
 
 // A single BHK/plot configuration within a project
 export interface ProjectConfig {
+  /** Configuration-specific dimensions with explicit units, e.g. 30 × 60 ft. */
+  measurements?: string;
+  roadWidth?: number;
   id: string;
   /** e.g. "3 BHK", "2 BHK", "Corner Plot" */
   label: string;
@@ -103,6 +106,7 @@ export interface Project {
 
   // Location
   location: {
+    crdaReview?: import("@/lib/listing-quality").CrdaReview;
     address: string;
     locality: string;
     city: string;
@@ -116,6 +120,11 @@ export interface Project {
   reraId?: string;
   reraApproved: boolean;
   crdaApproved?: boolean;
+  /** Official evidence supplied and reviewed by an administrator. */
+  crdaLpNumber?: string;
+  surveyNumber?: string;
+  crdaDocumentUrl?: string;
+  boundaryDimensions?: { north?: string; south?: string; east?: string; west?: string };
   noBrokerage?: boolean;
 
   // Status

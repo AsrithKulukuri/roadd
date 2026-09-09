@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Bed, Bath, Maximize2, Compass, Building2, Car, Layers, Armchair, Clock, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Maximize2, ChevronDown, ChevronUp, Bed, Bath, Compass, Zap, Droplets, Car, Layers, Armchair } from "lucide-react";
 import type { Property } from "@/types/property";
-import { propertyTypeLabels, furnishingLabels } from "@/config/site";
+import { resolvePropertySpecifications } from "@/lib/property-specifications";
 
 interface PropertySpecsProps {
   property: Property;
@@ -11,62 +11,7 @@ interface PropertySpecsProps {
 
 export function PropertySpecs({ property }: PropertySpecsProps) {
   const [showAllMobile, setShowAllMobile] = useState(false);
-  const attributes = property.attributes && typeof property.attributes === "object"
-    ? property.attributes as Record<string, unknown>
-    : {};
-
-  const formatPropertyType = (type: string) => {
-    if (!type) return "Residential";
-    if (propertyTypeLabels[type]) return propertyTypeLabels[type];
-    return type
-      .split("-")
-      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
-  };
-
-  const facing = (() => {
-    const raw = property.facing || (typeof attributes.facing === "string" ? attributes.facing : "");
-    if (!raw) return "East Facing";
-    const formatted = raw.charAt(0).toUpperCase() + raw.slice(1);
-    return formatted.toLowerCase().includes("facing") ? formatted : `${formatted} Facing`;
-  })();
-
-  const furnishing = (() => {
-    const raw = property.furnishing || (typeof attributes.furnishing === "string" ? attributes.furnishing : "");
-    if (!raw) return "Semi-Furnished";
-    return furnishingLabels[raw] || raw.charAt(0).toUpperCase() + raw.slice(1);
-  })();
-
-  const age = (() => {
-    const raw = property.ageOfProperty;
-    if (raw === undefined || raw === null) return "Ready to Move";
-    if (raw === 0) return "Brand New (< 1 yr)";
-    return `${raw} Years Old`;
-  })();
-
-  const areaText = (() => {
-    if (property.area) return `${property.area.toLocaleString()} sq.ft`;
-    if (property.builtUpArea) return `${property.builtUpArea.toLocaleString()} sq.ft`;
-    if (property.carpetArea) return `${property.carpetArea.toLocaleString()} sq.ft`;
-    return null;
-  })();
-
-  const directUds = "uds" in property ? (property as Property & { uds?: string | number }).uds : undefined;
-  const attributeUds = typeof attributes.uds === "string" || typeof attributes.uds === "number" ? attributes.uds : undefined;
-  const uds = directUds || attributeUds;
-
-  const specs = [
-    { label: "Bedrooms", value: property.bedrooms > 0 ? `${property.bedrooms} BHK` : "1 BHK", icon: Bed, sub: "Configuration" },
-    { label: "Bathrooms", value: property.bathrooms > 0 ? `${property.bathrooms} Baths` : "1 Bath", icon: Bath, sub: "Washrooms" },
-    { label: "Facing", value: facing, icon: Compass, sub: "Vastu Direction" },
-    { label: "Property Type", value: formatPropertyType(property.propertyType), icon: Building2, sub: "Category" },
-    ...(areaText ? [{ label: "Built-up Area", value: areaText, icon: Maximize2, sub: "Super Area" }] : []),
-    ...(uds ? [{ label: "Undivided Share", value: `${uds} sq.yds`, icon: Sparkles, sub: "Land Share (UDS)" }] : []),
-    { label: "Furnishing", value: furnishing, icon: Armchair, sub: "Interior Status" },
-    { label: "Parking", value: property.parking > 0 ? `${property.parking} Covered` : "Available", icon: Car, sub: "Vehicle Space" },
-    { label: "Floor Level", value: property.floorNumber ? `${property.floorNumber} of ${property.totalFloors || property.floorNumber}` : (property.propertyType === "independent-house" ? "Independent" : "Ground Floor"), icon: Layers, sub: "Floor Level" },
-    { label: "Property Age", value: age, icon: Clock, sub: "Construction" },
-  ];
+  const specs = resolvePropertySpecifications(property).map(spec => ({ ...spec, icon: /bedroom/i.test(spec.label) ? Bed : /bathroom/i.test(spec.label) ? Bath : /facing/i.test(spec.label) ? Compass : /electricity/i.test(spec.label) ? Zap : /water|borewell/i.test(spec.label) ? Droplets : /parking/i.test(spec.label) ? Car : /floor/i.test(spec.label) ? Layers : /furnished/i.test(spec.label) ? Armchair : Maximize2 }));
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -86,9 +31,6 @@ export function PropertySpecs({ property }: PropertySpecsProps) {
               </p>
               <p className="font-extrabold !text-[#0f172a] text-[13px] sm:text-sm break-words mt-1 leading-snug opacity-100">
                 {spec.value}
-              </p>
-              <p className="hidden sm:block text-[10px] text-slate-400 font-medium break-words mt-1 leading-snug">
-                {spec.sub}
               </p>
             </div>
           </div>

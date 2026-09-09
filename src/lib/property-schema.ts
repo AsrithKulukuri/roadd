@@ -88,6 +88,7 @@ export const CATEGORY_SUBTYPES: Record<PropertyCategory, { id: PropertySubtype; 
 
 // Common fields across residential building subtypes (Flat, Duplex, Penthouse)
 const COMMON_FLAT_FIELDS: CategoryFieldConfig[] = [
+  { key: "bedrooms", label: "Bedrooms", inputType: "number" },
   { key: "superBuiltUpArea", label: "Super Built-up Area (sqft)", inputType: "number", required: true },
   { key: "builtUpArea", label: "Built-up Area (sqft)", inputType: "number" },
   { key: "carpetArea", label: "Carpet Area (sqft)", inputType: "number", required: true },
@@ -109,6 +110,8 @@ const COMMON_FLAT_FIELDS: CategoryFieldConfig[] = [
 ];
 
 const COMMON_HOUSE_FIELDS: CategoryFieldConfig[] = [
+  { key: "bedrooms", label: "Bedrooms", inputType: "number" },
+  { key: "totalAreaSqyd", label: "Plot Area (sqyd)", inputType: "number" },
   { key: "builtUpArea", label: "Total Built-up Area (sqft)", inputType: "number", required: true },
   { key: "carpetArea", label: "Carpet Area (sqft)", inputType: "number" },
   { key: "measurements", label: "Measurements (Width x Depth)", inputType: "measurement", helpText: "e.g. 40 x 60" },
@@ -322,3 +325,18 @@ export const PROPERTY_CATEGORY_SCHEMA: Record<PropertyCategory, Record<string, C
     ]
   }
 };
+
+// Shared infrastructure fields are persisted in the existing attributes JSONB.
+for (const schemas of Object.values(PROPERTY_CATEGORY_SCHEMA)) {
+  for (const fields of Object.values(schemas)) {
+    if (fields.some(field => field.key === "waterSource")) {
+      fields.push(
+        { key: "borewell", label: "Borewell Facility", inputType: "yesno", options: YES_NO_OPTIONS },
+        { key: "electricity", label: "Electricity Available", inputType: "yesno", options: YES_NO_OPTIONS }
+      );
+    }
+    for (const field of fields) {
+      if (field.inputType === "measurement") field.helpText = "Width × depth with units, e.g. 30 × 60 ft";
+    }
+  }
+}

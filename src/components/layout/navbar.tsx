@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
+import { searchNavigationCategory } from "@/lib/search-navigation";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -375,6 +376,7 @@ export function Navbar() {
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
+    if (navigationLinks.main.some(link => link.href === href)) return pathname === "/search" && searchNavigationCategory(new URLSearchParams(href.split("?")[1])) === searchNavigationCategory(searchParams);
     
     const [path, query] = href.split("?");
     if (pathname !== path) return false;
@@ -390,7 +392,7 @@ export function Navbar() {
       }
       
       // Prevent general links (like Buy) from being active when a more specific category is selected
-      if (path === "/search" && !urlParams.has("propertyType") && searchParams.has("propertyType")) {
+      if (path === "/search" && !urlParams.has("propertyType") && !urlParams.has("projectType") && (searchParams.has("propertyType") || searchParams.has("projectType"))) {
         return false;
       }
       
@@ -681,6 +683,7 @@ export function Navbar() {
                       <div key={link.href} className="relative group shrink-0">
                         <Link
                           href={link.href}
+                          aria-current={isActive(link.href) ? "page" : undefined}
                           className={cn(
                             "relative px-2.5 xl:px-3.5 py-1.5 text-xs xl:text-[13px] font-bold rounded-xl transition-all duration-200 block whitespace-nowrap",
                             isActive(link.href)
@@ -854,6 +857,7 @@ export function Navbar() {
                   <div className="flex items-center justify-between">
                     <Link
                       href={link.href}
+                          aria-current={isActive(link.href) ? "page" : undefined}
                       className={cn(
                         "flex-1 px-4 py-3 rounded-xl font-semibold text-base transition-colors",
                         isActive(link.href)

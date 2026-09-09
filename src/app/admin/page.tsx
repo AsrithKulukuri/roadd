@@ -1,4 +1,5 @@
 "use client";
+import { ListingQualityPanel } from "@/components/admin/listing-quality-panel";
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -504,6 +505,7 @@ export default function AdminDashboardPage() {
       {/* TAB 1: OVERVIEW */}
       {activeTab === "overview" && (
         <div className="space-y-8 animate-in fade-in duration-200">
+          <ListingQualityPanel />
           <AnalyticsCharts />
           <AiWriter />
         </div>

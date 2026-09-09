@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/server-auth-guard";
+import { stampCrdaReview, validMeasurements, type CrdaReview } from "@/lib/listing-quality";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +24,22 @@ export async function POST(request: NextRequest) {
 
   try {
     const payload = { ...body.payload };
+    const location = payload.location as Record<string, unknown> | undefined;
+    const review = location?.crdaReview as CrdaReview | undefined;
+    if (review?.requested) {
+      if (payload.crdaApproved === true && payload.projectType !== "venture") return NextResponse.json({ success: false, error: "Only plot ventures can be marked CRDA approved." }, { status: 400 });
+      if (review.approved && (!String(payload.crdaLpNumber || "").trim() || !String(payload.surveyNumber || "").trim() || !String(payload.crdaDocumentUrl || "").trim())) {
+        return NextResponse.json({ success: false, error: "LP number, survey number, and approved layout document are required before verification." }, { status: 400 });
+      }
+      try {
+        payload.location = { ...location, crdaReview: stampCrdaReview(review, payload.crdaApproved === true, new Date().toISOString()) };
+      } catch (error) {
+        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Invalid approval review." }, { status: 400 });
+      }
+    }
+    if (Array.isArray(payload.configurations) && payload.configurations.some(config => config.measurements && !validMeasurements(config.measurements))) {
+      return NextResponse.json({ success: false, error: "Configuration dimensions need positive width × depth and units, e.g. 30 × 60 ft." }, { status: 400 });
+    }
 
     // Always mirror isRoadExclusive into location JSONB for fail-safe persistence
     if (payload.isRoadExclusive !== undefined) {

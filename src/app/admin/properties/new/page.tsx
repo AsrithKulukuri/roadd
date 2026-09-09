@@ -1,4 +1,7 @@
 "use client";
+import { SpecificationFields } from "@/components/admin/specification-fields";
+import { cleanPropertySpecifications, legacyPropertyType } from "@/lib/property-specifications";
+
 
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -209,7 +212,7 @@ export default function AddPropertyPage() {
       attributes: formData.attributes,
       price: parseInt(formData.price) || 0,
       pricePerSqft: parseInt(formData.price) / (parseInt(formData.area) || 1),
-      propertyType: formData.propertyType as any,
+      propertyType: legacyPropertyType(formData.category, formData.subtype),
       listingType: formData.listingType as any,
       saleType: formData.saleType,
       status: finalStatus as any,
@@ -281,7 +284,7 @@ export default function AddPropertyPage() {
 
     try {
       setIsSubmitting(true);
-      await addProperty(newProperty);
+      await addProperty(cleanPropertySpecifications(newProperty));
       toast.success(`Property ${finalStatus === 'published' ? 'Published' : 'Saved as Draft'} successfully!`);
       
       setTimeout(() => {
@@ -406,7 +409,7 @@ export default function AddPropertyPage() {
                       ...prev, 
                       category: cat, 
                       subtype: defaultSubtype,
-                      attributes: {} 
+                      attributes: {}, bedrooms: "", bathrooms: "", furnishing: "", facing: "", carpetArea: "", builtUpArea: "", parking: ""
                     }));
                   }} 
                   className="w-full h-12 rounded-xl bg-slate-900 border border-amber-500/50 px-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -427,7 +430,7 @@ export default function AddPropertyPage() {
                   value={formData.subtype} 
                   onChange={(e) => {
                     const sub = e.target.value as PropertySubtype;
-                    setFormData(prev => ({ ...prev, subtype: sub, attributes: {} }));
+                    setFormData(prev => ({ ...prev, subtype: sub, attributes: {}, bedrooms: "", bathrooms: "", furnishing: "", facing: "", carpetArea: "", builtUpArea: "", parking: "" }));
                   }} 
                   className="w-full h-12 rounded-xl bg-slate-900 border border-amber-500/50 px-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
@@ -446,146 +449,7 @@ export default function AddPropertyPage() {
                   <span>{formData.category.toUpperCase()} — {formData.subtype.replace("-", " ").toUpperCase()} Specific Fields</span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(PROPERTY_CATEGORY_SCHEMA[formData.category]?.[formData.subtype] || []).map((field) => {
-                    const val = formData.attributes[field.key] ?? "";
-
-                    if (field.inputType === "dropdown") {
-                      return (
-                        <div key={field.key} className="space-y-1">
-                          <label className="text-xs font-bold text-slate-300">
-                            {field.label} {field.required && <span className="text-red-400">*</span>}
-                          </label>
-                          <select
-                            value={val}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              setFormData(prev => ({
-                                ...prev,
-                                attributes: { ...prev.attributes, [field.key]: v },
-                                ...(field.key === "facing" ? { facing: v as any } : {}),
-                                ...(field.key === "furnishing" ? { furnishing: v as any } : {}),
-                                ...(field.key === "totalFloors" ? { totalFloors: parseInt(v) || 0 } : {}),
-                                ...(field.key === "bathrooms" ? { bathrooms: v } : {}),
-                                ...(field.key === "balconies" ? { balconies: v } : {}),
-                                ...(field.key === "parking" ? { parking: v } : {})
-                              }));
-                            }}
-                            className="w-full h-11 rounded-xl bg-slate-950 border border-slate-800 px-3 text-xs text-white focus:border-amber-500"
-                          >
-                            <option value="">-- Select {field.label} --</option>
-                            {field.options?.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
-                          {field.helpText && <p className="text-[10px] text-slate-400">{field.helpText}</p>}
-                        </div>
-                      );
-                    }
-
-                    if (field.inputType === "yesno") {
-                      return (
-                        <div key={field.key} className="space-y-1">
-                          <label className="text-xs font-bold text-slate-300 block">{field.label}</label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  attributes: { ...prev.attributes, [field.key]: "yes" }
-                                }));
-                              }}
-                              className={`py-2 px-3 rounded-xl text-xs font-black border transition-all cursor-pointer ${
-                                val === "yes"
-                                  ? "bg-amber-500 text-slate-950 border-amber-500"
-                                  : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
-                              }`}
-                            >
-                              Yes
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  attributes: { ...prev.attributes, [field.key]: "no" }
-                                }));
-                              }}
-                              className={`py-2 px-3 rounded-xl text-xs font-black border transition-all cursor-pointer ${
-                                val === "no"
-                                  ? "bg-slate-900 text-slate-300 border-slate-700"
-                                  : "bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800"
-                              }`}
-                            >
-                              No
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    if (field.inputType === "multiselect") {
-                      const selectedList: string[] = Array.isArray(val) ? val : [];
-                      return (
-                        <div key={field.key} className="md:col-span-2 space-y-2">
-                          <label className="text-xs font-bold text-slate-300 block">{field.label}</label>
-                          <div className="flex flex-wrap gap-2">
-                            {field.options?.map((crop) => {
-                              const isSelected = selectedList.includes(crop);
-                              return (
-                                <button
-                                  key={crop}
-                                  type="button"
-                                  onClick={() => {
-                                    const next = isSelected
-                                      ? selectedList.filter((c) => c !== crop)
-                                      : [...selectedList, crop];
-                                    setFormData(prev => ({
-                                      ...prev,
-                                      attributes: { ...prev.attributes, [field.key]: next }
-                                    }));
-                                  }}
-                                  className={`py-1.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                                    isSelected
-                                      ? "bg-amber-500 text-slate-950 border-amber-500 font-black"
-                                      : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
-                                  }`}
-                                >
-                                  {isSelected ? "✓ " : "+ "} {crop}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div key={field.key} className="space-y-1">
-                        <label className="text-xs font-bold text-slate-300">
-                          {field.label} {field.required && <span className="text-red-400">*</span>}
-                        </label>
-                        <Input
-                          type={field.inputType === "number" ? "number" : "text"}
-                          value={val}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            setFormData(prev => ({
-                              ...prev,
-                              attributes: { ...prev.attributes, [field.key]: v },
-                              ...(field.key === "superBuiltUpArea" || field.key === "builtUpArea" || field.key === "carpetArea" || field.key === "totalAreaSqyd" ? { area: v } : {})
-                            }));
-                          }}
-                          placeholder={field.helpText || `Enter ${field.label}...`}
-                          className="h-11 text-xs bg-slate-950 border-slate-800 text-white"
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
+                <SpecificationFields property={{ category: formData.category, subtype: formData.subtype, attributes: formData.attributes }} onChange={attributes => setFormData(prev => ({ ...prev, attributes }))} />
               </div>
 
               <div className="space-y-2">

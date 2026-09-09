@@ -41,6 +41,7 @@ const CoordinatePickerMap = dynamic(
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const FACILITIES_LIST = [
+  "Borewell", "Electricity Connection", "Gated Community", "Underground Drainage", "Street Lights",
   "Swimming Pool", "Clubhouse", "Gymnasium", "24/7 Security", "CCTV Surveillance",
   "Power Backup", "Intercom", "Lift", "Landscaped Gardens", "Jogging Track",
   "Children's Play Area", "Badminton Court", "Basketball Court", "Indoor Games",
@@ -182,6 +183,12 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const [reraId, setReraId]                   = useState(initialData?.reraId ?? "");
   const [reraApproved, setReraApproved]       = useState(initialData?.reraApproved ?? false);
   const [crdaApproved, setCrdaApproved]       = useState(initialData?.crdaApproved ?? false);
+  const [crdaLpNumber, setCrdaLpNumber] = useState(initialData?.crdaLpNumber ?? "");
+  const [surveyNumber, setSurveyNumber] = useState(initialData?.surveyNumber ?? "");
+  const [crdaDocumentUrl, setCrdaDocumentUrl] = useState(initialData?.crdaDocumentUrl ?? "");
+  const [crdaReviewReference, setCrdaReviewReference] = useState(initialData?.location?.crdaReview?.reference ?? "");
+  const [crdaReviewApproved, setCrdaReviewApproved] = useState(initialData?.location?.crdaReview?.approved ?? false);
+  const [boundaryDimensions, setBoundaryDimensions] = useState(initialData?.boundaryDimensions ?? {});
   const [isRoadExclusive, setIsRoadExclusive] = useState<boolean>(initialData?.isRoadExclusive ?? false);
   const [noBrokerage, setNoBrokerage]         = useState(initialData?.noBrokerage ?? false);
   const [constructionStatus, setConstructionStatus] = useState<ConstructionStatus>(initialData?.constructionStatus ?? "under-construction");
@@ -485,9 +492,22 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       builderDescription: builderDescription.trim() || undefined,
       builderExperience: builderExperience.trim() || undefined,
       builderProjectsCount: builderProjectsCount.trim() || undefined,
-      location: { address: address.trim(), locality: locality.trim(), city: city.trim(), state: locState.trim(), pincode: pincode.trim() || undefined, latitude: lat, longitude: lng },
+      location: {
+        address: address.trim(), locality: locality.trim(), city: city.trim(), state: locState.trim(), pincode: pincode.trim() || undefined, latitude: lat, longitude: lng,
+        ...(crdaReviewReference.trim() ? { crdaReview: { reference: crdaReviewReference.trim(), approved: crdaReviewApproved, requested: true } } : {}),
+      },
       reraId: reraId.trim() || undefined,
-      reraApproved, crdaApproved, isRoadExclusive, noBrokerage,
+      reraApproved, crdaApproved,
+      crdaLpNumber: crdaLpNumber.trim() || undefined,
+      surveyNumber: surveyNumber.trim() || undefined,
+      crdaDocumentUrl: crdaDocumentUrl.trim() || undefined,
+      boundaryDimensions: {
+        north: boundaryDimensions.north?.trim() || undefined,
+        south: boundaryDimensions.south?.trim() || undefined,
+        east: boundaryDimensions.east?.trim() || undefined,
+        west: boundaryDimensions.west?.trim() || undefined,
+      },
+      isRoadExclusive, noBrokerage,
       constructionStatus,
       totalUnits: totalUnits ? parseInt(totalUnits) : undefined,
       totalTowers: totalTowers ? parseInt(totalTowers) : undefined,
@@ -596,9 +616,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                     onChange={(e) => {
                       const newType = e.target.value as ProjectType;
                       setProjectType(newType);
-                      if (newType === "venture") {
-                        setCrdaApproved(true);
-                      }
+                      setCrdaApproved(false);
                       setConfigs([]);
                     }}
                     className="w-full h-12 rounded-xl bg-bg-primary border border-border-default/80 px-4 pr-10 text-text-primary font-bold text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all cursor-pointer shadow-xs appearance-none"
@@ -905,6 +923,20 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                     </p>
                   </div>
 
+                  {projectType === "venture" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 rounded-xl border border-amber-500/20 bg-slate-950">
+                      <Field label="CRDA LP Order Number"><Input value={crdaLpNumber} onChange={e => setCrdaLpNumber(e.target.value)} placeholder="LP No. 42/2024/CRDA" /></Field>
+                      <Field label="Survey Number"><Input value={surveyNumber} onChange={e => setSurveyNumber(e.target.value)} placeholder="Sy. No. 142/2B" /></Field>
+                      <Field label="Approved Layout / LP Document URL"><Input value={crdaDocumentUrl} onChange={e => setCrdaDocumentUrl(e.target.value)} placeholder="https://.../approved-layout.pdf" /></Field>
+                      <Field label="Admin Verification Reference"><Input value={crdaReviewReference} onChange={e => setCrdaReviewReference(e.target.value)} placeholder="Portal lookup reference or ticket" /></Field>
+                      <div className="md:col-span-2 grid grid-cols-2 gap-2">
+                        {(["north", "south", "east", "west"] as const).map(side => <Field key={side} label={`${side[0].toUpperCase()}${side.slice(1)} boundary`}><Input value={boundaryDimensions[side] ?? ""} onChange={e => setBoundaryDimensions(prev => ({ ...prev, [side]: e.target.value }))} placeholder="e.g. 33 ft" /></Field>)}
+                      </div>
+                      <label className="flex items-center gap-2 text-sm font-semibold text-white"><input type="checkbox" checked={crdaReviewApproved} onChange={e => setCrdaReviewApproved(e.target.checked)} className="h-4 w-4 accent-emerald-500" /> Admin verified against official portal</label>
+                      <p className="md:col-span-2 text-xs text-slate-400">A checkbox alone is not proof. Public CRDA verification requires the LP number, survey number, document, and an admin review.</p>
+                    </div>
+                  )}
+
                   {/* RERA Approved Option */}
                   <div 
                     className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${
@@ -1152,6 +1184,8 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                                 {projectType === "venture" ? (
                                   <>
                                     <Field label="Plot Size (sqyd)"><Input type="number" value={config.plotSizeMin || ""} onChange={e => updateConfigCalculated(config.id, "size", Number(e.target.value))} placeholder="150" className={ic()} /></Field>
+                                    <Field label="Dimensions (with units)"><Input value={config.measurements ?? ""} onChange={e => updateConfigField(config.id, "measurements", e.target.value)} placeholder="30 × 60 ft" className={ic()} /></Field>
+                                    <Field label="Facing Road Width (ft)"><Input type="number" min={0} value={config.roadWidth ?? ""} onChange={e => updateConfigField(config.id, "roadWidth", e.target.value === "" ? undefined : Number(e.target.value))} className={ic()} /></Field>
                                     <Field label="Price per Sqyd (₹)"><Input type="number" value={config.pricePerUnit || ""} onChange={e => updateConfigCalculated(config.id, "pricePerUnit", Number(e.target.value))} placeholder="15000" className={ic()} /></Field>
                                     <div className="space-y-2">
                                       <label className="text-sm font-medium text-text-secondary">Calculated Price</label>
@@ -1185,9 +1219,9 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                                 )}
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <Field label="Undivided Share (UDS sq.yds)">
+                                {projectType !== "venture" && <Field label="Undivided Share (UDS sq.yds)">
                                   <Input type="number" value={config.uds || ""} onChange={e => updateConfigField(config.id, "uds", Number(e.target.value))} placeholder="e.g. 40" className={ic()} />
-                                </Field>
+                                </Field>}
                                 <Field label="Possession Date">
                                   <Input value={config.possessionDate || ""} onChange={e => updateConfigField(config.id, "possessionDate", e.target.value)} placeholder="e.g., Apr, 2026" className={ic()} />
                                 </Field>

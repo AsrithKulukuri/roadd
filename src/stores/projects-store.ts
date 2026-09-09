@@ -30,6 +30,22 @@ const PUBLIC_PROJECT_SELECT = [
 
 export function toSupabaseProject(proj: Partial<Project>): Record<string, unknown> {
   const p: Record<string, unknown> = { ...proj };
+  // CRDA evidence is kept in the existing location JSONB so this feature works
+  // with current production schemas without a destructive migration.
+  if (p.crdaLpNumber || p.surveyNumber || p.crdaDocumentUrl || p.boundaryDimensions) {
+    const location = (p.location && typeof p.location === "object") ? { ...(p.location as Record<string, unknown>) } : {};
+    location.crdaEvidence = {
+      crdaLpNumber: p.crdaLpNumber,
+      surveyNumber: p.surveyNumber,
+      crdaDocumentUrl: p.crdaDocumentUrl,
+      boundaryDimensions: p.boundaryDimensions,
+    };
+    p.location = location;
+    delete p.crdaLpNumber;
+    delete p.surveyNumber;
+    delete p.crdaDocumentUrl;
+    delete p.boundaryDimensions;
+  }
   
   if (p.builder && typeof p.builder === 'object') {
     const b = p.builder as { name?: string; logoUrl?: string | null; phone?: string | null; whatsapp?: string | null };
@@ -115,6 +131,8 @@ export function toSupabaseProject(proj: Partial<Project>): Record<string, unknow
 }
 
 export function fromSupabaseProject(p: Record<string, unknown>): Project {
+  const location = (p.location && typeof p.location === "object") ? p.location as Record<string, unknown> : {};
+  const evidence = location.crdaEvidence && typeof location.crdaEvidence === "object" ? location.crdaEvidence as Record<string, unknown> : {};
   // Sanitize any expired temporary blob: URLs that were accidentally saved
   const rawBrochure = typeof p.brochureUrl === 'string' ? p.brochureUrl : undefined;
   const brochureUrl = rawBrochure && !rawBrochure.startsWith('blob:') ? rawBrochure : undefined;
@@ -162,6 +180,10 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
 
   return {
     ...(cleanObj as unknown as Project),
+    crdaLpNumber: (p.crdaLpNumber as string | undefined) || (evidence.crdaLpNumber as string | undefined),
+    surveyNumber: (p.surveyNumber as string | undefined) || (evidence.surveyNumber as string | undefined),
+    crdaDocumentUrl: (p.crdaDocumentUrl as string | undefined) || (evidence.crdaDocumentUrl as string | undefined),
+    boundaryDimensions: (p.boundaryDimensions as Project["boundaryDimensions"] | undefined) || (evidence.boundaryDimensions as Project["boundaryDimensions"] | undefined),
     refId,
     brochureUrl,
     coverImage,

@@ -376,7 +376,7 @@ export default function ContentAdminPage() {
             Home Page Content Manager
           </h1>
           <p className="text-text-secondary text-sm mt-1">
-            Easily update, add, or customize <strong>Browse Homes Categories</strong> and <strong>Hotspot Locations</strong>.
+            Easily update, add, or customize <strong>Browse Properties Categories</strong> and <strong>Hotspot Locations</strong>.
           </p>
         </div>
 

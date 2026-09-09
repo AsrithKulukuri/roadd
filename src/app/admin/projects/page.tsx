@@ -1,4 +1,5 @@
 "use client";
+import { ListingQualityPanel } from "@/components/admin/listing-quality-panel";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -128,6 +129,7 @@ export default function AdminProjectsPage() {
           </Button>
         </div>
 
+        <ListingQualityPanel scope="projects" />
         {/* Stats Row with Horizontal Touch Scrolling on Mobile */}
         <div className="flex sm:grid sm:grid-cols-5 gap-2.5 sm:gap-4 mb-6 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-none touch-pan-x">
           {(
@@ -136,7 +138,7 @@ export default function AdminProjectsPage() {
               { type: "exclusive", label: "ROAD Exclusive ⭐", count: projects.filter((p) => p.isRoadExclusive).length },
               { type: "apartment", label: "Apartments", count: projects.filter((p) => p.projectType === "apartment").length },
               { type: "villa", label: "Villas", count: projects.filter((p) => p.projectType === "villa").length },
-              { type: "venture", label: "CRDA Ventures", count: projects.filter((p) => p.projectType === "venture").length },
+              { type: "venture", label: "Plot Ventures", count: projects.filter((p) => p.projectType === "venture").length },
             ] as const
           ).map((item) => {
             const active = filterType === item.type;

@@ -237,7 +237,7 @@ function UnifiedSearchPage() {
     let propertyType: string[] = [];
     let gatedCommunity = searchParams.get("gatedCommunity") === "true";
     if (propTypeStr) {
-      propertyType = propTypeStr.split(",").map(p => p.trim()).filter(Boolean);
+      propertyType = propTypeStr.split(",").map(p => p.trim()).filter(Boolean).map(p => ["crda", "crda-venture", "crda-ventures"].includes(p) ? "venture" : p);
       if (propertyType.includes("gated-community")) {
         gatedCommunity = true;
       }
@@ -282,7 +282,7 @@ function UnifiedSearchPage() {
     // Parse displayCategory (featured / recommended / budget / crda-ventures)
     const categoryParam = searchParams.get("category") || searchParams.get("displayCategory") || "all";
     if (categoryParam === "crda-ventures" && propertyType.length === 0) {
-      propertyType = ["crda-ventures"];
+      propertyType = ["venture"];
     }
 
     // Parse sort parameter
@@ -313,7 +313,19 @@ function UnifiedSearchPage() {
 
   const [filters, setFilters] = useState<FilterState>(parseInitialParams);
 
+  const [visibleCount, setVisibleCount] = useState<number>(12);
   const searchParamsString = searchParams.toString();
+
+  useEffect(() => {
+    const nextFilters = parseInitialParams();
+    setFilters(nextFilters);
+    setSortBy((nextFilters.sortBy as SortByOption) || "relevant");
+    const type = searchParams.get("type");
+    setActiveTab(type === "projects" ? "projects" : type === "properties" ? "properties" : "all");
+    setVisibleCount(12);
+    setVisibleMapIds(null);
+    setUserViewMode(null);
+  }, [searchParamsString, parseInitialParams, searchParams]);
 
   // Unified filtering logic
   const filteredProperties = useMemo(() => {
@@ -350,6 +362,7 @@ function UnifiedSearchPage() {
     const parsedIntent = filters.query ? parseSearchIntent(filters.query) : null;
 
     return projects.filter((project) => {
+      if (!project.isPublished) return false;
       // 1. Intelligent Real Estate Text & Intent Query (BHK, Locality, Builder, Category, Keyword)
       if (filters.query && !matchesProjectSearch(project, filters.query, parsedIntent || undefined)) {
         return false;
@@ -439,7 +452,7 @@ function UnifiedSearchPage() {
 
   // 12 properties / projects initial load with Load More
   const pageSize = 12;
-  const [visibleCount, setVisibleCount] = useState<number>(12);
+
 
   const displayedResults = useMemo(() => {
     return combinedResults.slice(0, visibleCount);
@@ -520,6 +533,8 @@ function UnifiedSearchPage() {
       newParams.delete("sublocation");
     }
 
+    // Canonicalize the legacy alias so clearing filters cannot resurrect it.
+    newParams.delete("projectType");
     // 6. PropertyType
     if (newFilters.propertyType && newFilters.propertyType.length > 0) {
       newParams.set("propertyType", newFilters.propertyType.join(","));
@@ -982,7 +997,7 @@ function UnifiedSearchPage() {
                 </div>
                 <h3 className="text-xl font-heading font-bold text-text-primary mb-2">No matches found</h3>
                 <p className="text-text-secondary mb-6 max-w-md">Try adjusting your filters or search terms to find what you&apos;re looking for.</p>
-                <button onClick={() => { setFilters(initialFilterState); setActiveTab("all"); }} className="px-6 py-2.5 bg-amber-primary hover:bg-amber-600 text-slate-950 font-bold rounded-xl transition-colors">
+                <button onClick={() => { syncFiltersToUrl(initialFilterState, "all"); }} className="px-6 py-2.5 bg-amber-primary hover:bg-amber-600 text-slate-950 font-bold rounded-xl transition-colors">
                   Clear all filters
                 </button>
               </div>

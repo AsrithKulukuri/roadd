@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/server-auth-guard";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { validatePropertySpecifications } from "@/lib/property-specifications";
+import type { Property } from "@/types/property";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +24,11 @@ export async function POST(request: Request) {
   }
 
   const { mode, id, payload } = parsed.data;
+  try {
+    if (payload.propertyType && payload.attributes) validatePropertySpecifications(payload as Partial<Property>);
+  } catch (error) {
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Invalid specifications." }, { status: 400 });
+  }
   try {
     const cleanPayload = { ...payload };
 

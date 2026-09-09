@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { fromSupabaseProperty } from "@/stores/properties-store";
-import { matchesPropertySearch, parseSearchIntent, matchesStructuredLocation } from "@/lib/search-engine";
+import { matchesPropertySearch, parseSearchIntent, matchesStructuredLocation, evaluatePropertyFilters } from "@/lib/search-engine";
 import type { Property } from "@/types/property";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +55,9 @@ export async function GET(req: NextRequest) {
     const propertyTypeStr = searchParams.get("propertyType") || searchParams.get("type_alias");
     const rawPropertyTypes = propertyTypeStr ? propertyTypeStr.split(",").filter(Boolean) : [];
     const propertyTypes = normalizePropertyTypes(rawPropertyTypes);
+    const categoryTypes = rawPropertyTypes.map(type => type.trim().toLowerCase() === "venture" ? "crda-ventures" : type.trim().toLowerCase());
+    const categoryFilter = categoryTypes.some(type => ["gated-community", "commercial", "crda", "crda-venture", "crda-ventures"].includes(type));
+    const gatedCommunity = searchParams.get("gatedCommunity") === "true";
 
     // 6. BHK
     const bhkStr = searchParams.get("bhk");
@@ -118,7 +121,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Property Type filter
-    if (propertyTypes.length > 0) {
+    if (propertyTypes.length > 0 && !categoryFilter) {
       dbQuery = dbQuery.in("propertyType", propertyTypes);
     }
 
@@ -171,7 +174,7 @@ export async function GET(req: NextRequest) {
     dbQuery = dbQuery.order("createdAt", { ascending: false });
 
     // When query or multi-city is active, load candidate set for in-memory scoring
-    const needsInMemoryRefinement = Boolean(query) || cities.length > 0 || localities.length > 0;
+    const needsInMemoryRefinement = Boolean(query) || cities.length > 0 || localities.length > 0 || categoryFilter || gatedCommunity;
     if (!needsInMemoryRefinement) {
       dbQuery = dbQuery.range(offset, offset + limit - 1);
     } else {
@@ -186,6 +189,9 @@ export async function GET(req: NextRequest) {
     }
 
     let properties: Property[] = (rawProps || []).map(fromSupabaseProperty);
+    if (categoryFilter || gatedCommunity) {
+      properties = properties.filter(property => evaluatePropertyFilters(property, { propertyType: categoryFilter ? categoryTypes : [], gatedCommunity }));
+    }
 
     // In-memory City & Locality refinement
     if (cities.length > 0) {

@@ -786,7 +786,7 @@ export function HeroSection() {
                       <div className="bg-white text-slate-950 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden py-2 text-left">
                         <Link href="/search?type=projects&propertyType=apartment" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">Apartments</Link>
                         <Link href="/search?type=projects&propertyType=villa" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">Villas</Link>
-                        <Link href="/search?type=projects&propertyType=venture" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">CRDA Ventures</Link>
+                        <Link href="/search?type=projects&projectType=venture" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">CRDA Ventures</Link>
                         <Link href="/search?type=projects" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 border-t border-slate-100 mt-1 pt-3">View All Projects →</Link>
                       </div>
                     </div>
@@ -1441,7 +1441,7 @@ export function HeroSection() {
                         <Link href="/search?type=projects&propertyType=villa" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
                           Villas
                         </Link>
-                        <Link href="/search?type=projects&propertyType=venture" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
+                        <Link href="/search?type=projects&projectType=venture" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
                           CRDA Ventures
                         </Link>
                         <Link href="/search?type=projects" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 border-t border-slate-100 mt-1 pt-3">
@@ -2205,19 +2205,12 @@ export function HeroSection() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-20 w-full mt-4 sm:mt-8 text-left space-y-3.5">
-        {/* Header row with Title, "View all categories >", and Desktop Slider Chevrons */}
+        {/* Header row with Title and Desktop Slider Chevrons */}
         <div className="flex items-center justify-between">
           <h2 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-            Browse homes
+            Browse properties
           </h2>
           <div className="flex items-center gap-3">
-            <Link
-              href="/search"
-              className="text-xs sm:text-sm font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 hover:underline transition-colors"
-            >
-              View all categories <ChevronRight className="w-4 h-4" />
-            </Link>
-
             {/* Slide View Navigation Buttons */}
             <div className="hidden sm:flex items-center gap-1.5 ml-1">
               <button

@@ -50,11 +50,6 @@ const CommuteRadiusMap = dynamic(
   { ssr: false }
 );
 
-const LandUseSimulator = dynamic(
-  () => import("@/components/project/land-use-simulator"),
-  { ssr: false }
-);
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatINRCrore(amount: number): string {
@@ -1501,7 +1496,9 @@ export function ProjectDetailView({
                                   {areaMin} {hasAreaRange ? `– ${areaMax}` : ""} <span className="text-sm font-semibold text-text-tertiary">{unit}</span>
                                 </div>
                                 <div className="text-[11px] text-text-secondary font-medium mt-0.5">
-                                  {cfg.uds ? `UDS: ${cfg.uds} sq.yds • ` : ""}{project.projectType === "venture" ? "Plot Layout" : "Super Built-up Area"}
+                                  {project.projectType !== "venture" && cfg.uds ? `UDS: ${cfg.uds} sq.yds • ` : ""}{project.projectType === "venture" ? "Plot Layout" : "Super Built-up Area"}
+                                  {project.projectType === "venture" && cfg.measurements && <span className="block">Dimensions: {cfg.measurements}</span>}
+                                  {project.projectType === "venture" && cfg.roadWidth != null && <span className="block">Facing road: {cfg.roadWidth} ft</span>}
                                 </div>
                               </div>
 
@@ -1602,14 +1599,6 @@ export function ProjectDetailView({
                     </div>
                   </div>
 
-                  {/* Add Simulator for Ventures */}
-                  {project.projectType === "venture" && (
-                    <LandUseSimulator
-                      minSize={project.configurations[0]?.plotSizeMin || 150}
-                      maxSize={Math.max(...project.configurations.map(c => c.plotSizeMax || c.plotSizeMin || 0), 1000)}
-                      pricePerSqYd={project.configurations[0]?.pricePerUnit || 25000}
-                    />
-                  )}
                 </div>
               </ScrollReveal>
 

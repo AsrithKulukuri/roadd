@@ -50,7 +50,7 @@ export function toSupabaseProperty(prop: Partial<Property>): Record<string, unkn
     foodIncluded: p.foodIncluded,
     commercialType: p.commercialType,
     furnishingGrade: p.furnishingGrade,
-    waterSource: p.waterSource,
+    waterSource: p.waterSource ?? existingAttributes.waterSource,
     cultivationCrop: p.cultivationCrop,
     isRoadExclusive: p.isRoadExclusive,
   };

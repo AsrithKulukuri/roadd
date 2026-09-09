@@ -14,6 +14,7 @@ import { getRefId } from "@/lib/ref-id";
 import { shareItem } from "@/lib/share-utils";
 import { shareOnWhatsApp } from "@/lib/whatsapp/whatsapp-share";
 import { WhatsAppIcon } from "@/components/property/whatsapp-share-button";
+import { isCrdaVerified } from "@/lib/listing-quality";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<ProjectType, { icon: React.ElementType; label: string }> = {
@@ -282,6 +283,19 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
               badges.push(
                 <span key="exclusive" className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-500 text-slate-950 shadow-sm border border-amber-300/60 backdrop-blur-md tracking-tight">
                   <Sparkles className="w-3 h-3 fill-slate-950 text-slate-950" /> Exclusive
+                </span>
+              );
+            }
+            if (isVenture && isCrdaVerified(project)) {
+              badges.push(
+                <span key="crda-verified" className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-600 text-white shadow-sm border border-emerald-300/60">
+                  <Shield className="w-3 h-3" /> CRDA Verified
+                </span>
+              );
+            } else if (isVenture) {
+              badges.push(
+                <span key="crda-pending" className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-slate-700 text-white shadow-sm border border-slate-500/60">
+                  Verification in Progress
                 </span>
               );
             }
