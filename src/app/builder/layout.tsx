@@ -52,40 +52,19 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     setMounted(true);
-    fetchFromSupabase();
-    fetchSchedules();
-
-    // Authenticate builder session
-    if (pathname !== "/builder/login") {
-      if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("road_builder_user");
-        if (!stored) {
-          setIsAuthChecking(false);
-          router.replace("/builder/login");
-          return;
-        }
-        try {
-          const parsed = JSON.parse(stored);
-          const targetId = parsed?.builderId || parsed?.id;
-          if (!targetId) {
-            setIsAuthChecking(false);
-            router.replace("/builder/login");
-            return;
-          }
-          if (targetId !== currentBuilderId) {
-            setCurrentBuilderId(targetId);
-          }
-          setIsAuthChecking(false);
-        } catch {
-          setIsAuthChecking(false);
-          router.replace("/builder/login");
-          return;
-        }
-      }
-    } else {
-      setIsAuthChecking(false);
-    }
-  }, [fetchFromSupabase, fetchSchedules, pathname, router, currentBuilderId, setCurrentBuilderId]);
+    if (pathname === "/builder/login") { setIsAuthChecking(false); return; }
+    let cancelled = false;
+    setIsAuthChecking(true);
+    fetchFromSupabase().then(async () => {
+      if (cancelled) return;
+      if (!useBuilderStore.getState().currentBuilderId) { router.replace("/builder/login"); return; }
+      if (!cancelled) setIsAuthChecking(false);
+      await fetchSchedules().catch(error => toast.error(error.message || "Schedules unavailable. Retry from Site Visit Schedules."));
+    }).catch(error => {
+      if (!cancelled) { toast.error(error.message || "Unable to load builder portal."); router.replace("/builder/login"); }
+    });
+    return () => { cancelled = true; };
+  }, [fetchFromSupabase, fetchSchedules, pathname, router]);
 
   // If on builder login page, render full screen without layout shell
   if (pathname === "/builder/login") {
@@ -136,8 +115,8 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
     );
   }
 
-  const handleSignOut = () => {
-    logoutBuilder();
+  const handleSignOut = async () => {
+    try { await logoutBuilder(); } catch { toast.error("Sign out failed. Please retry."); return; }
     toast.success("Signed out of Builder Portal");
     router.replace("/builder/login");
   };
@@ -146,7 +125,7 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
   const assignedSchedulesCount = schedules.filter((s) => {
     if (!currentBuilder?.assignedProjectIds) return false;
     return currentBuilder.assignedProjectIds.some(
-      (pid) => pid === s.projectId || s.projectId.includes(pid) || pid.includes(s.projectId)
+      (pid) => pid === s.projectId || pid === s.projectSlug
     );
   }).filter((s) => s.status === "scheduled").length;
 

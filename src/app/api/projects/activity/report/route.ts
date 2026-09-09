@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { projectAccess, portalError } from "@/lib/builder-access";
 import { getActivityStore, ProjectActivityRecord } from "../track/route";
 
 export const dynamic = "force-dynamic";
@@ -22,8 +23,9 @@ function formatDuration(seconds: number): string {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const projectId = searchParams.get("projectId") || "";
-    const projectSlug = searchParams.get("projectSlug") || "";
+    const { project } = await projectAccess(req, searchParams.get("projectId") || "", searchParams.get("projectSlug") || undefined);
+    const projectId = project.id;
+    const projectSlug = project.slug;
     const projectName = searchParams.get("projectName") || "Project";
     const startDateParam = searchParams.get("startDate");
     const endDateParam = searchParams.get("endDate");
@@ -56,7 +58,8 @@ export async function GET(req: NextRequest) {
         if (projectId) q = q.eq("project_id", projectId);
         else if (projectSlug) q = q.eq("project_slug", projectSlug);
 
-        const { data: dbLogs } = await q;
+        const { data: dbLogs, error: logsError } = await q;
+        if (logsError) throw logsError;
         if (dbLogs && dbLogs.length > 0) {
           dbLogs.forEach((dbItem: any) => {
             if (!allRecords.some((r) => r.id === dbItem.id || r.sessionId === dbItem.session_id)) {
@@ -84,7 +87,8 @@ export async function GET(req: NextRequest) {
         if (projectId) leadQuery = leadQuery.eq("project_id", projectId);
         else if (projectSlug) leadQuery = leadQuery.eq("project_slug", projectSlug);
 
-        const { data: dbLeads } = await leadQuery;
+        const { data: dbLeads, error: leadsError } = await leadQuery;
+        if (leadsError) throw leadsError;
         if (dbLeads && dbLeads.length > 0) {
           dbLeads.forEach((lead: any) => {
             const alreadyHas = allRecords.some(
@@ -97,7 +101,7 @@ export async function GET(req: NextRequest) {
                 projectSlug: lead.project_slug || projectSlug,
                 projectName: lead.project_name || projectName,
                 sessionId: `lead-ses-${lead.id || Date.now()}`,
-                dwellSeconds: 30,
+                dwellSeconds: 0,
                 detailsShared: true,
                 action: "contact_builder",
                 viewerName: lead.viewer_name,
@@ -110,7 +114,7 @@ export async function GET(req: NextRequest) {
           });
         }
       } catch (dbErr) {
-        console.warn("[ACTIVITY REPORT] Supabase query skipped:", dbErr);
+        throw dbErr;
       }
     }
 
@@ -157,6 +161,14 @@ export async function GET(req: NextRequest) {
 
     // Return JSON if requested
     if (format === "json") {
+      const monthly = new Map<string, { month: string; views: number; leads: number }>();
+      for (const record of filteredRecords) {
+        const month = record.createdAt.slice(0, 7);
+        const bucket = monthly.get(month) || { month, views: 0, leads: 0 };
+        bucket.views += 1;
+        if (record.detailsShared) bucket.leads += 1;
+        monthly.set(month, bucket);
+      }
       return NextResponse.json({
         success: true,
         projectName,
@@ -174,6 +186,7 @@ export async function GET(req: NextRequest) {
           detailsSharedCount,
         },
         sharedMembers,
+        monthlyActivity: [...monthly.values()].sort((a, b) => a.month.localeCompare(b.month)),
       });
     }
 
@@ -276,6 +289,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (err: any) {
     console.error("[ACTIVITY REPORT ERROR]:", err);
-    return NextResponse.json({ success: false, error: err?.message || "Failed to generate report" }, { status: 500 });
+    return portalError(err);
   }
 }

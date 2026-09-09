@@ -80,7 +80,7 @@ export default function AdminBuildersPage() {
   const [tagline, setTagline] = useState("");
   const [description, setDescription] = useState("");
   const [tier, setTier] = useState<"starter" | "premium" | "titan">("premium");
-  const [loginCredentialsHint, setLoginCredentialsHint] = useState("");
+  const [authUserId, setAuthUserId] = useState("");
   const [isVerified, setIsVerified] = useState(true);
   const [crdaApproved, setCrdaApproved] = useState(true);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
@@ -89,11 +89,13 @@ export default function AdminBuildersPage() {
   const [activeRequest, setActiveRequest] = useState<BuilderRequest | null>(null);
   const [chatMessageText, setChatMessageText] = useState("");
   const [adminNoteInput, setAdminNoteInput] = useState("");
+  const [confirmedProof, setConfirmedProof] = useState(false);
+  useEffect(() => { setConfirmedProof(false); }, [activeRequest?.id]);
 
   useEffect(() => {
-    fetchFromSupabase();
+    fetchFromSupabase().catch(error => toast.error(error.message));
     fetchProjects();
-    fetchSchedules();
+    fetchSchedules().catch(error => toast.error(error.message));
   }, [fetchFromSupabase, fetchProjects, fetchSchedules]);
 
   // Open modal for new builder
@@ -107,7 +109,7 @@ export default function AdminBuildersPage() {
     setTagline("");
     setDescription("");
     setTier("premium");
-    setLoginCredentialsHint("");
+    setAuthUserId("");
     setIsVerified(true);
     setCrdaApproved(true);
     setSelectedProjectIds([]);
@@ -125,7 +127,7 @@ export default function AdminBuildersPage() {
     setTagline(builder.tagline || "");
     setDescription(builder.description || "");
     setTier(builder.tier);
-    setLoginCredentialsHint(builder.loginCredentialsHint || `${builder.contactEmail} / road2026`);
+    setAuthUserId(builder.userId || "");
     setIsVerified(builder.isVerified);
     setCrdaApproved(Boolean(builder.crdaApproved));
     setSelectedProjectIds(builder.assignedProjectIds || []);
@@ -146,7 +148,7 @@ export default function AdminBuildersPage() {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
-    await saveBuilderProfile({
+    try { await saveBuilderProfile({
       id: builderId,
       companyName,
       slug: editingBuilder?.slug || cleanSlug,
@@ -160,11 +162,12 @@ export default function AdminBuildersPage() {
       isVerified,
       crdaApproved,
       assignedProjectIds: selectedProjectIds,
-      loginCredentialsHint: loginCredentialsHint || `${contactEmail} / road2026`,
+      userId: authUserId.trim() || undefined,
     });
 
     toast.success(editingBuilder ? "Builder Profile Updated!" : "New Builder Partner Provisioned!");
     setIsModalOpen(false);
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Profile save failed."); }
   };
 
   // Quick project toggle
@@ -178,14 +181,16 @@ export default function AdminBuildersPage() {
 
   // Handle request approval
   const handleApproveRequest = async (req: BuilderRequest) => {
-    await updateRequestStatus(
+    try { await updateRequestStatus(
       req.id,
       "approved",
-      adminNoteInput.trim() || "Approved by ROAD Administration."
+      adminNoteInput.trim() || "Approved by ROAD Administration.",
+      confirmedProof
     );
-    toast.success(`Request '${req.title}' has been approved and activated!`);
+    toast.success(`Request '${req.title}' has been approved!`);
     setActiveRequest(null);
     setAdminNoteInput("");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Review failed."); }
   };
 
   // Handle request rejection
@@ -205,7 +210,7 @@ export default function AdminBuildersPage() {
     e.preventDefault();
     if (!chatMessageText.trim() || !activeRequest) return;
 
-    await sendMessage({
+    try { await sendMessage({
       builderId: activeRequest.builderId,
       requestId: activeRequest.id,
       senderRole: "admin",
@@ -215,6 +220,7 @@ export default function AdminBuildersPage() {
 
     setChatMessageText("");
     toast.success("Message dispatched to Builder's Portal");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Message failed."); }
   };
 
   // Filtered Builders
@@ -473,10 +479,10 @@ export default function AdminBuildersPage() {
                     <div className="flex items-center justify-between text-muted-foreground">
                       <span className="flex items-center gap-1.5">
                         <Lock className="h-3.5 w-3.5 text-amber-500" />
-                        Credentials Hint:
+                        Password account:
                       </span>
                       <span className="font-mono text-[11px] bg-muted/60 px-2 py-0.5 rounded text-foreground">
-                        {builder.loginCredentialsHint || `${builder.contactEmail} / road2026`}
+                        {builder.userId ? "Linked Auth account" : "Use registered WhatsApp OTP"}
                       </span>
                     </div>
 
@@ -580,7 +586,7 @@ export default function AdminBuildersPage() {
                     <Button
                       onClick={() => {
                         if (confirm(`Remove builder profile for ${builder.companyName}?`)) {
-                          deleteBuilderProfile(builder.id);
+                          deleteBuilderProfile(builder.id).catch(error => toast.error(error.message));
                           toast.success("Builder removed");
                         }
                       }}
@@ -873,11 +879,11 @@ export default function AdminBuildersPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-zinc-300 font-medium">Portal Credentials Hint</label>
+                  <label className="text-zinc-300 font-medium">Supabase Auth User ID (optional)</label>
                   <Input
-                    placeholder="e.g. director@company.com / road2026"
-                    value={loginCredentialsHint}
-                    onChange={(e) => setLoginCredentialsHint(e.target.value)}
+                    placeholder="UUID of the builder’s password account"
+                    value={authUserId}
+                    onChange={(e) => setAuthUserId(e.target.value)}
                     className="bg-zinc-800/80 border-zinc-700 text-white"
                   />
                 </div>
@@ -1035,6 +1041,12 @@ export default function AdminBuildersPage() {
                     />
                   </div>
                 )}
+                {activeRequest.details?.verification && <div className="space-y-2 rounded border p-3">
+                  <h3 className="font-semibold">Submitted plot evidence</h3>
+                  <dl className="grid grid-cols-2 gap-2">{Object.entries(activeRequest.details.verification).filter(([key]) => key !== "documentPath").map(([key, value]) => <div key={key}><dt className="text-muted-foreground">{key.replace(/([A-Z])/g, " $1")}</dt><dd>{String(value)}</dd></div>)}</dl>
+                  <a className="underline" target="_blank" rel="noreferrer" href={"/api/builder/documents?path=" + encodeURIComponent(activeRequest.details.verification.documentPath)}>Open private layout PDF</a>
+                  <label className="flex items-start gap-2"><input type="checkbox" checked={confirmedProof} onChange={event => setConfirmedProof(event.target.checked)} />I checked the official CRDA LP order, survey and boundary measurements against the submitted PDF.</label>
+                </div>}
                 {activeRequest.details?.notes && (
                   <div>
                     <span className="text-zinc-400 font-semibold">Builder's Note:</span>

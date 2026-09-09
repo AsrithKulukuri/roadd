@@ -48,6 +48,16 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isAdminLoginPage = pathname === "/admin/login";
+  if ((pathname === "/builder" || pathname.startsWith("/builder/")) && pathname !== "/builder/login") {
+    const auth = await authenticateServerRequest(request);
+    if (!auth.authorized || !["developer", "admin"].includes(auth.role)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/builder/login";
+      url.search = "";
+      url.searchParams.set("redirect", pathname + request.nextUrl.search);
+      return NextResponse.redirect(url);
+    }
+  }
 
   // Protect /admin routes (except public /admin/login)
   if (pathname.startsWith("/admin") && !isAdminLoginPage) {

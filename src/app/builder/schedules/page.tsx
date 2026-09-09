@@ -44,15 +44,17 @@ export default function BuilderSchedulesPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    fetchSchedules();
+    fetchSchedules().catch(error => toast.error(error.message));
   }, [fetchSchedules]);
 
   // Handle refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await fetchSchedules();
-    setIsRefreshing(false);
-    toast.success("Site visit schedules synchronized with central admin.");
+    try {
+      await fetchSchedules();
+      toast.success("Site visit schedules synchronized with central admin.");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Refresh failed."); }
+    finally { setIsRefreshing(false); }
   };
 
   // FILTER ONLY VISITS FOR ASSIGNED PROJECTS (Two-Way Sync Isolation)
@@ -60,7 +62,7 @@ export default function BuilderSchedulesPage() {
     if (!currentBuilder?.assignedProjectIds) return [];
     return schedules.filter((s) =>
       currentBuilder.assignedProjectIds.some(
-        (pid) => pid === s.projectId || s.projectId.includes(pid) || pid.includes(s.projectId)
+        (pid) => pid === s.projectId || pid === s.projectSlug
       )
     );
   }, [schedules, currentBuilder]);
@@ -81,8 +83,9 @@ export default function BuilderSchedulesPage() {
 
   // Handle status update (Syncs with admin simultaneously)
   const handleStatusChange = async (scheduleId: string, newStatus: "scheduled" | "completed" | "cancelled") => {
-    await updateStatus(scheduleId, newStatus);
+    try { await updateStatus(scheduleId, newStatus);
     toast.success(`Schedule marked as ${newStatus}. Synced with Admin.`);
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Status update failed."); }
   };
 
   // Build WhatsApp confirmation link

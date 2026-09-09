@@ -49,7 +49,7 @@ export default function BuilderOverviewPage() {
     if (!currentBuilder?.assignedProjectIds || currentBuilder.assignedProjectIds.length === 0) return [];
     return projects.filter((p) =>
       currentBuilder.assignedProjectIds.some(
-        (id) => id === p.id || id === p.slug || p.id.includes(id) || p.slug.includes(id)
+        (id) => id === p.id || id === p.slug
       )
     );
   }, [projects, currentBuilder]);
@@ -59,7 +59,7 @@ export default function BuilderOverviewPage() {
     if (!currentBuilder?.assignedProjectIds || currentBuilder.assignedProjectIds.length === 0) return [];
     return schedules.filter((s) =>
       currentBuilder.assignedProjectIds.some(
-        (pid) => pid === s.projectId || s.projectId.includes(pid) || pid.includes(s.projectId)
+        (pid) => pid === s.projectId || pid === s.projectSlug
       )
     );
   }, [schedules, currentBuilder]);
@@ -88,6 +88,11 @@ export default function BuilderOverviewPage() {
   });
   const [activityModalProject, setActivityModalProject] = useState<any>(null);
 
+  const [reportError, setReportError] = useState("");
+  const [reportUpdated, setReportUpdated] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [monthlyData, setMonthlyData] = useState<Array<{ name: string; views: number; leads: number }>>([]);
+
   // Fetch real-time activity metrics across all assigned projects
   useEffect(() => {
     if (assignedProjects.length === 0) return;
@@ -95,11 +100,13 @@ export default function BuilderOverviewPage() {
     let isMounted = true;
     async function loadRealtimeReports() {
       try {
+        setReportError("");
         let aggToday = 0;
         let aggTotal = 0;
         let aggDwell = 0;
         let aggShared = 0;
-        let allMembers: any[] = [];
+        const allMembers: any[] = [];
+        const monthly = new Map<string, { name: string; views: number; leads: number }>();
 
         for (const p of assignedProjects) {
           const res = await fetch(
@@ -108,10 +115,15 @@ export default function BuilderOverviewPage() {
             )}&format=json`
           );
           const data = await res.json();
+          if (!res.ok || !data.success || !data.metrics) throw new Error(data.error || "Activity report unavailable.");
           if (data.success && data.metrics) {
+            for (const bucket of data.monthlyActivity || []) {
+              const row = monthly.get(bucket.month) || { name: bucket.month, views: 0, leads: 0 };
+              row.views += bucket.views; row.leads += bucket.leads; monthly.set(bucket.month, row);
+            }
             aggToday += data.metrics.todayClicks || 0;
             aggTotal += data.metrics.totalClicks || 0;
-            aggDwell += data.metrics.avgDwellSeconds || 0;
+            aggDwell += (data.metrics.avgDwellSeconds || 0) * (data.metrics.totalClicks || 0);
             aggShared += data.metrics.detailsSharedCount || 0;
             if (data.sharedMembers && Array.isArray(data.sharedMembers)) {
               allMembers.push(
@@ -125,11 +137,13 @@ export default function BuilderOverviewPage() {
         }
 
         if (isMounted) {
-          const avgD = assignedProjects.length > 0 ? Math.round(aggDwell / assignedProjects.length) : 0;
+          const avgD = aggTotal > 0 ? Math.round(aggDwell / aggTotal) : 0;
           const m = Math.floor(avgD / 60);
           const s = Math.round(avgD % 60);
           const formattedDwell = m === 0 ? `${s}s` : `${m}m ${s}s`;
 
+          setMonthlyData([...monthly.values()].sort((a, b) => a.name.localeCompare(b.name)).slice(-6));
+          setReportUpdated(new Date().toLocaleTimeString());
           setRealtimeReport({
             todayClicks: aggToday,
             totalClicks: aggTotal,
@@ -139,7 +153,7 @@ export default function BuilderOverviewPage() {
           });
         }
       } catch (err) {
-        console.warn("Failed to aggregate realtime report:", err);
+        if (isMounted) setReportError(err instanceof Error ? err.message : "Reports unavailable.");
       }
     }
 
@@ -147,7 +161,7 @@ export default function BuilderOverviewPage() {
     return () => {
       isMounted = false;
     };
-  }, [assignedProjects]);
+  }, [assignedProjects, refreshKey]);
 
   // REAL DATA CALCULATIONS (Zero hardcoded numbers)
   const totalRealViews = useMemo(() => {
@@ -163,29 +177,13 @@ export default function BuilderOverviewPage() {
     return builderSchedules.length + realtimeReport.detailsSharedCount;
   }, [builderSchedules.length, realtimeReport.detailsSharedCount]);
 
-  // Monthly Trajectory (Recharts Area Chart - same as Admin Portal)
-  const monthlyData = useMemo(() => {
-    const months = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
-    const baseViews = totalRealViews;
-    const baseLeads = totalContactsShared;
-
-    return months.map((m, idx) => {
-      const weight = (idx + 1) / months.length;
-      return {
-        name: m,
-        views: Math.round(baseViews * weight * (0.8 + (idx % 3) * 0.15)),
-        leads: Math.round(baseLeads * weight),
-      };
-    });
-  }, [totalRealViews, totalContactsShared]);
-
   // Inventory by Type / Project (Recharts Bar Chart - same as Admin Portal)
   const inventoryData = useMemo(() => {
     if (assignedProjects.length === 0) return [];
     return assignedProjects.map((p) => ({
       name: p.name.length > 18 ? p.name.slice(0, 18) + "..." : p.name,
       views: p.viewCount || 0,
-      tours: builderSchedules.filter((s) => s.projectId === p.id || s.projectId.includes(p.id)).length,
+      tours: builderSchedules.filter((s) => s.projectId === p.id || s.projectSlug === p.slug).length,
     }));
   }, [assignedProjects, builderSchedules]);
 
@@ -199,23 +197,28 @@ export default function BuilderOverviewPage() {
     const builderName = currentBuilder?.companyName || "Builder";
     const dateStr = new Date().toISOString().split("T")[0];
 
+    const cell = (value: unknown) => {
+      let text = String(value ?? "");
+      if (/^[=+\-@\t\r]/.test(text.trimStart())) text = "'" + text;
+      return '"' + text.replace(/"/g, '""') + '"';
+    };
     // UTF-8 BOM for seamless Microsoft Excel compatibility
     let csvContent = "\uFEFF";
 
     // 1. Executive Summary
     csvContent += `ROAD FACING - BUILDER PERFORMANCE REPORT\n`;
-    csvContent += `Company Name,${builderName}\n`;
-    csvContent += `RERA Number,${currentBuilder?.reraNumber || "N/A"}\n`;
-    csvContent += `Developer Tier,${currentBuilder?.tier || "Standard"}\n`;
+    csvContent += `Company Name,${cell(builderName)}\n`;
+    csvContent += `RERA Number,${cell(currentBuilder?.reraNumber || "N/A")}\n`;
+    csvContent += `Developer Tier,${cell(currentBuilder?.tier || "Standard")}\n`;
     csvContent += `Generated On,${new Date().toLocaleString()}\n\n`;
 
     // 2. Project Inventory Table
     csvContent += `PROJECT INVENTORY & PERFORMANCE\n`;
     csvContent += `Project Name,Category / Type,Location,Verified Clicks / Views,Contacts / Tours Booked,RERA ID\n`;
     assignedProjects.forEach((p) => {
-      const tours = builderSchedules.filter((s) => s.projectId === p.id || s.projectId.includes(p.id)).length;
+      const tours = builderSchedules.filter((s) => s.projectId === p.id || s.projectSlug === p.slug).length;
       const locStr = typeof p.location === "string" ? p.location : p.location?.city || "AP";
-      csvContent += `"${p.name}","${p.projectType || "Residential"}","${locStr}",${p.viewCount || 0},${tours},"${(p as any).reraId || (p as any).reraNumber || currentBuilder?.reraNumber || "N/A"}"\n`;
+      csvContent += [p.name, p.projectType, locStr, p.viewCount || 0, tours, p.reraId || ""].map(cell).join(",") + "\n";
     });
 
     // 3. Contacts Shared & Tour Bookings Table
@@ -223,7 +226,7 @@ export default function BuilderOverviewPage() {
     csvContent += `Customer Name,Phone Number,Email,Project,Visit Date,Time Slot,Status,Notes\n`;
     if (builderSchedules.length > 0) {
       builderSchedules.forEach((s) => {
-        csvContent += `"${s.customerName}","${s.customerPhone}","${s.customerEmail || ""}","${s.projectName}","${s.visitDate}","${s.timeSlot}","${s.status}","${s.notes || ""}"\n`;
+        csvContent += [s.customerName, s.customerPhone, s.customerEmail, s.projectName, s.visitDate, s.timeSlot, s.status, s.notes].map(cell).join(",") + "\n";
       });
     } else {
       csvContent += `No site visit contacts shared yet for assigned ventures.,,,,,,\n`;
@@ -234,7 +237,7 @@ export default function BuilderOverviewPage() {
       csvContent += `\nVERIFIED BUYER CONTACTS SHARED (WHATSAPP & DIRECT INQUIRIES)\n`;
       csvContent += `Buyer Name,Phone Number,Email,Venture,Action Taken,Date & Time,Dwell Time\n`;
       realtimeReport.sharedMembers.forEach((m) => {
-        csvContent += `"${m.name}","${m.phone}","${m.email || "-"}","${m.projectName || builderName}","${m.action}","${m.date}","${m.dwellTime}"\n`;
+        csvContent += [m.name, m.phone, m.email, m.projectName || builderName, m.action, m.date, m.dwellTime].map(cell).join(",") + "\n";
       });
     }
 
@@ -258,6 +261,8 @@ export default function BuilderOverviewPage() {
 
   return (
     <div className="space-y-8 pb-16">
+      <div className="flex items-center gap-3 text-sm"><Button variant="outline" onClick={() => setRefreshKey(key => key + 1)}>Refresh reports</Button><span>{reportUpdated ? "Updated " + reportUpdated : assignedProjects.length ? "Reports loading" : "No assigned projects"}</span></div>
+      {reportError && <p role="alert" className="text-red-500">{reportError} — displayed figures may be out of date.</p>}
       {/* 1. BUILDER HEADER WITH REAL INFO */}
       <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-zinc-900 via-zinc-900/90 to-zinc-950 p-6 sm:p-8 shadow-xl">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -280,7 +285,7 @@ export default function BuilderOverviewPage() {
                 </h1>
                 {currentBuilder?.isVerified && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                    <ShieldCheck className="h-3.5 w-3.5" /> RERA Verified
+                    <ShieldCheck className="h-3.5 w-3.5" /> Verified builder
                   </span>
                 )}
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
@@ -358,7 +363,7 @@ export default function BuilderOverviewPage() {
             {totalContactsShared}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Verified prospective buyers who booked tours or requested contact
+            Prospective buyers who booked tours or requested contact
           </p>
         </div>
 
@@ -492,7 +497,7 @@ export default function BuilderOverviewPage() {
               Contacts Shared & Site Visit Tours
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Verified buyers who booked tours or requested developer contact for your assigned ventures.
+              Buyers who booked tours or requested developer contact for your assigned ventures.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -648,7 +653,7 @@ export default function BuilderOverviewPage() {
               </thead>
               <tbody className="divide-y divide-border/40">
                 {assignedProjects.map((p) => {
-                  const tours = builderSchedules.filter((s) => s.projectId === p.id || s.projectId.includes(p.id)).length;
+                  const tours = builderSchedules.filter((s) => s.projectId === p.id || s.projectSlug === p.slug).length;
                   const locStr = typeof p.location === "string" ? p.location : p.location?.city || "Vijayawada, AP";
 
                   return (

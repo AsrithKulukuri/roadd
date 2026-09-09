@@ -1,91 +1,43 @@
-import { NextRequest, NextResponse } from "next/server";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { INITIAL_MESSAGES } from "@/stores/builder-store";
-
-export async function GET(req: NextRequest) {
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { camelRow, portalAccess, PortalError, portalError, recordPortalActivity } from "@/lib/builder-access";
+export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const builderId = searchParams.get("builderId");
-
-    if (!builderId) {
-      return NextResponse.json({ success: false, error: "builderId required" }, { status: 400 });
-    }
-
-    if (!isSupabaseConfigured()) {
-      const filtered = INITIAL_MESSAGES.filter((m) => m.builderId === builderId);
-      return NextResponse.json({ success: true, messages: filtered });
-    }
-
-    const { data: messages, error } = await supabase
-      .from("builder_messages")
-      .select("*")
-      .eq("builder_id", builderId)
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      const filtered = INITIAL_MESSAGES.filter((m) => m.builderId === builderId);
-      return NextResponse.json({ success: true, messages: filtered });
-    }
-
-    const mapped = messages.map((m: any) => ({
-      id: m.id,
-      builderId: m.builder_id,
-      requestId: m.request_id,
-      senderRole: m.sender_role,
-      senderName: m.sender_name,
-      message: m.message,
-      attachments: m.attachments || [],
-      isRead: m.is_read,
-      createdAt: m.created_at,
-    }));
-
-    return NextResponse.json({ success: true, messages: mapped });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
-  }
+    const access = await portalAccess(request, new URL(request.url).searchParams.get("builderId"));
+    let query = supabaseAdmin.from("builder_messages").select("*").order("created_at");
+    if (access.builder) query = query.eq("builder_id", access.builder.id);
+    const { data, error } = await query;
+    if (error) throw error;
+    return NextResponse.json({ success: true, messages: data.map(camelRow) });
+  } catch (error) { return portalError(error); }
 }
-
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json();
-    const { builderId, requestId, senderRole, senderName, message, attachments } = body;
-
-    if (!builderId || !message || !senderRole) {
-      return NextResponse.json({ success: false, error: "Missing required message parameters" }, { status: 400 });
+    const body = await request.json();
+    const { builder, admin } = await portalAccess(request, body.builderId);
+    if (!builder || typeof body.message !== "string" || !body.message.trim() || body.message.length > 10000) throw new PortalError("A message of up to 10,000 characters is required.");
+    if (body.requestId) {
+      const { data, error } = await supabaseAdmin.from("builder_requests").select("id").eq("id", body.requestId).eq("builder_id", builder.id).maybeSingle();
+      if (error) throw error;
+      if (!data) throw new PortalError("Request access denied.", 403);
     }
-
-    const msgId = `msg-${Date.now()}`;
-    const now = new Date().toISOString();
-
-    if (isSupabaseConfigured()) {
-      await supabase.from("builder_messages").insert({
-        id: msgId,
-        builder_id: builderId,
-        request_id: requestId || null,
-        sender_role: senderRole,
-        sender_name: senderName || (senderRole === "admin" ? "ROAD Concierge" : "Builder Partner"),
-        message,
-        attachments: attachments || [],
-        is_read: false,
-        created_at: now,
-      });
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: {
-        id: msgId,
-        builderId,
-        requestId,
-        senderRole,
-        senderName: senderName || (senderRole === "admin" ? "ROAD Concierge" : "Builder Partner"),
-        message,
-        attachments: attachments || [],
-        isRead: false,
-        createdAt: now,
-      },
-    });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
-  }
+    const { data, error } = await supabaseAdmin.from("builder_messages").insert({
+      id: crypto.randomUUID(), builder_id: builder.id, request_id: body.requestId || null,
+      sender_role: admin ? "admin" : "builder", sender_name: admin ? "ROAD Concierge" : builder.company_name,
+      message: body.message.trim(), attachments: [], is_read: false,
+    }).select("*").single();
+    if (error) throw error;
+    await recordPortalActivity(builder, admin ? "admin_message" : "chat_message", data.id);
+    return NextResponse.json({ success: true, message: camelRow(data) });
+  } catch (error) { return portalError(error); }
+}
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { builder, admin } = await portalAccess(request, body.builderId);
+    if (!builder) throw new PortalError("Builder is required.");
+    const { error } = await supabaseAdmin.from("builder_messages").update({ is_read: true }).eq("builder_id", builder.id).eq("sender_role", admin ? "builder" : "admin");
+    if (error) throw error;
+    return NextResponse.json({ success: true, senderRole: admin ? "builder" : "admin" });
+  } catch (error) { return portalError(error); }
 }

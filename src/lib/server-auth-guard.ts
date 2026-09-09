@@ -68,6 +68,7 @@ export function signSessionPayload(payload: {
   email?: string;
   role?: string;
   exp?: number;
+  builderSessionVersion?: number;
 }): string {
   const jsonStr = JSON.stringify({
     ...payload,
@@ -90,6 +91,7 @@ export function verifySignedSessionToken(token: string): {
   name?: string;
   email?: string;
   role?: string;
+  builderSessionVersion?: number;
 } | null {
   try {
     const [b64, signature] = token.split(".");
@@ -101,6 +103,7 @@ export function verifySignedSessionToken(token: string): {
       .digest("base64url");
     if (!secretsMatch(signature, expectedSig)) return null;
     const parsed = JSON.parse(Buffer.from(b64, "base64url").toString("utf8"));
+    if (parsed.role === "developer" && parsed.builderId && parsed.builderSessionVersion !== 2) return null;
     if (parsed.exp && Date.now() > parsed.exp) return null;
     return parsed;
   } catch {
@@ -155,6 +158,7 @@ export async function authenticateServerRequest(
             name: verifiedSession.name || "Interested Buyer",
             email: verifiedSession.email || "",
             role: verifiedSession.role || "buyer",
+            builderSessionVersion: verifiedSession.builderSessionVersion,
             user_metadata: {
               role: verifiedSession.role || "buyer",
               name: verifiedSession.name,
@@ -175,6 +179,7 @@ export async function authenticateServerRequest(
           name: verifiedSession.name || "Interested Buyer",
           email: verifiedSession.email || "",
           role: verifiedSession.role || "buyer",
+          builderSessionVersion: verifiedSession.builderSessionVersion,
           user_metadata: {
             role: verifiedSession.role || "buyer",
             name: verifiedSession.name,
@@ -300,13 +305,13 @@ export async function authenticateServerRequest(
       name: name || user.name || "Interested Buyer",
       phone: phone || user.phone || "",
       email: email || user.email || "",
-      role: isAdmin ? "admin" : role,
+      role: isAdmin ? "admin" : user.builderSessionVersion === 2 ? "developer" : role,
     };
 
     return {
       authorized: true,
       user: resolvedUser,
-      role: isAdmin ? "admin" : role,
+      role: isAdmin ? "admin" : user.builderSessionVersion === 2 ? "developer" : role,
     };
   } catch (err: unknown) {
     return {

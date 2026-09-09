@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Sparkles,
   Flame,
@@ -31,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function BuilderRequestsPage() {
+  const requestedType = useSearchParams().get("type");
   const { getCurrentBuilder, requests, submitRequest, sendMessage, messages, markMessagesRead } = useBuilderStore();
   const { projects } = useProjectsStore();
 
@@ -65,7 +67,7 @@ export default function BuilderRequestsPage() {
     if (!currentBuilder?.assignedProjectIds) return [];
     return projects.filter((p) =>
       currentBuilder.assignedProjectIds.some(
-        (id) => id === p.id || id === p.slug || p.id.includes(id) || p.slug.includes(id)
+        (id) => id === p.id || id === p.slug
       )
     );
   }, [projects, currentBuilder]);
@@ -78,9 +80,9 @@ export default function BuilderRequestsPage() {
 
   useEffect(() => {
     if (currentBuilder) {
-      markMessagesRead(currentBuilder.id);
+      markMessagesRead(currentBuilder.id).catch(() => {});
     }
-  }, [currentBuilder, markMessagesRead]);
+  }, [currentBuilder?.id, markMessagesRead]);
 
   // Handle open request form
   const handleOpenForm = (type: typeof selectedFormType) => {
@@ -103,6 +105,29 @@ export default function BuilderRequestsPage() {
     }
   };
 
+  useEffect(() => {
+    const type = requestedType;
+    if (["promote_top", "publish_banner", "enable_chat", "caption_change", "custom_concierge"].includes(type || "")) {
+      setSelectedFormType(type as NonNullable<typeof selectedFormType>);
+      setTitle(type === "caption_change" ? "Request Marketing Caption Revision" : "New " + type!.replaceAll("_", " ") + " request");
+    }
+  }, [requestedType]);
+  useEffect(() => {
+    if (assignedProjects.length) setTargetProjectId(current => current || assignedProjects[0].id);
+  }, [assignedProjects]);
+  useEffect(() => {
+    let active = true;
+    const timer = setInterval(async () => {
+      if (!active || document.hidden) return;
+      try {
+        const response = await fetch("/api/builder/chat", { cache: "no-store" });
+        const data = await response.json();
+        if (response.ok && data.success && active) useBuilderStore.setState({ messages: data.messages });
+      } catch { /* Preserve the last successful conversation while offline. */ }
+    }, 15000);
+    return () => { active = false; clearInterval(timer); };
+  }, []);
+
   // Submit request to admin
   const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +135,7 @@ export default function BuilderRequestsPage() {
 
     const selectedProj = assignedProjects.find((p) => p.id === targetProjectId || p.slug === targetProjectId);
 
-    await submitRequest({
+    try { await submitRequest({
       builderId: currentBuilder.id,
       builderName: currentBuilder.companyName,
       requestType: selectedFormType,
@@ -129,6 +154,7 @@ export default function BuilderRequestsPage() {
 
     toast.success("Concierge request dispatched to ROAD Admin team!");
     setSelectedFormType(null);
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Request failed."); }
   };
 
   // Send direct message to admin
@@ -136,7 +162,7 @@ export default function BuilderRequestsPage() {
     e.preventDefault();
     if (!chatInput.trim() || !currentBuilder) return;
 
-    await sendMessage({
+    try { await sendMessage({
       builderId: currentBuilder.id,
       senderRole: "builder",
       senderName: currentBuilder.companyName,
@@ -145,6 +171,7 @@ export default function BuilderRequestsPage() {
 
     setChatInput("");
     toast.success("Message delivered to ROAD Administration");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Message failed."); }
   };
 
   return (

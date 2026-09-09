@@ -34,7 +34,7 @@ test("category and subtype map consistently to legacy search types", () => {
 test("CRDA requires explicit approval and commercial excludes residential projects", () => {
   const project = { projectType: "venture", name: "CRDA marketing text", description: "CRDA", configurations: [], location: {}, facilities: [], highlights: [] } as unknown as Project;
   expect(evaluateProjectFilters(project, { propertyType: ["crda-ventures"] })).toBe(false);
-  expect(evaluateProjectFilters({ ...project, crdaApproved: true, crdaLpNumber: "LP 42/2024", surveyNumber: "142/2B", crdaDocumentUrl: "https://example.com/lp.pdf", location: { crdaReview: { reference: "portal-ticket-1", approved: true, reviewedAt: "2026-09-09T00:00:00Z" } } } as unknown as Project, { propertyType: ["crda-ventures"] })).toBe(true);
+  expect(evaluateProjectFilters({ ...project, crdaApproved: true, crdaLpNumber: "LP 42/2024", surveyNumber: "142/2B", crdaDocumentUrl: "https://example.com/lp.pdf", boundaryDimensions: { north: "30 ft", south: "30 ft", east: "60 ft", west: "60 ft" }, location: { crdaReview: { reference: "portal-ticket-1", approved: true, reviewedAt: "2026-09-09T00:00:00Z" } } } as unknown as Project, { propertyType: ["crda-ventures"] })).toBe(true);
   expect(evaluateProjectFilters({ ...project, projectType: "apartment", crdaApproved: true }, { propertyType: ["crda-ventures"] })).toBe(false);
   expect(evaluateProjectFilters(project, { propertyType: ["commercial"] })).toBe(false);
 });

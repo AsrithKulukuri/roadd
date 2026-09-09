@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/server-auth-guard";
-import { stampCrdaReview, validMeasurements, type CrdaReview } from "@/lib/listing-quality";
+import { stampCrdaReview, validMeasurements, hasCompleteCrdaEvidence, type CrdaReview } from "@/lib/listing-quality";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,13 +26,14 @@ export async function POST(request: NextRequest) {
     const payload = { ...body.payload };
     const location = payload.location as Record<string, unknown> | undefined;
     const review = location?.crdaReview as CrdaReview | undefined;
+    const evidence = (location?.crdaEvidence || payload) as Record<string, unknown>;
     if (review?.requested) {
       if (payload.crdaApproved === true && payload.projectType !== "venture") return NextResponse.json({ success: false, error: "Only plot ventures can be marked CRDA approved." }, { status: 400 });
-      if (review.approved && (!String(payload.crdaLpNumber || "").trim() || !String(payload.surveyNumber || "").trim() || !String(payload.crdaDocumentUrl || "").trim())) {
-        return NextResponse.json({ success: false, error: "LP number, survey number, and approved layout document are required before verification." }, { status: 400 });
+      if (review.approved && !hasCompleteCrdaEvidence(evidence)) {
+        return NextResponse.json({ success: false, error: "Official LP number, survey number, layout document and all four boundary measurements with units are required before verification." }, { status: 400 });
       }
       try {
-        payload.location = { ...location, crdaReview: stampCrdaReview(review, payload.crdaApproved === true, new Date().toISOString()) };
+        payload.location = { ...location, crdaReview: stampCrdaReview(review, review.approved === true, new Date().toISOString()) };
       } catch (error) {
         return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Invalid approval review." }, { status: 400 });
       }

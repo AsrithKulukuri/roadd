@@ -21,14 +21,15 @@ import {
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useBuilderStore, INITIAL_BUILDERS, BuilderProfile } from "@/stores/builder-store";
+import { useBuilderStore, BuilderProfile } from "@/stores/builder-store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function BuilderLoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTarget = searchParams.get("redirect") || "/builder";
+  const requestedRedirect = searchParams.get("redirect") || "/builder";
+  const redirectTarget = requestedRedirect === "/builder" || requestedRedirect.startsWith("/builder/") ? requestedRedirect : "/builder";
 
   const { builders, setCurrentBuilderId, logoutBuilder, logActivity, fetchFromSupabase } = useBuilderStore();
 
@@ -43,20 +44,13 @@ export default function BuilderLoginPage() {
   const [existingSession, setExistingSession] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
-    fetchFromSupabase();
+    fetch("/api/builder/session", { cache: "no-store" }).then(async response => {
+      if (!response.ok) return;
+      const data = await response.json();
+      const builder = data.builders?.find((b: BuilderProfile) => b.id === data.currentBuilderId);
+      if (builder) setExistingSession({ id: builder.id, name: builder.companyName });
+    }).catch(() => {});
 
-    // Check if there is an existing session for display without auto-bypassing
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("road_builder_user");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed?.id && parsed?.name) {
-            setExistingSession({ id: parsed.id, name: parsed.name });
-          }
-        } catch {}
-      }
-    }
   }, [fetchFromSupabase]);
 
   // Complete builder sign in
@@ -126,23 +120,6 @@ export default function BuilderLoginPage() {
       if (data.success && data.builder) {
         completeBuilderSignIn(data.builder);
       } else {
-        // Also verify against active client store in case profile was provisioned in active admin session
-        const cleanEmail = email.trim().toLowerCase();
-        const cleanPass = password.trim();
-        const localBuilder = builders.find((b) => b.contactEmail.toLowerCase() === cleanEmail);
-        if (localBuilder) {
-          let expected = "road2026";
-          if (localBuilder.loginCredentialsHint && localBuilder.loginCredentialsHint.includes("/")) {
-            expected = localBuilder.loginCredentialsHint.split("/")[1]?.trim() || "road2026";
-          }
-          if (cleanPass === expected || cleanPass === "road2026") {
-            completeBuilderSignIn(localBuilder);
-            return;
-          } else {
-            toast.error("Incorrect password for builder partner account.");
-            return;
-          }
-        }
         toast.error(data.error || "Invalid builder credentials. Please verify with ROAD admin.");
       }
     } catch (err: any) {
@@ -202,8 +179,8 @@ export default function BuilderLoginPage() {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => {
-                    logoutBuilder();
+                  onClick={async () => {
+                    try { await logoutBuilder(); } catch { toast.error("Sign out failed. Please retry."); return; }
                     setExistingSession(null);
                     toast.info("Session cleared. Enter credentials to log in.");
                   }}
@@ -305,7 +282,7 @@ export default function BuilderLoginPage() {
                   <Input
                     placeholder="+91 98490 12345"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => { setPhone(e.target.value); setIsOtpSent(false); setOtpCode(""); }}
                     className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-amber-500"
                   />
                 </div>
@@ -313,13 +290,21 @@ export default function BuilderLoginPage() {
 
               {!isOtpSent ? (
                 <Button
-                  onClick={() => {
+                  disabled={isLoading}
+                  onClick={async () => {
                     if (!phone.trim()) {
                       toast.error("Please enter registered phone number");
                       return;
                     }
-                    setIsOtpSent(true);
-                    toast.success("Verification code dispatched via WhatsApp");
+                    setIsLoading(true);
+                    try {
+                      const response = await fetch("/api/auth/send-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone: phone.trim() }) });
+                      const data = await response.json();
+                      if (!response.ok || !data.success) throw new Error(data.error?.message || data.error || "Could not send code.");
+                      setIsOtpSent(true);
+                      toast.success("Verification code dispatched via WhatsApp");
+                    } catch (error) { toast.error(error instanceof Error ? error.message : "Could not send code."); }
+                    finally { setIsLoading(false); }
                   }}
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 text-xs"
                 >
@@ -334,8 +319,9 @@ export default function BuilderLoginPage() {
                     className="bg-zinc-950 border-zinc-800 text-white text-center font-mono tracking-widest text-base"
                   />
                   <Button
+                    disabled={isLoading}
                     onClick={async () => {
-                      if (!otpCode.trim() || otpCode.length < 4) {
+                      if (!/^\d{6}$/.test(otpCode.trim())) {
                         toast.error("Please enter a valid 6-digit verification code.");
                         return;
                       }
@@ -344,7 +330,7 @@ export default function BuilderLoginPage() {
                         const res = await fetch("/api/builder/login", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ phone: phone.trim() }),
+                          body: JSON.stringify({ phone: phone.trim(), otp: otpCode.trim() }),
                         });
                         const data = await res.json();
                         if (data.success && data.builder) {

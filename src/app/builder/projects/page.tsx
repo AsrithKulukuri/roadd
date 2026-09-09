@@ -27,6 +27,7 @@ import {
   FileSpreadsheet
 } from "lucide-react";
 import { useBuilderStore } from "@/stores/builder-store";
+import { VerificationSubmission } from "@/components/builder/verification-submission";
 import { useProjectsStore } from "@/stores/projects-store";
 import { useSchedulesStore } from "@/stores/schedules-store";
 import { ProjectRealtimeActivity } from "@/components/builder/project-realtime-activity";
@@ -63,16 +64,14 @@ export default function BuilderProjectsPage() {
   const [captionReason, setCaptionReason] = useState("");
   const [activityModalProject, setActivityModalProject] = useState<Project | null>(null);
 
-  useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+
 
   // STRICT TENANT ISOLATION: Show ONLY assigned projects
   const assignedProjects = useMemo(() => {
     if (!currentBuilder?.assignedProjectIds) return [];
     return projects.filter((p) =>
       currentBuilder.assignedProjectIds.some(
-        (id) => id === p.id || id === p.slug || p.id.includes(id) || p.slug.includes(id)
+        (id) => id === p.id || id === p.slug
       )
     );
   }, [projects, currentBuilder]);
@@ -81,7 +80,8 @@ export default function BuilderProjectsPage() {
   const handleOpenEdit = (project: Project) => {
     setEditingProject(project);
     setDescription(project.description || "");
-    setConstructionStatus(project.constructionStatus || (project as any).status || "Under Construction");
+    const status = String(project.constructionStatus || "under-construction").toLowerCase().replaceAll(" ", "-");
+    setConstructionStatus(["under-construction", "ready-to-move", "new-launch"].includes(status) ? status : "under-construction");
     setHighlightsInput(Array.isArray(project.highlights) ? project.highlights.join("\n") : "");
     setFacilitiesInput(Array.isArray(project.facilities) ? project.facilities.join(", ") : "");
   };
@@ -119,7 +119,7 @@ export default function BuilderProjectsPage() {
       }
 
       // Also update client memory store
-      updateProject(editingProject.id, allowedPayload as any);
+      // The builder API returned the saved project and updated the store.
 
       toast.success("Project text and milestones updated successfully!");
       setEditingProject(null);
@@ -262,7 +262,7 @@ export default function BuilderProjectsPage() {
                         <span>•</span>
                         <span className="font-semibold text-amber-400">{project.constructionStatus || "Ongoing"}</span>
                         <span>•</span>
-                        <span>Total Units: {project.totalUnits || "120 Units"}</span>
+                        <span>Total Units: {project.totalUnits ?? "Not provided"}</span>
                       </div>
                     </div>
                   </div>
@@ -302,6 +302,7 @@ export default function BuilderProjectsPage() {
                 />
 
                 {/* Narrative Preview */}
+                <VerificationSubmission project={project} />
                 <div className="bg-muted/20 p-4 rounded-xl border border-border/30 space-y-2 text-xs">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-foreground">Current Narrative / Description:</span>
@@ -389,11 +390,9 @@ export default function BuilderProjectsPage() {
                     onChange={(e) => setConstructionStatus(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-xs"
                   >
-                    <option value="Under Construction">Under Construction</option>
-                    <option value="Foundation Complete">Foundation Complete</option>
-                    <option value="Structural Framing">Structural Framing</option>
-                    <option value="Finishing & Interiors">Finishing & Interiors</option>
-                    <option value="Ready to Move">Ready to Move</option>
+                    <option value="under-construction">Under Construction</option>
+                    <option value="ready-to-move">Ready to Move</option>
+                    <option value="new-launch">New Launch</option>
                   </select>
                 </div>
 

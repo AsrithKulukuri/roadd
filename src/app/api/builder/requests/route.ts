@@ -1,137 +1,74 @@
-import { NextRequest, NextResponse } from "next/server";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { INITIAL_REQUESTS } from "@/stores/builder-store";
-
-export async function GET(req: NextRequest) {
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { camelRow, portalAccess, projectAccess, PortalError, portalError } from "@/lib/builder-access";
+import { requireAdmin } from "@/lib/server-auth-guard";
+import { z } from "zod";
+import { verificationEvidenceSchema } from "@/lib/builder-validation";
+const schema = z.object({
+  requestType: z.enum(["promote_top", "publish_banner", "enable_chat", "caption_change", "custom_concierge"]),
+  title: z.string().trim().min(1).max(200),
+  priority: z.enum(["low", "normal", "urgent"]).default("normal"),
+  details: z.object({
+    verification: verificationEvidenceSchema.optional(),
+    proposedCaption: z.string().max(2000).optional(), proposedBannerUrl: z.string().url().optional(),
+    shelfId: z.string().max(200).optional(), durationDays: z.number().int().min(1).max(365).optional(),
+    notes: z.string().max(20000).optional(), targetUrl: z.string().url().optional(),
+  }).strict().default({}),
+});
+export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const builderId = searchParams.get("builderId");
-
-    if (!isSupabaseConfigured()) {
-      const filtered = builderId
-        ? INITIAL_REQUESTS.filter((r) => r.builderId === builderId)
-        : INITIAL_REQUESTS;
-      return NextResponse.json({ success: true, requests: filtered });
-    }
-
-    let query = supabase.from("builder_requests").select("*").order("created_at", { ascending: false });
-    if (builderId) {
-      query = query.eq("builder_id", builderId);
-    }
-
-    const { data: requests, error } = await query;
-    if (error) {
-      return NextResponse.json({ success: true, requests: INITIAL_REQUESTS });
-    }
-
-    const mapped = requests.map((r: any) => ({
-      id: r.id,
-      builderId: r.builder_id,
-      builderName: r.builder_name,
-      requestType: r.request_type,
-      projectId: r.project_id,
-      projectName: r.project_name,
-      title: r.title,
-      details: r.details || {},
-      status: r.status,
-      adminNotes: r.admin_notes,
-      priority: r.priority || "normal",
-      createdAt: r.created_at,
-      updatedAt: r.updated_at,
-    }));
-
-    return NextResponse.json({ success: true, requests: mapped });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
-  }
+    const access = await portalAccess(request, new URL(request.url).searchParams.get("builderId"));
+    let query = supabaseAdmin.from("builder_requests").select("*").order("created_at", { ascending: false });
+    if (access.builder) query = query.eq("builder_id", access.builder.id);
+    const { data, error } = await query;
+    if (error) throw error;
+    return NextResponse.json({ success: true, requests: data.map(camelRow) });
+  } catch (error) { return portalError(error); }
 }
-
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json();
-    const { builderId, builderName, requestType, projectId, projectName, title, details, priority } = body;
-
-    if (!builderId || !requestType || !title) {
-      return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
+    const body = await request.json();
+    const { builder } = await portalAccess(request, body.builderId);
+    if (!builder) throw new PortalError("Builder is required.");
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) throw new PortalError("Check the request title, type, and details.");
+    const project = body.projectId ? (await projectAccess(request, body.projectId)).project : null;
+    const evidence = parsed.data.details.verification;
+    if (evidence) {
+      if (!project || project.projectType !== "venture" || parsed.data.requestType !== "custom_concierge") throw new PortalError("Select an assigned plot venture for verification.");
+      if (!evidence.documentPath.startsWith(builder.id + "/" + project.id + "/") || evidence.documentPath.includes("..")) throw new PortalError("Document does not belong to this project.");
+      const { data: document, error: documentError } = await supabaseAdmin.storage.from("builder-evidence").download(evidence.documentPath);
+      if (documentError || !document) throw new PortalError("Upload the layout PDF before submitting.");
     }
-
-    const requestId = `req-${Date.now()}`;
-    const now = new Date().toISOString();
-
-    if (isSupabaseConfigured()) {
-      await supabase.from("builder_requests").insert({
-        id: requestId,
-        builder_id: builderId,
-        builder_name: builderName || "Builder Partner",
-        request_type: requestType,
-        project_id: projectId || null,
-        project_name: projectName || null,
-        title,
-        details: details || {},
-        status: "pending",
-        priority: priority || "normal",
-        created_at: now,
-        updated_at: now,
-      });
-
-      // Also log activity
-      await supabase.from("builder_activity_logs").insert({
-        builder_id: builderId,
-        builder_name: builderName || "Builder Partner",
-        action_type: "submit_request",
-        entity_id: requestId,
-        entity_name: title,
-        details: { requestType, projectId },
-        created_at: now,
-      });
+    const { data, error } = await supabaseAdmin.from("builder_requests").insert({
+      id: crypto.randomUUID(), builder_id: builder.id, builder_name: builder.company_name,
+      project_id: project?.id || null, project_name: project?.name || null,
+      request_type: parsed.data.requestType, title: parsed.data.title, details: parsed.data.details,
+      status: "pending", priority: parsed.data.priority,
+    }).select("*").single();
+    if (error) throw error;
+    return NextResponse.json({ success: true, request: camelRow(data) });
+  } catch (error) { return portalError(error); }
+}
+export async function PATCH(request: Request) {
+  try {
+    const auth = await requireAdmin(request);
+    if (auth.errorResponse) return auth.errorResponse;
+    const body = await request.json();
+    if (!["pending", "under_review", "approved", "rejected", "active", "completed"].includes(body.status)) throw new PortalError("Invalid request status.");
+    const { data: existing, error: readError } = await supabaseAdmin.from("builder_requests").select("*").eq("id", body.id).single();
+    if (readError) throw readError;
+    if (existing.details?.verification && body.status === "approved") {
+      const proof = verificationEvidenceSchema.safeParse(existing.details.verification);
+      if (!proof.success) throw new PortalError("The submitted evidence is incomplete.");
+      if (body.confirmVerified !== true) throw new PortalError("Confirm that you checked the official LP order and boundary measurements.");
     }
-
-    return NextResponse.json({
-      success: true,
-      request: {
-        id: requestId,
-        builderId,
-        builderName,
-        requestType,
-        projectId,
-        projectName,
-        title,
-        details,
-        status: "pending",
-        priority: priority || "normal",
-        createdAt: now,
-        updatedAt: now,
-      },
+    const { error: reviewError } = await supabaseAdmin.rpc("review_builder_request", {
+      request_id: body.id, new_status: body.status, reviewer_id: auth.user!.id, review_notes: typeof body.adminNotes === "string" ? body.adminNotes.slice(0, 10000) : null,
     });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
-  }
-}
-
-export async function PATCH(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { id, status, adminNotes } = body;
-
-    if (!id || !status) {
-      return NextResponse.json({ success: false, error: "ID and status required" }, { status: 400 });
-    }
-
-    const now = new Date().toISOString();
-
-    if (isSupabaseConfigured()) {
-      await supabase
-        .from("builder_requests")
-        .update({
-          status,
-          admin_notes: adminNotes || null,
-          updated_at: now,
-        })
-        .eq("id", id);
-    }
-
-    return NextResponse.json({ success: true, id, status, adminNotes });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
-  }
+    if (reviewError) throw reviewError;
+    const { data, error } = await supabaseAdmin.from("builder_requests").select("*").eq("id", body.id).single();
+    if (error) throw error;
+    return NextResponse.json({ success: true, request: camelRow(data) });
+  } catch (error) { return portalError(error); }
 }

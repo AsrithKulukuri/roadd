@@ -38,6 +38,7 @@ export function ProjectRealtimeActivity({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -108,12 +109,14 @@ export function ProjectRealtimeActivity({
       const res = await fetch(`/api/projects/activity/report?${params.toString()}`);
       const data = await res.json();
 
+      if (!res.ok || !data.success || !data.metrics) throw new Error(data.error || "Activity report unavailable.");
+      setLoadError("");
       if (data.success && data.metrics) {
         setMetrics(data.metrics);
         setSharedMembers(data.sharedMembers || []);
       }
     } catch (err) {
-      console.warn("Failed to load activity metrics:", err);
+      setLoadError(err instanceof Error ? err.message : "Activity report unavailable.");
     } finally {
       setIsLoading(false);
     }
@@ -124,7 +127,7 @@ export function ProjectRealtimeActivity({
   }, [fetchMetrics]);
 
   // Download Excel Report
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = async () => {
     if (!project) return;
     setIsDownloading(true);
 
@@ -137,17 +140,21 @@ export function ProjectRealtimeActivity({
     params.set("format", "excel");
 
     const downloadUrl = `/api/projects/activity/report?${params.toString()}`;
+    try {
+    const response = await fetch(downloadUrl);
+    if (!response.ok) throw new Error("Report download failed.");
+    const objectUrl = URL.createObjectURL(await response.blob());
     const link = document.createElement("a");
-    link.href = downloadUrl;
+    link.href = objectUrl;
     link.setAttribute("download", `ROAD_Activity_${project.name}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    setTimeout(() => {
-      setIsDownloading(false);
-      toast.success("Excel report downloaded successfully!");
-    }, 1000);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    toast.success("Report downloaded.");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Download failed."); }
+    finally { setIsDownloading(false); }
   };
 
   const copyToClipboard = (text: string, label: string) => {
@@ -157,13 +164,14 @@ export function ProjectRealtimeActivity({
 
   return (
     <div className="space-y-4 pt-4 border-t border-border/40">
+      {loadError && <p role="alert" className="text-sm text-red-500">{loadError} — refresh to retry.</p>}
       {/* Date Range Selector Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
             <span>Select Date Range</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              100% Realtime
+              Activity report
             </span>
           </label>
         </div>

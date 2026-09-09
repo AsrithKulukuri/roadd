@@ -49,9 +49,21 @@ export function needsCrdaReview(project: Partial<Project>): boolean {
 export function isCrdaVerified(project: Partial<Project>): boolean {
   const review = project.location?.crdaReview;
   return project.projectType === "venture" && project.crdaApproved === true && Boolean(
-    project.crdaLpNumber?.trim() && project.surveyNumber?.trim() && project.crdaDocumentUrl?.trim() &&
-    review?.approved === true && review.reference?.trim() && review.reviewedAt
+    hasCompleteCrdaEvidence(project) &&
+    review?.approved === true && review.reference?.trim() && review.reviewedAt && Number.isFinite(Date.parse(review.reviewedAt))
   );
+}
+
+export function validBoundaryMeasurement(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const match = value.match(/(\d+(?:\.\d+)?)\s*(ft|feet|foot|m|metres?|meters?|yd|yards?)\b/i);
+  return Boolean(match && Number(match[1]) > 0);
+}
+export function hasCompleteCrdaEvidence(project: Partial<Project>): boolean {
+  return Boolean(project.crdaLpNumber?.trim() && !/demo|placeholder|sample/i.test(project.crdaLpNumber) &&
+    project.surveyNumber?.trim() && !/demo|placeholder|sample/i.test(project.surveyNumber) &&
+    project.crdaDocumentUrl?.trim() &&
+    ["north", "south", "east", "west"].every(side => validBoundaryMeasurement(project.boundaryDimensions?.[side as keyof NonNullable<Project["boundaryDimensions"]>])));
 }
 
 /** Pure server-side decision: caller must authenticate an administrator first. */

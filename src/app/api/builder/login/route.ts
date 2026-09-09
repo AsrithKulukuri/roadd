@@ -1,185 +1,40 @@
-import { NextRequest, NextResponse } from "next/server";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { INITIAL_BUILDERS } from "@/stores/builder-store";
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { signSessionPayload } from "@/lib/server-auth-guard";
+import { POST as verifyOtp } from "@/app/api/auth/verify-otp/route";
+import { camelRow, PortalError, portalError, recordPortalActivity } from "@/lib/builder-access";
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    let body: any = {};
-    try {
-      body = await req.json();
-    } catch {
-      try {
-        const text = await req.text();
-        body = JSON.parse(text);
-      } catch {
-        body = {};
-      }
-    }
-    const { email, password, phone, builderId } = body;
-
-    let matchedBuilder: any = null;
-
-    // 1. Fetch from Supabase or fallback
-    let allBuilders = INITIAL_BUILDERS;
-    if (isSupabaseConfigured()) {
-      try {
-        const { data: dbBuilders } = await supabase.from("builder_profiles").select("*");
-        if (dbBuilders && dbBuilders.length > 0) {
-          allBuilders = dbBuilders.map((b: any) => ({
-            id: b.id,
-            companyName: b.company_name,
-            slug: b.slug,
-            logoUrl: b.logo_url,
-            bannerUrl: b.banner_url,
-            description: b.description,
-            tagline: b.tagline,
-            reraNumber: b.rera_number,
-            contactEmail: b.contact_email,
-            contactPhone: b.contact_phone,
-            whatsappNumber: b.whatsapp_number,
-            tier: b.tier || "premium",
-            isVerified: b.is_verified,
-            assignedProjectIds: b.assigned_project_ids || [],
-            assignedPropertyIds: b.assigned_property_ids || [],
-            chatEnabled: b.chat_enabled ?? true,
-            promotedAtTop: b.promoted_at_top ?? false,
-            bannerActive: b.banner_active ?? false,
-            loginCredentialsHint: b.login_credentials_hint,
-            createdAt: b.created_at,
-            updatedAt: b.updated_at,
-          }));
-        }
-      } catch (e) {
-        console.warn("Could not query Supabase builder_profiles for login:", e);
-      }
-    }
-
-    // 2. Secure Authentication: Match builder by email + password, or verified registered phone
-    if (email) {
-      const cleanEmail = email.trim().toLowerCase();
-      const cleanPass = (password || "").trim();
-
-      if (!cleanPass) {
-        return NextResponse.json(
-          { success: false, error: "Password is required to authenticate." },
-          { status: 400 }
-        );
-      }
-
-      const builder = allBuilders.find(
-        (b) => b.contactEmail.toLowerCase() === cleanEmail
-      );
-
-      if (builder) {
-        // Verify against admin configured password hint or default secure password
-        let validPassword = "road2026";
-        if (builder.loginCredentialsHint && builder.loginCredentialsHint.includes("/")) {
-          validPassword = builder.loginCredentialsHint.split("/")[1]?.trim() || "road2026";
-        }
-        
-        if (cleanPass === validPassword || cleanPass === "road2026") {
-          matchedBuilder = builder;
-        } else {
-          return NextResponse.json(
-            { success: false, error: "Incorrect password. Please verify your credentials." },
-            { status: 401 }
-          );
-        }
-      }
-    } else if (phone) {
-      const cleanPhone = phone.replace(/[^0-9]/g, "");
-      matchedBuilder = allBuilders.find((b) => {
-        const bPhone = b.contactPhone.replace(/[^0-9]/g, "");
-        return bPhone.includes(cleanPhone) || cleanPhone.includes(bPhone);
-      });
-    }
-
-    if (!matchedBuilder) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid builder credentials. Access is restricted to authorized real estate developer partners.",
-        },
-        { status: 401 }
-      );
-    }
-
-    // 3. Record login activity
+    const body = await request.clone().json();
+    let builder;
+    if (typeof body.email === "string" && typeof body.password === "string" && body.password) {
+      const client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
+      const { data, error } = await client.auth.signInWithPassword({ email: body.email.trim(), password: body.password });
+      if (error || !data.user) throw new PortalError("Invalid builder credentials. Use your registered WhatsApp number or contact admin.", 401);
+      const result = await supabaseAdmin.from("builder_profiles").select("*").eq("user_id", data.user.id).maybeSingle();
+      if (result.error) throw result.error;
+      builder = result.data;
+    } else if (typeof body.phone === "string" && /^\d{6}$/.test(body.otp || "")) {
+      const response = await verifyOtp(request);
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new PortalError(result.error?.message || "OTP verification failed.", response.status);
+      const normalize = (phone: string) => phone.replace(/\D/g, "").replace(/^91(?=\d{10}$)/, "");
+      const { data, error } = await supabaseAdmin.from("builder_profiles").select("*");
+      if (error) throw error;
+      const matches = (data || []).filter(row => normalize(row.contact_phone || "") === normalize(result.user.phone));
+      if (matches.length === 1) builder = matches[0];
+    } else throw new PortalError("Provide email and password, or phone and a six-digit OTP.");
+    if (!builder) throw new PortalError("No registered builder account matches these credentials.", 403);
     const now = new Date().toISOString();
-    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0] || "49.207.214.88";
-    const userAgent = req.headers.get("user-agent") || "Web Desktop";
-
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase
-          .from("builder_profiles")
-          .update({ last_login_at: now, last_active_at: now })
-          .eq("id", matchedBuilder.id);
-
-        await supabase.from("builder_activity_logs").insert({
-          builder_id: matchedBuilder.id,
-          builder_name: matchedBuilder.companyName,
-          action_type: "login",
-          details: { ip: clientIp, userAgent },
-          ip_address: clientIp,
-          device_info: userAgent,
-          created_at: now,
-        });
-      } catch (e) {
-        console.warn("Failed to write builder login activity to db:", e);
-      }
-    }
-
-    // 4. Create signed session tokens
-    const sessionUser = {
-      id: matchedBuilder.id,
-      name: matchedBuilder.companyName,
-      email: matchedBuilder.contactEmail,
-      phone: matchedBuilder.contactPhone,
-      role: "developer",
-      builderId: matchedBuilder.id,
-      isLoggedIn: true,
-      isProfileComplete: true,
-      isVerified: matchedBuilder.isVerified,
-    };
-
-    const token = signSessionPayload(sessionUser);
-
-    const response = NextResponse.json({
-      success: true,
-      builder: matchedBuilder,
-      user: sessionUser,
-      redirectUrl: "/builder",
-    });
-
-    // Set secure auth cookies
-    response.cookies.set("road_auth_token", token, {
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60,
-      sameSite: "lax",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-    });
-
-    response.cookies.set("road_user", "true", {
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60,
-      sameSite: "lax",
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-    });
-
-    response.cookies.set("road_builder_id", matchedBuilder.id, {
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60,
-      sameSite: "lax",
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-    });
-
+    const { error: activityError } = await supabaseAdmin.from("builder_profiles").update({ last_login_at: now, last_active_at: now }).eq("id", builder.id);
+    if (activityError) throw activityError;
+    await recordPortalActivity(builder, "login");
+    const user = { id: builder.id, name: builder.company_name, email: builder.contact_email, phone: builder.contact_phone, role: "developer", builderSessionVersion: 2, exp: Date.now() + 86400000 };
+    const response = NextResponse.json({ success: true, builder: camelRow(builder), user });
+    response.cookies.set("road_auth_token", signSessionPayload(user), { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 86400 });
+    response.cookies.set("road_user", "true", { sameSite: "lax", path: "/", maxAge: 86400 });
     return response;
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
-  }
+  } catch (error) { return portalError(error); }
 }

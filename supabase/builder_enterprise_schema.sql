@@ -108,36 +108,17 @@ ALTER TABLE public.builder_activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.builder_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.builder_messages ENABLE ROW LEVEL SECURITY;
 
--- Builder profiles policies
-DROP POLICY IF EXISTS "Public can view verified builder profiles" ON public.builder_profiles;
-CREATE POLICY "Public can view verified builder profiles" ON public.builder_profiles FOR SELECT TO public USING (true);
-
-DROP POLICY IF EXISTS "Admins have full access to builder profiles" ON public.builder_profiles;
-CREATE POLICY "Admins have full access to builder profiles" ON public.builder_profiles FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Builders can view their own profile" ON public.builder_profiles;
-CREATE POLICY "Builders can view their own profile" ON public.builder_profiles FOR SELECT TO authenticated USING (auth.uid() = user_id OR true);
-
-DROP POLICY IF EXISTS "Builders can update their own profile" ON public.builder_profiles;
-CREATE POLICY "Builders can update their own profile" ON public.builder_profiles FOR UPDATE TO authenticated USING (auth.uid() = user_id OR true) WITH CHECK (true);
-
--- Activity logs policies
-DROP POLICY IF EXISTS "Admins can view builder activity logs" ON public.builder_activity_logs;
-CREATE POLICY "Admins can view builder activity logs" ON public.builder_activity_logs FOR SELECT TO authenticated USING (true);
-
-DROP POLICY IF EXISTS "Allow logging builder activities" ON public.builder_activity_logs;
-CREATE POLICY "Allow logging builder activities" ON public.builder_activity_logs FOR INSERT TO public WITH CHECK (true);
-
--- Requests policies
-DROP POLICY IF EXISTS "Admins can manage all builder requests" ON public.builder_requests;
-CREATE POLICY "Admins can manage all builder requests" ON public.builder_requests FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Builders can view and create their requests" ON public.builder_requests;
-CREATE POLICY "Builders can view and create their requests" ON public.builder_requests FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
--- Messages policies
-DROP POLICY IF EXISTS "Admins and builders can manage messages" ON public.builder_messages;
-CREATE POLICY "Admins and builders can manage messages" ON public.builder_messages FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Portal tables are server-only. The API checks session identity, admin role and project ownership.
+DO $$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT tablename, policyname FROM pg_policies WHERE schemaname = 'public'
+    AND tablename IN ('builder_profiles','builder_activity_logs','builder_requests','builder_messages')
+  LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, p.tablename);
+  END LOOP;
+END $$;
+REVOKE ALL ON public.builder_profiles, public.builder_activity_logs, public.builder_requests, public.builder_messages FROM anon, authenticated;
 
 -- 6. SEED DEMO BUILDERS (Mapped to actual active projects in ROAD)
 INSERT INTO public.builder_profiles (
@@ -162,7 +143,7 @@ VALUES (
   true,
   ARRAY['amaravati-heights', 'road-skyline-towers'],
   true,
-  'director@sriadityahomes.com / builder2026'
+  NULL
 ),
 (
   'Jayabheri Properties & Estates',
@@ -180,7 +161,7 @@ VALUES (
   true,
   ARRAY['green-valley-villas'],
   true,
-  'sales@jayabherigroup.com / builder2026'
+  NULL
 )
 ON CONFLICT (slug) DO UPDATE SET
   company_name = EXCLUDED.company_name,

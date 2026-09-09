@@ -47,7 +47,7 @@ export const useSchedulesStore = create<SchedulesStore>()(
         set({ isLoading: true });
 
         try {
-          const res = await fetch("/api/admin/schedules", {
+          const res = await fetch(typeof window !== "undefined" && window.location.pathname.startsWith("/builder") ? "/api/builder/schedules" : "/api/admin/schedules", {
             cache: "no-store",
             headers: { Accept: "application/json" },
           });
@@ -68,7 +68,8 @@ export const useSchedulesStore = create<SchedulesStore>()(
           console.warn("[SchedulesStore] Admin schedules fetch failed:", apiErr);
         }
 
-        set({ isLoading: false });
+        set({ isLoading: false, schedules: [] });
+        throw new Error("Could not load schedules. Please retry.");
       },
 
       addSchedule: async (item) => {
@@ -99,7 +100,7 @@ export const useSchedulesStore = create<SchedulesStore>()(
 
         // 1. Try server Admin API
         try {
-          const res = await fetch("/api/admin/schedules", {
+          const res = await fetch(typeof window !== "undefined" && window.location.pathname.startsWith("/builder") ? "/api/builder/schedules" : "/api/admin/schedules", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id, status }),
@@ -153,6 +154,7 @@ export const useSchedulesStore = create<SchedulesStore>()(
     }),
     {
       name: "road_schedules_storage",
+      version: 2, partialize: () => ({}), migrate: () => ({}), merge: (_stored, current) => current,
     }
   )
 );
