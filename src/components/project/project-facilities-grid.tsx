@@ -29,7 +29,7 @@ import {
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface FacilityMeta {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number | string }>;
   colorClass: string;
   bgClass: string;
 }
@@ -141,15 +141,15 @@ export function ProjectFacilitiesGrid({ facilities, projectName }: ProjectFacili
       {/* Modern Dedicated Vertical Tile Grid */}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5 sm:gap-3.5">
         {previewList.map((facility, idx) => {
-          const { icon: Icon, colorClass } = getFacilityMeta(facility);
+          const { icon: Icon } = getFacilityMeta(facility);
           return (
             <div
               key={`${facility}-${idx}`}
-              className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-200 hover:border-amber-500/40 flex flex-col items-center justify-center text-center gap-2.5 transition-all duration-300 hover:scale-105 hover:shadow-md cursor-default group"
+              className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-200 hover:border-slate-900 flex flex-col items-center justify-center text-center gap-2.5 transition-all duration-300 hover:shadow-md cursor-default group"
             >
               {/* Icon Container */}
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-slate-900 shadow-xs group-hover:scale-110 transition-transform">
-                <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${colorClass}`} />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-slate-950 shadow-xs group-hover:bg-black group-hover:scale-105 transition-all">
+                <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={2.2} />
               </div>
 
               {/* Title */}
@@ -177,14 +177,14 @@ export function ProjectFacilitiesGrid({ facilities, projectName }: ProjectFacili
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-4">
             {facilities.map((facility, idx) => {
-              const { icon: Icon, colorClass } = getFacilityMeta(facility);
+              const { icon: Icon } = getFacilityMeta(facility);
               return (
                 <div
                   key={`all-${facility}-${idx}`}
-                  className="p-3 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-200 hover:border-amber-500/40 flex flex-col items-center justify-center text-center gap-2 hover:shadow-md transition-all group"
+                      className="p-3 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-200 hover:border-slate-900 flex flex-col items-center justify-center text-center gap-2 hover:shadow-md transition-all group"
                 >
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-900 shadow-xs">
-                    <Icon className={`w-5 h-5 ${colorClass}`} />
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-950 shadow-xs">
+                    <Icon className="w-5 h-5 text-white" strokeWidth={2.2} />
                   </div>
                   <span className="text-xs font-bold text-slate-900 dark:text-slate-900 leading-tight">
                     {facility}

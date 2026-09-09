@@ -783,7 +783,7 @@ export function ProjectDetailView({
                   className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 transition-all shadow-xs shrink-0 cursor-pointer"
                 >
                   <Download className="w-3 h-3 text-slate-700 dark:text-slate-300 shrink-0" />
-                  <span>Brochure · share contact</span>
+                  <span>Brochure</span>
                 </button>
               )}
             </div>
@@ -1063,7 +1063,7 @@ export function ProjectDetailView({
                     onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all shadow-sm whitespace-nowrap cursor-pointer active:scale-95"
                   >
-                    <Download className="w-4 h-4 text-amber-500 shrink-0" /> Brochure · share contact
+                    <Download className="w-4 h-4 text-amber-500 shrink-0" /> Brochure
                   </button>
                 )}
               </div>

@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { requireActionSession } from "@/lib/action-auth";
 import type { ContactAction } from "@/lib/listing-actions";
 import { Button } from "@/components/ui/button";
+import { WhatsAppIcon } from "@/components/property/whatsapp-share-button";
 import { toast } from "sonner";
 export async function performListingAction(listingType: "project" | "property", listingId: string, action: ContactAction) {
   if (!await requireActionSession(action)) return null;
@@ -32,7 +33,7 @@ export function ListingContactActions({ listingType, listingId }: { listingType:
     <div className="flex flex-wrap gap-2">
       {phone ? <a className="inline-flex items-center rounded-xl border px-4 py-2 font-semibold" href={"tel:+" + phone}>+{phone}</a> :
         <Button disabled={busy} variant="outline" onClick={() => act("reveal_phone")}>Reveal number</Button>}
-      <Button disabled={busy} onClick={() => act("whatsapp_click")}>WhatsApp {listingType === "project" ? "Builder" : "Agent"}</Button>
+      <Button disabled={busy} onClick={() => act("whatsapp_click")}><WhatsAppIcon />WhatsApp {listingType === "project" ? "Builder" : "Agent"}</Button>
       <Button disabled={busy} variant="outline" onClick={() => act("callback_request")}>Request callback</Button>
     </div>
     <p className="text-xs text-muted-foreground">By revealing a number, opening WhatsApp, requesting a callback or requesting a brochure, you share your name, verified phone and email (if provided) with this listing’s builder/agent and ROAD admin for follow-up.</p>
