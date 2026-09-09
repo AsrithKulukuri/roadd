@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import { mockProperties } from "@/lib/mock-data";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

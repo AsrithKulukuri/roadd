@@ -1,4 +1,5 @@
 "use client";
+import { requireActionSession } from "@/lib/action-auth";
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
@@ -738,6 +739,11 @@ export function Navbar() {
               {/* Saved Items Heart Button */}
               <Link
                 href="/dashboard/saved"
+                onClick={async (event) => {
+                  event.preventDefault();
+                  try { if (await requireActionSession("view_saved")) router.push("/dashboard/saved"); }
+                  catch { toast.error("Unable to verify your session. Please retry."); }
+                }}
                 className={cn(
                   "hidden sm:inline-flex p-2 rounded-xl transition-colors",
                   isTransparent

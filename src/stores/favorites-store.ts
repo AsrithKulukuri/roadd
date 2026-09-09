@@ -1,104 +1,47 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
-import { haptic } from '@/lib/haptics';
-
+"use client";
+import { create } from "zustand";
+import { toast } from "sonner";
+import { requireActionSession } from "@/lib/action-auth";
 interface FavoritesState {
-  savedPropertyIds: string[];
-  isLoading: boolean;
-  isInitialized: boolean;
+  savedPropertyIds: string[]; isLoading: boolean; isInitialized: boolean;
   toggleFavorite: (id: string) => Promise<void>;
   setSavedPropertyIds: (ids: string[]) => void;
   isFavorite: (id: string) => boolean;
   syncWithSupabase: () => Promise<void>;
 }
-
-export const useFavoritesStore = create<FavoritesState>()(
-  persist(
-    (set, get) => ({
-      savedPropertyIds: [],
-      isLoading: false,
-      isInitialized: false,
-
-      setSavedPropertyIds: (ids: string[]) => {
-        set({ savedPropertyIds: ids });
-      },
-
-      syncWithSupabase: async () => {
-        set({ isLoading: true });
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            const { data, error } = await supabase
-              .from('saved_properties')
-              .select('property_id')
-              .eq('user_id', session.user.id);
-
-            if (!error && data) {
-              const dbIds = data.map((d) => d.property_id);
-              set({ savedPropertyIds: dbIds });
-            }
-          }
-        } catch (error) {
-          console.error('Error syncing favorites:', error);
-        } finally {
-          set({ isLoading: false, isInitialized: true });
-        }
-      },
-
-      toggleFavorite: async (id) => {
-        const { savedPropertyIds } = get();
-        const isSaved = savedPropertyIds.includes(id);
-
-        // 1. Instant local state update (Zero UI freeze)
-        const updatedIds = isSaved
-          ? savedPropertyIds.filter((pId) => pId !== id)
-          : [...savedPropertyIds, id];
-
-        set({ savedPropertyIds: updatedIds });
-
-        if (isSaved) {
-          haptic.light();
-          toast.success('Removed from saved properties');
-        } else {
-          haptic.favorite();
-          toast.success('Property saved!');
-        }
-
-        // 2. Background sync to Supabase if logged in
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            if (isSaved) {
-              await supabase
-                .from('saved_properties')
-                .delete()
-                .eq('user_id', session.user.id)
-                .eq('property_id', id);
-            } else {
-              await supabase
-                .from('saved_properties')
-                .insert([{ user_id: session.user.id, property_id: id }]);
-            }
-          } else if (!isSaved) {
-            // Friendly tip for guest users
-            toast.info('Sign in to sync saved properties across your devices', {
-              action: {
-                label: 'Sign In',
-                onClick: () => (window.location.href = '/login'),
-              },
-            });
-          }
-        } catch (error) {
-          console.error('Background favorite sync error:', error);
-        }
-      },
-
-      isFavorite: (id) => get().savedPropertyIds.includes(id),
-    }),
-    {
-      name: 'road-favorites-storage', // Keep local storage backup so guests never lose saved items
-    }
-  )
-);
+const pending = new Set<string>();
+export const useFavoritesStore = create<FavoritesState>((set, get) => ({
+  savedPropertyIds: [], isLoading: false, isInitialized: false,
+  setSavedPropertyIds: (ids) => set({ savedPropertyIds: ids }),
+  isFavorite: (id) => get().savedPropertyIds.includes(id),
+  syncWithSupabase: async () => {
+    set({ isLoading: true });
+    try {
+      const response = await fetch("/api/favorites", { cache: "no-store" });
+      if (response.status === 401) { set({ savedPropertyIds: [] }); return; }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      set({ savedPropertyIds: data.ids || [] });
+    } catch { /* Preserve the current list on a transient failure. */ }
+    finally { set({ isLoading: false, isInitialized: true }); }
+  },
+  toggleFavorite: async (id) => {
+    if (pending.has(id)) return;
+    pending.add(id);
+    try {
+      if (!await requireActionSession("save_listing")) return;
+      await get().syncWithSupabase();
+      const saved = !get().savedPropertyIds.includes(id);
+      const response = await fetch("/api/favorites", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, saved }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to save listing.");
+      set({ savedPropertyIds: data.ids });
+      toast.success(saved ? "Listing saved privately" : "Listing removed from saved");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to save listing."); }
+    finally { pending.delete(id); }
+  },
+}));
+if (typeof window !== "undefined") window.addEventListener("road_auth_changed", () => {
+  useFavoritesStore.setState({ savedPropertyIds: [] });
+  void useFavoritesStore.getState().syncWithSupabase();
+});

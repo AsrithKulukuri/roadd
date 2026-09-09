@@ -17,12 +17,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     async function loadProject() {
       setLoading(true);
       try {
-        // 1. Always query Supabase directly for the freshest data
-        const { data, error } = await supabase
-          .from("projects")
-          .select("*")
-          .or(`id.eq.${id},slug.eq.${id}`)
-          .maybeSingle();
+        const response = await fetch("/api/listings?type=project&scope=admin", { cache: "no-store" });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Unable to load project.");
+        const data = result.data.find((p: Project) => p.id === id || p.slug === id);
+        const error = null;
 
         if (data && !error) {
           setProject(fromSupabaseProject(data));

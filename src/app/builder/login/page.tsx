@@ -40,6 +40,7 @@ export default function BuilderLoginPage() {
   const [phone, setPhone] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [isOtpSent, setIsOtpSent] = useState(false);
+  const [resendSeconds, setResendSeconds] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [existingSession, setExistingSession] = useState<{ id: string; name: string } | null>(null);
 
@@ -52,6 +53,12 @@ export default function BuilderLoginPage() {
     }).catch(() => {});
 
   }, [fetchFromSupabase]);
+
+  useEffect(() => {
+    if (resendSeconds <= 0) return;
+    const timer = window.setInterval(() => setResendSeconds((seconds) => Math.max(0, seconds - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [resendSeconds]);
 
   // Complete builder sign in
   const completeBuilderSignIn = (builder: BuilderProfile) => {
@@ -301,7 +308,8 @@ export default function BuilderLoginPage() {
                       const response = await fetch("/api/auth/send-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone: phone.trim() }) });
                       const data = await response.json();
                       if (!response.ok || !data.success) throw new Error(data.error?.message || data.error || "Could not send code.");
-                      setIsOtpSent(true);
+                    setIsOtpSent(true);
+                      setResendSeconds(60);
                       toast.success("Verification code dispatched via WhatsApp");
                     } catch (error) { toast.error(error instanceof Error ? error.message : "Could not send code."); }
                     finally { setIsLoading(false); }
@@ -313,9 +321,16 @@ export default function BuilderLoginPage() {
               ) : (
                 <div className="space-y-3">
                   <Input
+                    autoFocus
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
                     placeholder="Enter 6-digit OTP code"
                     value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/D/g, "").slice(0, 6);
+                      setOtpCode(value);
+                    }}
                     className="bg-zinc-950 border-zinc-800 text-white text-center font-mono tracking-widest text-base"
                   />
                   <Button
@@ -348,6 +363,29 @@ export default function BuilderLoginPage() {
                   >
                     Verify & Enter Portal
                   </Button>
+                  <div className="flex items-center justify-between text-[11px] text-zinc-500">
+                    <button type="button" className="underline hover:text-white" onClick={() => {
+                      setIsOtpSent(false);
+                      setOtpCode("");
+                      setResendSeconds(0);
+                    }}>Change number</button>
+                    {resendSeconds > 0 ? (
+                      <span>Resend code in {resendSeconds}s</span>
+                    ) : (
+                      <button type="button" className="underline text-amber-400 hover:text-amber-300" onClick={async () => {
+                        setIsLoading(true);
+                        try {
+                          const response = await fetch("/api/auth/send-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone: phone.trim() }) });
+                          const data = await response.json();
+                          if (!response.ok || !data.success) throw new Error(data.error?.message || data.error || "Could not resend code.");
+                          setOtpCode("");
+                          setResendSeconds(60);
+                          toast.success("A new verification code was sent.");
+                        } catch (error) { toast.error(error instanceof Error ? error.message : "Could not resend code."); }
+                        finally { setIsLoading(false); }
+                      }}>Resend code</button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

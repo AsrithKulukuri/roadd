@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { ActionAuthProvider } from "@/components/auth/action-auth-gate";
 import { Toaster } from "sonner";
 import { ClientLayoutWrapper } from "@/components/layout/client-layout-wrapper";
 import { cn } from "@/lib/utils";
@@ -180,6 +181,7 @@ export default function RootLayout({
           <div className="relative flex min-h-screen flex-col">
             <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
           </div>
+          <ActionAuthProvider />
           <Toaster
             position="bottom-right"
             toastOptions={{

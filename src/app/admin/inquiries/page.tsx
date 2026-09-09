@@ -1,4 +1,5 @@
 "use client";
+import { ListingLeadsPanel } from "@/components/admin/listing-leads-panel";
 
 import { useState } from "react";
 import { useInquiriesStore, BuyerRequirement } from "@/stores/inquiries-store";
@@ -63,6 +64,7 @@ export default function AdminInquiriesPage() {
         </div>
       </div>
 
+      <ListingLeadsPanel />
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div 

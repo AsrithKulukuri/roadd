@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+import { leadUser } from "@/lib/listing-leads";
+import { PortalError, portalError } from "@/lib/builder-access";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -150,10 +153,10 @@ async function getListingContact(input: ScheduleVisitInput): Promise<ListingCont
 
   try {
     const project = await findInTable("projects");
-    if (project) return normalizeListingContact(project, input);
+    if (project && project.isPublished !== false) return normalizeListingContact(project, input);
 
     const property = await findInTable("properties");
-    if (property) return normalizeListingContact(property, input);
+    if (property && property.isPublished !== false) return normalizeListingContact(property, input);
   } catch (error) {
     console.warn("[SCHEDULE VISIT] Listing lookup skipped:", error);
   }
@@ -163,6 +166,7 @@ async function getListingContact(input: ScheduleVisitInput): Promise<ListingCont
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await leadUser(req);
     const contentLength = Number(req.headers.get("content-length") || "0");
     if (contentLength > MAX_BODY_BYTES) {
       return NextResponse.json(
@@ -172,7 +176,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const parsed = scheduleVisitSchema.safeParse(body);
+    if (body.consent !== true) throw new PortalError("Please accept sharing your contact details for this visit.");
+    const parsed = scheduleVisitSchema.safeParse({ ...body, customerName: user.name, customerPhone: user.phone, customerEmail: user.email || "" });
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: parsed.error.issues[0]?.message || "Invalid schedule request" },
@@ -208,6 +213,7 @@ export async function POST(req: NextRequest) {
     }
 
     const listingContact = await getListingContact(parsed.data);
+    if (!listingContact) throw new PortalError("Listing unavailable.", 404);
     const resolvedProjectId = listingContact?.projectId || projectId;
     const resolvedProjectSlug = listingContact?.projectSlug || projectSlug;
     const resolvedProjectName = listingContact?.projectName || projectName;
@@ -215,11 +221,22 @@ export async function POST(req: NextRequest) {
     const resolvedBuilderName = listingContact?.builderName || builderName || "Project Site Team";
     const cleanBuilderPhone = listingContact?.builderPhone ? formatWhatsAppPhone(listingContact.builderPhone) : "";
 
-    const scheduleId = `visit-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const scheduleId = "visit-" + createHash("sha256").update(JSON.stringify([user.id, resolvedProjectId, visitDate, timeSlot])).digest("hex").slice(0, 32);
     const createdAt = new Date().toISOString();
 
     let customerNotified = false;
     let builderNotified = false;
+
+    const saved = await supabaseAdmin.from("project_site_visits").insert({
+      id: scheduleId, project_id: resolvedProjectId, project_slug: resolvedProjectSlug,
+      project_name: resolvedProjectName, project_location: resolvedProjectLocation,
+      customer_name: customerName, customer_phone: cleanCustomerPhone, customer_email: customerEmail || null,
+      builder_name: resolvedBuilderName, builder_phone: cleanBuilderPhone || null,
+      visit_date: visitDate, time_slot: timeSlot, status: "scheduled",
+      customer_notified: false, builder_notified: false, reminder_sent: false, notes: notes || null, created_at: createdAt,
+    });
+    if (saved.error?.code === "23505") return NextResponse.json({ success: true, duplicate: true, message: "This visit has already been requested." });
+    if (saved.error) throw saved.error;
 
     // 1. Send WhatsApp notification to Customer
     try {
@@ -244,7 +261,8 @@ export async function POST(req: NextRequest) {
 
     // 2. Send WhatsApp notification to Builder
     try {
-      const targetBuilderPhone = cleanBuilderPhone || formatWhatsAppPhone(SUPPORT_WHATSAPP_PHONE);
+      const adminPhone = formatWhatsAppPhone(process.env.ADMIN_WHATSAPP_PHONE || process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE || "");
+      const targetBuilderPhone = cleanBuilderPhone || adminPhone;
       if (targetBuilderPhone) {
         const builderMsg =
           `New Site Visit Scheduled! 🔔\n\n` +
@@ -259,64 +277,19 @@ export async function POST(req: NextRequest) {
           `\nPlease ensure a site executive is available for the visit.\n\n` +
           `ROAD Facing Admin`;
 
-        const bldResult = await WasenderService.sendTextMessage(targetBuilderPhone, builderMsg, {
-          requestId: `sched-bld-${scheduleId}`,
-        });
-        builderNotified = bldResult.success;
+        for (const recipient of new Set([targetBuilderPhone, adminPhone].filter(Boolean))) {
+          try {
+            const result = await WasenderService.sendTextMessage(recipient, builderMsg, { requestId: `sched-${scheduleId}-${recipient}` });
+            if (recipient === cleanBuilderPhone) builderNotified = result.success;
+          } catch { /* One failed recipient must not prevent notifying the other. */ }
+        }
       }
     } catch (bldErr) {
       console.warn("[SCHEDULE VISIT] Failed to send WhatsApp to builder:", bldErr);
     }
 
-    // 3. Save to Supabase (primary project_site_visits + backup project_leads)
-    if (supabaseAdmin) {
-      try {
-        const { error: insertErr } = await supabaseAdmin.from("project_site_visits").insert({
-          id: scheduleId,
-          project_id: resolvedProjectId || null,
-          project_slug: resolvedProjectSlug || null,
-          project_name: resolvedProjectName,
-          project_location: resolvedProjectLocation || null,
-          customer_name: customerName,
-          customer_phone: cleanCustomerPhone,
-          customer_email: customerEmail || null,
-          builder_name: resolvedBuilderName || null,
-          builder_phone: cleanBuilderPhone || null,
-          visit_date: visitDate,
-          time_slot: timeSlot,
-          status: "scheduled",
-          customer_notified: customerNotified,
-          builder_notified: builderNotified,
-          reminder_sent: false,
-          notes: notes || null,
-          created_at: createdAt,
-        });
-
-        if (insertErr) {
-          console.warn("[SCHEDULE VISIT] Supabase project_site_visits insert warning:", insertErr.message || insertErr);
-        }
-      } catch (dbErr) {
-        console.warn("[SCHEDULE VISIT] Supabase insert skipped or table not present:", dbErr);
-      }
-
-      // Dual-record in project_leads as reliable failover so visits are never lost
-      try {
-        await supabaseAdmin.from("project_leads").insert({
-          project_id: resolvedProjectId || null,
-          project_slug: resolvedProjectSlug || null,
-          project_name: resolvedProjectName,
-          builder_phone: cleanBuilderPhone || "site-team",
-          builder_whatsapp: cleanBuilderPhone || null,
-          viewer_name: customerName,
-          viewer_phone: cleanCustomerPhone,
-          viewer_email: customerEmail || null,
-          delivery_status: `scheduled_visit:${visitDate}:${timeSlot}`,
-          created_at: createdAt,
-        });
-      } catch (leadErr) {
-        console.warn("[SCHEDULE VISIT] project_leads fallback record skipped:", leadErr);
-      }
-    }
+    const delivery = await supabaseAdmin.from("project_site_visits").update({ customer_notified: customerNotified, builder_notified: builderNotified }).eq("id", scheduleId);
+    if (delivery.error) console.error("Visit delivery status update failed:", delivery.error.code);
 
     const schedule = {
       id: scheduleId,
@@ -328,7 +301,6 @@ export async function POST(req: NextRequest) {
       customerPhone: cleanCustomerPhone,
       customerEmail,
       builderName: resolvedBuilderName,
-      builderPhone: cleanBuilderPhone,
       visitDate,
       timeSlot,
       status: "scheduled" as const,
@@ -346,11 +318,5 @@ export async function POST(req: NextRequest) {
       builderNotified,
       message: "Site visit scheduled successfully",
     });
-  } catch (error: any) {
-    console.error("[SCHEDULE VISIT API ERROR]:", error);
-    return NextResponse.json(
-      { success: false, error: error?.message || "Internal server error" },
-      { status: 500 }
-    );
-  }
+  } catch (error) { return portalError(error); }
 }

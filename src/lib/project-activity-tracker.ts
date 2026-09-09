@@ -51,7 +51,6 @@ export async function trackProjectImpression(payload: {
   if (typeof window === "undefined") return;
 
   const sessionId = getSessionId();
-  const viewer = getCurrentUserViewer();
 
   try {
     const body = JSON.stringify({
@@ -60,9 +59,6 @@ export async function trackProjectImpression(payload: {
       projectSlug: payload.projectSlug || "",
       projectName: payload.projectName,
       sessionId,
-      viewerName: viewer?.name || null,
-      viewerPhone: viewer?.phone || null,
-      viewerEmail: viewer?.email || null,
       timestamp: new Date().toISOString(),
     });
 

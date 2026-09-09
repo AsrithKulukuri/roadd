@@ -3336,7 +3336,6 @@ export default function PropertyMap({
                                 e.stopPropagation();
                                 e.preventDefault();
                                 toggleFavorite(property.id);
-                                toast.success(isFavorite(property.id) ? "Removed from saved properties" : "Saved to your favorites!");
                               }}
                               title={isFavorite(property.id) ? "Remove from saved" : "Save property"}
                               className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer"

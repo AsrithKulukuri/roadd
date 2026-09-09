@@ -126,7 +126,7 @@ export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthMo
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+      <div role="dialog" aria-modal="true" aria-label="Verify your phone" className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
         {/* Backdrop click */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -151,6 +151,7 @@ export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthMo
           {/* Close Button */}
           <button
             type="button"
+            aria-label="Close login"
             onClick={handleClose}
             className="absolute top-5 right-5 p-2 text-slate-500 hover:text-slate-950 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors z-20 cursor-pointer"
           >

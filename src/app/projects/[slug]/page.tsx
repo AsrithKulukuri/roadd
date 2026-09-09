@@ -1,3 +1,5 @@
+import { publicListing } from "@/lib/public-listing";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createClient } from "@supabase/supabase-js";
 import { fromSupabaseProject } from "@/stores/projects-store";
 import type { Project } from "@/types/project";
@@ -11,14 +13,12 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 function getSupabaseClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  return supabaseAdmin;
 }
 
 async function getProject(slug: string): Promise<Project | null> {
   try {
+    if (!/^[a-zA-Z0-9_-]{1,180}$/.test(slug)) return null;
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from("projects")
@@ -26,7 +26,7 @@ async function getProject(slug: string): Promise<Project | null> {
       .or(`slug.eq.${slug},id.eq.${slug}`)
       .single();
 
-    if (!error && data) {
+    if (!error && data && data.isPublished !== false) {
       const sanitized = fromSupabaseProject(data);
       // Strip private builder contact fields from public SSR payload
       delete (sanitized as any).builderPhone;
@@ -35,7 +35,7 @@ async function getProject(slug: string): Promise<Project | null> {
         delete (sanitized as any).builder.phone;
         delete (sanitized as any).builder.whatsapp;
       }
-      return sanitized;
+      return publicListing(sanitized);
     }
   } catch {
   }
@@ -135,13 +135,6 @@ export default async function ProjectPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get("road_auth_token")?.value;
-  const isTokenValid = authToken ? Boolean(verifySignedSessionToken(authToken)) : false;
-  if (!isTokenValid) {
-    redirect(`/login?redirect=/projects/${slug}`);
-  }
-
   const project = await getProject(slug);
   return <ProjectDetailView slug={slug} initialProject={project} />;
 }

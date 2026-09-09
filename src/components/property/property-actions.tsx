@@ -76,7 +76,7 @@ export function PropertyActions({ propertyId, property }: PropertyActionsProps) 
         }`}
         onClick={() => {
           toggleFavorite(propertyId);
-          toast.success(isSaved ? "Removed from saved properties" : "Saved to favorites!");
+
         }}
         title={isSaved ? "Remove from Saved" : "Save Property"}
       >

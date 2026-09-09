@@ -1,3 +1,5 @@
+import { publicListing } from "@/lib/public-listing";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { mockProperties } from "@/lib/mock-data";
@@ -23,14 +25,12 @@ import type { Property } from "@/types/property";
 import type { Metadata } from "next";
 
 function getSupabaseClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  return supabaseAdmin;
 }
 
 async function getProperty(slug: string): Promise<Property | null> {
   try {
+    if (!/^[a-zA-Z0-9_-]{1,180}$/.test(slug)) return null;
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from("properties")
@@ -38,11 +38,11 @@ async function getProperty(slug: string): Promise<Property | null> {
       .or(`slug.eq.${slug},id.eq.${slug}`)
       .single();
 
-    if (!error && data) return data as Property;
+    if (!error && data && data.isPublished !== false) return publicListing(data as Property);
   } catch {
   }
 
-  return mockProperties.find((p) => p.slug === slug || p.id === slug) || null;
+  return publicListing(mockProperties.find((p) => p.slug === slug || p.id === slug) || null);
 }
 
 export async function generateStaticParams() {

@@ -1,4 +1,5 @@
 "use client";
+import { ListingLeadsPanel } from "@/components/admin/listing-leads-panel";
 
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
@@ -261,6 +262,7 @@ export default function BuilderOverviewPage() {
 
   return (
     <div className="space-y-8 pb-16">
+      <ListingLeadsPanel />
       <div className="flex items-center gap-3 text-sm"><Button variant="outline" onClick={() => setRefreshKey(key => key + 1)}>Refresh reports</Button><span>{reportUpdated ? "Updated " + reportUpdated : assignedProjects.length ? "Reports loading" : "No assigned projects"}</span></div>
       {reportError && <p role="alert" className="text-red-500">{reportError} — displayed figures may be out of date.</p>}
       {/* 1. BUILDER HEADER WITH REAL INFO */}

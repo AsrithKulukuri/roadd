@@ -40,9 +40,7 @@ export async function POST(req: NextRequest) {
       projectName,
       sessionId,
       dwellSeconds = 0,
-      viewerName,
-      viewerPhone,
-      viewerEmail,
+
       timestamp = new Date().toISOString(),
     } = body;
 
@@ -65,9 +63,9 @@ export async function POST(req: NextRequest) {
           sessionId,
           dwellSeconds: 0,
           detailsShared: false,
-          viewerName: viewerName || undefined,
-          viewerPhone: viewerPhone || undefined,
-          viewerEmail: viewerEmail || undefined,
+          viewerName: undefined,
+          viewerPhone: undefined,
+          viewerEmail: undefined,
           createdAt: timestamp,
           updatedAt: timestamp,
         };
@@ -85,9 +83,9 @@ export async function POST(req: NextRequest) {
               session_id: sessionId,
               dwell_seconds: 0,
               details_shared: false,
-              viewer_name: viewerName || null,
-              viewer_phone: viewerPhone || null,
-              viewer_email: viewerEmail || null,
+              viewer_name: null,
+              viewer_phone: null,
+              viewer_email: null,
               created_at: timestamp,
               updated_at: timestamp,
             });

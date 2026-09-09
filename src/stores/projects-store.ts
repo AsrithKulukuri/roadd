@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { publicListing } from "@/lib/public-listing";
 import { supabase } from '@/lib/supabase';
 import type { Project } from '@/types/project';
 import { toast } from 'sonner';
@@ -195,8 +196,8 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
     constructionStatus: (p.constructionStatus as "under-construction" | "ready-to-move" | "new-launch" | undefined) || 'under-construction',
     builderName: (typeof p.builderName === 'string' ? p.builderName : (builderObj?.name ?? 'Independent Developer')),
     builderLogoUrl: (typeof p.builderLogoUrl === 'string' ? p.builderLogoUrl : (builderObj?.logoUrl ?? undefined)),
-    builderPhone: undefined,
-    builderWhatsapp: undefined,
+    builderPhone: typeof p.builderPhone === "string" ? p.builderPhone : undefined,
+    builderWhatsapp: typeof p.builderWhatsapp === "string" ? p.builderWhatsapp : undefined,
     displayCategory: (p.displayCategory as "featured" | "recommended" | "budget_friendly" | "none" | undefined) || (p.isFeatured ? "featured" : "none")
   };
 }
@@ -268,11 +269,12 @@ export const useProjectsStore = create<ProjectsState>()(
               }, 9000);
             });
 
-            const queryPromise = supabase
-              .from('projects')
-              .select(PUBLIC_PROJECT_SELECT)
-              .order('id', { ascending: false })
-              .abortSignal(currentSignal);
+            const scope = typeof window !== "undefined" && window.location.pathname.startsWith("/admin") ? "&scope=admin" : "";
+            const queryPromise = fetch("/api/listings?type=project" + scope, { signal: currentSignal, cache: "no-store" }).then(async response => {
+              const result = await response.json();
+              if (!response.ok) throw new Error(result.error || "Unable to load listings.");
+              return result;
+            });
 
             const result = await Promise.race([queryPromise, timeoutPromise]);
 
@@ -564,7 +566,9 @@ export const useProjectsStore = create<ProjectsState>()(
     }),
     {
       name: 'road_projects_store',
-      partialize: (state) => ({ projects: state.projects }),
+      version: 1,
+      migrate: (state) => publicListing(state) as { projects: Project[] },
+      partialize: (state) => ({ projects: publicListing(state.projects) }),
     }
   )
 );

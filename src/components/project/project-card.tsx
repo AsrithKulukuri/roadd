@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { cn, formatPriceCompact } from "@/lib/utils";
 import type { Project, ProjectType } from "@/types/project";
 import { useFavoritesStore } from "@/stores/favorites-store";
-import { trackShareDetailsWithBuilder } from "@/lib/project-activity-tracker";
 import { getRefId } from "@/lib/ref-id";
 import { shareItem } from "@/lib/share-utils";
 import { shareOnWhatsApp } from "@/lib/whatsapp/whatsapp-share";
@@ -341,17 +340,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const willSave = !isSaved;
-                toggleFavorite(project.id);
-                if (willSave) {
-                  trackShareDetailsWithBuilder({
-                    projectId: project.id,
-                    projectSlug: project.slug,
-                    projectName: project.name,
-                    builderPhone: project.builderWhatsapp || project.builderPhone,
-                    action: "save",
-                  });
-                }
+                void toggleFavorite(project.id);
               }}
               title={isSaved ? "Remove from saved" : "Save project"}
               aria-label={isSaved ? "Remove from saved" : "Save project"}

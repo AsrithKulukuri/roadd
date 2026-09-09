@@ -1,4 +1,6 @@
 "use client";
+import { ListingContactActions, performListingAction } from "@/components/property/listing-contact-actions";
+import { requireActionSession } from "@/lib/action-auth";
 
 import { use, useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
@@ -254,7 +256,7 @@ export function ProjectDetailView({
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
-  const project = projects.find((p) => (p.slug === slug || p.id === slug) && (p.isPublished || true)) || initialProject;
+  const project = projects.find((p) => (p.slug === slug || p.id === slug) && p.isPublished !== false) || initialProject;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -305,48 +307,6 @@ export function ProjectDetailView({
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
     );
   }, [project?.location?.latitude, project?.location?.longitude]);
-
-  useEffect(() => {
-    if (!isLoggedIn || !project) return;
-    const controller = new AbortController();
-    const projectKey = project.slug || project.id || slug;
-
-    fetch(`/api/projects/${encodeURIComponent(projectKey)}/contact`, {
-      credentials: "same-origin",
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        const result = await response.json().catch(() => null) as {
-          success?: boolean;
-          contact?: { phone?: string | null; whatsapp?: string | null };
-          error?: string;
-        } | null;
-        if (!response.ok || !result?.success || !result.contact) {
-          throw new Error(result?.error || "Unable to load builder contact");
-        }
-        setBuilderContact({
-          phone: result.contact.phone || null,
-          whatsapp: result.contact.whatsapp || result.contact.phone || null,
-        });
-        setBuilderContactError(null);
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setBuilderContact(null);
-        setBuilderContactError(error instanceof Error ? error.message : "Unable to load builder contact");
-      });
-
-    return () => controller.abort();
-  }, [isLoggedIn, project?.id, project?.slug, slug]);
-
-  // Auto-redirect unauthenticated users to login
-  useEffect(() => {
-    if (!isLoading && !isLoggedIn) {
-      const targetUrl = getLoginUrl(`/projects/${project?.slug || slug}`);
-      router.replace(targetUrl);
-    }
-  }, [isLoading, isLoggedIn, project?.slug, slug, getLoginUrl, router]);
 
   // Track genuine impression and active dwell time (WITHOUT sending WhatsApp viewing messages)
   useEffect(() => {
@@ -399,35 +359,6 @@ export function ProjectDetailView({
     );
   }
 
-  if (!isLoggedIn) {
-    const loginUrl = getLoginUrl(`/projects/${project?.slug || slug}`);
-    return (
-      <div className="min-h-screen pt-28 pb-16 px-4 flex flex-col items-center justify-center bg-bg-primary text-center">
-        <div className="w-full max-w-md p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col items-center">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 mb-5 shadow-inner">
-            <Lock className="w-7 h-7" />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Login Required</h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 mb-4 leading-relaxed">
-            Please sign in to view full project specifications, layouts, and builder information.
-          </p>
-
-          <div className="p-3 mb-6 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 text-left text-xs text-amber-900 dark:text-amber-300">
-            <p className="font-semibold mb-0.5">Privacy Notice:</p>
-            <p className="opacity-90">By viewing project details, your name and phone may be shared with the builder for follow-up.</p>
-          </div>
-
-          <Link
-            href={loginUrl}
-            className="w-full py-3.5 px-6 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
-          >
-            <span>Sign In with WhatsApp</span>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   if (!project) {
     return (
       <div className="min-h-screen pt-24 flex flex-col items-center justify-center gap-4 text-text-secondary">
@@ -455,16 +386,15 @@ export function ProjectDetailView({
     : null;
   const phone = displayBuilderPhone ? `tel:${displayBuilderPhone.replace(/\s/g, "")}` : null;
   const targetRedirect = `/projects/${project.slug || slug}`;
-  const hasBrochure = Boolean(project.brochureUrl && !project.brochureUrl.startsWith("blob:"));
+  const hasBrochure = Boolean((project as Project & { hasBrochure?: boolean }).hasBrochure || (project.brochureUrl && !project.brochureUrl.startsWith("blob:")));
 
   const handleDownloadBrochure = async (e: React.MouseEvent, url: string, filename: string) => {
     e.preventDefault();
-    if (!url || url.startsWith("blob:")) {
-      toast.error("Brochure file is unavailable or expired. Please upload a PDF in the Admin Dashboard.");
-      return;
-    }
-    const resolved = resolveMediaUrl(url);
+    let resolved = "";
     try {
+      const action = await performListingAction("project", project.id, "brochure_download");
+      if (!action) return;
+      resolved = resolveMediaUrl(action.brochureUrl || url);
       toast.info("Downloading brochure...");
       const res = await fetch(resolved);
       if (!res.ok) throw new Error("Fetch failed");
@@ -479,8 +409,8 @@ export function ProjectDetailView({
       document.body.removeChild(a);
       window.URL.revokeObjectURL(blobUrl);
       toast.success("Brochure downloaded!");
-    } catch {
-      window.open(resolved, "_blank");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to download the brochure. Please retry.");
     }
   };
 
@@ -853,7 +783,7 @@ export function ProjectDetailView({
                   className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 transition-all shadow-xs shrink-0 cursor-pointer"
                 >
                   <Download className="w-3 h-3 text-slate-700 dark:text-slate-300 shrink-0" />
-                  <span>Brochure</span>
+                  <span>Brochure · share contact</span>
                 </button>
               )}
             </div>
@@ -1133,7 +1063,7 @@ export function ProjectDetailView({
                     onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all shadow-sm whitespace-nowrap cursor-pointer active:scale-95"
                   >
-                    <Download className="w-4 h-4 text-amber-500 shrink-0" /> Download Brochure
+                    <Download className="w-4 h-4 text-amber-500 shrink-0" /> Brochure · share contact
                   </button>
                 )}
               </div>
@@ -1664,6 +1594,7 @@ export function ProjectDetailView({
               <ScrollReveal id="brochure" className="scroll-mt-32">
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm">
                   <h2 className="text-xl font-bold text-text-primary mb-4">Brochure</h2>
+                  <p className="text-xs text-text-secondary mb-3">Requesting a brochure shares your name, verified phone and email (if provided) with this builder and ROAD admin.</p>
                   {hasBrochure ? (
                     <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl border border-border-default bg-bg-primary">
                       <div className="w-12 h-12 rounded-xl bg-amber-primary/10 flex items-center justify-center shrink-0">
@@ -1675,7 +1606,8 @@ export function ProjectDetailView({
                       </div>
                       <div className="sm:ml-auto flex items-center gap-2.5 w-full sm:w-auto">
                         <a
-                          href={resolveMediaUrl(project.brochureUrl!)}
+                          href="#"
+                          onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-border-default hover:bg-slate-100 dark:hover:bg-slate-800 text-text-primary font-bold text-sm transition-colors text-center shrink-0 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
@@ -1746,68 +1678,7 @@ export function ProjectDetailView({
                     </p>
                   )}
 
-                  {/* Builder Contact Section (Login Gated) */}
-                  {!isLoggedIn ? (
-                    <div className="mt-4 p-5 rounded-2xl bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-500 border border-amber-500/40 flex items-center justify-center shrink-0">
-                          <Lock className="w-5 h-5 text-amber-500" />
-                        </div>
-                        <div>
-                          <h4 className="font-heading font-black text-slate-900 dark:text-white text-sm sm:text-base">
-                            Log in to view builder contact
-                          </h4>
-                          <p className="text-xs text-slate-600 dark:text-slate-300">
-                            Sign in to contact builder on WhatsApp
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => router.push(getLoginUrl(targetRedirect))}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black text-sm shadow-md transition-all cursor-pointer"
-                      >
-                        <Lock className="w-4 h-4 fill-slate-950 text-slate-950" />
-                        <span>Sign in to Contact Builder</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 pt-2">
-                      <div className="flex flex-wrap gap-3">
-                        {whatsapp && (
-                          <a
-                            href={whatsapp}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => {
-                              trackShareDetailsWithBuilder({
-                                projectId: project.id,
-                                projectSlug: project.slug,
-                                projectName: project.name,
-                                builderPhone: project.builderWhatsapp || project.builderPhone,
-                                action: "contact_builder",
-                              });
-                            }}
-                            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs sm:text-sm transition-all shadow-xs active:scale-95"
-                          >
-                            <WhatsAppIcon className="w-4.5 h-4.5 shrink-0" />
-                            <span>WhatsApp Builder</span>
-                          </a>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => setIsScheduleModalOpen(true)}
-                          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-300 font-bold text-xs sm:text-sm transition-all shadow-xs cursor-pointer active:scale-95"
-                        >
-                          <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
-                          <span>Schedule a Visit</span>
-                        </button>
-                      </div>
-                      {!whatsapp && builderContactError && (
-                        <p className="text-xs font-medium text-red-600 dark:text-red-400">{builderContactError}</p>
-                      )}
-                    </div>
-                  )}
+                  <ListingContactActions listingType="project" listingId={project.id} />
                 </div>
               </ScrollReveal>
               </div>
@@ -1847,50 +1718,14 @@ export function ProjectDetailView({
                 <div className="space-y-3">
                   <button
                     type="button"
-                    onClick={() => setIsScheduleModalOpen(true)}
+                    onClick={async () => { try { if (await requireActionSession("schedule_visit")) setIsScheduleModalOpen(true); } catch { toast.error("Unable to verify your session. Please try again."); } }}
                     className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-300 font-bold text-sm shadow-xs transition-all cursor-pointer active:scale-98"
                   >
                     <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
                     <span>Schedule a Visit</span>
                   </button>
 
-                  {!isLoggedIn ? (
-                    <button
-                      type="button"
-                      onClick={() => router.push(getLoginUrl(targetRedirect))}
-                      className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm shadow-md transition-all cursor-pointer active:scale-98"
-                    >
-                      <Lock className="w-4 h-4 fill-slate-950 text-slate-950" />
-                      <span>Sign in to Contact Builder</span>
-                    </button>
-                  ) : (
-                    <>
-                      {whatsapp && (
-                        <a
-                          href={whatsapp}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => {
-                            trackShareDetailsWithBuilder({
-                              projectId: project.id,
-                              projectSlug: project.slug,
-                              projectName: project.name,
-                              builderPhone: project.builderWhatsapp || project.builderPhone,
-                              action: "contact_builder",
-                            });
-                          }}
-                          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm transition-all shadow-sm active:scale-98"
-                        >
-                          <WhatsAppIcon className="w-4.5 h-4.5 shrink-0" />
-                          <span>WhatsApp Builder</span>
-                        </a>
-                      )}
-                    </>
-                  )}
-
-                  {isLoggedIn && !whatsapp && builderContactError && (
-                    <p className="text-xs font-medium text-red-600 dark:text-red-400 text-center">{builderContactError}</p>
-                  )}
+                  <ListingContactActions listingType="project" listingId={project.id} />
 
                   {project.videoUrl && (
                     <button
@@ -1903,7 +1738,8 @@ export function ProjectDetailView({
                   {hasBrochure && (
                     <div className="flex items-center gap-2 w-full">
                       <a
-                        href={resolveMediaUrl(project.brochureUrl!)}
+                        href="#"
+                        onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl border border-border-default hover:bg-slate-100 dark:hover:bg-slate-800 text-text-primary font-bold text-sm transition-colors text-center shrink-0 cursor-pointer"

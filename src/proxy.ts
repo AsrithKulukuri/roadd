@@ -70,20 +70,6 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Protect /projects/[slug] routes: enforce server-verifiable login before accessing project details
-  if (pathname.startsWith("/projects/")) {
-    const authToken = request.cookies.get("road_auth_token")?.value;
-    const isTokenValid = authToken ? Boolean(verifySignedSessionToken(authToken)) : false;
-
-    if (!user && !isTokenValid) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      const fullTarget = request.nextUrl.search ? `${pathname}${request.nextUrl.search}` : pathname;
-      url.searchParams.set("redirect", fullTarget);
-      return NextResponse.redirect(url);
-    }
-  }
-
   // Protect /dashboard routes (including /dashboard/saved): enforce authentic server session or signed token
   if (pathname.startsWith("/dashboard")) {
     const authToken = request.cookies.get("road_auth_token")?.value;

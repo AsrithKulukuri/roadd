@@ -1,4 +1,5 @@
 "use client";
+import { readActionSession, requireActionSession } from "@/lib/action-auth";
 
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -95,19 +96,16 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
     onClose();
   }, [onClose]);
 
-  // Auto-fill from logged-in user profile if exists
   useEffect(() => {
-    if (typeof window !== "undefined" && isOpen) {
-      try {
-        const stored = localStorage.getItem("road_user");
-        if (stored) {
-          const u = JSON.parse(stored);
-          if (u.name) setCustomerName(u.name);
-          if (u.phone) setCustomerPhone(u.phone);
-          if (u.email) setCustomerEmail(u.email);
-        }
-      } catch {}
-    }
+    if (!isOpen) return;
+    let active = true;
+    void readActionSession().then(user => {
+      if (!active) return;
+      setCustomerName(user?.name || "");
+      setCustomerPhone(user?.phone || "");
+      setCustomerEmail(user?.email || "");
+    }).catch(() => { if (active) setErrorMessage("Unable to load your verified contact. Please reopen this form."); });
+    return () => { active = false; };
   }, [isOpen]);
 
   // Handle ESC key to close
@@ -147,6 +145,7 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
       "";
 
     const payload = {
+      consent: true,
       projectId: project.id || "",
       projectSlug: project.slug || "",
       projectName: project.name,
@@ -162,6 +161,11 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
     };
 
     try {
+      const verified = await requireActionSession("schedule_visit");
+      if (!verified) return;
+      payload.customerName = verified.name || payload.customerName;
+      payload.customerPhone = verified.phone || "";
+      payload.customerEmail = verified.email || undefined;
       // 1. Call Backend API for WhatsApp triggers & Supabase DB record
       const res = await fetch("/api/projects/schedule-visit", {
         method: "POST",
@@ -174,6 +178,7 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
         throw new Error(data?.error || "Unable to schedule this visit right now.");
       }
 
+      if (data.duplicate) { setErrorMessage("You already requested this date and time. Choose another slot if needed."); return; }
       // 2. Add to client Zustand store
       const scheduleRecord = await addSchedule({
         id: data?.schedule?.id,
@@ -188,8 +193,8 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
         builderPhone: payload.builderPhone,
         visitDate: payload.visitDate,
         timeSlot: payload.timeSlot,
-        customerNotified: data?.customerNotified ?? true,
-        builderNotified: data?.builderNotified ?? true,
+        customerNotified: data?.customerNotified ?? false,
+        builderNotified: data?.builderNotified ?? false,
         notes: payload.notes,
       });
 
@@ -373,6 +378,7 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
                       type="text"
                       placeholder="Your Full Name *"
                       value={customerName}
+                      readOnly
                       onChange={(e) => setCustomerName(e.target.value)}
                       required
                       className="w-full pl-9 pr-3 py-2 bg-white border border-neutral-300 rounded-xl text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
@@ -387,6 +393,7 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
                       type="tel"
                       placeholder="WhatsApp Number (e.g. 9876543210) *"
                       value={customerPhone}
+                      readOnly
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       required
                       className="w-full pl-9 pr-3 py-2 bg-white border border-neutral-300 rounded-xl text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
@@ -405,6 +412,7 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
                       type="email"
                       placeholder="Email Address (Optional)"
                       value={customerEmail}
+                      readOnly
                       onChange={(e) => setCustomerEmail(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 bg-white border border-neutral-300 rounded-xl text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                     />
@@ -435,6 +443,7 @@ export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitMo
         {/* Sticky Footer with Submit Button */}
         {!scheduledResult && (
           <div className="p-4 bg-white border-t border-neutral-100 shrink-0 shadow-xs">
+            <p className="text-xs text-neutral-600 mb-3">Confirming shares your name, verified phone, email (if provided), visit date and notes with the listing team and ROAD admin.</p>
             <button
               type="submit"
               form="schedule-visit-form"

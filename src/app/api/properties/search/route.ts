@@ -1,3 +1,4 @@
+import { publicListing } from "@/lib/public-listing";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { fromSupabaseProperty } from "@/stores/properties-store";
@@ -265,7 +266,7 @@ export async function GET(req: NextRequest) {
       page,
       limit,
       totalPages: Math.ceil(totalMatches / limit),
-      properties: paginatedProperties,
+      properties: publicListing(paginatedProperties),
       filterCounts: counts,
       mapMarkers,
     });

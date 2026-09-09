@@ -1,4 +1,5 @@
 "use client";
+import { requireActionSession } from "@/lib/action-auth";
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
@@ -204,13 +205,9 @@ export function MobileBottomNav() {
     {
       id: "activity",
       label: "Activity",
-      onClick: () => {
-        if (!user) {
-          toast.info("Please log in to view your saved items.");
-          router.push("/login?redirect=/dashboard/saved");
-          return;
-        }
-        router.push("/dashboard/saved");
+      onClick: async () => {
+        try { if (await requireActionSession("view_saved")) router.push("/dashboard/saved"); }
+        catch { toast.error("Unable to verify your session. Please retry."); }
       },
       icon: SolidHeart,
       isActive: pathname.startsWith("/dashboard/saved") || pathname === "/dashboard",

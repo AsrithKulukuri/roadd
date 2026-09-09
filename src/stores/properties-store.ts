@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { publicListing } from "@/lib/public-listing";
 import { supabase } from '@/lib/supabase';
 import type { Property } from '@/types/property';
 import { toast } from 'sonner';
@@ -163,11 +164,12 @@ export const usePropertiesStore = create<PropertiesState>()(
               }, 9000);
             });
 
-            const queryPromise = supabase
-              .from('properties')
-              .select('*')
-              .order('createdAt', { ascending: false })
-              .abortSignal(currentSignal);
+            const scope = typeof window !== "undefined" && window.location.pathname.startsWith("/admin") ? "&scope=admin" : "";
+            const queryPromise = fetch("/api/listings?type=property" + scope, { signal: currentSignal, cache: "no-store" }).then(async response => {
+              const result = await response.json();
+              if (!response.ok) throw new Error(result.error || "Unable to load listings.");
+              return result;
+            });
 
             const result = await Promise.race([queryPromise, timeoutPromise]);
 
@@ -466,7 +468,9 @@ export const usePropertiesStore = create<PropertiesState>()(
     }),
     {
       name: 'road_properties_store',
-      partialize: (state) => ({ properties: state.properties }),
+      version: 1,
+      migrate: (state) => publicListing(state) as { properties: Property[] },
+      partialize: (state) => ({ properties: publicListing(state.properties) }),
     }
   )
 );
