@@ -24,7 +24,19 @@ export function ListingContactActions({ listingType, listingId }: { listingType:
       const result = await performListingAction(listingType, listingId, action);
       if (!result) return;
       if (action === "reveal_phone") setPhone(result.phone);
-      if (action === "whatsapp_click") window.location.assign("https://wa.me/" + result.phone + "?text=" + encodeURIComponent("Hi, I am interested in this listing: " + window.location.href));
+      if (action === "whatsapp_click") {
+        const waUrl = "https://wa.me/" + result.phone + "?text=" + encodeURIComponent("Hi, I am interested in this listing: " + window.location.href);
+        // Use anchor click so mobile browsers trigger WhatsApp app via Universal Links
+        // without navigating away from the current page (window.location.assign breaks mobile)
+        const a = document.createElement("a");
+        a.href = waUrl;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
       if (action === "callback_request") toast.success("Callback requested. Your enquiry has been recorded.");
     } catch (error) { toast.error(error instanceof Error ? error.message : "Please retry."); }
     finally { lock.current = false; setBusy(false); }
