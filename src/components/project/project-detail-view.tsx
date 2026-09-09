@@ -1832,22 +1832,20 @@ export function ProjectDetailView({
                     toast.error(err instanceof Error ? err.message : "Please retry.");
                   }
                 }}
-                className="flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl font-bold text-sm text-white shadow-lg shadow-green-500/25 active:scale-95 transition-all duration-150"
-                style={{ background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)" }}
+                className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl border border-slate-200 bg-white font-bold text-xs text-slate-950 shadow-sm hover:bg-slate-50 active:scale-95 transition-all duration-150"
                 id="mobile-cta-whatsapp"
               >
-                <WhatsAppIcon className="w-5 h-5 shrink-0" color="#FFFFFF" phoneColor="#25D366" />
+                <WhatsAppIcon className="w-4.5 h-4.5 shrink-0" />
                 <span>WhatsApp</span>
               </button>
 
               {/* Schedule a Visit Button */}
               <button
                 onClick={async () => { try { if (await requireActionSession("schedule_visit")) setIsScheduleModalOpen(true); } catch (err) { toast.error(err instanceof Error ? err.message : "Please retry."); } }}
-                className="flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl font-bold text-sm text-white shadow-lg shadow-amber-500/30 active:scale-95 transition-all duration-150"
-                style={{ background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)" }}
+                className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl border border-slate-200 bg-white font-bold text-xs text-slate-950 shadow-sm hover:bg-slate-50 active:scale-95 transition-all duration-150"
                 id="mobile-cta-schedule-visit"
               >
-                <Calendar className="w-5 h-5 shrink-0" />
+                <Calendar className="w-4 h-4 shrink-0" />
                 <span>Schedule Visit</span>
               </button>
             </div>

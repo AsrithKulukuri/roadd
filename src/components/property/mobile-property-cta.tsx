@@ -39,12 +39,12 @@ export function MobilePropertyCta({ property }: { property: Property }) {
   return <>
     <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200/70 bg-white/90 p-3 shadow-[0_-8px_32px_rgba(0,0,0,0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90" style={{ paddingBottom: "env(safe-area-inset-bottom, 12px)" }}>
       <div className="flex items-center gap-3">
-        <button type="button" onClick={openWhatsApp} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-[#25D366] to-[#128C7E] text-sm font-bold text-white shadow-lg shadow-green-500/25 transition-transform active:scale-95">
-          <WhatsAppIcon className="h-5 w-5 shrink-0" color="#FFFFFF" phoneColor="#25D366" />
+        <button type="button" onClick={openWhatsApp} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-950 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+          <WhatsAppIcon className="h-4.5 w-4.5 shrink-0" />
           <span>WhatsApp</span>
         </button>
-        <button type="button" onClick={openSchedule} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-sm font-bold text-white shadow-lg shadow-amber-500/30 transition-transform active:scale-95">
-          <Calendar className="h-5 w-5 shrink-0" />
+        <button type="button" onClick={openSchedule} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-950 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+          <Calendar className="h-4 w-4 shrink-0" />
           <span>Schedule Visit</span>
         </button>
       </div>
