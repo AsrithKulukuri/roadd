@@ -770,7 +770,24 @@ export function HeroSection() {
                             </div>
                           )}
                         </div>
-                        <Link href="/search?type=buy&propertyType=residential-plot" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors">Plots</Link>
+                        {/* 4. Plots */}
+                        <div className="relative group">
+                          <button
+                            type="button"
+                            onClick={() => setActiveBuySub(activeBuySub === "plots" ? null : "plots")}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
+                          >
+                            <span>Plots</span>
+                            <ChevronRight className={cn("w-4 h-4 text-amber-500 transition-transform", activeBuySub === "plots" && "rotate-90")} />
+                          </button>
+                          {activeBuySub === "plots" && (
+                            <div className="bg-slate-50 py-1 px-2 border-y border-slate-200 space-y-0.5">
+                              <Link href="/search?type=buy&propertyType=residential-plot&saleType=new" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-3 py-1.5 text-xs font-bold text-slate-800 hover:text-amber-600">New Plots</Link>
+                              <Link href="/search?type=buy&propertyType=residential-plot&saleType=resale" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-3 py-1.5 text-xs font-bold text-slate-800 hover:text-amber-600">Resale Plots</Link>
+                              <Link href="/search?type=buy&propertyType=residential-plot" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-3 py-1.5 text-xs font-bold text-amber-600">All Plots</Link>
+                            </div>
+                          )}
+                        </div>
                         <Link href="/search?type=buy&propertyType=agricultural-land" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors">Agriculture</Link>
                       </div>
                     </div>
@@ -1409,13 +1426,47 @@ export function HeroSection() {
                         </div>
 
                         {/* 4. Plots */}
-                        <Link
-                          href="/search?type=buy&propertyType=residential-plot"
-                          onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
-                          className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors"
+                        <div
+                          className="relative group"
+                          onMouseEnter={() => setActiveBuySub("plots")}
                         >
-                          Plots
-                        </Link>
+                          <button
+                            type="button"
+                            onClick={() => setActiveBuySub(activeBuySub === "plots" ? null : "plots")}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors text-left cursor-pointer"
+                          >
+                            <span>Plots</span>
+                            <ChevronRight className={cn("w-4 h-4 text-amber-500 group-hover:text-amber-600 transition-transform", activeBuySub === "plots" && "rotate-90 sm:rotate-0")} />
+                          </button>
+
+                          {/* Plots Submenu */}
+                          {activeBuySub === "plots" && (
+                            <div className="sm:absolute sm:left-full sm:top-0 sm:ml-1.5 sm:w-44 bg-white border-2 border-amber-500 rounded-xl shadow-2xl py-1.5 z-[110] animate-in fade-in zoom-in-95 duration-150 mx-2 sm:mx-0 my-1 sm:my-0 space-y-0.5">
+                              <Link
+                                href="/search?type=buy&propertyType=residential-plot&saleType=new"
+                                onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                                className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
+                              >
+                                New Plots
+                              </Link>
+                              <Link
+                                href="/search?type=buy&propertyType=residential-plot&saleType=resale"
+                                onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                                className="block px-3.5 py-2 text-xs font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
+                              >
+                                Resale Plots
+                              </Link>
+                              <div className="h-px bg-slate-100 my-1 mx-2" />
+                              <Link
+                                href="/search?type=buy&propertyType=residential-plot"
+                                onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }}
+                                className="block px-3.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-amber-500/10 hover:text-amber-600 rounded-lg mx-1 transition-colors"
+                              >
+                                All Plots
+                              </Link>
+                            </div>
+                          )}
+                        </div>
 
                         {/* 5. Agriculture */}
                         <Link

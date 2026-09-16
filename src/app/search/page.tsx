@@ -272,11 +272,11 @@ function UnifiedSearchPage() {
     // Parse reraApproved
     const reraParam = searchParams.get("reraApproved") === "true" || searchParams.get("rera") === "true";
 
-    // Parse saleType (resale filters specifically for resale; 'new' indicates recent listings)
+    // Parse saleType (new vs resale)
     const saleTypeStr = searchParams.get("saleType");
     let saleType: string[] = [];
-    if (saleTypeStr && saleTypeStr !== "new") {
-      saleType = saleTypeStr.split(",");
+    if (saleTypeStr) {
+      saleType = saleTypeStr.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
     }
 
     // Parse displayCategory (featured / recommended / budget / crda-ventures)

@@ -437,7 +437,7 @@ export function getSeededProperties(): Property[] {
       pricePerSqft,
       propertyType: propType,
       listingType: 'sale',
-      saleType: 'new',
+      saleType: i % 3 === 0 ? 'resale' : 'new',
       status: 'published',
       category: propType === 'commercial-lands' ? 'commercial' : propType === 'agricultural-lands' ? 'agricultural' : 'residential',
       subtype,

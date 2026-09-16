@@ -97,6 +97,20 @@ export default function AdminDashboardPage() {
   const [tempRefId, setTempRefId] = useState("");
   const [adminCategoryFilter, setAdminCategoryFilter] = useState<string>("all");
 
+  const isPlot = (p: any) => {
+    const pType = (p.propertyType || "").toLowerCase();
+    const subtype = (p.subtype || "").toLowerCase();
+    return subtype === "venture-plot" || subtype === "land" || pType === "residential-land" || pType === "residential-plot" || pType === "agricultural-lands" || pType.includes("plot");
+  };
+
+  const matchesAdminFilter = (p: any) => {
+    if (adminCategoryFilter === "all") return true;
+    if (adminCategoryFilter === "new-plots") return isPlot(p) && p.saleType !== "resale";
+    if (adminCategoryFilter === "resale-plots") return isPlot(p) && p.saleType === "resale";
+    if (adminCategoryFilter === "all-plots") return isPlot(p);
+    return p.category === adminCategoryFilter;
+  };
+
   // --- FORM STATES FOR MANAGERS ---
 
   // 1. Trending Location Form State
@@ -534,18 +548,27 @@ export default function AdminDashboardPage() {
 
           {/* CATEGORY & SUBTYPE FILTER CHIPS BAR */}
           <div className="flex items-center gap-2 overflow-x-auto py-2 px-1 touch-pan-x scrollbar-none">
-            {["all", "residential", "commercial", "industrial", "agricultural"].map((cat) => (
+            {[
+              { id: "all", label: "All Properties" },
+              { id: "residential", label: "Residential" },
+              { id: "new-plots", label: "✨ New Plots" },
+              { id: "resale-plots", label: "🏠 Resale Plots" },
+              { id: "all-plots", label: "All Plots & Land" },
+              { id: "commercial", label: "Commercial" },
+              { id: "industrial", label: "Industrial" },
+              { id: "agricultural", label: "Agricultural" },
+            ].map((cat) => (
               <button
-                key={cat}
+                key={cat.id}
                 type="button"
-                onClick={() => setAdminCategoryFilter(cat)}
-                className={`shrink-0 min-w-max px-4 py-2 rounded-xl text-xs font-extrabold capitalize transition-all cursor-pointer whitespace-nowrap ${
-                  adminCategoryFilter === cat
+                onClick={() => setAdminCategoryFilter(cat.id)}
+                className={`shrink-0 min-w-max px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                  adminCategoryFilter === cat.id
                     ? "bg-amber-500 text-slate-950 font-black shadow-sm"
                     : "bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                {cat === "all" ? "All Categories" : cat}
+                {cat.label}
               </button>
             ))}
           </div>
@@ -556,7 +579,7 @@ export default function AdminDashboardPage() {
             {/* Mobile View: Cards */}
             <div className="block md:hidden divide-y divide-slate-200 dark:divide-slate-800">
               {properties
-                .filter((p) => adminCategoryFilter === "all" || p.category === adminCategoryFilter)
+                .filter(matchesAdminFilter)
                 .map((p) => {
                 const refId = getPropertyRefId(p);
                 const isEditingRef = editingRefPropId === p.id;
@@ -576,8 +599,16 @@ export default function AdminDashboardPage() {
                         <div className="text-xs text-amber-500 font-black mt-0.5">
                           {formatPriceCompact(p.price)}
                         </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                          📍 {p.location.locality}, {p.location.city}
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5 mt-0.5">
+                          <span className="truncate">📍 {p.location.locality}, {p.location.city}</span>
+                          <span>•</span>
+                          <span className={`px-1.5 py-0.2 rounded text-[9.5px] font-extrabold shrink-0 ${
+                            p.saleType === "resale"
+                              ? "bg-blue-500/15 text-blue-500 border border-blue-500/30"
+                              : "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                          }`}>
+                            {isPlot(p) ? (p.saleType === "resale" ? "Resale Plot" : "New Plot") : (p.saleType === "resale" ? "Resale" : "New")}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -691,7 +722,7 @@ export default function AdminDashboardPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                   {properties
-                    .filter((p) => adminCategoryFilter === "all" || p.category === adminCategoryFilter)
+                    .filter(matchesAdminFilter)
                     .map((p) => {
                     const refId = getPropertyRefId(p);
                     const isEditingRef = editingRefPropId === p.id;
@@ -707,8 +738,16 @@ export default function AdminDashboardPage() {
                               <div className="font-extrabold text-slate-900 dark:text-white truncate">
                                 {p.title}
                               </div>
-                              <div className="text-xs text-slate-400 truncate">
-                                📍 {p.location.locality}, {p.location.city}
+                              <div className="text-xs text-slate-400 truncate flex items-center gap-1.5 mt-0.5">
+                                <span className="truncate">📍 {p.location.locality}, {p.location.city}</span>
+                                <span>•</span>
+                                <span className={`px-1.5 py-0.2 rounded text-[9.5px] font-extrabold shrink-0 ${
+                                  p.saleType === "resale"
+                                    ? "bg-blue-500/15 text-blue-500 border border-blue-500/30"
+                                    : "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                                }`}>
+                                  {isPlot(p) ? (p.saleType === "resale" ? "Resale Plot" : "New Plot") : (p.saleType === "resale" ? "Resale" : "New")}
+                                </span>
                               </div>
                             </div>
                           </div>

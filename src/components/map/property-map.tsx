@@ -1125,6 +1125,13 @@ export default function PropertyMap({
   const [showHeatmap, setShowHeatmap] = useState(false);
   // Show Landmarks Toggle State (Default OFF - only shows when enabled by user)
   const [showLandmarks, setShowLandmarks] = useState(false);
+  const [selectedLandmarkType, setSelectedLandmarkType] = useState<string>("all");
+
+  const displayedLandmarks = useMemo(() => {
+    if (!showLandmarks) return [];
+    if (selectedLandmarkType === "all") return landmarkOverlays;
+    return landmarkOverlays.filter((l) => l.type === selectedLandmarkType);
+  }, [showLandmarks, selectedLandmarkType]);
 
   // Master locations & sublocations from admin
   const { cities: adminCities, fetchLocations } = useLocationsStore();
@@ -1133,24 +1140,45 @@ export default function PropertyMap({
     fetchLocations();
   }, [fetchLocations]);
 
-  // Selected Location (City) & Sublocation (Locality) in Map Explorer
-  const [selectedMapCity, setSelectedMapCity] = useState<string | null>(() => {
-    return activeFilters?.cities?.[0] || null;
+// Map Explorer Budget Preset Options
+const BUDGET_PRESETS = [
+  { key: "under50L", label: "< 50L", min: 0, max: 5000000 },
+  { key: "50L-1Cr", label: "50L-1Cr", min: 5000000, max: 10000000 },
+  { key: "1Cr-2Cr", label: "1Cr-2Cr", min: 10000000, max: 20000000 },
+  { key: "above2Cr", label: "> 2Cr", min: 20000000, max: 100000000 },
+];
+
+  // Selected Locations (Cities) & Sublocations (Localities) in Map Explorer - Multi-select
+  const [selectedMapCities, setSelectedMapCities] = useState<string[]>(() => {
+    return activeFilters?.cities || [];
   });
-  const [selectedMapLocality, setSelectedMapLocality] = useState<string | null>(() => {
-    return activeFilters?.localities?.[0] || null;
+  const [selectedMapLocalities, setSelectedMapLocalities] = useState<string[]>(() => {
+    return activeFilters?.localities || [];
   });
   const [localitySearchText, setLocalitySearchText] = useState<string>("");
 
-  // Sync with activeFilters from top filter box
+  // Backward-compatible getters
+  const selectedMapCity = selectedMapCities[0] || null;
+  const selectedMapLocality = selectedMapLocalities[0] || null;
+
+  // Sync with activeFilters from top filter box without circular triggers
   useEffect(() => {
     if (activeFilters) {
-      const topCity = activeFilters.cities?.[0] || null;
-      const topLoc = activeFilters.localities?.[0] || null;
-      setSelectedMapCity((prev) => (prev !== topCity ? topCity : prev));
-      setSelectedMapLocality((prev) => (prev !== topLoc ? topLoc : prev));
+      const topCities = activeFilters.cities || [];
+      const topLocs = activeFilters.localities || [];
+      setSelectedMapCities((prev) => {
+        if (prev.length === topCities.length && prev.every((c, i) => c === topCities[i])) return prev;
+        return topCities;
+      });
+      setSelectedMapLocalities((prev) => {
+        if (prev.length === topLocs.length && prev.every((l, i) => l === topLocs[i])) return prev;
+        return topLocs;
+      });
     }
   }, [activeFilters?.cities, activeFilters?.localities]);
+
+  // Selected multi-budget presets
+  const [selectedBudgetKeys, setSelectedBudgetKeys] = useState<string[]>([]);
 
   // Price Range Slider State in Map Explorer [minPrice, maxPrice]
   const [mapPriceRange, setMapPriceRange] = useState<[number, number]>(() => {
@@ -1174,10 +1202,43 @@ export default function PropertyMap({
 
   const handleBudgetSelect = useCallback((range: [number, number]) => {
     setMapPriceRange(range);
+    setSelectedBudgetKeys([]);
     if (onFiltersChange) {
       onFiltersChange((prev) => ({
         ...prev,
         budget: range,
+      }));
+    }
+  }, [onFiltersChange]);
+
+  const handleToggleBudgetPreset = useCallback((key: string) => {
+    setSelectedBudgetKeys((prev) => {
+      const isSelected = prev.includes(key);
+      return isSelected ? prev.filter((k) => k !== key) : [...prev, key];
+    });
+
+    const isSelected = selectedBudgetKeys.includes(key);
+    const next = isSelected ? selectedBudgetKeys.filter((k) => k !== key) : [...selectedBudgetKeys, key];
+
+    if (onFiltersChange) {
+      if (next.length === 0) {
+        onFiltersChange((fPrev) => ({ ...fPrev, budget: [0, 100000000] }));
+      } else {
+        const selected = BUDGET_PRESETS.filter((p) => next.includes(p.key));
+        const minVal = Math.min(...selected.map((p) => p.min));
+        const maxVal = Math.max(...selected.map((p) => p.max));
+        onFiltersChange((fPrev) => ({ ...fPrev, budget: [minVal, maxVal] }));
+      }
+    }
+  }, [selectedBudgetKeys, onFiltersChange]);
+
+  const handleResetBudget = useCallback(() => {
+    setSelectedBudgetKeys([]);
+    setMapPriceRange([0, 100000000]);
+    if (onFiltersChange) {
+      onFiltersChange((prev) => ({
+        ...prev,
+        budget: [0, 100000000],
       }));
     }
   }, [onFiltersChange]);
@@ -1239,10 +1300,10 @@ export default function PropertyMap({
     }
   }, [mapProperties, flyToLocation]);
 
-  const handleSelectCity = useCallback((cityName: string | null) => {
-    if (selectedMapCity === cityName || cityName === null) {
-      setSelectedMapCity(null);
-      setSelectedMapLocality(null);
+  const handleToggleCity = useCallback((cityName: string | null) => {
+    if (cityName === null) {
+      setSelectedMapCities([]);
+      setSelectedMapLocalities([]);
       setLocalitySearchText("");
       if (onFiltersChange) {
         onFiltersChange((prev) => ({
@@ -1252,47 +1313,71 @@ export default function PropertyMap({
           query: "",
         }));
       }
-    } else {
-      setSelectedMapCity(cityName);
-      setSelectedMapLocality(null);
-      setLocalitySearchText("");
-      flyToLocation(cityName);
-      if (onFiltersChange) {
-        onFiltersChange((prev) => ({
-          ...prev,
-          cities: [cityName],
-          localities: [],
-          query: "",
-        }));
-      }
+      return;
     }
-  }, [selectedMapCity, flyToLocation, onFiltersChange]);
 
-  const handleSelectLocality = useCallback((subName: string) => {
-    if (selectedMapLocality?.toLowerCase() === subName.toLowerCase()) {
-      setSelectedMapLocality(null);
-      if (onFiltersChange) {
-        onFiltersChange((prev) => ({
-          ...prev,
-          localities: [],
-        }));
-      }
-    } else {
-      setSelectedMapLocality(subName);
-      flyToSublocation(subName, selectedMapCity);
-      if (onFiltersChange) {
-        onFiltersChange((prev) => {
-          const parentCity = selectedMapCity || (adminCities.find((c) => c.sublocations?.some((s) => s.name.toLowerCase() === subName.toLowerCase()))?.name);
-          return {
-            ...prev,
-            cities: parentCity ? [parentCity] : prev.cities,
-            localities: [subName],
-            query: "",
-          };
-        });
-      }
+    const exists = selectedMapCities.some((c) => c.toLowerCase() === cityName.toLowerCase());
+    const next = exists
+      ? selectedMapCities.filter((c) => c.toLowerCase() !== cityName.toLowerCase())
+      : [...selectedMapCities, cityName];
+
+    setSelectedMapCities(next);
+
+    if (!exists) {
+      flyToLocation(cityName);
     }
-  }, [selectedMapLocality, selectedMapCity, flyToSublocation, onFiltersChange, adminCities]);
+
+    if (onFiltersChange) {
+      onFiltersChange((fPrev) => ({
+        ...fPrev,
+        cities: next,
+        query: "",
+      }));
+    }
+  }, [selectedMapCities, flyToLocation, onFiltersChange]);
+
+  const handleSelectCity = handleToggleCity;
+
+  const handleToggleLocality = useCallback((subName: string) => {
+    const exists = selectedMapLocalities.some((l) => l.toLowerCase() === subName.toLowerCase());
+    const next = exists
+      ? selectedMapLocalities.filter((l) => l.toLowerCase() !== subName.toLowerCase())
+      : [...selectedMapLocalities, subName];
+
+    setSelectedMapLocalities(next);
+
+    if (!exists) {
+      flyToSublocation(subName, selectedMapCities[0]);
+    }
+
+    if (onFiltersChange) {
+      onFiltersChange((fPrev) => {
+        const parentCity = selectedMapCities[0] || (adminCities.find((c) => c.sublocations?.some((s) => s.name.toLowerCase() === subName.toLowerCase()))?.name);
+        return {
+          ...fPrev,
+          cities: parentCity && fPrev.cities.length === 0 ? [parentCity] : fPrev.cities,
+          localities: next,
+          query: "",
+        };
+      });
+    }
+  }, [selectedMapLocalities, selectedMapCities, flyToSublocation, onFiltersChange, adminCities]);
+
+  const handleSelectLocality = handleToggleLocality;
+
+  const handleResetLocations = useCallback(() => {
+    setSelectedMapCities([]);
+    setSelectedMapLocalities([]);
+    setLocalitySearchText("");
+    if (onFiltersChange) {
+      onFiltersChange((prev) => ({
+        ...prev,
+        cities: [],
+        localities: [],
+        query: "",
+      }));
+    }
+  }, [onFiltersChange]);
 
   // AP Stamp Duty Calculator Modal State
   const [showCalculatorModal, setShowCalculatorModal] = useState(false);
@@ -1369,22 +1454,28 @@ export default function PropertyMap({
   // Guard against internal subtype clicks being wiped out by subsequent activeFilters sync
   const isInternalSubtypeChange = useRef(false);
 
-  // Property / Project Subtype filter state (e.g. "flats", "villas", "plots", "crda", etc.)
-  const [selectedSubtype, setSelectedSubtype] = useState<string | null>(() => {
-    if (activeFilters?.gatedCommunity) return "gated";
+  // Property / Project Subtype filter state - MULTI-SELECT (e.g. ["flats", "villas"])
+  const [selectedSubtypes, setSelectedSubtypes] = useState<string[]>(() => {
+    const initial: string[] = [];
+    if (activeFilters?.gatedCommunity) initial.push("gated");
     if (activeFilters?.propertyType && activeFilters.propertyType.length > 0) {
-      const pt = activeFilters.propertyType[0]?.toLowerCase();
-      if (pt === "apartment") return "flats";
-      if (pt === "independent-house" || pt === "house" || pt === "houses") return "houses";
-      if (pt === "villa") return "villas";
-      if (pt === "residential-land" || pt === "plot" || pt === "plots") return "plots";
-      if (pt === "crda-ventures" || pt === "crda" || pt === "crda-venture") return "crda";
-      if (pt === "agricultural-lands" || pt === "agriculture") return "agriculture";
-      if (pt === "commercial-spaces" || pt === "commercial" || pt === "shops") return "commercial";
-      if (pt === "farmhouse") return "farmhouses";
+      for (const ptRaw of activeFilters.propertyType) {
+        const pt = ptRaw.toLowerCase();
+        if (pt === "apartment") initial.push("flats");
+        else if (pt === "independent-house" || pt === "house" || pt === "houses") initial.push("houses");
+        else if (pt === "villa") initial.push("villas");
+        else if (pt === "residential-land" || pt === "plot" || pt === "plots") initial.push("plots");
+        else if (pt === "crda-ventures" || pt === "crda" || pt === "crda-venture") initial.push("crda");
+        else if (pt === "agricultural-lands" || pt === "agriculture") initial.push("agriculture");
+        else if (pt === "commercial-spaces" || pt === "commercial" || pt === "shops") initial.push("commercial");
+        else if (pt === "farmhouse") initial.push("farmhouses");
+      }
     }
-    return null;
+    return initial;
   });
+
+  // Backward-compatible single subtype getter
+  const selectedSubtype = selectedSubtypes[0] || null;
 
   // Sync subtype with activeFilters from top filter box
   useEffect(() => {
@@ -1393,21 +1484,22 @@ export default function PropertyMap({
       return;
     }
     if (activeFilters) {
-      if (activeFilters.gatedCommunity) {
-        setSelectedSubtype("gated");
-      } else if (activeFilters.propertyType && activeFilters.propertyType.length > 0) {
-        const pt = activeFilters.propertyType[0]?.toLowerCase();
-        if (pt === "apartment") setSelectedSubtype("flats");
-        else if (pt === "independent-house" || pt === "house" || pt === "houses") setSelectedSubtype("houses");
-        else if (pt === "villa") setSelectedSubtype("villas");
-        else if (pt === "residential-land" || pt === "plot" || pt === "plots") setSelectedSubtype("plots");
-        else if (pt === "crda-ventures" || pt === "crda" || pt === "crda-venture") setSelectedSubtype("crda");
-        else if (pt === "agricultural-lands" || pt === "agriculture") setSelectedSubtype("agriculture");
-        else if (pt === "commercial-spaces" || pt === "commercial" || pt === "shops") setSelectedSubtype("commercial");
-        else if (pt === "farmhouse") setSelectedSubtype("farmhouses");
-      } else if (!activeFilters.gatedCommunity && (!activeFilters.propertyType || activeFilters.propertyType.length === 0)) {
-        setSelectedSubtype(null);
+      const synced: string[] = [];
+      if (activeFilters.gatedCommunity) synced.push("gated");
+      if (activeFilters.propertyType && activeFilters.propertyType.length > 0) {
+        for (const ptRaw of activeFilters.propertyType) {
+          const pt = ptRaw.toLowerCase();
+          if (pt === "apartment") synced.push("flats");
+          else if (pt === "independent-house" || pt === "house" || pt === "houses") synced.push("houses");
+          else if (pt === "villa") synced.push("villas");
+          else if (pt === "residential-land" || pt === "plot" || pt === "plots") synced.push("plots");
+          else if (pt === "crda-ventures" || pt === "crda" || pt === "crda-venture") synced.push("crda");
+          else if (pt === "agricultural-lands" || pt === "agriculture") synced.push("agriculture");
+          else if (pt === "commercial-spaces" || pt === "commercial" || pt === "shops") synced.push("commercial");
+          else if (pt === "farmhouse") synced.push("farmhouses");
+        }
       }
+      setSelectedSubtypes(Array.from(new Set(synced)));
     }
   }, [activeFilters?.gatedCommunity, activeFilters?.propertyType]);
 
@@ -1418,49 +1510,44 @@ export default function PropertyMap({
     }
   }, [showMapExplorer]);
 
-  const handleSubtypeSelect = useCallback((key: string) => {
-    const isCurrent = selectedSubtype === key;
-    const nextKey = isCurrent ? null : key;
+  const handleSubtypeToggle = useCallback((key: string) => {
     isInternalSubtypeChange.current = true;
-    setSelectedSubtype(nextKey);
+    const isSelected = selectedSubtypes.includes(key);
+    const next = isSelected ? selectedSubtypes.filter((k) => k !== key) : [...selectedSubtypes, key];
+
+    setSelectedSubtypes(next);
 
     if (onFiltersChange) {
-      onFiltersChange((prev) => {
+      onFiltersChange((fPrev) => {
         let propType: string[] = [];
         let isGated = false;
 
-        if (nextKey === "flats" || nextKey === "apartments") {
-          propType = ["apartment"];
-        } else if (nextKey === "houses") {
-          propType = ["independent-house"];
-        } else if (nextKey === "villas") {
-          propType = ["villa"];
-        } else if (nextKey === "plots" || nextKey === "open_plots") {
-          propType = ["residential-land"];
-        } else if (nextKey === "crda") {
-          propType = ["crda-ventures"];
-        } else if (nextKey === "agriculture") {
-          propType = ["agricultural-lands"];
-        } else if (nextKey === "commercial") {
-          propType = ["commercial-spaces"];
-        } else if (nextKey === "farmhouses") {
-          propType = ["farmhouse"];
-        } else if (nextKey === "gated" || nextKey === "gated_community") {
-          isGated = true;
+        for (const k of next) {
+          if (k === "flats" || k === "apartments") propType.push("apartment");
+          else if (k === "houses") propType.push("independent-house");
+          else if (k === "villas") propType.push("villa");
+          else if (k === "plots" || k === "open_plots") propType.push("residential-land");
+          else if (k === "crda") propType.push("crda-ventures");
+          else if (k === "agriculture") propType.push("agricultural-lands");
+          else if (k === "commercial") propType.push("commercial-spaces");
+          else if (k === "farmhouses") propType.push("farmhouse");
+          else if (k === "gated" || k === "gated_community") isGated = true;
         }
 
         return {
-          ...prev,
-          propertyType: propType,
+          ...fPrev,
+          propertyType: Array.from(new Set(propType)),
           gatedCommunity: isGated,
         };
       });
     }
-  }, [selectedSubtype, onFiltersChange]);
+  }, [selectedSubtypes, onFiltersChange]);
 
-  const handleResetType = useCallback(() => {
+  const handleSubtypeSelect = handleSubtypeToggle;
+
+  const handleResetTypes = useCallback(() => {
     isInternalSubtypeChange.current = true;
-    setSelectedSubtype(null);
+    setSelectedSubtypes([]);
     if (onFiltersChange) {
       onFiltersChange((prev) => ({
         ...prev,
@@ -1470,20 +1557,52 @@ export default function PropertyMap({
     }
   }, [onFiltersChange]);
 
+  const handleResetType = handleResetTypes;
+
   // Reset subtype when user switches between All / Properties / Projects
   useEffect(() => {
-    setSelectedSubtype(null);
+    setSelectedSubtypes([]);
   }, [listingTypeFilter]);
+
+  // Track active filters count for the "Reset All" button
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (selectedMapCities.length > 0) count += selectedMapCities.length;
+    if (selectedMapLocalities.length > 0) count += selectedMapLocalities.length;
+    if (selectedSubtypes.length > 0) count += selectedSubtypes.length;
+    if (selectedBudgetKeys.length > 0) count += selectedBudgetKeys.length;
+    return count;
+  }, [selectedMapCities.length, selectedMapLocalities.length, selectedSubtypes.length, selectedBudgetKeys.length]);
+
+  const handleClearAllMapFilters = useCallback(() => {
+    setSelectedMapCities([]);
+    setSelectedMapLocalities([]);
+    setLocalitySearchText("");
+    setSelectedSubtypes([]);
+    setSelectedBudgetKeys([]);
+    setMapPriceRange([0, 100000000]);
+    if (onFiltersChange) {
+      onFiltersChange((prev) => ({
+        ...prev,
+        cities: [],
+        localities: [],
+        propertyType: [],
+        gatedCommunity: false,
+        budget: [0, 100000000],
+        query: "",
+      }));
+    }
+  }, [onFiltersChange]);
 
   // Track item IDs visible in current map viewport for real selected area counts
   const [visibleAreaIds, setVisibleAreaIds] = useState<string[] | null>(null);
 
   // Active Locality Highlight Boundary (Dynamic for ANY searched or selected location!)
   const activeLocalityBoundary = useMemo(() => {
-    const term = selectedMapLocality || selectedMapCity || mapSearchInput;
-    if (!term.trim()) return null;
+    const term = selectedMapLocalities[selectedMapLocalities.length - 1] || selectedMapCities[selectedMapCities.length - 1] || mapSearchInput;
+    if (!term || !term.trim()) return null;
     return getDynamicLocalityBoundary(term, mapProperties);
-  }, [selectedMapLocality, selectedMapCity, mapSearchInput, mapProperties]);
+  }, [selectedMapLocalities, selectedMapCities, mapSearchInput, mapProperties]);
 
   // Fly map to locality boundary when detected or fit bounds to displayed properties
   useEffect(() => {
@@ -1525,29 +1644,39 @@ export default function PropertyMap({
       });
     }
 
-    // Location (City) filter from Map Explorer
-    if (selectedMapCity) {
-      const cityQ = selectedMapCity.toLowerCase().trim();
+    // Location (Cities) filter from Map Explorer - Multi-select
+    if (selectedMapCities.length > 0) {
+      const cityQueries = selectedMapCities.map((c) => c.toLowerCase().trim());
       source = source.filter((p) => {
         const pCity = (p.location?.city || "").toLowerCase();
         const pAddr = (p.location?.address || "").toLowerCase();
-        return pCity.includes(cityQ) || pAddr.includes(cityQ);
+        return cityQueries.some((q) => pCity.includes(q) || pAddr.includes(q));
       });
     }
 
-    // Sublocation (Locality) filter from Map Explorer
-    if (selectedMapLocality) {
-      const locQ = selectedMapLocality.toLowerCase().trim();
+    // Sublocation (Localities) filter from Map Explorer - Multi-select
+    if (selectedMapLocalities.length > 0) {
+      const locQueries = selectedMapLocalities.map((l) => l.toLowerCase().trim());
       source = source.filter((p) => {
         const pLoc = (p.location?.locality || "").toLowerCase();
         const pAddr = (p.location?.address || "").toLowerCase();
         const pTitle = (p.title || "").toLowerCase();
-        return pLoc.includes(locQ) || pAddr.includes(locQ) || pTitle.includes(locQ);
+        return locQueries.some((q) => pLoc.includes(q) || pAddr.includes(q) || pTitle.includes(q));
       });
     }
 
-    // Price Range Slider Filter from Map Explorer
-    if (mapPriceRange[0] > 0 || mapPriceRange[1] < 100000000) {
+    // Price Range Filter from Map Explorer (Multi-preset or slider)
+    if (selectedBudgetKeys.length > 0) {
+      source = source.filter((p) => {
+        const price = Number(p.price || 0);
+        if (price === 0) return true; // Price on request
+        return selectedBudgetKeys.some((key) => {
+          const preset = BUDGET_PRESETS.find((b) => b.key === key);
+          if (!preset) return false;
+          return price >= preset.min && price <= preset.max;
+        });
+      });
+    } else if (mapPriceRange[0] > 0 || mapPriceRange[1] < 100000000) {
       source = source.filter((p) => {
         const price = Number(p.price || 0);
         if (price === 0) return true; // Price on request
@@ -1565,7 +1694,7 @@ export default function PropertyMap({
     }
 
     return source.filter((p) => checkPropertyMatchesQuery(p, mapSearchInput));
-  }, [mapProperties, filteredItems, drawPolygonPoints, selectedMapCity, selectedMapLocality, mapPriceRange, parsedBudget, mapSearchInput]);
+  }, [mapProperties, filteredItems, drawPolygonPoints, selectedMapCities, selectedMapLocalities, selectedBudgetKeys, mapPriceRange, parsedBudget, mapSearchInput]);
 
   // Only locations selected on Home page (isHeroPill === true)
   const homeCities = useMemo(() => {
@@ -1573,14 +1702,16 @@ export default function PropertyMap({
     return pills.length > 0 ? pills : adminCities.slice(0, 3);
   }, [adminCities]);
 
-  // Active sublocations based on selectedMapCity and homeCities
+  // Active sublocations based on selectedMapCities and homeCities
   const activeSublocations = useMemo(() => {
-    if (selectedMapCity) {
-      const cityObj = homeCities.find((c) => c.name.toLowerCase() === selectedMapCity.toLowerCase());
-      return cityObj?.sublocations || [];
+    if (selectedMapCities.length > 0) {
+      const selectedCitySet = new Set(selectedMapCities.map((c) => c.toLowerCase()));
+      const matchingCities = homeCities.filter((c) => selectedCitySet.has(c.name.toLowerCase()));
+      const sublocs = matchingCities.flatMap((c) => c.sublocations || []);
+      return sublocs.length > 0 ? sublocs : homeCities.flatMap((c) => c.sublocations || []);
     }
     return homeCities.flatMap((c) => c.sublocations || []);
-  }, [selectedMapCity, homeCities]);
+  }, [selectedMapCities, homeCities]);
 
   // Filtered sublocations by user search input
   const displayedSublocations = useMemo(() => {
@@ -1606,7 +1737,6 @@ export default function PropertyMap({
     return displayedProperties.find((p) => p.id === selectedPropertyId);
   }, [displayedProperties, selectedPropertyId]);
 
-
   // Entity type filter & subtype filter applied on top of displayedProperties
   // Real-time viewport boundary filter: Show ONLY what is shown on the map!
   const displayedPropertiesFiltered = useMemo(() => {
@@ -1621,43 +1751,35 @@ export default function PropertyMap({
     if (listingTypeFilter === "properties") list = list.filter((p: any) => !p._isProject);
     else if (listingTypeFilter === "projects") list = list.filter((p: any) => Boolean(p._isProject));
 
-    if (selectedSubtype) {
-      list = list.filter((p) => itemMatchesSubtype(p, selectedSubtype));
+    if (selectedSubtypes.length > 0) {
+      list = list.filter((p) => selectedSubtypes.some((key) => itemMatchesSubtype(p, key)));
     }
     return list;
-  }, [displayedProperties, visibleAreaIds, listingTypeFilter, selectedSubtype]);
+  }, [displayedProperties, visibleAreaIds, listingTypeFilter, selectedSubtypes]);
 
-  const fallbackPropCount = useMemo(() => {
+  // Live item counts reflecting map area, locations, budget, AND selected subtypes
+  const allMatchingAreaItems = useMemo(() => {
     let list = displayedProperties;
     if (visibleAreaIds !== null) {
       const areaSet = new Set(visibleAreaIds);
       list = list.filter((p) => areaSet.has(p.id));
     }
-    return list.filter((p: any) => !p._isProject).length;
-  }, [displayedProperties, visibleAreaIds]);
-
-  const fallbackProjCount = useMemo(() => {
-    let list = displayedProperties;
-    if (visibleAreaIds !== null) {
-      const areaSet = new Set(visibleAreaIds);
-      list = list.filter((p) => areaSet.has(p.id));
+    if (selectedSubtypes.length > 0) {
+      list = list.filter((p) => selectedSubtypes.some((key) => itemMatchesSubtype(p, key)));
     }
-    return list.filter((p: any) => Boolean(p._isProject)).length;
-  }, [displayedProperties, visibleAreaIds]);
+    return list;
+  }, [displayedProperties, visibleAreaIds, selectedSubtypes]);
 
-  const allCount = visibleAreaIds !== null ? visibleAreaIds.length : (counts ? counts.all : displayedProperties.length);
-  const propertiesCount = fallbackPropCount;
-  const projectsCount = fallbackProjCount;
+  const liveAllCount = allMatchingAreaItems.length;
+  const livePropertiesCount = useMemo(() => allMatchingAreaItems.filter((p: any) => !p._isProject).length, [allMatchingAreaItems]);
+  const liveProjectsCount = useMemo(() => allMatchingAreaItems.filter((p: any) => Boolean(p._isProject)).length, [allMatchingAreaItems]);
+
+  const allCount = liveAllCount;
+  const propertiesCount = livePropertiesCount;
+  const projectsCount = liveProjectsCount;
 
   // Real synchronized active count for the "Show On Map" header
-  const currentActiveCount = useMemo(() => {
-    if (selectedSubtype) {
-      return displayedPropertiesFiltered.length;
-    }
-    if (listingTypeFilter === "properties") return propertiesCount;
-    if (listingTypeFilter === "projects") return projectsCount;
-    return allCount;
-  }, [selectedSubtype, displayedPropertiesFiltered.length, listingTypeFilter, propertiesCount, projectsCount, allCount]);
+  const currentActiveCount = displayedPropertiesFiltered.length;
 
   // Options for Property / Project Type Boxes with live counts from the selected/visible map area
   const currentTypeOptions = useMemo(() => {
@@ -1937,16 +2059,21 @@ export default function PropertyMap({
               className="w-10 h-1 bg-slate-300 hover:bg-slate-400 rounded-full mx-auto mb-2.5 md:hidden cursor-pointer shrink-0 transition-colors"
             />
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shadow-xs">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shadow-xs shrink-0">
                   <Compass className="w-4 h-4 text-amber-600" />
                 </div>
-                <div>
-                  <h2 className="font-heading text-base sm:text-lg font-black text-slate-950 tracking-tight leading-tight">
-                    Map Explorer
-                  </h2>
-                  <p className="text-[10px] text-slate-500 font-medium">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-heading text-base sm:text-lg font-black text-slate-950 tracking-tight leading-tight whitespace-nowrap">
+                      Map Explorer
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-full text-[10.5px] font-black bg-amber-500 text-slate-950 border border-amber-600/20 shadow-xs whitespace-nowrap shrink-0">
+                      {displayedPropertiesFiltered.length} Found
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-medium truncate">
                     Live Vijayawada & AP Map Radar
                   </p>
                 </div>
@@ -1968,11 +2095,27 @@ export default function PropertyMap({
           {/* 2. SCROLLABLE BODY - Content scrolls strictly below header with zero bleed */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 overscroll-contain touch-pan-y no-scrollbar">
 
-            {/* Entity Type Filter Buttons (All, Properties, Projects) */}
+            {/* Active Filters Reset Banner */}
+            {activeFilterCount > 0 && (
+              <div className="flex items-center justify-between bg-amber-50/90 border border-amber-200/90 rounded-2xl px-3.5 py-2 text-xs shadow-xs animate-in fade-in duration-200">
+                <span className="text-slate-700 font-medium text-[11.5px]">
+                  <strong className="text-slate-950 font-bold">{activeFilterCount}</strong> active filter{activeFilterCount > 1 ? "s" : ""} applied
+                </span>
+                <button
+                  type="button"
+                  onClick={handleClearAllMapFilters}
+                  className="text-[11px] font-black text-amber-800 hover:text-amber-950 bg-amber-200/70 hover:bg-amber-300/80 px-2.5 py-1 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                >
+                  Reset All
+                </button>
+              </div>
+            )}
+
+            {/* Entity Type Filter Buttons (All, Properties, Projects) with Dynamic Live Counts */}
             <div className="space-y-1.5 shrink-0">
               <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-slate-500 px-0.5">
                 <span>Show On Map</span>
-                <span className="text-amber-600 font-bold">{currentActiveCount} Active</span>
+                <span className="text-amber-600 font-bold">{displayedPropertiesFiltered.length} Active Found</span>
               </div>
               <div className="grid grid-cols-[0.85fr_1.35fr_1.1fr] p-1 bg-slate-100/90 border border-slate-200 rounded-2xl gap-1 shadow-inner">
                 <button
@@ -1993,7 +2136,7 @@ export default function PropertyMap({
                       ? "bg-white text-slate-950 shadow-xs border border-amber-600/20"
                       : "bg-white text-slate-700 font-bold border border-slate-200"
                   )}>
-                    {allCount}
+                    {liveAllCount}
                   </span>
                 </button>
 
@@ -2015,7 +2158,7 @@ export default function PropertyMap({
                       ? "bg-white text-slate-950 shadow-xs border border-amber-600/20"
                       : "bg-white text-slate-700 font-bold border border-slate-200"
                   )}>
-                    {propertiesCount}
+                    {livePropertiesCount}
                   </span>
                 </button>
 
@@ -2037,122 +2180,44 @@ export default function PropertyMap({
                       ? "bg-white text-slate-950 shadow-xs border border-amber-600/20"
                       : "bg-white text-slate-700 font-bold border border-slate-200"
                   )}>
-                    {projectsCount}
+                    {liveProjectsCount}
                   </span>
                 </button>
               </div>
             </div>
 
-            {/* PROPERTY & PROJECT TYPES */}
-            <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 space-y-2.5 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  {listingTypeFilter === "properties" 
-                    ? "Property Types" 
-                    : listingTypeFilter === "projects" 
-                    ? "Project Categories" 
-                    : "Property & Project Types"}
-                </span>
-                {selectedSubtype && (
-                  <button
-                    type="button"
-                    onClick={handleResetType}
-                    className="text-[10px] font-bold text-amber-600 hover:text-amber-700 underline cursor-pointer"
-                  >
-                    Reset Type
-                  </button>
-                )}
-              </div>
-
-              {/* Grid of Boxes with Icons - Full text fully visible with stacked layout */}
-              <div className="grid grid-cols-2 gap-2">
-                {currentTypeOptions.map((opt) => {
-                  const IconComp = opt.icon;
-                  const isSelected = selectedSubtype === opt.key;
-                  return (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      onClick={() => handleSubtypeSelect(opt.key)}
-                      className={cn(
-                        "p-2.5 rounded-2xl border text-left flex flex-col justify-between gap-1.5 transition-all cursor-pointer group min-h-[64px]",
-                        isSelected
-                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-md shadow-amber-500/25 scale-[1.02] font-black"
-                          : "bg-white border-slate-200 text-slate-800 hover:border-amber-400 hover:bg-amber-50/40 hover:text-slate-950 shadow-xs"
-                      )}
-                    >
-                      {/* Top row: Icon on left, count on right */}
-                      <div className="flex items-center justify-between w-full">
-                        <div className={cn(
-                          "w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-colors",
-                          isSelected ? "bg-slate-950/20 text-slate-950" : "bg-amber-500/15 text-amber-600 group-hover:bg-amber-500/25"
-                        )}>
-                          <IconComp className="w-3.5 h-3.5" />
-                        </div>
-                        <span className={cn(
-                          "text-[10px] font-mono px-2 py-0.5 rounded-full font-bold",
-                          isSelected ? "bg-slate-950/20 text-slate-950" : "bg-slate-100 text-slate-600 border border-slate-200"
-                        )}>
-                          {opt.count}
-                        </span>
-                      </div>
-
-                      {/* Bottom row: Full label with zero truncation */}
-                      <span className={cn(
-                        "text-xs font-extrabold tracking-tight leading-snug break-words",
-                        isSelected ? "text-slate-950 font-black" : "text-slate-900"
-                      )}>
-                        {opt.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-            </div>
-
-            {/* LOCATIONS & SUBLOCATIONS (Added by Admin) */}
+            {/* 1. LOCATIONS & SUBLOCATIONS (First Section) - Multi-Select */}
             <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 space-y-3 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-extrabold uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-amber-600" /> Locations & Sublocations
                 </span>
-                {(selectedMapCity || selectedMapLocality) && (
+                {(selectedMapCities.length > 0 || selectedMapLocalities.length > 0) && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedMapCity(null);
-                      setSelectedMapLocality(null);
-                      setLocalitySearchText("");
-                      if (onFiltersChange) {
-                        onFiltersChange((prev) => ({
-                          ...prev,
-                          cities: [],
-                          localities: [],
-                          query: "",
-                        }));
-                      }
-                    }}
+                    onClick={handleResetLocations}
                     className="text-[10px] font-bold text-amber-600 hover:text-amber-700 underline cursor-pointer"
                   >
-                    Reset
+                    Reset ({selectedMapCities.length + selectedMapLocalities.length})
                   </button>
                 )}
               </div>
 
-              {/* 1. Locations (Cities) First */}
+              {/* 1. Locations (Cities) */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block px-0.5">
-                  Select Location:
-                </label>
+                <div className="flex items-center justify-between px-0.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    Select Locations:
+                  </label>
+                  <span className="text-[9.5px] text-slate-400">Choose multiple</span>
+                </div>
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
                   <button
                     type="button"
-                    onClick={() => handleSelectCity(null)}
+                    onClick={() => handleToggleCity(null)}
                     className={cn(
                       "px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border",
-                      !selectedMapCity
+                      selectedMapCities.length === 0
                         ? "bg-amber-500 text-slate-950 border-amber-500 font-black shadow-xs"
                         : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-slate-950 shadow-xs"
                     )}
@@ -2160,12 +2225,12 @@ export default function PropertyMap({
                     All Locations
                   </button>
                   {homeCities.map((city) => {
-                    const isSelected = selectedMapCity?.toLowerCase() === city.name.toLowerCase();
+                    const isSelected = selectedMapCities.some((c) => c.toLowerCase() === city.name.toLowerCase());
                     return (
                       <button
                         key={city.id}
                         type="button"
-                        onClick={() => handleSelectCity(city.name)}
+                        onClick={() => handleToggleCity(city.name)}
                         className={cn(
                           "px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border flex items-center gap-1.5",
                           isSelected
@@ -2173,6 +2238,7 @@ export default function PropertyMap({
                             : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-slate-950 shadow-xs"
                         )}
                       >
+                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                         <span>{city.name}</span>
                         {city.sublocations && city.sublocations.length > 0 && (
                           <span className={cn(
@@ -2188,11 +2254,19 @@ export default function PropertyMap({
                 </div>
               </div>
 
-              {/* 2. Sublocations for Selected Location */}
+              {/* 2. Sublocations for Selected Locations */}
               <div className="space-y-1.5 pt-1 border-t border-slate-200">
                 <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider px-0.5">
-                  <span>{selectedMapCity ? `${selectedMapCity} Sublocations` : "Sublocations"}</span>
-                  <span>{activeSublocations.length} areas</span>
+                  <span>
+                    {selectedMapCities.length === 1
+                      ? `${selectedMapCities[0]} Sublocations`
+                      : selectedMapCities.length > 1
+                      ? `${selectedMapCities.join(", ")} Sublocations`
+                      : "Sublocations"}
+                  </span>
+                  <span className="text-amber-600 font-bold">
+                    {selectedMapLocalities.length > 0 ? `${selectedMapLocalities.length} selected` : `${activeSublocations.length} areas`}
+                  </span>
                 </div>
 
                 {/* Sublocation search if many */}
@@ -2203,14 +2277,14 @@ export default function PropertyMap({
                       type="text"
                       value={localitySearchText}
                       onChange={(e) => setLocalitySearchText(e.target.value)}
-                      placeholder={`Search ${selectedMapCity || "all"} areas...`}
+                      placeholder={`Search areas (select multiple)...`}
                       className="w-full h-7 pl-7 pr-6 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-amber-500 shadow-xs"
                     />
                     {localitySearchText && (
                       <button
                         type="button"
                         onClick={() => setLocalitySearchText("")}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
                       >
                         <X className="w-2.5 h-2.5" />
                       </button>
@@ -2218,17 +2292,17 @@ export default function PropertyMap({
                   </div>
                 )}
 
-                {/* Sublocation Pills */}
+                {/* Sublocation Pills - Multi-select */}
                 <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1 no-scrollbar">
                   {displayedSublocations.length > 0 ? (
                     displayedSublocations.map((sub) => {
-                      const isSelected = selectedMapLocality?.toLowerCase() === sub.name.toLowerCase();
+                      const isSelected = selectedMapLocalities.some((l) => l.toLowerCase() === sub.name.toLowerCase());
                       const count = getSublocationPropertyCount(sub.name);
                       return (
                         <button
                           key={sub.id || sub.name}
                           type="button"
-                          onClick={() => handleSelectLocality(sub.name)}
+                          onClick={() => handleToggleLocality(sub.name)}
                           className={cn(
                             "px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border",
                             isSelected
@@ -2236,6 +2310,7 @@ export default function PropertyMap({
                               : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-950 shadow-xs"
                           )}
                         >
+                          {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                           <span>{sub.name}</span>
                           {count > 0 && (
                             <span className={cn(
@@ -2257,47 +2332,130 @@ export default function PropertyMap({
               </div>
             </div>
 
-            {/* PRICE / BUDGET FILTER BUTTONS */}
+            {/* 2. PROPERTY & PROJECT TYPES (Second Section) - Multi-Select */}
+            <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 space-y-2.5 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  {listingTypeFilter === "properties" 
+                    ? "Property Types" 
+                    : listingTypeFilter === "projects" 
+                    ? "Project Categories" 
+                    : "Property & Project Types"}
+                </span>
+                {selectedSubtypes.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleResetTypes}
+                    className="text-[10px] font-bold text-amber-600 hover:text-amber-700 underline cursor-pointer"
+                  >
+                    Reset ({selectedSubtypes.length})
+                  </button>
+                )}
+              </div>
+
+              {/* Grid of Boxes with Icons - Multi-select Cards */}
+              <div className="grid grid-cols-2 gap-2">
+                {currentTypeOptions.map((opt) => {
+                  const IconComp = opt.icon;
+                  const isSelected = selectedSubtypes.includes(opt.key);
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => handleSubtypeToggle(opt.key)}
+                      className={cn(
+                        "p-2.5 rounded-2xl border text-left flex flex-col justify-between gap-1.5 transition-all cursor-pointer group min-h-[64px] relative",
+                        isSelected
+                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-md shadow-amber-500/25 scale-[1.02] font-black"
+                          : "bg-white border-slate-200 text-slate-800 hover:border-amber-400 hover:bg-amber-50/40 hover:text-slate-950 shadow-xs"
+                      )}
+                    >
+                      {/* Top row: Icon & check on left, count on right */}
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-1.5">
+                          <div className={cn(
+                            "w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+                            isSelected ? "bg-slate-950/20 text-slate-950" : "bg-amber-500/15 text-amber-600 group-hover:bg-amber-500/25"
+                          )}>
+                            <IconComp className="w-3.5 h-3.5" />
+                          </div>
+                          {isSelected && (
+                            <span className="w-4 h-4 rounded-full bg-slate-950 text-amber-400 flex items-center justify-center shrink-0">
+                              <Check className="w-2.5 h-2.5 stroke-[3]" />
+                            </span>
+                          )}
+                        </div>
+                        <span className={cn(
+                          "text-[10px] font-mono px-2 py-0.5 rounded-full font-bold",
+                          isSelected ? "bg-slate-950/20 text-slate-950" : "bg-slate-100 text-slate-600 border border-slate-200"
+                        )}>
+                          {opt.count}
+                        </span>
+                      </div>
+
+                      {/* Bottom row: Full label with zero truncation */}
+                      <span className={cn(
+                        "text-xs font-extrabold tracking-tight leading-snug break-words",
+                        isSelected ? "text-slate-950 font-black" : "text-slate-900"
+                      )}>
+                        {opt.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 3. PRICE / BUDGET FILTER BUTTONS (Third Section) - Multi-Select */}
             <div className="bg-slate-50/90 border border-slate-200 rounded-2xl p-2.5 shadow-xs">
               <div className="flex items-center justify-between mb-2 px-0.5">
                 <div className="flex items-center gap-1.5">
                   <SlidersHorizontal className="w-3.5 h-3.5 text-amber-600" />
                   <span className="text-xs font-bold text-slate-900">Price Budget</span>
+                  <span className="text-[9.5px] text-slate-400 font-normal">Choose multiple</span>
                 </div>
-                {(mapPriceRange[0] > 0 || mapPriceRange[1] < 100000000) && (
+                {selectedBudgetKeys.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => handleBudgetSelect([0, 100000000])}
-                    className="text-[10px] text-amber-600 hover:text-amber-700 font-semibold px-2 py-0.5 rounded-full hover:bg-amber-500/10 transition-colors"
+                    onClick={handleResetBudget}
+                    className="text-[10px] text-amber-600 hover:text-amber-700 font-semibold px-2 py-0.5 rounded-full hover:bg-amber-500/10 transition-colors cursor-pointer"
                   >
-                    Reset
+                    Reset ({selectedBudgetKeys.length})
                   </button>
                 )}
               </div>
 
-              {/* Budget Buttons - All 5 in a single row */}
+              {/* Budget Buttons - Multi-select */}
               <div className="grid grid-cols-5 gap-1 w-full">
-                {[
-                  { label: "All", range: [0, 100000000] as [number, number] },
-                  { label: "< 50L", range: [0, 5000000] as [number, number] },
-                  { label: "50L-1Cr", range: [5000000, 10000000] as [number, number] },
-                  { label: "1Cr-2Cr", range: [10000000, 20000000] as [number, number] },
-                  { label: "> 2Cr", range: [20000000, 100000000] as [number, number] },
-                ].map((preset) => {
-                  const isActive = mapPriceRange[0] === preset.range[0] && mapPriceRange[1] === preset.range[1];
+                <button
+                  type="button"
+                  onClick={() => handleResetBudget()}
+                  className={cn(
+                    "w-full py-1.5 px-0.5 rounded-xl text-[10px] sm:text-[10.5px] font-bold transition-all cursor-pointer text-center flex items-center justify-center whitespace-nowrap",
+                    selectedBudgetKeys.length === 0
+                      ? "bg-amber-500 text-slate-950 shadow-xs shadow-amber-500/20 font-black border border-amber-500"
+                      : "bg-white text-slate-700 hover:text-slate-950 hover:bg-slate-100 border border-slate-200 shadow-xs"
+                  )}
+                >
+                  All
+                </button>
+                {BUDGET_PRESETS.map((preset) => {
+                  const isActive = selectedBudgetKeys.includes(preset.key);
                   return (
                     <button
-                      key={preset.label}
+                      key={preset.key}
                       type="button"
-                      onClick={() => handleBudgetSelect(preset.range)}
+                      onClick={() => handleToggleBudgetPreset(preset.key)}
                       className={cn(
-                        "w-full py-1.5 px-0.5 rounded-xl text-[10px] sm:text-[10.5px] font-bold transition-all cursor-pointer text-center flex items-center justify-center whitespace-nowrap",
+                        "w-full py-1.5 px-0.5 rounded-xl text-[10px] sm:text-[10.5px] font-bold transition-all cursor-pointer text-center flex items-center justify-center whitespace-nowrap gap-1",
                         isActive
                           ? "bg-amber-500 text-slate-950 shadow-xs shadow-amber-500/20 font-black border border-amber-500"
                           : "bg-white text-slate-700 hover:text-slate-950 hover:bg-slate-100 border border-slate-200 shadow-xs"
                       )}
                     >
-                      {preset.label}
+                      {isActive && <Check className="w-2.5 h-2.5 stroke-[3] hidden sm:inline" />}
+                      <span>{preset.label}</span>
                     </button>
                   );
                 })}
@@ -2376,8 +2534,8 @@ export default function PropertyMap({
                     <Landmark className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-extrabold text-slate-900">Show Landmarks</div>
-                    <div className="text-[10px] text-slate-500">Temples, churches, hospitals & parks</div>
+                    <div className="text-xs font-extrabold text-slate-900">Show Landmarks & Hospitals</div>
+                    <div className="text-[10px] text-slate-500">Only shown when enabled (Temples, hospitals, schools, parks)</div>
                   </div>
                 </div>
                 <button
@@ -2397,9 +2555,35 @@ export default function PropertyMap({
                 </button>
               </div>
               {showLandmarks && (
-                <div className="pt-1.5 text-[11px] text-slate-600 border-t border-slate-200/70 flex items-center justify-between">
-                  <span className="font-bold text-amber-700">✨ {landmarkOverlays.length} Landmarks Visible</span>
-                  <span className="text-[10px] text-slate-400">Tap pins to inspect</span>
+                <div className="pt-2 border-t border-slate-200/70 space-y-2">
+                  <div className="text-[11px] text-slate-600 flex items-center justify-between">
+                    <span className="font-bold text-amber-700">✨ {displayedLandmarks.length} Landmarks Visible</span>
+                    <span className="text-[10px] text-slate-400">Tap pins to inspect</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {[
+                      { key: "all", label: "All" },
+                      { key: "hospital", label: "🏥 Hospitals" },
+                      { key: "school", label: "🏫 Schools" },
+                      { key: "temple", label: "🛕 Temples" },
+                      { key: "park", label: "🌳 Parks" },
+                      { key: "transit", label: "⚡ Transit" },
+                    ].map((cat) => (
+                      <button
+                        key={cat.key}
+                        type="button"
+                        onClick={() => setSelectedLandmarkType(cat.key)}
+                        className={cn(
+                          "px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer",
+                          selectedLandmarkType === cat.key
+                            ? "bg-amber-500 text-slate-950 shadow-xs"
+                            : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                        )}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -2485,10 +2669,8 @@ export default function PropertyMap({
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedSubtype(null);
+                  handleClearAllMapFilters();
                   setListingTypeFilter("all");
-                  setSelectedMapLocality(null);
-                  setMapPriceRange([0, 100000000]);
                   if (mapRef.current) {
                     mapRef.current.setView([16.5062, 80.6480], 13);
                   }
@@ -2727,6 +2909,34 @@ export default function PropertyMap({
                         <span className={cn("text-[10px] font-bold", mapLayerType === layer.key ? "text-[#f1a010]" : "text-slate-600 dark:text-slate-300")}>{layer.label}</span>
                       </button>
                     ))}
+                  </div>
+
+                  {/* Quick toggle for Landmarks & Hospitals in Layer Panel */}
+                  <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Landmark className="w-3.5 h-3.5 text-amber-500" />
+                        <div>
+                          <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Hospitals & Landmarks</div>
+                          <div className="text-[9.5px] text-slate-500">Disabled by default</div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={showLandmarks}
+                        onClick={() => setShowLandmarks((prev) => !prev)}
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          showLandmarks ? "bg-amber-500" : "bg-slate-300 dark:bg-slate-700"
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                            showLandmarks ? "translate-x-4" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -3179,7 +3389,7 @@ export default function PropertyMap({
 
             {/* INTERACTIVE LANDMARKS & PUBLIC PLACES (Temples, Churches, Hospitals, Parks, Schools, Transit) */}
             {showLandmarks &&
-              landmarkOverlays.map((landmark) => {
+              displayedLandmarks.map((landmark) => {
                 const icon = getLandmarkIcon(landmark.type, landmark.name);
                 return (
                   <Marker

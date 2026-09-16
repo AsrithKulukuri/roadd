@@ -3,7 +3,7 @@ import { ListingQualityPanel } from "@/components/admin/listing-quality-panel";
 
 import { usePropertiesStore } from "@/stores/properties-store";
 import { Button } from "@/components/ui/button";
-import { formatPriceCompact } from "@/lib/utils";
+import { formatPriceCompact, cn } from "@/lib/utils";
 import { MoreHorizontal, Plus, Star, Trash2, PowerOff, MapPin, ThumbsUp, Edit3, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { 
@@ -20,28 +20,37 @@ import { useState } from "react";
 export default function AdminPropertiesPage() {
   const { properties, toggleSoldOut, deleteProperty, deleteAllProperties, toggleShowOnMap, toggleRoadExclusive, updateDisplayCategory } = usePropertiesStore();
   const [whatsAppModalItem, setWhatsAppModalItem] = useState<any | null>(null);
-  const [filterType, setFilterType] = useState<"all" | "exclusive" | "apartment" | "villa" | "plot" | "commercial">("all");
+  const [filterType, setFilterType] = useState<"all" | "exclusive" | "apartment" | "villa" | "plot" | "new-plot" | "resale-plot" | "commercial">("all");
+  const [conditionFilter, setConditionFilter] = useState<"all" | "new" | "resale">("all");
 
   const isPlotOrLand = (p: any) => {
     const pType = (p.propertyType || "").toLowerCase();
     const subtype = (p.subtype || "").toLowerCase();
-    return subtype === "venture-plot" || subtype === "land" || pType === "residential-land" || pType === "agricultural-lands";
+    return subtype === "venture-plot" || subtype === "land" || pType === "residential-land" || pType === "residential-plot" || pType === "agricultural-lands" || pType.includes("plot");
   };
 
   const getPropertyTypeLabel = (p: any) => {
     const pType = (p.propertyType || "").toLowerCase();
     const subtype = (p.subtype || "").toLowerCase();
-    if (isPlotOrLand(p)) return "Plot / Land";
-    if (subtype === "flat" || pType === "apartment") return "Apartment / Flat";
-    if (subtype === "villa" || subtype === "house" || pType === "villa" || pType === "independent-house") return "Villa / House";
+    if (isPlotOrLand(p)) {
+      return p.saleType === "resale" ? "Resale Plot" : "New Plot";
+    }
+    if (subtype === "flat" || pType === "apartment") return p.saleType === "resale" ? "Resale Flat" : "New Flat";
+    if (subtype === "villa" || subtype === "house" || pType === "villa" || pType === "independent-house") return p.saleType === "resale" ? "Resale Villa/House" : "New Villa/House";
     if (pType.includes("commercial") || subtype.includes("shop") || subtype.includes("building")) return "Commercial";
     return p.propertyType?.replace("-", " ") || "Property";
   };
 
   const filteredProperties = properties.filter((p: any) => {
+    // Condition filter (All, New, Resale)
+    if (conditionFilter === "new" && p.saleType === "resale") return false;
+    if (conditionFilter === "resale" && p.saleType !== "resale") return false;
+
     if (filterType === "all") return true;
     if (filterType === "exclusive") return Boolean(p.isRoadExclusive);
     if (filterType === "plot") return isPlotOrLand(p);
+    if (filterType === "new-plot") return isPlotOrLand(p) && p.saleType !== "resale";
+    if (filterType === "resale-plot") return isPlotOrLand(p) && p.saleType === "resale";
     const pType = (p.propertyType || "").toLowerCase();
     const subtype = (p.subtype || "").toLowerCase();
     if (filterType === "apartment") return !isPlotOrLand(p) && (subtype === "flat" || pType === "apartment");
@@ -85,13 +94,15 @@ export default function AdminPropertiesPage() {
 
       <ListingQualityPanel scope="properties" />
       {/* Stats & Category Filter Tabs with Horizontal Touch Scroll on Mobile */}
-      <div className="flex sm:grid sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-6 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-none touch-pan-x">
+      <div className="flex sm:grid sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-3 mb-4 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-none touch-pan-x">
         {[
           { type: "all", label: "All Properties", count: properties.length },
           { type: "exclusive", label: "ROAD Exclusive ⭐", count: properties.filter((p: any) => Boolean(p.isRoadExclusive)).length },
           { type: "apartment", label: "Apartments", count: properties.filter((p: any) => !isPlotOrLand(p) && ((p.subtype || "").toLowerCase() === "flat" || (p.propertyType || "").toLowerCase() === "apartment")).length },
           { type: "villa", label: "Houses & Villas", count: properties.filter((p: any) => !isPlotOrLand(p) && (["villa", "house"].includes((p.subtype || "").toLowerCase()) || ["villa", "independent-house"].includes((p.propertyType || "").toLowerCase()))).length },
-          { type: "plot", label: "Plots & Land", count: properties.filter((p: any) => isPlotOrLand(p)).length },
+          { type: "plot", label: "All Plots", count: properties.filter((p: any) => isPlotOrLand(p)).length },
+          { type: "new-plot", label: "New Plots ✨", count: properties.filter((p: any) => isPlotOrLand(p) && p.saleType !== "resale").length },
+          { type: "resale-plot", label: "Resale Plots 🏠", count: properties.filter((p: any) => isPlotOrLand(p) && p.saleType === "resale").length },
           { type: "commercial", label: "Commercial", count: properties.filter((p: any) => (p.propertyType || "").toLowerCase().includes("commercial") || (p.subtype || "").toLowerCase().includes("shop") || (p.subtype || "").toLowerCase().includes("building")).length },
         ].map((item) => {
           const active = filterType === item.type;
@@ -112,6 +123,36 @@ export default function AdminPropertiesPage() {
             </button>
           );
         })}
+      </div>
+
+      {/* Condition Filter Bar (All / New / Resale) */}
+      <div className="flex items-center justify-between gap-3 mb-6 bg-bg-card border border-border-default rounded-2xl p-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Condition:</span>
+          <div className="flex items-center gap-1.5">
+            {[
+              { val: "all", label: "All Conditions" },
+              { val: "new", label: "✨ New Only" },
+              { val: "resale", label: "🏠 Resale Only" },
+            ].map((c) => (
+              <button
+                key={c.val}
+                type="button"
+                onClick={() => setConditionFilter(c.val as any)}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  conditionFilter === c.val
+                    ? "bg-amber-500 text-slate-950 shadow-xs"
+                    : "bg-bg-primary text-text-secondary border border-border-default hover:text-text-primary"
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="text-xs font-medium text-text-secondary">
+          Showing <span className="font-bold text-amber-500">{filteredProperties.length}</span> of {properties.length}
+        </div>
       </div>
 
       {properties.length === 0 ? (
@@ -146,8 +187,19 @@ export default function AdminPropertiesPage() {
                     <div className="text-xs font-semibold text-amber-primary mt-0.5">
                       {formatPriceCompact(property.price)}
                     </div>
-                    <div className="text-xs text-text-tertiary truncate">
-                      📍 {property.location.locality}, {property.location.city} • <span className="text-amber-500 font-semibold">{getPropertyTypeLabel(property)}</span>
+                    <div className="text-xs text-text-tertiary truncate flex items-center gap-1.5 mt-0.5">
+                      <span className="truncate">📍 {property.location.locality}, {property.location.city}</span>
+                      <span>•</span>
+                      <span className={cn(
+                        "px-1.5 py-0.2 rounded text-[10px] font-extrabold shrink-0",
+                        property.saleType === "resale"
+                          ? "bg-blue-500/15 text-blue-500 border border-blue-500/30"
+                          : "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                      )}>
+                        {property.saleType === "resale" ? "Resale" : "New"}
+                      </span>
+                      <span>•</span>
+                      <span className="text-amber-500 font-semibold shrink-0">{getPropertyTypeLabel(property)}</span>
                     </div>
                   </div>
                 </div>
@@ -270,8 +322,19 @@ export default function AdminPropertiesPage() {
                           <div className="font-bold text-text-primary truncate max-w-[200px]">
                             {property.title}
                           </div>
-                          <div className="text-xs text-text-tertiary capitalize">
-                            {property.listingType} • <span className="text-amber-500 font-semibold">{getPropertyTypeLabel(property)}</span>
+                          <div className="text-xs text-text-tertiary capitalize flex items-center gap-1.5 mt-0.5">
+                            <span>{property.listingType}</span>
+                            <span>•</span>
+                            <span className={cn(
+                              "px-1.5 py-0.2 rounded text-[10px] font-extrabold shrink-0",
+                              property.saleType === "resale"
+                                ? "bg-blue-500/15 text-blue-500 border border-blue-500/30"
+                                : "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                            )}>
+                              {property.saleType === "resale" ? "🏠 Resale" : "✨ New"}
+                            </span>
+                            <span>•</span>
+                            <span className="text-amber-500 font-semibold">{getPropertyTypeLabel(property)}</span>
                           </div>
                         </div>
                       </div>

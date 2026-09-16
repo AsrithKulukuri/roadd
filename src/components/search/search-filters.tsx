@@ -60,7 +60,7 @@ export interface FilterState {
   roadExclusive: boolean;
   certifiedAgentsOnly: boolean;
   reraRegisteredProperties: boolean;
-  reraRegisteredAgents: boolean;
+  reraRegisteredAgents?: boolean;
   
   // Rent Specific
   tenantPreference: string[];
@@ -125,7 +125,6 @@ export const initialFilterState: FilterState = {
   roadExclusive: false,
   certifiedAgentsOnly: false,
   reraRegisteredProperties: false,
-  reraRegisteredAgents: false,
   
   tenantPreference: [],
   petsAllowed: false,
@@ -461,7 +460,6 @@ export function SearchFiltersModal({
     if (localFilters.postedSince && localFilters.postedSince !== "any") count += 1;
     if (localFilters.roadExclusive) count += 1;
     if (localFilters.reraRegisteredProperties) count += 1;
-    if (localFilters.reraRegisteredAgents) count += 1;
     if (localFilters.vastuCompliant) count += 1;
     return count;
   }, [localFilters]);
@@ -664,7 +662,7 @@ export function SearchFiltersModal({
                 { label: "Plot/Land", val: "residential-land", icon: Trees },
                 { label: "Commercial", val: "commercial-spaces", icon: Briefcase },
               ].map((item) => {
-                const isSelected = localFilters.propertyType.includes(item.val);
+                const isSelected = localFilters.propertyType.includes(item.val) || (item.val === "residential-land" && (localFilters.propertyType.includes("residential-plot") || localFilters.propertyType.includes("plot")));
                 const Icon = item.icon;
                 return (
                   <button
@@ -707,7 +705,7 @@ export function SearchFiltersModal({
                   const isSelected =
                     st.val === "all_residential"
                       ? localFilters.propertyType.length === 0
-                      : localFilters.propertyType.includes(st.val);
+                      : localFilters.propertyType.includes(st.val) || (st.val === "residential-land" && (localFilters.propertyType.includes("residential-plot") || localFilters.propertyType.includes("plot")));
                   return (
                     <PillTag
                       key={st.val}
@@ -997,11 +995,6 @@ export function SearchFiltersModal({
                 onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val })}
               />
               <ToggleSwitch
-                label="RERA Registered Agents"
-                checked={localFilters.reraRegisteredAgents}
-                onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredAgents: val })}
-              />
-              <ToggleSwitch
                 label="ROAD Exclusive Properties"
                 checked={localFilters.roadExclusive}
                 onChange={(val) => setLocalFilters({ ...localFilters, roadExclusive: val })}
@@ -1275,11 +1268,6 @@ export function SearchFiltersModal({
                     checked={localFilters.reraRegisteredProperties}
                     onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val })}
                   />
-                  <ToggleSwitch
-                    label="RERA Registered Agents"
-                    checked={localFilters.reraRegisteredAgents}
-                    onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredAgents: val })}
-                  />
                 </div>
               </div>
             )}
@@ -1382,7 +1370,7 @@ export function SearchFiltersModal({
                       { label: "Plot / Land", val: "residential-land", icon: Trees },
                       { label: "Commercial Space", val: "commercial-spaces", icon: Briefcase },
                     ].map((item) => {
-                      const isSelected = localFilters.propertyType.includes(item.val);
+                      const isSelected = localFilters.propertyType.includes(item.val) || (item.val === "residential-land" && (localFilters.propertyType.includes("residential-plot") || localFilters.propertyType.includes("plot")));
                       const Icon = item.icon;
                       return (
                         <button
@@ -1424,7 +1412,7 @@ export function SearchFiltersModal({
                       <PillTag
                         key={item.val}
                         label={item.label}
-                        isSelected={localFilters.propertyType.includes(item.val)}
+                        isSelected={localFilters.propertyType.includes(item.val) || (item.val === "residential-land" && (localFilters.propertyType.includes("residential-plot") || localFilters.propertyType.includes("plot")))}
                         onClick={() => toggleArrayFilter("propertyType", item.val)}
                       />
                     ))}
@@ -1633,11 +1621,6 @@ export function SearchFiltersModal({
                     label="RERA Registered Properties"
                     checked={localFilters.reraRegisteredProperties}
                     onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val })}
-                  />
-                  <ToggleSwitch
-                    label="RERA Registered Agents"
-                    checked={localFilters.reraRegisteredAgents}
-                    onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredAgents: val })}
                   />
                   <ToggleSwitch
                     label="ROAD Exclusive Properties"
