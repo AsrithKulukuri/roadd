@@ -656,10 +656,10 @@ export function SearchFiltersModal({
             </label>
             <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
               {[
-                { label: "Flat", val: "apartment", icon: Building },
-                { label: "House/Villa", val: "villa", icon: Home },
+                { label: "Flat / Apartment", val: "apartment", icon: Building },
+                { label: "House / Villa", val: "villa", icon: Home },
                 { label: "CRDA Ventures", val: "venture", icon: Landmark },
-                { label: "Plot/Land", val: "residential-land", icon: Trees },
+                { label: "Plot / Land", val: "residential-land", icon: Trees },
                 { label: "Commercial", val: "commercial-spaces", icon: Briefcase },
               ].map((item) => {
                 const isSelected = localFilters.propertyType.includes(item.val) || (item.val === "residential-land" && (localFilters.propertyType.includes("residential-plot") || localFilters.propertyType.includes("plot")));
@@ -670,7 +670,7 @@ export function SearchFiltersModal({
                     type="button"
                     onClick={() => toggleArrayFilter("propertyType", item.val)}
                     className={cn(
-                      "min-w-[100px] h-[86px] rounded-2xl border p-2.5 flex flex-col items-center justify-center relative transition-all cursor-pointer shrink-0 select-none",
+                      "w-[112px] min-w-[112px] h-[86px] rounded-2xl border p-2 flex flex-col items-center justify-center text-center relative transition-all cursor-pointer shrink-0 select-none",
                       isSelected
                         ? "bg-[#e6f4f2] border-[#008075]/40 text-slate-950 font-semibold shadow-xs"
                         : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
@@ -681,8 +681,8 @@ export function SearchFiltersModal({
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </span>
                     )}
-                    <Icon className={cn("w-6 h-6 mb-1.5", isSelected ? "text-[#008075]" : "text-slate-600")} />
-                    <span className="text-xs leading-tight">{item.label}</span>
+                    <Icon className={cn("w-6 h-6 mb-1.5 shrink-0", isSelected ? "text-[#008075]" : "text-slate-600")} />
+                    <span className="text-xs font-semibold leading-tight text-center line-clamp-2 px-0.5">{item.label}</span>
                   </button>
                 );
               })}

@@ -615,6 +615,7 @@ function UnifiedSearchPage() {
         images: p.images?.map((img: unknown) => (typeof img === "string" ? img : (((img as Record<string, unknown>)?.url as string) || ""))) || [],
         showOnMap: true,
         builderName: p.builderName,
+        configurations: p.configurations,
         _isProject: true,
         _originalProjectData: p,
       }));

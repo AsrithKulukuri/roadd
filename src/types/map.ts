@@ -30,6 +30,7 @@ export interface MapProjectItem {
   bathrooms?: number;
   area?: number;
   refId?: string;
+  configurations?: any[];
   _isProject: boolean;
   _originalProjectData?: Project;
 }

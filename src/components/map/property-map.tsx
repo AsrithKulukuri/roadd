@@ -1047,6 +1047,7 @@ export default function PropertyMap({
         images: p.images?.map((img) => (typeof img === "string" ? img : img.url || "")) || [],
         showOnMap: true,
         builderName: p.builderName,
+        configurations: p.configurations,
         _isProject: true,
         _originalProjectData: p,
       }));
@@ -3503,6 +3504,11 @@ const BUDGET_PRESETS = [
                       const isProj = (property as any)._isProject;
                       const linkUrl = isProj ? `/projects/${property.slug || property.id}` : `/properties/${property.slug || property.id}`;
                       const orig = (property as any)._originalProjectData;
+                      const configs = (property as any).configurations || orig?.configurations;
+                      const configLabels = Array.isArray(configs) && configs.length > 0
+                        ? Array.from(new Set(configs.map((c: any) => c.label || (c.bedrooms ? `${c.bedrooms} BHK` : null)).filter(Boolean)))
+                        : [];
+                      const isApartment = property.propertyType === "apartment" || (property as any).subtype === "flat" || (property as any).subtype === "apartment";
                       
                       return (
                         <div className="relative w-[260px] h-[190px] rounded-2xl overflow-hidden shadow-2xl group cursor-pointer bg-slate-900">
@@ -3579,21 +3585,43 @@ const BUDGET_PRESETS = [
                             {isProj ? (
                               <>
                                 <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center gap-1.5 flex-wrap">
-                                  <span>{property.title}</span>
+                                  {configLabels.length > 0 ? (
+                                    <span className="text-amber-300 font-extrabold">{configLabels.join(", ")}</span>
+                                  ) : null}
+                                  <span className="truncate">{property.title}</span>
                                 </div>
-                                <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center mt-0.5">
+                                <div className="text-xs font-semibold drop-shadow-md text-white/80 truncate w-full flex items-center mt-0.5">
                                   <span>By {(property as any).builderName || "Builder"}</span>
+                                  {property.location?.locality && <span> • {property.location.locality}</span>}
                                 </div>
                               </>
                             ) : (
                               <>
                                 <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center gap-1.5 flex-wrap">
-                                  {property.bedrooms ? <span>{property.bedrooms} bed</span> : null}
+                                  {property.bedrooms ? (
+                                    <span>{property.bedrooms} BHK</span>
+                                  ) : configLabels.length > 0 ? (
+                                    <span className="text-amber-300 font-extrabold">{configLabels.join(", ")}</span>
+                                  ) : null}
                                   {property.bathrooms ? <span>• {property.bathrooms} ba</span> : null}
                                   {property.area ? <span>• {property.area.toLocaleString()} sqft</span> : null}
+                                  {!property.bedrooms && !property.area && <span>{property.title}</span>}
                                 </div>
-                                <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center mt-0.5">
-                                  <span>{(property as any).plotArea ? `${(((property as any).plotArea as number) / 43560).toFixed(2)} acres lot` : "0.34 acres lot"}</span>
+                                <div className="text-xs font-semibold drop-shadow-md text-white/85 truncate w-full flex items-center mt-0.5">
+                                  {isApartment || property.bedrooms ? (
+                                    <span>
+                                      {property.location?.locality ? `${property.location.locality}${property.location?.city ? `, ${property.location.city}` : ""}` : property.title}
+                                    </span>
+                                  ) : (property as any).plotArea ? (
+                                    <span>
+                                      {Number((property as any).plotArea) > 10000
+                                        ? `${(Number((property as any).plotArea) / 43560).toFixed(2)} acres lot`
+                                        : `${Math.round(Number((property as any).plotArea) / 9)} sq.yd plot`}
+                                      {property.location?.locality ? ` • ${property.location.locality}` : ""}
+                                    </span>
+                                  ) : (
+                                    <span>{property.location?.locality ? `${property.location.locality}${property.location?.city ? `, ${property.location.city}` : ""}` : property.title}</span>
+                                  )}
                                 </div>
                               </>
                             )}
