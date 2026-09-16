@@ -79,15 +79,15 @@ export default function ProjectMapView({
         style={{ height: "100%", width: "100%", zIndex: 0 }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
           url={
             process.env.NEXT_PUBLIC_MAP_TILE_URL ||
             (process.env.NEXT_PUBLIC_CARTO_API_KEY
               ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?api_key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}`
-              : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
+              : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}")
           }
-          maxNativeZoom={19}
-          maxZoom={20}
+          maxNativeZoom={18}
+          maxZoom={19}
         />
         <FlyTo center={center} />
         <AutoOpenMarker center={center}>
