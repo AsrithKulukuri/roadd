@@ -10,7 +10,8 @@ test("protected pages redirect anonymous visitors", async ({ page }) => {
   await expect(page).toHaveURL(/\/login\?redirect=/);
 
   await page.goto("/projects/meridian-skyline-towers-vijayawada");
-  await expect(page).toHaveURL(/\/login\?redirect=/);
+  await expect(page).toHaveURL(/\/projects\/meridian-skyline-towers-vijayawada/);
+  await expect(page.getByRole("heading", { name: "Login Required" })).toHaveCount(0);
 });
 
 const protectedRequests = [

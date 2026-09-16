@@ -18,6 +18,9 @@ const publicRoutes = [
 async function collectRuntimeErrors(page: Page) {
   const errors: string[] = [];
   page.on("console", (message) => {
+    // Anonymous session/favorites probes intentionally return 401; other errors remain failures.
+    const pathname = new URL(message.location().url || "http://localhost").pathname;
+    if (["/api/auth/session", "/api/favorites"].includes(pathname) && message.text().includes("401")) return;
     if (message.type() === "error") errors.push(message.text());
   });
   page.on("pageerror", (error) => errors.push(error.message));

@@ -8,7 +8,8 @@ const properties = [
   { ...base, id: "test-commercial", slug: "test-commercial", title: "Fixture Commercial Shop", propertyType: "shops", category: "commercial", subtype: "shop", listingType: "sale", attributes: { gatedCommunity: "no" }, price: 5000000 },
 ];
 const project: Project = {
-  id: "test-approved", slug: "test-approved", name: "Fixture Approved Venture", projectType: "venture", builderName: "Fixture Builder", location: base.location,
+  id: "test-approved", slug: "test-approved", name: "Fixture Approved Venture", projectType: "venture", builderName: "Fixture Builder", location: { ...base.location, crdaReview: { reference: "Test evidence", approved: true, reviewedAt: "2026-09-01" } },
+  crdaLpNumber: "LP No. 42/2024/CRDA", surveyNumber: "142/2B", crdaDocumentUrl: "https://example.test/layout.pdf", boundaryDimensions: { north: "33 ft", south: "33 ft", east: "50 ft", west: "50 ft" },
   reraApproved: false, crdaApproved: true, constructionStatus: "ready-to-move", phases: [], configurations: [{ id: "cfg", label: "Plot", plotSizeMin: 200, priceMin: 5000000, priceMax: 5000000 }],
   images: [], highlights: [], facilities: [], isFeatured: false, isPublished: true, createdAt: "2026-09-01", updatedAt: "2026-09-01",
 };
@@ -16,6 +17,10 @@ const projects = [project, { ...project, id: "test-unapproved", slug: "test-unap
 
 test("headers replace filters, counts, and active state across history and refresh", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.route("**/api/listings?*", async route => {
+    const type = new URL(route.request().url()).searchParams.get("type");
+    await route.fulfill({ json: { data: type === "property" ? properties : projects, error: null } });
+  });
   await page.route("**/rest/v1/**", async route => {
     const table = new URL(route.request().url()).pathname.split("/").pop();
     await route.fulfill({ json: table === "properties" ? properties : table === "projects" ? projects : [] });
