@@ -20,7 +20,12 @@ function buildIcon() {
 
 function FlyTo({ center }: { center: [number, number] }) {
   const map = useMap();
-  useEffect(() => { map.flyTo(center, 15, { animate: true, duration: 1.5 }); }, [center[0], center[1]]);
+  const [latitude, longitude] = center;
+  useEffect(() => {
+    if (!map.getCenter().equals([latitude, longitude])) {
+      map.setView([latitude, longitude], 15, { animate: false });
+    }
+  }, [map, latitude, longitude]);
   return null;
 }
 
@@ -91,7 +96,7 @@ export default function ProjectMapView({
         />
         <FlyTo center={center} />
         <AutoOpenMarker center={center}>
-          <Popup closeButton={false} offset={[0, -8]}>
+          <Popup closeButton={false} autoPan={false} offset={[0, -8]}>
             <div style={{ minWidth: "180px", padding: "2px 4px" }}>
               <p style={{ fontWeight: 800, fontSize: "13px", marginBottom: "2px", color: "#0f172a" }}>
                 {projectName}

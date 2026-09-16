@@ -1091,9 +1091,11 @@ export default function PropertyMap({
   useEffect(() => {
     setPosition(initialCenter);
     if (mapRef.current) {
-      mapRef.current.flyTo(initialCenter, 13, { duration: 1 });
+      if (!mapRef.current.getCenter().equals(initialCenter)) {
+        mapRef.current.setView(initialCenter, 13, { animate: false });
+      }
     }
-  }, [initialCenter]);
+  }, [initialCenter.lat, initialCenter.lng]);
 
   // Keep internal search input in sync with external query params
   useEffect(() => {
@@ -1604,9 +1606,11 @@ const BUDGET_PRESETS = [
     return getDynamicLocalityBoundary(term, mapProperties);
   }, [selectedMapLocalities, selectedMapCities, mapSearchInput, mapProperties]);
 
-  // Fly map to locality boundary when detected or fit bounds to displayed properties
+  const lastAppliedBoundary = useRef<string | null>(null);
+  // Re-rendering listing data must not restart the camera for the same bounds.
   useEffect(() => {
     if (!mapRef.current) return;
+    if (!activeLocalityBoundary) lastAppliedBoundary.current = null;
     if (activeLocalityBoundary) {
       try {
         const validBounds = activeLocalityBoundary.bounds.filter(
@@ -1616,11 +1620,15 @@ const BUDGET_PRESETS = [
         if (validBounds.length > 0) {
           const bounds = L.latLngBounds(validBounds);
           if (bounds.isValid()) {
+            const boundaryKey = bounds.toBBoxString();
+            if (lastAppliedBoundary.current === boundaryKey) return;
             const size = mapRef.current.getSize();
             if (size.x > 100 && size.y > 100) {
-              mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: true, duration: 1.2 });
+              mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: false });
+              lastAppliedBoundary.current = boundaryKey;
             } else if (size.x > 0 && size.y > 0) {
               mapRef.current.fitBounds(bounds, { padding: [0, 0], maxZoom: 15, animate: false });
+              lastAppliedBoundary.current = boundaryKey;
             }
           }
         }

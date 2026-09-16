@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -40,8 +40,8 @@ function FitBounds({ userPos, propPos }: { userPos: L.LatLng, propPos: L.LatLng 
   const map = useMap();
   useEffect(() => {
     const bounds = L.latLngBounds([userPos, propPos]);
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
-  }, [map, userPos, propPos]);
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14, animate: false });
+  }, [map, userPos.lat, userPos.lng, propPos.lat, propPos.lng]);
   return null;
 }
 
@@ -57,7 +57,7 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
   const [userLocation, setUserLocation] = useState<L.LatLng | null>(null);
   const [distance, setDistance] = useState<string | null>(null);
   
-  const propertyPos = new L.LatLng(latitude, longitude);
+  const propertyPos = useMemo(() => new L.LatLng(latitude, longitude), [latitude, longitude]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !navigator.geolocation) return;
