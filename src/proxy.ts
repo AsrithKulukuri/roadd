@@ -3,6 +3,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import { authenticateServerRequest, verifySignedSessionToken } from "@/lib/server-auth-guard";
 
 export async function proxy(request: NextRequest) {
+  // Public Meta verification must not depend on a Supabase session or availability.
+  if (request.nextUrl.pathname === "/api/webhooks/meta-whatsapp") {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
