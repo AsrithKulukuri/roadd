@@ -4,7 +4,7 @@ import { authenticateServerRequest, verifySignedSessionToken } from "@/lib/serve
 
 export async function proxy(request: NextRequest) {
   // Public Meta verification must not depend on a Supabase session or availability.
-  if (request.nextUrl.pathname === "/api/webhooks/meta-whatsapp") {
+  if (request.nextUrl.pathname.startsWith("/api/webhooks/meta-whatsapp")) {
     return NextResponse.next();
   }
 
