@@ -129,6 +129,29 @@ export async function POST(request: Request) {
             if (statusObj.errors && statusObj.errors.length > 0) {
               console.error("[META WEBHOOK DELIVERY ERROR]", JSON.stringify(statusObj.errors));
             }
+
+            // Sync delivery receipt with whatsapp_campaign_recipients
+            if (statusObj.id) {
+              try {
+                if (statusObj.status === "delivered" || statusObj.status === "read") {
+                  await supabaseAdmin
+                    .from("whatsapp_campaign_recipients")
+                    .update({ status: "sent", last_error: null })
+                    .eq("provider_message_id", statusObj.id);
+                } else if (statusObj.status === "failed") {
+                  const errDetail =
+                    statusObj.errors?.[0]?.title ||
+                    statusObj.errors?.[0]?.message ||
+                    "Delivery failed via Meta Cloud API";
+                  await supabaseAdmin
+                    .from("whatsapp_campaign_recipients")
+                    .update({ status: "failed", last_error: String(errDetail) })
+                    .eq("provider_message_id", statusObj.id);
+                }
+              } catch (statusDbErr) {
+                console.warn("[META WEBHOOK STATUS DB UPDATE ERROR]", statusDbErr);
+              }
+            }
           }
         }
 

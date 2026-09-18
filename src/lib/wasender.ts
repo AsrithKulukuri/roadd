@@ -1,11 +1,17 @@
 import { WasenderAPIResponse } from "@/types/auth";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
 import { resolveExternalMediaUrl } from "@/lib/aws/presign";
+import { MetaWhatsAppService } from "@/lib/meta-whatsapp";
 
 export type WasenderMode = "disabled" | "mock" | "live";
+export type WhatsAppProvider = "meta" | "wasender";
 
 export interface WasenderSendOptions {
   requestId?: string;
+  templateName?: string;
+  languageCode?: string;
+  components?: Array<Record<string, any>>;
+  fallbackText?: string;
 }
 
 export interface WasenderExecutionResult extends WasenderAPIResponse {
@@ -19,8 +25,10 @@ export interface WasenderExecutionResult extends WasenderAPIResponse {
     | "INVALID_PHONE"
     | "PROVIDER_UNAVAILABLE"
     | "TIMEOUT"
-    | "NETWORK_ERROR";
+    | "NETWORK_ERROR"
+    | "POLICY_VIOLATION";
   durationMs?: number;
+  provider?: WhatsAppProvider;
 }
 
 /**
@@ -110,6 +118,27 @@ export function getWasenderMode(): WasenderMode {
   return getWasenderOtpMode();
 }
 
+/**
+ * Resolves active WhatsApp provider: "meta" (Meta WhatsApp Cloud API) or "wasender" (WaSenderAPI).
+ * Controlled via WHATSAPP_PROVIDER environment variable.
+ */
+export function getWhatsAppProvider(): WhatsAppProvider {
+  const explicit = (process.env.WHATSAPP_PROVIDER || "").trim().toLowerCase();
+  if (explicit === "meta") return "meta";
+  if (explicit === "wasender") return "wasender";
+
+  // Auto-detect: if Meta credentials exist and WaSender API key is absent, use Meta
+  if (
+    process.env.META_WHATSAPP_PHONE_NUMBER_ID &&
+    (process.env.META_WHATSAPP_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN) &&
+    !process.env.WASENDER_API_KEY
+  ) {
+    return "meta";
+  }
+
+  return "wasender";
+}
+
 function maskPhone(phone: string): string {
   if (!phone || phone.length < 4) return "***";
   return `${phone.slice(0, 4)}****${phone.slice(-3)}`;
@@ -177,6 +206,11 @@ export class WasenderService {
     otp: string,
     options?: WasenderSendOptions
   ): Promise<WasenderExecutionResult> {
+    // Route to official Meta WhatsApp Cloud API when WHATSAPP_PROVIDER=meta
+    if (getWhatsAppProvider() === "meta") {
+      return MetaWhatsAppService.sendOTPMessage(phone, otp, options);
+    }
+
     const startTime = Date.now();
     const requestId = options?.requestId || `otp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const cleanPhone = formatWhatsAppPhone(phone);
@@ -306,6 +340,11 @@ export class WasenderService {
     message: string,
     options?: WasenderSendOptions
   ): Promise<WasenderExecutionResult> {
+    // Route to official Meta WhatsApp Cloud API when WHATSAPP_PROVIDER=meta
+    if (getWhatsAppProvider() === "meta") {
+      return MetaWhatsAppService.sendTextMessage(phone, message, options);
+    }
+
     const startTime = Date.now();
     const requestId = options?.requestId || `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const cleanPhone = formatWhatsAppPhone(phone);
@@ -411,6 +450,11 @@ export class WasenderService {
     text: string,
     options?: WasenderSendOptions
   ): Promise<WasenderExecutionResult> {
+    // Route to official Meta WhatsApp Cloud API when WHATSAPP_PROVIDER=meta
+    if (getWhatsAppProvider() === "meta") {
+      return MetaWhatsAppService.sendImageMessage(phone, imageUrl, text, options);
+    }
+
     const rawUrl = (imageUrl || "").trim();
     // Resolve relative, proxy (/api/media/...), or S3 keys to direct S3 pre-signed GET URLs
     const resolvedUrl = await resolveExternalMediaUrl(rawUrl).catch(() => rawUrl);
@@ -488,6 +532,26 @@ export class WasenderService {
       { to: cleanPhone, text, imageUrl: resolvedUrl },
       { requestId, runtime, mode, endpointHost, startTime, logPrefix: "MEDIA" }
     );
+  }
+
+  /**
+   * Send pre-approved template message (Meta) with automatic fallback to text message (WaSender).
+   */
+  static async sendTemplateMessage(
+    phone: string,
+    templateName: string,
+    options?: WasenderSendOptions
+  ): Promise<WasenderExecutionResult> {
+    if (getWhatsAppProvider() === "meta") {
+      return MetaWhatsAppService.sendTemplateMessage(phone, templateName, {
+        languageCode: options?.languageCode,
+        components: options?.components as any,
+        requestId: options?.requestId,
+      });
+    }
+
+    const fallbackText = options?.fallbackText || `ROAD Notification: ${templateName}`;
+    return this.sendTextMessage(phone, fallbackText, options);
   }
 
   /**
