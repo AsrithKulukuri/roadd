@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/server-auth-guard";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -8,7 +8,8 @@ import {
   toPublicMediaUrl,
   withWhatsAppOptOut,
 } from "@/lib/whatsapp-audience";
-import { getWasenderNotificationMode } from "@/lib/wasender";
+import { getWasenderNotificationMode, getWhatsAppProvider } from "@/lib/wasender";
+import { runCampaignToCompletion } from "@/lib/whatsapp/campaign-runner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -159,11 +160,23 @@ export async function POST(request: Request) {
       throw recipientsError;
     }
 
+    // Automatically trigger server-side execution so campaign dispatches without requiring browser to stay open
+    after(async () => {
+      try {
+        await runCampaignToCompletion(campaign.id);
+      } catch (runErr) {
+        console.error("[CAMPAIGN AUTO-START ERROR]", runErr);
+      }
+    });
+
+    const isMeta = getWhatsAppProvider() === "meta";
+    const deliveryMode = isMeta ? "live" : getWasenderNotificationMode();
+
     return NextResponse.json({
       success: true,
       campaignId: campaign.id,
       recipientCount: contacts.length,
-      deliveryMode: getWasenderNotificationMode(),
+      deliveryMode,
     });
   } catch (error: unknown) {
     console.error("[WHATSAPP CAMPAIGN CREATE ERROR]", error);

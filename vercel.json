@@ -1,1 +1,12 @@
-{}
+{
+  "crons": [
+    {
+      "path": "/api/cron/whatsapp-campaigns",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/whatsapp-inactivity",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

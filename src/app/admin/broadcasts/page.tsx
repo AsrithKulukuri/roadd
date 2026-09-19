@@ -344,20 +344,24 @@ export default function AdminBroadcastsPage() {
           const response = await fetch("/api/admin/whatsapp/process", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ campaignId }),
+            body: JSON.stringify({ campaignId, auto: true }),
           });
-          const result = (await response.json().catch(() => null)) as { success?: boolean; error?: string; pending?: boolean; nextDelayMs?: number } | null;
+          const result = (await response.json().catch(() => null)) as {
+            success?: boolean;
+            error?: string;
+            pending?: boolean;
+            nextDelayMs?: number;
+            processedCount?: number;
+          } | null;
           if (!response.ok || !result?.success) throw new Error(result?.error || "Broadcast queue stopped.");
           pending = Boolean(result.pending);
           await loadCampaigns();
           if (pending && !queueAbortRef.current) {
-            const resumeAt = Date.now() + (result.nextDelayMs || 60000);
-            while (!queueAbortRef.current && Date.now() < resumeAt) {
-              await new Promise((resolve) => window.setTimeout(resolve, Math.min(250, resumeAt - Date.now())));
-            }
+            const delay = Math.min(result.nextDelayMs ?? 250, 1000);
+            await new Promise((resolve) => window.setTimeout(resolve, delay));
           }
         }
-        if (!queueAbortRef.current) toast.success("Broadcast queue finished.");
+        if (!queueAbortRef.current) toast.success("Broadcast completed successfully.");
       } catch (error: unknown) {
         toast.error(error instanceof Error ? error.message : "Broadcast queue stopped.");
       } finally {
@@ -420,7 +424,7 @@ export default function AdminBroadcastsPage() {
       <header className="flex flex-col gap-4 border-b border-border-default pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="mb-2 flex items-center gap-2 text-sm font-bold text-amber-primary">
-            <MessageSquareText className="h-4 w-4" /> Wasender broadcasts
+            <MessageSquareText className="h-4 w-4" /> WhatsApp Broadcasts
           </div>
           <h1 className="font-heading text-2xl font-bold text-text-primary sm:text-3xl">WhatsApp Notifications</h1>
           <p className="mt-1 max-w-2xl text-sm text-text-secondary">
@@ -725,15 +729,15 @@ export default function AdminBroadcastsPage() {
           )}>
             <Clock3 className="h-4 w-4 shrink-0" />
             {deliveryMode === "live"
-              ? "Live Wasender delivery is active with provider-safe pacing."
+              ? "Automated live WhatsApp delivery active with fast provider pacing."
               : deliveryMode === "mock"
-                ? "Simulation mode: Wasender will not be contacted."
+                ? "Simulation mode: WhatsApp will not be contacted."
                 : "WhatsApp notifications are disabled."}
           </div>
 
           <Button type="submit" disabled={isSubmitting || isUploading || selectedCount === 0 || Boolean(processingCampaignId)} className="h-12 w-full gap-2">
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            {deliveryMode === "live" ? "Queue and send" : "Run simulation"}
+            {deliveryMode === "live" ? "Queue and send automatically" : "Run simulation"}
           </Button>
         </form>
       </div>
@@ -754,7 +758,7 @@ export default function AdminBroadcastsPage() {
                   <td className="px-4 py-3 font-semibold text-text-primary">{campaign.recipient_count}</td>
                   <td className="px-4 py-3 font-semibold text-emerald-600">{campaign.sent_count}</td>
                   <td className="px-4 py-3 font-semibold text-red-600">{campaign.failed_count}</td>
-                  <td className="px-4 py-3 text-right">{["queued", "sending"].includes(campaign.status) && <Button type="button" size="sm" variant="outline" disabled={Boolean(processingCampaignId)} onClick={() => void processCampaign(campaign.id)} className="gap-2">{processingCampaignId === campaign.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} {campaign.status === "sending" ? "Resume" : "Start"}</Button>}</td>
+                  <td className="px-4 py-3 text-right">{["queued", "sending"].includes(campaign.status) && <Button type="button" size="sm" variant="outline" disabled={Boolean(processingCampaignId)} onClick={() => void processCampaign(campaign.id)} className="gap-2">{processingCampaignId === campaign.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} {campaign.status === "sending" ? "Resume" : "Send All"}</Button>}</td>
                 </tr>
               ))}
             </tbody>
