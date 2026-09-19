@@ -306,8 +306,8 @@ export class MetaWhatsAppService {
 
     const templateName =
       options?.templateName || getSanitizedEnv("META_OTP_TEMPLATE_NAME") || "road_auth_otp";
-    const languageCode = options?.languageCode || getSanitizedEnv("META_TEMPLATE_LANGUAGE") || "en";
-    const hasButton = getSanitizedEnv("META_OTP_HAS_BUTTON") === "true";
+    const languageCode = options?.languageCode || getSanitizedEnv("META_TEMPLATE_LANGUAGE") || "en_US";
+    const hasButton = getSanitizedEnv("META_OTP_HAS_BUTTON") !== "false";
 
     // Standard Meta WhatsApp OTP template format
     const components: MetaTemplateComponent[] = [
@@ -558,7 +558,7 @@ export class MetaWhatsAppService {
       };
     }
 
-    const languageCode = options?.languageCode || getSanitizedEnv("META_TEMPLATE_LANGUAGE") || "en";
+    const languageCode = options?.languageCode || getSanitizedEnv("META_TEMPLATE_LANGUAGE") || "en_US";
 
     const payload = {
       messaging_product: "whatsapp",
