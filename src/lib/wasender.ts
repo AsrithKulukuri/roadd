@@ -120,19 +120,40 @@ export function getWasenderMode(): WasenderMode {
 
 /**
  * Resolves active WhatsApp provider: "meta" (Meta WhatsApp Cloud API) or "wasender" (WaSenderAPI).
- * Controlled via WHATSAPP_PROVIDER environment variable.
+ * Controlled via WHATSAPP_PROVIDER environment variable with automatic fallback.
  */
 export function getWhatsAppProvider(): WhatsAppProvider {
   const explicit = (process.env.WHATSAPP_PROVIDER || "").trim().toLowerCase();
-  if (explicit === "meta") return "meta";
+
+  const hasMetaCredentials = Boolean(
+    (process.env.META_WHATSAPP_PHONE_NUMBER_ID ||
+      process.env.META_PHONE_NUMBER_ID ||
+      process.env.WHATSAPP_PHONE_NUMBER_ID ||
+      process.env.PHONE_NUMBER_ID) &&
+    (process.env.META_WHATSAPP_ACCESS_TOKEN ||
+      process.env.META_ACCESS_TOKEN ||
+      process.env.WHATSAPP_ACCESS_TOKEN ||
+      process.env.META_WHATSAPP_TOKEN)
+  );
+
+  const hasWasenderCredentials = Boolean(process.env.WASENDER_API_KEY);
+
+  if (explicit === "meta") {
+    // If explicitly set to meta, but Meta credentials are not yet configured in this environment,
+    // and wasender credentials exist, safely fallback to WaSender so login and messaging don't break
+    if (!hasMetaCredentials && hasWasenderCredentials) {
+      console.warn(
+        "[WHATSAPP PROVIDER] WHATSAPP_PROVIDER=meta requested, but Meta credentials are not set in environment. Falling back to WaSender."
+      );
+      return "wasender";
+    }
+    return "meta";
+  }
+
   if (explicit === "wasender") return "wasender";
 
-  // Auto-detect: if Meta credentials exist and WaSender API key is absent, use Meta
-  if (
-    process.env.META_WHATSAPP_PHONE_NUMBER_ID &&
-    (process.env.META_WHATSAPP_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN) &&
-    !process.env.WASENDER_API_KEY
-  ) {
+  // Auto-detect: if Meta credentials exist, default to Meta; otherwise wasender
+  if (hasMetaCredentials) {
     return "meta";
   }
 

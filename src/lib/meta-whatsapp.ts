@@ -79,10 +79,23 @@ function getMetaConfig(): {
   accessToken: string;
   apiVersion: string;
 } {
-  const phoneNumberId = getSanitizedEnv("META_WHATSAPP_PHONE_NUMBER_ID");
+  const phoneNumberId =
+    getSanitizedEnv("META_WHATSAPP_PHONE_NUMBER_ID") ||
+    getSanitizedEnv("META_PHONE_NUMBER_ID") ||
+    getSanitizedEnv("WHATSAPP_PHONE_NUMBER_ID") ||
+    getSanitizedEnv("PHONE_NUMBER_ID");
+
   const accessToken =
-    getSanitizedEnv("META_WHATSAPP_ACCESS_TOKEN") || getSanitizedEnv("META_ACCESS_TOKEN");
-  const apiVersion = getSanitizedEnv("META_WHATSAPP_API_VERSION") || "v21.0";
+    getSanitizedEnv("META_WHATSAPP_ACCESS_TOKEN") ||
+    getSanitizedEnv("META_ACCESS_TOKEN") ||
+    getSanitizedEnv("WHATSAPP_ACCESS_TOKEN") ||
+    getSanitizedEnv("META_WHATSAPP_TOKEN") ||
+    getSanitizedEnv("WHATSAPP_TOKEN");
+
+  const apiVersion =
+    getSanitizedEnv("META_WHATSAPP_API_VERSION") ||
+    getSanitizedEnv("META_API_VERSION") ||
+    "v21.0";
 
   return { phoneNumberId, accessToken, apiVersion };
 }
