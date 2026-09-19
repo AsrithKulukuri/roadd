@@ -260,6 +260,7 @@ export const navigationLinks = {
       { label: "Cookie Policy", href: "/cookies" },
       { label: "Disclaimer", href: "/disclaimer" },
       { label: "Grievance Redressal", href: "/grievance" },
+      { label: "User Data Deletion", href: "/data-deletion" },
     ],
   },
 } as const;
