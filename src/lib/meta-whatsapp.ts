@@ -55,12 +55,18 @@ export function getMetaWhatsAppMode(type: "otp" | "notification" = "otp"): MetaW
   }
 
   if (type === "otp") {
-    const otpMode = getSanitizedEnv("WASENDER_OTP_MODE").toLowerCase();
+    const otpMode = (
+      getSanitizedEnv("META_OTP_MODE") ||
+      getSanitizedEnv("WASENDER_OTP_MODE")
+    ).toLowerCase();
     if (otpMode === "live" || otpMode === "mock" || otpMode === "disabled") {
       return otpMode as MetaWhatsAppMode;
     }
   } else {
-    const notifMode = getSanitizedEnv("WASENDER_NOTIFICATION_MODE").toLowerCase();
+    const notifMode = (
+      getSanitizedEnv("META_NOTIFICATION_MODE") ||
+      getSanitizedEnv("WASENDER_NOTIFICATION_MODE")
+    ).toLowerCase();
     if (notifMode === "live" || notifMode === "mock" || notifMode === "disabled") {
       return notifMode as MetaWhatsAppMode;
     }

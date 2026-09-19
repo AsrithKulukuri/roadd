@@ -68,6 +68,20 @@ export async function getRegisteredUserByPhone(rawPhone: string) {
   ];
 
   try {
+    // Check whatsapp_contacts first for contact name fallback
+    let contactName = "";
+    for (const variant of phoneVariants) {
+      const { data: contact } = await supabaseAdmin
+        .from("whatsapp_contacts")
+        .select("name")
+        .eq("phone", variant)
+        .maybeSingle();
+      if (contact?.name && contact.name.trim()) {
+        contactName = contact.name.trim();
+        break;
+      }
+    }
+
     // 1. Check user_profiles
     for (const variant of phoneVariants) {
       const { data: userProfile } = await supabaseAdmin
@@ -79,7 +93,7 @@ export async function getRegisteredUserByPhone(rawPhone: string) {
       if (userProfile) {
         return {
           id: str(userProfile.id),
-          name: str(userProfile.full_name) || "Valued Member",
+          name: str(userProfile.full_name) || contactName || "Valued Member",
           email: str(userProfile.email),
           phone: str(userProfile.phone) || phone,
           role: str(userProfile.role) || "buyer",
@@ -100,7 +114,7 @@ export async function getRegisteredUserByPhone(rawPhone: string) {
       if (profile) {
         return {
           id: str(profile.id),
-          name: str(profile.full_name) || "Valued Member",
+          name: str(profile.full_name) || contactName || "Valued Member",
           email: str(profile.email),
           phone: str(profile.phone) || phone,
           role: str(profile.role) || "buyer",
@@ -121,13 +135,34 @@ export async function getRegisteredUserByPhone(rawPhone: string) {
       const meta = (authUser.user_metadata || {}) as LooseRecord;
       return {
         id: str(authUser.id),
-        name: str(meta.full_name) || str(meta.name) || "Valued Member",
+        name: str(meta.full_name) || str(meta.name) || contactName || "Valued Member",
         email: str(authUser.email),
         phone: str(authUser.phone) || phone,
         role: str(meta.role) || "buyer",
         isVerified: Boolean(authUser.phone_confirmed_at || authUser.email_confirmed_at),
         isProfileComplete: Boolean(meta.full_name && authUser.email),
       };
+    }
+
+    // 4. Check whatsapp_contacts as registered contact
+    for (const variant of phoneVariants) {
+      const { data: contact } = await supabaseAdmin
+        .from("whatsapp_contacts")
+        .select("id, name, phone, profile_id")
+        .eq("phone", variant)
+        .maybeSingle();
+
+      if (contact && (contact.name || contact.profile_id)) {
+        return {
+          id: str(contact.profile_id) || str(contact.id),
+          name: str(contact.name) || "Valued Member",
+          email: "",
+          phone: str(contact.phone) || phone,
+          role: "buyer",
+          isVerified: true,
+          isProfileComplete: Boolean(contact.name),
+        };
+      }
     }
   } catch (err) {
     console.warn("[CONCIERGE USER LOOKUP ERROR]", err);

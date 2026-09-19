@@ -2,6 +2,7 @@ import { timingSafeEqual, createHmac } from "node:crypto";
 import { normalizeWhatsAppPhone } from "@/lib/whatsapp-audience";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { processInboundWhatsAppMessage } from "@/lib/whatsapp/whatsapp-concierge";
+import { WasenderService } from "@/lib/wasender";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -180,13 +181,13 @@ export async function POST(request: Request) {
               text = String(msg.text.body).trim();
             } else if (msg.type === "interactive") {
               const interactive = msg.interactive || {};
-              if (interactive.type === "button_reply" && interactive.button_reply?.title) {
-                text = String(interactive.button_reply.title).trim();
-              } else if (interactive.type === "list_reply" && interactive.list_reply?.title) {
-                text = String(interactive.list_reply.title).trim();
+              if (interactive.type === "button_reply") {
+                text = String(interactive.button_reply?.title || interactive.button_reply?.id || "").trim();
+              } else if (interactive.type === "list_reply") {
+                text = String(interactive.list_reply?.title || interactive.list_reply?.id || "").trim();
               }
-            } else if (msg.type === "button" && msg.button?.text) {
-              text = String(msg.button.text).trim();
+            } else if (msg.type === "button") {
+              text = String(msg.button?.text || msg.button?.payload || "").trim();
             }
 
             if (!text) {
@@ -232,11 +233,22 @@ export async function POST(request: Request) {
               } catch (optOutErr) {
                 console.error("[META WEBHOOK OPT-OUT ERROR]", optOutErr);
               }
+
+              try {
+                await WasenderService.sendTextMessage(
+                  phone,
+                  "You have unsubscribed from ROAD FACING property updates. You will not receive broadcast messages.\n\nReply YES (or any message) to resume receiving updates again.",
+                  { requestId: `meta-stop-${Date.now()}` }
+                );
+              } catch (replyErr) {
+                console.warn("[META STOP REPLY ERROR]", replyErr);
+              }
+
               continue;
             }
 
             // B. Opt-In / Resubscribe (YES, START, RESUME)
-            const isResumeKeyword = [
+            const isExplicitResumeKeyword = [
               "YES",
               "START",
               "UNSTOP",
@@ -245,9 +257,9 @@ export async function POST(request: Request) {
               "AGREE",
               "OK",
               "OPTIN",
-              "HI",
-              "HELLO",
             ].includes(normalizedKeyword);
+
+            const isResumeKeyword = isExplicitResumeKeyword || ["HI", "HELLO"].includes(normalizedKeyword);
 
             try {
               const { data: existingContact } = await supabaseAdmin
@@ -256,24 +268,36 @@ export async function POST(request: Request) {
                 .eq("phone", phone)
                 .maybeSingle();
 
-              if (
+              const wasOptedOut =
                 existingContact &&
                 (!existingContact.is_subscribed ||
                   existingContact.opted_out_at ||
-                  existingContact.restriction_until)
-              ) {
-                if (isResumeKeyword || cleanText.length > 0) {
-                  await supabaseAdmin
-                    .from("whatsapp_contacts")
-                    .update({
-                      is_subscribed: true,
-                      opted_out_at: null,
-                      restriction_until: null,
-                      opted_in_at: now,
-                      consent_source: "whatsapp_user_keyword_meta",
-                      updated_at: now,
-                    })
-                    .eq("phone", phone);
+                  existingContact.restriction_until);
+
+              if (wasOptedOut && (isResumeKeyword || cleanText.length > 0)) {
+                await supabaseAdmin
+                  .from("whatsapp_contacts")
+                  .update({
+                    is_subscribed: true,
+                    opted_out_at: null,
+                    restriction_until: null,
+                    opted_in_at: now,
+                    consent_source: "whatsapp_user_keyword_meta",
+                    updated_at: now,
+                  })
+                  .eq("phone", phone);
+
+                if (isExplicitResumeKeyword) {
+                  try {
+                    await WasenderService.sendTextMessage(
+                      phone,
+                      "Welcome back! You have successfully resubscribed to ROAD FACING property updates.\n\nYou will now receive alerts on new properties, verified listings, and projects.",
+                      { requestId: `meta-resume-${Date.now()}` }
+                    );
+                  } catch (sendErr) {
+                    console.warn("[META RESUME REPLY ERROR]", sendErr);
+                  }
+                  continue;
                 }
               }
             } catch (resumeErr) {
