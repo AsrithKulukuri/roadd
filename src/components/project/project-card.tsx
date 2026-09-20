@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight, Ruler, SquareDashed, Trees, Heart, Share2, Sparkles, Award, Tag, Shield, Image as ImageIcon, Maximize2 } from "lucide-react";
+import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight, Ruler, SquareDashed, Trees, Heart, Share2, Sparkles, Award, Tag, Shield, Image as ImageIcon, Maximize2, Building, Calendar, Layers } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -135,6 +135,68 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
     : project.totalUnits
     ? `${project.totalUnits} ${isVilla ? "Villas" : "Units"}`
     : null;
+
+  // Little glass boxes specifications
+  const specItems: { label: string; icon: React.ElementType }[] = [];
+
+  // 1. Configs (e.g. "3 BHK", "2, 3 BHK")
+  if (configLabels.length > 0) {
+    specItems.push({
+      label: configLabels.length <= 2 ? configLabels.join(", ") : `${configLabels[0]} (+${configLabels.length - 1})`,
+      icon: isVilla ? Home : isVenture ? Landmark : Building2,
+    });
+  } else {
+    specItems.push({
+      label: `${TC.label}`,
+      icon: Icon,
+    });
+  }
+
+  // 2. Units / Plots / Villas
+  if (project.totalUnits) {
+    specItems.push({
+      label: `${project.totalUnits} ${isVilla ? "Villas" : isVenture ? "Plots" : "Units"}`,
+      icon: Layers,
+    });
+  }
+
+  // 3. Towers
+  if (project.totalTowers) {
+    specItems.push({
+      label: `${project.totalTowers} ${project.totalTowers === 1 ? "Tower" : "Towers"}`,
+      icon: Building,
+    });
+  }
+
+  // 4. Area (Total Area e.g. "5.5 Acres", or built-up range, or plot size range)
+  const projectArea = project.totalArea || (project.location as Record<string, unknown> | undefined)?.totalArea as string | undefined;
+  if (projectArea && projectArea.trim()) {
+    specItems.push({
+      label: projectArea.trim(),
+      icon: Maximize2,
+    });
+  } else if (builtUpRange) {
+    specItems.push({
+      label: builtUpRange,
+      icon: Maximize2,
+    });
+  } else if (plotSizeRange) {
+    specItems.push({
+      label: plotSizeRange,
+      icon: SquareDashed,
+    });
+  }
+
+  // 5. Possession Date
+  const rawPossession = project.possessionDate ||
+    (project.location as Record<string, unknown> | undefined)?.possessionDate as string | undefined ||
+    project.configurations?.find(c => c.possessionDate)?.possessionDate;
+  if (rawPossession && rawPossession.trim()) {
+    specItems.push({
+      label: rawPossession.trim(),
+      icon: Calendar,
+    });
+  }
 
   const { openProject } = useProjectOpenGuard();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -372,52 +434,36 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
         {/* Details Section */}
         <div className="p-4 flex-1 flex flex-col justify-between gap-3">
 
-          <div className="space-y-2.5">
-            {/* Title (2 lines clamp) & Locality */}
+          <div className="space-y-3">
+            {/* Title (2 lines clamp) & Locality (wraps to 2nd line if long) */}
             <div>
               <h3 className="font-bold text-text-primary text-base sm:text-lg leading-snug group-hover:text-amber-primary transition-colors line-clamp-2">
                 {project.name}
               </h3>
-              <div className="flex items-center gap-1.5 text-text-secondary text-xs mt-1 truncate">
-                <MapPin className="w-3.5 h-3.5 shrink-0 text-amber-primary" />
-                <span className="truncate">{project.location.locality}, {project.location.city}</span>
+              <div className="flex items-start gap-1.5 text-text-secondary text-xs mt-1.5">
+                <MapPin className="w-3.5 h-3.5 shrink-0 text-amber-primary mt-0.5" />
+                <span className="line-clamp-2 leading-relaxed font-medium">
+                  {project.location?.locality
+                    ? `${project.location.locality}, ${project.location.city}`
+                    : (project.location?.address || project.location?.city || "")}
+                </span>
               </div>
             </div>
 
-            {/* Clean 1-Row Config Pills */}
-            <div className="flex min-h-6 items-center gap-2 overflow-hidden text-xs font-semibold text-text-secondary">
-              {configLabels.length > 0 ? (
-                <>
-                  <span className="truncate">{configLabels[0]}</span>
-                  {configLabels.length > 1 && <span className="shrink-0 text-amber-600">+{configLabels.length - 1} more</span>}
-                </>
-              ) : (
-                <span className="text-text-tertiary">
-                  {TC.label} Project
-                </span>
-              )}
-            </div>
-
-            {/* Area Row */}
-            <div className="h-[18px] flex items-center gap-1.5 text-xs text-text-secondary">
-              {builtUpRange ? (
-                <>
-                  <Maximize2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span className="truncate font-medium">{builtUpRange}</span>
-                </>
-              ) : plotSizeRange ? (
-                <>
-                  <SquareDashed className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span className="truncate font-medium">{plotSizeRange}</span>
-                </>
-              ) : totalLabel ? (
-                <>
-                  <Trees className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span className="truncate font-medium">{totalLabel}</span>
-                </>
-              ) : (
-                <span className="text-text-tertiary text-[11px]">Premium Specifications</span>
-              )}
+            {/* Little Glass Boxes for Every Information */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              {specItems.map((item, idx) => {
+                const ItemIcon = item.icon;
+                return (
+                  <div
+                    key={idx}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100/90 dark:bg-white/[0.06] backdrop-blur-xs border border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-200 shadow-2xs transition-colors hover:border-amber-500/40 hover:bg-amber-500/5"
+                  >
+                    <ItemIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span className="truncate max-w-[150px]">{item.label}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
