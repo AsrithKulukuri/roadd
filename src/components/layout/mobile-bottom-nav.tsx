@@ -234,7 +234,7 @@ export function MobileBottomNav() {
       {/* ── Fixed Mobile Bottom Nav Bar ── */}
       <nav 
         aria-label="Mobile Navigation"
-        className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl border-t border-slate-200/80 dark:border-slate-800/80 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] py-1.5 px-3 safe-bottom"
+        className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl border-t border-slate-200/90 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] py-1.5 px-3 safe-bottom"
       >
         <div className="grid grid-cols-5 items-center justify-around max-w-md mx-auto relative">
           {navItems.map((item) => {
@@ -271,31 +271,35 @@ export function MobileBottomNav() {
                       className={cn(
                         "w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 relative border shadow-md",
                         item.isActive
-                          ? "bg-amber-500 border-amber-300 text-slate-950 shadow-[0_4px_16px_rgba(245,158,11,0.45)] ring-2 ring-amber-500/30"
-                          : "bg-slate-900 border-amber-500/50 text-amber-400 shadow-[0_3px_12px_rgba(0,0,0,0.25)] hover:border-amber-400 hover:scale-105"
+                          ? "bg-gradient-to-tr from-amber-500 to-amber-400 border-amber-300 text-slate-950 shadow-[0_4px_16px_rgba(250,173,19,0.45)] ring-4 ring-white dark:ring-slate-950 scale-105"
+                          : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 shadow-[0_3px_12px_rgba(0,0,0,0.08)] ring-4 ring-white dark:ring-slate-950 hover:border-amber-400 hover:text-amber-500 hover:scale-105"
                       )}
                     >
                       <SolidMapPin
                         className={cn(
                           "w-5.5 h-5.5 transition-transform duration-200",
-                          item.isActive ? "scale-110 text-slate-950" : "text-amber-400"
+                          item.isActive
+                            ? "scale-110 text-slate-950"
+                            : "text-slate-600 dark:text-slate-300 group-hover:text-amber-500"
                         )}
                       />
                       {/* Subtle location accent dot */}
                       <span
                         className={cn(
-                          "absolute top-2 right-2 w-1.5 h-1.5 rounded-full",
-                          item.isActive ? "bg-slate-950" : "bg-amber-400 ring-1 ring-slate-900"
+                          "absolute top-2 right-2 w-1.5 h-1.5 rounded-full transition-colors",
+                          item.isActive
+                            ? "bg-slate-950"
+                            : "bg-amber-500 ring-1 ring-white dark:ring-slate-900"
                         )}
                       />
                     </motion.div>
 
                     <span
                       className={cn(
-                        "text-[10px] tracking-tight mt-0.5 leading-tight font-extrabold",
+                        "text-[10px] tracking-tight mt-0.5 leading-tight transition-colors",
                         item.isActive
-                          ? "text-amber-500 dark:text-amber-400 font-black"
-                          : "text-slate-700 dark:text-slate-200"
+                          ? "text-amber-600 dark:text-amber-400 font-black"
+                          : "text-slate-500 dark:text-slate-400 font-medium group-hover:text-slate-700 dark:group-hover:text-slate-200"
                       )}
                     >
                       {item.label}
@@ -309,18 +313,18 @@ export function MobileBottomNav() {
               <motion.div
                 whileTap={{ scale: 0.92 }}
                 className={cn(
-                  "flex flex-col items-center justify-center py-1 rounded-2xl transition-all relative cursor-pointer group",
+                  "flex flex-col items-center justify-center py-1.5 px-1 transition-all relative cursor-pointer group",
                   item.isActive
-                    ? "text-amber-500 dark:text-amber-400 font-black"
-                    : "text-slate-700 dark:text-slate-300 hover:text-amber-500 font-bold"
+                    ? "text-amber-600 dark:text-amber-400 font-bold"
+                    : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 font-medium"
                 )}
               >
-                {/* Active Tab Spring Glow Pill */}
+                {/* Active Tab Top Indicator Bar */}
                 {item.isActive && (
                   <motion.div
-                    layoutId="mobileNavActivePill"
-                    className="absolute inset-0 bg-amber-500/10 dark:bg-amber-400/15 rounded-2xl -z-10"
-                    transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                    layoutId="mobileNavTopIndicator"
+                    className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-amber-500 rounded-full shadow-xs"
+                    transition={{ type: "spring", stiffness: 500, damping: 32 }}
                   />
                 )}
 
@@ -328,10 +332,10 @@ export function MobileBottomNav() {
                 <div className="relative flex items-center justify-center">
                   <Icon
                     className={cn(
-                      "w-5.5 h-5.5 transition-transform duration-200",
+                      "w-5.5 h-5.5 transition-all duration-200",
                       item.isActive
-                        ? "scale-110 text-[#faad13] drop-shadow-[0_2px_8px_rgba(250,173,19,0.35)]"
-                        : "text-[#faad13]/85 group-hover:text-[#faad13]"
+                        ? "scale-110 text-amber-500 drop-shadow-[0_2px_8px_rgba(250,173,19,0.35)]"
+                        : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300"
                     )}
                   />
 
@@ -354,10 +358,10 @@ export function MobileBottomNav() {
                 {/* Text Label */}
                 <span
                   className={cn(
-                    "text-[10px] tracking-tight mt-1 leading-tight font-bold",
+                    "text-[10px] tracking-tight mt-1 leading-tight transition-colors duration-200",
                     item.isActive
-                      ? "text-[#faad13] font-black"
-                      : "text-slate-700 dark:text-slate-300 group-hover:text-[#faad13]"
+                      ? "text-amber-600 dark:text-amber-400 font-bold"
+                      : "text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300 font-semibold"
                   )}
                 >
                   {item.label}

@@ -19,7 +19,6 @@ import {
   Clock,
   UserCheck,
   Sparkles,
-  Mic,
   ArrowRight,
   Hash,
   Loader2,
@@ -71,7 +70,6 @@ export function RealtorSearchHeader({
   const [isFocused, setIsFocused] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [openDropdown, setOpenDropdown] = useState<"price" | "rooms" | null>(null);
-  const [isListening, setIsListening] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -169,29 +167,6 @@ export function RealtorSearchHeader({
     setIsFocused(false);
     onFilterChange({ ...filters, query: searchInput });
     setTimeout(() => setIsSubmitting(false), 400);
-  };
-
-  // Web Speech API Voice Search Handler
-  const handleVoiceSearch = () => {
-    if (typeof window !== "undefined" && ("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.lang = "en-IN";
-      recognition.interimResults = false;
-
-      recognition.onstart = () => setIsListening(true);
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setSearchInput(transcript);
-        onFilterChange({ ...filters, query: transcript });
-        setIsListening(false);
-      };
-      recognition.onerror = () => setIsListening(false);
-      recognition.onend = () => setIsListening(false);
-      recognition.start();
-    } else {
-      alert("Voice search is not supported by your browser. Try typing your search.");
-    }
   };
 
   const currentSuggestion = CAROUSEL_SUGGESTIONS[suggestionIndex];
@@ -300,19 +275,6 @@ export function RealtorSearchHeader({
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
-
-                {/* VOICE SEARCH MICROPHONE BUTTON */}
-                <button
-                  type="button"
-                  onClick={handleVoiceSearch}
-                  title={isListening ? "Listening..." : "Voice Search"}
-                  className={cn(
-                    "p-1 sm:p-1.5 rounded-full text-slate-400 hover:text-amber-500 transition-colors cursor-pointer",
-                    isListening && "text-amber-500 bg-amber-500/10 animate-pulse"
-                  )}
-                >
-                  <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-                </button>
 
                 {/* Search Icon Submit Button */}
                 <button

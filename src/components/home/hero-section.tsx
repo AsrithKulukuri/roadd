@@ -23,7 +23,6 @@ import {
   IndianRupee,
   X,
   Loader2,
-  Mic,
   RotateCcw,
 } from "lucide-react";
 import { HOME_SECTION_ICONS } from "@/lib/home-section-icons";
