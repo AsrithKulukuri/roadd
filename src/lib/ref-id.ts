@@ -4,10 +4,19 @@ import type { Project } from "@/types/project";
 /**
  * Returns a standardized reference ID for any property or project (e.g. "REF101", "REF123")
  */
-export function getRefId(item: Property | Project | { id?: string; slug?: string; title?: string; name?: string; refId?: string } | null | undefined): string {
+export function getRefId(item: Property | Project | { id?: string; slug?: string; title?: string; name?: string; refId?: string; location?: Record<string, unknown>; attributes?: Record<string, unknown> } | null | undefined): string {
   if (!item) return "";
-  if (item.refId && item.refId.trim()) {
-    const rawRef = item.refId.trim().toUpperCase().replace(/[\s-_]/g, "");
+  const rawRecord = item as Record<string, unknown>;
+  const loc = (typeof rawRecord.location === "object" && rawRecord.location !== null) ? (rawRecord.location as Record<string, unknown>) : undefined;
+  const attr = (typeof rawRecord.attributes === "object" && rawRecord.attributes !== null) ? (rawRecord.attributes as Record<string, unknown>) : undefined;
+  const explicitRef = (typeof item.refId === "string" && item.refId.trim())
+    || (typeof loc?.refId === "string" && (loc.refId as string).trim())
+    || (typeof attr?.refId === "string" && (attr.refId as string).trim())
+    || (typeof rawRecord.ref_id === "string" && (rawRecord.ref_id as string).trim())
+    || undefined;
+
+  if (explicitRef) {
+    const rawRef = explicitRef.trim().toUpperCase().replace(/[\s-_]/g, "");
     return rawRef.startsWith("REF") ? rawRef : `REF${rawRef}`;
   }
 

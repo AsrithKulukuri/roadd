@@ -114,6 +114,8 @@ export interface Project {
     pincode?: string;
     latitude: number;
     longitude: number;
+    refId?: string;
+    [key: string]: unknown;
   };
 
   // Compliance

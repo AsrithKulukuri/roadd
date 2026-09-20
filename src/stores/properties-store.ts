@@ -35,6 +35,10 @@ export function toSupabaseProperty(prop: Partial<Property>): Record<string, unkn
 
   // Store all structured real-estate attributes in attributes JSONB for 100% database persistence reliability
   const existingAttributes = (p.attributes as Record<string, unknown>) || {};
+  const cleanRef = typeof p.refId === 'string' ? p.refId.trim().toUpperCase() : (typeof existingAttributes.refId === 'string' ? existingAttributes.refId : undefined);
+  if (cleanRef) {
+    p.refId = cleanRef;
+  }
   p.attributes = {
     ...existingAttributes,
     saleType: p.saleType,
@@ -54,6 +58,7 @@ export function toSupabaseProperty(prop: Partial<Property>): Record<string, unkn
     waterSource: p.waterSource ?? existingAttributes.waterSource,
     cultivationCrop: p.cultivationCrop,
     isRoadExclusive: p.isRoadExclusive,
+    refId: cleanRef,
   };
 
   // Strip keys that are not valid columns in Supabase
@@ -68,8 +73,18 @@ export function toSupabaseProperty(prop: Partial<Property>): Record<string, unkn
 
 export function fromSupabaseProperty(p: Record<string, unknown>): Property {
   const attr = (p.attributes as Record<string, unknown>) || {};
+  const explicitRef = (typeof p.refId === 'string' && p.refId.trim()) 
+    || (typeof (p as Record<string, unknown>).ref_id === 'string' && ((p as Record<string, unknown>).ref_id as string).trim()) 
+    || (typeof attr.refId === 'string' && attr.refId.trim()) 
+    || undefined;
+  const rawId = typeof p.id === 'string' ? p.id : '';
+  const refId = explicitRef
+    ? (explicitRef.toUpperCase().startsWith("REF") ? explicitRef.toUpperCase() : `REF${explicitRef.toUpperCase()}`)
+    : (rawId ? `REF${(rawId.replace(/\D/g, "") || "100").padStart(3, "0").slice(0, 5)}` : undefined);
+
   return {
     ...(p as unknown as Property),
+    refId,
     isRoadExclusive: Boolean((p.isRoadExclusive as boolean | undefined) ?? (attr.isRoadExclusive as boolean | undefined) ?? false),
     saleType: (p.saleType as "new" | "resale" | undefined) || (attr.saleType as "new" | "resale" | undefined) || "new",
     pricePerSqft: (p.pricePerSqft as number | undefined) ?? (p.pricePerSqFt as number | undefined) ?? 0,
@@ -436,20 +451,22 @@ export const usePropertiesStore = create<PropertiesState>()(
         const property = get().properties.find((item) => item.id === id);
         if (!property) return false;
         const cleanRef = refId.trim().toUpperCase();
+        const existingAttr = (property.attributes as Record<string, unknown>) || {};
+        const updatedAttr = { ...existingAttr, refId: cleanRef };
 
         set((state) => ({
           properties: state.properties.map((item) =>
-            item.id === id ? { ...item, refId: cleanRef } : item
+            item.id === id ? { ...item, refId: cleanRef, attributes: updatedAttr } : item
           ),
         }));
 
         try {
-          await savePropertyToServer("update", { refId: cleanRef }, id);
+          await savePropertyToServer("update", { refId: cleanRef, attributes: updatedAttr }, id);
           return true;
         } catch (error: unknown) {
           set((state) => ({
             properties: state.properties.map((item) =>
-              item.id === id ? { ...item, refId: property.refId } : item
+              item.id === id ? { ...item, refId: property.refId, attributes: property.attributes } : item
             ),
           }));
           toast.error(error instanceof Error ? error.message : "Reference ID was not saved.");

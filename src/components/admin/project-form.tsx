@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -171,7 +171,22 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   // ── Step 1 ──
   const [projectType, setProjectType]         = useState<ProjectType>(initialData?.projectType ?? "apartment");
   const [name, setName]                       = useState(initialData?.name ?? "");
-  const [refId, setRefId]                     = useState(initialData?.refId ?? `REF${generatedRefId}`);
+  const initialRefId = 
+    initialData?.refId || 
+    (initialData?.location as any)?.refId || 
+    (initialData as any)?.ref_id || 
+    "";
+  const [refId, setRefId]                     = useState(initialRefId || `REF${generatedRefId}`);
+
+  useEffect(() => {
+    if (initialData) {
+      const incomingRef = initialData.refId || (initialData.location as any)?.refId || (initialData as any)?.ref_id;
+      if (incomingRef && typeof incomingRef === "string" && incomingRef.trim()) {
+        setRefId(incomingRef.trim().toUpperCase());
+      }
+    }
+  }, [initialData]);
+
   const [tagline, setTagline]                         = useState(initialData?.tagline ?? "");
   const [description, setDescription]                 = useState(initialData?.description ?? "");
   const [builderName, setBuilderName]                 = useState(initialData?.builderName ?? "");
@@ -533,6 +548,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       builderProjectsCount: builderProjectsCount.trim() || undefined,
       location: {
         address: address.trim(), locality: locality.trim(), city: city.trim(), state: locState.trim(), pincode: pincode.trim() || undefined, latitude: lat, longitude: lng,
+        refId: refId.trim().toUpperCase() || undefined,
         ...(crdaReviewReference.trim() ? { crdaReview: { reference: crdaReviewReference.trim(), approved: crdaReviewApproved, requested: true } } : {}),
       },
       reraId: reraId.trim() || undefined,

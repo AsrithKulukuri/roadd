@@ -50,6 +50,18 @@ export async function POST(request: NextRequest) {
       payload.location = loc;
     }
 
+    // Always mirror refId into location JSONB for fail-safe persistence across database schemas
+    if (payload.refId !== undefined) {
+      const cleanRef = typeof payload.refId === "string" ? payload.refId.trim().toUpperCase() : undefined;
+      if (cleanRef) {
+        payload.refId = cleanRef;
+        const loc = (payload.location && typeof payload.location === "object")
+          ? { ...(payload.location as Record<string, unknown>), refId: cleanRef }
+          : { refId: cleanRef };
+        payload.location = loc;
+      }
+    }
+
     if (body.mode === "update" && !body.id && !body.slug) {
       return NextResponse.json({ success: false, error: "Project identifier required" }, { status: 400 });
     }
@@ -74,6 +86,15 @@ export async function POST(request: NextRequest) {
     // If the physical isRoadExclusive column does not exist on Supabase, retry without it (already safely stored in location)
     if (error && (error.message.includes("isRoadExclusive") || error.message.includes("does not exist"))) {
       delete payload.isRoadExclusive;
+      const retryResult = await executeSave(payload);
+      data = retryResult.data;
+      error = retryResult.error;
+    }
+
+    // If the physical refId column does not exist on Supabase, retry without it (already safely stored in location)
+    if (error && (error.message.includes("refId") || error.message.includes("ref_id") || error.message.includes("does not exist"))) {
+      delete payload.refId;
+      delete (payload as Record<string, unknown>).ref_id;
       const retryResult = await executeSave(payload);
       data = retryResult.data;
       error = retryResult.error;

@@ -306,8 +306,16 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
   const configsText = (project.configurations || []).map(c => `${c.label || ""} ${c.bedrooms ? c.bedrooms + "bhk " + c.bedrooms + "bk " + c.bedrooms + " bed" : ""} ${c.facing?.join(" ") || ""}`).join(" ").toLowerCase();
   const tagsText = `${(project.highlights || []).join(" ")} ${(project.facilities || []).map((f: any) => typeof f === 'string' ? f : (f?.name || f?.label || "")).join(" ")}`.toLowerCase();
   const titleAndDesc = `${project.name || ""} ${project.tagline || ""} ${project.description || ""}`.toLowerCase();
+  const refText = `${project.refId || ""} ${(project.location as any)?.refId || ""}`.toLowerCase();
 
-  const fullCorpus = `${titleAndDesc} ${locationText} ${builderText} ${projectTypeText} ${configsText} ${tagsText}`;
+  // Instant direct match if query matches project's Ref ID directly
+  const cleanRef = refText.replace(/[\s-_]/g, "");
+  const cleanNorm = norm.replace(/[\s-_]/g, "");
+  if (cleanRef && (cleanRef.includes(cleanNorm) || cleanNorm.includes(cleanRef.replace("ref", "")))) {
+    return true;
+  }
+
+  const fullCorpus = `${titleAndDesc} ${locationText} ${builderText} ${projectTypeText} ${configsText} ${tagsText} ${refText}`;
 
   // 1. Budget / Max Price check: If user specified max budget, project's starting price MUST be within budget
   if (intent.maxPrice) {

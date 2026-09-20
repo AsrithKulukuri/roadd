@@ -40,6 +40,18 @@ export async function POST(request: Request) {
       cleanPayload.attributes = attr;
     }
 
+    // Always mirror refId into attributes JSONB for fail-safe persistence
+    if (cleanPayload.refId !== undefined) {
+      const cleanRef = typeof cleanPayload.refId === "string" ? cleanPayload.refId.trim().toUpperCase() : undefined;
+      if (cleanRef) {
+        cleanPayload.refId = cleanRef;
+        const attr = (cleanPayload.attributes && typeof cleanPayload.attributes === "object")
+          ? { ...(cleanPayload.attributes as Record<string, unknown>), refId: cleanRef }
+          : { refId: cleanRef };
+        cleanPayload.attributes = attr;
+      }
+    }
+
     if (mode === "update" && !id) {
       return NextResponse.json({ success: false, error: "Property identifier required." }, { status: 400 });
     }
@@ -61,6 +73,15 @@ export async function POST(request: Request) {
     // If the physical isRoadExclusive column does not exist on Supabase, retry without it (already safely stored in attributes)
     if (error && (error.message.includes("isRoadExclusive") || error.message.includes("does not exist"))) {
       delete cleanPayload.isRoadExclusive;
+      const retryResult = await executeSave(cleanPayload);
+      data = retryResult.data;
+      error = retryResult.error;
+    }
+
+    // If the physical refId column does not exist on Supabase, retry without it (already safely stored in attributes)
+    if (error && (error.message.includes("refId") || error.message.includes("ref_id") || error.message.includes("does not exist"))) {
+      delete cleanPayload.refId;
+      delete (cleanPayload as Record<string, unknown>).ref_id;
       const retryResult = await executeSave(cleanPayload);
       data = retryResult.data;
       error = retryResult.error;

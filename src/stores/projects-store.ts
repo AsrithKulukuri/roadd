@@ -14,7 +14,8 @@ const VALID_PROJECT_COLUMNS = new Set([
   'configurations', 'images', 'coverImage', 'videoUrl',
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
-  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory'
+  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory',
+  'refId', 'masterPlanUrl', 'videoThumbnail'
 ]);
 
 // Public projection columns excluding private builder contact numbers
@@ -26,7 +27,8 @@ const PUBLIC_PROJECT_SELECT = [
   'configurations', 'images', 'coverImage', 'videoUrl',
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
-  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory'
+  'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory',
+  'refId', 'masterPlanUrl', 'videoThumbnail'
 ].join(',');
 
 export function toSupabaseProject(proj: Partial<Project>): Record<string, unknown> {
@@ -121,6 +123,17 @@ export function toSupabaseProject(proj: Partial<Project>): Record<string, unknow
     }
   }
 
+  // Persist refId safely across Supabase JSONB fields (location)
+  if (p.refId !== undefined) {
+    const cleanRef = typeof p.refId === 'string' ? p.refId.trim().toUpperCase() : undefined;
+    if (cleanRef) {
+      p.refId = cleanRef;
+      if (p.location && typeof p.location === 'object') {
+        p.location = { ...(p.location as Record<string, unknown>), refId: cleanRef };
+      }
+    }
+  }
+
   // Strip keys that are not valid columns in Supabase
   const cleaned: Record<string, unknown> = {};
   for (const key of Object.keys(p)) {
@@ -176,7 +189,12 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
   delete cleanObj.builder_whatsapp;
 
   const rawId = typeof p.id === 'string' ? p.id : '';
-  const refId = typeof p.refId === 'string' ? p.refId : (rawId ? `REF${(rawId.replace(/\D/g, "") || "100").padStart(3, "0").slice(0, 5)}` : undefined);
+  const rawLocationRef = typeof rawLocation?.refId === 'string' ? rawLocation.refId : undefined;
+  const directRef = typeof p.refId === 'string' ? p.refId : (typeof p.ref_id === 'string' ? p.ref_id : undefined);
+  const explicitRef = (directRef && directRef.trim()) || (rawLocationRef && rawLocationRef.trim()) || undefined;
+  const refId = explicitRef 
+    ? (explicitRef.toUpperCase().startsWith("REF") ? explicitRef.toUpperCase() : `REF${explicitRef.toUpperCase()}`)
+    : (rawId ? `REF${(rawId.replace(/\D/g, "") || "100").padStart(3, "0").slice(0, 5)}` : undefined);
   const builderObj = p.builder as { name?: string; logoUrl?: string | null } | undefined;
 
   return {
@@ -456,14 +474,18 @@ export const useProjectsStore = create<ProjectsState>()(
         if (!project) return false;
         const cleanRef = refId.trim().toUpperCase();
 
+        const updatedLocation = (project.location && typeof project.location === 'object')
+          ? { ...(project.location as Record<string, unknown>), refId: cleanRef }
+          : { refId: cleanRef };
+
         set((state) => ({
           projects: state.projects.map((item) =>
-            item.id === id ? { ...item, refId: cleanRef, updatedAt: new Date().toISOString() } : item
+            item.id === id ? { ...item, refId: cleanRef, location: updatedLocation as any, updatedAt: new Date().toISOString() } : item
           ),
         }));
 
         try {
-          await saveProjectMutation(id, { refId: cleanRef });
+          await saveProjectMutation(id, { refId: cleanRef, location: updatedLocation });
           return true;
         } catch (error: unknown) {
           set((state) => ({
