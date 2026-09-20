@@ -3,6 +3,7 @@ import { normalizeWhatsAppPhone } from "@/lib/whatsapp-audience";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { processInboundWhatsAppMessage } from "@/lib/whatsapp/whatsapp-concierge";
 import { WasenderService } from "@/lib/wasender";
+import { recordWhatsAppReceipt } from "@/lib/whatsapp/message-log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,6 +84,8 @@ export async function POST(request: Request) {
     const appSecret = (process.env.META_APP_SECRET || process.env.META_WHATSAPP_APP_SECRET)?.trim();
     const signature = request.headers.get("x-hub-signature-256");
 
+    if (!appSecret) return plainTextResponse("Webhook app secret is not configured", 503);
+    if (!signature) return plainTextResponse("Missing webhook signature", 401);
     if (appSecret && signature) {
       const expectedSig = "sha256=" + createHmac("sha256", appSecret).update(rawBody).digest("hex");
       if (!safeEqual(signature, expectedSig)) {
@@ -124,6 +127,8 @@ export async function POST(request: Request) {
         // 1. Handle Delivery Status Updates (sent, delivered, read, failed)
         if (Array.isArray(value.statuses)) {
           for (const statusObj of value.statuses) {
+            await recordWhatsAppReceipt("meta", String(statusObj.id || ""), statusObj.status,
+              statusObj.timestamp, statusObj.errors?.[0]?.title || statusObj.errors?.[0]?.message);
             console.log(
               `[META WEBHOOK STATUS] ID: ${statusObj.id}, Status: ${statusObj.status}, Recipient: ${statusObj.recipient_id}`
             );
@@ -322,9 +327,9 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error("[META WEBHOOK POST FATAL ERROR]", err);
-    // Return 200 anyway so Meta does not repeatedly retry failed events causing retry storms
-    return new Response("EVENT_RECEIVED", {
-      status: 200,
+    // Request a retry when receipt persistence fails.
+    return new Response("Webhook processing failed", {
+      status: 500,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   }

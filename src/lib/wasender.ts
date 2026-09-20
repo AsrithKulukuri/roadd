@@ -2,16 +2,19 @@ import { WasenderAPIResponse } from "@/types/auth";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
 import { resolveExternalMediaUrl } from "@/lib/aws/presign";
 import { MetaWhatsAppService } from "@/lib/meta-whatsapp";
+import { trackWhatsAppSend } from "@/lib/whatsapp/message-log";
 
 export type WasenderMode = "disabled" | "mock" | "live";
 export type WhatsAppProvider = "meta" | "wasender";
 
 export interface WasenderSendOptions {
+  recipientType?: "user" | "builder" | "admin";
   requestId?: string;
   templateName?: string;
   languageCode?: string;
   components?: Array<Record<string, any>>;
   fallbackText?: string;
+  allowFreeformOnly?: boolean;
 }
 
 export interface WasenderExecutionResult extends WasenderAPIResponse {
@@ -214,7 +217,7 @@ function logWasenderDiagnostic(meta: {
  * Industrial-grade WhatsApp OTP and notification client with separate OTP/Notification modes,
  * bounded retries with exponential backoff, and sanitized diagnostics.
  */
-export class WasenderService {
+class WasenderTransport {
   /**
    * Send WhatsApp OTP Message via WasenderAPI
    *
@@ -356,16 +359,14 @@ export class WasenderService {
    * @param message - Message body to send
    * @param options - Additional options
    */
-  static async sendTextMessage(
+  /**
+   * Internal implementation of text message delivery via Wasender API
+   */
+  private static async sendTextMessageViaWasender(
     phone: string,
     message: string,
     options?: WasenderSendOptions
   ): Promise<WasenderExecutionResult> {
-    // Route to official Meta WhatsApp Cloud API when WHATSAPP_PROVIDER=meta
-    if (getWhatsAppProvider() === "meta") {
-      return MetaWhatsAppService.sendTextMessage(phone, message, options);
-    }
-
     const startTime = Date.now();
     const requestId = options?.requestId || `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const cleanPhone = formatWhatsAppPhone(phone);
@@ -459,6 +460,57 @@ export class WasenderService {
       startTime,
       logPrefix: "NOTIF",
     });
+  }
+
+  /**
+   * Send Generic Text / Notification Message with automatic dual-provider fallback.
+   *
+   * @param phone - Recipient phone number
+   * @param message - Message body to send
+   * @param options - Additional options
+   */
+  static async sendTextMessage(
+    phone: string,
+    message: string,
+    options?: WasenderSendOptions
+  ): Promise<WasenderExecutionResult> {
+    const provider = getWhatsAppProvider();
+
+    // 1. If provider is Meta, attempt Meta Cloud API first
+    if (provider === "meta") {
+      const metaResult = await MetaWhatsAppService.sendTextMessage(phone, message, options);
+      if (metaResult.success) {
+        return { ...metaResult, provider: "meta" };
+      }
+
+      // If Meta failed, attempt fallback to WaSender if configured
+      if (getSanitizedEnv("WASENDER_API_KEY")) {
+        console.warn("[WHATSAPP] Meta WhatsApp delivery failed. Attempting fallback to WaSender...", metaResult.error);
+        const wasenderResult = await this.sendTextMessageViaWasender(phone, message, options);
+        if (wasenderResult.success) {
+          return { ...wasenderResult, provider: "wasender" };
+        }
+      }
+
+      return { ...metaResult, provider: "meta" };
+    }
+
+    // 2. Default: Attempt WaSender first
+    const wasenderResult = await this.sendTextMessageViaWasender(phone, message, options);
+    if (wasenderResult.success) {
+      return { ...wasenderResult, provider: "wasender" };
+    }
+
+    // If WaSender failed (e.g. session disconnected), attempt fallback to Meta Cloud API
+    if (getSanitizedEnv("META_WHATSAPP_ACCESS_TOKEN")) {
+      console.warn("[WHATSAPP] WaSender delivery failed. Attempting fallback to Meta WhatsApp...", wasenderResult.error);
+      const metaResult = await MetaWhatsAppService.sendTextMessage(phone, message, options);
+      if (metaResult.success) {
+        return { ...metaResult, provider: "meta" };
+      }
+    }
+
+    return { ...wasenderResult, provider: "wasender" };
   }
 
   /**
@@ -761,5 +813,25 @@ export class WasenderService {
       errorCategory: "PROVIDER_UNAVAILABLE",
       durationMs: Date.now() - ctx.startTime,
     };
+  }
+}
+
+// All application sends pass through this boundary, including validation failures and mocks.
+export class WasenderService {
+  static sendOTPMessage(phone: string, otp: string, options?: WasenderSendOptions) {
+    return trackWhatsAppSend({ phone, provider: getWhatsAppProvider(), messageType: "otp", message: "[REDACTED]", requestId: options?.requestId, recipientType: options?.recipientType },
+      () => WasenderTransport.sendOTPMessage(phone, otp, options));
+  }
+  static sendTextMessage(phone: string, message: string, options?: WasenderSendOptions) {
+    return trackWhatsAppSend({ phone, provider: getWhatsAppProvider(), messageType: "text", message, requestId: options?.requestId, recipientType: options?.recipientType, templateName: options?.templateName },
+      () => WasenderTransport.sendTextMessage(phone, message, options));
+  }
+  static sendImageMessage(phone: string, imageUrl: string, text: string, options?: WasenderSendOptions) {
+    return trackWhatsAppSend({ phone, provider: getWhatsAppProvider(), messageType: "image", message: text, mediaUrl: imageUrl, requestId: options?.requestId, recipientType: options?.recipientType },
+      () => WasenderTransport.sendImageMessage(phone, imageUrl, text, options));
+  }
+  static sendTemplateMessage(phone: string, templateName: string, options?: WasenderSendOptions) {
+    return trackWhatsAppSend({ phone, provider: getWhatsAppProvider(), messageType: "template", message: options?.fallbackText || JSON.stringify(options?.components || []), templateName, requestId: options?.requestId, recipientType: options?.recipientType },
+      () => WasenderTransport.sendTemplateMessage(phone, templateName, options));
   }
 }

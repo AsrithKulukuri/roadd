@@ -4,6 +4,7 @@ import { getSanitizedEnv, WasenderService } from "@/lib/wasender";
 import { normalizeWhatsAppPhone } from "@/lib/whatsapp-audience";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { processInboundWhatsAppMessage } from "@/lib/whatsapp/whatsapp-concierge";
+import { recordWhatsAppReceipt } from "@/lib/whatsapp/message-log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -107,8 +108,10 @@ export async function POST(request: Request) {
       new URL(request.url).searchParams.get("secret") ||
       "";
 
-    // Validate secret if configured
-    if (configuredSecret && providedSignature) {
+    if (!configuredSecret) {
+      return NextResponse.json({ error: "Webhook secret is not configured" }, { status: 503 });
+    }
+    if (configuredSecret) {
       if (!safeEqual(providedSignature, configuredSecret)) {
         console.warn("[WASENDER WEBHOOK] Secret signature mismatch.");
         return NextResponse.json({ received: false, error: "Invalid webhook secret." }, { status: 401 });
@@ -116,6 +119,21 @@ export async function POST(request: Request) {
     }
 
     const payload = asRecord(await request.json().catch(() => null));
+    if (payload.event === "messages.update") {
+      const updates = Array.isArray(payload.data) ? payload.data : [payload.data];
+      const statuses: Record<string, string> = { "0": "failed", "2": "sent", "3": "delivered", "4": "read", "5": "read" };
+      for (const item of updates) {
+        const data = asRecord(item);
+        const key = asRecord(data.key);
+        const update = asRecord(data.update);
+        const status = statuses[String(update.status)];
+        if (status && key.id) {
+          await recordWhatsAppReceipt("wasender", String(key.id), status, payload.timestamp,
+            status === "failed" ? "WhatsApp provider reported a delivery failure" : undefined);
+        }
+      }
+      return NextResponse.json({ received: true });
+    }
     const incoming = extractIncomingMessage(payload);
     if (!incoming || incoming.fromMe) {
       return NextResponse.json({ received: true, ignored: true, reason: incoming?.fromMe ? "outbound" : "unrecognized_format" });

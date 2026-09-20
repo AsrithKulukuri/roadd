@@ -6,6 +6,7 @@ import { formatPriceCompact, formatINR } from "@/lib/utils";
 import { getRefId } from "@/lib/ref-id";
 import { requireAdmin } from "@/lib/server-auth-guard";
 import { resolveExternalMediaUrl } from "@/lib/aws/presign";
+import { trackWhatsAppSend } from "@/lib/whatsapp/message-log";
 
 function getSupabaseAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -182,7 +183,13 @@ export async function POST(req: NextRequest) {
         };
       }
 
-      const res = await fetch(endpoint, {
+      const result = await trackWhatsAppSend({
+        phone: targetPhone, provider: "meta", messageType: mode === "template" ? "template" : "text",
+        message: mode === "template" ? JSON.stringify(payload.template.components) : payload.text.body,
+        templateName: mode === "template" ? templateName : undefined,
+        mediaUrl: imageUrl, requestId: `property-share-${item.id}-${crypto.randomUUID()}`,
+      }, async () => {
+        const res = await fetch(endpoint, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -191,17 +198,15 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("[WhatsApp Cloud API Error]:", data);
-        const errMsg = data.error?.message || "Failed to send WhatsApp message via Meta Cloud API";
-        return NextResponse.json({ success: false, error: errMsg }, { status: res.status });
-      }
+        const data = await res.json();
+        return { success: res.ok, id: data.messages?.[0]?.id, statusCode: res.status,
+          error: res.ok ? undefined : data.error?.message || "Failed to send WhatsApp message via Meta Cloud API" };
+      });
+      if (!result.success) return NextResponse.json({ success: false, error: result.error }, { status: result.statusCode || 502 });
 
       return NextResponse.json({
         success: true,
-        messageId: data.messages?.[0]?.id,
+        messageId: result.id,
         recipient: targetPhone,
         propertyTitle: title,
         refId,
@@ -209,6 +214,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Graceful response when credentials are not yet set in environment (Dev/Sandbox Mode)
+    await trackWhatsAppSend({ phone: targetPhone, provider: "meta", messageType: "template",
+      message: `${title}\n${location}\n${priceFormatted}\n${propertyUrl}`, templateName, mediaUrl: imageUrl,
+    }, async () => ({ success: true, simulated: true }));
     return NextResponse.json({
       success: true,
       mode: "simulated",

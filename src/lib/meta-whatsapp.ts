@@ -386,8 +386,14 @@ export class MetaWhatsAppService {
   }
 
   /**
-   * Send Generic Text Message via Meta WhatsApp Cloud API.
-   * Works for free-form messages within the 24-hour service window.
+   * Send Text / Notification Message via Meta WhatsApp Cloud API.
+   *
+   * Note on Meta Cloud API 24-Hour Policy:
+   * - Business-initiated messages outside the 24-hour service window MUST use an approved template.
+   * - Free-form text (type: "text") is dropped asynchronously by Meta if the recipient hasn't messaged within 24h.
+   * - When allowFreeformOnly is true, sends direct freeform text (for active 24h chat replies).
+   * - Otherwise, formats and delivers the notification via the pre-approved template (road_listing_update),
+   *   falling back to freeform text if the template is not accessible.
    */
   static async sendTextMessage(
     phone: string,
@@ -430,7 +436,84 @@ export class MetaWhatsAppService {
       };
     }
 
-    const payload = {
+    // 1. Explicit template requested
+    if (options?.templateName) {
+      return this.sendTemplateMessage(cleanPhone, options.templateName, {
+        languageCode: options.languageCode,
+        components: options.components as any,
+        requestId,
+      });
+    }
+
+    // 2. Explicit freeform requested (e.g. Concierge / active 24h chat conversation)
+    if (options?.allowFreeformOnly) {
+      const payload = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: cleanPhone,
+        type: "text",
+        text: {
+          preview_url: true,
+          body: message,
+        },
+      };
+
+      return this.executeGraphApi(payload, {
+        requestId,
+        mode,
+        startTime,
+        logPrefix: "TEXT_FREEFORM",
+      });
+    }
+
+    // 3. Outbound Business Notification:
+    // Sanitize parameter to comply with Meta's strict template rules:
+    // Positional parameters cannot have newlines (\n, \r), tabs (\t), or 4+ consecutive spaces.
+    const sanitizedParam = message
+      .replace(/\r?\n+/g, " • ")
+      .replace(/\s{2,}/g, " ")
+      .replace(/[•\s]+$/, "")
+      .trim()
+      .slice(0, 1024);
+
+    const templateName =
+      getSanitizedEnv("META_NOTIFICATION_TEMPLATE_NAME") || "road_listing_update";
+    const languageCode = options?.languageCode || getSanitizedEnv("META_TEMPLATE_LANGUAGE") || "en_US";
+
+    const templatePayload = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: cleanPhone,
+      type: "template",
+      template: {
+        name: templateName,
+        language: { code: languageCode },
+        components: [
+          {
+            type: "body",
+            parameters: [{ type: "text", text: sanitizedParam }],
+          },
+        ],
+      },
+    };
+
+    const templateResult = await this.executeGraphApi(templatePayload, {
+      requestId,
+      mode,
+      startTime,
+      logPrefix: "NOTIF_TEMPLATE",
+    });
+
+    if (templateResult.success) {
+      return templateResult;
+    }
+
+    // If template failed, fall back to direct freeform text
+    console.warn(
+      `[META WHATSAPP] Notification template '${templateName}' delivery failed (${templateResult.error}). Falling back to freeform text...`
+    );
+
+    const fallbackPayload = {
       messaging_product: "whatsapp",
       recipient_type: "individual",
       to: cleanPhone,
@@ -441,11 +524,11 @@ export class MetaWhatsAppService {
       },
     };
 
-    return this.executeGraphApi(payload, {
+    return this.executeGraphApi(fallbackPayload, {
       requestId,
       mode,
       startTime,
-      logPrefix: "TEXT",
+      logPrefix: "FALLBACK_TEXT",
     });
   }
 

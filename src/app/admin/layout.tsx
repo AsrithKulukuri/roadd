@@ -35,6 +35,7 @@ const sidebarLinks = [
   { href: "/admin/schedules", label: "Site Visit Schedules", icon: Calendar, isScheduleBadge: true },
   { href: "/admin/support", label: "WhatsApp Support Desk", icon: Bot },
   { href: "/admin/broadcasts", label: "WhatsApp Broadcasts", icon: Send },
+  { href: "/admin/whatsapp-logs", label: "WhatsApp Logs", icon: MessageSquare },
   { href: "/admin/inquiries", label: "Requirements & Leads", icon: MessageSquare, isBadge: true },
   { href: "/admin/properties", label: "Properties", icon: Building2 },
   { href: "/admin/projects", label: "Projects", icon: FolderOpen },
@@ -83,6 +84,9 @@ const getAdminPageInfo = (path: string) => {
   }
   if (path.startsWith("/admin/broadcasts")) {
     return { title: "Broadcasts", badge: "Marketing", icon: Send };
+  }
+  if (path.startsWith("/admin/whatsapp-logs")) {
+    return { title: "WhatsApp Logs", badge: "Delivery", icon: MessageSquare };
   }
   if (path.startsWith("/admin/locations")) {
     return { title: "Locations", badge: "Localities", icon: MapPin };
@@ -409,4 +413,3 @@ export default function AdminLayout({
     </AdminGuard>
   );
 }
-
