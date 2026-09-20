@@ -144,6 +144,7 @@ export async function GET(request: Request) {
             try {
               await WasenderService.sendTextMessage(recipient, builderMsg, {
                 requestId: `remind-bld-${visit.id}-${recipient}`,
+                recipientType: recipient === targetBuilderPhone ? "builder" : "admin",
               });
             } catch (err) {
               console.warn(`[SITE VISIT REMINDER] Failed to send to builder ${recipient}:`, err);

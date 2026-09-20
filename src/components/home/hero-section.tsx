@@ -1064,11 +1064,8 @@ export function HeroSection() {
             <div className="bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-2.5 space-y-2.5 shadow-sm">
               <div className="relative flex items-center justify-center py-0.5">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-2xs">
-                    <IndianRupee className="w-3.5 h-3.5 stroke-[2.5]" />
-                  </div>
                   <span className="text-xs font-black text-slate-900">
-                    Filter by Budget
+                    Budget
                   </span>
                 </div>
 
@@ -2113,17 +2110,9 @@ export function HeroSection() {
 
               {/* 1. Left: Beige/Gold ₹ Badge + FILTER BY Budget Label */}
               <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 pl-1">
-                <div className="w-8 h-8 rounded-full bg-[#fef3c7] border border-amber-500/20 flex items-center justify-center text-amber-800 shadow-2xs">
-                  <IndianRupee className="w-4 h-4 stroke-[2.5]" />
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none">
-                    FILTER BY
-                  </span>
-                  <span className="text-xs font-black text-slate-900 leading-tight">
-                    Budget
-                  </span>
-                </div>
+                <span className="text-xs font-black text-slate-900 leading-tight">
+                  Budget
+                </span>
               </div>
 
               {/* Vertical Divider */}

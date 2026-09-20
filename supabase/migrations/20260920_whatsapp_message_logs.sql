@@ -10,6 +10,7 @@ create table if not exists public.whatsapp_message_logs (
   request_id text,
   provider text not null,
   provider_message_id text,
+  receipt_id_pending boolean not null default false,
   status text not null default 'queued' check (status in ('queued','accepted','sent','delivered','read','failed','simulated')),
   error_message text,
   error_category text,
@@ -47,10 +48,10 @@ create or replace function public.sync_whatsapp_log_receipts(p_provider text, p_
 returns void language plpgsql set search_path = public as $$
 begin
   update whatsapp_message_logs l set
-    sent_at = coalesce(l.sent_at, r.sent_at),
-    delivered_at = coalesce(l.delivered_at, r.delivered_at),
-    read_at = coalesce(l.read_at, r.read_at),
-    failed_at = coalesce(l.failed_at, r.failed_at),
+    sent_at = least(l.sent_at, r.sent_at),
+    delivered_at = least(l.delivered_at, r.delivered_at),
+    read_at = least(l.read_at, r.read_at),
+    failed_at = least(l.failed_at, r.failed_at),
     status = case when r.read_at is not null then 'read'
       when r.delivered_at is not null then 'delivered'
       when r.failed_at is not null then 'failed'
@@ -89,6 +90,7 @@ begin
     perform pg_advisory_xact_lock(hashtextextended(p_provider || ':' || p_message_id, 0));
   end if;
   update whatsapp_message_logs set provider=p_provider, provider_message_id=p_message_id,
+    receipt_id_pending=(p_provider='wasender' and coalesce(p_message_id ~ '^[0-9]+$', false)),
     status=p_status, error_message=p_error, error_category=p_error_category,
     accepted_at=case when p_status='accepted' then now() else null end,
     failed_at=case when p_status='failed' then now() else null end, updated_at=now()
@@ -102,3 +104,17 @@ revoke all on function public.finish_whatsapp_log(uuid,text,text,text,text,text)
 grant execute on function public.sync_whatsapp_log_receipts(text,text) to service_role;
 grant execute on function public.record_whatsapp_receipt(text,text,text,timestamptz,text) to service_role;
 grant execute on function public.finish_whatsapp_log(uuid,text,text,text,text,text) to service_role;
+
+-- Resolve a queued WaSender API id to its WhatsApp receipt id without resetting send timestamps.
+create or replace function public.link_whatsapp_receipt_id(p_id uuid, p_message_id text)
+returns void language plpgsql set search_path = public as $$
+begin
+  perform pg_advisory_xact_lock(hashtextextended('wasender:' || p_message_id, 0));
+  update whatsapp_message_logs set provider_message_id=p_message_id,
+    receipt_id_pending=(p_message_id ~ '^[0-9]+$'), updated_at=now()
+    where id=p_id and provider='wasender';
+  perform sync_whatsapp_log_receipts('wasender',p_message_id);
+end;
+$$;
+revoke all on function public.link_whatsapp_receipt_id(uuid,text) from public, anon, authenticated;
+grant execute on function public.link_whatsapp_receipt_id(uuid,text) to service_role;

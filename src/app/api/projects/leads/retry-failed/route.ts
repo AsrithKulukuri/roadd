@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       ].filter(Boolean).join("\n");
 
       try {
-        const sendRes = await WasenderService.sendTextMessage(lead.builder_phone, retryMessage);
+        const sendRes = await WasenderService.sendTextMessage(lead.builder_phone, retryMessage, { recipientType: "builder", requestId: `lead-retry-${lead.id}` });
         if (sendRes && sendRes.success !== false) {
           await supabase
             .from("project_leads")

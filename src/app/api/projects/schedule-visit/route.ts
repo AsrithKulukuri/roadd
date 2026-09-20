@@ -286,7 +286,7 @@ export async function POST(req: NextRequest) {
 
         for (const recipient of new Set([targetBuilderPhone, adminPhone].filter(Boolean))) {
           try {
-            const result = await WasenderService.sendTextMessage(recipient, builderMsg, { requestId: `sched-${scheduleId}-${recipient}` });
+            const result = await WasenderService.sendTextMessage(recipient, builderMsg, { requestId: `sched-${scheduleId}-${recipient}`, recipientType: recipient === targetBuilderPhone ? "builder" : "admin" });
             if (recipient === cleanBuilderPhone) builderNotified = result.success;
           } catch { /* One failed recipient must not prevent notifying the other. */ }
         }

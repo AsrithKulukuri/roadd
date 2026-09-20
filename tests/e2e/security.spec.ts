@@ -42,7 +42,7 @@ for (const entry of protectedRequests) {
   });
 }
 
-for (const path of ["/api/admin/whatsapp/audience", "/api/admin/whatsapp/campaigns", "/api/admin/schedules"]) {
+for (const path of ["/api/admin/whatsapp/logs", "/api/admin/whatsapp/audience", "/api/admin/whatsapp/campaigns", "/api/admin/schedules"]) {
   test(`${path} rejects anonymous reads`, async ({ request }) => {
     const response = await request.get(path);
     expect(response.status()).toBe(403);

@@ -59,7 +59,7 @@ export default function WhatsAppLogsPage() {
     return () => { clearTimeout(timer); controller.abort(); };
   }, [page, phone, status, recipient, from, to, refresh]);
 
-  return <div className="space-y-6">
+  return <div className="space-y-6 p-5 sm:p-8">
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div><h1 className="text-3xl font-bold text-text-primary">WhatsApp Logs</h1>
         <p className="mt-2 text-sm text-text-secondary">Messages to users, builders and admins, with delivery history and failure details.</p></div>

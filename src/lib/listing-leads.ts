@@ -79,7 +79,7 @@ export async function recordListingAction(request: Request, type: "project" | "p
     const delivered = new Set<string>();
     for (const recipient of recipients) {
       try {
-        const sent = await WasenderService.sendTextMessage(recipient, message, { requestId: data.id + ":" + recipient });
+        const sent = await WasenderService.sendTextMessage(recipient, message, { requestId: data.id + ":" + recipient, recipientType: recipient === phone ? "builder" : "admin" });
         if (sent.success) delivered.add(recipient);
       } catch { /* Saved lead remains available for admin follow-up. */ }
     }
