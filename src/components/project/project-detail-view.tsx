@@ -1703,7 +1703,7 @@ export function ProjectDetailView({
             <div className="space-y-5">
               {/* Why consider */}
               {project.highlights.length > 0 && (
-                <div className="bg-white dark:bg-bg-card border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm lg:sticky lg:top-32">
+                <div className="bg-white dark:bg-bg-card border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm">
                   <h3 className="font-bold text-text-primary mb-4 flex items-center gap-2">
                     <Star className="w-4 h-4 text-amber-primary fill-amber-primary" />
                     Why {project.name}?
