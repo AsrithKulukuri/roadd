@@ -129,10 +129,17 @@ function normalizeListingContact(record: Record<string, any>, fallback: Schedule
         record.builder_whatsapp ||
         record.builderPhone ||
         record.builder_phone ||
+        record.ownerWhatsapp ||
+        record.owner_whatsapp ||
         record.ownerPhone ||
         record.owner_phone ||
+        record.contactWhatsapp ||
+        record.contact_whatsapp ||
+        record.contactPhone ||
+        record.contact_phone ||
         builder.whatsapp ||
         builder.phone ||
+        fallback.builderPhone ||
         ""
     ),
   };

@@ -21,13 +21,34 @@ export async function getActionListing(type: "project" | "property", id: string)
   return result.data;
 }
 export function listingPhone(listing: Record<string, any>) {
-  return formatWhatsAppPhone(listing.builderWhatsapp || listing.builder_whatsapp || listing.builderPhone || listing.builder_phone || listing.ownerPhone || listing.owner_phone || listing.builder?.whatsapp || listing.builder?.phone || "");
+  const b = typeof listing.builder === "object" && listing.builder ? listing.builder : {};
+  const raw =
+    listing.builderWhatsapp ||
+    listing.builder_whatsapp ||
+    listing.builderPhone ||
+    listing.builder_phone ||
+    listing.ownerWhatsapp ||
+    listing.owner_whatsapp ||
+    listing.ownerPhone ||
+    listing.owner_phone ||
+    listing.contactWhatsapp ||
+    listing.contact_whatsapp ||
+    listing.contactPhone ||
+    listing.contact_phone ||
+    b.whatsapp ||
+    b.phone ||
+    "";
+  return formatWhatsAppPhone(raw);
 }
 export async function recordListingAction(request: Request, type: "project" | "property", id: string, action: ContactAction) {
   const user = await leadUser(request);
   const listing = await getActionListing(type, id);
   const phone = listingPhone(listing);
-  if (!phone && action !== "brochure_download") throw new PortalError("Contact details are not available. Please contact ROAD support.", 404);
+  const adminPhone = formatWhatsAppPhone(process.env.ADMIN_WHATSAPP_PHONE || process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE || "");
+  const targetRecipient = phone || adminPhone;
+  if (!targetRecipient && action !== "brochure_download") {
+    throw new PortalError("Contact details are not available. Please contact ROAD support.", 404);
+  }
   if (action === "brochure_download" && !listing.brochureUrl) throw new PortalError("Brochure unavailable.", 404);
   const row = {
     user_id: user.id, listing_type: type, listing_id: String(listing.id), listing_slug: listing.slug,
@@ -38,11 +59,22 @@ export async function recordListingAction(request: Request, type: "project" | "p
   const { data, error } = await supabaseAdmin.from("listing_action_leads").insert(row).select("*").single();
   if (error && error.code !== "23505") throw error;
   if (data) {
-    const message = "ROAD Facing — " + ACTION_LABELS[action] + "\n\nListing: " + row.listing_name +
-      "\nReference: " + listing.id + "\nName: " + (user.name || "Not provided") +
-      "\nPhone: " + (user.phone || "Not provided") + (user.email ? "\nEmail: " + user.email : "") +
-      "\nAction: " + ACTION_LABELS[action] + "\nTime: " + new Date().toISOString();
-    const adminPhone = formatWhatsAppPhone(process.env.ADMIN_WHATSAPP_PHONE || process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE || "");
+    const timeFormatted = new Date().toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+    const message =
+      `🔔 *New Lead Alert on ROAD Facing!*\n\n` +
+      `📌 *Listing:* ${row.listing_name}\n` +
+      `⚡ *Action:* ${ACTION_LABELS[action]}\n\n` +
+      `👤 *Viewer Details:*\n` +
+      `• *Name:* ${user.name || "Interested Buyer"}\n` +
+      `• *Phone:* +${formatWhatsAppPhone(user.phone || "")}\n` +
+      (user.email ? `• *Email:* ${user.email}\n` : "") +
+      `• *Time:* ${timeFormatted}\n\n` +
+      `Please connect with this interested buyer.\n\n` +
+      `— ROAD Facing`;
     const recipients = [...new Set([phone, adminPhone].filter(Boolean))];
     const delivered = new Set<string>();
     for (const recipient of recipients) {

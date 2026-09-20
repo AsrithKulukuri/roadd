@@ -388,13 +388,20 @@ export function ProjectDetailView({
   const targetRedirect = `/projects/${project.slug || slug}`;
   const hasBrochure = Boolean((project as Project & { hasBrochure?: boolean }).hasBrochure || (project.brochureUrl && !project.brochureUrl.startsWith("blob:")));
 
-  const handleDownloadBrochure = async (e: React.MouseEvent, url: string, filename: string) => {
+  const handleDownloadBrochure = async (e: React.MouseEvent, url: string, filename: string, isView = false) => {
     e.preventDefault();
     let resolved = "";
     try {
       const action = await performListingAction("project", project.id, "brochure_download");
       if (!action) return;
       resolved = resolveMediaUrl(action.brochureUrl || url);
+
+      if (isView) {
+        window.open(resolved, "_blank", "noopener,noreferrer");
+        toast.success("Opening brochure...");
+        return;
+      }
+
       toast.info("Downloading brochure...");
       const res = await fetch(resolved);
       if (!res.ok) throw new Error("Fetch failed");
@@ -410,7 +417,7 @@ export function ProjectDetailView({
       window.URL.revokeObjectURL(blobUrl);
       toast.success("Brochure downloaded!");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Unable to download the brochure. Please retry.");
+      toast.error(error instanceof Error ? error.message : "Unable to process brochure request. Please retry.");
     }
   };
 
@@ -1613,7 +1620,7 @@ export function ProjectDetailView({
                       <div className="sm:ml-auto flex items-center gap-2.5 w-full sm:w-auto">
                         <a
                           href="#"
-                          onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
+                          onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name, true)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-border-default hover:bg-slate-100 dark:hover:bg-slate-800 text-text-primary font-bold text-sm transition-colors text-center shrink-0 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
@@ -1754,7 +1761,7 @@ export function ProjectDetailView({
                     <div className="flex items-center gap-2 w-full">
                       <a
                         href="#"
-                        onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name)}
+                        onClick={(e) => handleDownloadBrochure(e, project.brochureUrl!, project.name, true)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl border border-border-default hover:bg-slate-100 dark:hover:bg-slate-800 text-text-primary font-bold text-sm transition-colors text-center shrink-0 cursor-pointer"

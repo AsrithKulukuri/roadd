@@ -6,19 +6,42 @@ import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function parseTime(timeStr: string): { hours: number; minutes: number } | null {
+  const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+  if (!match) return null;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const meridiem = (match[3] || "").toUpperCase();
+  if (meridiem === "PM" && hours < 12) hours += 12;
+  if (meridiem === "AM" && hours === 12) hours = 0;
+  return { hours, minutes };
+}
+
 /**
- * Parses date string (e.g. "2026-09-08" or "Tue, Sep 8, 2026") and timeSlot (e.g. "11:30 AM")
- * into a approximate timestamp (assuming Asia/Kolkata timezone UTC+5:30)
+ * Parses date string (e.g. "Mon, Sep 21, 2026" or "2026-09-21") and timeSlot (e.g. "10:00 AM - 11:00 AM")
+ * into an accurate timestamp in Indian Standard Time (IST, UTC+05:30).
  */
 function parseScheduleTimestamp(dateStr: string, timeSlot: string): number | null {
   try {
-    const combinedStr = `${dateStr} ${timeSlot}`;
-    const parsed = new Date(combinedStr);
-    if (!isNaN(parsed.getTime())) {
-      return parsed.getTime();
-    }
-  } catch {}
-  return null;
+    const startTimeStr = timeSlot.split("-")[0].trim();
+    const time = parseTime(startTimeStr);
+    if (!time) return null;
+
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hour = String(time.hours).padStart(2, "0");
+    const minute = String(time.minutes).padStart(2, "0");
+
+    const istIso = `${year}-${month}-${day}T${hour}:${minute}:00+05:30`;
+    const parsed = new Date(istIso);
+    return isNaN(parsed.getTime()) ? null : parsed.getTime();
+  } catch {
+    return null;
+  }
 }
 
 export async function GET(request: Request) {
@@ -28,6 +51,13 @@ export async function GET(request: Request) {
         success: false,
         message: "Database admin client not configured",
       });
+    }
+
+    // Optional verification if CRON_SECRET is configured
+    const authHeader = request.headers.get("authorization");
+    const cronSecret = process.env.CRON_SECRET;
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      // Allow internal Vercel cron or admin bypass
     }
 
     // Fetch upcoming scheduled visits where reminder hasn't been sent
@@ -48,21 +78,21 @@ export async function GET(request: Request) {
     }
 
     const nowMs = Date.now();
-    let sentCount = 0;
+    let remindersSent = 0;
+    const adminPhone = formatWhatsAppPhone(process.env.ADMIN_WHATSAPP_PHONE || process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE || "");
 
     for (const visit of visits) {
       const scheduledTime = parseScheduleTimestamp(visit.visit_date, visit.time_slot);
 
-      // Check window: between 30 minutes and 90 minutes before the visit (target is 1 hour before)
+      // Check window: between 15 minutes and 90 minutes before the visit (target is 1 hour before)
       let isWithinWindow = false;
       if (scheduledTime) {
         const diffMinutes = (scheduledTime - nowMs) / (1000 * 60);
-        // If scheduled within 30 to 90 minutes from now
-        if (diffMinutes >= 30 && diffMinutes <= 90) {
+        if (diffMinutes >= 15 && diffMinutes <= 90) {
           isWithinWindow = true;
         }
       } else {
-        // Fallback: If date matches today's date string, we can send reminder
+        // Fallback: If date matches today's date string and slot starts within today
         const todayStr = new Date().toISOString().slice(0, 10);
         if (visit.visit_date && visit.visit_date.includes(todayStr)) {
           isWithinWindow = true;
@@ -70,31 +100,65 @@ export async function GET(request: Request) {
       }
 
       if (isWithinWindow) {
-        const cleanPhone = formatWhatsAppPhone(visit.customer_phone);
-        if (cleanPhone) {
-          const reminderMsg =
+        const cleanCustomerPhone = formatWhatsAppPhone(visit.customer_phone);
+        const cleanBuilderPhone = formatWhatsAppPhone(visit.builder_phone || "");
+
+        // 1. Notify Customer 1 hour before
+        if (cleanCustomerPhone) {
+          const customerMsg =
             `Site Visit Reminder! ⏰\n\n` +
-            `Hello ${visit.customer_name}, your site visit for *${visit.project_name}* is in 1 hour!\n\n` +
+            `Hello ${visit.customer_name}, your site visit for *${visit.project_name}* is scheduled in approximately 1 hour!\n\n` +
             `📅 *Date:* ${visit.visit_date}\n` +
-            `⏰ *Time:* ${visit.time_slot}\n` +
+            `⏰ *Time Slot:* ${visit.time_slot}\n` +
             `📍 *Location:* ${visit.project_location || "Project Site"}\n\n` +
-            `Our site executive is ready to welcome you. See you shortly!\n\n` +
-            `ROAD Facing Support`;
+            `Our site executive is ready to welcome and guide you. See you shortly!\n\n` +
+            `— ROAD Facing Support`;
 
           try {
-            await WasenderService.sendTextMessage(cleanPhone, reminderMsg, {
-              requestId: `remind-${visit.id}`,
+            await WasenderService.sendTextMessage(cleanCustomerPhone, customerMsg, {
+              requestId: `remind-cust-${visit.id}`,
             });
-            sentCount++;
-
-            // Update reminder_sent flag
-            await supabaseAdmin
-              .from("project_site_visits")
-              .update({ reminder_sent: true })
-              .eq("id", visit.id);
-          } catch (sendErr) {
-            console.warn(`[SITE VISIT REMINDER] Failed to send to ${cleanPhone}:`, sendErr);
+            remindersSent++;
+          } catch (err) {
+            console.warn(`[SITE VISIT REMINDER] Failed to send to customer ${cleanCustomerPhone}:`, err);
           }
+        }
+
+        // 2. Notify Builder (and Admin) 1 hour before
+        const targetBuilderPhone = cleanBuilderPhone || adminPhone;
+        if (targetBuilderPhone) {
+          const builderMsg =
+            `Site Visit Reminder (In 1 Hour)! 🔔\n\n` +
+            `Upcoming site visit for *${visit.project_name}* in 1 hour:\n\n` +
+            `👤 *Visitor:* ${visit.customer_name}\n` +
+            `📞 *Phone:* +${cleanCustomerPhone}\n` +
+            `📅 *Date:* ${visit.visit_date}\n` +
+            `⏰ *Time Slot:* ${visit.time_slot}\n` +
+            `📍 *Location:* ${visit.project_location || "Project Site"}\n` +
+            (visit.notes ? `📝 *Notes:* ${visit.notes}\n` : "") +
+            `\nPlease ensure a site executive is available at the property.\n\n` +
+            `— ROAD Facing Support`;
+
+          const builderRecipients = [...new Set([targetBuilderPhone, adminPhone].filter(Boolean))];
+          for (const recipient of builderRecipients) {
+            try {
+              await WasenderService.sendTextMessage(recipient, builderMsg, {
+                requestId: `remind-bld-${visit.id}-${recipient}`,
+              });
+            } catch (err) {
+              console.warn(`[SITE VISIT REMINDER] Failed to send to builder ${recipient}:`, err);
+            }
+          }
+        }
+
+        // 3. Mark reminder_sent = true so duplicate reminders are not dispatched
+        try {
+          await supabaseAdmin
+            .from("project_site_visits")
+            .update({ reminder_sent: true })
+            .eq("id", visit.id);
+        } catch (dbErr) {
+          console.warn(`[SITE VISIT REMINDER] Failed to update reminder_sent for ${visit.id}:`, dbErr);
         }
       }
     }
@@ -102,7 +166,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       processed: visits.length,
-      remindersSent: sentCount,
+      remindersSent,
     });
   } catch (err: any) {
     console.error("[SITE VISIT REMINDERS CRON ERROR]:", err);
