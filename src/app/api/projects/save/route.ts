@@ -13,6 +13,19 @@ interface SaveProjectBody {
   payload?: Record<string, unknown>;
 }
 
+// Physical columns that exist in the Supabase `projects` PostgreSQL table
+const PHYSICAL_PROJECT_COLUMNS = new Set([
+  "id", "slug", "name", "tagline", "description", "projectType",
+  "builderName", "builderLogoUrl", "builderPhone", "builderWhatsapp",
+  "location", "reraId", "reraApproved", "noBrokerage",
+  "constructionStatus", "totalUnits", "totalArea", "phases",
+  "configurations", "images", "coverImage", "videoUrl",
+  "brochureUrl", "highlights", "facilities", "isFeatured",
+  "isPublished", "viewCount", "createdAt", "updatedAt",
+  "crdaApproved", "totalTowers", "constructionUpdates", "displayCategory",
+  "masterPlanUrl", "master_plan_url", "isRoadExclusive"
+]);
+
 export async function POST(request: NextRequest) {
   const { errorResponse } = await requireAdmin(request);
   if (errorResponse) return errorResponse;
@@ -23,67 +36,70 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const payload = { ...body.payload };
-    const location = payload.location as Record<string, unknown> | undefined;
+    const rawPayload = { ...body.payload };
+    const location = (rawPayload.location && typeof rawPayload.location === "object")
+      ? { ...(rawPayload.location as Record<string, unknown>) }
+      : {};
+
     const review = location?.crdaReview as CrdaReview | undefined;
-    const evidence = (location?.crdaEvidence || payload) as Record<string, unknown>;
+    const evidence = (location?.crdaEvidence || rawPayload) as Record<string, unknown>;
     if (review?.requested) {
-      if (payload.crdaApproved === true && payload.projectType !== "venture") return NextResponse.json({ success: false, error: "Only plot ventures can be marked CRDA approved." }, { status: 400 });
+      if (rawPayload.crdaApproved === true && rawPayload.projectType !== "venture") {
+        return NextResponse.json({ success: false, error: "Only plot ventures can be marked CRDA approved." }, { status: 400 });
+      }
       if (review.approved && !hasCompleteCrdaEvidence(evidence)) {
         return NextResponse.json({ success: false, error: "Official LP number, survey number, layout document and all four boundary measurements with units are required before verification." }, { status: 400 });
       }
       try {
-        payload.location = { ...location, crdaReview: stampCrdaReview(review, review.approved === true, new Date().toISOString()) };
+        location.crdaReview = stampCrdaReview(review, review.approved === true, new Date().toISOString());
       } catch (error) {
         return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Invalid approval review." }, { status: 400 });
       }
     }
-    if (Array.isArray(payload.configurations) && payload.configurations.some(config => config.measurements && !validMeasurements(config.measurements))) {
+    if (Array.isArray(rawPayload.configurations) && rawPayload.configurations.some(config => config.measurements && !validMeasurements(config.measurements))) {
       return NextResponse.json({ success: false, error: "Configuration dimensions need positive width × depth and units, e.g. 30 × 60 ft." }, { status: 400 });
     }
 
-    // Always mirror isRoadExclusive into location JSONB for fail-safe persistence
-    if (payload.isRoadExclusive !== undefined) {
-      const loc = (payload.location && typeof payload.location === "object")
-        ? { ...(payload.location as Record<string, unknown>), isRoadExclusive: Boolean(payload.isRoadExclusive) }
-        : { isRoadExclusive: Boolean(payload.isRoadExclusive) };
-      payload.location = loc;
-    }
-
     // Always mirror refId into location JSONB for fail-safe persistence across database schemas
-    if (payload.refId !== undefined) {
-      const cleanRef = typeof payload.refId === "string" ? payload.refId.trim().toUpperCase() : undefined;
-      if (cleanRef) {
-        payload.refId = cleanRef;
-        const loc = (payload.location && typeof payload.location === "object")
-          ? { ...(payload.location as Record<string, unknown>), refId: cleanRef }
-          : { refId: cleanRef };
-        payload.location = loc;
-      }
+    if (rawPayload.refId !== undefined) {
+      const cleanRef = typeof rawPayload.refId === "string" ? rawPayload.refId.trim().toUpperCase() : undefined;
+      if (cleanRef) location.refId = cleanRef;
     }
 
     // Always mirror possessionDate into location JSONB for fail-safe persistence
-    if (payload.possessionDate !== undefined) {
-      const cleanPossession = typeof payload.possessionDate === "string" ? payload.possessionDate.trim() : undefined;
-      payload.possessionDate = cleanPossession;
-      const loc = (payload.location && typeof payload.location === "object")
-        ? { ...(payload.location as Record<string, unknown>), possessionDate: cleanPossession }
-        : { possessionDate: cleanPossession };
-      payload.location = loc;
+    if (rawPayload.possessionDate !== undefined) {
+      const cleanPossession = typeof rawPayload.possessionDate === "string" ? rawPayload.possessionDate.trim() : undefined;
+      if (cleanPossession) location.possessionDate = cleanPossession;
     }
 
     // Always mirror totalArea into location JSONB for fail-safe persistence
-    if (payload.totalArea !== undefined) {
-      const cleanArea = typeof payload.totalArea === "string" ? payload.totalArea.trim() : undefined;
-      payload.totalArea = cleanArea;
-      const loc = (payload.location && typeof payload.location === "object")
-        ? { ...(payload.location as Record<string, unknown>), totalArea: cleanArea }
-        : { totalArea: cleanArea };
-      payload.location = loc;
+    if (rawPayload.totalArea !== undefined) {
+      const cleanArea = typeof rawPayload.totalArea === "string" ? rawPayload.totalArea.trim() : undefined;
+      if (cleanArea) location.totalArea = cleanArea;
     }
+
+    // Always mirror isRoadExclusive into location JSONB for fail-safe persistence
+    if (rawPayload.isRoadExclusive !== undefined) {
+      location.isRoadExclusive = Boolean(rawPayload.isRoadExclusive);
+    }
+
+    // Always mirror isSoldOut into location JSONB
+    if (rawPayload.isSoldOut !== undefined) {
+      location.isSoldOut = Boolean(rawPayload.isSoldOut);
+    }
+
+    rawPayload.location = location;
 
     if (body.mode === "update" && !body.id && !body.slug) {
       return NextResponse.json({ success: false, error: "Project identifier required" }, { status: 400 });
+    }
+
+    // Filter payload strictly to valid physical columns for Supabase PostgreSQL
+    const cleanPayload: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(rawPayload)) {
+      if (PHYSICAL_PROJECT_COLUMNS.has(key) && value !== undefined) {
+        cleanPayload[key] = value;
+      }
     }
 
     const executeSave = async (dataPayload: Record<string, unknown>) => {
@@ -101,48 +117,33 @@ export async function POST(request: NextRequest) {
       return await query.select("id, slug").maybeSingle();
     };
 
-    let { data, error } = await executeSave(payload);
+    let saveResult = await executeSave(cleanPayload);
+    let attempts = 0;
 
-    // If the physical isRoadExclusive column does not exist on Supabase, retry without it (already safely stored in location)
-    if (error && (error.message.includes("isRoadExclusive") || error.message.includes("does not exist"))) {
-      delete payload.isRoadExclusive;
-      const retryResult = await executeSave(payload);
-      data = retryResult.data;
-      error = retryResult.error;
+    // Dynamic recovery loop: If PostgREST returns a schema cache or missing column error,
+    // dynamically strip the offending column and retry up to 6 times.
+    while (saveResult.error && attempts < 6) {
+      attempts++;
+      const errMsg = saveResult.error.message || "";
+      const match = errMsg.match(/Could not find the '(\w+)' column/i) ||
+                    errMsg.match(/column "?(\w+)"? of relation/i) ||
+                    errMsg.match(/column projects\.(\w+) does not exist/i) ||
+                    errMsg.match(/column "?(\w+)"? does not exist/i);
+      if (match && match[1]) {
+        const offendingCol = match[1];
+        console.warn(`[PROJECT SAVE] Column '${offendingCol}' not recognized by Supabase table. Stripping and retrying...`);
+        delete cleanPayload[offendingCol];
+        saveResult = await executeSave(cleanPayload);
+      } else {
+        break;
+      }
     }
 
-    // If the physical refId column does not exist on Supabase, retry without it (already safely stored in location)
-    if (error && (error.message.includes("refId") || error.message.includes("ref_id") || error.message.includes("does not exist"))) {
-      delete payload.refId;
-      delete (payload as Record<string, unknown>).ref_id;
-      const retryResult = await executeSave(payload);
-      data = retryResult.data;
-      error = retryResult.error;
-    }
-
-    // If the physical possessionDate column does not exist on Supabase, retry without it (already safely stored in location)
-    if (error && (error.message.includes("possessionDate") || error.message.includes("possession_date") || error.message.includes("does not exist"))) {
-      delete payload.possessionDate;
-      delete (payload as Record<string, unknown>).possession_date;
-      const retryResult = await executeSave(payload);
-      data = retryResult.data;
-      error = retryResult.error;
-    }
-
-    // If the physical totalArea column does not exist on Supabase, retry without it (already safely stored in location)
-    if (error && (error.message.includes("totalArea") || error.message.includes("total_area") || error.message.includes("does not exist"))) {
-      delete payload.totalArea;
-      delete (payload as Record<string, unknown>).total_area;
-      const retryResult = await executeSave(payload);
-      data = retryResult.data;
-      error = retryResult.error;
-    }
-
-    if (error) throw error;
-    if (body.mode === "update" && !data) {
+    if (saveResult.error) throw saveResult.error;
+    if (body.mode === "update" && !saveResult.data) {
       return NextResponse.json({ success: false, error: "Project was not found" }, { status: 404 });
     }
-    return NextResponse.json({ success: true, project: data });
+    return NextResponse.json({ success: true, project: saveResult.data });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Project persistence failed";
     console.error("[PROJECT SAVE ERROR]", message);
