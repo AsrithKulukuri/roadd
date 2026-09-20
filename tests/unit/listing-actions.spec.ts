@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { signSessionPayload } from "@/lib/server-auth-guard";
-import { WasenderService } from "@/lib/wasender";
+import { WhatsAppService } from "@/lib/whatsapp-service";
 import { POST as action } from "@/app/api/listing-actions/route";
 import { POST as visit } from "@/app/api/projects/schedule-visit/route";
 import { GET as listings } from "@/app/api/listings/route";
@@ -13,7 +13,7 @@ test.describe.configure({ mode: "serial" });
 const user = { id: "buyer-a", name: "Verified Buyer", phone: "+919000000001", email: "buyer@example.test", role: "buyer" };
 const project = { id: "project-a", slug: "plot-a", name: "Test Project", isPublished: true, builderPhone: "+919000000002", brochureUrl: "https://example.test/brochure.pdf" };
 let originalFrom: ReturnType<typeof getSupabaseAdmin>["from"];
-let originalSend: typeof WasenderService.sendTextMessage;
+let originalSend: typeof WhatsAppService.sendTextMessage;
 let writes: Array<{ table: string; payload: any }> = [];
 let messages: Array<{ phone: string; message: string }> = [];
 let failure: string | null = null;
@@ -27,7 +27,7 @@ test.beforeAll(() => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = "isolated-test-service-key";
   process.env.ADMIN_WHATSAPP_PHONE = "+919000000003";
   originalFrom = getSupabaseAdmin().from;
-  originalSend = WasenderService.sendTextMessage;
+  originalSend = WhatsAppService.sendTextMessage;
 });
 test.beforeEach(() => {
   writes = []; messages = []; failure = null;
@@ -47,13 +47,13 @@ test.beforeEach(() => {
     };
     return query;
   }) as typeof originalFrom;
-  WasenderService.sendTextMessage = (async (phone: string, message: string) => {
+  WhatsAppService.sendTextMessage = (async (phone: string, message: string) => {
     expect(writes.some(write => write.table === "listing_action_leads" || write.table === "project_site_visits")).toBe(true);
     messages.push({ phone, message });
     return { success: true };
   }) as typeof originalSend;
 });
-test.afterAll(() => { getSupabaseAdmin().from = originalFrom; WasenderService.sendTextMessage = originalSend; });
+test.afterAll(() => { getSupabaseAdmin().from = originalFrom; WhatsAppService.sendTextMessage = originalSend; });
 
 test("anonymous contact and visit requests do not create or send leads", async () => {
   expect((await action(request(payload, false))).status).toBe(401);

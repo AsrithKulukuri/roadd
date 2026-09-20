@@ -18,7 +18,7 @@ export interface ProjectNotificationData {
 }
 
 /**
- * Triggers an immediate, non-blocking WhatsApp notification to the project builder via Wasender.
+ * Triggers an immediate, non-blocking WhatsApp notification to the project builder via Meta WhatsApp.
  * - Authenticates automatically via secure same-origin HTTP-only cookie
  * - Uses stable dedupe key road_project_view_notified:{projectKey}:{viewerPhone}
  * - Uses an in-flight pending lock and commits 24h dedupe ONLY when API JSON returns success: true

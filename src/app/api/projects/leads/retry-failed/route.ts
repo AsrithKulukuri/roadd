@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { WasenderService } from "@/lib/wasender";
+import { WhatsAppService } from "@/lib/whatsapp-service";
 import { authenticateServerRequest } from "@/lib/server-auth-guard";
 
 export const dynamic = "force-dynamic";
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       ].filter(Boolean).join("\n");
 
       try {
-        const sendRes = await WasenderService.sendTextMessage(lead.builder_phone, retryMessage, { recipientType: "builder", requestId: `lead-retry-${lead.id}` });
+        const sendRes = await WhatsAppService.sendTextMessage(lead.builder_phone, retryMessage, { recipientType: "builder", requestId: `lead-retry-${lead.id}` });
         if (sendRes && sendRes.success !== false) {
           await supabase
             .from("project_leads")

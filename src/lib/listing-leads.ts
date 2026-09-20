@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { WasenderService } from "@/lib/wasender";
+import { WhatsAppService } from "@/lib/whatsapp-service";
 import { authenticateServerRequest } from "@/lib/server-auth-guard";
 import { PortalError } from "@/lib/builder-access";
 import { ACTION_LABELS, type ContactAction } from "@/lib/listing-actions";
@@ -79,7 +79,7 @@ export async function recordListingAction(request: Request, type: "project" | "p
     const delivered = new Set<string>();
     for (const recipient of recipients) {
       try {
-        const sent = await WasenderService.sendTextMessage(recipient, message, { requestId: data.id + ":" + recipient, recipientType: recipient === phone ? "builder" : "admin" });
+        const sent = await WhatsAppService.sendTextMessage(recipient, message, { requestId: data.id + ":" + recipient, recipientType: recipient === phone ? "builder" : "admin" });
         if (sent.success) delivered.add(recipient);
       } catch { /* Saved lead remains available for admin follow-up. */ }
     }

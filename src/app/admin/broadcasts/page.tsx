@@ -317,7 +317,7 @@ export default function AdminBroadcastsPage() {
   const uploadCustomMedia = async (file?: File) => {
     if (!file) return;
     if (!["image/jpeg", "image/png"].includes(file.type)) return toast.error("Use a JPEG or PNG image.");
-    if (file.size > 5 * 1024 * 1024) return toast.error("Wasender images must be 5MB or smaller.");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Meta WhatsApp images must be 5MB or smaller.");
     setIsUploading(true);
     try {
       const result = await uploadToS3({ file, folder: "banners", compress: true, watermark: true });

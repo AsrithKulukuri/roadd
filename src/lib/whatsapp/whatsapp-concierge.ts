@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { normalizeWhatsAppPhone } from "@/lib/whatsapp-audience";
-import { WasenderService } from "@/lib/wasender";
+import { WhatsAppService } from "@/lib/whatsapp-service";
 import { formatPriceCompact } from "@/lib/utils";
 import { parseSearchIntent, matchesPropertySearch, matchesProjectSearch, type ParsedSearchIntent } from "@/lib/search-engine";
 import { mockProperties } from "@/lib/mock-data";
@@ -457,7 +457,7 @@ export async function processInboundWhatsAppMessage(
       `👉 *Complete 1-Tap Mobile Verification:*\n${siteUrl}/login\n\n` +
       `_Once verified, simply send your requirements here (e.g. "2BHK in Vijayawada under 60L") for instant AI matching!_`;
 
-    await WasenderService.sendTextMessage(cleanPhone, registrationPrompt, {
+    await WhatsAppService.sendTextMessage(cleanPhone, registrationPrompt, {
       requestId: `unregistered-${Date.now()}`,
     });
 
@@ -488,7 +488,7 @@ export async function processInboundWhatsAppMessage(
       .in("status", ["open", "in_progress"]);
 
     const switchMsg = `🤖 *AI Concierge Resumed*\n\nI am back to assist you with property searches, project comparisons, and verified listings across Andhra Pradesh! 🏡\n\n*Try asking:* _"3 bhk flats in Poranki"_ or _"Flats under 1 Cr"_`;
-    await WasenderService.sendTextMessage(cleanPhone, switchMsg, {
+    await WhatsAppService.sendTextMessage(cleanPhone, switchMsg, {
       requestId: `bot-resume-${Date.now()}`,
     });
     return { handled: true, intent: "bot_resumed", responseSent: true, message: switchMsg };
@@ -519,7 +519,7 @@ export async function processInboundWhatsAppMessage(
       `🎫 *Ticket ID:* #${ticketId ? ticketId.slice(0, 8) : "ROAD-" + Date.now().toString().slice(-4)}\n\n` +
       `A senior property consultant has received your request and will reply directly to this chat shortly.`;
 
-    await WasenderService.sendTextMessage(cleanPhone, humanAck, {
+    await WhatsAppService.sendTextMessage(cleanPhone, humanAck, {
       requestId: `agent-escalation-${Date.now()}`,
     });
 
@@ -585,7 +585,7 @@ export async function processInboundWhatsAppMessage(
       `• _"Avenue Serene project"_\n` +
       `• _"Talk to agent"_`;
 
-    await WasenderService.sendTextMessage(cleanPhone, identityMsg, {
+    await WhatsAppService.sendTextMessage(cleanPhone, identityMsg, {
       requestId: `identity-${Date.now()}`,
     });
 
@@ -613,7 +613,7 @@ export async function processInboundWhatsAppMessage(
       `I use advanced AI to instantly search verified properties, compare configurations, and deliver project insights for ROAD FACING.\n\n` +
       `If you'd like to speak with a human property consultant, simply reply *"Talk to agent"* anytime! 👨‍💼`;
 
-    await WasenderService.sendTextMessage(cleanPhone, botMsg, {
+    await WhatsAppService.sendTextMessage(cleanPhone, botMsg, {
       requestId: `bot-q-${Date.now()}`,
     });
 
@@ -637,7 +637,7 @@ export async function processInboundWhatsAppMessage(
   const isGratitude = /\b(?:thank you|thanks|tq|thx|great|awesome|super|nice)\b/i.test(norm) && norm.split(/\s+/).length <= 4;
   if (isGratitude) {
     const thanksMsg = `😊 *You're very welcome, ${registeredUser.name}!* Let me know whenever you want to explore more verified properties or projects in Andhra Pradesh. 🏡`;
-    await WasenderService.sendTextMessage(cleanPhone, thanksMsg, {
+    await WhatsAppService.sendTextMessage(cleanPhone, thanksMsg, {
       requestId: `thanks-${Date.now()}`,
     });
     await logConversation({
@@ -663,7 +663,7 @@ export async function processInboundWhatsAppMessage(
       `• _"Villas in Guntur"_\n` +
       `• _"Talk to agent"_`;
 
-    await WasenderService.sendTextMessage(cleanPhone, greetingMsg, {
+    await WhatsAppService.sendTextMessage(cleanPhone, greetingMsg, {
       requestId: `greet-${Date.now()}`,
     });
 
@@ -689,7 +689,7 @@ export async function processInboundWhatsAppMessage(
   const geminiAnalysis = await analyzeWithGemini(text, conversationHistory, registeredUser.name);
 
   if (geminiAnalysis?.category === "interactive_chat" && geminiAnalysis.chatResponse) {
-    await WasenderService.sendTextMessage(cleanPhone, geminiAnalysis.chatResponse, {
+    await WhatsAppService.sendTextMessage(cleanPhone, geminiAnalysis.chatResponse, {
       requestId: `chat-ai-${Date.now()}`,
     });
 
@@ -777,11 +777,11 @@ export async function processInboundWhatsAppMessage(
     }
 
     if (heroImage && (heroImage.startsWith("http") || heroImage.startsWith("/") || heroImage.startsWith("banners/") || heroImage.startsWith("properties/") || heroImage.startsWith("projects/"))) {
-      await WasenderService.sendImageMessage(cleanPhone, heroImage, responseText, {
+      await WhatsAppService.sendImageMessage(cleanPhone, heroImage, responseText, {
         requestId: `concierge-results-${Date.now()}`,
       });
     } else {
-      await WasenderService.sendTextMessage(cleanPhone, responseText, {
+      await WhatsAppService.sendTextMessage(cleanPhone, responseText, {
         requestId: `concierge-results-${Date.now()}`,
       });
     }
@@ -835,7 +835,7 @@ export async function processInboundWhatsAppMessage(
       `• _"Talk to agent"_`;
   }
 
-  await WasenderService.sendTextMessage(cleanPhone, fallbackMsg, {
+  await WhatsAppService.sendTextMessage(cleanPhone, fallbackMsg, {
     requestId: `no-match-${Date.now()}`,
   });
 

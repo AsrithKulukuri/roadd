@@ -194,7 +194,7 @@ function LoginForm() {
         <div className="mt-8 pt-4 border-t border-slate-200 flex flex-col items-center gap-2">
           <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600 font-medium">
             <Lock className="w-3.5 h-3.5 text-amber-500 stroke-[2.5]" />
-            <span>Encrypted & Secured by WasenderAPI</span>
+            <span>Encrypted & Secured by WhatsApp Cloud API</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-4 mt-1">
             <a

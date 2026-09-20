@@ -24,7 +24,7 @@ try {
 }
 
 import { getSupabaseAdmin } from "../src/lib/supabase-admin";
-import { WasenderService } from "../src/lib/wasender";
+import { WhatsAppService } from "../src/lib/whatsapp-service";
 import { OTPCryptoService } from "../src/lib/otp";
 
 async function testLiveFlow() {
@@ -59,14 +59,14 @@ async function testLiveFlow() {
   console.log("[OTP_FLOW] Database persistence succeeded; invoking Wasender");
 
   // Step 3: Dispatch via Wasender
-  const wasenderResult = await WasenderService.sendOTPMessage(targetPhone, rawOTP, { requestId });
+  const whatsappResult = await WhatsAppService.sendOTPMessage(targetPhone, rawOTP, { requestId });
 
   console.log(
-    `[OTP_FLOW] Wasender completed status=${wasenderResult.statusCode || (wasenderResult.success ? 200 : "ERROR")} success=${wasenderResult.success} requestId=${requestId}`
+    `[OTP_FLOW] Wasender completed status=${whatsappResult.statusCode || (whatsappResult.success ? 200 : "ERROR")} success=${whatsappResult.success} requestId=${requestId}`
   );
 
-  if (!wasenderResult.success) {
-    console.error("❌ Wasender dispatch failed:", wasenderResult.error);
+  if (!whatsappResult.success) {
+    console.error("❌ Wasender dispatch failed:", whatsappResult.error);
     process.exit(1);
   }
 

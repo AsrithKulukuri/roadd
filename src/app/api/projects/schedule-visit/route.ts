@@ -4,7 +4,7 @@ import { PortalError, portalError } from "@/lib/builder-access";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { WasenderService } from "@/lib/wasender";
+import { sendSiteVisitNotification } from "@/lib/whatsapp/site-visit-notification";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
 import { sanitizeIndianPhoneNumber } from "@/lib/validations/auth";
 
@@ -257,10 +257,10 @@ export async function POST(req: NextRequest) {
         `Thank you for using ROAD Facing!`;
 
       if (cleanCustomerPhone) {
-        const custResult = await WasenderService.sendTextMessage(cleanCustomerPhone, customerMsg, {
+        const custResult = await sendSiteVisitNotification(cleanCustomerPhone, customerMsg, {
           requestId: `sched-cust-${scheduleId}`,
         });
-        customerNotified = custResult.success;
+        customerNotified = custResult.success && !custResult.simulated;
       }
     } catch (msgErr) {
       console.warn("[SCHEDULE VISIT] Failed to send WhatsApp to customer:", msgErr);
@@ -286,8 +286,8 @@ export async function POST(req: NextRequest) {
 
         for (const recipient of new Set([targetBuilderPhone, adminPhone].filter(Boolean))) {
           try {
-            const result = await WasenderService.sendTextMessage(recipient, builderMsg, { requestId: `sched-${scheduleId}-${recipient}`, recipientType: recipient === targetBuilderPhone ? "builder" : "admin" });
-            if (recipient === cleanBuilderPhone) builderNotified = result.success;
+            const result = await sendSiteVisitNotification(recipient, builderMsg, { requestId: `sched-${scheduleId}-${recipient}`, recipientType: recipient === cleanBuilderPhone ? "builder" : "admin" });
+            if (recipient === cleanBuilderPhone) builderNotified = result.success && !result.simulated;
           } catch { /* One failed recipient must not prevent notifying the other. */ }
         }
       }

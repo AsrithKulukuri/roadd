@@ -60,9 +60,9 @@ test("maps resolver rejects non-Google URLs before fetching", async ({ request }
   });
 });
 
-test("Wasender webhook rejects an invalid signature", async ({ request }) => {
-  const response = await request.post("/api/webhooks/wasender", {
-    headers: { "x-webhook-signature": "invalid" },
+test("Meta webhook rejects an invalid signature", async ({ request }) => {
+  const response = await request.post("/api/webhooks/meta-whatsapp", {
+    headers: { "x-hub-signature-256": "invalid" },
     data: { event: "messages.received", data: {} },
   });
   expect([401, 503]).toContain(response.status());

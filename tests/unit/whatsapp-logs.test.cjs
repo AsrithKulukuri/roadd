@@ -21,7 +21,6 @@ function fixture(dbError = null) {
   const api = load('src/lib/whatsapp/message-log.ts', {
     '@/lib/supabase-admin': { supabaseAdmin: db },
     '@/lib/whatsapp/whatsapp-share': { formatWhatsAppPhone: value => value.replace(/\D/g, '') },
-    './wasender-message-id': { resolveWasenderMessageId: async () => 'WA-RECEIPT-ID' },
   });
   return { ...api, inserts, calls };
 }
@@ -43,15 +42,9 @@ test('OTP and failure echo are redacted; signed media query is stripped', async 
 });
 test('simulated sends stay simulated and do not resolve a provider receipt id', async () => {
   const f = fixture();
-  await f.trackWhatsAppSend({ ...input, provider: 'wasender' }, async () => ({ success: true, simulated: true, id: 'mock-1' }));
+  await f.trackWhatsAppSend({ ...input, provider: 'meta' }, async () => ({ success: true, simulated: true, id: 'mock-1' }));
   assert.equal(f.calls[0].args.p_status, 'simulated');
   assert.equal(f.calls[0].args.p_message_id, 'mock-1');
-});
-test('fallback provider and its receipt ID are tracked', async () => {
-  const f = fixture();
-  await f.trackWhatsAppSend(input, async () => ({ success: true, provider: 'wasender', id: '123' }));
-  assert.equal(f.calls[0].args.p_provider, 'wasender');
-  assert.equal(f.calls[0].args.p_message_id, 'WA-RECEIPT-ID');
 });
 test('unexpected send exception becomes a failed log', async () => {
   const f = fixture();
@@ -69,8 +62,8 @@ test('database failure never resends a message', async () => {
 test('receipt seconds and milliseconds normalize equally; unsupported events ignored', async () => {
   const f = fixture();
   await f.recordWhatsAppReceipt('meta', 'one', 'read', '1751297488');
-  await f.recordWhatsAppReceipt('wasender', 'two', 'read', 1751297488000);
-  await f.recordWhatsAppReceipt('wasender', 'two', 'pending', 1751297488000);
+  await f.recordWhatsAppReceipt('meta', 'two', 'read', 1751297488000);
+  await f.recordWhatsAppReceipt('meta', 'two', 'pending', 1751297488000);
   assert.equal(f.calls.length, 2);
   assert.equal(f.calls[0].args.p_occurred_at, f.calls[1].args.p_occurred_at);
 });
@@ -83,32 +76,20 @@ test('admin logs endpoint rejects unauthorized access before database lookup', a
     'next/server': { NextResponse: Response },
     '@/lib/server-auth-guard': { requireAdmin: async () => ({ errorResponse: new Response('Forbidden', { status: 403 }) }) },
     '@/lib/supabase-admin': { supabaseAdmin: { from: () => { throw new Error('Must not query'); } } },
-    '@/lib/whatsapp/wasender-message-id': {},
   });
   assert.equal((await route.GET(new Request('https://example.test/api/admin/whatsapp/logs'))).status, 403);
 });
 
 function webhookFixture(provider, record = async () => {}) {
-  return load(`src/app/api/webhooks/${provider === 'meta' ? 'meta-whatsapp' : 'wasender'}/route.ts`, {
+  return load('src/app/api/webhooks/meta-whatsapp/route.ts', {
     'next/server': { NextResponse: Response },
-    '@/lib/wasender': { getSanitizedEnv: () => 'test-secret', WasenderService: {} },
+    '@/lib/whatsapp-service': { getSanitizedEnv: () => 'test-secret', WhatsAppService: {} },
     '@/lib/whatsapp-audience': { normalizeWhatsAppPhone: value => value },
     '@/lib/supabase-admin': { supabaseAdmin: {} },
     '@/lib/whatsapp/whatsapp-concierge': { processInboundWhatsAppMessage: () => { throw new Error('Receipt routed to bot'); } },
     '@/lib/whatsapp/message-log': { recordWhatsAppReceipt: record },
   });
 }
-test('Wasender numeric read receipt records the message key and timestamp', async () => {
-  const calls = [];
-  const route = webhookFixture('wasender', async (...args) => calls.push(args));
-  const response = await route.POST(new Request('https://example.test/webhook', { method: 'POST', headers: { 'x-webhook-signature': 'test-secret' }, body: JSON.stringify({ event: 'messages.update', timestamp: 1751297488000, data: { key: { id: 'WA1' }, update: { status: 4 } } }) }));
-  assert.equal(response.status, 200);
-  assert.deepEqual(calls[0].slice(0, 4), ['wasender', 'WA1', 'read', 1751297488000]);
-});
-test('Wasender missing webhook secret header is rejected', async () => {
-  const response = await webhookFixture('wasender').POST(new Request('https://example.test/webhook', { method: 'POST', body: '{}' }));
-  assert.equal(response.status, 401);
-});
 test('Meta missing signature is rejected when app secret is configured', async () => {
   const previous = process.env.META_APP_SECRET;
   process.env.META_APP_SECRET = 'test-app-secret';
@@ -118,4 +99,46 @@ test('Meta missing signature is rejected when app secret is configured', async (
   } finally {
     if (previous === undefined) delete process.env.META_APP_SECRET; else process.env.META_APP_SECRET = previous;
   }
+});
+
+test('all send methods use Meta and log exactly once even if legacy provider is configured', async () => {
+  const calls = [], logs = [];
+  const previous = process.env.WHATSAPP_PROVIDER;
+  process.env.WHATSAPP_PROVIDER = 'wasender';
+  const service = load('src/lib/whatsapp-service.ts', {
+    '@/lib/meta-whatsapp': { getMetaWhatsAppMode: () => 'live', MetaWhatsAppService: Object.fromEntries(['sendOTPMessage','sendTextMessage','sendImageMessage','sendTemplateMessage'].map(name => [name, async () => { calls.push(name); return { success: true, id: 'wamid.test' }; }])) },
+    '@/lib/whatsapp/message-log': { trackWhatsAppSend: async (input, send) => { logs.push(input); return send(); } },
+  });
+  try {
+    await service.WhatsAppService.sendOTPMessage('919000000001','123456');
+    await service.WhatsAppService.sendTextMessage('919000000001','hello');
+    await service.WhatsAppService.sendImageMessage('919000000001','https://example.com/photo','caption');
+    await service.WhatsAppService.sendTemplateMessage('919000000001','template');
+    assert.equal(service.getWhatsAppProvider(),'meta');
+    assert.equal(calls.length,4); assert.equal(logs.length,4);
+    assert.ok(logs.every(x => x.provider === 'meta'));
+    assert.ok(!JSON.stringify(logs).includes('123456'));
+  } finally {
+    if(previous === undefined) delete process.env.WHATSAPP_PROVIDER; else process.env.WHATSAPP_PROVIDER=previous;
+  }
+});
+test('site visit notification uses approved template and normalized one-body parameter', async () => {
+  let args;
+  const helper = load('src/lib/whatsapp/site-visit-notification.ts', {
+    '@/lib/whatsapp-service': { WhatsAppService: { sendTextMessage: async (...value) => { args=value; return { success:true }; } } },
+  });
+  await helper.sendSiteVisitNotification('919000000001','Visit\n\nTomorrow\t3PM',{ requestId:'visit-test', recipientType:'builder' });
+  assert.equal(args[2].templateName,process.env.META_SITE_VISIT_TEMPLATE_NAME || 'road_alert_notification');
+  assert.equal(args[2].components[0].parameters[0].text,'Visit Tomorrow 3PM');
+  assert.equal(args[2].recipientType,'builder');
+});
+test('valid Meta read receipt preserves provider timestamp', async () => {
+  const calls=[]; const previous=process.env.META_APP_SECRET;
+  process.env.META_APP_SECRET='test-app-secret';
+  try {
+    const payload=JSON.stringify({object:'whatsapp_business_account',entry:[{changes:[{field:'messages',value:{statuses:[{id:'wamid.test',status:'read',timestamp:'1751297488'}]}}]}]});
+    const signature='sha256='+require('node:crypto').createHmac('sha256','test-app-secret').update(payload).digest('hex');
+    const response=await webhookFixture('meta',async(...args)=>calls.push(args)).POST(new Request('https://example.test/webhook',{method:'POST',headers:{'x-hub-signature-256':signature},body:payload}));
+    assert.equal(response.status,200); assert.deepEqual(calls[0].slice(0,4),['meta','wamid.test','read','1751297488']);
+  } finally {if(previous===undefined)delete process.env.META_APP_SECRET;else process.env.META_APP_SECRET=previous;}
 });

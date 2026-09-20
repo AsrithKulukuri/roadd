@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/server-auth-guard";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { WasenderService } from "@/lib/wasender";
+import { WhatsAppService } from "@/lib/whatsapp-service";
 import { normalizeWhatsAppPhone } from "@/lib/whatsapp-audience";
 import { getSavedPropertiesForUser } from "@/lib/whatsapp/lead-engine";
 import { getConversationState } from "@/lib/whatsapp/conversation-state";
@@ -148,13 +148,13 @@ export async function POST(request: Request) {
       }
 
       // 1. Send live WhatsApp message to user
-      const sendResult = await WasenderService.sendTextMessage(cleanPhone, data.message, {
+      const sendResult = await WhatsAppService.sendTextMessage(cleanPhone, data.message, {
         requestId: `admin-reply-${Date.now()}`,
       });
 
       if (!sendResult.success && !sendResult.simulated) {
         return NextResponse.json(
-          { success: false, error: sendResult.error || "Failed to send WhatsApp message via Wasender." },
+          { success: false, error: sendResult.error || "Failed to send WhatsApp message via Meta WhatsApp." },
           { status: 502 }
         );
       }
@@ -231,7 +231,7 @@ export async function POST(request: Request) {
       // If resolved, notify the user that AI Concierge has resumed
       if (isResolved) {
         const resumeNotice = `🤖 *AI Concierge Resumed*\n\nYour support session has been completed by our advisor. I am back and ready to assist you with property searches across Andhra Pradesh! 🏡\n\n*Try asking:* _"3 bhk flats in Poranki"_ or _"Flats under 1 Cr"_`;
-        await WasenderService.sendTextMessage(cleanPhone, resumeNotice, {
+        await WhatsAppService.sendTextMessage(cleanPhone, resumeNotice, {
           requestId: `resume-notice-${Date.now()}`,
         }).catch(() => null);
 

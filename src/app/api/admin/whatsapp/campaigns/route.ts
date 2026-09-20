@@ -8,7 +8,7 @@ import {
   toPublicMediaUrl,
   withWhatsAppOptOut,
 } from "@/lib/whatsapp-audience";
-import { getWasenderNotificationMode, getWhatsAppProvider } from "@/lib/wasender";
+import { getWhatsAppNotificationMode, getWhatsAppProvider } from "@/lib/whatsapp-service";
 import { runCampaignToCompletion } from "@/lib/whatsapp/campaign-runner";
 
 export const runtime = "nodejs";
@@ -84,7 +84,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     success: true,
     campaigns: data || [],
-    deliveryMode: getWasenderNotificationMode(),
+    deliveryMode: getWhatsAppNotificationMode(),
   });
 }
 
@@ -170,7 +170,7 @@ export async function POST(request: Request) {
     });
 
     const isMeta = getWhatsAppProvider() === "meta";
-    const deliveryMode = isMeta ? "live" : getWasenderNotificationMode();
+    const deliveryMode = getWhatsAppNotificationMode();
 
     return NextResponse.json({
       success: true,

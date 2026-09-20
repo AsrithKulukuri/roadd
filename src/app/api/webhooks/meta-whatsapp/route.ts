@@ -2,7 +2,7 @@ import { timingSafeEqual, createHmac } from "node:crypto";
 import { normalizeWhatsAppPhone } from "@/lib/whatsapp-audience";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { processInboundWhatsAppMessage } from "@/lib/whatsapp/whatsapp-concierge";
-import { WasenderService } from "@/lib/wasender";
+import { WhatsAppService } from "@/lib/whatsapp-service";
 import { recordWhatsAppReceipt } from "@/lib/whatsapp/message-log";
 
 export const runtime = "nodejs";
@@ -240,7 +240,7 @@ export async function POST(request: Request) {
               }
 
               try {
-                await WasenderService.sendTextMessage(
+                await WhatsAppService.sendTextMessage(
                   phone,
                   "You have unsubscribed from ROAD FACING property updates. You will not receive broadcast messages.\n\nReply YES (or any message) to resume receiving updates again.",
                   { requestId: `meta-stop-${Date.now()}` }
@@ -294,7 +294,7 @@ export async function POST(request: Request) {
 
                 if (isExplicitResumeKeyword) {
                   try {
-                    await WasenderService.sendTextMessage(
+                    await WhatsAppService.sendTextMessage(
                       phone,
                       "Welcome back! You have successfully resubscribed to ROAD FACING property updates.\n\nYou will now receive alerts on new properties, verified listings, and projects.",
                       { requestId: `meta-resume-${Date.now()}` }

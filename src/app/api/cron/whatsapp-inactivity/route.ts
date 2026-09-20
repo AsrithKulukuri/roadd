@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { WasenderService } from "@/lib/wasender";
+import { WhatsAppService } from "@/lib/whatsapp-service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
           `Please type *"Hi"* or continue typing to proceed with exploring verified properties & projects on ROAD! 🏡`;
 
         try {
-          await WasenderService.sendTextMessage(phone, inactivityText, {
+          await WhatsAppService.sendTextMessage(phone, inactivityText, {
             requestId: `cron-inactivity-${phone}-${Date.now()}`,
           });
 

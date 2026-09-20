@@ -291,17 +291,17 @@ export function TourBookingModal({
               <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 text-left space-y-2">
                 <div className="flex items-center gap-2 text-xs font-semibold text-amber-900">
                   <MessageSquare className="w-4 h-4 text-amber-600" />
-                  <span>WhatsApp Notifications Dispatched</span>
+                  <span>WhatsApp Notification Status</span>
                 </div>
                 <ul className="text-xs text-neutral-700 space-y-1 pl-5 list-disc">
                   <li>
-                    <span className="font-medium">Customer:</span> Confirmation sent to {scheduledResult.customerPhone}
+                    <span className="font-medium">Customer:</span> {scheduledResult.customerNotified ? `Confirmation accepted for sending to ${scheduledResult.customerPhone}. Delivery is not yet confirmed.` : "Confirmation could not be sent. Your booking is saved; please contact the site team."}
                   </li>
                   <li>
-                    <span className="font-medium">Owner / Agent:</span> Tour request alert dispatched with your slot
+                    <span className="font-medium">Owner / Agent:</span> {scheduledResult.builderNotified ? "Visit alert accepted for sending. Delivery is not yet confirmed." : "Visit alert could not be sent. The site team can still view your booking."}
                   </li>
                   <li>
-                    <span className="font-medium">1-Hour Reminder:</span> Scheduled automatically before your visit
+                    <span className="font-medium">1-Hour Reminder:</span> Automatic reminder delivery depends on WhatsApp availability
                   </li>
                 </ul>
               </div>

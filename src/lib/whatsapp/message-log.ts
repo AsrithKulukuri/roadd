@@ -1,11 +1,11 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
-import type { WasenderExecutionResult } from "@/lib/wasender";
-import { resolveWasenderMessageId } from "./wasender-message-id";
+import type { WhatsAppExecutionResult } from "@/lib/whatsapp-types";
+
 
 export interface MessageLogInput {
   phone: string;
-  provider: "meta" | "wasender";
+  provider: "meta";
   messageType: string;
   message: string;
   requestId?: string;
@@ -14,65 +14,51 @@ export interface MessageLogInput {
   templateName?: string;
 }
 
-let logTableRetryAfter = 0;
-
-/** Await persistence, but never resend a message because writing its log failed. */
-export async function trackWhatsAppSend(input: MessageLogInput, send: () => Promise<WasenderExecutionResult>): Promise<WasenderExecutionResult> {
+/** Retry persistence independently; never repeat a provider send because logging failed. */
+export async function trackWhatsAppSend(input: MessageLogInput, send: () => Promise<WhatsAppExecutionResult>): Promise<WhatsAppExecutionResult> {
   const id = crypto.randomUUID();
-  let inserted = false;
-  if (Date.now() >= logTableRetryAfter) {
+  const row = {
+    id, phone: formatWhatsAppPhone(input.phone) || input.phone, provider: "meta",
+    message_type: input.messageType,
+    message_body: input.messageType === "otp" ? "Verification code: [REDACTED]" : input.message.replace(/https?:\/\/[^\s"<>]+/g, value => {
+      try { const url = new URL(value); if (url.searchParams.has("X-Amz-Signature")) { url.search = ""; return url.toString(); } } catch {}
+      return value;
+    }),
+    recipient_type: input.recipientType || "user", request_id: input.requestId,
+    media_url: input.mediaUrl?.split("?")[0], template_name: input.templateName,
+    created_at: new Date().toISOString(),
+  };
+  const persistAttempt = async () => {
     try {
-      const { error } = await supabaseAdmin.from("whatsapp_message_logs").insert({
-        id, phone: formatWhatsAppPhone(input.phone) || input.phone,
-        provider: input.provider, message_type: input.messageType,
-        message_body: input.messageType === "otp" ? "Verification code: [REDACTED]" : input.message.replace(/https?:\/\/[^\s"<>]+/g, value => {
-          try { const url = new URL(value); if (url.searchParams.has("X-Amz-Signature")) { url.search = ""; return url.toString(); } } catch {}
-          return value;
-        }),
-        recipient_type: input.recipientType || "user", request_id: input.requestId,
-        // Never persist signed URL credentials.
-        media_url: input.mediaUrl?.split("?")[0], template_name: input.templateName,
-      });
-      if (error) {
-        if (error.message?.includes("Could not find the table")) {
-          logTableRetryAfter = Date.now() + 60000;
-          console.warn("[WhatsApp Logs] Apply the WhatsApp Logs database migration; retrying in one minute.");
-        } else {
-          throw error;
-        }
-      } else {
-        logTableRetryAfter = 0;
-        inserted = true;
-      }
+      const { error } = await supabaseAdmin.from("whatsapp_message_logs").insert(row);
+      if (error && error.code !== "23505") throw error;
+      return true;
     } catch (error) {
-      console.warn("[WhatsApp Logs] Log table not ready or write skipped:", error);
+      console.error("[WhatsApp Logs] Send attempt persistence failed", { logId: id, requestId: input.requestId, error });
+      return false;
     }
-  }
-
-  let result: WasenderExecutionResult;
-  try {
-    result = await send();
-  } catch {
-    result = { success: false, error: "Message dispatch failed unexpectedly", errorCategory: "NETWORK_ERROR" };
-  }
+  };
+  let inserted = await persistAttempt();
+  let result: WhatsAppExecutionResult;
+  try { result = await send(); }
+  catch { result = { success: false, error: "Message dispatch failed unexpectedly", errorCategory: "NETWORK_ERROR" }; }
+  if (!inserted) inserted = await persistAttempt();
+  let logRecorded = false;
   if (inserted) {
-  try {
-    const provider = result.provider || input.provider;
-    const messageId = provider === "wasender" && result.id && !result.simulated
-      ? await resolveWasenderMessageId(result.id) : result.id;
-    const { error } = await supabaseAdmin.rpc("finish_whatsapp_log", {
-      p_id: id, p_provider: provider,
-      p_message_id: messageId || null,
-        p_status: result.simulated ? "simulated" : result.success ? "accepted" : "failed",
-        p_error: input.messageType === "otp" && result.error ? "Verification message failed to send" : result.error || null,
-        p_error_category: result.errorCategory || null,
-      });
-      if (error) throw error;
-    } catch (error) {
-      console.warn("[WhatsApp Logs] Could not record send result:", error);
+    for (let attempt = 0; attempt < 2 && !logRecorded; attempt++) {
+      try {
+        const { error } = await supabaseAdmin.rpc("finish_whatsapp_log", {
+          p_id: id, p_provider: "meta", p_message_id: result.id || null,
+          p_status: result.simulated ? "simulated" : result.success ? "accepted" : "failed",
+          p_error: input.messageType === "otp" && result.error ? "Verification message failed to send" : result.error || null,
+          p_error_category: result.errorCategory || null,
+        });
+        if (error) throw error;
+        logRecorded = true;
+      } catch (error) { console.error("[WhatsApp Logs] Send result persistence failed", { logId: id, error }); }
     }
   }
-  return result;
+  return { ...result, provider: "meta", logRecorded };
 }
 
 export async function recordWhatsAppReceipt(provider: string, messageId: string, status: string, timestamp: unknown, errorMessage?: string) {

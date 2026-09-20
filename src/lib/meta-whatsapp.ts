@@ -1,11 +1,11 @@
 import axios, { AxiosError } from "axios";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
 import { resolveExternalMediaUrl } from "@/lib/aws/presign";
-import type { WasenderExecutionResult, WasenderMode, WasenderSendOptions } from "@/lib/wasender";
+import type { WhatsAppExecutionResult, WhatsAppMode, WhatsAppSendOptions } from "@/lib/whatsapp-types";
 
-export type MetaWhatsAppMode = WasenderMode;
+export type MetaWhatsAppMode = WhatsAppMode;
 
-export interface MetaSendOptions extends WasenderSendOptions {
+export interface MetaSendOptions extends WhatsAppSendOptions {
   templateName?: string;
   languageCode?: string;
   components?: Array<Record<string, any>>;
@@ -54,30 +54,10 @@ export function getMetaWhatsAppMode(type: "otp" | "notification" = "otp"): MetaW
     return metaSpecific as MetaWhatsAppMode;
   }
 
-  if (type === "otp") {
-    const otpMode = (
-      getSanitizedEnv("META_OTP_MODE") ||
-      getSanitizedEnv("WASENDER_OTP_MODE")
-    ).toLowerCase();
-    if (otpMode === "live" || otpMode === "mock" || otpMode === "disabled") {
-      return otpMode as MetaWhatsAppMode;
-    }
-  } else {
-    const notifMode = (
-      getSanitizedEnv("META_NOTIFICATION_MODE") ||
-      getSanitizedEnv("WASENDER_NOTIFICATION_MODE")
-    ).toLowerCase();
-    if (notifMode === "live" || notifMode === "mock" || notifMode === "disabled") {
-      return notifMode as MetaWhatsAppMode;
-    }
-  }
-
-  const legacy = getSanitizedEnv("WASENDER_MODE").toLowerCase();
-  if (legacy === "live" || legacy === "mock" || legacy === "disabled") {
-    return legacy as MetaWhatsAppMode;
-  }
-
-  return getSanitizedEnv("META_WHATSAPP_ACCESS_TOKEN") ? "live" : "disabled";
+  const mode = getSanitizedEnv(type === "otp" ? "META_OTP_MODE" : "META_NOTIFICATION_MODE").toLowerCase();
+  if (mode === "live" || mode === "mock" || mode === "disabled") return mode;
+  if (process.env.NODE_ENV === "test") return "mock";
+  return getMetaConfig().accessToken ? "live" : "disabled";
 }
 
 function getMetaConfig(): {
@@ -108,7 +88,7 @@ function getMetaConfig(): {
 
 function classifyMetaError(err: unknown): {
   error: string;
-  errorCategory: WasenderExecutionResult["errorCategory"];
+  errorCategory: WhatsAppExecutionResult["errorCategory"];
   statusCode: number;
 } {
   if (axios.isAxiosError(err)) {
@@ -199,7 +179,7 @@ export class MetaWhatsAppService {
       startTime: number;
       logPrefix: string;
     }
-  ): Promise<WasenderExecutionResult> {
+  ): Promise<WhatsAppExecutionResult> {
     const { phoneNumberId, accessToken, apiVersion } = getMetaConfig();
 
     if (!phoneNumberId || !accessToken) {
@@ -231,7 +211,8 @@ export class MetaWhatsAppService {
         });
 
         const data = response.data;
-        const messageId = data?.messages?.[0]?.id || `meta-${Date.now()}`;
+        const messageId = data?.messages?.[0]?.id;
+        if (!messageId) return { success: false, error: "Meta did not return a message ID", errorCategory: "PROVIDER_UNAVAILABLE", statusCode: 502 };
 
         return {
           success: true,
@@ -286,7 +267,7 @@ export class MetaWhatsAppService {
     phone: string,
     otp: string,
     options?: MetaSendOptions
-  ): Promise<WasenderExecutionResult> {
+  ): Promise<WhatsAppExecutionResult> {
     const startTime = Date.now();
     const requestId = options?.requestId || `meta-otp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const cleanPhone = formatWhatsAppPhone(phone);
@@ -399,7 +380,7 @@ export class MetaWhatsAppService {
     phone: string,
     message: string,
     options?: MetaSendOptions
-  ): Promise<WasenderExecutionResult> {
+  ): Promise<WhatsAppExecutionResult> {
     const startTime = Date.now();
     const requestId = options?.requestId || `meta-txt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const cleanPhone = formatWhatsAppPhone(phone);
@@ -541,7 +522,7 @@ export class MetaWhatsAppService {
     imageUrl: string,
     caption: string,
     options?: MetaSendOptions
-  ): Promise<WasenderExecutionResult> {
+  ): Promise<WhatsAppExecutionResult> {
     const rawUrl = (imageUrl || "").trim();
     const resolvedUrl = await resolveExternalMediaUrl(rawUrl).catch(() => rawUrl);
 
@@ -623,7 +604,7 @@ export class MetaWhatsAppService {
       components?: MetaTemplateComponent[];
       requestId?: string;
     }
-  ): Promise<WasenderExecutionResult> {
+  ): Promise<WhatsAppExecutionResult> {
     const startTime = Date.now();
     const requestId = options?.requestId || `meta-tpl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const cleanPhone = formatWhatsAppPhone(phone);

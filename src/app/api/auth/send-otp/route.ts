@@ -3,7 +3,7 @@ import { sendOTPSchema } from "@/lib/validations/auth";
 import { RateLimiterService } from "@/lib/rate-limiter";
 import { OTPCryptoService } from "@/lib/otp";
 import { supabaseAdmin, isServiceRoleConfigured } from "@/lib/supabase-admin";
-import { WasenderService } from "@/lib/wasender";
+import { WhatsAppService } from "@/lib/whatsapp-service";
 import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
@@ -189,37 +189,37 @@ export async function POST(request: Request) {
       );
     }
 
-    // 6. Mandatory exact log before Wasender invocation
-    console.log("[OTP_FLOW] Database persistence succeeded; invoking Wasender");
+    // 6. Mandatory exact log before Meta WhatsApp invocation
+    console.log("[OTP_FLOW] Database persistence succeeded; invoking Meta WhatsApp");
 
-    // 7. Send OTP via WasenderAPI (WhatsApp)
-    const wasenderResult = await WasenderService.sendOTPMessage(phone, rawOTP, { requestId });
+    // 7. Send OTP via WhatsApp Cloud API (WhatsApp)
+    const whatsappResult = await WhatsAppService.sendOTPMessage(phone, rawOTP, { requestId });
 
-    // 8. Mandatory exact log after Wasender completion
+    // 8. Mandatory exact log after Meta WhatsApp completion
     console.log(
-      `[OTP_FLOW] Wasender completed status=${wasenderResult.statusCode || (wasenderResult.success ? 200 : "ERROR")} success=${wasenderResult.success} requestId=${requestId}`
+      `[OTP_FLOW] Meta WhatsApp completed status=${whatsappResult.statusCode || (whatsappResult.success ? 200 : "ERROR")} success=${whatsappResult.success} requestId=${requestId}`
     );
 
-    if (!wasenderResult.success) {
+    if (!whatsappResult.success) {
       // Invalidate the unusable code while retaining this request for rate limiting.
       await supabaseAdmin
         .from("phone_otps")
         .update({ verified: true, verified_at: new Date().toISOString(), delivery_status: "failed" })
         .eq("id", otpRecordId);
 
-      logger.error("WasenderAPI failed to deliver WhatsApp OTP", {
+      logger.error("WhatsApp Cloud API failed to deliver WhatsApp OTP", {
         phone: `${phone.slice(0, 4)}****${phone.slice(-3)}`,
-        error: wasenderResult.error,
-        category: wasenderResult.errorCategory,
+        error: whatsappResult.error,
+        category: whatsappResult.errorCategory,
         requestId,
       });
 
       const statusCode =
-        wasenderResult.statusCode === 429
+        whatsappResult.statusCode === 429
           ? 429
-          : wasenderResult.errorCategory === "CONFIG_ERROR"
+          : whatsappResult.errorCategory === "CONFIG_ERROR"
           ? 503
-          : wasenderResult.errorCategory === "TIMEOUT"
+          : whatsappResult.errorCategory === "TIMEOUT"
           ? 504
           : 502;
 
@@ -227,8 +227,8 @@ export async function POST(request: Request) {
         {
           success: false,
           error: {
-            code: wasenderResult.errorCategory || "OTP_PROVIDER_UNAVAILABLE",
-            message: wasenderResult.error || "Failed to dispatch WhatsApp OTP message.",
+            code: whatsappResult.errorCategory || "OTP_PROVIDER_UNAVAILABLE",
+            message: whatsappResult.error || "Failed to dispatch WhatsApp OTP message.",
           },
           requestId,
         },

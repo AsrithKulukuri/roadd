@@ -24,7 +24,7 @@ try {
 }
 
 import { getSupabaseAdmin, isServiceRoleConfigured } from "../src/lib/supabase-admin";
-import { WasenderService, getWasenderOtpMode } from "../src/lib/wasender";
+import { WhatsAppService, getWhatsAppOtpMode } from "../src/lib/whatsapp-service";
 import { OTPCryptoService } from "../src/lib/otp";
 
 async function runTests() {
@@ -57,7 +57,7 @@ async function runTests() {
   assert("isServiceRoleConfigured() returns true with valid key", isServiceRoleConfigured());
 
   // 2. Test Wasender OTP Mode
-  const otpMode = getWasenderOtpMode();
+  const otpMode = getWhatsAppOtpMode();
   assert("Wasender OTP mode resolves to live when configured", otpMode === "live" || otpMode === "mock");
 
   // 3. Test Supabase phone_otps Schema & Operations

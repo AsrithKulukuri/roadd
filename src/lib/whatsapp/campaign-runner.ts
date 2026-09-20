@@ -1,21 +1,10 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { WasenderService, getWhatsAppProvider } from "@/lib/wasender";
+import { WhatsAppService, getWhatsAppProvider } from "@/lib/whatsapp-service";
 
-/**
- * Returns safe interval delay between recipient dispatches in milliseconds.
- * - Meta WhatsApp Cloud API: 250ms (or META_BROADCAST_INTERVAL_MS, 50ms - 5000ms)
- * - Wasender provider: 5000ms (or WASENDER_BROADCAST_INTERVAL_MS, 1000ms - 300000ms)
- */
+/** Delay between Meta Cloud API recipients. */
 export function getBroadcastIntervalMs(): number {
-  if (getWhatsAppProvider() === "meta") {
-    const metaInterval = Number(process.env.META_BROADCAST_INTERVAL_MS || 250);
-    if (!Number.isFinite(metaInterval)) return 250;
-    return Math.max(50, Math.min(metaInterval, 5000));
-  }
-
-  const configured = Number(process.env.WASENDER_BROADCAST_INTERVAL_MS || 5000);
-  if (!Number.isFinite(configured)) return 5000;
-  return Math.max(1000, Math.min(configured, 300000));
+  const interval = Number(process.env.META_BROADCAST_INTERVAL_MS || 250);
+  return Number.isFinite(interval) ? Math.max(50, Math.min(interval, 5000)) : 250;
 }
 
 export interface CampaignProgress {
@@ -99,7 +88,7 @@ export async function processCampaignBatch(
   options?: ProcessBatchOptions
 ): Promise<ProcessBatchResult> {
   const isMeta = getWhatsAppProvider() === "meta";
-  // Default to 20 for Meta, 5 for Wasender
+  // Default to 20 for Meta, 5 for Meta WhatsApp
   const defaultBatch = isMeta ? 20 : 5;
   const batchSize = Math.max(1, Math.min(options?.batchSize || defaultBatch, 50));
   const maxDurationMs = Math.max(5000, Math.min(options?.maxDurationMs || 24000, 55000));
@@ -173,13 +162,13 @@ export async function processCampaignBatch(
     const requestId = `broadcast-${campaignId}-${recipient.id}`;
     const result =
       campaign.media_kind === "image" && campaign.media_url
-        ? await WasenderService.sendImageMessage(
+        ? await WhatsAppService.sendImageMessage(
             recipient.phone,
             campaign.media_url,
             campaign.message,
             { requestId }
           )
-        : await WasenderService.sendTextMessage(recipient.phone, campaign.message, {
+        : await WhatsAppService.sendTextMessage(recipient.phone, campaign.message, {
             requestId,
           });
 

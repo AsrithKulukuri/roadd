@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server-auth-guard";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { resolveWasenderMessageId } from "@/lib/whatsapp/wasender-message-id";
+
 
 export const dynamic = "force-dynamic";
 
@@ -22,19 +22,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Invalid log filters" }, { status: 400 });
   }
   try {
-    // Retry id correlation if WaSender's send response arrived before its message info.
-    // Limit work and retry frequency; no messages are sent by this read operation.
-    const pending = await supabaseAdmin.from("whatsapp_message_logs").select("id,provider_message_id")
-      .eq("provider", "wasender").eq("status", "accepted")
-      .eq("receipt_id_pending", true)
-      .lt("updated_at", new Date(Date.now() - 30000).toISOString())
-      .order("updated_at").limit(5);
-    for (const log of pending.data || []) {
-      if (!/^\d+$/.test(log.provider_message_id || "")) continue;
-      const receiptId = await resolveWasenderMessageId(log.provider_message_id);
-      const linked = await supabaseAdmin.rpc("link_whatsapp_receipt_id", { p_id: log.id, p_message_id: receiptId });
-      if (linked.error) throw linked.error;
-    }
     let query = supabaseAdmin.from("whatsapp_message_logs").select("*", { count: "exact" });
     if (status) query = query.eq("status", status);
     if (recipient) query = query.eq("recipient_type", recipient);

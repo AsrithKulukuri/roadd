@@ -53,12 +53,12 @@ export interface APIErrorResponse {
   details?: Record<string, string>;
 }
 
-export interface WasenderSendMessagePayload {
+export interface WhatsAppSendMessagePayload {
   to: string;
   message: string;
 }
 
-export interface WasenderAPIResponse {
+export interface WhatsAppAPIResponse {
   success: boolean;
   message?: string;
   id?: string;

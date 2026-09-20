@@ -50,7 +50,7 @@ export function getPublicUrl(key: string): string {
 
 /**
  * Resolves any media URL or proxy path to a direct pre-signed S3 GET URL
- * suitable for external API consumption (e.g. WhatsApp / WASender / CDN)
+ * suitable for external API consumption (e.g. WhatsApp / CDN)
  * without hitting proxy auth or deployment protection.
  */
 export async function resolveExternalMediaUrl(rawUrl: string, expiresIn = 86400): Promise<string> {

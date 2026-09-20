@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { WasenderService } from "@/lib/wasender";
+import { sendSiteVisitNotification } from "@/lib/whatsapp/site-visit-notification";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
 
 export const runtime = "nodejs";
@@ -115,7 +115,7 @@ export async function GET(request: Request) {
             `— ROAD Facing Support`;
 
           try {
-            await WasenderService.sendTextMessage(cleanCustomerPhone, customerMsg, {
+            await sendSiteVisitNotification(cleanCustomerPhone, customerMsg, {
               requestId: `remind-cust-${visit.id}`,
             });
             remindersSent++;
@@ -142,7 +142,7 @@ export async function GET(request: Request) {
           const builderRecipients = [...new Set([targetBuilderPhone, adminPhone].filter(Boolean))];
           for (const recipient of builderRecipients) {
             try {
-              await WasenderService.sendTextMessage(recipient, builderMsg, {
+              await sendSiteVisitNotification(recipient, builderMsg, {
                 requestId: `remind-bld-${visit.id}-${recipient}`,
                 recipientType: recipient === targetBuilderPhone ? "builder" : "admin",
               });

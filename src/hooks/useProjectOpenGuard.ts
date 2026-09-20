@@ -11,7 +11,7 @@ import { toast } from "sonner";
  * Universal project click & open guard for ROAD FACING.
  * Enforces:
  * 1. Logged-out users cannot open projects directly -> redirected to /login?redirect=/projects/{slug} with friendly toast.
- * 2. Logged-in users immediately trigger Wasender lead notification to builder, then navigate to /projects/{slug}.
+ * 2. Logged-in users immediately trigger Meta WhatsApp lead notification to builder, then navigate to /projects/{slug}.
  * 3. Property cards and views are completely unaffected.
  */
 export function useProjectOpenGuard() {
