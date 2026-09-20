@@ -152,6 +152,21 @@ export function toSupabaseProject(proj: Partial<Project>): Record<string, unknow
     }
   }
 
+  // Persist builder bio / experience / projects count safely in location JSONB
+  const bDesc = typeof p.builderDescription === 'string' ? p.builderDescription.trim() : undefined;
+  const bExp = typeof p.builderExperience === 'string' ? p.builderExperience.trim() : undefined;
+  const bCount = typeof p.builderProjectsCount === 'string' ? p.builderProjectsCount.trim() : undefined;
+  if (bDesc !== undefined || bExp !== undefined || bCount !== undefined) {
+    const loc = (p.location && typeof p.location === 'object') ? { ...(p.location as Record<string, unknown>) } : {};
+    if (bDesc !== undefined) loc.builderDescription = bDesc || undefined;
+    if (bExp !== undefined) loc.builderExperience = bExp || undefined;
+    if (bCount !== undefined) loc.builderProjectsCount = bCount || undefined;
+    p.location = loc;
+  }
+  delete p.builderDescription;
+  delete p.builderExperience;
+  delete p.builderProjectsCount;
+
   // Strip keys that are not valid columns in Supabase
   const cleaned: Record<string, unknown> = {};
   for (const key of Object.keys(p)) {
@@ -229,6 +244,27 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
       : (typeof rawLocation?.totalArea === 'string' ? rawLocation.totalArea : undefined));
   const totalArea = rawTotalArea && rawTotalArea.trim() ? rawTotalArea.trim() : undefined;
 
+  const rawBuilderDesc = typeof p.builderDescription === 'string' 
+    ? p.builderDescription 
+    : (typeof rawLocation?.builderDescription === 'string' 
+      ? rawLocation.builderDescription 
+      : undefined);
+  const builderDescription = rawBuilderDesc && rawBuilderDesc.trim() ? rawBuilderDesc.trim() : undefined;
+
+  const rawBuilderExp = typeof p.builderExperience === 'string' 
+    ? p.builderExperience 
+    : (typeof rawLocation?.builderExperience === 'string' 
+      ? rawLocation.builderExperience 
+      : undefined);
+  const builderExperience = rawBuilderExp && rawBuilderExp.trim() ? rawBuilderExp.trim() : undefined;
+
+  const rawBuilderProjectsCount = typeof p.builderProjectsCount === 'string' 
+    ? p.builderProjectsCount 
+    : (typeof rawLocation?.builderProjectsCount === 'string' 
+      ? rawLocation.builderProjectsCount 
+      : undefined);
+  const builderProjectsCount = rawBuilderProjectsCount && rawBuilderProjectsCount.trim() ? rawBuilderProjectsCount.trim() : undefined;
+
   return {
     ...(cleanObj as unknown as Project),
     crdaLpNumber: (p.crdaLpNumber as string | undefined) || (evidence.crdaLpNumber as string | undefined),
@@ -248,6 +284,9 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
     builderLogoUrl: (typeof p.builderLogoUrl === 'string' ? p.builderLogoUrl : (builderObj?.logoUrl ?? undefined)),
     builderPhone: typeof p.builderPhone === "string" ? p.builderPhone : undefined,
     builderWhatsapp: typeof p.builderWhatsapp === "string" ? p.builderWhatsapp : undefined,
+    builderDescription,
+    builderExperience,
+    builderProjectsCount,
     displayCategory: (p.displayCategory as "featured" | "recommended" | "budget_friendly" | "none" | undefined) || (p.isFeatured ? "featured" : "none"),
     possessionDate,
     totalArea

@@ -88,6 +88,20 @@ export async function POST(request: NextRequest) {
       location.isSoldOut = Boolean(rawPayload.isSoldOut);
     }
 
+    // Always mirror builder bio / experience / projects count into location JSONB for fail-safe persistence
+    if (rawPayload.builderDescription !== undefined) {
+      const cleanDesc = typeof rawPayload.builderDescription === "string" ? rawPayload.builderDescription.trim() : undefined;
+      if (cleanDesc) location.builderDescription = cleanDesc;
+    }
+    if (rawPayload.builderExperience !== undefined) {
+      const cleanExp = typeof rawPayload.builderExperience === "string" ? rawPayload.builderExperience.trim() : undefined;
+      if (cleanExp) location.builderExperience = cleanExp;
+    }
+    if (rawPayload.builderProjectsCount !== undefined) {
+      const cleanCount = typeof rawPayload.builderProjectsCount === "string" ? rawPayload.builderProjectsCount.trim() : undefined;
+      if (cleanCount) location.builderProjectsCount = cleanCount;
+    }
+
     rawPayload.location = location;
 
     if (body.mode === "update" && !body.id && !body.slug) {

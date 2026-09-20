@@ -1663,26 +1663,35 @@ export function ProjectDetailView({
                     </div>
 
                     {/* Builder Stats Badges */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {project.builderExperience && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                          🏆 {project.builderExperience}
-                        </span>
-                      )}
-                      {project.builderProjectsCount && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
-                          🏢 {project.builderProjectsCount}
-                        </span>
-                      )}
-                    </div>
+                    {(() => {
+                      const exp = project.builderExperience || (project.location as any)?.builderExperience;
+                      const count = project.builderProjectsCount || (project.location as any)?.builderProjectsCount;
+                      return (exp || count) ? (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {exp && (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                              🏆 {exp}
+                            </span>
+                          )}
+                          {count && (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                              🏢 {count}
+                            </span>
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
 
                   {/* Optional Builder Bio / Description */}
-                  {project.builderDescription && (
-                    <p className="text-xs sm:text-sm text-text-secondary leading-relaxed pt-1">
-                      {project.builderDescription}
-                    </p>
-                  )}
+                  {(() => {
+                    const desc = project.builderDescription || (project.location as any)?.builderDescription;
+                    return desc ? (
+                      <p className="text-xs sm:text-sm text-text-secondary leading-relaxed pt-1">
+                        {desc}
+                      </p>
+                    ) : null;
+                  })()}
 
                   <ListingContactActions listingType="project" listingId={project.id} />
                 </div>

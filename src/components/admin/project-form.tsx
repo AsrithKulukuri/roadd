@@ -192,6 +192,18 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       if (incomingPossession && typeof incomingPossession === "string" && incomingPossession.trim()) {
         setPossessionDate(incomingPossession.trim());
       }
+      const incomingDesc = initialData.builderDescription || (initialData.location as any)?.builderDescription;
+      if (incomingDesc && typeof incomingDesc === "string" && incomingDesc.trim()) {
+        setBuilderDescription(incomingDesc.trim());
+      }
+      const incomingExp = initialData.builderExperience || (initialData.location as any)?.builderExperience;
+      if (incomingExp && typeof incomingExp === "string" && incomingExp.trim()) {
+        setBuilderExperience(incomingExp.trim());
+      }
+      const incomingProjectsCount = initialData.builderProjectsCount || (initialData.location as any)?.builderProjectsCount;
+      if (incomingProjectsCount && typeof incomingProjectsCount === "string" && incomingProjectsCount.trim()) {
+        setBuilderProjectsCount(incomingProjectsCount.trim());
+      }
     }
   }, [initialData]);
 
@@ -201,9 +213,15 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const [builderLogoUrl, setBuilderLogoUrl]           = useState(initialData?.builderLogoUrl ?? "");
   const [builderPhone, setBuilderPhone]               = useState(initialData?.builderPhone ?? "");
   const [builderWhatsapp, setBuilderWhatsapp]         = useState(initialData?.builderWhatsapp ?? "");
-  const [builderDescription, setBuilderDescription]   = useState(initialData?.builderDescription ?? "");
-  const [builderExperience, setBuilderExperience]     = useState(initialData?.builderExperience ?? "");
-  const [builderProjectsCount, setBuilderProjectsCount] = useState(initialData?.builderProjectsCount ?? "");
+  const [builderDescription, setBuilderDescription]   = useState(
+    initialData?.builderDescription ?? (initialData?.location as any)?.builderDescription ?? ""
+  );
+  const [builderExperience, setBuilderExperience]     = useState(
+    initialData?.builderExperience ?? (initialData?.location as any)?.builderExperience ?? ""
+  );
+  const [builderProjectsCount, setBuilderProjectsCount] = useState(
+    initialData?.builderProjectsCount ?? (initialData?.location as any)?.builderProjectsCount ?? ""
+  );
   const [reraId, setReraId]                   = useState(initialData?.reraId ?? "");
   const [reraApproved, setReraApproved]       = useState(initialData?.reraApproved ?? false);
   const [crdaApproved, setCrdaApproved]       = useState(initialData?.crdaApproved ?? false);
@@ -565,6 +583,9 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
         refId: refId.trim().toUpperCase() || undefined,
         totalArea: totalArea.trim() || undefined,
         possessionDate: possessionDate.trim() || undefined,
+        builderDescription: builderDescription.trim() || undefined,
+        builderExperience: builderExperience.trim() || undefined,
+        builderProjectsCount: builderProjectsCount.trim() || undefined,
         ...(crdaReviewReference.trim() ? { crdaReview: { reference: crdaReviewReference.trim(), approved: crdaReviewApproved, requested: true } } : {}),
       },
       reraId: reraId.trim() || undefined,
