@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { searchNavigationCategory } from "@/lib/search-navigation";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { X, Sparkles, Plus, User, LogOut, LogIn } from "lucide-react";
+import { X, Sparkles, Plus, User, LogOut, LogIn, Shield } from "lucide-react";
 import { SolidHome, SolidSearch, SolidMapPin, SolidHeart, SolidMenu } from "@/components/ui/solid-icons";
 import { cn } from "@/lib/utils";
 import { useFavoritesStore } from "@/stores/favorites-store";
@@ -38,7 +38,7 @@ export function MobileBottomNav() {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; role?: string } | null>(null);
   const mounted = useIsMounted();
   const [showMapTooltip, setShowMapTooltip] = useState(false);
 
@@ -133,35 +133,93 @@ export function MobileBottomNav() {
   // Load user session
   useEffect(() => {
     const checkUser = async () => {
-      if (isSupabaseConfigured()) {
+      let activeUser: { name: string; role?: string } | null = null;
+
+      // 1. Check server session (/api/auth/session)
+      try {
+        const res = await fetch("/api/auth/session", { cache: "no-store", credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated && data.user) {
+            activeUser = {
+              name: data.user.name || (data.user.role === "admin" ? "Administrator" : "User"),
+              role: data.user.role || "buyer",
+            };
+          }
+        }
+      } catch {}
+
+      // 2. Check Supabase Auth session
+      if (!activeUser && isSupabaseConfigured()) {
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
             const u = session.user;
-            setUser({
-              name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
-            });
-            return;
+            const email = u.email || "";
+            const ADMIN_EMAILS = [
+              "admin@road.com",
+              "admin@roadapp.com",
+              "aasrith@road.com",
+              "kulukuri@road.com",
+            ];
+            const isEmailAdmin = ADMIN_EMAILS.includes(email.toLowerCase().trim());
+            const role = isEmailAdmin
+              ? "admin"
+              : ((u.app_metadata?.role as string) || (u.user_metadata?.role as string) || "buyer");
+
+            activeUser = {
+              name: u.user_metadata?.full_name || u.user_metadata?.name || email.split("@")[0] || "User",
+              role,
+            };
           }
         } catch (e) {
           console.error("Error fetching mobile nav user session:", e);
         }
       }
       
-      const stored = localStorage.getItem("road_user");
-      if (stored) {
+      // 3. Check localStorage ("road_admin_user" or "road_user")
+      if (typeof window !== "undefined") {
         try {
-          const parsed = JSON.parse(stored);
-          if (parsed.isLoggedIn) {
-            setUser(parsed);
-            return;
+          const rawAdmin = localStorage.getItem("road_admin_user");
+          const rawUser = localStorage.getItem("road_user");
+          const raw = rawAdmin || rawUser;
+          if (raw && raw !== "true" && raw !== "null" && raw !== "undefined") {
+            const parsed = JSON.parse(raw);
+            if (parsed && (parsed.isLoggedIn || parsed.id || parsed.role)) {
+              if (!activeUser) {
+                activeUser = {
+                  name: parsed.name || (parsed.role === "admin" ? "Administrator" : "User"),
+                  role: parsed.role || "buyer",
+                };
+              } else if (parsed.role === "admin") {
+                activeUser.role = "admin";
+              }
+            }
           }
         } catch {}
       }
-      setUser(null);
+
+      setUser(activeUser);
     };
 
     checkUser();
+
+    window.addEventListener("storage", checkUser);
+    window.addEventListener("road_auth_changed", checkUser);
+
+    let unsubscribeSupabase: (() => void) | undefined;
+    if (isSupabaseConfigured()) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+        checkUser();
+      });
+      unsubscribeSupabase = () => subscription.unsubscribe();
+    }
+
+    return () => {
+      window.removeEventListener("storage", checkUser);
+      window.removeEventListener("road_auth_changed", checkUser);
+      if (unsubscribeSupabase) unsubscribeSupabase();
+    };
   }, [pathname, isMenuOpen]);
 
   const isDetailPage = 
@@ -490,11 +548,15 @@ export function MobileBottomNav() {
                   {/* My Dashboard or Log In */}
                   {user ? (
                     <Link
-                      href="/dashboard"
+                      href={user.role === "admin" ? "/admin" : "/dashboard"}
                       onClick={() => setIsMenuOpen(false)}
                       className="w-full py-3.5 px-4 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-98 transition-all border border-slate-800"
                     >
-                      <User className="w-4 h-4 text-slate-300" />
+                      {user.role === "admin" ? (
+                        <Shield className="w-4 h-4 text-amber-400" />
+                      ) : (
+                        <User className="w-4 h-4 text-slate-300" />
+                      )}
                       <span>My Dashboard ({user.name})</span>
                     </Link>
                   ) : (

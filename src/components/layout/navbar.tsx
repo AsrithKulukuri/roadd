@@ -51,6 +51,15 @@ const NAV_SEARCH_PLACEHOLDERS = [
   "CRDA Ventures",
 ];
 
+interface NavUser {
+  id?: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  isLoggedIn?: boolean;
+}
+
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
@@ -61,7 +70,8 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
   const [openMobileSubmenus, setOpenMobileSubmenus] = useState<Record<string, boolean>>({});
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<NavUser | null>(null);
+  const isAdmin = user?.role === "admin";
 
   // Compact Navbar Search States
   const [navSearchQuery, setNavSearchQuery] = useState("");
@@ -316,55 +326,108 @@ export function Navbar() {
     };
   }, [isMobileMenuOpen]);
 
-  // Load user session from Supabase or localStorage
+  // Load user session from server session, Supabase, or localStorage
   useEffect(() => {
     const checkUser = async () => {
-      if (isSupabaseConfigured()) {
+      let activeUser: NavUser | null = null;
+
+      // 1. Check authoritative server session (/api/auth/session)
+      try {
+        const res = await fetch("/api/auth/session", { cache: "no-store", credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated && data.user) {
+            activeUser = {
+              id: data.user.id,
+              name: data.user.name || (data.user.role === "admin" ? "Administrator" : "User"),
+              email: data.user.email || "",
+              phone: data.user.phone || "",
+              role: data.user.role || "buyer",
+              isLoggedIn: true,
+            };
+          }
+        }
+      } catch {}
+
+      // 2. Check Supabase Auth session
+      if (!activeUser && isSupabaseConfigured()) {
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
             const u = session.user;
-            setUser({
-              name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
-            });
-            return;
+            const email = u.email || "";
+            const ADMIN_EMAILS = [
+              "admin@road.com",
+              "admin@roadapp.com",
+              "aasrith@road.com",
+              "kulukuri@road.com",
+            ];
+            const isEmailAdmin = ADMIN_EMAILS.includes(email.toLowerCase().trim());
+            const role = isEmailAdmin
+              ? "admin"
+              : ((u.app_metadata?.role as string) || (u.user_metadata?.role as string) || "buyer");
+
+            activeUser = {
+              id: u.id,
+              name: u.user_metadata?.full_name || u.user_metadata?.name || email.split("@")[0] || "User",
+              email,
+              phone: u.phone || (u.user_metadata?.phone as string) || "",
+              role,
+              isLoggedIn: true,
+            };
           }
         } catch (e) {
           console.error("Error fetching navbar user session:", e);
         }
       }
       
-      const stored = localStorage.getItem("road_user");
-      if (stored) {
+      // 3. Check localStorage ("road_admin_user" or "road_user")
+      if (typeof window !== "undefined") {
         try {
-          const parsed = JSON.parse(stored);
-          if (parsed.isLoggedIn) {
-            setUser(parsed);
-            return;
+          const rawAdmin = localStorage.getItem("road_admin_user");
+          const rawUser = localStorage.getItem("road_user");
+          const raw = rawAdmin || rawUser;
+          if (raw && raw !== "true" && raw !== "null" && raw !== "undefined") {
+            const parsed = JSON.parse(raw);
+            if (parsed && (parsed.isLoggedIn || parsed.id || parsed.role)) {
+              if (!activeUser) {
+                activeUser = {
+                  id: parsed.id,
+                  name: parsed.name || (parsed.role === "admin" ? "Administrator" : "User"),
+                  email: parsed.email || "",
+                  phone: parsed.phone || "",
+                  role: parsed.role || "buyer",
+                  isLoggedIn: true,
+                };
+              } else if (parsed.role === "admin") {
+                activeUser.role = "admin";
+              }
+            }
           }
         } catch (e) {}
       }
-      setUser(null);
+
+      setUser(activeUser);
     };
 
     checkUser();
 
+    window.addEventListener("storage", checkUser);
+    window.addEventListener("road_auth_changed", checkUser);
+
+    let unsubscribeSupabase: (() => void) | undefined;
     if (isSupabaseConfigured()) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        if (session?.user) {
-          const u = session.user;
-          setUser({
-            name: u.user_metadata?.full_name || u.user_metadata?.name || "User",
-          });
-        } else {
-          const stored = localStorage.getItem("road_user");
-          if (!stored) {
-            setUser(null);
-          }
-        }
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+        checkUser();
       });
-      return () => subscription.unsubscribe();
+      unsubscribeSupabase = () => subscription.unsubscribe();
     }
+
+    return () => {
+      window.removeEventListener("storage", checkUser);
+      window.removeEventListener("road_auth_changed", checkUser);
+      if (unsubscribeSupabase) unsubscribeSupabase();
+    };
   }, []);
 
   const handleSignOut = async () => {
@@ -763,20 +826,37 @@ export function Navbar() {
                         : "bg-white/10 text-white hover:bg-white/15 border-white/20 backdrop-blur-md"
                     )}
                   >
-                    <User strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="max-w-[75px] truncate">{user.name || "Account"}</span>
+                    {isAdmin ? (
+                      <Shield strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-400" />
+                    ) : (
+                      <User strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-400" />
+                    )}
+                    <span className="max-w-[85px] truncate">{user.name || (isAdmin ? "Admin" : "Account")}</span>
                     <ChevronDown strokeWidth={2.5} className="w-3 h-3 text-amber-400 group-hover:rotate-180 transition-transform" />
                   </button>
 
                   {/* Dropdown Menu */}
-                  <div className="absolute top-full right-0 pt-2 w-44 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
-                    <div className="bg-white border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden p-1.5 text-xs">
+                  <div className="absolute top-full right-0 pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden p-1.5 text-xs">
+                      {isAdmin && (
+                        <>
+                          <Link
+                            href="/admin"
+                            className="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-slate-800 dark:text-slate-100 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-600 dark:hover:text-amber-400 rounded-xl font-bold cursor-pointer transition-colors"
+                          >
+                            <Shield className="w-4 h-4 text-amber-500 shrink-0" />
+                            <span>My Dashboard</span>
+                          </Link>
+                          <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                        </>
+                      )}
                       <button
                         type="button"
                         onClick={handleSignOut}
-                        className="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl font-bold cursor-pointer transition-colors"
+                        className="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-700 rounded-xl font-bold cursor-pointer transition-colors"
                       >
-                        <LogOut className="w-4 h-4 text-red-500" /> Sign Out
+                        <LogOut className="w-4 h-4 text-red-500 shrink-0" />
+                        <span>Sign Out</span>
                       </button>
                     </div>
                   </div>
@@ -912,14 +992,14 @@ export function Navbar() {
 
               {user ? (
                 <div className="space-y-2 pt-2">
-                  {user.role === "admin" && (
+                  {isAdmin && (
                     <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
                       <div className="text-[11px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5" /> Staff Administrator
                       </div>
-                      <Link href="/admin/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block">
+                      <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="block">
                         <Button className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-black justify-start shadow-xs">
-                          <Shield className="w-4 h-4 mr-2" /> Admin Control Center
+                          <Shield className="w-4 h-4 mr-2" /> My Dashboard
                         </Button>
                       </Link>
                       <Link href="/admin/support" onClick={() => setIsMobileMenuOpen(false)} className="block">
@@ -929,11 +1009,13 @@ export function Navbar() {
                       </Link>
                     </div>
                   )}
-                  <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block">
-                    <Button variant="outline" className="w-full bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-extrabold justify-start shadow-xs">
-                      <User className="w-4 h-4 mr-2" /> My Profile ({user.name})
-                    </Button>
-                  </Link>
+                  {!isAdmin && (
+                    <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block">
+                      <Button variant="outline" className="w-full bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-extrabold justify-start shadow-xs">
+                        <User className="w-4 h-4 mr-2" /> My Profile ({user.name})
+                      </Button>
+                    </Link>
+                  )}
                   <Button
                     onClick={handleSignOut}
                     variant="ghost"
