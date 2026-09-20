@@ -164,12 +164,19 @@ export const usePropertiesStore = create<PropertiesState>()(
               }, 9000);
             });
 
-            const scope = typeof window !== "undefined" && window.location.pathname.startsWith("/admin") ? "&scope=admin" : "";
-            const queryPromise = fetch("/api/listings?type=property" + scope, { signal: currentSignal, cache: "no-store" }).then(async response => {
+            const isAdminPath = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+            const isAdminLogin = typeof window !== "undefined" && window.location.pathname.startsWith("/admin/login");
+            const scope = isAdminPath && !isAdminLogin ? "&scope=admin" : "";
+            const queryPromise = (async () => {
+              let response = await fetch("/api/listings?type=property" + scope, { signal: currentSignal, cache: "no-store" });
+              if (response.status === 403 && scope) {
+                // If admin session is not active or expired, fallback gracefully to public listings
+                response = await fetch("/api/listings?type=property", { signal: currentSignal, cache: "no-store" });
+              }
               const result = await response.json();
               if (!response.ok) throw new Error(result.error || "Unable to load listings.");
               return result;
-            });
+            })();
 
             const result = await Promise.race([queryPromise, timeoutPromise]);
 

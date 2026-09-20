@@ -47,7 +47,14 @@ export const useSchedulesStore = create<SchedulesStore>()(
         set({ isLoading: true });
 
         try {
-          const res = await fetch(typeof window !== "undefined" && window.location.pathname.startsWith("/builder") ? "/api/builder/schedules" : "/api/admin/schedules", {
+          const isBuilder = typeof window !== "undefined" && window.location.pathname.startsWith("/builder");
+          const isAdminLogin = typeof window !== "undefined" && window.location.pathname.startsWith("/admin/login");
+          if (isAdminLogin) {
+            set({ isLoading: false, schedules: [] });
+            return;
+          }
+
+          const res = await fetch(isBuilder ? "/api/builder/schedules" : "/api/admin/schedules", {
             cache: "no-store",
             headers: { Accept: "application/json" },
           });
@@ -65,11 +72,10 @@ export const useSchedulesStore = create<SchedulesStore>()(
             }
           }
         } catch (apiErr) {
-          console.warn("[SchedulesStore] Admin schedules fetch failed:", apiErr);
+          console.warn("[SchedulesStore] Schedules fetch failed:", apiErr);
         }
 
         set({ isLoading: false, schedules: [] });
-        throw new Error("Could not load schedules. Please retry.");
       },
 
       addSchedule: async (item) => {

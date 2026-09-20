@@ -119,8 +119,10 @@ export default function AdminLayout({
 
   useEffect(() => {
     setMounted(true);
-    useSchedulesStore.getState().fetchSchedules();
-  }, []);
+    if (pathname !== "/admin/login") {
+      useSchedulesStore.getState().fetchSchedules().catch(() => {});
+    }
+  }, [pathname]);
 
   const signOut = async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
