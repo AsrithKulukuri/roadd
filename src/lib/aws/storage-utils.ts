@@ -291,10 +291,18 @@ export async function uploadToS3({
               success: true,
             });
           } else {
-            reject(new Error(res.error || `Upload failed with status ${xhr.status}`));
+            if (xhr.status === 413) {
+              reject(new Error("Upload failed: AWS S3 Bucket CORS is not enabled for direct uploads. Vercel blocks files > 4.5MB from passing through the server."));
+            } else {
+              reject(new Error(res.error || `Upload failed with status ${xhr.status}`));
+            }
           }
         } catch {
-          reject(new Error(`Upload failed with status ${xhr.status}`));
+          if (xhr.status === 413) {
+            reject(new Error("Upload failed: AWS S3 Bucket CORS is not enabled for direct uploads. Vercel blocks files > 4.5MB from passing through the server."));
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
         }
       };
 
