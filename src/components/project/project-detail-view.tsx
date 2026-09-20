@@ -874,7 +874,7 @@ export function ProjectDetailView({
                 </div>
 
                 {/* Project Snapshot Specs (Introduction) */}
-                <div className="pt-4 border-t border-slate-200 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
                     <span className="text-[10px] font-bold text-text-tertiary uppercase block">Project Type</span>
                     <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.projectType}</span>
@@ -888,6 +888,12 @@ export function ProjectDetailView({
                     <span className="text-xs sm:text-sm font-bold text-text-primary">{project.totalUnits ? `${project.totalUnits} Units` : "On Request"}</span>
                   </div>
                   <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
+                    <span className="text-[10px] font-bold text-text-tertiary uppercase block">Possession</span>
+                    <span className="text-xs sm:text-sm font-bold text-text-primary">
+                      {project.possessionDate || project.configurations?.find(c => c.possessionDate)?.possessionDate || (project.constructionStatus === 'ready-to-move' ? 'Ready to Move' : 'On Request')}
+                    </span>
+                  </div>
+                  <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60 col-span-2 sm:col-span-1">
                     <span className="text-[10px] font-bold text-text-tertiary uppercase block">Status</span>
                     <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.constructionStatus.replace("-", " ")}</span>
                   </div>

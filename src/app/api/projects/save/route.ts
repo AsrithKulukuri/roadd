@@ -62,6 +62,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Always mirror possessionDate into location JSONB for fail-safe persistence
+    if (payload.possessionDate !== undefined) {
+      const cleanPossession = typeof payload.possessionDate === "string" ? payload.possessionDate.trim() : undefined;
+      payload.possessionDate = cleanPossession;
+      const loc = (payload.location && typeof payload.location === "object")
+        ? { ...(payload.location as Record<string, unknown>), possessionDate: cleanPossession }
+        : { possessionDate: cleanPossession };
+      payload.location = loc;
+    }
+
+    // Always mirror totalArea into location JSONB for fail-safe persistence
+    if (payload.totalArea !== undefined) {
+      const cleanArea = typeof payload.totalArea === "string" ? payload.totalArea.trim() : undefined;
+      payload.totalArea = cleanArea;
+      const loc = (payload.location && typeof payload.location === "object")
+        ? { ...(payload.location as Record<string, unknown>), totalArea: cleanArea }
+        : { totalArea: cleanArea };
+      payload.location = loc;
+    }
+
     if (body.mode === "update" && !body.id && !body.slug) {
       return NextResponse.json({ success: false, error: "Project identifier required" }, { status: 400 });
     }
@@ -95,6 +115,24 @@ export async function POST(request: NextRequest) {
     if (error && (error.message.includes("refId") || error.message.includes("ref_id") || error.message.includes("does not exist"))) {
       delete payload.refId;
       delete (payload as Record<string, unknown>).ref_id;
+      const retryResult = await executeSave(payload);
+      data = retryResult.data;
+      error = retryResult.error;
+    }
+
+    // If the physical possessionDate column does not exist on Supabase, retry without it (already safely stored in location)
+    if (error && (error.message.includes("possessionDate") || error.message.includes("possession_date") || error.message.includes("does not exist"))) {
+      delete payload.possessionDate;
+      delete (payload as Record<string, unknown>).possession_date;
+      const retryResult = await executeSave(payload);
+      data = retryResult.data;
+      error = retryResult.error;
+    }
+
+    // If the physical totalArea column does not exist on Supabase, retry without it (already safely stored in location)
+    if (error && (error.message.includes("totalArea") || error.message.includes("total_area") || error.message.includes("does not exist"))) {
+      delete payload.totalArea;
+      delete (payload as Record<string, unknown>).total_area;
       const retryResult = await executeSave(payload);
       data = retryResult.data;
       error = retryResult.error;

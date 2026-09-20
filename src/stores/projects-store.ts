@@ -15,7 +15,7 @@ const VALID_PROJECT_COLUMNS = new Set([
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
   'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory',
-  'refId', 'masterPlanUrl', 'videoThumbnail'
+  'refId', 'masterPlanUrl', 'videoThumbnail', 'possessionDate'
 ]);
 
 // Public projection columns excluding private builder contact numbers
@@ -28,7 +28,7 @@ const PUBLIC_PROJECT_SELECT = [
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
   'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory',
-  'refId', 'masterPlanUrl', 'videoThumbnail'
+  'refId', 'masterPlanUrl', 'videoThumbnail', 'possessionDate'
 ].join(',');
 
 export function toSupabaseProject(proj: Partial<Project>): Record<string, unknown> {
@@ -134,6 +134,24 @@ export function toSupabaseProject(proj: Partial<Project>): Record<string, unknow
     }
   }
 
+  // Persist possessionDate safely across Supabase JSONB fields (location)
+  if (p.possessionDate !== undefined) {
+    const cleanPossession = typeof p.possessionDate === 'string' ? p.possessionDate.trim() : undefined;
+    p.possessionDate = cleanPossession;
+    if (p.location && typeof p.location === 'object') {
+      p.location = { ...(p.location as Record<string, unknown>), possessionDate: cleanPossession };
+    }
+  }
+
+  // Persist totalArea safely across Supabase JSONB fields (location)
+  if (p.totalArea !== undefined) {
+    const cleanArea = typeof p.totalArea === 'string' ? p.totalArea.trim() : undefined;
+    p.totalArea = cleanArea;
+    if (p.location && typeof p.location === 'object') {
+      p.location = { ...(p.location as Record<string, unknown>), totalArea: cleanArea };
+    }
+  }
+
   // Strip keys that are not valid columns in Supabase
   const cleaned: Record<string, unknown> = {};
   for (const key of Object.keys(p)) {
@@ -197,6 +215,20 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
     : (rawId ? `REF${(rawId.replace(/\D/g, "") || "100").padStart(3, "0").slice(0, 5)}` : undefined);
   const builderObj = p.builder as { name?: string; logoUrl?: string | null } | undefined;
 
+  const rawPossession = typeof p.possessionDate === 'string' 
+    ? p.possessionDate 
+    : (typeof p.possession_date === 'string' 
+      ? p.possession_date 
+      : (typeof rawLocation?.possessionDate === 'string' ? rawLocation.possessionDate : undefined));
+  const possessionDate = rawPossession && rawPossession.trim() ? rawPossession.trim() : undefined;
+
+  const rawTotalArea = typeof p.totalArea === 'string' 
+    ? p.totalArea 
+    : (typeof p.total_area === 'string' 
+      ? p.total_area 
+      : (typeof rawLocation?.totalArea === 'string' ? rawLocation.totalArea : undefined));
+  const totalArea = rawTotalArea && rawTotalArea.trim() ? rawTotalArea.trim() : undefined;
+
   return {
     ...(cleanObj as unknown as Project),
     crdaLpNumber: (p.crdaLpNumber as string | undefined) || (evidence.crdaLpNumber as string | undefined),
@@ -216,7 +248,9 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
     builderLogoUrl: (typeof p.builderLogoUrl === 'string' ? p.builderLogoUrl : (builderObj?.logoUrl ?? undefined)),
     builderPhone: typeof p.builderPhone === "string" ? p.builderPhone : undefined,
     builderWhatsapp: typeof p.builderWhatsapp === "string" ? p.builderWhatsapp : undefined,
-    displayCategory: (p.displayCategory as "featured" | "recommended" | "budget_friendly" | "none" | undefined) || (p.isFeatured ? "featured" : "none")
+    displayCategory: (p.displayCategory as "featured" | "recommended" | "budget_friendly" | "none" | undefined) || (p.isFeatured ? "featured" : "none"),
+    possessionDate,
+    totalArea
   };
 }
 

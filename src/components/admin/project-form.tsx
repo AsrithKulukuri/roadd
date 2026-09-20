@@ -184,6 +184,14 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       if (incomingRef && typeof incomingRef === "string" && incomingRef.trim()) {
         setRefId(incomingRef.trim().toUpperCase());
       }
+      const incomingArea = initialData.totalArea || (initialData.location as any)?.totalArea;
+      if (incomingArea && typeof incomingArea === "string" && incomingArea.trim()) {
+        setTotalArea(incomingArea.trim());
+      }
+      const incomingPossession = initialData.possessionDate || (initialData.location as any)?.possessionDate || initialData.configurations?.find(c => c.possessionDate)?.possessionDate;
+      if (incomingPossession && typeof incomingPossession === "string" && incomingPossession.trim()) {
+        setPossessionDate(incomingPossession.trim());
+      }
     }
   }, [initialData]);
 
@@ -210,7 +218,13 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const [constructionStatus, setConstructionStatus] = useState<ConstructionStatus>(initialData?.constructionStatus ?? "under-construction");
   const [totalUnits, setTotalUnits]           = useState(initialData?.totalUnits?.toString() ?? "");
   const [totalTowers, setTotalTowers]         = useState(initialData?.totalTowers?.toString() ?? "");
-  const [totalArea, setTotalArea]             = useState(initialData?.totalArea ?? "");
+  const [totalArea, setTotalArea]             = useState(initialData?.totalArea ?? (initialData?.location as any)?.totalArea ?? "");
+  const [possessionDate, setPossessionDate]   = useState(
+    initialData?.possessionDate ?? 
+    (initialData?.location as any)?.possessionDate ?? 
+    initialData?.configurations?.find(c => c.possessionDate)?.possessionDate ?? 
+    ""
+  );
   
   // Location
   const [address, setAddress]   = useState(initialData?.location.address ?? "");
@@ -549,6 +563,8 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       location: {
         address: address.trim(), locality: locality.trim(), city: city.trim(), state: locState.trim(), pincode: pincode.trim() || undefined, latitude: lat, longitude: lng,
         refId: refId.trim().toUpperCase() || undefined,
+        totalArea: totalArea.trim() || undefined,
+        possessionDate: possessionDate.trim() || undefined,
         ...(crdaReviewReference.trim() ? { crdaReview: { reference: crdaReviewReference.trim(), approved: crdaReviewApproved, requested: true } } : {}),
       },
       reraId: reraId.trim() || undefined,
@@ -564,6 +580,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       },
       isRoadExclusive, noBrokerage,
       constructionStatus,
+      possessionDate: possessionDate.trim() || undefined,
       totalUnits: totalUnits ? parseInt(totalUnits) : undefined,
       totalTowers: totalTowers ? parseInt(totalTowers) : undefined,
       totalArea: totalArea.trim() || undefined,
@@ -1053,20 +1070,24 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 </div>
               </div>
 
-              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={cn(
+                "md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4",
+                projectType === "apartment" ? "lg:grid-cols-4" : "lg:grid-cols-3"
+              )}>
                 {projectType === "apartment" && (
                   <Field label="Total Towers">
-                    <Input type="number" value={totalTowers} onChange={(e) => setTotalTowers(e.target.value)} placeholder="5" className={ic()} />
+                    <Input type="number" value={totalTowers} onChange={(e) => setTotalTowers(e.target.value)} placeholder="e.g. 5" className={ic()} />
                   </Field>
                 )}
-                <Field label={projectType === "apartment" ? "Total Units" : projectType === "villa" ? "Total Villas" : "Total Plots"}>
-                  <Input type="number" value={totalUnits} onChange={(e) => setTotalUnits(e.target.value)} placeholder="251" className={ic()} />
+                <Field label={projectType === "apartment" ? "Total Units / Flats" : projectType === "villa" ? "Total Villas" : "Total Plots"}>
+                  <Input type="number" value={totalUnits} onChange={(e) => setTotalUnits(e.target.value)} placeholder={projectType === "apartment" ? "e.g. 70" : projectType === "villa" ? "e.g. 45" : "e.g. 150"} className={ic()} />
                 </Field>
-                {(projectType === "villa" || projectType === "venture") && (
-                  <Field label="Total Area">
-                    <Input value={totalArea} onChange={(e) => setTotalArea(e.target.value)} placeholder="34 acres" className={ic()} />
-                  </Field>
-                )}
+                <Field label="Total Project Area">
+                  <Input value={totalArea} onChange={(e) => setTotalArea(e.target.value)} placeholder="e.g. 5.5 Acres or 34,000 sq.ft" className={ic()} />
+                </Field>
+                <Field label="Possession Date">
+                  <Input value={possessionDate} onChange={(e) => setPossessionDate(e.target.value)} placeholder="e.g. Dec 2026 or Immediate" className={ic()} />
+                </Field>
               </div>
 
             </div>

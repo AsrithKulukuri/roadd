@@ -307,6 +307,8 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
   const tagsText = `${(project.highlights || []).join(" ")} ${(project.facilities || []).map((f: any) => typeof f === 'string' ? f : (f?.name || f?.label || "")).join(" ")}`.toLowerCase();
   const titleAndDesc = `${project.name || ""} ${project.tagline || ""} ${project.description || ""}`.toLowerCase();
   const refText = `${project.refId || ""} ${(project.location as any)?.refId || ""}`.toLowerCase();
+  const possessionText = `${project.possessionDate || ""} ${(project.location as any)?.possessionDate || ""}`.toLowerCase();
+  const areaText = `${project.totalArea || ""} ${(project.location as any)?.totalArea || ""}`.toLowerCase();
 
   // Instant direct match if query matches project's Ref ID directly
   const cleanRef = refText.replace(/[\s-_]/g, "");
@@ -315,7 +317,7 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
     return true;
   }
 
-  const fullCorpus = `${titleAndDesc} ${locationText} ${builderText} ${projectTypeText} ${configsText} ${tagsText} ${refText}`;
+  const fullCorpus = `${titleAndDesc} ${locationText} ${builderText} ${projectTypeText} ${configsText} ${tagsText} ${refText} ${possessionText} ${areaText}`;
 
   // 1. Budget / Max Price check: If user specified max budget, project's starting price MUST be within budget
   if (intent.maxPrice) {

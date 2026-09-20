@@ -251,12 +251,18 @@ export default function AdminProjectsPage() {
                             <MapPin className="w-3 h-3 shrink-0" />
                             {project.location.locality}, {project.location.city}
                           </div>
+                          {project.totalArea && (
+                            <div className="text-[10px] text-text-tertiary mt-0.5 font-medium">
+                              📐 {project.totalArea}
+                            </div>
+                          )}
                         </td>
                         {/* Price range */}
                         <td className="px-4 py-4">
                           <span className="font-semibold text-amber-primary text-xs">{getPriceRange(project)}</span>
                           <div className="text-[10px] text-text-tertiary mt-0.5">
                             {project.configurations.length} config{project.configurations.length !== 1 ? "s" : ""}
+                            {project.possessionDate && <span> • 🗓️ {project.possessionDate}</span>}
                           </div>
                         </td>
                         {/* Construction status & Sold Out */}

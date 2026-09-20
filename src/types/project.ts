@@ -131,6 +131,7 @@ export interface Project {
 
   // Status
   constructionStatus: ConstructionStatus;
+  possessionDate?: string;
   totalUnits?: number;
   totalTowers?: number;
   /** e.g. "34 acres" */
