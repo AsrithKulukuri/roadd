@@ -479,14 +479,14 @@ export default function EditPropertyPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
+                <label className="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1">
                   Property Condition (New / Old) *
                 </label>
                 <select 
                   name="saleType" 
                   value={formData.saleType} 
                   onChange={handleChange} 
-                  className="w-full h-12 rounded-xl bg-slate-900 border border-amber-500/50 px-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full h-12 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-4 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
                 >
                   <option value="new">✨ New Property (Brand New / New Launch)</option>
                   <option value="resale">🏠 Old Property (Resale / Pre-owned)</option>

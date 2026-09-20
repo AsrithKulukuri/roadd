@@ -396,7 +396,7 @@ export default function AddPropertyPage() {
 
               {/* Category & Subtype Cascading Selectors (Master Schema) */}
               <div className="space-y-2">
-                <label className="text-sm font-bold text-amber-400 uppercase tracking-wider">
+                <label className="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
                   Category *
                 </label>
                 <select 
@@ -412,7 +412,7 @@ export default function AddPropertyPage() {
                       attributes: {}, bedrooms: "", bathrooms: "", furnishing: "", facing: "", carpetArea: "", builtUpArea: "", parking: ""
                     }));
                   }} 
-                  className="w-full h-12 rounded-xl bg-slate-900 border border-amber-500/50 px-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full h-12 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-4 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
                 >
                   <option value="residential">Residential</option>
                   <option value="commercial">Commercial</option>
@@ -422,7 +422,7 @@ export default function AddPropertyPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-amber-400 uppercase tracking-wider">
+                <label className="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
                   Subtype *
                 </label>
                 <select 
@@ -432,7 +432,7 @@ export default function AddPropertyPage() {
                     const sub = e.target.value as PropertySubtype;
                     setFormData(prev => ({ ...prev, subtype: sub, attributes: {}, bedrooms: "", bathrooms: "", furnishing: "", facing: "", carpetArea: "", builtUpArea: "", parking: "" }));
                   }} 
-                  className="w-full h-12 rounded-xl bg-slate-900 border border-amber-500/50 px-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full h-12 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-4 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
                 >
                   {CATEGORY_SUBTYPES[formData.category]?.map((sub) => (
                     <option key={sub.id} value={sub.id}>
@@ -443,9 +443,9 @@ export default function AddPropertyPage() {
               </div>
 
               {/* Dynamic Schema Fields Container */}
-              <div className="md:col-span-2 p-5 rounded-2xl bg-slate-900/90 border-2 border-amber-500/30 space-y-4">
-                <div className="flex items-center gap-2 text-amber-400 font-black text-xs uppercase tracking-wider border-b border-slate-800 pb-3">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
+              <div className="md:col-span-2 p-5 sm:p-6 rounded-2xl bg-amber-500/[0.06] dark:bg-slate-900/90 border-2 border-amber-500/30 space-y-4 shadow-xs">
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-black text-xs uppercase tracking-wider border-b border-amber-500/20 dark:border-slate-800 pb-3">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
                   <span>{formData.category.toUpperCase()} — {formData.subtype.replace("-", " ").toUpperCase()} Specific Fields</span>
                 </div>
 
@@ -481,14 +481,14 @@ export default function AddPropertyPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
+                <label className="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1">
                   Property Condition (New / Old) *
                 </label>
                 <select 
                   name="saleType" 
                   value={formData.saleType} 
                   onChange={handleChange} 
-                  className="w-full h-12 rounded-xl bg-slate-900 border border-amber-500/50 px-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full h-12 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-4 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
                 >
                   <option value="new">✨ New Property (Brand New / New Launch)</option>
                   <option value="resale">🏠 Old Property (Resale / Pre-owned)</option>
