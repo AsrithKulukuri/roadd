@@ -1394,7 +1394,7 @@ const BUDGET_PRESETS = [
   
   const activeUserLocation = externalUserLocation || internalUserLoc;
 
-  const [showPropertiesTray, setShowPropertiesTray] = useState(true);
+  const [showPropertiesTray, setShowPropertiesTray] = useState(false);
   const trayScrollRef = useRef<HTMLDivElement>(null);
   const [mobileTrayCount, setMobileTrayCount] = useState<number>(12);
   const { toggleFavorite, isFavorite } = useFavoritesStore();
@@ -2990,7 +2990,11 @@ const BUDGET_PRESETS = [
             className={cn(
               "absolute left-1/2 -translate-x-1/2 z-[520] flex-col items-center gap-2 pointer-events-auto transition-all duration-300 md:bottom-6",
               showMapExplorer ? "hidden md:flex" : "flex",
-              showPropertiesTray && !showMapExplorer ? "bottom-[340px]" : "bottom-14"
+              showPropertiesTray && displayedPropertiesFiltered.length > 0 && !showMapExplorer
+                ? "hidden md:flex"
+                : displayedPropertiesFiltered.length > 0 && !isDrawing
+                ? "bottom-14"
+                : "bottom-5"
             )}
           >
             {showSearchThisArea && (
@@ -3251,7 +3255,11 @@ const BUDGET_PRESETS = [
             className={cn(
               "absolute right-3 md:right-4 z-[500] flex-col gap-1.5 pointer-events-auto transition-all duration-300 md:bottom-8",
               showMapExplorer ? "hidden md:flex" : "flex",
-              showPropertiesTray && !showMapExplorer ? "bottom-[340px]" : "bottom-16"
+              showPropertiesTray && displayedPropertiesFiltered.length > 0 && !showMapExplorer
+                ? "hidden md:flex"
+                : displayedPropertiesFiltered.length > 0 && !isDrawing
+                ? "bottom-14"
+                : "bottom-5"
             )}
           >
             <button
