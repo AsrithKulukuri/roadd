@@ -87,3 +87,35 @@ test('admin logs endpoint rejects unauthorized access before database lookup', a
   });
   assert.equal((await route.GET(new Request('https://example.test/api/admin/whatsapp/logs'))).status, 403);
 });
+
+function webhookFixture(provider, record = async () => {}) {
+  return load(`src/app/api/webhooks/${provider === 'meta' ? 'meta-whatsapp' : 'wasender'}/route.ts`, {
+    'next/server': { NextResponse: Response },
+    '@/lib/wasender': { getSanitizedEnv: () => 'test-secret', WasenderService: {} },
+    '@/lib/whatsapp-audience': { normalizeWhatsAppPhone: value => value },
+    '@/lib/supabase-admin': { supabaseAdmin: {} },
+    '@/lib/whatsapp/whatsapp-concierge': { processInboundWhatsAppMessage: () => { throw new Error('Receipt routed to bot'); } },
+    '@/lib/whatsapp/message-log': { recordWhatsAppReceipt: record },
+  });
+}
+test('Wasender numeric read receipt records the message key and timestamp', async () => {
+  const calls = [];
+  const route = webhookFixture('wasender', async (...args) => calls.push(args));
+  const response = await route.POST(new Request('https://example.test/webhook', { method: 'POST', headers: { 'x-webhook-signature': 'test-secret' }, body: JSON.stringify({ event: 'messages.update', timestamp: 1751297488000, data: { key: { id: 'WA1' }, update: { status: 4 } } }) }));
+  assert.equal(response.status, 200);
+  assert.deepEqual(calls[0].slice(0, 4), ['wasender', 'WA1', 'read', 1751297488000]);
+});
+test('Wasender missing webhook secret header is rejected', async () => {
+  const response = await webhookFixture('wasender').POST(new Request('https://example.test/webhook', { method: 'POST', body: '{}' }));
+  assert.equal(response.status, 401);
+});
+test('Meta missing signature is rejected when app secret is configured', async () => {
+  const previous = process.env.META_APP_SECRET;
+  process.env.META_APP_SECRET = 'test-app-secret';
+  try {
+    const response = await webhookFixture('meta').POST(new Request('https://example.test/webhook', { method: 'POST', body: '{}' }));
+    assert.equal(response.status, 401);
+  } finally {
+    if (previous === undefined) delete process.env.META_APP_SECRET; else process.env.META_APP_SECRET = previous;
+  }
+});

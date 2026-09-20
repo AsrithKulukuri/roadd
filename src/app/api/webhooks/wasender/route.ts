@@ -119,14 +119,16 @@ export async function POST(request: Request) {
     }
 
     const payload = asRecord(await request.json().catch(() => null));
-    if (payload.event === "messages.update") {
+    if (payload.event === "messages.update" || payload.event === "message.sent") {
       const updates = Array.isArray(payload.data) ? payload.data : [payload.data];
       const statuses: Record<string, string> = { "0": "failed", "2": "sent", "3": "delivered", "4": "read", "5": "read" };
       for (const item of updates) {
         const data = asRecord(item);
         const key = asRecord(data.key);
         const update = asRecord(data.update);
-        const status = statuses[String(update.status)];
+        const status = payload.event === "message.sent"
+          ? (data.success === true ? "sent" : data.success === false ? "failed" : undefined)
+          : statuses[String(update.status)];
         if (status && key.id) {
           await recordWhatsAppReceipt("wasender", String(key.id), status, payload.timestamp,
             status === "failed" ? "WhatsApp provider reported a delivery failure" : undefined);
