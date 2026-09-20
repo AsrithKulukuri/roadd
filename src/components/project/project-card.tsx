@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight, Ruler, SquareDashed, Trees, Heart, Share2, Sparkles, Award, Tag, Shield, Image as ImageIcon, Maximize2, Building, Calendar, Layers } from "lucide-react";
+import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight, Ruler, SquareDashed, Trees, Heart, Share2, Sparkles, Award, Tag, Shield, Image as ImageIcon, Maximize2, Building, Calendar, Plus } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -137,38 +137,37 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
     : null;
 
   // Little glass boxes specifications
-  const specItems: { label: string; icon: React.ElementType }[] = [];
+  const specItems: { label: string; icon?: React.ElementType; isMore?: boolean }[] = [];
 
-  // 1. Configs (e.g. "3 BHK", "2, 3 BHK")
+  // Configs: show each added configuration as its own glass box (e.g. 2 BHK, 3 BHK, 4 BHK)
+  const configIcon = isVilla ? Home : isVenture ? Landmark : Building2;
   if (configLabels.length > 0) {
-    specItems.push({
-      label: configLabels.length <= 2 ? configLabels.join(", ") : `${configLabels[0]} (+${configLabels.length - 1})`,
-      icon: isVilla ? Home : isVenture ? Landmark : Building2,
-    });
+    const maxVisibleConfigs = 3;
+    const visibleConfigs = configLabels.slice(0, maxVisibleConfigs);
+    for (const label of visibleConfigs) {
+      specItems.push({
+        label,
+        icon: configIcon,
+      });
+    }
+    if (configLabels.length > maxVisibleConfigs) {
+      specItems.push({
+        label: `+${configLabels.length - maxVisibleConfigs} more`,
+        icon: Plus,
+        isMore: true,
+      });
+    }
   } else {
     specItems.push({
-      label: `${TC.label}`,
-      icon: Icon,
+      label: isVenture ? "Plots" : `${TC.label}`,
+      icon: configIcon,
     });
   }
 
-  // 2. Units / Plots / Villas
-  if (project.totalUnits) {
-    specItems.push({
-      label: `${project.totalUnits} ${isVilla ? "Villas" : isVenture ? "Plots" : "Units"}`,
-      icon: Layers,
-    });
-  }
+  // Notice: Total Units (e.g. "70 Units") is completely removed per user request:
+  // "no need to that units use that whole just for showing configs like 2bhk 3bhk 4bkh like that added ones if configs more configs are there show + 1 more like that"
 
-  // 3. Towers
-  if (project.totalTowers) {
-    specItems.push({
-      label: `${project.totalTowers} ${project.totalTowers === 1 ? "Tower" : "Towers"}`,
-      icon: Building,
-    });
-  }
-
-  // 4. Area (Total Area e.g. "5.5 Acres", or built-up range, or plot size range)
+  // Area (Total Project Area e.g. "5.5 Acres", or built-up range, or plot size range)
   const projectArea = project.totalArea || (project.location as Record<string, unknown> | undefined)?.totalArea as string | undefined;
   if (projectArea && projectArea.trim()) {
     specItems.push({
@@ -450,16 +449,21 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
               </div>
             </div>
 
-            {/* Little Glass Boxes for Every Information */}
+            {/* Little Glass Boxes for Configurations and Specifications */}
             <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
               {specItems.map((item, idx) => {
                 const ItemIcon = item.icon;
                 return (
                   <div
                     key={idx}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100/90 dark:bg-white/[0.06] backdrop-blur-xs border border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-200 shadow-2xs transition-colors hover:border-amber-500/40 hover:bg-amber-500/5"
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold backdrop-blur-xs shadow-2xs transition-colors",
+                      item.isMore
+                        ? "bg-amber-500/10 dark:bg-amber-400/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 font-bold"
+                        : "bg-slate-100/90 dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-amber-500/40 hover:bg-amber-500/5"
+                    )}
                   >
-                    <ItemIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    {ItemIcon && <ItemIcon className={cn("w-3.5 h-3.5 shrink-0", item.isMore ? "text-amber-600 dark:text-amber-400" : "text-amber-500")} />}
                     <span className="truncate max-w-[150px]">{item.label}</span>
                   </div>
                 );
