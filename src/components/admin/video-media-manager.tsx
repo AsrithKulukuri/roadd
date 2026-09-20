@@ -123,10 +123,10 @@ export function VideoMediaManager({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate size: 50MB max (50 * 1024 * 1024 bytes)
-    const MAX_SIZE = 50 * 1024 * 1024;
+    // Validate size: 500MB max (500 * 1024 * 1024 bytes)
+    const MAX_SIZE = 500 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      toast.error("Video file is too large. Maximum supported size is 50MB.");
+      toast.error("Video file is too large. Maximum supported size is 500MB.");
       return;
     }
 
@@ -272,7 +272,7 @@ export function VideoMediaManager({
             )}
           >
             <UploadCloud className="w-4 h-4 text-blue-500" />
-            <span>Upload Video (Max 50MB)</span>
+            <span>Upload Video (Max 500MB)</span>
           </button>
         </div>
       </div>
@@ -432,7 +432,7 @@ export function VideoMediaManager({
                       Click or Drag & Drop Video File Here
                     </p>
                     <p className="text-xs text-text-secondary mt-1">
-                      Supports <span className="font-bold text-text-primary">MP4, WebM, MOV</span> up to <span className="font-bold text-amber-500">50 MB</span>
+                      Supports <span className="font-bold text-text-primary">MP4, WebM, MOV</span> up to <span className="font-bold text-amber-500">500 MB</span>
                     </p>
                   </div>
                   <Button type="button" size="sm" className="mt-1 font-bold bg-amber-500 hover:bg-amber-600 text-slate-950">

@@ -14,7 +14,8 @@ import {
   ArrowLeft, Save, Upload, X, MapPin, 
   Video, Info, Phone, Search, 
   CheckCircle2, Image as ImageIcon,
-  Building2, Trees, Shield, Car, Waves, Zap, Trash2, Sparkles, Eye
+  Building2, Trees, Shield, Car, Waves, Zap, Trash2, Sparkles, Eye,
+  FileText, Map
 } from "lucide-react";
 import Link from "next/link";
 import { Property } from "@/types/property";
@@ -23,6 +24,7 @@ import { getPropertyRefId } from "@/lib/ref-id";
 import { parseGoogleMapsUrl } from "@/lib/utils";
 import { uploadToS3 } from "@/lib/aws/storage-utils";
 import { VideoMediaManager } from "@/components/admin/video-media-manager";
+import { AdminFileUpload } from "@/components/admin/admin-file-upload";
 
 const CoordinatePickerMap = dynamic(
   () => import("@/components/admin/coordinate-picker-map"),
@@ -63,6 +65,7 @@ export default function EditPropertyPage() {
     furnishing: "unfurnished", facing: "east", yearBuilt: "",
     
     coverImage: "", galleryImages: [] as string[], videoUrl: "", videoThumbnail: "",
+    layoutMapUrl: "", floorPlanUrl: "", brochureUrl: "",
     
     latitude: 16.5062, longitude: 80.6480, address: "", locality: "", city: "Vijayawada", state: "Andhra Pradesh", pincode: "", landmark: "",
     
@@ -110,6 +113,9 @@ export default function EditPropertyPage() {
         galleryImages: gImages,
         videoUrl: targetProperty.videoUrl || "",
         videoThumbnail: targetProperty.videoThumbnail || "",
+        layoutMapUrl: targetProperty.layoutMapUrl || "",
+        floorPlanUrl: targetProperty.floorPlanUrl || "",
+        brochureUrl: targetProperty.brochureUrl || "",
         
         latitude: targetProperty.location?.latitude || 16.5062,
         longitude: targetProperty.location?.longitude || 80.6480,
@@ -215,6 +221,7 @@ export default function EditPropertyPage() {
       toast.error("Failed to upload image. Please try again.");
     } finally {
       setIsUploading(false);
+      if (e.target) e.target.value = "";
     }
   };
 
@@ -288,6 +295,9 @@ export default function EditPropertyPage() {
       galleryImages: formData.galleryImages,
       videoUrl: formData.videoUrl,
       videoThumbnail: formData.videoThumbnail || undefined,
+      layoutMapUrl: formData.layoutMapUrl || undefined,
+      floorPlanUrl: formData.floorPlanUrl || undefined,
+      brochureUrl: formData.brochureUrl || undefined,
       
       amenities: propertyAmenities,
       
@@ -605,6 +615,45 @@ export default function EditPropertyPage() {
                   folder="properties"
                   entityId={targetProperty?.id}
                 />
+              </div>
+
+              {/* Additional Documents (Brochure, Floor Plan, Layout Map with 500MB, Progress & Retry) */}
+              <div className="md:col-span-2 pt-4 border-t border-border-default/50 space-y-6">
+                <AdminFileUpload
+                  label="Property Brochure (PDF / Document)"
+                  hint="Upload brochure up to 500MB with live progress and retry"
+                  currentUrl={formData.brochureUrl}
+                  onUrlChange={(url) => setFormData((prev) => ({ ...prev, brochureUrl: url }))}
+                  folder="brochures"
+                  entityId={targetProperty?.id}
+                  accept=".pdf,.doc,.docx,image/*"
+                  maxSizeMB={500}
+                  icon={FileText}
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <AdminFileUpload
+                    label="Layout Map (Image or PDF)"
+                    hint="Upload layout map up to 500MB"
+                    currentUrl={formData.layoutMapUrl}
+                    onUrlChange={(url) => setFormData((prev) => ({ ...prev, layoutMapUrl: url }))}
+                    folder="properties"
+                    entityId={targetProperty?.id}
+                    accept="image/*,.pdf"
+                    maxSizeMB={500}
+                    icon={Map}
+                  />
+                  <AdminFileUpload
+                    label="Floor Plan (Image or PDF)"
+                    hint="Upload floor plan up to 500MB"
+                    currentUrl={formData.floorPlanUrl}
+                    onUrlChange={(url) => setFormData((prev) => ({ ...prev, floorPlanUrl: url }))}
+                    folder="properties"
+                    entityId={targetProperty?.id}
+                    accept="image/*,.pdf"
+                    maxSizeMB={500}
+                    icon={FileText}
+                  />
+                </div>
               </div>
             </div>
           </div>

@@ -14,21 +14,26 @@ const ALLOWED_FOLDERS = [
   "videos",
 ];
 
-const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "pdf", "mp4", "mov", "webm"]);
+const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "pdf", "doc", "docx", "mp4", "mov", "webm"]);
 const ALLOWED_MIME_TYPES = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
   "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/octet-stream",
   "video/mp4",
   "video/quicktime",
   "video/webm",
 ]);
 
-const MAX_IMAGE_SIZE = 15 * 1024 * 1024; // 15MB
-const MAX_VIDEO_SIZE = 60 * 1024 * 1024; // 60MB
+const MAX_IMAGE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_DOCUMENT_SIZE = 500 * 1024 * 1024; // 500MB
+const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300; // 5 minutes execution for high-MB streaming uploads
 
 export async function POST(request: Request) {
   try {
@@ -103,7 +108,8 @@ export async function POST(request: Request) {
 
     // 4. File Size Limits
     const isVideo = ["mp4", "mov", "webm"].includes(cleanExt);
-    const maxAllowedSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+    const isDoc = ["pdf", "doc", "docx"].includes(cleanExt);
+    const maxAllowedSize = isVideo ? MAX_VIDEO_SIZE : isDoc ? MAX_DOCUMENT_SIZE : MAX_IMAGE_SIZE;
 
     if (buffer.length > maxAllowedSize) {
       return NextResponse.json(
@@ -128,6 +134,8 @@ export async function POST(request: Request) {
       else if (cleanExt === "png") contentType = "image/png";
       else if (cleanExt === "webp") contentType = "image/webp";
       else if (cleanExt === "pdf") contentType = "application/pdf";
+      else if (cleanExt === "doc") contentType = "application/msword";
+      else if (cleanExt === "docx") contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
       else if (["mp4", "mov"].includes(cleanExt)) contentType = "video/mp4";
       else if (cleanExt === "webm") contentType = "video/webm";
       else contentType = "image/jpeg";
@@ -135,14 +143,16 @@ export async function POST(request: Request) {
 
     contentType = contentType.split(";")[0].trim().toLowerCase();
     const expectedMimeByExtension: Record<string, Set<string>> = {
-      jpg: new Set(["image/jpeg"]),
-      jpeg: new Set(["image/jpeg"]),
-      png: new Set(["image/png"]),
-      webp: new Set(["image/webp"]),
-      pdf: new Set(["application/pdf"]),
-      mp4: new Set(["video/mp4"]),
-      mov: new Set(["video/quicktime", "video/mp4"]),
-      webm: new Set(["video/webm"]),
+      jpg: new Set(["image/jpeg", "application/octet-stream"]),
+      jpeg: new Set(["image/jpeg", "application/octet-stream"]),
+      png: new Set(["image/png", "application/octet-stream"]),
+      webp: new Set(["image/webp", "application/octet-stream"]),
+      pdf: new Set(["application/pdf", "application/octet-stream"]),
+      doc: new Set(["application/msword", "application/octet-stream"]),
+      docx: new Set(["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/octet-stream"]),
+      mp4: new Set(["video/mp4", "application/octet-stream"]),
+      mov: new Set(["video/quicktime", "video/mp4", "application/octet-stream"]),
+      webm: new Set(["video/webm", "application/octet-stream"]),
     };
     if (!ALLOWED_MIME_TYPES.has(contentType) || !expectedMimeByExtension[cleanExt]?.has(contentType)) {
       return NextResponse.json({ error: "File extension and MIME type do not match." }, { status: 400 });

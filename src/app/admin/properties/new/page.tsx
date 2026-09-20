@@ -15,7 +15,8 @@ import {
   ArrowLeft, Save, Upload, X, MapPin, 
   Video, Info, Phone, Search, 
   CheckCircle2, Image as ImageIcon,
-  Building2, Trees, Shield, Car, Waves, Zap, Sparkles
+  Building2, Trees, Shield, Car, Waves, Zap, Sparkles,
+  FileText, Map
 } from "lucide-react";
 import Link from "next/link";
 import { Property, PropertyLocation } from "@/types/property";
@@ -23,6 +24,7 @@ import { supabase } from "@/lib/supabase";
 import { parseGoogleMapsUrl } from "@/lib/utils";
 import { uploadToS3 } from "@/lib/aws/storage-utils";
 import { VideoMediaManager } from "@/components/admin/video-media-manager";
+import { AdminFileUpload } from "@/components/admin/admin-file-upload";
 
 const CoordinatePickerMap = dynamic(
   () => import("@/components/admin/coordinate-picker-map"),
@@ -178,6 +180,7 @@ export default function AddPropertyPage() {
       toast.error("Failed to upload image. Please try again.");
     } finally {
       setIsUploading(false);
+      if (e.target) e.target.value = "";
     }
   };
 
@@ -568,19 +571,39 @@ export default function AddPropertyPage() {
                 />
               </div>
 
-              {/* Additional Document URLs */}
-              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-border-default/50">
-                <div className="space-y-4">
-                  <label className="text-sm font-medium text-text-secondary">Layout Map URL</label>
-                  <Input name="layoutMapUrl" value={formData.layoutMapUrl} onChange={handleChange} placeholder="https://... (Image or PDF)" className="h-12" />
-                </div>
-                <div className="space-y-4">
-                  <label className="text-sm font-medium text-text-secondary">Floor Plan URL</label>
-                  <Input name="floorPlanUrl" value={formData.floorPlanUrl} onChange={handleChange} placeholder="https://... (Image or PDF)" className="h-12" />
-                </div>
-                <div className="space-y-4">
-                  <label className="text-sm font-medium text-text-secondary">Brochure URL</label>
-                  <Input name="brochureUrl" value={formData.brochureUrl} onChange={handleChange} placeholder="https://... (PDF)" className="h-12" />
+              {/* Additional Documents (Brochure, Floor Plan, Layout Map with 500MB, Progress & Retry) */}
+              <div className="md:col-span-2 pt-4 border-t border-border-default/50 space-y-6">
+                <AdminFileUpload
+                  label="Property Brochure (PDF / Document)"
+                  hint="Upload brochure up to 500MB with live progress and retry"
+                  currentUrl={formData.brochureUrl}
+                  onUrlChange={(url) => setFormData((prev) => ({ ...prev, brochureUrl: url }))}
+                  folder="brochures"
+                  accept=".pdf,.doc,.docx,image/*"
+                  maxSizeMB={500}
+                  icon={FileText}
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <AdminFileUpload
+                    label="Layout Map (Image or PDF)"
+                    hint="Upload layout map up to 500MB"
+                    currentUrl={formData.layoutMapUrl}
+                    onUrlChange={(url) => setFormData((prev) => ({ ...prev, layoutMapUrl: url }))}
+                    folder="properties"
+                    accept="image/*,.pdf"
+                    maxSizeMB={500}
+                    icon={Map}
+                  />
+                  <AdminFileUpload
+                    label="Floor Plan (Image or PDF)"
+                    hint="Upload floor plan up to 500MB"
+                    currentUrl={formData.floorPlanUrl}
+                    onUrlChange={(url) => setFormData((prev) => ({ ...prev, floorPlanUrl: url }))}
+                    folder="properties"
+                    accept="image/*,.pdf"
+                    maxSizeMB={500}
+                    icon={FileText}
+                  />
                 </div>
               </div>
             </div>

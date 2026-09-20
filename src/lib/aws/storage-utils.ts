@@ -62,6 +62,10 @@ export function detectMimeType(filename: string, fileType?: string): string {
       return "image/heic";
     case "pdf":
       return "application/pdf";
+    case "doc":
+      return "application/msword";
+    case "docx":
+      return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     case "mp4":
     case "mov":
       return "video/mp4";
@@ -176,9 +180,10 @@ export async function uploadToS3({
           await new Promise<void>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             const startTime = Date.now();
+            xhr.timeout = 0; // Allow unlimited time for high-MB files
 
             xhr.open("PUT", presignData.uploadUrl, true);
-            xhr.setRequestHeader("Content-Type", effectiveMime);
+            xhr.setRequestHeader("Content-Type", presignData.contentType || effectiveMime);
 
             xhr.upload.onprogress = (evt) => {
               if (evt.lengthComputable && onProgress) {
@@ -227,6 +232,9 @@ export async function uploadToS3({
             success: true,
           };
         }
+      } else {
+        const errorJson = await presignRes.json().catch(() => ({}));
+        console.warn("[S3 Presign Upload Fallback]:", errorJson?.error || `Status ${presignRes.status}`);
       }
     } catch (presignErr) {
       console.warn("[S3 Storage Direct Presign fallback]:", presignErr);
@@ -238,6 +246,7 @@ export async function uploadToS3({
     const serverUploadResult = await new Promise<UploadResult>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       const startTime = Date.now();
+      xhr.timeout = 0;
 
       xhr.open("POST", uploadApiUrl, true);
       xhr.setRequestHeader("Content-Type", effectiveMime);

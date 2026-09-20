@@ -25,6 +25,7 @@ import type {
 } from "@/types/project";
 import { uploadToS3 } from "@/lib/aws/storage-utils";
 import { VideoMediaManager } from "@/components/admin/video-media-manager";
+import { AdminFileUpload } from "@/components/admin/admin-file-upload";
 
 // ─── Lazy map import (SSR unsafe) ────────────────────────────────────────────
 const CoordinatePickerMap = dynamic(
@@ -238,10 +239,16 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUpl("logo", true);
-    const url = await uploadFile(file, "projects", "logos");
-    setBuilderLogoUrl(url);
-    setUpl("logo", false);
-    toast.success("Logo uploaded!");
+    try {
+      const url = await uploadFile(file, "projects", "logos");
+      setBuilderLogoUrl(url);
+      toast.success("Logo uploaded!");
+    } catch {
+      toast.error("Failed to upload logo. Please retry.");
+    } finally {
+      setUpl("logo", false);
+      if (e.target) e.target.value = "";
+    }
   };
 
   const handleMasterPlanFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -252,47 +259,74 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       const url = await uploadFile(file, "projects", "master-plans");
       setMasterPlanUrl(url);
       toast.success("Master Plan uploaded!");
-    } catch {}
-    setUpl("master-plan", false);
+    } catch {
+      toast.error("Failed to upload master plan.");
+    } finally {
+      setUpl("master-plan", false);
+      if (e.target) e.target.value = "";
+    }
   };
 
   const handleBrochureFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUpl("brochure", true);
-    const url = await uploadFile(file, "projects", "brochures");
-    setBrochureUrl(url);
-    setUpl("brochure", false);
-    toast.success("Brochure uploaded!");
+    try {
+      const url = await uploadFile(file, "projects", "brochures");
+      setBrochureUrl(url);
+      toast.success("Brochure uploaded!");
+    } catch {
+      toast.error("Failed to upload brochure. Please retry.");
+    } finally {
+      setUpl("brochure", false);
+      if (e.target) e.target.value = "";
+    }
   };
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUpl("cover", true);
-    const url = await uploadFile(file, "projects", "cover");
-    setCoverImage(url);
-    if (images.length === 0) {
-      setImages([{ id: `img-${Date.now()}`, url, alt: "Cover", category: "exterior", isPrimary: true }]);
+    try {
+      const url = await uploadFile(file, "projects", "cover");
+      setCoverImage(url);
+      if (images.length === 0) {
+        setImages([{ id: `img-${Date.now()}`, url, alt: "Cover", category: "exterior", isPrimary: true }]);
+      }
+      toast.success("Cover image uploaded!");
+    } catch {
+      toast.error("Failed to upload cover image.");
+    } finally {
+      setUpl("cover", false);
+      if (e.target) e.target.value = "";
     }
-    setUpl("cover", false);
-    toast.success("Cover image uploaded!");
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     setUpl("gallery", true);
-    
-    const newImages: ProjectImage[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const url = await uploadFile(files[i], "projects", "gallery");
-      newImages.push({ id: `img-${Date.now()}-${i}`, url, alt: `Gallery ${i}`, category: "exterior" });
+    try {
+      const newImages: ProjectImage[] = [];
+      let successCount = 0;
+      for (let i = 0; i < files.length; i++) {
+        toast.loading(`Uploading image ${i + 1} of ${files.length}...`, { id: "gallery-upload" });
+        try {
+          const url = await uploadFile(files[i], "projects", "gallery");
+          newImages.push({ id: `img-${Date.now()}-${i}`, url, alt: `Gallery ${i}`, category: "exterior" });
+          successCount++;
+        } catch {
+          toast.error(`Image "${files[i].name}" failed to upload.`);
+        }
+      }
+      if (newImages.length > 0) {
+        setImages(prev => [...prev, ...newImages]);
+      }
+      toast.success(`${successCount} of ${files.length} images added to gallery!`, { id: "gallery-upload" });
+    } finally {
+      setUpl("gallery", false);
+      if (e.target) e.target.value = "";
     }
-    
-    setImages(prev => [...prev, ...newImages]);
-    setUpl("gallery", false);
-    toast.success(`${files.length} images added to gallery!`);
   };
 
   // ─── Map position change ──────────────────────────────────────────────────
@@ -345,10 +379,15 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
 
   const handleConfigImageUpload = async (id: string, file: File) => {
     setUpl(`config-${id}`, true);
-    const url = await uploadFile(file, "projects", "floor-plans");
-    updateConfigField(id, "floorPlanUrl", url);
-    setUpl(`config-${id}`, false);
-    toast.success("Floor plan uploaded!");
+    try {
+      const url = await uploadFile(file, "projects", "floor-plans");
+      updateConfigField(id, "floorPlanUrl", url);
+      toast.success("Floor plan uploaded!");
+    } catch {
+      toast.error("Failed to upload floor plan.");
+    } finally {
+      setUpl(`config-${id}`, false);
+    }
   };
 
   // ─── Highlights helpers ──────────────────────────────────────────────────
@@ -1507,31 +1546,33 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 />
               </div>
 
-              {/* Brochure (Upload or Direct URL) */}
-              <div className="md:col-span-2 pt-4 border-t border-border-default/50 space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <FileText className="w-4 h-4" /> Project Brochure (PDF)
-                  </label>
-                  {brochureUrl && (
-                    <a href={brochureUrl} target="_blank" rel="noreferrer" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1">
-                      View Uploaded Brochure ↗
-                    </a>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-text-secondary block mb-1.5 font-medium">Upload PDF / Document</label>
-                    <div className="flex items-center gap-3">
-                      <Input type="file" accept=".pdf,.doc,.docx,image/*" onChange={handleBrochureFile} className="file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-600 dark:file:text-amber-400 cursor-pointer" />
-                      {uploading.brochure && <Loader2 className="w-4 h-4 animate-spin text-amber-500 shrink-0" />}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-text-secondary block mb-1.5 font-medium">Or Direct Brochure URL</label>
-                    <Input value={brochureUrl} onChange={(e) => setBrochureUrl(e.target.value)} placeholder="https://example.com/brochure.pdf" className={ic()} />
-                  </div>
-                </div>
+              {/* Brochure (Upload or Direct URL with 500MB, Live Progress & Retry) */}
+              <div className="md:col-span-2 pt-4 border-t border-border-default/50">
+                <AdminFileUpload
+                  label="Project Brochure (PDF / Document)"
+                  hint="Supports high-res PDF, Word (.doc, .docx), Images up to 500MB with live progress and 1-click retry"
+                  currentUrl={brochureUrl}
+                  onUrlChange={(url) => setBrochureUrl(url)}
+                  folder="brochures"
+                  entityId={initialData?.id}
+                  accept=".pdf,.doc,.docx,image/*"
+                  maxSizeMB={500}
+                />
+              </div>
+
+              {/* Master Plan (Upload or Direct URL with Progress & Retry) */}
+              <div className="md:col-span-2 pt-2">
+                <AdminFileUpload
+                  label="Master Plan Layout (Image or PDF)"
+                  hint="Upload high-resolution master plan layout up to 500MB"
+                  currentUrl={masterPlanUrl}
+                  onUrlChange={(url) => setMasterPlanUrl(url)}
+                  folder="projects"
+                  entityId={initialData?.id}
+                  accept="image/*,.pdf"
+                  maxSizeMB={500}
+                  icon={Map}
+                />
               </div>
 
               {/* Amenities */}

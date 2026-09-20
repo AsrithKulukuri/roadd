@@ -34,12 +34,14 @@ const ALLOWED_VIDEO_MIMES = [
 
 const ALLOWED_DOC_MIMES = [
   "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
 const MAX_SIZES_MB = {
-  images: 20,
-  videos: 100,
-  documents: 30,
+  images: 50,
+  videos: 500,
+  documents: 500,
 };
 
 export async function POST(request: Request) {
@@ -88,6 +90,8 @@ export async function POST(request: Request) {
       else if (rawExt === "webp") contentType = "image/webp";
       else if (["heic", "heif"].includes(rawExt)) contentType = "image/heic";
       else if (rawExt === "pdf") contentType = "application/pdf";
+      else if (rawExt === "doc") contentType = "application/msword";
+      else if (rawExt === "docx") contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
       else if (["mp4", "mov"].includes(rawExt)) contentType = "video/mp4";
       else contentType = "image/jpeg";
     }
@@ -113,7 +117,10 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-    } else if (ALLOWED_DOC_MIMES.includes(cleanContentType) && rawExt === "pdf") {
+    } else if (
+      (ALLOWED_DOC_MIMES.includes(cleanContentType) || cleanContentType === "application/octet-stream") &&
+      ["pdf", "doc", "docx"].includes(rawExt)
+    ) {
       isAllowed = true;
       if (sizeMb > MAX_SIZES_MB.documents) {
         return NextResponse.json(
@@ -153,7 +160,7 @@ export async function POST(request: Request) {
       key = `${folder}/${uuid}.${cleanExt}`;
     }
 
-    const expiresIn = 300; // 5 minutes
+    const expiresIn = 3600; // 1 hour for reliable high-MB uploads
     const uploadUrl = await generatePresignedUrl(key, cleanContentType, expiresIn);
     const fileUrl = getPublicUrl(key);
 
