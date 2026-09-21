@@ -6,8 +6,8 @@ export function ListingLeadsPanel() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(true);
-  async function refresh() {
-    setBusy(true); setError("");
+  async function refresh(background = false) {
+    if (!background) setBusy(true); setError("");
     try {
       const response = await fetch("/api/listing-leads", { cache: "no-store" });
       const data = await response.json();
@@ -16,9 +16,13 @@ export function ListingLeadsPanel() {
     } catch (error) { setError(error instanceof Error ? error.message : "Unable to load enquiries."); }
     finally { setBusy(false); }
   }
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => {
+    void refresh();
+    const timer = window.setInterval(() => { if (document.visibilityState === "visible") void refresh(true); }, 30000);
+    return () => window.clearInterval(timer);
+  }, []);
   return <section className="rounded-2xl border border-border-default bg-bg-card p-5 space-y-4">
-    <div className="flex items-center justify-between gap-3"><div><h2 className="text-xl font-bold">Listing contact enquiries</h2><p className="text-sm text-text-secondary">Latest 200 explicit requests. Saves and page views do not share buyer details.</p></div><button onClick={refresh} disabled={busy} className="rounded-xl border px-3 py-2">Refresh</button></div>
+    <div className="flex items-center justify-between gap-3"><div><h2 className="text-xl font-bold">Listing contact enquiries</h2><p className="text-sm text-text-secondary">Latest 200 explicit requests. Saves and page views do not share buyer details.</p></div><button onClick={() => void refresh()} disabled={busy} className="rounded-xl border px-3 py-2">Refresh</button></div>
     {error ? <p role="alert" className="text-red-600">{error}</p> : busy ? <p>Loading enquiries…</p> : !leads.length ? <p>No contact enquiries yet.</p> :
     <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead><tr>{["Listing / action", "Buyer", "Phone / email", "Requested", "WhatsApp delivery"].map(label => <th key={label} className="p-3">{label}</th>)}</tr></thead><tbody>{leads.map(lead => <tr key={lead.id} className="border-t border-border-default">
       <td className="p-3">{lead.listing_name}<div className="font-semibold">{ACTION_LABELS[lead.action] || lead.action}</div></td>

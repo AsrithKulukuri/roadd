@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Calendar } from "lucide-react";
 import { toast } from "sonner";
 import type { Property } from "@/types/property";
-import { requireActionSession } from "@/lib/action-auth";
 import { performListingAction } from "./listing-contact-actions";
 import { TourBookingModal } from "./tour-booking-modal";
 import { WhatsAppIcon } from "./whatsapp-share-button";
@@ -28,7 +27,7 @@ export function MobilePropertyCta({ property }: { property: Property }) {
 
   async function openSchedule() {
     try {
-      if (await requireActionSession("schedule_visit")) setIsScheduleOpen(true);
+      if (await performListingAction("property", property.id, "schedule_visit")) setIsScheduleOpen(true);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Please retry.");
     }

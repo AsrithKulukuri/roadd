@@ -107,3 +107,12 @@ test("visit identity comes from session, persists before notification and dedupl
   expect((await visit(request(body))).status).toBe(200);
   expect(messages).toHaveLength(0);
 });
+
+for (const requestedAction of ["callback_request", "brochure_download", "schedule_visit", "information_request"]) {
+  test(requestedAction + " records verified buyer details and notifies builder and admin", async () => {
+    const response = await action(request({ ...payload, action: requestedAction }));
+    expect(response.status).toBe(200);
+    expect(writes[0].payload).toMatchObject({ action: requestedAction, buyer_name: user.name, buyer_phone: user.phone, buyer_email: user.email });
+    expect(messages.map(message => message.phone)).toEqual(["919000000002", "919000000003"]);
+  });
+}

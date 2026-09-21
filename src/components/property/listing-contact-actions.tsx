@@ -48,6 +48,6 @@ export function ListingContactActions({ listingType, listingId }: { listingType:
       <Button disabled={busy} onClick={() => act("whatsapp_click")}><WhatsAppIcon />WhatsApp {listingType === "project" ? "Builder" : "Agent"}</Button>
       <Button disabled={busy} variant="outline" onClick={() => act("callback_request")}>Request callback</Button>
     </div>
-    <p className="text-xs text-muted-foreground">By revealing a number, opening WhatsApp, requesting a callback or requesting a brochure, you share your name, verified phone and email (if provided) with this listing’s builder/agent and ROAD admin for follow-up.</p>
+    <p className="text-xs text-muted-foreground">By revealing a number, opening WhatsApp, requesting a callback, scheduling a visit or requesting listing information and brochures, you share your name, verified phone and email (if provided) with this listing’s builder/agent and ROAD admin for follow-up.</p>
   </div>;
 }

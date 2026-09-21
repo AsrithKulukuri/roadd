@@ -46,7 +46,7 @@ export async function recordListingAction(request: Request, type: "project" | "p
   const phone = listingPhone(listing);
   const adminPhone = formatWhatsAppPhone(process.env.ADMIN_WHATSAPP_PHONE || process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE || "");
   const targetRecipient = phone || adminPhone;
-  if (!targetRecipient && action !== "brochure_download") {
+  if (!targetRecipient && ["reveal_phone", "whatsapp_click"].includes(action)) {
     throw new PortalError("Contact details are not available. Please contact ROAD support.", 404);
   }
   if (action === "brochure_download" && !listing.brochureUrl) throw new PortalError("Brochure unavailable.", 404);
@@ -85,5 +85,5 @@ export async function recordListingAction(request: Request, type: "project" | "p
     }
     await supabaseAdmin.from("listing_action_leads").update({ builder_notified: delivered.has(phone), admin_notified: !!adminPhone && delivered.has(adminPhone) }).eq("id", data.id);
   }
-  return { listing, phone, duplicate: !data };
+  return { listing, phone: targetRecipient, duplicate: !data };
 }

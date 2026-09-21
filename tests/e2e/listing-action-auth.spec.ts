@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 const buyer = { id: "fixture-buyer", name: "Fixture Buyer", phone: "+919000000001", email: "buyer@example.test", role: "buyer", isLoggedIn: true };
-const project = { id: "fixture-project", slug: "fixture-plot", name: "Fixture Plot Venture", projectType: "venture", description: "Public project description", isPublished: true, constructionStatus: "under-construction", location: { city: "Vijayawada", locality: "Fixture locality", latitude: 16.5062, longitude: 80.648 }, coverImage: "/images/property-placeholder.jpg", configurations: [], images: [], highlights: [], facilities: [], totalUnits: 10, builderName: "Fixture Builder" };
+const project = { id: "fixture-project", slug: "fixture-plot", name: "Fixture Plot Venture", projectType: "venture", description: "Public project description", isPublished: true, constructionStatus: "under-construction", location: { city: "Vijayawada", locality: "Fixture locality", latitude: 16.5062, longitude: 80.648 }, coverImage: "/images/property-placeholder.jpg", configurations: [], images: [], highlights: [], facilities: [], hasBrochure: true, totalUnits: 10, builderName: "Fixture Builder" };
 async function fixture(page: Page, signedIn: boolean) {
   const actions: any[] = [];
   await page.route("**/api/**", async route => {
@@ -45,4 +45,35 @@ test("cancelled OTP shares nothing; successful OTP resumes the original reveal",
   await expect(page.locator('a[href="tel:+919000000002"]').first()).toBeVisible();
   expect(actions).toHaveLength(1);
   await expect(page).toHaveURL(/projects\/fixture-plot/);
+});
+
+
+test("logged-out project cards open public details without login", async ({ page }) => {
+  const actions = await fixture(page, false);
+  await page.goto("/search?type=projects");
+  const card = page.locator('a[href="/projects/fixture-plot"]').first();
+  await expect(card).toBeVisible();
+  await card.click();
+  await expect(page).toHaveURL(/projects\/fixture-plot/);
+  await expect(page.getByRole("heading", { name: project.name, exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Verify your phone" })).toHaveCount(0);
+  expect(actions).toHaveLength(0);
+});
+
+test("an expired server session requires OTP despite cached user details", async ({ page }) => {
+  await page.addInitScript(user => localStorage.setItem("road_user", JSON.stringify(user)), buyer);
+  const actions = await fixture(page, false);
+  await page.getByRole("button", { name: "Request callback", exact: true }).first().click();
+  await expect(page.getByRole("dialog", { name: "Verify your phone" })).toBeVisible();
+  expect(actions).toHaveLength(0);
+});
+
+test("signed-in callback and scheduling clicks each record a lead", async ({ page }) => {
+  const actions = await fixture(page, true);
+  await page.getByRole("button", { name: "Request callback", exact: true }).first().click();
+  await expect.poll(() => actions.length).toBe(1);
+  await page.getByRole("button", { name: /Schedule.*Visit/i }).first().click();
+  await expect.poll(() => actions.length).toBe(2);
+  expect(actions.map(a => a.action)).toEqual(["callback_request", "schedule_visit"]);
+  expect(actions.every(a => a.consent === true && a.listingId === project.id)).toBe(true);
 });

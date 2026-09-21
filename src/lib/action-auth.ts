@@ -1,43 +1,12 @@
 "use client";
 import type { SessionUser } from "@/hooks/use-auth-session";
 
-function getLocalVerifiedUser(): SessionUser | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem("road_user");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed.isLoggedIn && parsed.phone) {
-      const cleanPhone = String(parsed.phone).replace(/\D/g, "");
-      if (cleanPhone.length >= 10) {
-        return parsed as SessionUser;
-      }
-    }
-  } catch {}
-  return null;
-}
-
 export async function readActionSession(): Promise<SessionUser | null> {
-  const localUser = getLocalVerifiedUser();
-  try {
-    const response = await fetch("/api/auth/session", { cache: "no-store", credentials: "include" });
-    if (response.status === 401) return localUser;
-    const data = await response.json();
-    if (!response.ok) return localUser;
-    if (data.authenticated && data.user) {
-      const phone = data.user.phone || localUser?.phone;
-      if (phone) {
-        return {
-          ...data.user,
-          phone,
-          name: data.user.name || localUser?.name || "User",
-        };
-      }
-    }
-    return localUser;
-  } catch {
-    return localUser;
-  }
+  const response = await fetch("/api/auth/session", { cache: "no-store", credentials: "include" });
+  if (response.status === 401) return null;
+  if (!response.ok) throw new Error("Unable to verify your session. Please try again.");
+  const data = await response.json();
+  return data.authenticated && data.user?.phone ? data.user : null;
 }
 
 let pending: Promise<SessionUser | null> | null = null;
