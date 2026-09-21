@@ -15,7 +15,7 @@ const VALID_PROJECT_COLUMNS = new Set([
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
   'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory',
-  'masterPlanUrl', 'isRoadExclusive'
+  'masterPlanUrl', 'isRoadExclusive', 'locationHighlights'
 ]);
 
 // Public projection columns excluding private builder contact numbers
@@ -28,7 +28,7 @@ const PUBLIC_PROJECT_SELECT = [
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
   'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory',
-  'masterPlanUrl', 'isRoadExclusive'
+  'masterPlanUrl', 'isRoadExclusive', 'locationHighlights'
 ].join(',');
 
 export function toSupabaseProject(proj: Partial<Project>): Record<string, unknown> {
@@ -167,6 +167,13 @@ export function toSupabaseProject(proj: Partial<Project>): Record<string, unknow
   delete p.builderExperience;
   delete p.builderProjectsCount;
 
+  // Persist locationHighlights safely in location JSONB
+  if (p.locationHighlights !== undefined) {
+    const loc = (p.location && typeof p.location === 'object') ? { ...(p.location as Record<string, unknown>) } : {};
+    loc.locationHighlights = Array.isArray(p.locationHighlights) ? p.locationHighlights.filter(Boolean) : [];
+    p.location = loc;
+  }
+
   // Strip keys that are not valid columns in Supabase
   const cleaned: Record<string, unknown> = {};
   for (const key of Object.keys(p)) {
@@ -289,7 +296,14 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
     builderProjectsCount,
     displayCategory: (p.displayCategory as "featured" | "recommended" | "budget_friendly" | "none" | undefined) || (p.isFeatured ? "featured" : "none"),
     possessionDate,
-    totalArea
+    totalArea,
+    locationHighlights: Array.isArray(p.locationHighlights)
+      ? (p.locationHighlights as string[]).filter((h) => typeof h === 'string' && h.trim())
+      : (Array.isArray((p as any).location_highlights)
+        ? ((p as any).location_highlights as string[]).filter((h) => typeof h === 'string' && h.trim())
+        : (Array.isArray(rawLocation?.locationHighlights)
+          ? (rawLocation.locationHighlights as string[]).filter((h) => typeof h === 'string' && h.trim())
+          : undefined))
   };
 }
 

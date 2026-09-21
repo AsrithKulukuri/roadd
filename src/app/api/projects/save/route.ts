@@ -23,7 +23,7 @@ const PHYSICAL_PROJECT_COLUMNS = new Set([
   "brochureUrl", "highlights", "facilities", "isFeatured",
   "isPublished", "viewCount", "createdAt", "updatedAt",
   "crdaApproved", "totalTowers", "constructionUpdates", "displayCategory",
-  "masterPlanUrl", "master_plan_url", "isRoadExclusive"
+  "masterPlanUrl", "master_plan_url", "isRoadExclusive", "locationHighlights", "location_highlights"
 ]);
 
 export async function POST(request: NextRequest) {
@@ -100,6 +100,13 @@ export async function POST(request: NextRequest) {
     if (rawPayload.builderProjectsCount !== undefined) {
       const cleanCount = typeof rawPayload.builderProjectsCount === "string" ? rawPayload.builderProjectsCount.trim() : undefined;
       if (cleanCount) location.builderProjectsCount = cleanCount;
+    }
+
+    // Always mirror locationHighlights into location JSONB for fail-safe persistence
+    if (rawPayload.locationHighlights !== undefined) {
+      location.locationHighlights = Array.isArray(rawPayload.locationHighlights)
+        ? rawPayload.locationHighlights.filter(Boolean)
+        : [];
     }
 
     rawPayload.location = location;

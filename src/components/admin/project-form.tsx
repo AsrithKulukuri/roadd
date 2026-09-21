@@ -270,6 +270,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const [brochureUrl, setBrochureUrl] = useState(initialData?.brochureUrl ?? "");
   const [masterPlanUrl, setMasterPlanUrl] = useState(initialData?.masterPlanUrl ?? "");
   const [highlights, setHighlights] = useState<string[]>(initialData?.highlights?.length ? initialData.highlights : [""]);
+  const [locationHighlights, setLocationHighlights] = useState<string[]>(initialData?.locationHighlights?.length ? initialData.locationHighlights : [""]);
   const [facilities, setFacilities] = useState<string[]>(initialData?.facilities ?? []);
   const [displayCategory, setDisplayCategory] = useState<"featured" | "recommended" | "budget_friendly" | "none">(
     initialData?.displayCategory ?? (initialData?.isFeatured ? "featured" : "none")
@@ -452,6 +453,21 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     setHighlights(prev => prev.filter((_, i) => i !== index));
   };
 
+  // ─── Location Highlights helpers ─────────────────────────────────────────
+  const addLocationHighlight = (text: string = "") => {
+    setLocationHighlights(prev => [...prev, text]);
+  };
+  const updateLocationHighlight = (index: number, text: string) => {
+    setLocationHighlights(prev => {
+      const next = [...prev];
+      next[index] = text;
+      return next;
+    });
+  };
+  const removeLocationHighlight = (index: number) => {
+    setLocationHighlights(prev => prev.filter((_, i) => i !== index));
+  };
+
   // ─── Construction Updates helpers ────────────────────────────────────────
   const addConstructionUpdate = () => {
     setConstructionUpdates(prev => [
@@ -615,6 +631,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       brochureUrl: brochureUrl.trim() || undefined,
       masterPlanUrl: masterPlanUrl.trim() || undefined,
       highlights: highlights.filter(Boolean),
+      locationHighlights: locationHighlights.filter(Boolean),
       facilities,
       isFeatured: displayCategory === "featured" || isFeatured,
       displayCategory,
@@ -1677,7 +1694,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
               </Button>
             </div>
             <p className="text-xs sm:text-sm text-text-secondary">
-              Bullet points shown on the project page and the &quot;Why consider this project?&quot; card.
+              Bullet points shown in the sidebar &quot;Why {name || "this project"}?&quot; card (and as a fallback on the project page if no location highlights are added).
             </p>
 
             {/* Quick Presets */}
@@ -1688,9 +1705,9 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 "45,000 Sq.Ft Luxury Clubhouse",
                 "Smart Home Automation",
                 "100% Vastu Compliant with 80% Green Space",
-                "10 Mins to High Court & Secretariat",
                 "Bank Loan Approvals from SBI, HDFC & ICICI",
-                "100% Power Backup with EV Fast-Charging"
+                "100% Power Backup with EV Fast-Charging",
+                "Private Terrace Garden & Plunge Pool"
               ].map((preset) => (
                 <button
                   key={preset}
@@ -1713,7 +1730,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                   <Input
                     value={hl}
                     onChange={(e) => updateHighlight(idx, e.target.value)}
-                    placeholder="e.g. 5 Mins from Benz Circle, Italian Marble Living Room..."
+                    placeholder="e.g. Italian Marble Living Room, 100% Vastu..."
                     className={cn(ic(), "flex-1")}
                   />
                   <button
@@ -1721,6 +1738,76 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                     onClick={() => removeHighlight(idx)}
                     className="p-2.5 rounded-xl text-text-tertiary hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
                     title="Remove Highlight"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* SECTION 5B: Location Highlights */}
+          <div className="bg-bg-card border border-border-default rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-heading font-semibold text-text-primary flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-amber-primary" /> Location Highlights
+              </h2>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => addLocationHighlight("")}
+                className="text-xs font-bold border-amber-500/40 text-amber-500 hover:bg-amber-500/10 flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Location Highlight
+              </Button>
+            </div>
+            <p className="text-xs sm:text-sm text-text-secondary">
+              Key connectivity &amp; proximity landmarks shown in the main Location Highlights section of the project page. (If none are added, the project page falls back to showing project highlights).
+            </p>
+
+            {/* Quick Presets */}
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              <span className="text-[11px] font-bold text-text-tertiary self-center mr-1">Quick add:</span>
+              {[
+                "5 Mins to Benz Circle",
+                "10 Mins to AIIMS Mangalagiri",
+                "15 Mins to Gannavaram Airport",
+                "Near Top International Schools",
+                "5 Mins to NH-16 Highway",
+                "10 Mins to Amaravati Secretariat",
+                "Close to Multi-Specialty Hospitals",
+                "Walking Distance to Bus Hub / Metro"
+              ].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => {
+                    if (!locationHighlights.includes(preset)) addLocationHighlight(preset);
+                  }}
+                  className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-bg-primary border border-border-default hover:border-amber-500/50 hover:text-amber-500 transition-colors text-text-secondary cursor-pointer"
+                >
+                  + {preset}
+                </button>
+              ))}
+            </div>
+
+            {/* Location Highlights Inputs List */}
+            <div className="space-y-2.5 pt-2">
+              {locationHighlights.map((hl, idx) => (
+                <div key={idx} className="flex items-center gap-2.5">
+                  <span className="w-6 text-center text-xs font-bold text-amber-500">#{idx + 1}</span>
+                  <Input
+                    value={hl}
+                    onChange={(e) => updateLocationHighlight(idx, e.target.value)}
+                    placeholder="e.g. 5 Mins to Benz Circle, 10 Mins to AIIMS Mangalagiri..."
+                    className={cn(ic(), "flex-1")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeLocationHighlight(idx)}
+                    className="p-2.5 rounded-xl text-text-tertiary hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    title="Remove Location Highlight"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

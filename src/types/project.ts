@@ -155,6 +155,8 @@ export interface Project {
   // Content
   /** Bullet points for "Why consider?" sidebar */
   highlights: string[];
+  /** Bullet points for "Location Highlights" section */
+  locationHighlights?: string[];
   /** Facility/amenity tags e.g. "Swimming Pool", "Clubhouse" */
   facilities: string[];
 

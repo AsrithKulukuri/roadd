@@ -1132,20 +1132,34 @@ export function ProjectDetailView({
                     </p>
                   )}
 
-                  {/* Highlights Bullet Matrix */}
-                  {project.highlights && project.highlights.length > 0 && (
-                    <div className="pt-4 border-t border-border-default">
-                      <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-3">Project Highlights</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        {project.highlights.map((hl, idx) => (
-                          <div key={idx} className="flex items-start gap-2 text-xs sm:text-sm font-medium text-text-secondary">
-                            <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                            <span>{hl}</span>
-                          </div>
-                        ))}
+                  {/* Highlights Bullet Matrix: Location Highlights preferred, Project Highlights fallback */}
+                  {(() => {
+                    const hasLocHighlights = Boolean(project.locationHighlights && project.locationHighlights.length > 0);
+                    const items = hasLocHighlights ? project.locationHighlights! : project.highlights;
+                    if (!items || items.length === 0) return null;
+                    return (
+                      <div className="pt-4 border-t border-border-default">
+                        <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
+                          {hasLocHighlights ? (
+                            <>
+                              <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
+                              <span>Location Highlights</span>
+                            </>
+                          ) : (
+                            <span>Project Highlights</span>
+                          )}
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {items.map((hl, idx) => (
+                            <div key={idx} className="flex items-start gap-2 text-xs sm:text-sm font-medium text-text-secondary">
+                              <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                              <span>{hl}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               </ScrollReveal>
 
