@@ -964,12 +964,12 @@ function UnifiedSearchPage() {
               </div>
             ) : combinedResults.length > 0 ? (
               <div className="flex flex-col gap-6">
-                <div className={cn("grid gap-6", viewMode === "map" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2" : displayedResults.some(item => item.type === "project") ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-4" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4")}>
+                <div className={cn("grid gap-6", viewMode === "map" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4")}>
                   {displayedResults.map((item, idx) => {
                     if (item.type === "property") {
                       return <PropertyCard key={`prop-${item.data.id}-${idx}`} property={item.data as unknown as Property} index={idx} />;
                     } else {
-                      return <div key={`proj-${item.data.id}-${idx}`} className="min-w-0 sm:col-span-2"><SearchProjectCard project={item.data as unknown as Project} /></div>;
+                      return <div key={`proj-${item.data.id}-${idx}`} className="min-w-0"><SearchProjectCard project={item.data as unknown as Project} /></div>;
                     }
                   })}
                 </div>
