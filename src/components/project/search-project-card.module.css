@@ -2,7 +2,7 @@
   min-width:0;
   overflow:hidden;
   border:1px solid var(--color-border-default,#e2e8f0);
-  border-radius:24px;
+  border-radius:20px;
   background:var(--color-bg-card,#fff);
   color:var(--color-text-primary,#101828);
   box-shadow:0 2px 4px #1018280a,0 10px 28px #10182805;
@@ -14,7 +14,7 @@
   box-shadow:0 8px 28px #10182812}
 .media {
   position:relative;
-  aspect-ratio:16/9;
+  aspect-ratio:4/3;
   background:#e8edf0}
 .imageLink {
   display:block;
@@ -330,3 +330,23 @@
   scroll-behavior:auto}
 }
 
+
+/* Match the standard property card: 4:3 image plus a 300px details area. */
+.body {
+  display: grid;
+  grid-template-rows: 94px 44px 34px 100px;
+  padding: 14px;
+}
+.identity { height: 94px; }
+.facts { height: 44px; padding-bottom: 10px; }
+.configHeader { height: 34px; }
+.configHeader h4 { font-size: 12px; }
+.configHeader button { height: 32px; }
+.configs { height: 100px; padding-bottom: 4px; }
+.config { padding: 8px 10px; }
+.configName strong { font-size: 15px; line-height: 19px; }
+.configArea strong { font-size: 11px; line-height: 14px; margin-top: 2px; }
+.configPrice { padding-top: 5px; }
+.configPrice strong { font-size: 16px; line-height: 20px; }
+.config small { font-size: 10px; line-height: 13px; margin-top: 2px; }
+.single .config { padding: 10px; }
