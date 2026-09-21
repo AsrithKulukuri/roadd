@@ -28,6 +28,49 @@ export function AiAssistantWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const isDraggingRef = useRef(false);
   const [constraints, setConstraints] = useState({ left: -10, right: 300, top: -500, bottom: 20 });
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  // Dynamic visual viewport height listener for mobile virtual keyboard handling
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      setViewportHeight(vh);
+      const keyboardActive = window.innerWidth < 640 && (window.innerHeight - vh > 120);
+      setIsKeyboardOpen(keyboardActive);
+    };
+
+    handleResize();
+    window.visualViewport?.addEventListener("resize", handleResize);
+    window.visualViewport?.addEventListener("scroll", handleResize);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", handleResize);
+      window.visualViewport?.removeEventListener("scroll", handleResize);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  // Body scroll lock & global state flag when assistant is open on mobile
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (isOpen) {
+      document.documentElement.setAttribute("data-ai-assistant-open", "true");
+      if (window.innerWidth < 640) {
+        document.body.style.overflow = "hidden";
+      }
+    } else {
+      document.documentElement.removeAttribute("data-ai-assistant-open");
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.documentElement.removeAttribute("data-ai-assistant-open");
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     const updateConstraints = () => {
@@ -145,7 +188,7 @@ export function AiAssistantWidget() {
 
   return (
     <>
-      {/* Floating Action Button */}
+      {/* Floating Action Button (Trigger) */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
@@ -174,8 +217,8 @@ export function AiAssistantWidget() {
             aria-label="Open AI Assistant"
             style={{ touchAction: "none" }}
             className={cn(
-              "fixed left-4 w-12 h-12 lg:w-14 lg:h-14 bg-slate-950 hover:bg-slate-900 rounded-full shadow-2xl flex items-center justify-center z-[45] text-white border border-white/20 ring-2 ring-white/10 cursor-grab active:cursor-grabbing transition-shadow select-none",
-              isMapView ? "bottom-16 sm:bottom-6" : isNavHidden ? "bottom-6" : "bottom-20 sm:bottom-6"
+              "fixed left-4 w-12 h-12 lg:w-14 lg:h-14 bg-slate-950 hover:bg-slate-900 rounded-full shadow-2xl flex items-center justify-center z-[600] text-white border border-white/20 ring-2 ring-white/10 cursor-grab active:cursor-grabbing transition-shadow select-none",
+              isMapView ? "bottom-20 sm:bottom-6" : isNavHidden ? "bottom-6" : "bottom-20 sm:bottom-6"
             )}
           >
             <div className="relative flex items-center justify-center pointer-events-none">
@@ -186,55 +229,94 @@ export function AiAssistantWidget() {
         )}
       </AnimatePresence>
 
-      {/* Chat Window */}
+      {/* Mobile Backdrop Overlay (Dim background & prevent map interactions) */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-[9998] sm:hidden"
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Chat Window: Bottom Sheet on Mobile, Floating Card on Desktop */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            transition={{ type: "spring", damping: 28, stiffness: 320 }}
             className={cn(
-              "fixed left-4 bottom-20 sm:bottom-6 w-[90vw] max-w-sm h-[500px] max-h-[80vh] bg-bg-card border border-border-default shadow-elevated rounded-2xl flex flex-col overflow-hidden z-[100] transition-all",
-              isNavHidden ? "bottom-6" : "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
+              "fixed z-[9999] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden transition-all",
+              // Mobile: Anchored bottom sheet
+              "inset-x-0 bottom-0 rounded-t-[28px] border-t",
+              // Desktop: Floating corner widget
+              "sm:inset-auto sm:left-4 sm:bottom-6 sm:w-[380px] sm:max-w-sm sm:h-[520px] sm:rounded-2xl sm:border",
+              isNavHidden ? "sm:bottom-6" : "sm:bottom-6"
             )}
+            style={{
+              // Constrain height dynamically on mobile to visualViewport (prevents keyboard cutoff)
+              maxHeight:
+                typeof window !== "undefined" && window.innerWidth < 640 && viewportHeight
+                  ? `${viewportHeight}px`
+                  : undefined,
+              height:
+                typeof window !== "undefined" && window.innerWidth < 640
+                  ? (isKeyboardOpen && viewportHeight ? `${viewportHeight}px` : "82dvh")
+                  : undefined,
+            }}
           >
+            {/* Mobile Drag Handle */}
+            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto mt-2 sm:hidden shrink-0" />
+
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-bg-primary/50 border-b border-border-default backdrop-blur-md">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-slate-950 text-white flex items-center justify-center shadow-xs">
-                  <Bot className="w-4 h-4 text-white" />
+            <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="relative w-8 h-8 rounded-full bg-slate-950 dark:bg-amber-500 text-white dark:text-slate-950 flex items-center justify-center shadow-xs shrink-0">
+                  <Bot className="w-4 h-4" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-950 rounded-full" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-text-primary text-sm">ROAD AI</h3>
-                  <p className="text-[10px] text-text-secondary">Smart Search Assistant</p>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-sm leading-none">ROAD AI</h3>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-500/10 dark:bg-amber-400/10 px-1.5 py-0.5 rounded">Smart</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Real Estate Assistant</p>
                 </div>
               </div>
               <button 
+                type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-2 text-text-secondary hover:bg-white/10 rounded-full transition-colors"
+                aria-label="Close AI Assistant"
+                className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 stroke-[2.5]" />
               </button>
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 overscroll-contain">
               {messages.map((msg) => (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   key={msg.id}
-                  className={`flex items-start gap-2 max-w-[85%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}
+                  className={`flex items-start gap-2.5 max-w-[88%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}
                 >
-                  <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center mt-1 ${
-                    msg.role === 'assistant' ? 'bg-slate-950 text-white' : 'bg-white/10 text-text-secondary'
+                  <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center mt-0.5 ${
+                    msg.role === 'assistant' ? 'bg-slate-950 dark:bg-amber-500/20 text-white dark:text-amber-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                   }`}>
-                    {msg.role === 'assistant' ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                    {msg.role === 'assistant' ? <Bot className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
                   </div>
-                  <div className={`p-3 rounded-2xl text-sm ${
+                  <div className={`p-3 rounded-2xl text-[13px] sm:text-sm leading-relaxed ${
                     msg.role === 'assistant' 
-                      ? 'bg-bg-primary border border-border-default text-text-primary rounded-tl-sm' 
-                      : 'bg-slate-950 text-white font-medium rounded-tr-sm'
+                      ? 'bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-tl-xs shadow-2xs' 
+                      : 'bg-slate-950 text-white font-medium rounded-tr-xs shadow-2xs'
                   }`}>
                     {msg.content}
                   </div>
@@ -246,18 +328,25 @@ export function AiAssistantWidget() {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="flex flex-col gap-2 mt-2 ml-10"
+                  transition={{ delay: 0.2 }}
+                  className="flex flex-col gap-2 pt-1 sm:pl-9"
                 >
-                  <button onClick={() => handleQuickSearch("Find me a 3 BHK in Benz Circle")} className="text-left text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-text-primary border border-border-default rounded-xl px-3 py-2 transition-colors w-fit">
-                    Find me a 3 BHK in Benz Circle
-                  </button>
-                  <button onClick={() => handleQuickSearch("Show me Villas under 2 Cr in Vijayawada")} className="text-left text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-text-primary border border-border-default rounded-xl px-3 py-2 transition-colors w-fit">
-                    Show me Villas under 2 Cr in Vijayawada
-                  </button>
-                  <button onClick={() => handleQuickSearch("Apartments for rent in Patamata")} className="text-left text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-text-primary border border-border-default rounded-xl px-3 py-2 transition-colors w-fit">
-                    Apartments for rent in Patamata
-                  </button>
+                  <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 pl-0.5">Quick searches:</p>
+                  {[
+                    "Find me a 3 BHK in Benz Circle",
+                    "Show me Villas under 2 Cr in Vijayawada",
+                    "Apartments for rent in Patamata",
+                  ].map((suggestion) => (
+                    <button 
+                      key={suggestion}
+                      type="button"
+                      onClick={() => handleQuickSearch(suggestion)} 
+                      className="text-left text-xs bg-slate-50 dark:bg-slate-900 hover:bg-amber-50 dark:hover:bg-slate-800/80 text-slate-800 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 border border-slate-200 dark:border-slate-800 hover:border-amber-400/60 rounded-xl px-3.5 py-2.5 transition-all active:scale-[0.98] w-full sm:w-fit font-medium flex items-center justify-between gap-2 shadow-2xs group cursor-pointer"
+                    >
+                      <span>{suggestion}</span>
+                      <Sparkles className="w-3 h-3 text-amber-500 opacity-60 group-hover:opacity-100 shrink-0" />
+                    </button>
+                  ))}
                 </motion.div>
               )}
               
@@ -265,13 +354,14 @@ export function AiAssistantWidget() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex items-start gap-2 max-w-[85%]"
+                  className="flex items-start gap-2.5 max-w-[88%]"
                 >
-                  <div className="w-6 h-6 rounded-full bg-slate-950 text-white flex-shrink-0 flex items-center justify-center mt-1">
-                    <Bot className="w-3 h-3" />
+                  <div className="w-7 h-7 rounded-full bg-slate-950 dark:bg-amber-500/20 text-white dark:text-amber-400 shrink-0 flex items-center justify-center mt-0.5">
+                    <Bot className="w-3.5 h-3.5" />
                   </div>
-                  <div className="bg-bg-primary border border-border-default p-3 rounded-2xl rounded-tl-sm">
-                    <Loader2 className="w-4 h-4 text-text-primary animate-spin" />
+                  <div className="bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3 rounded-2xl rounded-tl-xs shadow-2xs flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
+                    <span>Thinking...</span>
                   </div>
                 </motion.div>
               )}
@@ -279,23 +369,26 @@ export function AiAssistantWidget() {
             </div>
 
             {/* Input Area */}
-            <form onSubmit={handleSubmit} className="p-3 border-t border-border-default bg-bg-primary/50">
-              <div className="relative">
+            <form 
+              onSubmit={handleSubmit} 
+              className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            >
+              <div className="relative flex items-center">
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask me anything..."
-                  className="pr-10 bg-bg-card border-border-default focus-visible:ring-slate-950"
+                  placeholder="Ask me anything (e.g. 3BHK in Benz Circle)..."
+                  className="pr-12 pl-4 py-2.5 h-11 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-sm rounded-full shadow-xs focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-white"
                   disabled={isLoading}
                 />
                 <Button
                   type="submit"
                   size="icon"
-                  variant="ghost"
                   disabled={!input.trim() || isLoading}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 text-slate-950 dark:text-white hover:bg-white/10"
+                  className="absolute right-1.5 w-8 h-8 rounded-full bg-slate-950 hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-slate-950 disabled:opacity-40 transition-all flex items-center justify-center shadow-xs cursor-pointer"
+                  aria-label="Send message"
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-3.5 h-3.5" />
                 </Button>
               </div>
             </form>
