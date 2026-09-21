@@ -186,13 +186,13 @@ export function ProjectDetailView({
 
   const scrollConfigLeft = () => {
     if (configSliderRef.current) {
-      configSliderRef.current.scrollBy({ left: -290, behavior: "smooth" });
+      configSliderRef.current.scrollBy({ left: -230, behavior: "smooth" });
     }
   };
 
   const scrollConfigRight = () => {
     if (configSliderRef.current) {
-      configSliderRef.current.scrollBy({ left: 290, behavior: "smooth" });
+      configSliderRef.current.scrollBy({ left: 230, behavior: "smooth" });
     }
   };
 
@@ -1027,20 +1027,20 @@ export function ProjectDetailView({
                                 if (el) el.scrollIntoView({ behavior: "smooth" });
                               }
                             }}
-                            className={`shrink-0 w-[270px] sm:w-[290px] snap-start p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
+                            className={`shrink-0 w-[205px] sm:w-[225px] snap-start p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
                               isSelected
                                 ? "!bg-slate-950 !text-white !border-slate-950 shadow-sm ring-2 ring-amber-500/40"
                                 : "bg-bg-primary text-text-primary border-border-default/60 hover:border-amber-500 hover:bg-slate-50 dark:hover:bg-slate-900/80"
                             }`}
                           >
-                            <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                              <span className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                              <span className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
                                 isSelected ? "text-amber-400" : "text-text-tertiary"
                               }`}>
-                                <ConfigIcon className="w-3.5 h-3.5 text-[#faad13] shrink-0" />
+                                <ConfigIcon className="w-3 h-3 text-[#faad13] shrink-0" />
                                 <span>{cfg.label}</span>
                               </span>
-                              <span className={`text-xs font-black px-1.5 py-0.5 rounded-md ${
+                              <span className={`text-[11px] font-black px-1.5 py-0.5 rounded-md leading-none ${
                                 isSelected
                                   ? "bg-amber-500 text-slate-950"
                                   : "bg-amber-500/15 text-slate-950 dark:text-amber-400 border border-amber-500/30"
@@ -1049,14 +1049,14 @@ export function ProjectDetailView({
                               </span>
                             </div>
 
-                            <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 mt-1">
-                              <span className={`text-xs sm:text-sm font-bold whitespace-normal ${
+                            <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-0.5 mt-0.5">
+                              <span className={`text-xs sm:text-[13px] font-bold whitespace-normal ${
                                 isSelected ? "text-white" : "text-text-primary"
                               }`}>
                                 {sizeText || "Layout available"}
                               </span>
                               {cfg.pricePerUnit && (
-                                <span className={`text-[11px] font-medium shrink-0 ${
+                                <span className={`text-[10px] font-medium shrink-0 ${
                                   isSelected ? "text-slate-300" : "text-text-secondary"
                                 }`}>
                                   ₹{cfg.pricePerUnit.toLocaleString("en-IN")}/{unitLabel}
