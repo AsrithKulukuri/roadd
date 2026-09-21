@@ -63,7 +63,7 @@ export function SearchProjectCard({ project }: { project: Project }) {
       </div>
       <div className={styles.configHeader}>
         <h4>{plots ? "Available plots" : single ? "Configuration" : "Configurations"}</h4>
-        <div><span>{configurations.length} {single ? "option" : "options"}</span>{configurations.length > 1 && <><button type="button" aria-label={"Previous configurations for " + project.name} onClick={() => track.current?.scrollBy({ left: -230, behavior: "smooth" })}><ChevronLeft size={14} /></button><button type="button" aria-label={"Next configurations for " + project.name} onClick={() => track.current?.scrollBy({ left: 230, behavior: "smooth" })}><ChevronRight size={14} /></button></>}</div>
+        <div><span>{configurations.length} {single ? "option" : "options"}</span>{configurations.length > 1 && <><button type="button" aria-label={"Previous configurations for " + project.name} onClick={() => track.current?.scrollBy({ left: -230, behavior: "smooth" })}><ChevronLeft size={12} strokeWidth={2.2} /></button><button type="button" aria-label={"Next configurations for " + project.name} onClick={() => track.current?.scrollBy({ left: 230, behavior: "smooth" })}><ChevronRight size={12} strokeWidth={2.2} /></button></>}</div>
       </div>
       <div ref={track} className={styles.configs + (single ? " " + styles.single : "")} tabIndex={configurations.length > 1 ? 0 : undefined} aria-label="Available configurations">
         {configurations.map((config, index) => {

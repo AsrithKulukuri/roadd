@@ -331,9 +331,14 @@
   color: #475569;
   width: 20px;
   height: 20px;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 20px;
+  max-height: 20px;
   border-radius: 50%;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.15s ease;
   padding: 0;
