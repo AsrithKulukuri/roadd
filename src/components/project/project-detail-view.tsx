@@ -186,13 +186,13 @@ export function ProjectDetailView({
 
   const scrollConfigLeft = () => {
     if (configSliderRef.current) {
-      configSliderRef.current.scrollBy({ left: -230, behavior: "smooth" });
+      configSliderRef.current.scrollBy({ left: -180, behavior: "smooth" });
     }
   };
 
   const scrollConfigRight = () => {
     if (configSliderRef.current) {
-      configSliderRef.current.scrollBy({ left: 230, behavior: "smooth" });
+      configSliderRef.current.scrollBy({ left: 180, behavior: "smooth" });
     }
   };
 
@@ -1027,13 +1027,13 @@ export function ProjectDetailView({
                                 if (el) el.scrollIntoView({ behavior: "smooth" });
                               }
                             }}
-                            className={`shrink-0 w-[205px] sm:w-[225px] snap-start p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
+                            className={`shrink-0 w-[168px] sm:w-[180px] snap-start px-2.5 py-2 rounded-xl sm:rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col gap-1 ${
                               isSelected
                                 ? "!bg-slate-950 !text-white !border-slate-950 shadow-sm ring-2 ring-amber-500/40"
                                 : "bg-bg-primary text-text-primary border-border-default/60 hover:border-amber-500 hover:bg-slate-50 dark:hover:bg-slate-900/80"
                             }`}
                           >
-                            <div className="flex items-center justify-between gap-1 mb-1">
+                            <div className="flex items-center justify-between gap-1">
                               <span className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
                                 isSelected ? "text-amber-400" : "text-text-tertiary"
                               }`}>
@@ -1049,7 +1049,7 @@ export function ProjectDetailView({
                               </span>
                             </div>
 
-                            <div className="flex flex-wrap items-baseline justify-between gap-x-1.5 gap-y-0.5 mt-0.5">
+                            <div className="flex flex-wrap items-baseline justify-between gap-x-1 gap-y-0.5">
                               <span className={`text-xs sm:text-[13px] font-bold whitespace-normal ${
                                 isSelected ? "text-white" : "text-text-primary"
                               }`}>
