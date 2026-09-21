@@ -45,16 +45,16 @@ export function SearchProjectCard({ project }: { project: Project }) {
       </Link>
       <span className={styles.type}>{kind}</span>
       <div className={styles.actions}>
-        <button type="button" aria-label={"Share " + project.name} onClick={() => shareOnWhatsApp({ item: project, type: "project", source: "card" })}><Share2 size={19} /></button>
-        <button type="button" aria-label={(saved ? "Unsave " : "Save ") + project.name} aria-pressed={saved} onClick={() => void toggleFavorite(project.id)}><Heart size={21} fill={saved ? "currentColor" : "none"} className={saved ? styles.saved : undefined} /></button>
+        <button type="button" aria-label={"Share " + project.name} onClick={() => shareOnWhatsApp({ item: project, type: "project", source: "card" })}><Share2 size={16} /></button>
+        <button type="button" aria-label={(saved ? "Unsave " : "Save ") + project.name} aria-pressed={saved} onClick={() => void toggleFavorite(project.id)}><Heart size={18} fill={saved ? "currentColor" : "none"} className={saved ? styles.saved : undefined} /></button>
       </div>
       <span className={styles.status}>{status}</span>
-      {!!project.images?.length && <span className={styles.photoCount}><ImageIcon size={16} />{project.images.length}</span>}
+      {!!project.images?.length && <span className={styles.photoCount}><ImageIcon size={14} />{project.images.length}</span>}
     </div>
     <div className={styles.body}>
       <div className={styles.identity}>
-        <div className={styles.titleRow}><h3><Link href={url}>{project.name}</Link></h3>{approval && <span className={styles.approval}><ShieldCheck size={16} />{approval}</span>}</div>
-        <p className={styles.location}><MapPin size={18} /><span title={location}>{location}</span></p>
+        <div className={styles.titleRow}><h3><Link href={url}>{project.name}</Link></h3>{approval && <span className={styles.approval}><ShieldCheck size={14} />{approval}</span>}</div>
+        <p className={styles.location}><MapPin size={16} /><span title={location}>{location}</span></p>
       </div>
       <div className={styles.facts}>
         <div><Maximize2 /><span><strong title={project.totalArea}>{project.totalArea || "On request"}</strong><small>Total area</small></span></div>
@@ -62,8 +62,8 @@ export function SearchProjectCard({ project }: { project: Project }) {
         <div><CalendarDays /><span><strong title={possession}>{possession}</strong><small>{plots ? "Handover" : "Possession"}</small></span></div>
       </div>
       <div className={styles.configHeader}>
-        <h4>{plots ? "Available plots" : single ? "Available configuration" : "Available configurations"}</h4>
-        <div><span>{configurations.length} {single ? "option" : "options"}</span>{configurations.length > 1 && <><button type="button" aria-label={"Previous configurations for " + project.name} onClick={() => track.current?.scrollBy({ left: -230, behavior: "smooth" })}><ChevronLeft size={18} /></button><button type="button" aria-label={"Next configurations for " + project.name} onClick={() => track.current?.scrollBy({ left: 230, behavior: "smooth" })}><ChevronRight size={18} /></button></>}</div>
+        <h4>{plots ? "Available plots" : single ? "Configuration" : "Configurations"}</h4>
+        <div><span>{configurations.length} {single ? "option" : "options"}</span>{configurations.length > 1 && <><button type="button" aria-label={"Previous configurations for " + project.name} onClick={() => track.current?.scrollBy({ left: -230, behavior: "smooth" })}><ChevronLeft size={14} /></button><button type="button" aria-label={"Next configurations for " + project.name} onClick={() => track.current?.scrollBy({ left: 230, behavior: "smooth" })}><ChevronRight size={14} /></button></>}</div>
       </div>
       <div ref={track} className={styles.configs + (single ? " " + styles.single : "")} tabIndex={configurations.length > 1 ? 0 : undefined} aria-label="Available configurations">
         {configurations.map((config, index) => {
