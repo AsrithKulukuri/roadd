@@ -10,6 +10,9 @@ import {
   matchesStructuredLocation,
   hasGatedEvidenceProperty,
   hasGatedEvidenceProject,
+  levenshteinDistance,
+  isFuzzyMatch,
+  haversineDistanceKm,
 } from "@/lib/search-engine";
 import type { Property } from "@/types/property";
 import type { Project } from "@/types/project";
@@ -351,3 +354,129 @@ test.describe("Search accuracy regressions", () => {
     expect(matchesProjectSearch({ ...project, refId: "REF0001" }, "REF0001")).toBe(true);
   });
 });
+
+test.describe("10/10 Search Intelligence Enhancements", () => {
+  test("Levenshtein and fuzzy match accurately compute typo tolerance", () => {
+    expect(levenshteinDistance("mangalagiri", "mangalagirii")).toBe(1);
+    expect(levenshteinDistance("vijayawada", "vijaywada")).toBe(1);
+    expect(levenshteinDistance("apartment", "appartment")).toBe(1);
+    expect(isFuzzyMatch("mangalagirii", "mangalagiri")).toBe(true);
+    expect(isFuzzyMatch("vijaywada", "vijayawada")).toBe(true);
+    expect(isFuzzyMatch("guntor", "guntur")).toBe(true);
+    expect(isFuzzyMatch("appartment", "apartment")).toBe(true);
+    expect(isFuzzyMatch("villla", "villa")).toBe(true);
+    expect(isFuzzyMatch("rent", "bent")).toBe(false); // short words require exact match
+  });
+
+  test("fuzzy typo tolerance resolves AP localities and property types seamlessly", () => {
+    const intent = parseSearchIntent("3bhk appartment in mangalagirii under 80 lakhs");
+    expect(intent.bhks).toContain(3);
+    expect(intent.propertyTypes).toContain("apartment");
+    expect(intent.locationKeywords).toContain("mangalagiri");
+    expect(intent.specificKeywords).not.toContain("mangalagirii");
+
+    const mangalagiriProject = {
+      id: "proj-mgl",
+      name: "Mangalagiri Heights",
+      projectType: "apartment",
+      location: { city: "Guntur", locality: "Mangalagiri" },
+      configurations: [{ label: "3 BHK", priceMin: 7000000, priceMax: 7800000 }],
+    } as unknown as Project;
+
+    expect(matchesProjectSearch(mangalagiriProject, "3bhk appartment in mangalagirii under 80 lakhs", intent)).toBe(true);
+  });
+
+  test("AP landmark spatial proximity resolves coordinates and filters geographically", () => {
+    const aiimsIntent = parseSearchIntent("2 BHK flats near AIIMS under 60 lakhs");
+    expect(aiimsIntent.landmark).toBeDefined();
+    expect(aiimsIntent.landmark?.name).toBe("AIIMS Mangalagiri");
+    expect(aiimsIntent.landmark?.latitude).toBeCloseTo(16.4402, 3);
+    expect(aiimsIntent.landmark?.longitude).toBeCloseTo(80.5756, 3);
+
+    // Project near AIIMS (~1.5 km away)
+    const closeProject = {
+      id: "proj-close",
+      name: "Capital AIIMS Enclave",
+      projectType: "apartment",
+      location: {
+        city: "Guntur",
+        locality: "Mangalagiri",
+        latitude: 16.4450,
+        longitude: 80.5800,
+      },
+      configurations: [{ label: "2 BHK", priceMin: 4500000, priceMax: 5500000 }],
+    } as unknown as Project;
+
+    // Distant project in Visakhapatnam (~340 km away)
+    const distantProject = {
+      id: "proj-distant",
+      name: "Coastal Breeze",
+      projectType: "apartment",
+      location: {
+        city: "Visakhapatnam",
+        locality: "Madhurawada",
+        latitude: 17.8200,
+        longitude: 83.3500,
+      },
+      configurations: [{ label: "2 BHK", priceMin: 4500000, priceMax: 5500000 }],
+    } as unknown as Project;
+
+    expect(matchesProjectSearch(closeProject, "2 BHK flats near AIIMS under 60 lakhs", aiimsIntent)).toBe(true);
+    expect(matchesProjectSearch(distantProject, "2 BHK flats near AIIMS under 60 lakhs", aiimsIntent)).toBe(false);
+
+    // Geodesic distance calculation verification
+    const distanceKm = haversineDistanceKm(16.4402, 80.5756, 16.4450, 80.5800);
+    expect(distanceKm).toBeLessThan(2);
+
+    // Proximity relevance boost
+    const closeScore = searchRelevanceScore(closeProject, aiimsIntent);
+    expect(closeScore).toBeGreaterThanOrEqual(180);
+  });
+
+  test("quality & verified trust signals boost search relevance score", () => {
+    const baseIntent = parseSearchIntent("Apartments in Vijayawada");
+
+    const standardProject = {
+      id: "std-1",
+      name: "Sunrise Apartments",
+      projectType: "apartment",
+      location: { city: "Vijayawada", locality: "Kanuru" },
+      configurations: [{ label: "3 BHK", priceMin: 6500000, priceMax: 7500000 }],
+    } as unknown as Project;
+
+    const reraVerifiedProject = {
+      id: "rera-1",
+      name: "Sunrise Apartments",
+      projectType: "apartment",
+      reraApproved: true,
+      reraId: "P02240010001",
+      isRoadExclusive: true,
+      videoUrl: "https://youtube.com/watch?v=demo",
+      location: { city: "Vijayawada", locality: "Kanuru" },
+      configurations: [{ label: "3 BHK", priceMin: 6500000, priceMax: 7500000 }],
+    } as unknown as Project;
+
+    const standardScore = searchRelevanceScore(standardProject, baseIntent);
+    const verifiedScore = searchRelevanceScore(reraVerifiedProject, baseIntent);
+
+    expect(verifiedScore).toBeGreaterThan(standardScore);
+    // Verified project receives RERA (+40) + Road Exclusive (+35) + Video (+25) = +100 bonus
+    expect(verifiedScore - standardScore).toBeGreaterThanOrEqual(100);
+  });
+
+  test("Telugu regional land units and vastu facing are extracted accurately", () => {
+    const facingIntent = parseSearchIntent("East facing 3 BHK apartment in Vijayawada");
+    expect(facingIntent.bhks).toContain(3);
+    expect(facingIntent.facings).toContain("east");
+    expect(facingIntent.specificKeywords).not.toContain("east");
+
+    const gajaluIntent = parseSearchIntent("200 gajalu plot in Amaravati");
+    expect(gajaluIntent.propertyTypes).toContain("residential-land");
+    expect(gajaluIntent.maxAreaSqYds).toBe(200);
+
+    const centsIntent = parseSearchIntent("5 cents land in Mangalagiri");
+    expect(centsIntent.propertyTypes).toContain("residential-land");
+    expect(centsIntent.maxAreaSqYds).toBeCloseTo(5 * 48.4, 1);
+  });
+});
+

@@ -24,6 +24,162 @@ export interface ParsedSearchIntent {
   maxPrice?: number;
   locationKeywords: string[];
   specificKeywords: string[];
+  // 10/10 Natural Language & Spatial Intelligence
+  landmark?: {
+    name: string;
+    latitude: number;
+    longitude: number;
+    maxDistanceKm: number;
+  };
+  facings?: string[];
+  minAreaSqYds?: number;
+  maxAreaSqYds?: number;
+  corrections?: Array<{ original: string; corrected: string }>;
+}
+
+/**
+ * Fast Levenshtein distance calculation for typo tolerance
+ */
+export function levenshteinDistance(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+
+  const row = new Array(b.length + 1);
+  for (let j = 0; j <= b.length; j++) row[j] = j;
+
+  for (let i = 1; i <= a.length; i++) {
+    let prev = i;
+    for (let j = 1; j <= b.length; j++) {
+      const val = a[i - 1] === b[j - 1] ? row[j - 1] : Math.min(row[j - 1], row[j], prev) + 1;
+      row[j - 1] = prev;
+      prev = val;
+    }
+    row[b.length] = prev;
+  }
+  return row[b.length];
+}
+
+/**
+ * Returns true if word is within typo tolerance of target.
+ * For length <= 4: exact match only (avoids false positives like rent/bent)
+ * For length 5-7: 1 edit allowed (e.g. guntor -> guntur, villla -> villa)
+ * For length >= 8: 2 edits allowed (e.g. mangalagirii -> mangalagiri, vijaywada -> vijayawada)
+ */
+export function isFuzzyMatch(word: string, target: string, maxDistance?: number): boolean {
+  if (word === target) return true;
+  const maxLen = Math.max(word.length, target.length);
+  const allowed = maxDistance !== undefined ? maxDistance : (maxLen <= 4 ? 0 : maxLen <= 7 ? 1 : 2);
+  if (Math.abs(word.length - target.length) > allowed) return false;
+  return levenshteinDistance(word, target) <= allowed;
+}
+
+export interface KnownLandmark {
+  name: string;
+  aliases: string[];
+  latitude: number;
+  longitude: number;
+  maxDistanceKm: number;
+}
+
+/**
+ * AP Key Landmarks for natural language spatial proximity queries ("near AIIMS", "near Trendset", etc.)
+ */
+export const AP_LANDMARKS: KnownLandmark[] = [
+  {
+    name: "AIIMS Mangalagiri",
+    aliases: ["aiims", "aiims hospital", "aiims mangalagiri"],
+    latitude: 16.4402,
+    longitude: 80.5756,
+    maxDistanceKm: 12,
+  },
+  {
+    name: "Benz Circle",
+    aliases: ["benz circle", "benz circle flyover", "trendset mall", "trendset"],
+    latitude: 16.5000,
+    longitude: 80.6470,
+    maxDistanceKm: 10,
+  },
+  {
+    name: "Gannavaram Airport",
+    aliases: ["airport", "vijayawada airport", "gannavaram airport"],
+    latitude: 16.5304,
+    longitude: 80.7968,
+    maxDistanceKm: 15,
+  },
+  {
+    name: "Prakasam Barrage",
+    aliases: ["prakasam barrage", "barrage", "krishna river barrage"],
+    latitude: 16.5065,
+    longitude: 80.6053,
+    maxDistanceKm: 10,
+  },
+  {
+    name: "VIT-AP University",
+    aliases: ["vit", "vit ap", "vit university", "vit-ap"],
+    latitude: 16.4952,
+    longitude: 80.4992,
+    maxDistanceKm: 15,
+  },
+  {
+    name: "SRM-AP University",
+    aliases: ["srm", "srm ap", "srm university", "srm-ap"],
+    latitude: 16.4674,
+    longitude: 80.5055,
+    maxDistanceKm: 15,
+  },
+  {
+    name: "Velagapudi Secretariat",
+    aliases: ["secretariat", "ap secretariat", "velagapudi secretariat", "assembly"],
+    latitude: 16.5414,
+    longitude: 80.5155,
+    maxDistanceKm: 15,
+  },
+  {
+    name: "PB Siddhartha College",
+    aliases: ["pb siddhartha", "siddhartha college", "siddhartha academy"],
+    latitude: 16.5020,
+    longitude: 80.6550,
+    maxDistanceKm: 10,
+  },
+  {
+    name: "Kanaka Durga Temple",
+    aliases: ["kanaka durga temple", "durga temple", "indrakeeladri"],
+    latitude: 16.5158,
+    longitude: 80.6075,
+    maxDistanceKm: 10,
+  },
+  {
+    name: "Auto Nagar Vijayawada",
+    aliases: ["auto nagar", "autonagar"],
+    latitude: 16.4925,
+    longitude: 80.6720,
+    maxDistanceKm: 10,
+  },
+  {
+    name: "Acharya Nagarjuna University",
+    aliases: ["anu", "nagarjuna university", "acharya nagarjuna university"],
+    latitude: 16.3742,
+    longitude: 80.5255,
+    maxDistanceKm: 15,
+  }
+];
+
+/**
+ * Geodesic distance in kilometers using the Haversine formula
+ */
+export function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
 
 /**
@@ -52,12 +208,8 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
 
   const bhks = new Set<number>();
   const propertyTypes = new Set<string>();
-  const listingType: "sale" | "rent" | undefined = undefined;
-  const saleType: "new" | "resale" | undefined = undefined;
-  const isGatedCommunity: boolean | undefined = undefined;
-  const minPrice: number | undefined = undefined;
-  const maxPrice: number | undefined = undefined;
   const locationKeywords: string[] = [];
+  const corrections: Array<{ original: string; corrected: string }> = [];
 
   // 1. Detect BHK patterns: 1bhk, 2bhk, 3bhk, 4bhk, 5bhk, 1bk, 2bk, 3bk, 4bk, 5bk, 3 bhk, 3 bed, 3 bedroom
   const bhkRegex = /\b(\d+)\s*(?:bhk|bk|bed|beds|bedroom|bedrooms|b\.h\.k|rk)\b/gi;
@@ -76,15 +228,15 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     }
   }
 
-  // 2. Detect Property Types
-  if (/\b(?:apartment|apartments|flat|flats|penthouse|studio|highrise|society)\b/i.test(norm)) {
+  // 2. Detect Property Types (with typo tolerance)
+  if (/\b(?:apartment|apartments|appartment|apartmnt|flat|flats|flatts|penthouse|penthuose|studio|highrise|society)\b/i.test(norm)) {
     propertyTypes.add("apartment");
   }
-  if (/\b(?:villa|villas|row\s*house|bungalow|duplex|independent\s*house|individual\s*house|house|houses)\b/i.test(norm)) {
+  if (/\b(?:villa|villas|villla|vilas|vila|row\s*house|bungalow|duplex|duplexx|independent\s*house|individual\s*house|independant\s*house|house|houses)\b/i.test(norm)) {
     propertyTypes.add("villa");
     propertyTypes.add("independent-house");
   }
-  if (/\b(?:plot|plots|land|lands|site|sites|layout|layouts|venture|ventures|crda)\b/i.test(norm)) {
+  if (/\b(?:plot|plots|ploat|ploats|plott|land|lands|landd|site|sites|layout|layouts|venture|ventures|crda)\b/i.test(norm)) {
     propertyTypes.add("residential-land");
     propertyTypes.add("venture");
   }
@@ -92,15 +244,15 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     propertyTypes.add("farmhouse");
     propertyTypes.add("agricultural-land");
   }
-  if (/\b(?:commercial|office|shop|shops|showroom|warehouse|industrial|building|buildings)\b/i.test(norm)) {
+  if (/\b(?:commercial|comercial|commerical|office|offce|shop|shops|shopp|showroom|warehouse|industrial|building|buildings)\b/i.test(norm)) {
     propertyTypes.add("commercial-spaces");
     propertyTypes.add("shops");
     propertyTypes.add("buildings");
   }
 
   // 3. Detect Listing Type & Sale Type (New / Resale / Old / Rent / Sale)
-  let detectedListingType: "sale" | "rent" | undefined = listingType;
-  let detectedSaleType: "new" | "resale" | undefined = saleType;
+  let detectedListingType: "sale" | "rent" | undefined = undefined;
+  let detectedSaleType: "new" | "resale" | undefined = undefined;
 
   if (/\b(?:resale|old|used|pre-owned|preowned|second\s*hand)\b/i.test(norm)) {
     detectedSaleType = "resale";
@@ -149,7 +301,58 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     detectedMaxPrice = Number(range[3]) * multiplier(range[4]);
   }
 
-  // 6. Common AP Real Estate Localities & Cities
+  // 6. AP Regional Land & Area Units (Gajalu / Gajam, Cents, Ankanam)
+  let detectedMinAreaSqYds: number | undefined = undefined;
+  let detectedMaxAreaSqYds: number | undefined = undefined;
+
+  const gajaluMatch = norm.match(/(?:under|below|upto|within|<=|<)?\s*(\d+(?:\.\d+)?)\s*(?:gajalu|gajam|sq\s*yds?|sq\s*yards?)\b/i);
+  if (gajaluMatch) {
+    detectedMaxAreaSqYds = parseFloat(gajaluMatch[1]);
+  }
+  const centsMatch = norm.match(/(?:under|below|upto|within|<=|<)?\s*(\d+(?:\.\d+)?)\s*cents?\b/i);
+  if (centsMatch) {
+    detectedMaxAreaSqYds = parseFloat(centsMatch[1]) * 48.4;
+  }
+  const ankanamMatch = norm.match(/(?:under|below|upto|within|<=|<)?\s*(\d+(?:\.\d+)?)\s*ankanam\b/i);
+  if (ankanamMatch) {
+    detectedMaxAreaSqYds = parseFloat(ankanamMatch[1]) * 8;
+  }
+
+  // 7. Facing Alignment (East, West, North, South, Corner)
+  const detectedFacings: string[] = [];
+  const facingRegex = /\b(east|west|north|south|north-east|north-west|south-east|south-west|northeast|northwest|southeast|southwest|corner)\s*(?:facing|face)?\b/gi;
+  let facingMatch;
+  while ((facingMatch = facingRegex.exec(norm)) !== null) {
+    const f = facingMatch[1].toLowerCase().replace("-", "");
+    if (!detectedFacings.includes(f)) detectedFacings.push(f);
+  }
+
+  // 8. Landmark Proximity Detection ("near AIIMS", "near Trendset Mall", "near VIT")
+  let detectedLandmark: ParsedSearchIntent["landmark"] = undefined;
+  for (const lm of AP_LANDMARKS) {
+    const isPurePoi = !["Benz Circle", "Auto Nagar Vijayawada"].includes(lm.name);
+    const hasAlias = lm.aliases.some(alias => {
+      const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s*");
+      if (isPurePoi) {
+        const regex = new RegExp(`(?:near|close\\s*to|around|opposite|opp|adj(?:acent)?\\s*to)?\\s*\\b${escaped}\\b`, "i");
+        return regex.test(norm);
+      } else {
+        const regex = new RegExp(`(?:near|close\\s*to|around|opposite|opp|adj(?:acent)?\\s*to)\\s*\\b${escaped}\\b`, "i");
+        return regex.test(norm);
+      }
+    });
+    if (hasAlias) {
+      detectedLandmark = {
+        name: lm.name,
+        latitude: lm.latitude,
+        longitude: lm.longitude,
+        maxDistanceKm: lm.maxDistanceKm,
+      };
+      break;
+    }
+  }
+
+  // 9. Common AP Real Estate Localities & Cities with Typo Tolerance
   const KNOWN_PLACES = [
     "vijayawada", "guntur", "amaravati", "vizag", "visakhapatnam", "mangalagiri",
     "tadepalli", "poranki", "kanuru", "benz circle", "auto nagar", "gorantla",
@@ -159,27 +362,72 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     "edupugallu", "yenamalakuduru", "payakapuram", "ayodhya nagar", "mg road"
   ];
 
+  const matchedPlaces = new Set<string>();
+
+  // Exact substring containment first
   for (const place of KNOWN_PLACES) {
     if ((" " + norm + " ").includes(" " + place + " ")) {
+      matchedPlaces.add(place);
       locationKeywords.push(place);
+    }
+  }
+
+  // Fuzzy match single tokens against known places (e.g. "mangalagirii" -> "mangalagiri", "vijaywada" -> "vijayawada")
+  for (const w of words) {
+    if (w.length >= 5) {
+      for (const place of KNOWN_PLACES) {
+        if (!place.includes(" ") && !matchedPlaces.has(place) && isFuzzyMatch(w, place)) {
+          matchedPlaces.add(place);
+          locationKeywords.push(place);
+          if (w !== place) {
+            corrections.push({ original: w, corrected: place });
+          }
+        }
+      }
+    }
+  }
+
+  // Check multi-word known places with minor typo in secondary token (e.g. "benz circel")
+  for (const place of KNOWN_PLACES) {
+    if (place.includes(" ") && !matchedPlaces.has(place)) {
+      const placeTokens = place.split(" ");
+      const matchesAllTokens = placeTokens.every(pt => words.some(w => isFuzzyMatch(w, pt)));
+      if (matchesAllTokens) {
+        matchedPlaces.add(place);
+        locationKeywords.push(place);
+        corrections.push({ original: norm, corrected: place });
+      }
     }
   }
 
   // Common Real Estate noise / stop words that shouldn't restrict name matching
   const STOP_WORDS = new Set([
-    "between", "up", "in", "at", "near", "for", "with", "of", "and", "the", "a", "an", "to", "on", "by", "is", "are", "any", "all",
+    "between", "up", "in", "at", "near", "close", "for", "with", "of", "and", "the", "a", "an", "to", "on", "by", "is", "are", "any", "all",
     "i", "want", "need", "looking", "look", "show", "me", "find", "get", "give", "please", "pls", "best", "top", "good",
     "cheap", "luxury", "budget", "affordable", "premium", "verified", "available", "buy", "rent", "sale", "purchase",
     "bhk", "bk", "rk", "bed", "beds", "bedroom", "bedrooms", "property", "properties", "flat", "flats", "apartment",
     "apartments", "villa", "villas", "house", "houses", "home", "homes", "duplex", "plot", "plots", "land", "lands",
     "venture", "ventures", "commercial", "space", "spaces", "shop", "shops", "building", "buildings", "office", "offices",
     "below", "under", "above", "less", "more", "than", "within", "upto", "lakh", "lakhs", "lac", "lacs", "cr", "crore",
-    "crores", "gated", "community", "ready", "move", "new", "old", "resale", "project", "projects", "facing", "road"
+    "crores", "gated", "community", "ready", "move", "new", "old", "resale", "project", "projects", "facing", "road",
+    "gajalu", "gajam", "cents", "cent", "ankanam", "east", "west", "north", "south", "corner", "hospital", "mall", "airport", "barrage", "temple"
+  ]);
+
+  const landmarkStopTokens = new Set(AP_LANDMARKS.flatMap(l => l.aliases.flatMap(a => a.split(" "))));
+  const locationTokens = new Set([
+    ...locationKeywords.flatMap(p => p.split(" ")),
+    ...corrections.map(c => c.original)
   ]);
 
   const specificKeywords: string[] = [];
   for (const w of words) {
-    if (w.length >= 3 && !STOP_WORDS.has(w) && !locationKeywords.some(place => place.split(" ").includes(w)) && !w.match(/^\d+(?:\.\d+)?(?:bhk|bk|rk|beds?|bedrooms?|l|lacs?|lakhs?|cr|crores?|k)?$/i)) {
+    if (
+      w.length >= 3 &&
+      !STOP_WORDS.has(w) &&
+      !landmarkStopTokens.has(w) &&
+      !locationTokens.has(w) &&
+      !w.match(/^\d+(?:\.\d+)?(?:bhk|bk|rk|beds?|bedrooms?|l|lacs?|lakhs?|cr|crores?|k|cents?|gajalu|gajam)?$/i)
+    ) {
       specificKeywords.push(w);
     }
   }
@@ -196,7 +444,12 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     minPrice: detectedMinPrice,
     maxPrice: detectedMaxPrice,
     locationKeywords,
-    specificKeywords
+    specificKeywords,
+    landmark: detectedLandmark,
+    facings: detectedFacings.length ? detectedFacings : undefined,
+    minAreaSqYds: detectedMinAreaSqYds,
+    maxAreaSqYds: detectedMaxAreaSqYds,
+    corrections: corrections.length ? corrections : undefined
   };
 }
 
@@ -225,6 +478,7 @@ export function matchesStructuredLocation(
   const pincode = (locObj.pincode || "").toLowerCase().trim();
 
   const structuredCorpus = normalizeRealEstateText(`${city} ${locality} ${address} ${landmark} ${pincode}`);
+  const corpusTokens = structuredCorpus.split(" ").filter(Boolean);
 
   return locationKeywords.every((kw) => {
     const target = normalizeRealEstateText(kw);
@@ -237,6 +491,15 @@ export function matchesStructuredLocation(
     const aliases = LOCATION_ALIASES[target];
     if (aliases && aliases.some((alias) => structuredCorpus.includes(alias))) {
       return true;
+    }
+
+    // Token-level fuzzy match against structured location tokens
+    const targetTokens = target.split(" ").filter(Boolean);
+    if (targetTokens.length > 0) {
+      const allTokensMatch = targetTokens.every(tTok =>
+        corpusTokens.some(cTok => isFuzzyMatch(tTok, cTok))
+      );
+      if (allTokensMatch) return true;
     }
 
     return false;
@@ -389,9 +652,47 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
     }
   }
 
-  // 8. Specific Name / Builder Keywords requirement (e.g. "sri", "lansum", "heights")
+  // Landmark Proximity requirement ("near AIIMS", "near Benz Circle")
+  if (intent.landmark) {
+    const lat = project.location?.latitude;
+    const lng = project.location?.longitude;
+    const maxDist = intent.landmark.maxDistanceKm || 12;
+    let matchesProximity = false;
+    if (typeof lat === "number" && typeof lng === "number" && !isNaN(lat) && !isNaN(lng)) {
+      const dist = haversineDistanceKm(lat, lng, intent.landmark.latitude, intent.landmark.longitude);
+      if (dist <= maxDist) matchesProximity = true;
+    } else {
+      const landmarkAliases = AP_LANDMARKS.find(l => l.name === intent.landmark?.name)?.aliases || [intent.landmark.name.toLowerCase()];
+      if (landmarkAliases.some(alias => fullCorpus.includes(alias) || matchesStructuredLocation(project.location, [alias]))) {
+        matchesProximity = true;
+      }
+    }
+    if (!matchesProximity) {
+      return false;
+    }
+  }
+
+  // Facing requirement
+  if (intent.facings && intent.facings.length > 0) {
+    const configs = project.configurations || [];
+    const hasConfigFacings = configs.some(c => c.facing && c.facing.length > 0);
+    if (hasConfigFacings) {
+      const allConfigFacings = configs.flatMap(c => c.facing || []).map(f => f.toLowerCase());
+      const hasFacingMatch = intent.facings.some(f => allConfigFacings.some(cf => cf.includes(f)));
+      if (!hasFacingMatch) return false;
+    }
+  }
+
+  // 8. Specific Name / Builder Keywords requirement (with typo tolerance)
   if (intent.specificKeywords.length > 0) {
-    const allSpecificMatch = intent.specificKeywords.every(kw => fullCorpus.includes(kw));
+    const corpusWords = fullCorpus.split(/\s+/).filter(Boolean);
+    const allSpecificMatch = intent.specificKeywords.every(kw => {
+      if (fullCorpus.includes(kw)) return true;
+      if (kw.length >= 5) {
+        return corpusWords.some(cw => isFuzzyMatch(kw, cw, 1));
+      }
+      return false;
+    });
     if (!allSpecificMatch) {
       return false;
     }
@@ -489,9 +790,43 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
     if (!matchesLoc) return false;
   }
 
-  // 8. Specific Name / Keywords requirement
+  // Landmark Proximity requirement ("near AIIMS", "near Trendset Mall")
+  if (intent.landmark) {
+    const lat = property.location?.latitude;
+    const lng = property.location?.longitude;
+    const maxDist = intent.landmark.maxDistanceKm || 12;
+    let matchesProximity = false;
+    if (typeof lat === "number" && typeof lng === "number" && !isNaN(lat) && !isNaN(lng)) {
+      const dist = haversineDistanceKm(lat, lng, intent.landmark.latitude, intent.landmark.longitude);
+      if (dist <= maxDist) matchesProximity = true;
+    } else {
+      const landmarkAliases = AP_LANDMARKS.find(l => l.name === intent.landmark?.name)?.aliases || [intent.landmark.name.toLowerCase()];
+      if (landmarkAliases.some(alias => fullCorpus.includes(alias) || matchesStructuredLocation(property.location, [alias]))) {
+        matchesProximity = true;
+      }
+    }
+    if (!matchesProximity) {
+      return false;
+    }
+  }
+
+  // Facing requirement
+  if (intent.facings && intent.facings.length > 0 && property.facing) {
+    const propFacing = property.facing.toLowerCase();
+    const hasFacingMatch = intent.facings.some(f => propFacing.includes(f));
+    if (!hasFacingMatch) return false;
+  }
+
+  // 8. Specific Name / Keywords requirement (with typo tolerance)
   if (intent.specificKeywords.length > 0) {
-    const allSpecificMatch = intent.specificKeywords.every(kw => fullCorpus.includes(kw));
+    const corpusWords = fullCorpus.split(/\s+/).filter(Boolean);
+    const allSpecificMatch = intent.specificKeywords.every(kw => {
+      if (fullCorpus.includes(kw)) return true;
+      if (kw.length >= 5) {
+        return corpusWords.some(cw => isFuzzyMatch(kw, cw, 1));
+      }
+      return false;
+    });
     if (!allSpecificMatch) return false;
   }
 
@@ -1052,16 +1387,99 @@ export function matchingProjectConfigurations(project: Project, filters: Partial
 
 /** Rank only eligible results; never relax hard location, budget or bedroom filters. */
 export function searchRelevanceScore(item: Project | Property, intent: ParsedSearchIntent): number {
-  const name = normalizeRealEstateText("name" in item ? item.name : item.title);
+  const isProject = "name" in item;
+  const name = normalizeRealEstateText(isProject ? item.name : item.title);
   const location = normalizeRealEstateText([item.location?.locality, item.location?.city].filter(Boolean).join(" "));
   const query = intent.normalizedQuery;
   if (!query) return 0;
+
+  // 1. Text Title Relevance
   let score = name === query ? 1000 : name.startsWith(query) ? 500 : name.includes(query) ? 250 : 0;
-  for (const word of intent.specificKeywords) {
-    if (name.split(" ").includes(word)) score += 40;
-    else if (name.includes(word)) score += 20;
-    if (location.includes(word)) score += 10;
+
+  // Fuzzy Title Match if query is reasonably long and didn't match directly
+  if (score === 0 && query.length >= 5 && isFuzzyMatch(name, query)) {
+    score = 220;
   }
-  for (const place of intent.locationKeywords) if (location.includes(place)) score += 60;
+
+  // 2. Specific Keyword Matches
+  const nameWords = name.split(" ").filter(Boolean);
+  for (const word of intent.specificKeywords) {
+    if (nameWords.includes(word)) {
+      score += 40;
+    } else if (name.includes(word)) {
+      score += 20;
+    } else if (word.length >= 5 && nameWords.some(nw => isFuzzyMatch(word, nw, 1))) {
+      score += 25;
+    }
+    if (location.includes(word)) {
+      score += 10;
+    }
+  }
+
+  // 3. Location Keyword Matches
+  for (const place of intent.locationKeywords) {
+    if (location.includes(place)) {
+      score += 60;
+    } else if (isFuzzyMatch(location, place)) {
+      score += 40;
+    }
+  }
+
+  // 4. Landmark Proximity Boost
+  if (intent.landmark) {
+    const lat = item.location?.latitude;
+    const lng = item.location?.longitude;
+    if (typeof lat === "number" && typeof lng === "number" && !isNaN(lat) && !isNaN(lng)) {
+      const dist = haversineDistanceKm(lat, lng, intent.landmark.latitude, intent.landmark.longitude);
+      if (dist <= 2) score += 180;
+      else if (dist <= 5) score += 120;
+      else if (dist <= 10) score += 60;
+      else if (dist <= 15) score += 30;
+    }
+    const locText = normalizeRealEstateText([item.location?.locality, item.location?.address, (item.location as any)?.landmark].filter(Boolean).join(" "));
+    const landmarkAliases = AP_LANDMARKS.find(l => l.name === intent.landmark?.name)?.aliases || [intent.landmark.name.toLowerCase()];
+    if (landmarkAliases.some(alias => locText.includes(alias))) {
+      score += 50;
+    }
+  }
+
+  // 5. Facing Alignment Boost
+  if (intent.facings && intent.facings.length > 0) {
+    if (isProject) {
+      const configFacings = ((item as Project).configurations || []).flatMap(c => c.facing || []).map(f => f.toLowerCase());
+      if (intent.facings.some(f => configFacings.some(cf => cf.includes(f)))) {
+        score += 40;
+      }
+    } else {
+      const propFacing = ((item as Property).facing || "").toLowerCase();
+      if (intent.facings.some(f => propFacing.includes(f))) {
+        score += 40;
+      }
+    }
+  }
+
+  // 6. Quality, Trust & Verification Signals (Reranking Boosts)
+  if (isProject) {
+    const proj = item as Project;
+    if (proj.reraApproved || proj.reraId) score += 40;
+    if (isCrdaVerified(proj)) score += 40;
+    if (proj.isRoadExclusive) score += 35;
+    if (proj.videoUrl) score += 25;
+    if (proj.constructionStatus === "ready-to-move") score += 15;
+    if (proj.images && proj.images.length >= 4) score += 15;
+    if (proj.isFeatured) score += 15;
+  } else {
+    const prop = item as Property;
+    if (prop.reraId) score += 40;
+    const landApproved = String(prop.attributes?.landApprovedBy ?? (prop as unknown as Record<string, unknown>).landApprovedBy ?? "").toLowerCase();
+    if (landApproved === "crda" || (prop as unknown as Record<string, unknown>).crdaApproved === true) score += 40;
+    if (prop.isRoadExclusive) score += 35;
+    if (prop.videoUrl) score += 25;
+    if (prop.isReadyToMove) score += 15;
+    if (prop.images && prop.images.length >= 4) score += 15;
+    if (prop.ownerType === "builder" || prop.postedBy === "builder" || prop.isOwnerVerified) score += 20;
+    if (prop.displayCategory === "featured" || prop.isFeatured) score += 15;
+  }
+
   return score;
 }
