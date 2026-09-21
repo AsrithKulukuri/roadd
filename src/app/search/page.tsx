@@ -15,7 +15,7 @@ import { MapWrapper } from "@/components/map/map-wrapper";
 import { Search as SearchIcon, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { matchesPropertySearch, matchesProjectSearch, parseSearchIntent, evaluatePropertyFilters, evaluateProjectFilters, matchesStructuredLocation } from "@/lib/search-engine";
+import { matchesPropertySearch, matchesProjectSearch, parseSearchIntent, evaluatePropertyFilters, evaluateProjectFilters, matchesStructuredLocation, matchingProjectConfigurations, searchRelevanceScore } from "@/lib/search-engine";
 import { useIsMounted } from "@/hooks/use-is-mounted";
 
 type SortByOption = "relevant" | "price-asc" | "price-desc" | "newest";
@@ -332,13 +332,8 @@ function UnifiedSearchPage() {
     const parsedIntent = filters.query ? parseSearchIntent(filters.query) : null;
 
     return properties.filter((property) => {
-      // 1. Text & Intent Query (BHK, Locality, Builder, Category, Keyword)
-      if (filters.query && !matchesPropertySearch(property, filters.query, parsedIntent || undefined)) {
-        return false;
-      }
-
       // 2. Complete Multi-Attribute Evaluation
-      if (!evaluatePropertyFilters(property, filters)) {
+      if (!evaluatePropertyFilters(property, filters, undefined, parsedIntent || undefined)) {
         return false;
       }
 
@@ -363,13 +358,8 @@ function UnifiedSearchPage() {
 
     return projects.filter((project) => {
       if (!project.isPublished) return false;
-      // 1. Intelligent Real Estate Text & Intent Query (BHK, Locality, Builder, Category, Keyword)
-      if (filters.query && !matchesProjectSearch(project, filters.query, parsedIntent || undefined)) {
-        return false;
-      }
-
       // 2. Complete Multi-Attribute Evaluation
-      if (!evaluateProjectFilters(project, filters)) {
+      if (!evaluateProjectFilters(project, filters, undefined, parsedIntent || undefined)) {
         return false;
       }
 
@@ -404,19 +394,23 @@ function UnifiedSearchPage() {
       projList = projList.filter((p) => visibleSet.has(p.id));
     }
 
+    const intent = parseSearchIntent(filters.query || "");
     const propItems = propList.map((p) => ({
       type: "property" as const,
       data: p,
       price: p.price,
+      relevance: searchRelevanceScore(p, intent),
       createdAt: p.createdAt,
     }));
 
     const projItems = projList.map((p) => {
-      const minPrice = p.configurations?.[0]?.priceMin || 0;
+      const prices = matchingProjectConfigurations(p, filters, intent).map(c => Number(c.priceMin) || Number(c.priceMax)).filter(price => price > 0);
+      const minPrice = prices.length ? Math.min(...prices) : 0;
       return {
         type: "project" as const,
         data: p,
         price: minPrice,
+        relevance: searchRelevanceScore(p, intent),
         createdAt: p.createdAt,
       };
     });
@@ -426,9 +420,11 @@ function UnifiedSearchPage() {
     const activeSort = (filters.sortBy || sortBy || "relevant").toLowerCase();
     items.sort((a, b) => {
       if (activeSort === "price-asc" || activeSort === "price_asc" || activeSort === "price_low" || activeSort === "low_to_high") {
+        if (!a.price || !b.price) return Number(!a.price) - Number(!b.price);
         return a.price - b.price;
       }
       if (activeSort === "price-desc" || activeSort === "price_desc" || activeSort === "price_high" || activeSort === "high_to_low") {
+        if (!a.price || !b.price) return Number(!a.price) - Number(!b.price);
         return b.price - a.price;
       }
       if (activeSort === "newest" || activeSort === "recent" || activeSort === "date-desc") {
@@ -438,7 +434,7 @@ function UnifiedSearchPage() {
         return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
       }
       // Relevance default
-      if (filters.query) return 0;
+      if (filters.query && a.relevance !== b.relevance) return b.relevance - a.relevance;
       const isRecA = "isRecommended" in a.data ? Boolean(a.data.isRecommended) : false;
       const isRecB = "isRecommended" in b.data ? Boolean(b.data.isRecommended) : false;
       const scoreA = (a.data?.isFeatured ? 2 : 0) + (isRecA ? 1 : 0);
@@ -448,7 +444,7 @@ function UnifiedSearchPage() {
     });
 
     return items;
-  }, [filteredProperties, filteredProjects, isRentActive, sortBy, filters.sortBy, filters.query, viewMode, visibleMapIds, activeTab]);
+  }, [filteredProperties, filteredProjects, isRentActive, sortBy, filters, viewMode, visibleMapIds, activeTab]);
 
   // 12 properties / projects initial load with Load More
   const pageSize = 12;

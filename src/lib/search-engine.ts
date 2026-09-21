@@ -33,6 +33,11 @@ export function normalizeRealEstateText(text: string): string {
   if (!text) return "";
   return text
     .toLowerCase()
+    .replace(/\bamaravathi\b/g, "amaravati")
+    .replace(/\bedupugalu\b/g, "edupugallu")
+    .replace(/\bb\.h\.k\.?/g, "bhk")
+    .replace(/₹/g, " ")
+    .replace(/(\d),(?=\d)/g, "$1")
     .replace(/[,;+&/\\()\-]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -119,11 +124,11 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
   let detectedMaxPrice: number | undefined = undefined;
   let detectedMinPrice: number | undefined = undefined;
 
-  const underCrMatch = norm.match(/(?:under|below|upto|less\s*than|<=|<)\s*(\d+(?:\.\d+)?)\s*(?:cr|crore|crores)\b/i);
+  const underCrMatch = norm.match(/(?:under|below|upto|up\s+to|within|less\s*than|<=|<)\s*(\d+(?:\.\d+)?)\s*(?:cr|crore|crores)\b/i);
   if (underCrMatch) {
     detectedMaxPrice = parseFloat(underCrMatch[1]) * 10000000;
   }
-  const underLakhMatch = norm.match(/(?:under|below|upto|less\s*than|<=|<)\s*(\d+(?:\.\d+)?)\s*(?:l|lac|lakh|lakhs)\b/i);
+  const underLakhMatch = norm.match(/(?:under|below|upto|up\s+to|within|less\s*than|<=|<)\s*(\d+(?:\.\d+)?)\s*(?:l|lac|lakh|lakhs)\b/i);
   if (underLakhMatch) {
     detectedMaxPrice = parseFloat(underLakhMatch[1]) * 100000;
   }
@@ -137,6 +142,13 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
     detectedMinPrice = parseFloat(aboveLakhMatch[1]) * 100000;
   }
 
+  const range = norm.match(/between\s+(\d+(?:\.\d+)?)\s*(cr|crores?|l|lacs?|lakhs?)?\s+and\s+(\d+(?:\.\d+)?)\s*(cr|crores?|l|lacs?|lakhs?)\b/);
+  if (range) {
+    const multiplier = (unit: string) => unit.startsWith("cr") ? 10000000 : 100000;
+    detectedMinPrice = Number(range[1]) * multiplier(range[2] || range[4]);
+    detectedMaxPrice = Number(range[3]) * multiplier(range[4]);
+  }
+
   // 6. Common AP Real Estate Localities & Cities
   const KNOWN_PLACES = [
     "vijayawada", "guntur", "amaravati", "vizag", "visakhapatnam", "mangalagiri",
@@ -148,14 +160,14 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
   ];
 
   for (const place of KNOWN_PLACES) {
-    if (norm.includes(place)) {
+    if ((" " + norm + " ").includes(" " + place + " ")) {
       locationKeywords.push(place);
     }
   }
 
   // Common Real Estate noise / stop words that shouldn't restrict name matching
   const STOP_WORDS = new Set([
-    "in", "at", "near", "for", "with", "of", "and", "the", "a", "an", "to", "on", "by", "is", "are", "any", "all",
+    "between", "up", "in", "at", "near", "for", "with", "of", "and", "the", "a", "an", "to", "on", "by", "is", "are", "any", "all",
     "i", "want", "need", "looking", "look", "show", "me", "find", "get", "give", "please", "pls", "best", "top", "good",
     "cheap", "luxury", "budget", "affordable", "premium", "verified", "available", "buy", "rent", "sale", "purchase",
     "bhk", "bk", "rk", "bed", "beds", "bedroom", "bedrooms", "property", "properties", "flat", "flats", "apartment",
@@ -167,7 +179,7 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
 
   const specificKeywords: string[] = [];
   for (const w of words) {
-    if (w.length >= 3 && !STOP_WORDS.has(w) && !KNOWN_PLACES.includes(w) && !w.match(/^\d+(?:bhk|bk|rk|l|cr|k)?$/i)) {
+    if (w.length >= 3 && !STOP_WORDS.has(w) && !locationKeywords.some(place => place.split(" ").includes(w)) && !w.match(/^\d+(?:\.\d+)?(?:bhk|bk|rk|beds?|bedrooms?|l|lacs?|lakhs?|cr|crores?|k)?$/i)) {
       specificKeywords.push(w);
     }
   }
@@ -212,10 +224,10 @@ export function matchesStructuredLocation(
   const landmark = (locObj.landmark || "").toLowerCase().trim();
   const pincode = (locObj.pincode || "").toLowerCase().trim();
 
-  const structuredCorpus = `${city} ${locality} ${address} ${landmark} ${pincode}`;
+  const structuredCorpus = normalizeRealEstateText(`${city} ${locality} ${address} ${landmark} ${pincode}`);
 
   return locationKeywords.every((kw) => {
-    const target = kw.toLowerCase().trim();
+    const target = normalizeRealEstateText(kw);
     if (!target) return true;
 
     // Direct match in structured location fields
@@ -321,35 +333,14 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
   // Instant direct match if query matches project's Ref ID directly
   const cleanRef = refText.replace(/[\s-_]/g, "");
   const cleanNorm = norm.replace(/[\s-_]/g, "");
-  if (cleanRef && (cleanRef.includes(cleanNorm) || cleanNorm.includes(cleanRef.replace("ref", "")))) {
+  if (cleanNorm && [project.refId, project.location?.refId].some(ref => ref && String(ref).toLowerCase().replace(/[\s-_]/g, "") === cleanNorm)) {
     return true;
   }
 
   const fullCorpus = `${titleAndDesc} ${locationText} ${builderText} ${projectTypeText} ${configsText} ${tagsText} ${refText} ${possessionText} ${areaText}`;
 
-  // 1. Budget / Max Price check: If user specified max budget, project's starting price MUST be within budget
-  if (intent.maxPrice) {
-    const configMinPrices = (project.configurations || []).map((c: any) => c.priceMin).filter(Boolean);
-    const minProjectPrice = configMinPrices.length > 0
-      ? Math.min(...configMinPrices)
-      : (typeof (project as any).minPrice === "number" ? (project as any).minPrice : 0);
-
-    if (minProjectPrice && minProjectPrice > intent.maxPrice) {
-      return false;
-    }
-  }
-
-  // 2. Budget / Min Price check
-  if (intent.minPrice) {
-    const configMaxPrices = (project.configurations || []).map((c: any) => c.priceMax).filter(Boolean);
-    const maxProjectPrice = configMaxPrices.length > 0
-      ? Math.max(...configMaxPrices)
-      : (typeof (project as any).maxPrice === "number" ? (project as any).maxPrice : Infinity);
-
-    if (maxProjectPrice && maxProjectPrice < intent.minPrice) {
-      return false;
-    }
-  }
+  // BHK and price must belong to the same offered configuration.
+  if ((intent.bhks.length || intent.minPrice !== undefined || intent.maxPrice !== undefined) && !matchingProjectConfigurations(project, {}, intent).length) return false;
 
   // 3. Listing Type requirement: If user specifically searches for "rent", projects are typically for sale
   if (intent.listingType === "rent") {
@@ -488,7 +479,7 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
   }
 
   // 6. Budget constraint (e.g. "under 50 lakhs")
-  if (intent.maxPrice && property.price > intent.maxPrice) {
+  if ((intent.minPrice !== undefined || intent.maxPrice !== undefined) && (!(property.price > 0) || property.price < (intent.minPrice ?? 0) || property.price > (intent.maxPrice ?? Infinity))) {
     return false;
   }
 
@@ -510,7 +501,7 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
 /**
  * Complete Multi-Attribute Filter Engine for Properties
  */
-export function evaluatePropertyFilters(property: Property, filters: Partial<FilterState> | Record<string, unknown>, currentTimeMs?: number): boolean {
+export function evaluatePropertyFilters(property: Property, filters: Partial<FilterState> | Record<string, unknown>, currentTimeMs?: number, parsedIntent?: ParsedSearchIntent): boolean {
   if (!filters) return true;
 
   // 0. Location & Geography (Cities, Localities, Query)
@@ -543,7 +534,7 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
   // Query search matching with intelligent search engine
   if (filters.query && typeof filters.query === "string" && filters.query.trim()) {
     const query = filters.query.trim();
-    if (!matchesPropertySearch(property, query)) {
+    if (!matchesPropertySearch(property, query, parsedIntent)) {
       return false;
     }
   }
@@ -813,14 +804,15 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
 export function evaluateProjectFilters(
   project: Project,
   filters: Partial<FilterState> | Record<string, unknown>,
-  currentTimeMs?: number
+  currentTimeMs?: number,
+  parsedIntent?: ParsedSearchIntent
 ): boolean {
   if (!filters) return true;
 
   // Query search matching with intelligent search engine
   if (filters.query && typeof filters.query === "string" && filters.query.trim()) {
     const query = filters.query.trim();
-    if (!matchesProjectSearch(project, query)) {
+    if (!matchesProjectSearch(project, query, parsedIntent)) {
       return false;
     }
   }
@@ -895,52 +887,12 @@ export function evaluateProjectFilters(
     if (!matchesSubType) return false;
   }
 
-  // 4. BHK
-  const rawBhk = Array.isArray(filters.bhk) ? (filters.bhk as string[]) : [];
-  if (rawBhk.length > 0) {
-    if (project.projectType === "venture") return false;
-    if (!project.configurations || project.configurations.length === 0) return false;
-    const hasMatchingBhk = project.configurations.some((cfg) => {
-      const beds = configurationBedrooms(cfg);
-      return rawBhk.some((b: string) => {
-        if (b === "5+" || b === "4+") return beds >= parseInt(b, 10);
-        return beds.toString() === b;
-      });
-    });
-    if (!hasMatchingBhk) return false;
-  }
-
-  // 5. Budget Range (INR)
-  const rawBudget = Array.isArray(filters.budget) ? (filters.budget as [number, number]) : undefined;
-  if (rawBudget) {
-    const [minB, maxB] = rawBudget;
-    if (minB > 0 || maxB < 100000000) {
-      if (project.configurations && project.configurations.length > 0) {
-        const hasBudgetOverlap = project.configurations.some((cfg) => {
-          const pMin = cfg.priceMin || 0;
-          const pMax = cfg.priceMax || pMin;
-          return pMin <= maxB && pMax >= minB;
-        });
-        if (!hasBudgetOverlap) return false;
-      }
-    }
-  }
-
-  // 6. Covered Area (sqft)
-  if (filters.coveredArea && Array.isArray(filters.coveredArea)) {
-    const [minArea, maxArea] = filters.coveredArea;
-    if (minArea > 0 || maxArea < 10000) {
-      if (project.configurations && project.configurations.length > 0) {
-        const hasAreaOverlap = project.configurations.some((cfg) => {
-          const aMin = cfg.builtUpAreaMin || cfg.superBuiltUpAreaMin || cfg.plinthAreaMin || (cfg.plotSizeMin ? cfg.plotSizeMin * 9 : 0) || 0;
-          const aMax = cfg.builtUpAreaMax || cfg.superBuiltUpAreaMax || cfg.plinthAreaMax || (cfg.plotSizeMax ? cfg.plotSizeMax * 9 : 0) || aMin;
-          if (aMin === 0 && aMax === 0) return true; // unspecified config area
-          return aMin <= maxArea && aMax >= minArea;
-        });
-        if (!hasAreaOverlap) return false;
-      }
-    }
-  }
+  // Require one configuration to satisfy all requested bedroom, budget and area constraints.
+  const intent = parsedIntent || parseSearchIntent(typeof filters.query === "string" ? filters.query : "");
+  const constrained = (Array.isArray(filters.bhk) && filters.bhk.length > 0) || intent.bhks.length > 0 || intent.minPrice !== undefined || intent.maxPrice !== undefined ||
+    (Array.isArray(filters.budget) && (filters.budget[0] > 0 || filters.budget[1] < 100000000)) ||
+    (Array.isArray(filters.coveredArea) && (filters.coveredArea[0] > 0 || filters.coveredArea[1] < 10000));
+  if (constrained && !matchingProjectConfigurations(project, filters, intent).length) return false;
 
   // 7. Possession Status & Construction Status & Availability
   const rawAvailability = Array.isArray((filters as Record<string, unknown>).availability) ? ((filters as Record<string, unknown>).availability as string[]) : [];
@@ -1070,4 +1022,46 @@ export function evaluateProjectFilters(
   }
 
   return true;
+}
+
+
+export function matchingProjectConfigurations(project: Project, filters: Partial<FilterState> | Record<string, unknown> = {}, intent = parseSearchIntent(typeof filters.query === "string" ? filters.query : "")): ProjectConfig[] {
+  const bhks = Array.isArray(filters.bhk) ? filters.bhk.map(String) : [];
+  const budget = Array.isArray(filters.budget) && (filters.budget[0] > 0 || filters.budget[1] < 100000000) ? filters.budget as number[] : undefined;
+  const area = Array.isArray(filters.coveredArea) && (filters.coveredArea[0] > 0 || filters.coveredArea[1] < 10000) ? filters.coveredArea as number[] : undefined;
+  const min = Math.max(intent.minPrice ?? 0, budget?.[0] ?? 0);
+  const max = Math.min(intent.maxPrice ?? Infinity, budget?.[1] ?? Infinity);
+  return (project.configurations || []).filter(config => {
+    const beds = configurationBedrooms(config);
+    if ((bhks.length || intent.bhks.length) && project.projectType === "venture") return false;
+    if (intent.bhks.length && !intent.bhks.includes(beds)) return false;
+    if (bhks.length && !bhks.some(b => b.endsWith("+") ? beds >= parseInt(b, 10) : beds === Number(b))) return false;
+    if (min > 0 || max < Infinity) {
+      const low = Number(config.priceMin) || Number(config.priceMax);
+      const high = Number(config.priceMax) || low;
+      if (!(low > 0) || low > max || high < min || min > max) return false;
+    }
+    if (area) {
+      const low = config.superBuiltUpAreaMin || config.builtUpAreaMin || config.plinthAreaMin || (config.plotSizeMin ? config.plotSizeMin * 9 : 0);
+      const high = (config.superBuiltUpAreaMin ? config.superBuiltUpAreaMax : config.builtUpAreaMin ? config.builtUpAreaMax : config.plinthAreaMin ? config.plinthAreaMax : config.plotSizeMax ? config.plotSizeMax * 9 : 0) || low;
+      if (!low || low > area[1] || high < area[0]) return false;
+    }
+    return true;
+  });
+}
+
+/** Rank only eligible results; never relax hard location, budget or bedroom filters. */
+export function searchRelevanceScore(item: Project | Property, intent: ParsedSearchIntent): number {
+  const name = normalizeRealEstateText("name" in item ? item.name : item.title);
+  const location = normalizeRealEstateText([item.location?.locality, item.location?.city].filter(Boolean).join(" "));
+  const query = intent.normalizedQuery;
+  if (!query) return 0;
+  let score = name === query ? 1000 : name.startsWith(query) ? 500 : name.includes(query) ? 250 : 0;
+  for (const word of intent.specificKeywords) {
+    if (name.split(" ").includes(word)) score += 40;
+    else if (name.includes(word)) score += 20;
+    if (location.includes(word)) score += 10;
+  }
+  for (const place of intent.locationKeywords) if (location.includes(place)) score += 60;
+  return score;
 }

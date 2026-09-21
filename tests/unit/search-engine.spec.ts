@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import {
   parseSearchIntent,
+  matchingProjectConfigurations,
+  searchRelevanceScore,
   matchesPropertySearch,
   matchesProjectSearch,
   evaluatePropertyFilters,
@@ -309,4 +311,43 @@ test("BHK text and structured filters both match label-only project configuratio
   expect(evaluateProjectFilters(project, { query: "3bhk in guntur", bhk: ["3"] })).toBe(false);
   expect(evaluateProjectFilters({ ...project, configurations: [{ label: "4 BHK - 3200 sq.ft", priceMin: 1, priceMax: 1 }] } as Project, { bhk: ["4+"] })).toBe(true);
   expect(evaluateProjectFilters({ ...project, projectType: "venture" }, { bhk: ["3"] })).toBe(false);
+});
+
+
+test.describe("Search accuracy regressions", () => {
+  const project = { name: "Serene Grande", projectType: "apartment", location: { city: "Edupugallu", locality: "Serene Grande By Avenue Realty" }, configurations: [{ label: "2 BHK", priceMin: 6000000, priceMax: 7000000, builtUpAreaMin: 1000 }, { label: "3 BHK", priceMin: 11400000, priceMax: 13000000, builtUpAreaMin: 2400 }] } as Project;
+  test("decimal and range budgets do not become stray name keywords", () => {
+    expect(matchesProjectSearch(project, "3bhk in edupugallu under 1.5 cr")).toBe(true);
+    expect(matchesProjectSearch(project, "3 BHK within ₹1.5cr in edupugalu")).toBe(true);
+    expect(matchesProjectSearch(project, "3 BHK between 1 and 1.5 crore")).toBe(true);
+    expect(matchesProjectSearch(project, "3 BHK under 90 lakhs")).toBe(false);
+    expect(parseSearchIntent("between 50 lakh and 1 cr")).toMatchObject({ minPrice: 5000000, maxPrice: 10000000, specificKeywords: [] });
+  });
+  test("a single configuration must meet bedrooms budget and area together", () => {
+    expect(evaluateProjectFilters(project, { bhk: ["3"], budget: [0, 9000000] })).toBe(false);
+    expect(evaluateProjectFilters(project, { bhk: ["3"], coveredArea: [0, 1500] })).toBe(false);
+    expect(evaluateProjectFilters(project, { bhk: ["3"], budget: [10000000, 15000000], coveredArea: [2000, 3000] })).toBe(true);
+    expect(matchingProjectConfigurations(project, { bhk: ["3"] }).map(c => c.priceMin)).toEqual([11400000]);
+  });
+  test("unknown prices and areas cannot satisfy explicit constraints", () => {
+    const unknown = { ...project, configurations: [{ label: "3 BHK" }] } as Project;
+    expect(evaluateProjectFilters(unknown, { budget: [0, 9000000] })).toBe(false);
+    expect(evaluateProjectFilters(unknown, { coveredArea: [1000, 3000] })).toBe(false);
+    expect(evaluateProjectFilters(unknown, {})).toBe(true);
+  });
+  test("multiword locations use structured aliases without requiring their words in marketing text", () => {
+    expect(matchesProjectSearch({ ...project, location: { city: "Vijayawada", locality: "Patamata" } } as Project, "3 bhk in benz circle")).toBe(true);
+    expect(matchesProjectSearch(project, "3bhk in guntur")).toBe(false);
+  });
+  test("property minimum budgets are enforced", () => {
+    const property = { title: "Home", price: 5000000, propertyType: "apartment", bedrooms: 3, location: {}, amenities: [], features: [] } as unknown as Property;
+    expect(matchesPropertySearch(property, "above 80 lakh")).toBe(false);
+    expect(matchesPropertySearch(property, "between 40 and 60 lakh")).toBe(true);
+  });
+  test("exact names outrank incidental description matches", () => {
+    const intent = parseSearchIntent("Serene Grande");
+    expect(searchRelevanceScore(project, intent)).toBeGreaterThan(searchRelevanceScore({ ...project, name: "Other Towers", description: "Near Serene Grande" }, intent));
+    expect(matchesProjectSearch({ ...project, refId: "REF0001" }, "ref")).toBe(true);
+    expect(matchesProjectSearch({ ...project, refId: "REF0001" }, "REF0001")).toBe(true);
+  });
 });
