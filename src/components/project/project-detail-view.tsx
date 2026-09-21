@@ -1664,8 +1664,8 @@ export function ProjectDetailView({
                         </div>
                       )}
                       <div>
-                        <p className="font-black text-xl text-text-primary">{project.builderName}</p>
                         <p className="text-xs text-text-secondary font-medium">Developed By</p>
+                        <p className="font-black text-xl text-text-primary">{project.builderName}</p>
                       </div>
                     </div>
 
