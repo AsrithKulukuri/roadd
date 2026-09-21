@@ -350,3 +350,14 @@
 .configPrice strong { font-size: 16px; line-height: 20px; }
 .config small { font-size: 10px; line-height: 13px; margin-top: 2px; }
 .single .config { padding: 10px; }
+
+/* Keep the complete possession month and year readable on compact cards. */
+.facts { grid-template-columns: 1fr .8fr 1.4fr; }
+.facts > div:last-child { gap: 5px; }
+.facts > div:last-child strong {
+  font-size: 11px;
+  line-height: 14px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
