@@ -127,16 +127,16 @@
 /* Card Body - Exactly 300px total height for seamless grid alignment */
 .body {
   display: grid;
-  grid-template-rows: 94px 44px 34px 100px;
+  grid-template-rows: 84px 54px 34px 100px;
   padding: 14px;
   box-sizing: border-box;
   overflow: hidden;
   width: 100%;
 }
 
-/* Row 1: Identity (94px) */
+/* Row 1: Identity (84px) */
 .identity {
-  height: 94px;
+  height: 84px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -220,44 +220,49 @@
   overflow: hidden;
 }
 
-/* Row 2: Facts Grid (44px) - Balanced spacing to eliminate text wrap collisions */
+/* Row 2: Facts Table Card (54px) - Clean rounded boxed table format */
 .facts {
   display: grid;
-  grid-template-columns: 0.88fr 0.98fr 1.18fr;
-  height: 44px;
+  grid-template-columns: 0.95fr 1fr 1.15fr;
+  height: 54px;
   align-items: center;
-  border-bottom: 1px solid var(--color-border-default, #f1f5f9);
-  padding-bottom: 8px;
-  gap: 3px;
+  border: 1px solid var(--color-border-default, #e2e8f0);
+  border-radius: 12px;
+  background: var(--color-bg-primary, #ffffff);
+  padding: 0 7px;
   box-sizing: border-box;
   overflow: hidden;
   width: 100%;
   min-width: 0;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
 }
 
 .facts > div {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   min-width: 0;
-  height: 32px;
+  height: 100%;
   overflow: hidden;
 }
 
 .facts > div + div {
-  border-left: 1px solid var(--color-border-default, #f1f5f9);
-  padding-left: 4px;
+  border-left: 1px solid var(--color-border-default, #eef2f6);
+  padding-left: 7px;
 }
 
 .facts svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
   stroke-width: 1.75;
   color: #64748b;
 }
 
 .facts span {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   min-width: 0;
   overflow: hidden;
 }
@@ -267,20 +272,21 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #0f172a;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-text-primary, #0f172a);
   line-height: 1.2;
+  letter-spacing: -0.2px;
 }
 
 .facts > div:last-child strong {
-  font-size: 11px;
-  line-height: 14px;
+  font-size: 12.5px;
+  line-height: 1.2;
 }
 
 .facts small {
   display: block;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: -0.15px;
   margin-top: 1px;
   color: var(--color-text-secondary, #64748b);
@@ -288,6 +294,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.2;
+  font-weight: 500;
 }
 
 /* Row 3: Config Header (34px) */
@@ -511,10 +518,24 @@
     font-size: 18px;
   }
   .facts {
+    padding: 0 6px;
+    grid-template-columns: 0.95fr 1fr 1.15fr;
+  }
+  .facts > div {
     gap: 4px;
+  }
+  .facts > div + div {
+    padding-left: 5px;
+  }
+  .facts svg {
+    width: 14px;
+    height: 14px;
   }
   .facts strong {
     font-size: 11.5px;
+  }
+  .facts > div:last-child strong {
+    font-size: 11px;
   }
   .facts small {
     font-size: 9.5px;
