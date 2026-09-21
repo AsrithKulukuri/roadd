@@ -1,6 +1,5 @@
 "use client";
 import { ListingContactActions, performListingAction } from "@/components/property/listing-contact-actions";
-import { requireActionSession } from "@/lib/action-auth";
 
 import { use, useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
@@ -161,15 +160,24 @@ export function ProjectDetailView({
   const [activeConfigLabel, setActiveConfigLabel] = useState<string>("All");
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
-  const openVideo = (url: string | null | undefined) => {
+  const openVideo = async (url: string | null | undefined) => {
     if (!url) return;
+    if (!await requestInformation()) return;
     setIsVideoLoading(true);
     setActiveVideoUrl(url);
     setTimeout(() => {
       setIsVideoLoading(false);
     }, 2000);
   };
-  const [floorPlanLightbox, setFloorPlanLightbox] = useState<{ url: string; label: string } | null>(null);
+  const [floorPlanLightbox, updateFloorPlanLightbox] = useState<{ url: string; label: string } | null>(null);
+  async function requestInformation() {
+    if (!project) return false;
+    try { return Boolean(await performListingAction("project", project.id, "information_request")); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Please retry."); return false; }
+  }
+  async function setFloorPlanLightbox(value: { url: string; label: string } | null) {
+    if (!value || await requestInformation()) updateFloorPlanLightbox(value);
+  }
   const [activeMedia, setActiveMedia] = useState<Record<string, 'image' | 'video'>>({});
   const [playingVideos, setPlayingVideos] = useState<Record<string, boolean>>({});
   const [builderContact, setBuilderContact] = useState<{ phone: string | null; whatsapp: string | null } | null>(null);
@@ -892,7 +900,20 @@ export function ProjectDetailView({
                   </div>
                   <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
                     <span className="text-[10px] font-bold text-text-tertiary uppercase block">Total Units</span>
-                    <span className="text-xs sm:text-sm font-bold text-text-primary">{project.totalUnits ? `${project.totalUnits} Units` : "On Request"}</span>
+                    <span className="text-xs sm:text-sm font-bold text-text-primary leading-tight block">
+                      {(() => {
+                        const configs = project.configurations && project.configurations.length > 0
+                          ? [...new Set(project.configurations.map((c) => c.label).filter(Boolean))].join(", ")
+                          : "";
+                        if (project.totalUnits && configs) {
+                          return `${project.totalUnits} Units - ${configs}`;
+                        }
+                        if (project.totalUnits) {
+                          return `${project.totalUnits} Units`;
+                        }
+                        return configs || "On Request";
+                      })()}
+                    </span>
                   </div>
                   <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
                     <span className="text-[10px] font-bold text-text-tertiary uppercase block">Possession</span>
@@ -1398,8 +1419,19 @@ export function ProjectDetailView({
                             </div>
                             <div className="bg-slate-50 dark:bg-bg-primary border border-border-default/60 rounded-xl px-3 py-2">
                               <div className="text-[10px] uppercase font-bold text-text-tertiary">Total Units</div>
-                              <div className="text-xs font-bold text-text-primary truncate mt-0.5">
-                                {project.totalUnits ? `${project.totalUnits} Units` : "On Request"}
+                              <div className="text-xs font-bold text-text-primary mt-0.5 leading-tight">
+                                {(() => {
+                                  const configs = project.configurations && project.configurations.length > 0
+                                    ? [...new Set(project.configurations.map((c) => c.label).filter(Boolean))].join(", ")
+                                    : "";
+                                  if (project.totalUnits && configs) {
+                                    return `${project.totalUnits} Units - ${configs}`;
+                                  }
+                                  if (project.totalUnits) {
+                                    return `${project.totalUnits} Units`;
+                                  }
+                                  return configs || "On Request";
+                                })()}
                               </div>
                             </div>
                           </div>
@@ -1740,7 +1772,7 @@ export function ProjectDetailView({
                 <div className="space-y-3">
                   <button
                     type="button"
-                    onClick={async () => { try { if (await requireActionSession("schedule_visit")) setIsScheduleModalOpen(true); } catch { toast.error("Unable to verify your session. Please try again."); } }}
+                    onClick={async () => { try { if (await performListingAction("project", project.id, "schedule_visit")) setIsScheduleModalOpen(true); } catch { toast.error("Unable to verify your session. Please try again."); } }}
                     className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-300 font-bold text-sm shadow-xs transition-all cursor-pointer active:scale-98"
                   >
                     <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
@@ -1863,7 +1895,7 @@ export function ProjectDetailView({
 
               {/* Schedule a Visit Button */}
               <button
-                onClick={async () => { try { if (await requireActionSession("schedule_visit")) setIsScheduleModalOpen(true); } catch (err) { toast.error(err instanceof Error ? err.message : "Please retry."); } }}
+                onClick={async () => { try { if (await performListingAction("project", project.id, "schedule_visit")) setIsScheduleModalOpen(true); } catch (err) { toast.error(err instanceof Error ? err.message : "Please retry."); } }}
                 className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl border border-slate-200 bg-white font-bold text-xs text-slate-950 shadow-sm hover:bg-slate-50 active:scale-95 transition-all duration-150"
                 id="mobile-cta-schedule-visit"
               >

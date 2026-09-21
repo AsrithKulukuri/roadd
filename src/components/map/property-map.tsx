@@ -3594,7 +3594,7 @@ const BUDGET_PRESETS = [
                               <>
                                 <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center gap-1.5 flex-wrap">
                                   {configLabels.length > 0 ? (
-                                    <span className="text-amber-300 font-extrabold">{configLabels.join(", ")}</span>
+                                    <span className="text-white font-extrabold drop-shadow-sm">{configLabels.join(", ")}</span>
                                   ) : null}
                                   <span className="truncate">{property.title}</span>
                                 </div>
@@ -3609,7 +3609,7 @@ const BUDGET_PRESETS = [
                                   {property.bedrooms ? (
                                     <span>{property.bedrooms} BHK</span>
                                   ) : configLabels.length > 0 ? (
-                                    <span className="text-amber-300 font-extrabold">{configLabels.join(", ")}</span>
+                                    <span className="text-white font-extrabold drop-shadow-sm">{configLabels.join(", ")}</span>
                                   ) : null}
                                   {property.bathrooms ? <span>• {property.bathrooms} ba</span> : null}
                                   {property.area ? <span>• {property.area.toLocaleString()} sqft</span> : null}
@@ -3635,8 +3635,8 @@ const BUDGET_PRESETS = [
                             )}
 
                             {activeUserLocation && (
-                              <div className="text-xs font-extrabold text-amber-400 mt-1 flex items-center gap-1 bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-sm">
-                                <Navigation className="w-3 h-3" />
+                              <div className="text-xs font-bold text-white mt-1 flex items-center gap-1 bg-black/60 px-2 py-0.5 rounded backdrop-blur-sm shadow-xs">
+                                <Navigation className="w-3 h-3 text-white" />
                                 {getDistanceFromLatLonInKm(activeUserLocation.lat, activeUserLocation.lng, coords.lat, coords.lng).toFixed(1)} km away from you
                               </div>
                             )}
