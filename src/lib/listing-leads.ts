@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { WhatsAppService } from "@/lib/whatsapp-service";
+import { sendListingNotification } from "@/lib/whatsapp/listing-notification";
 import { authenticateServerRequest } from "@/lib/server-auth-guard";
 import { PortalError } from "@/lib/builder-access";
 import { ACTION_LABELS, type ContactAction } from "@/lib/listing-actions";
@@ -56,8 +56,19 @@ export async function recordListingAction(request: Request, type: "project" | "p
     buyer_name: user.name || null, buyer_phone: user.phone || null, buyer_email: user.email || null,
     recipient_phone: phone || null, source: "listing_action", consent_version: "contact-sharing-v1",
   };
-  const { data, error } = await supabaseAdmin.from("listing_action_leads").insert(row).select("*").single();
+  const saved = await supabaseAdmin.from("listing_action_leads").insert(row).select("*").single();
+  const { error } = saved;
+  let data = saved.data;
   if (error && error.code !== "23505") throw error;
+  // Repeated callback clicks can recover missing/failed notifications without adding another lead.
+  if (!data && action === "callback_request") {
+    const existing = await supabaseAdmin.from("listing_action_leads").select("*")
+      .eq("user_id", user.id).eq("listing_type", type).eq("listing_id", String(listing.id))
+      .eq("action", action).eq("action_day", row.action_day).single();
+    if (existing.error || !existing.data) throw existing.error || new Error("Callback request unavailable.");
+    data = existing.data;
+  }
+  const notifications = { builderAccepted: false, adminAccepted: false, userAccepted: false };
   if (data) {
     const timeFormatted = new Date().toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
@@ -65,7 +76,7 @@ export async function recordListingAction(request: Request, type: "project" | "p
       timeStyle: "short",
     });
     const message =
-      `🔔 *New Lead Alert on ROAD Facing!*\n\n` +
+      (action === "callback_request" ? `📞 *Callback requested on ROAD Facing!*\n\n` : `🔔 *New Lead Alert on ROAD Facing!*\n\n`) +
       `📌 *Listing:* ${row.listing_name}\n` +
       `⚡ *Action:* ${ACTION_LABELS[action]}\n\n` +
       `👤 *Viewer Details:*\n` +
@@ -73,17 +84,27 @@ export async function recordListingAction(request: Request, type: "project" | "p
       `• *Phone:* +${formatWhatsAppPhone(user.phone || "")}\n` +
       (user.email ? `• *Email:* ${user.email}\n` : "") +
       `• *Time:* ${timeFormatted}\n\n` +
-      `Please connect with this interested buyer.\n\n` +
+      (action === "callback_request" ? `This buyer wants a callback. Please call them shortly on the number above.\n\n` : `Please connect with this interested buyer.\n\n`) +
       `— ROAD Facing`;
     const recipients = [...new Set([phone, adminPhone].filter(Boolean))];
     const delivered = new Set<string>();
     for (const recipient of recipients) {
       try {
-        const sent = await WhatsAppService.sendTextMessage(recipient, message, { requestId: data.id + ":" + recipient, recipientType: recipient === phone ? "builder" : "admin" });
-        if (sent.success) delivered.add(recipient);
+        const sent = await sendListingNotification(recipient, message, { requestId: data.id + (action === "callback_request" ? ":callback-v2:" : ":") + recipient, recipientType: recipient === phone ? "builder" : "admin" }, action === "callback_request");
+        if (sent.success && !sent.simulated) delivered.add(recipient);
       } catch { /* Saved lead remains available for admin follow-up. */ }
     }
-    await supabaseAdmin.from("listing_action_leads").update({ builder_notified: delivered.has(phone), admin_notified: !!adminPhone && delivered.has(adminPhone) }).eq("id", data.id);
+    notifications.builderAccepted = !!phone && delivered.has(phone);
+    notifications.adminAccepted = !!adminPhone && delivered.has(adminPhone);
+    if (action === "callback_request") {
+      try {
+        const confirmation = await sendListingNotification(formatWhatsAppPhone(user.phone),
+          `Hello ${user.name || "there"}! Your callback request for ${row.listing_name} has been received. Our team will call you shortly on your verified number. — ROAD Facing`,
+          { requestId: data.id + ":callback:user", recipientType: "user" }, true);
+        notifications.userAccepted = confirmation.success && !confirmation.simulated;
+      } catch { /* A confirmation failure must not discard the saved callback. */ }
+    }
+    await supabaseAdmin.from("listing_action_leads").update({ builder_notified: notifications.builderAccepted, admin_notified: notifications.adminAccepted }).eq("id", data.id);
   }
-  return { listing, phone: targetRecipient, duplicate: !data };
+  return { listing, phone: targetRecipient, duplicate: !saved.data, notifications: data ? notifications : null };
 }

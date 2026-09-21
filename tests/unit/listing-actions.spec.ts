@@ -17,6 +17,8 @@ let originalSend: typeof WhatsAppService.sendTextMessage;
 let writes: Array<{ table: string; payload: any }> = [];
 let messages: Array<{ phone: string; message: string }> = [];
 let failure: string | null = null;
+let sendOptions: any[] = [];
+let extraRows: Record<string, any[]> = {};
 function request(body: unknown, authenticated = true) {
   return new NextRequest("http://localhost/api/listing-actions", { method: "POST", headers: { "Content-Type": "application/json", ...(authenticated ? { cookie: "road_auth_token=" + signSessionPayload(user) } : {}) }, body: JSON.stringify(body) });
 }
@@ -30,9 +32,9 @@ test.beforeAll(() => {
   originalSend = WhatsAppService.sendTextMessage;
 });
 test.beforeEach(() => {
-  writes = []; messages = []; failure = null;
+  writes = []; messages = []; failure = null; sendOptions = []; extraRows = {};
   getSupabaseAdmin().from = ((table: string) => {
-    let rows: any[] = table === "projects" ? [project] : [];
+    let rows: any[] = table === "projects" ? [project] : extraRows[table] || [];
     let mutation = false;
     const result = () => ({ data: rows, error: mutation && failure ? { code: failure } : null });
     const query: any = {
@@ -41,13 +43,14 @@ test.beforeEach(() => {
       in: (key: string, values: unknown[]) => { rows = rows.filter(row => values.includes(row[key])); return query; },
       insert: (value: any) => { mutation = true; writes.push({ table, payload: value }); rows = [{ id: "lead-a", ...value }]; return query; },
       update: (value: any) => { writes.push({ table, payload: value }); return query; },
-      single: async () => ({ ...result(), data: failure ? null : rows[0] || null }),
+      single: async () => ({ ...result(), data: mutation && failure ? null : rows[0] || null }),
       maybeSingle: async () => ({ ...result(), data: rows[0] || null }),
       then: (resolve: (value: unknown) => void) => resolve(result()),
     };
     return query;
   }) as typeof originalFrom;
-  WhatsAppService.sendTextMessage = (async (phone: string, message: string) => {
+  WhatsAppService.sendTextMessage = (async (phone: string, message: string, options: any) => {
+    sendOptions.push(options);
     expect(writes.some(write => write.table === "listing_action_leads" || write.table === "project_site_visits")).toBe(true);
     messages.push({ phone, message });
     return { success: true };
@@ -113,6 +116,41 @@ for (const requestedAction of ["callback_request", "brochure_download", "schedul
     const response = await action(request({ ...payload, action: requestedAction }));
     expect(response.status).toBe(200);
     expect(writes[0].payload).toMatchObject({ action: requestedAction, buyer_name: user.name, buyer_phone: user.phone, buyer_email: user.email });
-    expect(messages.map(message => message.phone)).toEqual(["919000000002", "919000000003"]);
+    expect(messages.map(message => message.phone)).toEqual(requestedAction === "callback_request" ? ["919000000002", "919000000003", "919000000001"] : ["919000000002", "919000000003"]);
   });
 }
+
+
+test("callback uses explicit alert templates and confirms the request to the buyer", async () => {
+  const response = await action(request({ ...payload, action: "callback_request" }));
+  expect((await response.json()).notifications).toEqual({ builderAccepted: true, adminAccepted: true, userAccepted: true });
+  expect(messages[0].message).toContain("This buyer wants a callback");
+  expect(messages[2]).toMatchObject({ phone: "919000000001" });
+  expect(messages[2].message).toContain("Our team will call you shortly");
+  expect(sendOptions.map(o => o.recipientType)).toEqual(["builder", "admin", "user"]);
+  expect(sendOptions.every(o => o.templateName === "road_alert_notification")).toBe(true);
+  expect(sendOptions.every(o => !/[\r\n]/.test(o.components[0].parameters[0].text))).toBe(true);
+});
+
+test("builder send failure preserves the callback and still confirms to the buyer", async () => {
+  const send = WhatsAppService.sendTextMessage;
+  WhatsAppService.sendTextMessage = (async (phone, message, options) => options?.recipientType === "builder"
+    ? { success: false, error: "Template rejected" }
+    : send(phone, message, options)) as typeof originalSend;
+  const response = await action(request({ ...payload, action: "callback_request" }));
+  expect(response.status).toBe(200);
+  expect((await response.json()).notifications).toEqual({ builderAccepted: false, adminAccepted: true, userAccepted: true });
+  expect(messages.some(m => m.phone === "919000000001")).toBe(true);
+  expect(writes[0].table).toBe("listing_action_leads");
+});
+
+
+test("repeated callback retries missing notifications while skipping accepted recipients", async () => {
+  failure = "23505";
+  extraRows.listing_action_leads = [{ id: "existing-callback", user_id: user.id, listing_type: "project", listing_id: project.id, action: "callback_request", action_day: new Date().toISOString().slice(0, 10) }];
+  extraRows.whatsapp_message_logs = [{ id: "accepted-builder", request_id: "existing-callback:callback-v2:919000000002", status: "accepted" }];
+  const response = await action(request({ ...payload, action: "callback_request" }));
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({ duplicate: true, notifications: { builderAccepted: true, userAccepted: true } });
+  expect(messages.map(m => m.phone)).toEqual(["919000000003", "919000000001"]);
+});

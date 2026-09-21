@@ -72,6 +72,7 @@ test("signed-in callback and scheduling clicks each record a lead", async ({ pag
   const actions = await fixture(page, true);
   await page.getByRole("button", { name: "Request callback", exact: true }).first().click();
   await expect.poll(() => actions.length).toBe(1);
+  await expect(page.getByRole("status").filter({ hasText: "Our team will call you shortly" }).first()).toBeVisible();
   await page.getByRole("button", { name: /Schedule.*Visit/i }).first().click();
   await expect.poll(() => actions.length).toBe(2);
   expect(actions.map(a => a.action)).toEqual(["callback_request", "schedule_visit"]);

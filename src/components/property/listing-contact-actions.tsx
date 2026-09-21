@@ -14,9 +14,10 @@ export async function performListingAction(listingType: "project" | "property", 
 }
 export function ListingContactActions({ listingType, listingId }: { listingType: "project" | "property"; listingId: string }) {
   const [phone, setPhone] = useState("");
+  const [callbackMessage, setCallbackMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
-  useEffect(() => { const reset = () => setPhone(""); reset(); window.addEventListener("road_auth_changed", reset); return () => window.removeEventListener("road_auth_changed", reset); }, [listingId, listingType]);
+  useEffect(() => { const reset = () => { setPhone(""); setCallbackMessage(""); }; reset(); window.addEventListener("road_auth_changed", reset); return () => window.removeEventListener("road_auth_changed", reset); }, [listingId, listingType]);
   async function act(action: ContactAction) {
     if (lock.current) return;
     lock.current = true; setBusy(true);
@@ -37,7 +38,15 @@ export function ListingContactActions({ listingType, listingId }: { listingType:
         a.click();
         document.body.removeChild(a);
       }
-      if (action === "callback_request") toast.success("Callback requested. Your enquiry has been recorded.");
+      if (action === "callback_request") {
+        const confirmation = result.duplicate
+          ? "Your callback request is already recorded. Our team will call you shortly."
+          : "Callback requested. Our team will call you shortly.";
+        const notificationFailed = result.notifications && (!result.notifications.builderAccepted || !result.notifications.userAccepted);
+        const message = confirmation + (notificationFailed ? " We could not send all WhatsApp notifications. Your request is saved for follow-up." : "");
+        setCallbackMessage(message);
+        if (notificationFailed) toast.warning(message); else toast.success(message);
+      }
     } catch (error) { toast.error(error instanceof Error ? error.message : "Please retry."); }
     finally { lock.current = false; setBusy(false); }
   }
@@ -48,6 +57,7 @@ export function ListingContactActions({ listingType, listingId }: { listingType:
       <Button disabled={busy} onClick={() => act("whatsapp_click")}><WhatsAppIcon />WhatsApp {listingType === "project" ? "Builder" : "Agent"}</Button>
       <Button disabled={busy} variant="outline" onClick={() => act("callback_request")}>Request callback</Button>
     </div>
+    {callbackMessage && <p role="status" className="rounded-xl border p-3 text-sm">{callbackMessage}</p>}
     <p className="text-xs text-muted-foreground">By revealing a number, opening WhatsApp, requesting a callback, scheduling a visit or requesting listing information and brochures, you share your name, verified phone and email (if provided) with this listing’s builder/agent and ROAD admin for follow-up.</p>
   </div>;
 }
