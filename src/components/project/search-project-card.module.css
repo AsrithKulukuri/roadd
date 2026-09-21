@@ -1,0 +1,332 @@
+.card {
+  min-width:0;
+  overflow:hidden;
+  border:1px solid var(--color-border-default,#e2e8f0);
+  border-radius:24px;
+  background:var(--color-bg-card,#fff);
+  color:var(--color-text-primary,#101828);
+  box-shadow:0 2px 4px #1018280a,0 10px 28px #10182805;
+  transition:box-shadow .2s,border-color .2s;
+  container-type:inline-size}
+
+.card:hover {
+  border-color:#adb5c2;
+  box-shadow:0 8px 28px #10182812}
+.media {
+  position:relative;
+  aspect-ratio:16/9;
+  background:#e8edf0}
+.imageLink {
+  display:block;
+  width:100%;
+  height:100%}
+.image {
+  width:100%;
+  height:100%;
+  object-fit:cover}
+.placeholder {
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  color:#64748b;
+  background:linear-gradient(135deg,#e2e8f0,#f8fafc)}
+.type {
+  position:absolute;
+  top:16px;
+  left:16px;
+  padding:7px 13px;
+  border-radius:30px;
+  background:#fff;
+  color:#101828;
+  font-size:12px;
+  font-weight:750;
+  box-shadow:0 2px 8px #0002;
+  pointer-events:none}
+.actions {
+  position:absolute;
+  top:12px;
+  right:12px;
+  display:flex;
+  gap:8px}
+.actions button {
+  display:grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  background:#fff;
+  color:#111;
+  border:1px solid #e2e8f0;
+  box-shadow:0 2px 10px #0001;
+  cursor:pointer}
+.actions button:hover {
+  background:#fff6df}
+.saved {
+  color:#dc3545}
+.status,.photoCount {
+  position:absolute;
+  bottom:13px;
+  border:1px solid #ffffffa6;
+  background:#111827e8;
+  color:white;
+  border-radius:24px;
+  padding:5px 11px;
+  font-size:12px;
+  font-weight:650;
+  pointer-events:none}
+.status {
+  left:16px}
+.photoCount {
+  right:16px;
+  display:flex;
+  align-items:center;
+  gap:6px}
+.body {
+  padding:22px 22px 24px}
+.identity {
+  height:94px}
+.titleRow {
+  display:flex;
+  align-items:center;
+  gap:10px}
+.titleRow h3 {
+  font-size:26px;
+  line-height:1.2;
+  letter-spacing:-.7px;
+  font-weight:800;
+  min-width:0;
+  flex:1;
+  margin:0}
+.titleRow h3 a {
+  display:-webkit-box;
+  -webkit-line-clamp:1;
+  -webkit-box-orient:vertical;
+  overflow:hidden}
+.approval {
+  display:flex;
+  align-items:center;
+  gap:5px;
+  white-space:nowrap;
+  border:1px solid var(--color-border-default,#e2e8f0);
+  border-radius:8px;
+  padding:7px 8px;
+  font-size:10px;
+  font-weight:750}
+.location {
+  display:flex;
+  align-items:flex-start;
+  gap:7px;
+  font-size:14px;
+  line-height:1.5;
+  color:var(--color-text-secondary,#475569);
+  margin-top:10px}
+.location svg {
+  flex-shrink:0;
+  margin-top:2px}
+.location span {
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden}
+.facts {
+  display:grid;
+  grid-template-columns:1fr 1fr 1.15fr;
+  height:72px;
+  align-items:center;
+  border-bottom:1px solid var(--color-border-default,#e2e8f0);
+  padding-bottom:18px;
+  gap:10px}
+.facts>div {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0}
+.facts>div+div {
+  border-left:1px solid var(--color-border-default,#e2e8f0);
+  padding-left:12px}
+.facts svg {
+  width:24px;
+  height:24px;
+  flex-shrink:0;
+  stroke-width:1.8}
+.facts span {
+  min-width:0}
+.facts strong {
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:14px;
+  font-weight:750}
+.facts small {
+  display:block;
+  font-size:11px;
+  margin-top:3px;
+  color:var(--color-text-secondary,#64748b)}
+.configHeader {
+  height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px}
+.configHeader h4 {
+  font-size:16px;
+  font-weight:750;
+  letter-spacing:-.3px;
+  margin:0}
+.configHeader>div {
+  display:flex;
+  align-items:center;
+  gap:2px;
+  white-space:nowrap;
+  font-size:12px;
+  color:var(--color-text-secondary,#475569)}
+.configHeader button {
+  border:0;
+  background:transparent;
+  color:inherit;
+  width:30px;
+  height:40px;
+  display:grid;
+  place-items:center;
+  cursor:pointer}
+.configs {
+  display:flex;
+  gap:10px;
+  height:164px;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:thin;
+  scrollbar-color:#cbd5e1 transparent;
+  padding-bottom:6px}
+.config {
+  flex:0 0 calc((100% - 20px)/3);
+  min-width:140px;
+  border:1px solid var(--color-border-default,#dce2e9);
+  border-radius:12px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  scroll-snap-align:start}
+.config:hover {
+  border-color:#bd8c32;
+  background:#f5aa1310}
+.config strong {
+  display:block;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis}
+.configName strong {
+  font-size:19px;
+  letter-spacing:-.4px}
+.configArea strong {
+  font-size:12px;
+  font-weight:550;
+  margin-top:4px}
+.configPrice {
+  border-top:1px solid var(--color-border-default,#e2e8f0);
+  padding-top:10px;
+  margin-top:auto}
+.configPrice strong {
+  font-size:20px;
+  letter-spacing:-.6px}
+.config small {
+  font-size:11px;
+  color:var(--color-text-secondary,#64748b);
+  display:block;
+  margin-top:4px}
+.single .config {
+  min-width:0;
+  flex:1;
+  display:grid;
+  grid-template-columns:.85fr 1.15fr 1fr;
+  align-items:center;
+  gap:12px;
+  padding:18px}
+.single .configArea,.single .configPrice {
+  padding-left:14px;
+  border-left:1px solid var(--color-border-default,#e2e8f0)}
+.single .configPrice {
+  border-top:0;
+  padding-top:0;
+  margin:0}
+.single .configArea strong {
+  font-size:15px;
+  margin-top:0}
+.empty {
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  border:1px dashed #cbd5e1;
+  border-radius:12px;
+  font-size:14px;
+  color:var(--color-text-secondary,#64748b)}
+.card a:focus-visible,.card button:focus-visible,.configs:focus-visible {
+  outline:3px solid #e9a11b;
+  outline-offset:-3px}
+
+@container(max-width:440px) {
+  .body {
+  padding:18px 16px 20px}
+.identity {
+  height:110px}
+.titleRow {
+  align-items:flex-start;
+  flex-wrap:wrap;
+  gap:7px}
+.titleRow h3 {
+  font-size:23px;
+  flex-basis:100%}
+.approval {
+  font-size:9px;
+  padding:3px 6px}
+.location {
+  margin-top:6px;
+  font-size:12px;
+  line-height:1.4}
+.facts {
+  gap:6px}
+.facts>div {
+  gap:6px}
+.facts>div+div {
+  padding-left:7px}
+.facts svg {
+  width:19px;
+  height:19px}
+.facts strong {
+  font-size:12px}
+.facts small {
+  font-size:10px}
+.configHeader h4 {
+  font-size:13px}
+.configHeader>div {
+  font-size:10px}
+.configHeader button {
+  width:24px}
+.single .config {
+  gap:8px;
+  padding:12px}
+.single .configArea,.single .configPrice {
+  padding-left:8px}
+.single .configName strong {
+  font-size:17px}
+.single .configArea strong {
+  font-size:12px}
+.single .configPrice strong {
+  font-size:17px}
+.single .config small {
+  font-size:10px}
+}
+
+@media(prefers-reduced-motion:reduce) {
+  .card {
+  transition:none}
+.configs {
+  scroll-behavior:auto}
+}
+
