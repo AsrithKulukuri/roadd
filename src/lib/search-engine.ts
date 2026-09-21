@@ -1,7 +1,15 @@
 import type { Property } from "@/types/property";
-import type { Project } from "@/types/project";
+import type { Project, ProjectConfig } from "@/types/project";
 import { isCrdaVerified } from "@/lib/listing-quality";
 import type { FilterState } from "@/components/search/search-filters";
+
+/** Older configurations can have a BHK label without the numeric bedrooms field. */
+function configurationBedrooms(config: ProjectConfig): number {
+  const explicit = Number(config.bedrooms);
+  if (Number.isInteger(explicit) && explicit > 0) return explicit;
+  const match = normalizeRealEstateText(config.label || "").match(/\b(\d+)\s*(?:bhk|bk|bedrooms?|beds?|b\.h\.k)\b/i);
+  return match ? Number(match[1]) : 0;
+}
 
 export interface ParsedSearchIntent {
   rawQuery: string;
@@ -375,10 +383,7 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
       return false;
     }
 
-    const hasMatchingBhk = (project.configurations || []).some(cfg => {
-      const bCount = cfg.bedrooms || (cfg.label ? parseInt(cfg.label.replace(/\D/g, ""), 10) : 0);
-      return intent.bhks.includes(bCount) || intent.bhks.some(b => cfg.label?.toLowerCase().includes(`${b}bhk`) || cfg.label?.toLowerCase().includes(`${b} bhk`) || cfg.label?.toLowerCase().includes(`${b}bk`));
-    });
+    const hasMatchingBhk = (project.configurations || []).some(cfg => intent.bhks.includes(configurationBedrooms(cfg)));
 
     if (!hasMatchingBhk) {
       return false;
@@ -893,9 +898,10 @@ export function evaluateProjectFilters(
   // 4. BHK
   const rawBhk = Array.isArray(filters.bhk) ? (filters.bhk as string[]) : [];
   if (rawBhk.length > 0) {
+    if (project.projectType === "venture") return false;
     if (!project.configurations || project.configurations.length === 0) return false;
     const hasMatchingBhk = project.configurations.some((cfg) => {
-      const beds = cfg.bedrooms || 0;
+      const beds = configurationBedrooms(cfg);
       return rawBhk.some((b: string) => {
         if (b === "5+" || b === "4+") return beds >= parseInt(b, 10);
         return beds.toString() === b;

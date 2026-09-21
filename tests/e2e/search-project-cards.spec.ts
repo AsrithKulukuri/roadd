@@ -13,6 +13,10 @@ test("project cards keep equal dimensions across configuration counts and types"
   await page.goto("/search?type=projects");
   const cards = page.getByTestId("search-project-card");
   await expect(cards).toHaveCount(5);
+  await page.goto("/search?type=projects&q=3bhk%20in%20edupugallu");
+  await expect(cards.filter({ hasText: "Serene Grande" }).first()).toBeVisible();
+  await page.goto("/search?type=projects");
+  await expect(cards).toHaveCount(5);
   const sizes = await cards.evaluateAll(nodes => nodes.map(node => { const r = node.getBoundingClientRect(); return { width: r.width, height: r.height }; }));
   for (const size of sizes) { expect(Math.abs(size.height - ((size.width - 2) * 0.75 + 302))).toBeLessThan(2); expect(Math.abs(size.height - sizes[0].height)).toBeLessThan(2); expect(Math.abs(size.width - sizes[0].width)).toBeLessThan(2); }
   await expect(cards.filter({ hasText: "Greenfield Layout" })).toContainText("200 sq.yd");

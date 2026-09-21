@@ -297,3 +297,16 @@ test.describe("Search Engine Unit Tests", () => {
     });
   });
 });
+
+
+test("BHK text and structured filters both match label-only project configurations", () => {
+  const project = { id: "serene", name: "Serene Grande", projectType: "apartment", isPublished: true, location: { locality: "Edupugallu", city: "Vijayawada" }, configurations: [{ label: "3 BHK", priceMin: 11400000, priceMax: 11400000 }] } as Project;
+  for (const query of ["3bhk in edupugallu", "3 BHK in Edupugallu", "3 bedroom in edupugallu"]) {
+    expect(matchesProjectSearch(project, query)).toBe(true);
+    expect(evaluateProjectFilters(project, { query, bhk: ["3"] })).toBe(true);
+  }
+  expect(evaluateProjectFilters(project, { bhk: ["2"] })).toBe(false);
+  expect(evaluateProjectFilters(project, { query: "3bhk in guntur", bhk: ["3"] })).toBe(false);
+  expect(evaluateProjectFilters({ ...project, configurations: [{ label: "4 BHK - 3200 sq.ft", priceMin: 1, priceMax: 1 }] } as Project, { bhk: ["4+"] })).toBe(true);
+  expect(evaluateProjectFilters({ ...project, projectType: "venture" }, { bhk: ["3"] })).toBe(false);
+});
