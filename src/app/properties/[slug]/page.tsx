@@ -10,7 +10,7 @@ import { PropertyContact } from "@/components/property/property-contact";
 import { MobilePropertyCta } from "@/components/property/mobile-property-cta";
 import { PropertySimilar } from "@/components/property/property-similar";
 import { PropertyActions } from "@/components/property/property-actions";
-import { MapPin, Shield, ChevronLeft, Building2, Tag, Percent, ArrowDownRight, Sparkles, Play, Compass } from "lucide-react";
+import { MapPin, Shield, ChevronLeft, Building2, Tag, Percent, ArrowDownRight, Sparkles, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PropertyLocationWrapper } from "@/components/property/property-location-wrapper";
 import { PropertyHeaderLocation } from "@/components/property/property-header-location";
@@ -270,18 +270,6 @@ export default async function PropertyDetailPage({
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                   {property.listingType === "rent" ? "Home for Rent" : property.saleType === "resale" ? "Resale Property" : "House for Sale"}
                 </span>
-
-                {(() => {
-                  const rawFacing = property.facing || (property.attributes && typeof property.attributes === "object" && "facing" in property.attributes ? String((property.attributes as Record<string, unknown>).facing) : "");
-                  if (!rawFacing) return null;
-                  const formattedFacing = rawFacing.toLowerCase().includes("facing") ? rawFacing : `${rawFacing} Facing`;
-                  return (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-900 text-white font-bold text-xs rounded-full border border-white/15 shadow-xs">
-                      <Compass className="w-3.5 h-3.5 text-amber-400" />
-                      <span className="capitalize">{formattedFacing}</span>
-                    </span>
-                  );
-                })()}
 
                 {property.reraId && (
                   <Badge variant="rera" className="uppercase tracking-wider text-[10px]">
