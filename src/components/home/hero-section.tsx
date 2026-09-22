@@ -814,11 +814,10 @@ export function HeroSection() {
 
           {/* Clean Modern Search Input Bar (Rectangular with Solid Amber Search Icon - Exactly Like Before) */}
           <form
-            action="#"
-            method="POST"
+            action="/search"
+            method="GET"
             onSubmit={(e) => {
               e.preventDefault();
-              e.stopPropagation();
               handleSearchSubmit(e);
             }}
             className={cn(
@@ -859,6 +858,7 @@ export function HeroSection() {
                 ref={(el) => { if (el) inputRef.current = el; }}
                 type="text"
                 id="hero-search-input-mobile"
+                name="location"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
@@ -901,11 +901,6 @@ export function HeroSection() {
             <button
               type="submit"
               disabled={isNavigating}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleSearchSubmit(e);
-              }}
               aria-label="Search properties"
               title="Search"
               className="w-9 h-9 rounded-xl flex items-center justify-center text-[#f59e0b] hover:text-amber-600 hover:bg-amber-50 transition-all active:scale-90 cursor-pointer shrink-0 ml-1"
@@ -1073,9 +1068,9 @@ export function HeroSection() {
                   <button
                     type="button"
                     onClick={() => setHeroBudget([1000000, 500000000])}
-                    className="absolute right-0 inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-slate-800 transition-colors cursor-pointer px-1.5 py-0.5 rounded-md hover:bg-slate-100"
+                    className="absolute right-0 inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-800 transition-colors cursor-pointer px-1.5 py-0.5 rounded-md hover:bg-slate-100"
                   >
-                    <RotateCcw className="w-3 h-3 text-amber-500" />
+                    <RotateCcw className="w-3 h-3 text-amber-600" />
                     <span>Reset</span>
                   </button>
                 )}
@@ -1090,7 +1085,7 @@ export function HeroSection() {
                   prefix="Min"
                 />
 
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider">
                   to
                 </span>
 
@@ -1504,11 +1499,10 @@ export function HeroSection() {
 
           {/* Clean Modern Search Input Bar (Fully Rounded Pill with Dark Outline Icon on Left & Amber on Right) */}
           <form
-            action="#"
-            method="POST"
+            action="/search"
+            method="GET"
             onSubmit={(e) => {
               e.preventDefault();
-              e.stopPropagation();
               handleSearchSubmit(e);
             }}
             className={cn(
@@ -1553,6 +1547,7 @@ export function HeroSection() {
                 ref={inputRef}
                 type="text"
                 id="hero-search-input"
+                name="location"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
@@ -1597,11 +1592,6 @@ export function HeroSection() {
             <button
               type="submit"
               disabled={isNavigating}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleSearchSubmit(e);
-              }}
               aria-label="Search properties"
               title="Search"
               className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[#f59e0b] hover:text-amber-600 hover:bg-amber-50 transition-all active:scale-90 cursor-pointer shrink-0 ml-1"
@@ -2131,7 +2121,7 @@ export function HeroSection() {
                   />
                 </div>
 
-                <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider shrink-0 px-0.5">
+                <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider shrink-0 px-0.5">
                   to
                 </span>
 
@@ -2317,7 +2307,7 @@ export function HeroSection() {
                     <span className="font-heading font-black text-xs sm:text-sm text-slate-950 group-hover:text-amber-600 transition-colors truncate">
                       {cat.title}
                     </span>
-                    <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium truncate mt-0.5">
+                    <span className="text-[10px] sm:text-[11px] text-slate-600 font-medium truncate mt-0.5">
                       {cat.subtitle}
                     </span>
                   </div>

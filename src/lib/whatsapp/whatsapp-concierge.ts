@@ -60,109 +60,78 @@ export async function getRegisteredUserByPhone(rawPhone: string) {
   const phone = normalizeWhatsAppPhone(rawPhone);
   if (!phone) return null;
 
-  const phoneVariants = [
-    phone,
-    `+${phone}`,
-    phone.startsWith("91") ? phone.slice(2) : phone,
-    phone.replace(/\D/g, ""),
-  ];
+  const phoneVariants = Array.from(
+    new Set([
+      phone,
+      `+${phone}`,
+      phone.startsWith("91") ? phone.slice(2) : phone,
+      phone.startsWith("+91") ? phone.slice(3) : phone,
+      `91${phone}`,
+      phone.replace(/\D/g, ""),
+    ])
+  ).filter(Boolean);
 
   try {
-    // Check whatsapp_contacts first for contact name fallback
-    let contactName = "";
-    for (const variant of phoneVariants) {
-      const { data: contact } = await supabaseAdmin
-        .from("whatsapp_contacts")
-        .select("name")
-        .eq("phone", variant)
-        .maybeSingle();
-      if (contact?.name && contact.name.trim()) {
-        contactName = contact.name.trim();
-        break;
-      }
-    }
-
-    // 1. Check user_profiles
-    for (const variant of phoneVariants) {
-      const { data: userProfile } = await supabaseAdmin
+    const [userProfilesRes, profilesRes, contactsRes] = await Promise.all([
+      supabaseAdmin
         .from("user_profiles")
         .select("id, full_name, email, phone, role, is_verified, is_profile_complete")
-        .eq("phone", variant)
-        .maybeSingle();
-
-      if (userProfile) {
-        return {
-          id: str(userProfile.id),
-          name: str(userProfile.full_name) || contactName || "Valued Member",
-          email: str(userProfile.email),
-          phone: str(userProfile.phone) || phone,
-          role: str(userProfile.role) || "buyer",
-          isVerified: Boolean(userProfile.is_verified),
-          isProfileComplete: Boolean(userProfile.is_profile_complete),
-        };
-      }
-    }
-
-    // 2. Check profiles
-    for (const variant of phoneVariants) {
-      const { data: profile } = await supabaseAdmin
+        .in("phone", phoneVariants)
+        .limit(1)
+        .maybeSingle(),
+      supabaseAdmin
         .from("profiles")
         .select("id, full_name, email, phone, role, is_verified, is_profile_complete")
-        .eq("phone", variant)
-        .maybeSingle();
+        .in("phone", phoneVariants)
+        .limit(1)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("whatsapp_contacts")
+        .select("id, name, phone, profile_id")
+        .in("phone", phoneVariants)
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
-      if (profile) {
-        return {
-          id: str(profile.id),
-          name: str(profile.full_name) || contactName || "Valued Member",
-          email: str(profile.email),
-          phone: str(profile.phone) || phone,
-          role: str(profile.role) || "buyer",
-          isVerified: Boolean(profile.is_verified),
-          isProfileComplete: Boolean(profile.is_profile_complete),
-        };
-      }
-    }
+    const contactName = str(contactsRes.data?.name);
 
-    // 3. Check auth.users by phone
-    const { data: authData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 }).catch(() => ({ data: { users: [] }, error: null }));
-    const authUser = authData?.users?.find((u) => {
-      const uPhone = normalizeWhatsAppPhone(u.phone || "");
-      return uPhone && phoneVariants.includes(uPhone);
-    });
-
-    if (authUser) {
-      const meta = (authUser.user_metadata || {}) as LooseRecord;
+    if (userProfilesRes.data) {
+      const u = userProfilesRes.data;
       return {
-        id: str(authUser.id),
-        name: str(meta.full_name) || str(meta.name) || contactName || "Valued Member",
-        email: str(authUser.email),
-        phone: str(authUser.phone) || phone,
-        role: str(meta.role) || "buyer",
-        isVerified: Boolean(authUser.phone_confirmed_at || authUser.email_confirmed_at),
-        isProfileComplete: Boolean(meta.full_name && authUser.email),
+        id: str(u.id),
+        name: str(u.full_name) || contactName || "Valued Member",
+        email: str(u.email),
+        phone: str(u.phone) || phone,
+        role: str(u.role) || "buyer",
+        isVerified: Boolean(u.is_verified),
+        isProfileComplete: Boolean(u.is_profile_complete),
       };
     }
 
-    // 4. Check whatsapp_contacts as registered contact
-    for (const variant of phoneVariants) {
-      const { data: contact } = await supabaseAdmin
-        .from("whatsapp_contacts")
-        .select("id, name, phone, profile_id")
-        .eq("phone", variant)
-        .maybeSingle();
+    if (profilesRes.data) {
+      const p = profilesRes.data;
+      return {
+        id: str(p.id),
+        name: str(p.full_name) || contactName || "Valued Member",
+        email: str(p.email),
+        phone: str(p.phone) || phone,
+        role: str(p.role) || "buyer",
+        isVerified: Boolean(p.is_verified),
+        isProfileComplete: Boolean(p.is_profile_complete),
+      };
+    }
 
-      if (contact && (contact.name || contact.profile_id)) {
-        return {
-          id: str(contact.profile_id) || str(contact.id),
-          name: str(contact.name) || "Valued Member",
-          email: "",
-          phone: str(contact.phone) || phone,
-          role: "buyer",
-          isVerified: true,
-          isProfileComplete: Boolean(contact.name),
-        };
-      }
+    if (contactsRes.data && (contactsRes.data.name || contactsRes.data.profile_id)) {
+      const c = contactsRes.data;
+      return {
+        id: str(c.profile_id) || str(c.id),
+        name: str(c.name) || "Valued Member",
+        email: "",
+        phone: str(c.phone) || phone,
+        role: "buyer",
+        isVerified: true,
+        isProfileComplete: Boolean(c.name),
+      };
     }
   } catch (err) {
     console.warn("[CONCIERGE USER LOOKUP ERROR]", err);
@@ -447,33 +416,27 @@ export async function processInboundWhatsAppMessage(
     message: text,
   });
 
-  // 2. Gatekeeper: Verify if sender is a registered user on ROAD
+  // 2. Identify user (registered member or guest)
   const registeredUser = await getRegisteredUserByPhone(cleanPhone);
+  const userName = registeredUser?.name || "";
+  const isRegistered = Boolean(registeredUser);
 
-  if (!registeredUser) {
-    const registrationPrompt =
-      `👋 *Welcome to ROAD FACING!* 🏡\n\n` +
-      `To search verified MLS properties, compare live pricing, and view project updates across Andhra Pradesh, you must be a registered member.\n\n` +
-      `👉 *Complete 1-Tap Mobile Verification:*\n${siteUrl}/login\n\n` +
-      `_Once verified, simply send your requirements here (e.g. "2BHK in Vijayawada under 60L") for instant AI matching!_`;
-
-    await WhatsAppService.sendTextMessage(cleanPhone, registrationPrompt, {
-      requestId: `unregistered-${Date.now()}`,
-    });
-
-    await logConversation({
-      phone: cleanPhone,
-      role: "system",
-      message: registrationPrompt,
-      intent: "registration_required",
-    });
-
-    return {
-      handled: true,
-      intent: "registration_required",
-      responseSent: true,
-      message: registrationPrompt,
-    };
+  // Auto-record/update in whatsapp_contacts so audience list is always populated
+  try {
+    await supabaseAdmin
+      .from("whatsapp_contacts")
+      .upsert(
+        {
+          phone: cleanPhone,
+          name: userName || "WhatsApp Member",
+          is_subscribed: true,
+          opted_in_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "phone", ignoreDuplicates: true }
+      );
+  } catch (contactErr) {
+    console.warn("[CONCIERGE CONTACT UPSERT ERROR]", contactErr);
   }
 
   const norm = text.toLowerCase().trim();
@@ -490,6 +453,7 @@ export async function processInboundWhatsAppMessage(
     const switchMsg = `🤖 *AI Concierge Resumed*\n\nI am back to assist you with property searches, project comparisons, and verified listings across Andhra Pradesh! 🏡\n\n*Try asking:* _"3 bhk flats in Poranki"_ or _"Flats under 1 Cr"_`;
     await WhatsAppService.sendTextMessage(cleanPhone, switchMsg, {
       requestId: `bot-resume-${Date.now()}`,
+      allowFreeformOnly: true,
     });
     return { handled: true, intent: "bot_resumed", responseSent: true, message: switchMsg };
   }
@@ -503,30 +467,32 @@ export async function processInboundWhatsAppMessage(
     norm.includes("call me");
 
   if (isHumanRequest) {
+    const callerName = userName || "Valued Member";
     const ticketId = await createOrUpdateTicket({
       phone: cleanPhone,
-      userName: registeredUser.name,
-      userId: registeredUser.id,
-      subject: `Inquiry from ${registeredUser.name}: "${text.slice(0, 80)}"`,
+      userName: callerName,
+      userId: registeredUser?.id,
+      subject: `Inquiry from ${callerName}: "${text.slice(0, 80)}"`,
       lastMessage: text,
       priority: "high",
     });
 
     const humanAck =
       `👨‍💼 *Request Forwarded to Real Estate Advisor*\n\n` +
-      `Hello ${registeredUser.name}, we have connected you with our dedicated property advisory team.\n\n` +
+      `Hello ${callerName}, we have connected you with our dedicated property advisory team.\n\n` +
       `📌 *Your Inquiry:* "${text}"\n` +
       `🎫 *Ticket ID:* #${ticketId ? ticketId.slice(0, 8) : "ROAD-" + Date.now().toString().slice(-4)}\n\n` +
       `A senior property consultant has received your request and will reply directly to this chat shortly.`;
 
     await WhatsAppService.sendTextMessage(cleanPhone, humanAck, {
       requestId: `agent-escalation-${Date.now()}`,
+      allowFreeformOnly: true,
     });
 
     await logConversation({
       phone: cleanPhone,
-      userId: registeredUser.id,
-      userName: registeredUser.name,
+      userId: registeredUser?.id,
+      userName: callerName,
       role: "assistant",
       message: humanAck,
       intent: "human_agent_escalation",
@@ -587,12 +553,13 @@ export async function processInboundWhatsAppMessage(
 
     await WhatsAppService.sendTextMessage(cleanPhone, identityMsg, {
       requestId: `identity-${Date.now()}`,
+      allowFreeformOnly: true,
     });
 
     await logConversation({
       phone: cleanPhone,
-      userId: registeredUser.id,
-      userName: registeredUser.name,
+      userId: registeredUser?.id,
+      userName: userName || "Member",
       role: "assistant",
       message: identityMsg,
       intent: "identity_answer",
@@ -615,12 +582,13 @@ export async function processInboundWhatsAppMessage(
 
     await WhatsAppService.sendTextMessage(cleanPhone, botMsg, {
       requestId: `bot-q-${Date.now()}`,
+      allowFreeformOnly: true,
     });
 
     await logConversation({
       phone: cleanPhone,
-      userId: registeredUser.id,
-      userName: registeredUser.name,
+      userId: registeredUser?.id,
+      userName: userName || "Member",
       role: "assistant",
       message: botMsg,
       intent: "robot_answer",
@@ -636,14 +604,17 @@ export async function processInboundWhatsAppMessage(
 
   const isGratitude = /\b(?:thank you|thanks|tq|thx|great|awesome|super|nice)\b/i.test(norm) && norm.split(/\s+/).length <= 4;
   if (isGratitude) {
-    const thanksMsg = `😊 *You're very welcome, ${registeredUser.name}!* Let me know whenever you want to explore more verified properties or projects in Andhra Pradesh. 🏡`;
+    const thanksMsg = userName
+      ? `😊 *You're very welcome, ${userName}!* Let me know whenever you want to explore more verified properties or projects in Andhra Pradesh. 🏡`
+      : `😊 *You're very welcome!* Let me know whenever you want to explore more verified properties or projects in Andhra Pradesh. 🏡`;
     await WhatsAppService.sendTextMessage(cleanPhone, thanksMsg, {
       requestId: `thanks-${Date.now()}`,
+      allowFreeformOnly: true,
     });
     await logConversation({
       phone: cleanPhone,
-      userId: registeredUser.id,
-      userName: registeredUser.name,
+      userId: registeredUser?.id,
+      userName: userName || "Member",
       role: "assistant",
       message: thanksMsg,
       intent: "gratitude_reply",
@@ -654,8 +625,9 @@ export async function processInboundWhatsAppMessage(
   // 7. Check for Greeting
   const isGreeting = ["hi", "hello", "helo", "hey", "namaste", "good morning", "good evening", "start"].includes(norm);
   if (isGreeting) {
+    const greetingHeader = userName ? `👋 *Hello ${userName}!*` : `👋 *Hello!*`;
     const greetingMsg =
-      `👋 *Hello ${registeredUser.name}!* Welcome to ROAD Facing Concierge 🏡\n\n` +
+      `${greetingHeader} Welcome to ROAD Facing Concierge 🏡\n\n` +
       `I am your AI Real Estate Assistant. I can find verified properties, builder projects, villas, apartments, and open plots for you in real-time.\n\n` +
       `*Try asking:*\n` +
       `• _"3 bhk flats in Poranki"_\n` +
@@ -665,12 +637,13 @@ export async function processInboundWhatsAppMessage(
 
     await WhatsAppService.sendTextMessage(cleanPhone, greetingMsg, {
       requestId: `greet-${Date.now()}`,
+      allowFreeformOnly: true,
     });
 
     await logConversation({
       phone: cleanPhone,
-      userId: registeredUser.id,
-      userName: registeredUser.name,
+      userId: registeredUser?.id,
+      userName: userName || "Member",
       role: "assistant",
       message: greetingMsg,
       intent: "greeting",
@@ -686,17 +659,18 @@ export async function processInboundWhatsAppMessage(
 
   // 8. Multi-Turn Gemini Analysis for Open-Ended Real Estate Q&A
   const conversationHistory = await getRecentConversationHistory(cleanPhone, 6);
-  const geminiAnalysis = await analyzeWithGemini(text, conversationHistory, registeredUser.name);
+  const geminiAnalysis = await analyzeWithGemini(text, conversationHistory, userName || "Member");
 
   if (geminiAnalysis?.category === "interactive_chat" && geminiAnalysis.chatResponse) {
     await WhatsAppService.sendTextMessage(cleanPhone, geminiAnalysis.chatResponse, {
       requestId: `chat-ai-${Date.now()}`,
+      allowFreeformOnly: true,
     });
 
     await logConversation({
       phone: cleanPhone,
-      userId: registeredUser.id,
-      userName: registeredUser.name,
+      userId: registeredUser?.id,
+      userName: userName || "Member",
       role: "assistant",
       message: geminiAnalysis.chatResponse,
       intent: "interactive_chat",
@@ -767,6 +741,9 @@ export async function processInboundWhatsAppMessage(
     });
 
     responseText += `🔍 *Browse all search results on ROAD:*\n${siteUrl}/search?q=${encodeURIComponent(text)}\n\n`;
+    if (!isRegistered) {
+      responseText += `💡 *Complete free 1-tap registration:* ${siteUrl}/login to save favorites & get live updates!\n\n`;
+    }
     responseText += `_Reply with specific budget/BHK or type "Talk to agent" anytime._`;
 
     let heroImage = "";
@@ -776,20 +753,29 @@ export async function processInboundWhatsAppMessage(
       heroImage = extractHeroImage(topProps[0]);
     }
 
-    if (heroImage && (heroImage.startsWith("http") || heroImage.startsWith("/") || heroImage.startsWith("banners/") || heroImage.startsWith("properties/") || heroImage.startsWith("projects/"))) {
-      await WhatsAppService.sendImageMessage(cleanPhone, heroImage, responseText, {
-        requestId: `concierge-results-${Date.now()}`,
-      });
-    } else {
+    let imageSent = false;
+    if (heroImage && (heroImage.startsWith("https://") || heroImage.startsWith("http://"))) {
+      try {
+        const imgResult = await WhatsAppService.sendImageMessage(cleanPhone, heroImage, responseText, {
+          requestId: `concierge-results-${Date.now()}`,
+        });
+        imageSent = Boolean(imgResult?.success);
+      } catch (imgErr) {
+        console.warn("[CONCIERGE IMAGE SEND ERROR]", imgErr);
+      }
+    }
+
+    if (!imageSent) {
       await WhatsAppService.sendTextMessage(cleanPhone, responseText, {
         requestId: `concierge-results-${Date.now()}`,
+        allowFreeformOnly: true,
       });
     }
 
     await logConversation({
       phone: cleanPhone,
-      userId: registeredUser.id,
-      userName: registeredUser.name,
+      userId: registeredUser?.id,
+      userName: userName || "Member",
       role: "assistant",
       message: responseText,
       mediaUrl: heroImage || undefined,
@@ -837,12 +823,13 @@ export async function processInboundWhatsAppMessage(
 
   await WhatsAppService.sendTextMessage(cleanPhone, fallbackMsg, {
     requestId: `no-match-${Date.now()}`,
+    allowFreeformOnly: true,
   });
 
   await logConversation({
     phone: cleanPhone,
-    userId: registeredUser.id,
-    userName: registeredUser.name,
+    userId: registeredUser?.id,
+    userName: userName || "Member",
     role: "assistant",
     message: fallbackMsg,
     intent: "property_search_no_match",

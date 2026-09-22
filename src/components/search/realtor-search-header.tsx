@@ -399,11 +399,11 @@ export function RealtorSearchHeader({
               <span>Save search</span>
             </button>
 
-            {/* INTEGRATED MAP VIEW / LIST VIEW TOGGLE BUTTON (IN SEARCH BOX ROW FOR BOTH MOBILE & DESKTOP) */}
+            {/* Desktop toggle; retain the mobile return control while the map is open. */}
             <button
               type="button"
               onClick={() => onViewModeChange(viewMode === "grid" ? "map" : "grid")}
-              className="h-10 sm:h-11 px-4 rounded-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 shadow-sm font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
+              className={cn("h-10 sm:h-11 px-4 rounded-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 shadow-sm font-bold text-xs items-center gap-1.5 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap", viewMode === "grid" ? "hidden sm:flex" : "flex")}
             >
               {viewMode === "grid" ? (
                 <>

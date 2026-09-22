@@ -25,6 +25,15 @@ import {
   Award,
   CheckCircle2,
   Tag,
+  Compass,
+  Layers,
+  Home,
+  Building2,
+  IndianRupee,
+  SquareDashed,
+  Route,
+  ShieldCheck,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,6 +56,358 @@ interface PropertyCardProps {
   onSelect?: (checked: boolean) => void;
   actionMenu?: React.ReactNode;
   distance?: number;
+}
+
+function getOrdinal(n: number) {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
+}
+
+interface TableColumn {
+  icon: React.ComponentType<{ className?: string }>;
+  value: string;
+  label: string;
+}
+
+interface SpecChip {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  subtitle: string;
+}
+
+export function resolvePropertyCardDetails(property: Property) {
+  const pType = (property.propertyType || "").toLowerCase();
+  const subType = (property.subtype || "").toLowerCase();
+  const title = (property.title || "").toLowerCase();
+  const desc = (property.description || "").toLowerCase();
+
+  const isLand =
+    pType.includes("land") ||
+    pType.includes("plot") ||
+    subType.includes("plot") ||
+    subType.includes("land") ||
+    subType.includes("venture") ||
+    title.includes("plot") ||
+    title.includes("land") ||
+    title.includes("sqyard");
+
+  const isVilla =
+    pType === "villa" ||
+    pType === "independent-house" ||
+    subType === "villa" ||
+    subType === "house" ||
+    title.includes("villa") ||
+    title.includes("independent house") ||
+    title.includes("duplex") ||
+    title.includes("triplex");
+
+  const isCommercial =
+    property.category === "commercial" ||
+    pType.startsWith("commercial") ||
+    pType === "shops" ||
+    pType === "buildings" ||
+    subType.includes("shop") ||
+    subType.includes("office");
+
+  const isRent = property.listingType === "rent" || property.listingType === "pg";
+
+  // 1. Sq.Yards calculation for plots & villas
+  let plotSqYards = 0;
+  if (property.plotArea && property.plotArea > 0) {
+    plotSqYards = property.plotArea;
+  } else if (property.attributes && typeof property.attributes === "object") {
+    const attr = property.attributes as Record<string, unknown>;
+    if (attr.plotArea) plotSqYards = Number(attr.plotArea) || 0;
+    else if (attr.sqYards) plotSqYards = Number(attr.sqYards) || 0;
+    else if (attr.plotSize) plotSqYards = Number(attr.plotSize) || 0;
+  }
+
+  // Regex fallback (e.g. "418 Sqyards Land for Sale")
+  if (!plotSqYards) {
+    const match = property.title.match(/(\d+(?:,\d+)*(?:\.\d+)?)\s*(?:sq\.?\s*yards?|sqyds?|sqyd)/i);
+    if (match && match[1]) {
+      plotSqYards = parseFloat(match[1].replace(/,/g, ""));
+    }
+  }
+
+  // If still not found and isLand, check property.area
+  if (!plotSqYards && isLand && property.area) {
+    plotSqYards = property.area > 600 ? Math.round(property.area / 9) : Math.round(property.area);
+  }
+
+  // Built-up Area in Sq.Ft
+  let builtUpSqFt = property.builtUpArea || property.superBuiltUpArea || property.carpetArea || 0;
+  if (!builtUpSqFt) {
+    if (isLand && plotSqYards) {
+      builtUpSqFt = property.area && property.area > plotSqYards ? property.area : Math.round(plotSqYards * 9);
+    } else {
+      builtUpSqFt = property.area || 0;
+    }
+  }
+
+  const sqFtForLand = isLand
+    ? property.area && property.area > (plotSqYards || 0)
+      ? property.area
+      : Math.round((plotSqYards || 0) * 9)
+    : builtUpSqFt;
+
+  const centsValue = plotSqYards > 0 ? (plotSqYards / 48.4).toFixed(1) : null;
+
+  // Rate calculations
+  let ratePerSqYd = 0;
+  let ratePerSqFt = property.pricePerSqft ? Math.round(property.pricePerSqft) : 0;
+  if (property.price > 0) {
+    if (plotSqYards > 0) {
+      ratePerSqYd = Math.round(property.price / plotSqYards);
+      if (!ratePerSqFt) ratePerSqFt = Math.round(property.price / (plotSqYards * 9));
+    } else if (builtUpSqFt > 0) {
+      if (!ratePerSqFt) ratePerSqFt = Math.round(property.price / builtUpSqFt);
+      ratePerSqYd = Math.round(ratePerSqFt * 9);
+    }
+  }
+
+  // Facing formatting
+  const rawFacing = property.facing || (property.attributes as Record<string, unknown> | undefined)?.facing as string | undefined;
+  let facingShort = "On request";
+  let facingFormatted = "Facing on request";
+  if (rawFacing) {
+    const clean = String(rawFacing).toLowerCase().trim();
+    if (clean.includes("north-east") || clean.includes("northeast")) {
+      facingShort = "North-East";
+    } else if (clean.includes("north-west") || clean.includes("northwest")) {
+      facingShort = "North-West";
+    } else if (clean.includes("south-east") || clean.includes("southeast")) {
+      facingShort = "South-East";
+    } else if (clean.includes("south-west") || clean.includes("southwest")) {
+      facingShort = "South-West";
+    } else if (clean.includes("east")) {
+      facingShort = "East";
+    } else if (clean.includes("west")) {
+      facingShort = "West";
+    } else if (clean.includes("north")) {
+      facingShort = "North";
+    } else if (clean.includes("south")) {
+      facingShort = "South";
+    } else {
+      facingShort = clean.charAt(0).toUpperCase() + clean.slice(1);
+    }
+    facingFormatted = `${facingShort} Facing`;
+  } else if (title.includes("east") || desc.includes("east facing")) {
+    facingShort = "East";
+    facingFormatted = "East Facing";
+  } else if (title.includes("north") || desc.includes("north facing")) {
+    facingShort = "North";
+    facingFormatted = "North Facing";
+  } else if (title.includes("west") || desc.includes("west facing")) {
+    facingShort = "West";
+    facingFormatted = "West Facing";
+  } else if (title.includes("south") || desc.includes("south facing")) {
+    facingShort = "South";
+    facingFormatted = "South Facing";
+  } else if (property.vastuCompliant) {
+    facingShort = "Vastu";
+    facingFormatted = "100% Vastu";
+  }
+
+  // Floor level
+  const floorNum = property.floorNumber || (property.attributes as Record<string, unknown> | undefined)?.floorNumber as number | undefined;
+  const totalFl = property.totalFloors || property.floors || (property.attributes as Record<string, unknown> | undefined)?.totalFloors as number | undefined;
+  const floorLabel = floorNum && totalFl
+    ? `Floor ${floorNum} of ${totalFl}`
+    : floorNum
+    ? `${floorNum}${getOrdinal(floorNum)} Floor`
+    : totalFl && totalFl > 1
+    ? `${totalFl} Floors`
+    : "On request";
+
+  // Furnishing
+  const furnishing = property.furnishing;
+  const furnishingLabel =
+    furnishing === "furnished" ? "Furnished" : furnishing === "semi-furnished" ? "Semi-Furnished" : furnishing === "unfurnished" ? "Unfurnished" : "Furnishing on request";
+
+  // Road width
+  const roadWidth = property.roadWidth || (property.attributes as Record<string, unknown> | undefined)?.roadWidth as number | undefined;
+
+  // 1. Three-column Table Box (Height 50px, white box with black text)
+  let tableColumns: TableColumn[] = [];
+
+  if (isLand) {
+    tableColumns = [
+      {
+        icon: Maximize2,
+        value: plotSqYards > 0 ? `${plotSqYards} Sq.Yd` : `${sqFtForLand} sft`,
+        label: "Plot Area",
+      },
+      {
+        icon: Compass,
+        value: facingShort,
+        label: "Facing",
+      },
+      {
+        icon: IndianRupee,
+        value: ratePerSqYd > 0 ? `₹${ratePerSqYd.toLocaleString("en-IN")}` : "On request",
+        label: "Rate / sq.yd",
+      },
+    ];
+  } else if (isVilla) {
+    tableColumns = [
+      {
+        icon: Home,
+        value: property.bedrooms > 0 ? `${property.bedrooms} BHK` : "Villa",
+        label: property.floors === 3 ? "Triplex" : property.floors === 2 ? "Duplex" : "Villa",
+      },
+      {
+        icon: Maximize2,
+        value: builtUpSqFt > 0 ? `${builtUpSqFt.toLocaleString("en-IN")} sft` : "On request",
+        label: "Built-up",
+      },
+      {
+        icon: SquareDashed,
+        value: plotSqYards > 0 ? `${plotSqYards} Sq.Yd` : facingShort,
+        label: plotSqYards > 0 ? "Plot Size" : "Facing",
+      },
+    ];
+  } else if (isCommercial) {
+    tableColumns = [
+      {
+        icon: Building2,
+        value: builtUpSqFt > 0 ? `${builtUpSqFt.toLocaleString("en-IN")} sft` : "On request",
+        label: "Super Area",
+      },
+      {
+        icon: Layers,
+        value: floorLabel,
+        label: "Floor",
+      },
+      {
+        icon: IndianRupee,
+        value: ratePerSqFt > 0 ? `₹${ratePerSqFt.toLocaleString("en-IN")}` : "On request",
+        label: "Rate / sft",
+      },
+    ];
+  } else {
+    // Flats / Apartments
+    tableColumns = [
+      {
+        icon: Bed,
+        value: property.bedrooms > 0 ? `${property.bedrooms} BHK` : "Apartment",
+        label: "Config",
+      },
+      {
+        icon: Maximize2,
+        value: builtUpSqFt > 0 ? `${builtUpSqFt.toLocaleString("en-IN")} sft` : "On request",
+        label: "Built-up",
+      },
+      {
+        icon: Compass,
+        value: facingShort,
+        label: "Facing",
+      },
+    ];
+  }
+
+  // 2. Middle Row: Specialized Highlights (Utilizing Empty Space with 2 Spacious Columns)
+  let specHeader = { title: "Property Highlights", badge: "Verified" };
+  let specChips: SpecChip[] = [];
+
+  if (isLand) {
+    specHeader = {
+      title: "Plot Highlights",
+      badge: centsValue ? `${centsValue} Cents` : "Clear Title",
+    };
+    specChips = [
+      {
+        icon: Maximize2,
+        title: `${sqFtForLand.toLocaleString("en-IN")} sq.ft`,
+        subtitle: "Total Land Area",
+      },
+      {
+        icon: Route,
+        title: roadWidth ? `${roadWidth} ft road` : "Road width on request",
+        subtitle: "Approach road",
+      },
+    ];
+  } else if (isVilla) {
+    specHeader = {
+      title: "Villa Layout & Specs",
+      badge: property.bathrooms > 0 ? `${property.bathrooms} Baths` : "Private",
+    };
+    specChips = [
+      {
+        icon: Home,
+        title: property.bathrooms ? `${property.bathrooms} bathrooms` : "Bathrooms on request",
+        subtitle: property.floors ? `${property.floors} floors` : "",
+      },
+      {
+        icon: Compass,
+        title: property.parking ? `${property.parking} parking spaces` : "Parking on request",
+        subtitle: property.vastuCompliant ? "Vastu compliant" : "",
+      },
+    ];
+  } else if (isCommercial) {
+    specHeader = {
+      title: "Commercial Highlights",
+      badge: "Prime Location",
+    };
+    const carpetSq = property.carpetArea;
+    specChips = [
+      {
+        icon: Maximize2,
+        title: carpetSq ? `${carpetSq.toLocaleString("en-IN")} sq.ft carpet` : "Carpet area on request",
+        subtitle: floorLabel,
+      },
+      {
+        icon: ShieldCheck,
+        title: furnishingLabel,
+        subtitle: property.parking ? `${property.parking} parking spaces` : "",
+      },
+    ];
+  } else {
+    // Flats / Apartments
+    specHeader = {
+      title: "Apartment Highlights",
+      badge: property.bathrooms > 0 ? `${property.bathrooms} Baths` : "Verified",
+    };
+    specChips = [
+      {
+        icon: Bath,
+        title: property.bathrooms ? `${property.bathrooms} bathrooms` : "Bathrooms on request",
+        subtitle: floorLabel,
+      },
+      {
+        icon: Home,
+        title: furnishingLabel,
+        subtitle: property.parking ? `${property.parking} parking spaces` : "",
+      },
+    ];
+  }
+
+  // 3. Rate Subtitle in Price Section
+  const rateSubtitle = isRent
+    ? property.securityDeposit
+      ? `· Dep. ₹${formatPriceCompact(property.securityDeposit)}`
+      : ""
+    : isLand
+    ? ratePerSqYd > 0
+      ? `· ₹${ratePerSqYd.toLocaleString("en-IN")}/yd`
+      : ""
+    : ratePerSqFt > 0
+    ? `· ₹${ratePerSqFt.toLocaleString("en-IN")}/sft`
+    : "";
+
+  return {
+    isLand,
+    isVilla,
+    isCommercial,
+    isRent,
+    plotSqYards,
+    builtUpSqFt,
+    tableColumns,
+    specHeader,
+    specChips,
+    rateSubtitle,
+  };
 }
 
 export function PropertyCard({
@@ -502,14 +863,14 @@ export function PropertyCard({
       >
         <div
           className={cn(
-            "relative bg-white dark:bg-bg-card border border-border-default rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:border-amber-500/40 transition-[box-shadow,border-color] duration-200 h-full flex flex-col",
+            "relative bg-white dark:bg-bg-card border border-border-default rounded-[18px] overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 dark:hover:border-slate-700 transition-[box-shadow,border-color] duration-200 h-full flex flex-col",
             selected
               ? "ring-2 ring-red-500 border-red-500"
-              : "hover:border-slate-300",
+              : "",
             className,
           )}
         >
-          {/* Image Container */}
+          {/* Image Container with 4/3 Aspect Ratio matching Project Card */}
           <div className="relative aspect-[4/3] w-full overflow-hidden bg-bg-primary shrink-0">
             {/* Selection Checkbox */}
             {selectable && (
@@ -573,7 +934,7 @@ export function PropertyCard({
               </>
             )}
 
-            {/* Top Image Badges (Max 2 badges + '+N' chip, with dedicated margin so it never collides with actions) */}
+            {/* Top Image Badges */}
             {(() => {
               const badges: React.ReactNode[] = [];
               if (property.isRoadExclusive) {
@@ -632,7 +993,7 @@ export function PropertyCard({
               </div>
             )}
 
-            {/* Subtle Bottom Gradient for Status readability (no dark overlay on top/middle) */}
+            {/* Subtle Bottom Gradient */}
             <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
 
             {/* Status Bottom Left */}
@@ -647,71 +1008,66 @@ export function PropertyCard({
                   : "Under Construction"}
               </span>
             </div>
+
+            {/* Photo count indicator */}
+            {images.length > 1 && (
+              <div className="absolute bottom-2.5 right-2.5 z-10">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-950/80 text-white backdrop-blur-md border border-white/10 flex items-center gap-1 shadow-sm">
+                  <ImageIcon className="w-3 h-3 text-amber-400" /> {images.length}
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Details Section */}
-          <div className="p-4 flex-1 flex flex-col justify-between gap-3">
-            <div className="space-y-2.5">
-              {/* Title (2 lines clamp) & Location */}
-              <div>
-                <h3 className="font-bold text-text-primary text-base sm:text-lg leading-snug group-hover:text-amber-primary transition-colors line-clamp-2">
-                  {property.title}
-                </h3>
-                <div className="flex items-center gap-1.5 text-text-secondary text-xs mt-1 truncate">
-                  <MapPin className="w-3.5 h-3.5 shrink-0 text-amber-primary" />
-                  <span className="truncate">
-                    {property.location.locality}, {property.location.city}
-                  </span>
-                </div>
-              </div>
-
-              {/* Clean 1-Row Specs Pills */}
-              <div className="flex min-h-6 items-center gap-2 overflow-hidden text-xs font-semibold text-text-secondary">
-                {property.bedrooms > 0 && (
-                  <span className="whitespace-nowrap">
-                    {property.bedrooms} BHK{property.bathrooms > 0 ? ` · ${property.bathrooms} Bath${property.bathrooms > 1 ? "s" : ""}` : ""}
-                  </span>
-                )}
-              </div>
-
-              {/* Area Row */}
-              <div className="h-[18px] flex items-center gap-1.5 text-xs text-text-secondary">
-                {property.area || property.builtUpArea || property.carpetArea ? (
-                  <>
-                    <Maximize2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    <span className="truncate font-medium">
-                      {formatArea(property.area || property.builtUpArea || property.carpetArea || 0, areaUnit, property.propertyType)}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-text-tertiary text-[11px]">Ready for Possession</span>
-                )}
-              </div>
-            </div>
-
-            {/* Locked Bottom Price & Owner Row */}
-            <div className="mt-auto pt-3 border-t border-border-default">
-              {/* Top Sub-row: Category label on left, Ref ID on right so it doesn't steal price width */}
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <p className="text-[9.5px] text-text-tertiary uppercase tracking-wider font-extrabold truncate">
-                  {property.listingType === "rent" || property.listingType === "pg"
-                    ? "Monthly Rent"
-                    : "Price"}
-                </p>
-              </div>
-
-              {/* Main Row: Big Bold Price (Left, broad) + Owner (Right, compact) */}
-              <div className="flex items-end justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-black text-text-primary text-xl leading-tight break-words">
-                    {property.listingType === "rent" || property.listingType === "pg"
-                      ? `${formatINR(property.price)}/mo`
-                      : formatPriceCompact(property.price)}
+          {/* A fixed body keeps property cards aligned with the search grid. */}
+          {(() => {
+            const { isLand, tableColumns, specChips, rateSubtitle, isRent } = resolvePropertyCardDetails(property);
+            const refId = getRefId(property);
+            const location = [...new Set([property.location?.locality, property.location?.city].filter(Boolean))].join(", ");
+            return (
+              <div className="h-[300px] p-4 flex flex-col gap-3 min-w-0">
+                <div className="h-[62px] shrink-0 min-w-0">
+                  <h3 className="text-[16px] font-bold leading-5 text-slate-900 dark:text-white line-clamp-2" title={property.title}>{property.title}</h3>
+                  <p className="flex items-center gap-1 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <MapPin className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate" title={location}>{location || "Location on request"}</span>
                   </p>
                 </div>
+                <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 py-2.5 shrink-0">
+                  {tableColumns.map((col, idx) => (
+                    <div key={idx} className="min-w-0 px-1.5 text-center">
+                      <strong className="block text-[12px] leading-4 tracking-tight font-bold text-slate-900 dark:text-white break-words">{col.value}</strong>
+                      <span className="block mt-1 text-[10px] leading-3 text-slate-500 dark:text-slate-400">{col.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-3 min-w-0">
+                  {specChips.slice(0, 2).map((chip, idx) => {
+                    const Icon = chip.icon;
+                    return <div key={idx} className="flex items-start gap-1.5 min-w-0">
+                      <Icon className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-600" />
+                      <div className="min-w-0">
+                        <p className="text-[11px] leading-4 font-semibold text-slate-800 dark:text-slate-200">{chip.title}</p>
+                        <p className="text-[10px] leading-4 text-slate-500 dark:text-slate-400">{chip.subtitle}</p>
+                      </div>
+                    </div>;
+                  })}
+                </div>
+                <div className="mt-auto border-t border-slate-200 dark:border-slate-800 pt-2 min-w-0">
+                  <div className="flex items-center justify-between gap-2 text-[9px] uppercase tracking-wide text-slate-500 mb-1">
+                    <span>{isRent ? "Monthly rent" : isLand ? "Total price" : "Asking price"}</span>
+                    <span>{property.isOwnerVerified ? <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 normal-case"><BadgeCheck className="w-3 h-3" />Owner verified</span> : refId}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <strong className="whitespace-nowrap text-[22px] leading-6 tracking-tight text-slate-900 dark:text-white">{property.price > 0 ? isRent ? formatINR(property.price) : formatPriceCompact(property.price) : "On request"}</strong>
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 dark:bg-amber-950/30 px-2.5 py-2 text-[11px] font-bold text-amber-800 dark:text-amber-300 group-hover:bg-amber-100 transition-colors">Details<ChevronRight className="w-3.5 h-3.5" /></span>
+                  </div>
+                  <p className="min-h-4 text-[10px] leading-4 text-slate-500 dark:text-slate-400">{isLand ? "" : rateSubtitle.replace(/^·\s*/, "")}</p>
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
+
         </div>
       </Link>
     </motion.div>
@@ -719,17 +1075,5 @@ export function PropertyCard({
 }
 
 export function PropertyCardSkeleton() {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-      <div className="aspect-[4/3] bg-slate-200 animate-pulse" />
-      <div className="p-4 space-y-3">
-        <div className="h-6 w-1/2 bg-slate-200 animate-pulse rounded" />
-        <div className="h-4 w-3/4 bg-slate-200 animate-pulse rounded" />
-        <div className="h-4 w-2/3 bg-slate-200 animate-pulse rounded" />
-        <div className="flex justify-between pt-3 border-t border-slate-100">
-          <div className="h-4 w-16 bg-slate-200 animate-pulse rounded" />
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="rounded-[18px] border border-slate-200 overflow-hidden animate-pulse"><div className="aspect-[4/3] bg-slate-200" /><div className="h-[300px] bg-slate-50 p-4"><div className="h-5 w-3/4 rounded bg-slate-200" /><div className="h-14 mt-12 rounded-xl bg-slate-200" /></div></div>;
 }

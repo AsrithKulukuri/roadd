@@ -67,6 +67,15 @@ export function Footer() {
                 <Phone className="h-4 w-4 text-amber-primary/70" />
                 {siteConfig.phone}
               </a>
+              <a
+                href="https://wa.me/918977311418?text=Hi%20ROAD%20Facing%20Concierge"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2.5 text-sm font-semibold text-emerald-800 hover:text-emerald-950 dark:text-emerald-400 transition-colors"
+              >
+                <span className="flex h-2 w-2 rounded-full bg-emerald-600 animate-pulse" />
+                WhatsApp Concierge: +91 8977311418
+              </a>
               <div className="flex items-center gap-2.5 text-sm text-text-secondary">
                 <MapPin className="h-4 w-4 text-amber-primary/70 flex-shrink-0" />
                 Vijayawada, Andhra Pradesh, India

@@ -573,7 +573,7 @@ export function ShelfCard({
 
             <span
               className={cn(
-                "rounded-lg font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/70 transition-colors flex items-center gap-1 shrink-0",
+                "rounded-lg font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 border border-amber-500/40 transition-colors flex items-center gap-1 shrink-0",
                 isCompactMobile ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
                 isCompactDesktop ? "sm:px-2.5 sm:py-1 sm:text-xs" : isLargeDesktop ? "sm:px-3.5 sm:py-1.5 sm:text-xs" : "sm:px-2.5 sm:py-1 sm:text-xs",
                 isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105"

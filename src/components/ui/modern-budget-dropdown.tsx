@@ -157,7 +157,7 @@ export function ModernBudgetDropdown({
           {prefix && (
             <span className={cn(
               "text-[10px] sm:text-[11px] uppercase tracking-wider shrink-0",
-              variant === "capsule" ? "font-extrabold text-slate-500" : "font-bold text-slate-400"
+              variant === "capsule" ? "font-extrabold text-slate-600" : "font-bold text-slate-600"
             )}>
               {prefix}
             </span>

@@ -474,7 +474,7 @@ export function Navbar() {
         className={cn(
           "fixed top-0 left-0 right-0 z-[100] h-16 flex items-center transition-all duration-300 ease-in-out",
           isTransparent
-            ? "bg-transparent border-b border-transparent shadow-none"
+            ? "bg-slate-950/90 backdrop-blur-md border-b border-slate-800/60 shadow-xs"
             : "bg-slate-950/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-800/90 shadow-md"
         )}
       >

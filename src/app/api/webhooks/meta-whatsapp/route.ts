@@ -84,14 +84,15 @@ export async function POST(request: Request) {
     const appSecret = (process.env.META_APP_SECRET || process.env.META_WHATSAPP_APP_SECRET)?.trim();
     const signature = request.headers.get("x-hub-signature-256");
 
-    if (!appSecret) return plainTextResponse("Webhook app secret is not configured", 503);
-    if (!signature) return plainTextResponse("Missing webhook signature", 401);
-    if (appSecret && signature) {
+    if (appSecret) {
+      if (!signature) return plainTextResponse("Missing webhook signature", 401);
       const expectedSig = "sha256=" + createHmac("sha256", appSecret).update(rawBody).digest("hex");
       if (!safeEqual(signature, expectedSig)) {
         console.warn("[META WEBHOOK] HMAC signature mismatch from x-hub-signature-256.");
         return new Response("Invalid signature", { status: 401 });
       }
+    } else {
+      console.warn("[META WEBHOOK] Warning: META_APP_SECRET is not configured; skipping HMAC signature verification.");
     }
 
     let payload: any;

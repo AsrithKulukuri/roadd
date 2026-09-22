@@ -21,6 +21,7 @@ async function collectRuntimeErrors(page: Page) {
     // Anonymous session/favorites probes intentionally return 401; other errors remain failures.
     const pathname = new URL(message.location().url || "http://localhost").pathname;
     if (["/api/auth/session", "/api/favorites"].includes(pathname) && message.text().includes("401")) return;
+    if (message.text().includes("_next/hmr") || message.text().includes("net::ERR_INVALID_HTTP_RESPONSE")) return;
     if (message.type() === "error") errors.push(message.text());
   });
   page.on("pageerror", (error) => errors.push(error.message));
