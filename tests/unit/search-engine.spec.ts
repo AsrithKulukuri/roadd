@@ -18,6 +18,24 @@ import type { Property } from "@/types/property";
 import type { Project } from "@/types/project";
 
 test.describe("Search Engine Unit Tests", () => {
+  test("includes resale plots in Buy filters and for-sale queries, but not rent", () => {
+    const plot = {
+      title: "418 Sqyards Land for Sale",
+      description: "Residential plot",
+      propertyType: "residential-land",
+      listingType: "resale",
+      saleType: "resale",
+      price: 22990000,
+      location: { city: "Gudavalli", locality: "Nidamanuru" },
+    } as Property;
+
+    expect(evaluatePropertyFilters(plot, { listingType: ["buy"] })).toBe(true);
+    expect(evaluatePropertyFilters(plot, { listingType: ["sale"] })).toBe(true);
+    expect(matchesPropertySearch(plot, "plots for sale in Nidamanuru")).toBe(true);
+    expect(evaluatePropertyFilters(plot, { listingType: ["rent"] })).toBe(false);
+    expect(matchesPropertySearch(plot, "plots for rent in Nidamanuru")).toBe(false);
+  });
+
   test.describe("parseSearchIntent", () => {
     test("parses BHK, budget, city, property type and gated community accurately", () => {
       const intent = parseSearchIntent("3 BHK gated community villa in Guntur under 1.5 Cr");
@@ -479,4 +497,3 @@ test.describe("10/10 Search Intelligence Enhancements", () => {
     expect(centsIntent.maxAreaSqYds).toBeCloseTo(5 * 48.4, 1);
   });
 });
-

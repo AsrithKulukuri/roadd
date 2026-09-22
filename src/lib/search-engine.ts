@@ -764,7 +764,7 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
   if (intent.listingType) {
     const lType = (property.listingType || "").toLowerCase();
     if (intent.listingType === "rent" && lType !== "rent") return false;
-    if (intent.listingType === "sale" && lType !== "sale" && lType !== "buy") return false;
+    if (intent.listingType === "sale" && !["sale", "buy", "resale"].includes(lType)) return false;
   }
 
   // 4. Sale Type requirement
@@ -879,7 +879,7 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
     const lType = (property.listingType || "").toLowerCase();
     const matchesListing = filters.listingType.some((req: string) => {
       const r = req.toLowerCase();
-      if (r === "buy" || r === "sale") return lType === "sale" || lType === "buy";
+      if (r === "buy" || r === "sale") return ["sale", "buy", "resale"].includes(lType);
       if (r === "rent") return lType === "rent";
       if (r === "pg" || r === "pg-coliving") return lType === "pg" || (property.propertyType || "").toLowerCase() === "pg-coliving";
       if (r === "commercial") return (property.category || "").toLowerCase() === "commercial" || (property.propertyType || "").toLowerCase().includes("commercial");
