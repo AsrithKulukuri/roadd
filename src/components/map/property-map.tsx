@@ -1,4 +1,6 @@
 "use client";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
+import { useVisibleProperties } from "@/components/shared/property-feature";
 
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import {
@@ -1000,6 +1002,7 @@ export default function PropertyMap({
   activeFilters,
   onFiltersChange,
 }: PropertyMapProps = {}) {
+  const { propertiesEnabled } = useSiteFeatures();
   const router = useRouter();
   const { openProject } = useProjectOpenGuard();
   const searchParams = useSearchParams();
@@ -1019,7 +1022,7 @@ export default function PropertyMap({
     return null;
   }, [budgetParam]);
   
-  const properties = usePropertiesStore((state) => state.properties);
+  const properties = useVisibleProperties();
   const projects = useProjectsStore((state) => state.projects);
   const isLoading = usePropertiesStore((state) => state.isLoading);
 
@@ -1056,10 +1059,10 @@ export default function PropertyMap({
 
   const mapProperties = useMemo(() => {
     if (filteredItems && Array.isArray(filteredItems)) {
-      return filteredItems;
+      return propertiesEnabled ? filteredItems : filteredItems.filter(item => "_isProject" in item && item._isProject);
     }
     return defaultAllItems;
-  }, [filteredItems, defaultAllItems]);
+  }, [filteredItems, defaultAllItems, propertiesEnabled]);
 
   const initialCenter = useMemo(() => {
     if (externalUserLocation) {
@@ -1411,7 +1414,8 @@ const BUDGET_PRESETS = [
   // Entity type pill filter on map (All / Properties / Projects)
   const [internalListingTypeFilter, setInternalListingTypeFilter] = useState<"all" | "properties" | "projects">("all");
   
-  const listingTypeFilter = entityTypeFilter !== undefined ? entityTypeFilter : internalListingTypeFilter;
+  const selectedListingType = entityTypeFilter !== undefined ? entityTypeFilter : internalListingTypeFilter;
+  const listingTypeFilter = !propertiesEnabled && selectedListingType === "properties" ? "projects" : selectedListingType;
 
   const setListingTypeFilter = useCallback((newType: "all" | "properties" | "projects") => {
     setInternalListingTypeFilter(newType);
@@ -1522,7 +1526,7 @@ const BUDGET_PRESETS = [
 
     if (onFiltersChange) {
       onFiltersChange((fPrev) => {
-        let propType: string[] = [];
+        const propType: string[] = [];
         let isGated = false;
 
         for (const k of next) {
@@ -1641,6 +1645,7 @@ const BUDGET_PRESETS = [
 
   const displayedProperties = useMemo(() => {
     let source = filteredItems && Array.isArray(filteredItems) ? filteredItems : mapProperties;
+    if (!propertiesEnabled) source = source.filter(item => "_isProject" in item && item._isProject);
 
     // Polygon Area Draw Filter
     if (drawPolygonPoints.length >= 3) {
@@ -1703,7 +1708,7 @@ const BUDGET_PRESETS = [
     }
 
     return source.filter((p) => checkPropertyMatchesQuery(p, mapSearchInput));
-  }, [mapProperties, filteredItems, drawPolygonPoints, selectedMapCities, selectedMapLocalities, selectedBudgetKeys, mapPriceRange, parsedBudget, mapSearchInput]);
+  }, [mapProperties, filteredItems, drawPolygonPoints, selectedMapCities, selectedMapLocalities, selectedBudgetKeys, mapPriceRange, parsedBudget, mapSearchInput, propertiesEnabled]);
 
   // Only locations selected on Home page (isHeroPill === true)
   const homeCities = useMemo(() => {
@@ -2126,7 +2131,7 @@ const BUDGET_PRESETS = [
                 <span>Show On Map</span>
                 <span className="text-amber-600 font-bold">{displayedPropertiesFiltered.length} Active Found</span>
               </div>
-              <div className="grid grid-cols-[0.85fr_1.35fr_1.1fr] p-1 bg-slate-100/90 border border-slate-200 rounded-2xl gap-1 shadow-inner">
+              <div className={cn("grid p-1 bg-slate-100/90 border border-slate-200 rounded-2xl gap-1 shadow-inner", propertiesEnabled ? "grid-cols-[0.85fr_1.35fr_1.1fr]" : "grid-cols-2")}>
                 <button
                   type="button"
                   onClick={() => setListingTypeFilter("all")}
@@ -2149,6 +2154,7 @@ const BUDGET_PRESETS = [
                   </span>
                 </button>
 
+                {propertiesEnabled && (
                 <button
                   type="button"
                   onClick={() => setListingTypeFilter("properties")}
@@ -2170,6 +2176,7 @@ const BUDGET_PRESETS = [
                     {livePropertiesCount}
                   </span>
                 </button>
+                )}
 
                 <button
                   type="button"
@@ -2846,7 +2853,7 @@ const BUDGET_PRESETS = [
           
           {/* TOP: Entity Type Pills (All / Properties / Projects) - Centered on mobile only, hidden on desktop */}
           <div className={cn("absolute top-3 left-1/2 -translate-x-1/2 z-[550] items-center gap-1 sm:gap-1.5 pointer-events-auto md:hidden", showMapExplorer ? "hidden" : "flex")}>
-            {(["all", "properties", "projects"] as const).map((lt) => (
+            {(["all", "properties", "projects"] as const).filter(type => propertiesEnabled || type !== "properties").map((lt) => (
               <button
                 key={lt}
                 onClick={() => setListingTypeFilter(lt)}

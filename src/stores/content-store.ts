@@ -206,8 +206,8 @@ interface ContentState {
 
   // Home Categories Actions
   fetchCategories: () => Promise<void>;
-  addCategory: (category: Omit<HomeCategory, "id">) => Promise<void>;
-  updateCategory: (id: string, category: Partial<HomeCategory>) => Promise<void>;
+  addCategory: (category: Omit<HomeCategory, "id">) => Promise<boolean>;
+  updateCategory: (id: string, category: Partial<HomeCategory>) => Promise<boolean>;
   deleteCategory: (id: string) => Promise<void>;
   resetCategories: () => Promise<void>;
 
@@ -578,10 +578,12 @@ export const useContentStore = create<ContentState>()(
             throw new Error(errData.error || "Failed to persist category to server");
           }
           toast.success("Home Category added!");
+          return true;
         } catch (err: any) {
           console.error("[ContentStore] addCategory error:", err);
           set({ homeCategories: previous });
           toast.error(err.message || "Failed to save category to server");
+          return false;
         }
       },
 
@@ -603,10 +605,12 @@ export const useContentStore = create<ContentState>()(
             throw new Error(errData.error || "Failed to persist category to server");
           }
           toast.success("Home Category card updated!");
+          return true;
         } catch (err: any) {
           console.error("[ContentStore] updateCategory error:", err);
           set({ homeCategories: previous });
           toast.error(err.message || "Failed to save category update to server");
+          return false;
         }
       },
 

@@ -513,33 +513,10 @@ export function HeroSection() {
 
   const browseCategories = useMemo(() => {
     return homeCategories.map((cat) => {
-      let href = cat.href;
-      if (cat.id === "new-listings") {
-        href = "/search?type=buy&propertyType=apartment";
-      } else if (!href) {
-        href = `/search?type=buy&propertyType=${cat.type}`;
-      }
-
-      let title = cat.name;
-      let subtitle = cat.subtitle || cat.description;
-      let badge = cat.badge;
-
-      // Exact title & subtitle normalization to match reference screenshot
-      if (cat.id === "new-listings" && (title === "New Listings" || !title)) {
-        title = "Apartments";
-        subtitle = "Modern living spaces";
-        badge = badge || "Last 30 days";
-      } else if (cat.id === "new-apartments" && (title === "New Apartments" || !title)) {
-        title = "New Projects";
-        subtitle = "Launches & upcoming";
-      } else if (cat.id === "new-villas" && (title === "New Villas" || !title)) {
-        title = "Villas";
-        subtitle = "Ultra-luxury homes";
-        badge = badge || "Premium";
-      } else if (cat.id === "individual" && (title === "Individual Homes" || !title)) {
-        title = "Independent Houses";
-        subtitle = "Your own space";
-      }
+      const href = cat.href || `/search?type=buy&propertyType=${cat.type}`;
+      const title = cat.name;
+      const subtitle = cat.subtitle || cat.description;
+      const badge = cat.badge;
 
       return {
         id: cat.id,

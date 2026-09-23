@@ -1,4 +1,7 @@
 "use client";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
+import { isPropertyOnlyHref } from "@/lib/property-visibility";
+import { categorySearchHref, categoryDestination, type CategoryDestination } from "@/lib/home-category-links";
 
 import { useEffect, useState } from "react";
 import { useContentStore, TrendingLocation, HomeCategory, DEFAULT_DESKTOP_SEARCH_PHRASES, DEFAULT_MOBILE_SEARCH_PHRASES } from "@/stores/content-store";
@@ -15,6 +18,12 @@ import { getLucideIcon } from "@/lib/home-section-icons";
 
 type Tab = "categories" | "locations" | "search-phrases";
 
+const PROJECT_TYPES = [
+  { value: "apartment", label: "Apartments" },
+  { value: "villa", label: "Villas" },
+  { value: "venture", label: "CRDA Ventures" },
+];
+
 const PROPERTY_TYPES = [
   { value: "apartment", label: "Apartment / Flat" },
   { value: "villa", label: "Luxury Villa" },
@@ -27,6 +36,9 @@ const PROPERTY_TYPES = [
 ];
 
 export default function ContentAdminPage() {
+  const { propertiesEnabled } = useSiteFeatures();
+  const [destination, setDestination] = useState<CategoryDestination>("projects");
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
   const {
     trendingLocations, isLoading, fetchTrendingLocations,
     addLocation, updateLocation, deleteLocation,
@@ -289,11 +301,14 @@ export default function ContentAdminPage() {
 
   // ─── Category handlers ────────────────────────────────────────────────────────
   const handleSaveCat = async () => {
-    if (!catForm.name) { 
+    if (isSavingCategory) return;
+    if (!catForm.name?.trim()) {
       toast.error("Category name is required"); 
       return; 
     }
 
+    setIsSavingCategory(true);
+    try {
     let imageUrl = catForm.image || "";
     if (catImageFile) {
       setIsUploading(true);
@@ -307,15 +322,11 @@ export default function ContentAdminPage() {
     }
 
     const targetType = catForm.type || "apartment";
-    const defaultHref = catForm.href || (
-      targetType === "resale" ? "/search?type=buy&saleType=resale" :
-      targetType === "new" ? "/search?type=buy&saleType=new" :
-      `/search?type=buy&propertyType=${targetType}`
-    );
+    const defaultHref = catForm.href?.trim() || categorySearchHref(destination, targetType);
 
     const payload: Partial<HomeCategory> = {
       ...catForm,
-      name: catForm.name,
+      name: catForm.name.trim(),
       subtitle: catForm.subtitle || catForm.description || "",
       description: catForm.description || catForm.subtitle || "",
       image: imageUrl,
@@ -328,33 +339,43 @@ export default function ContentAdminPage() {
     };
 
     if (isAddingCat) {
-      await addCategory(payload as Omit<HomeCategory, "id">);
+      if (!await addCategory(payload as Omit<HomeCategory, "id">)) return;
       setIsAddingCat(false);
     } else if (editingCatId) {
-      await updateCategory(editingCatId, payload);
+      if (!await updateCategory(editingCatId, payload)) return;
       setEditingCatId(null);
     }
 
     setCatForm({});
     setCatImageFile(null);
     setCatImagePreview(null);
+    } catch {
+      toast.error("Could not save this category. Your changes are still here; please retry.");
+    } finally {
+      setIsSavingCategory(false);
+      setIsUploading(false);
+    }
   };
 
   const handleOpenEditCategory = (cat: HomeCategory) => {
     setEditingCatId(cat.id);
     setCatForm(cat);
+    setDestination(categoryDestination(cat.href));
     setCatImagePreview(cat.image);
     setCatImageFile(null);
     setIsAddingCat(false);
   };
 
   const handleOpenAddCategory = () => {
+    const nextDestination = propertiesEnabled ? "properties" : "projects";
+    setDestination(nextDestination);
     setIsAddingCat(true);
     setEditingCatId(null);
     setCatForm({
       name: "",
       subtitle: "",
       type: "apartment",
+      href: categorySearchHref(nextDestination, "apartment"),
       badge: "",
       count: 0,
       image: "",
@@ -476,22 +497,36 @@ export default function ContentAdminPage() {
                       />
                     </div>
 
+                    <div>
+                      <label htmlFor="category-destination" className="text-xs font-bold text-text-primary">Show results from</label>
+                      <select id="category-destination" value={destination} onChange={(event) => {
+                        const next = event.target.value as CategoryDestination;
+                        const type = next === "projects" && !PROJECT_TYPES.some(item => item.value === catForm.type) ? "apartment" : catForm.type || "apartment";
+                        setDestination(next);
+                        setCatForm({ ...catForm, type, href: categorySearchHref(next, type) });
+                      }} className="mt-1 h-10 w-full rounded-xl border border-border-default bg-bg-surface px-3 text-sm font-semibold">
+                        <option value="projects">Projects</option>
+                        <option value="properties">Properties</option>
+                      </select>
+                      <p className="mt-2 text-xs text-text-secondary">Project categories remain visible when properties are hidden. You can still create and edit both.</p>
+                    </div>
                     {/* Property Type Selector */}
                     <div>
-                      <label className="text-xs font-bold text-text-primary">Property Type Filter</label>
+                      <label htmlFor="category-type" className="text-xs font-bold text-text-primary">{destination === "projects" ? "Project type" : "Property type"}</label>
                       <select
+                        id="category-type"
                         value={catForm.type || "apartment"}
                         onChange={(e) => {
                           const val = e.target.value;
                           setCatForm({
                             ...catForm,
                             type: val,
-                            href: val === "resale" ? "/search?type=buy&saleType=resale" : `/search?type=buy&propertyType=${val}`,
+                            href: categorySearchHref(destination, val),
                           });
                         }}
                         className="w-full h-10 px-3 mt-1 border border-border-default rounded-xl bg-bg-surface text-sm font-semibold text-text-primary outline-none cursor-pointer"
                       >
-                        {PROPERTY_TYPES.map((pt) => (
+                        {(destination === "projects" ? PROJECT_TYPES : PROPERTY_TYPES).map((pt) => (
                           <option key={pt.value} value={pt.value}>
                             {pt.label}
                           </option>
@@ -517,11 +552,14 @@ export default function ContentAdminPage() {
                     <Input
                       value={catForm.href || ""}
                       onChange={(e) => setCatForm({ ...catForm, href: e.target.value })}
-                      placeholder="/search?type=buy&propertyType=villa"
+                      placeholder={categorySearchHref(destination, "villa")}
                       className="mt-1 font-mono text-xs"
                     />
                   </div>
 
+                  {!propertiesEnabled && isPropertyOnlyHref(catForm.href || categorySearchHref(destination, catForm.type || "apartment")) && (
+                    <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">This category can be saved, but will be hidden on the website while properties are disabled. Choose Projects above to show a project category.</p>
+                  )}
                   {/* Image Upload Dropzone */}
                   <div className="space-y-2 pt-2">
                     <label className="text-xs font-bold text-text-primary flex items-center gap-2">
@@ -569,10 +607,10 @@ export default function ContentAdminPage() {
                   <div className="flex gap-3 pt-4 border-t border-border-default">
                     <Button 
                       onClick={handleSaveCat} 
-                      disabled={isUploading}
+                      disabled={isUploading || isSavingCategory}
                       className="bg-amber-primary hover:bg-amber-600 text-slate-950 font-black px-6 shadow-md"
                     >
-                      {isUploading ? "Uploading..." : editingCatId ? "Update Category" : "Add Category"}
+                      {isUploading ? "Uploading..." : isSavingCategory ? "Saving..." : editingCatId ? "Update Category" : "Add Category"}
                     </Button>
                     <Button 
                       variant="outline" 
