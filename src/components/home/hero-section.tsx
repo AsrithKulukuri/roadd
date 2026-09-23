@@ -223,6 +223,10 @@ export function HeroSection() {
 
   const activeSuggestions = useMemo(() => {
     if (isMobileScreen) {
+      // Reuse the admin's desktop phrases when no mobile-specific phrases exist.
+      if (!searchTypewriterPhrasesMobile?.some((phrase) => phrase.trim()) && searchTypewriterPhrasesDesktop?.some((phrase) => phrase.trim())) {
+        return searchTypewriterPhrasesDesktop.filter((phrase) => phrase.trim());
+      }
       if (searchPhrasesConfigured || Array.isArray(searchTypewriterPhrasesMobile)) {
         return searchTypewriterPhrasesMobile || [];
       }
@@ -235,6 +239,12 @@ export function HeroSection() {
   }, [isMobileScreen, searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile, searchPhrasesConfigured]);
 
   useEffect(() => {
+    setTypedText("");
+    setIsDeleting(false);
+    setLoopNum(0);
+  }, [activeSuggestions]);
+
+  useEffect(() => {
     if (!activeSuggestions || activeSuggestions.length === 0) {
       setTypedText("");
       return;
@@ -243,11 +253,6 @@ export function HeroSection() {
     const currentPhrase = activeSuggestions[loopNum % activeSuggestions.length] || "";
     const forwardSpeed = Math.max(30, searchTypewriterSpeed || 60);
     const pauseTime = Math.max(1000, searchTypewriterPause || 2200);
-
-    // If only 1 phrase and it has finished typing, stay resting calmly without deleting and retyping
-    if (activeSuggestions.length === 1 && typedText === currentPhrase && !isDeleting) {
-      return;
-    }
 
     let timer: NodeJS.Timeout;
 
@@ -260,9 +265,7 @@ export function HeroSection() {
       } else {
         // Entire sentence typed: Hold for the configured pauseTime
         timer = setTimeout(() => {
-          if (activeSuggestions.length > 1) {
-            setIsDeleting(true);
-          }
+          setIsDeleting(true);
         }, pauseTime);
       }
     } else {

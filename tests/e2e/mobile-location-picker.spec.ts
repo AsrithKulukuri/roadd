@@ -1,5 +1,19 @@
 import { expect, test } from "@playwright/test";
 
+test("mobile search animates admin phrases when the mobile list is empty", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "Mobile placeholder regression");
+  await page.route("**/api/content/search-phrases", route => route.fulfill({ json: {
+    desktop: ["Admin test homes"], mobile: [], typingSpeed: 80, pauseDuration: 1000, textColor: "dark",
+  } }));
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const phrase = page.locator("#hero-banner-mobile form span.truncate.text-slate-900");
+  await expect(phrase).toHaveText("Admin test homes", { timeout: 15000 });
+  await expect(phrase).not.toHaveText("Admin test homes", { timeout: 5000 });
+  await expect(phrase).toHaveText("Admin test homes", { timeout: 5000 });
+  await page.locator("#hero-search-input-mobile").fill("My search");
+  await expect(phrase).toHaveCount(0);
+});
+
 test("mobile header selects a city then an area without the old hero pills", async ({ page, isMobile }) => {
   await page.route("**/api/site-features", route => route.fulfill({ json: { propertiesEnabled: false } }));
   await page.goto("/", { waitUntil: "domcontentloaded" });
