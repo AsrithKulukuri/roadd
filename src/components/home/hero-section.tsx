@@ -997,24 +997,18 @@ export function HeroSection() {
                 <ChevronDown className="h-4 w-4 shrink-0 text-amber-600 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
               </summary>
               <div className="space-y-3 border-t border-slate-100 p-3">
-              <div className="relative flex items-center justify-center py-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-slate-900">
-                    Budget
-                  </span>
-                </div>
-
                 {(heroBudget[0] !== 1000000 || heroBudget[1] !== 500000000) && (
+                  <div className="flex justify-end">
                   <button
                     type="button"
                     onClick={() => setHeroBudget([1000000, 500000000])}
-                    className="absolute right-0 inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-800 transition-colors cursor-pointer px-1.5 py-0.5 rounded-md hover:bg-slate-100"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-800 transition-colors cursor-pointer px-1.5 py-0.5 rounded-md hover:bg-slate-100"
                   >
                     <RotateCcw className="w-3 h-3 text-amber-600" />
                     <span>Reset</span>
                   </button>
+                  </div>
                 )}
-              </div>
 
               <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                 <ModernBudgetDropdown
