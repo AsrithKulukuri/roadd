@@ -548,7 +548,7 @@ export function HeroSection() {
       <div id="hero-banner-mobile" className="sm:hidden w-full pb-3">
         {/* Full-Width Dynamic Banner on Mobile */}
         {banners.length > 0 && (
-          <div className="relative z-10 w-full mb-3 shadow-md h-[240px] overflow-hidden">
+          <div className="relative z-10 w-full mb-3 shadow-md h-[clamp(140px,42vw,180px)] overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentBanner?.id || 'banner-fallback-mobile'}
@@ -988,56 +988,15 @@ export function HeroSection() {
             )}
           </form>
 
-          {/* Dynamic Location Pills on Mobile */}
-          <div className="w-full max-w-[760px] mx-auto mt-2.5 text-left relative z-30">
-            <div
-              className={cn(
-                "grid gap-1.5 w-full pb-1 mb-1.5",
-                heroCities.length === 1 ? "grid-cols-1" :
-                  heroCities.length === 2 ? "grid-cols-2" :
-                    heroCities.length === 3 ? "grid-cols-3" :
-                      "grid-cols-2"
-              )}
-            >
-              {heroCities.map((city) => {
-                const isOpen = openLocationTab === city.id;
-                const hasSublocations = city.sublocations && city.sublocations.length > 0;
-
-                return (
-                  <button
-                    key={`m-city-${city.id}`}
-                    type="button"
-                    onClick={() => {
-                      setShowBuyMenu(false);
-                      setShowProjectsMenu(false);
-                      if (hasSublocations) {
-                        setOpenLocationTab(isOpen ? null : city.id);
-                        setSublocationSearch("");
-                      } else {
-                        router.push(`/search?type=${activeTab}&location=${encodeURIComponent(city.name)}`);
-                      }
-                    }}
-                    className={cn(
-                      "h-[34px] px-2 rounded-full text-[11px] flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-2xs border w-full text-center whitespace-nowrap",
-                      isOpen
-                        ? "bg-white border-amber-500 text-slate-950 font-black shadow-md ring-2 ring-amber-500/25"
-                        : "bg-white/95 hover:bg-white border-slate-200/90 text-slate-950 font-bold shadow-xs hover:border-amber-400"
-                    )}
-                  >
-                    <SolidMapPin className="w-3.5 h-3.5 text-[#faad13] shrink-0" />
-                    <span className="whitespace-nowrap tracking-tight text-slate-950 font-bold">{city.name}</span>
-                    {hasSublocations && (
-                      <ChevronDown className={cn("w-3 h-3 text-[#faad13] shrink-0 transition-transform duration-200", isOpen && "rotate-180")} />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Mobile Budget Filter Card */}
           <div className="relative z-20 w-full max-w-[760px] mx-auto mt-2.5 text-left">
-            <div className="bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-2.5 space-y-2.5 shadow-sm">
+            <details className="group bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-4 py-3 text-xs focus-visible:outline-2 focus-visible:outline-amber-500 [&::-webkit-details-marker]:hidden">
+                <span className="font-black text-slate-900">Budget</span>
+                <span className="ml-auto truncate font-semibold text-slate-500">{formatPriceCompact(heroBudget[0])} – {heroBudget[1] >= 500000000 ? "Any price" : formatPriceCompact(heroBudget[1])}</span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-amber-600 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+              </summary>
+              <div className="space-y-3 border-t border-slate-100 p-3">
               <div className="relative flex items-center justify-center py-0.5">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-black text-slate-900">
@@ -1085,14 +1044,15 @@ export function HeroSection() {
               <button
                 type="button"
                 onClick={() => handleSearchSubmit()}
-                className="w-full h-9 bg-slate-950 hover:bg-slate-900 active:scale-98 text-white font-extrabold text-xs rounded-full flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                className="w-full min-h-11 bg-slate-950 hover:bg-slate-900 active:scale-98 text-white font-extrabold text-xs rounded-full flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
               >
                 <span>Apply Budget Filter</span>
                 <span className="px-2 py-0.5 min-w-[20px] h-[20px] rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px] font-black shadow-2xs">
                   {matchingCount}
                 </span>
               </button>
-            </div>
+              </div>
+            </details>
           </div>
         </div>
       </div>

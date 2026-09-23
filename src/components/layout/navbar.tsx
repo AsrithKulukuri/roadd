@@ -31,6 +31,7 @@ import {
   Shield,
   MessageSquare,
 } from "lucide-react";
+import { MobileLocationPicker } from "@/components/layout/mobile-location-picker";
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { cn, formatINRWords } from "@/lib/utils";
@@ -525,6 +526,8 @@ export function Navbar() {
                 </button>
               </div>
             )}
+
+            <MobileLocationPicker />
 
             {/* Center: Interactive Search Bar on Scroll PAST BANNER OR Navigation Links */}
             <div ref={navDropdownRef} className="flex-1 min-w-0 max-w-5xl mx-2 sm:mx-4 hidden lg:flex items-center justify-center">
