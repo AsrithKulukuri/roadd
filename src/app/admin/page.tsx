@@ -1,4 +1,6 @@
 "use client";
+import { PropertyVisibilityControl } from "@/components/admin/property-visibility-control";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
 import { ListingQualityPanel } from "@/components/admin/listing-quality-panel";
 
 import { useState, useMemo, useEffect } from "react";
@@ -47,6 +49,7 @@ import { getLucideIcon } from "@/lib/home-section-icons";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const { propertiesEnabled, ready } = useSiteFeatures();
 
   // Stores
   const {
@@ -286,8 +289,20 @@ export default function AdminDashboardPage() {
     setRegImage("");
   };
 
+  if (!ready || !propertiesEnabled) return (
+    <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto space-y-6">
+      <h1 className="text-3xl font-bold">Admin Control Center</h1>
+      <PropertyVisibilityControl />
+      <section className="grid gap-4 sm:grid-cols-3">
+        {[{ label: "Projects", count: totalProjects, href: "/admin/projects" }, { label: "Published projects", count: publishedProjects, href: "/admin/projects" }, { label: "Upcoming visits", count: upcomingSchedules, href: "/admin/schedules" }].map(item => <Link key={item.label} href={item.href} className="rounded-2xl border border-border-default bg-bg-card p-6 transition-colors hover:border-amber-500"><p className="text-sm text-text-secondary">{item.label}</p><p className="mt-3 text-3xl font-bold">{item.count}</p></Link>)}
+      </section>
+      <Link href="/admin/projects/new" className="inline-flex rounded-xl bg-amber-500 px-5 py-3 font-bold text-slate-950">Add project</Link>
+    </div>
+  );
+
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto space-y-6">
+      <PropertyVisibilityControl />
       
       {/* MOBILE-FIRST HEADER & REFERENCE ID TEST DOCK */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-3xl p-5 sm:p-6 shadow-sm">

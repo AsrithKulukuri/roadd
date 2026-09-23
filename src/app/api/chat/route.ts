@@ -1,3 +1,4 @@
+import { readSiteFeatures } from "@/lib/site-features";
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { mockProperties } from "@/lib/mock-data";
@@ -23,6 +24,7 @@ function checkChatRateLimit(ip: string, maxPerMin = 20): boolean {
 
 export async function POST(req: Request) {
   try {
+    if (!(await readSiteFeatures()).propertiesEnabled) return NextResponse.json({ error: "Property assistance is currently unavailable. Explore our projects instead." }, { status: 503 });
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
     if (!checkChatRateLimit(ip, 20)) {
       return NextResponse.json(

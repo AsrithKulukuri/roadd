@@ -1,5 +1,7 @@
 "use client";
 
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
+import { ProjectsOnlyLayout } from "@/components/layout/projects-only-layout";
 import { useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
@@ -32,6 +34,7 @@ function ConditionalFooter() {
 
 export function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { propertiesEnabled, ready, error, refresh } = useSiteFeatures();
   const isStandalonePortal = pathname.startsWith("/admin") || pathname.startsWith("/builder");
   const hasNestedMain =
     isStandalonePortal ||
@@ -47,9 +50,13 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
   const fetchProjects   = useProjectsStore((state) => state.fetchProjects);
 
   useEffect(() => {
-    fetchProperties();
+    if (!ready) return;
+    if (propertiesEnabled || isStandalonePortal) fetchProperties();
     fetchProjects();
-  }, [fetchProperties, fetchProjects]);
+  }, [fetchProperties, fetchProjects, ready, propertiesEnabled, isStandalonePortal]);
+
+  if (!isStandalonePortal && !ready) return <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4" aria-live="polite"><p>{error || "Loading your experience…"}</p>{error && <button className="cursor-pointer underline" onClick={() => void refresh()}>Retry</button>}</main>;
+  if (!isStandalonePortal && !propertiesEnabled) return <Suspense fallback={null}><ProjectsOnlyLayout>{children}</ProjectsOnlyLayout></Suspense>;
 
   return (
     <>

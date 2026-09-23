@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
+import { PropertyVisibilityControl } from "@/components/admin/property-visibility-control";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/shared/logo";
 
@@ -115,6 +117,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { propertiesEnabled } = useSiteFeatures();
   const router = useRouter();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -197,7 +200,7 @@ export default function AdminLayout({
 
             {/* Sidebar Navigation Links */}
             <nav className="flex-1 min-h-0 px-3 py-3 space-y-1 overflow-y-auto overscroll-contain focus:outline-none scrollbar-thin">
-              {sidebarLinks.map((link) => {
+              {sidebarLinks.filter(link => propertiesEnabled || link.href !== "/admin/properties").map((link) => {
                 const isActive = pathname === link.href || (link.href !== "/admin" && pathname.startsWith(link.href));
                 const Icon = link.icon;
                 return (
@@ -298,7 +301,7 @@ export default function AdminLayout({
 
           {/* Page Content with Safe Bottom Margin for Mobile Bottom Nav */}
           <div className={cn("flex-1 overflow-auto", !isFormPage ? "pb-20 lg:pb-0" : "pb-24")}>
-            {children}
+            {!propertiesEnabled && pathname.startsWith("/admin/properties") ? <div className="p-6"><PropertyVisibilityControl /></div> : children}
           </div>
 
           {/* Mobile Bottom Navigation Dock (lg:hidden, hidden on creation/edit forms so save panel is unobstructed) */}

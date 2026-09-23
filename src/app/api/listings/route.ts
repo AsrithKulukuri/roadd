@@ -1,3 +1,4 @@
+import { readSiteFeatures } from "@/lib/site-features";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/server-auth-guard";
@@ -10,6 +11,7 @@ export async function GET(request: Request) {
     if (type !== "project" && type !== "property") throw new PortalError("Invalid listing type.");
     const admin = params.get("scope") === "admin";
     if (admin) { const auth = await requireAdmin(request); if (auth.errorResponse) return auth.errorResponse; }
+    if (!admin && type === "property" && !(await readSiteFeatures()).propertiesEnabled) return NextResponse.json({ data: [], error: null }, { headers: { "Cache-Control": "no-store" } });
     const { data, error } = await supabaseAdmin.from(type === "project" ? "projects" : "properties").select("*").order("id");
     if (error) throw error;
     const rows = admin ? data : publicListing((data || []).filter(row => row.isPublished !== false && !["draft", "archived", "deleted"].includes(row.status)));

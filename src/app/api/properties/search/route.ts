@@ -1,3 +1,4 @@
+import { readSiteFeatures } from "@/lib/site-features";
 import { publicListing } from "@/lib/public-listing";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -36,6 +37,7 @@ function normalizePropertyTypes(rawTypes: string[]): string[] {
 
 export async function GET(req: NextRequest) {
   try {
+    if (!(await readSiteFeatures()).propertiesEnabled) return NextResponse.json({ success: true, total: 0, page: 1, limit: 20, totalPages: 0, properties: [], filterCounts: {}, mapMarkers: [] }, { headers: { "Cache-Control": "no-store" } });
     const { searchParams } = new URL(req.url);
 
     // 1. Text Query

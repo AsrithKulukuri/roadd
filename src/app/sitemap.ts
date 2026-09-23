@@ -1,9 +1,12 @@
+import { readSiteFeatures } from "@/lib/site-features";
+export const dynamic = "force-dynamic";
 import { MetadataRoute } from "next";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import { mockProperties } from "@/lib/mock-data";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const { propertiesEnabled } = await readSiteFeatures();
   const baseUrl = "https://www.roadfacing.com";
 
   // Static core routes
@@ -63,7 +66,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Dynamic Properties from DB
   let propertyRoutes: MetadataRoute.Sitemap = [];
   try {
-    if (isSupabaseConfigured()) {
+    if (propertiesEnabled && isSupabaseConfigured()) {
       const { data: properties } = await supabase
         .from("properties")
         .select("slug, updatedAt")
@@ -84,7 +87,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // Fallback to mock properties if DB is empty
-  if (propertyRoutes.length === 0) {
+  if (propertiesEnabled && propertyRoutes.length === 0) {
     propertyRoutes = mockProperties.map((p) => ({
       url: `${baseUrl}/properties/${p.slug}`,
       lastModified: new Date(),
@@ -116,5 +119,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("Error generating sitemap projects:", err);
   }
 
-  return [...staticRoutes, ...cityRoutes, ...propertyRoutes, ...projectRoutes];
+  return [...staticRoutes.filter(route => propertiesEnabled || !route.url.includes("/properties")), ...cityRoutes, ...(propertiesEnabled ? propertyRoutes : []), ...projectRoutes];
 }

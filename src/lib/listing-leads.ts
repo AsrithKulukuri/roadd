@@ -1,3 +1,4 @@
+import { readSiteFeatures } from "@/lib/site-features";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sendListingNotification } from "@/lib/whatsapp/listing-notification";
 import { authenticateServerRequest } from "@/lib/server-auth-guard";
@@ -12,6 +13,7 @@ export async function leadUser(request: Request) {
   return auth.user;
 }
 export async function getActionListing(type: "project" | "property", id: string) {
+  if (type === "property" && !(await readSiteFeatures()).propertiesEnabled) throw new PortalError("Property features are currently unavailable.", 404);
   if (!/^[a-zA-Z0-9_-]{1,180}$/.test(id)) throw new PortalError("Invalid listing.");
   const table = type === "project" ? "projects" : "properties";
   let result = await supabaseAdmin.from(table).select("*").eq("id", id).maybeSingle();

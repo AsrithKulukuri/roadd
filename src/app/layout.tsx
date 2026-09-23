@@ -6,6 +6,8 @@ import { Toaster } from "sonner";
 import { ClientLayoutWrapper } from "@/components/layout/client-layout-wrapper";
 import { cn } from "@/lib/utils";
 import "./globals.css";
+import { readSiteFeatures } from "@/lib/site-features";
+import { SiteFeaturesProvider } from "@/components/providers/site-features-provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -154,11 +156,12 @@ const jsonLdWebsite = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const initialFeatures = await readSiteFeatures().catch(() => null);
   return (
     <html
       lang="en"
@@ -179,10 +182,12 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
+          <SiteFeaturesProvider initialFeatures={initialFeatures}>
           <div className="relative flex min-h-screen flex-col">
             <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
           </div>
           <ActionAuthProvider />
+          </SiteFeaturesProvider>
           <Toaster
             position="bottom-right"
             toastOptions={{
