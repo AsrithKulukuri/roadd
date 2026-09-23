@@ -548,7 +548,7 @@ export function HeroSection() {
       <div id="hero-banner-mobile" className="sm:hidden w-full pb-3">
         {/* Full-Width Dynamic Banner on Mobile */}
         {banners.length > 0 && (
-          <div className="relative z-10 w-full mb-3 shadow-md h-[clamp(140px,42vw,180px)] overflow-hidden">
+          <div className="relative z-10 w-full mb-3 shadow-md h-[240px] overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentBanner?.id || 'banner-fallback-mobile'}
