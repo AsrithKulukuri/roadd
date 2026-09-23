@@ -1,4 +1,7 @@
 "use client";
+import { PropertyFeature } from "@/components/shared/property-feature";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
+import { isPropertyOnlyHref } from "@/lib/property-visibility";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -37,6 +40,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { propertiesEnabled } = useSiteFeatures();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
 
@@ -121,7 +125,7 @@ export default function DashboardLayout({
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex w-64 flex-col fixed inset-y-0 pt-[72px] z-40 bg-bg-card border-r border-border-default overflow-y-auto">
         <div className="p-6">
-          <Button 
+          <PropertyFeature><Button
             variant="amber" 
             className="w-full justify-between shadow-amber-glow opacity-85 cursor-not-allowed bg-amber-500/80 hover:bg-amber-500/80" 
             onClick={(e) => {
@@ -136,11 +140,11 @@ export default function DashboardLayout({
               Post Property
             </span>
             <Lock className="h-4 w-4 text-slate-950 font-black shrink-0" />
-          </Button>
+          </Button></PropertyFeature>
         </div>
 
         <nav className="flex-1 px-4 space-y-1">
-          {displayedLinks.map((link) => {
+          {displayedLinks.filter(link => propertiesEnabled || !isPropertyOnlyHref(link.href)).map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
             const isMyPropertiesLocked = link.href === "/dashboard/listings";
@@ -175,7 +179,7 @@ export default function DashboardLayout({
                 )}
               >
                 <Icon className={cn("h-5 w-5", isActive ? "text-amber-primary" : "text-text-tertiary")} />
-                <span className="flex-1">{link.label}</span>
+                <span className="flex-1">{propertiesEnabled ? link.label : link.label.replace("Properties", "Projects")}</span>
                 {isMyPropertiesLocked ? (
                   <Lock className="w-4 h-4 text-amber-400 shrink-0" />
                 ) : isProfileIncomplete ? (

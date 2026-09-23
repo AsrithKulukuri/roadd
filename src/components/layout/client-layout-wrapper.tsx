@@ -1,9 +1,8 @@
 "use client";
 
 import { useSiteFeatures } from "@/components/providers/site-features-provider";
-import { ProjectsOnlyLayout } from "@/components/layout/projects-only-layout";
 import { useEffect, Suspense } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { usePropertiesStore } from "@/stores/properties-store";
@@ -35,6 +34,11 @@ function ConditionalFooter() {
 export function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { propertiesEnabled, ready, error, refresh } = useSiteFeatures();
+  const router = useRouter();
+  const hiddenPropertyRoute = !propertiesEnabled && /^\/(properties|property|list-with-us|dashboard\/listings)(\/|$)/.test(pathname);
+  useEffect(() => {
+    if (ready && hiddenPropertyRoute) router.replace("/search?type=projects");
+  }, [ready, hiddenPropertyRoute, router]);
   const isStandalonePortal = pathname.startsWith("/admin") || pathname.startsWith("/builder");
   const hasNestedMain =
     isStandalonePortal ||
@@ -56,7 +60,6 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
   }, [fetchProperties, fetchProjects, ready, propertiesEnabled, isStandalonePortal]);
 
   if (!isStandalonePortal && !ready) return <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4" aria-live="polite"><p>{error || "Loading your experience…"}</p>{error && <button className="cursor-pointer underline" onClick={() => void refresh()}>Retry</button>}</main>;
-  if (!isStandalonePortal && !propertiesEnabled) return <Suspense fallback={null}><ProjectsOnlyLayout>{children}</ProjectsOnlyLayout></Suspense>;
 
   return (
     <>
@@ -73,14 +76,14 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
           </Suspense>
         </>
       )}
-      <ContentElement className={`flex-1 ${isDetailPage ? "pb-0" : "pb-16 sm:pb-0"}`}>{children}</ContentElement>
+      <ContentElement className={`flex-1 ${isDetailPage ? "pb-0" : "pb-16 sm:pb-0"}`}>{hiddenPropertyRoute ? null : children}</ContentElement>
       {!isStandalonePortal && (
         <>
           <Suspense fallback={null}>
             <ConditionalFooter />
           </Suspense>
           <Suspense fallback={null}>
-            <AiAssistantWidget />
+            {propertiesEnabled && <AiAssistantWidget />}
           </Suspense>
           <Suspense fallback={null}>
             <MobileBottomNav />

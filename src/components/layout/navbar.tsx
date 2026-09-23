@@ -1,4 +1,8 @@
 "use client";
+import { PropertyFeature } from "@/components/shared/property-feature";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
+import { isPropertyOnlyHref } from "@/lib/property-visibility";
+import { useVisibleProperties } from "@/components/shared/property-feature";
 import { requireActionSession } from "@/lib/action-auth";
 
 import { useState, useEffect, useMemo, useRef } from "react";
@@ -35,7 +39,6 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
 import { logoutUser } from "@/hooks/use-auth-session";
 import { PostRequirementModal } from "@/components/shared/post-requirement-modal";
-import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { useLocationsStore } from "@/stores/locations-store";
 import { useContentStore, DEFAULT_DESKTOP_SEARCH_PHRASES } from "@/stores/content-store";
@@ -61,6 +64,7 @@ interface NavUser {
 }
 
 export function Navbar() {
+  const { propertiesEnabled } = useSiteFeatures();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -83,7 +87,7 @@ export function Navbar() {
   const navDropdownRef = useRef<HTMLDivElement>(null);
 
   const { cities, fetchLocations } = useLocationsStore();
-  const properties = usePropertiesStore((state) => state.properties);
+  const properties = useVisibleProperties();
   const projects = useProjectsStore((state) => state.projects);
 
   // Fetch admin master locations on mount
@@ -742,7 +746,7 @@ export function Navbar() {
                     role="navigation"
                     aria-label="Main navigation"
                   >
-                    {navigationLinks.main.map((link) => (
+                    {navigationLinks.main.filter(link => propertiesEnabled || !isPropertyOnlyHref(link.href)).map((link) => (
                       <div key={link.href} className="relative group shrink-0">
                         <Link
                           href={link.href}
@@ -809,7 +813,7 @@ export function Navbar() {
                     ? "text-white hover:bg-white/15"
                     : "text-white hover:text-amber-400 hover:bg-white/10"
                 )}
-                aria-label="Saved properties"
+                aria-label={propertiesEnabled ? "Saved properties" : "Saved projects"}
               >
                 <Heart strokeWidth={2.5} className="h-4.5 w-4.5 text-amber-400" />
               </Link>
@@ -898,12 +902,12 @@ export function Navbar() {
                   </button>
 
                   {/* List Property CTA Button */}
-                  <Link href="/list-with-us" className="hidden md:block">
+                  <PropertyFeature><Link href="/list-with-us" className="hidden md:block">
                     <Button size="sm" className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-full shadow-xs px-4 h-8 text-xs border-0">
                       <Plus className="h-3.5 w-3.5 stroke-[3]" />
                       List Property
                     </Button>
-                  </Link>
+                  </Link></PropertyFeature>
                 </>
               )}
 
@@ -934,7 +938,7 @@ export function Navbar() {
             </button>
 
             <nav className="flex flex-col gap-2">
-              {navigationLinks.main.map((link) => (
+              {navigationLinks.main.filter(link => propertiesEnabled || !isPropertyOnlyHref(link.href)).map((link) => (
                 <div key={link.href} className="flex flex-col">
                   <div className="flex items-center justify-between">
                     <Link
@@ -983,12 +987,12 @@ export function Navbar() {
             </nav>
 
             <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 space-y-3">
-              <Link href="/list-with-us" className="block w-full">
+              <PropertyFeature><Link href="/list-with-us" className="block w-full">
                 <Button className="w-full gap-2 bg-slate-900 hover:bg-slate-800 text-white font-black py-6 text-base shadow-md">
                   <Plus className="h-5 w-5 stroke-[3] text-amber-400" />
                   List Property Free
                 </Button>
-              </Link>
+              </Link></PropertyFeature>
 
               {user ? (
                 <div className="space-y-2 pt-2">

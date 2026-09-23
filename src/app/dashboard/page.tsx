@@ -1,4 +1,5 @@
 "use client";
+import { PropertyFeature } from "@/components/shared/property-feature";
 
 import { useState, useEffect } from "react";
 import { 
@@ -504,7 +505,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
+            <PropertyFeature><div className="lg:col-span-2 space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="font-heading text-xl font-bold text-text-primary">Your Recent Listings</h2>
                 <button className="text-sm text-amber-primary hover:underline font-medium">View all</button>
@@ -514,7 +515,7 @@ export default function DashboardPage() {
                   <PropertyCard key={property.id} property={property} index={i} />
                 ))}
               </div>
-            </div>
+            </div></PropertyFeature>
 
             <div className="space-y-6">
               <h2 className="font-heading text-xl font-bold text-text-primary">Recent Messages</h2>

@@ -1,4 +1,5 @@
 "use client";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
 
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -36,6 +37,7 @@ type RenderSection = {
 };
 
 export function HomeCategories() {
+  const { propertiesEnabled } = useSiteFeatures();
   const { properties, fetchProperties, isLoading: isPropsLoading, error: propsError } = usePropertiesStore();
   const { projects, fetchProjects, isLoading: isProjsLoading, error: projsError } = useProjectsStore();
   const mounted = useIsMounted();
@@ -43,9 +45,9 @@ export function HomeCategories() {
   const [hasCustomLayout, setHasCustomLayout] = useState(false);
 
   useEffect(() => {
-    fetchProperties();
+    if (propertiesEnabled) fetchProperties();
     fetchProjects();
-  }, [fetchProperties, fetchProjects]);
+  }, [fetchProperties, fetchProjects, propertiesEnabled]);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,8 +63,8 @@ export function HomeCategories() {
     return () => { cancelled = true; };
   }, []);
 
-  const isInitialLoading = !mounted || ((isPropsLoading && properties.length === 0) && (isProjsLoading && projects.length === 0));
-  const isCompleteFailure = propsError && projsError && properties.length === 0 && projects.length === 0;
+  const isInitialLoading = !mounted || (propertiesEnabled ? ((isPropsLoading && properties.length === 0) && (isProjsLoading && projects.length === 0)) : (isProjsLoading && projects.length === 0));
+  const isCompleteFailure = propertiesEnabled ? propsError && projsError && properties.length === 0 && projects.length === 0 : projsError && projects.length === 0;
 
   if (isInitialLoading) {
     return (
@@ -92,7 +94,7 @@ export function HomeCategories() {
           <button
             type="button"
             onClick={() => {
-              fetchProperties();
+              if (propertiesEnabled) fetchProperties();
               fetchProjects();
             }}
             className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-sm cursor-pointer"
@@ -114,7 +116,7 @@ export function HomeCategories() {
     return p;
   });
 
-  const activeProperties = normalizedProperties.filter((p) => p.status !== 'sold' && p.status !== 'hidden');
+  const activeProperties = normalizedProperties.filter((p) => propertiesEnabled && p.status !== 'sold' && p.status !== 'hidden');
 
   const recommendedProps = activeProperties.filter((p) => p.displayCategory === 'recommended');
   const featuredProps = activeProperties.filter((p) => p.displayCategory === 'featured');

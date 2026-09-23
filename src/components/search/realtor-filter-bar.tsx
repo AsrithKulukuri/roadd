@@ -1,4 +1,7 @@
 "use client";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
+import { useVisibleProperties } from "@/components/shared/property-feature";
+import { PropertyFeature } from "@/components/shared/property-feature";
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -26,7 +29,6 @@ import type { FilterState } from "./search-filters";
 import { Slider } from "@/components/ui/slider";
 import { ModernBudgetDropdown } from "@/components/ui/modern-budget-dropdown";
 import { useLocationsStore } from "@/stores/locations-store";
-import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { evaluatePropertyFilters, evaluateProjectFilters } from "@/lib/search-engine";
 import { useIsMounted } from "@/hooks/use-is-mounted";
@@ -44,6 +46,7 @@ export function RealtorFilterBar({
   onOpenAllFilters,
   totalResults,
 }: RealtorFilterBarProps) {
+  const { propertiesEnabled } = useSiteFeatures();
   // Track open dropdown popover/sheet: "propertyType" | "price" | "postedBy" | "location" | null
   const [openDropdown, setOpenDropdown] = useState<
     "propertyType" | "price" | "postedBy" | "location" | null
@@ -57,7 +60,7 @@ export function RealtorFilterBar({
     fetchLocations();
   }, [fetchLocations]);
 
-  const allProperties = usePropertiesStore((state) => state.properties);
+  const allProperties = useVisibleProperties();
   const allProjects = useProjectsStore((state) => state.projects);
 
   // Live count summing BOTH matching properties and projects
@@ -268,7 +271,7 @@ export function RealtorFilterBar({
 
   // Property Type summary label
   const getPropertyTypeLabel = () => {
-    if (filters.propertyType.length === 0) return "Property Type";
+    if (filters.propertyType.length === 0) return propertiesEnabled ? "Property Type" : "Project Type";
     if (filters.propertyType.length === 1) {
       const val = filters.propertyType[0];
       if (val === "venture" || val === "crda-ventures" || val === "crda-venture") return "CRDA Ventures";
@@ -423,7 +426,7 @@ export function RealtorFilterBar({
         </button>
 
         {/* 4. POSTED BY BUTTON */}
-        <button
+        <PropertyFeature><button
           type="button"
           onClick={() =>
             setOpenDropdown(openDropdown === "postedBy" ? null : "postedBy")
@@ -442,7 +445,7 @@ export function RealtorFilterBar({
               openDropdown === "postedBy" && "rotate-180"
             )}
           />
-        </button>
+        </button></PropertyFeature>
 
         {/* 5. READY TO OCCUPY TOGGLE */}
         <button
@@ -578,7 +581,7 @@ export function RealtorFilterBar({
               {openDropdown === "propertyType" && (
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    {propertyTypes.map((opt) => {
+                    {propertyTypes.filter(opt => propertiesEnabled || ["apartment", "villa", "venture"].includes(opt.value)).map((opt) => {
                       const isSelected = filters.propertyType.includes(opt.value);
                       return (
                         <button
@@ -618,7 +621,7 @@ export function RealtorFilterBar({
               )}
 
               {/* 3. POSTED BY CONTENT */}
-              {openDropdown === "postedBy" && (
+              {propertiesEnabled && openDropdown === "postedBy" && (
                 <div className="space-y-3">
                   <div className="space-y-1">
                     {postedByOptions.map((opt) => {
@@ -886,10 +889,10 @@ export function RealtorFilterBar({
           {openDropdown === "propertyType" && (
             <div className="space-y-3">
               <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-1">
-                Property Type
+                {propertiesEnabled ? "Property Type" : "Project Type"}
               </div>
               <div className="space-y-1">
-                {propertyTypes.map((opt) => {
+                {propertyTypes.filter(opt => propertiesEnabled || ["apartment", "villa", "venture"].includes(opt.value)).map((opt) => {
                   const isSelected = filters.propertyType.includes(opt.value);
                   return (
                     <button
@@ -930,7 +933,7 @@ export function RealtorFilterBar({
           )}
 
           {/* 3. POSTED BY DROPDOWN CONTENT */}
-          {openDropdown === "postedBy" && (
+          {propertiesEnabled && openDropdown === "postedBy" && (
             <div className="space-y-3">
               <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-1">
                 Posted By

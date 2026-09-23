@@ -1,10 +1,12 @@
 "use client";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
 
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function CTASection() {
+  const { propertiesEnabled } = useSiteFeatures();
   return (
     <section className="py-20 sm:py-28 relative overflow-hidden bg-white dark:bg-bg-primary">
       {/* Background Subtle Gradient */}
@@ -17,7 +19,7 @@ export function CTASection() {
           </div>
           
           <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-black text-white mb-5 max-w-2xl tracking-tight">
-            Ready to Find Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-500">Dream Property?</span>
+            Ready to Find Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-500">{propertiesEnabled ? "Dream Property?" : "Dream Project?"}</span>
           </h2>
           
           <p className="text-base sm:text-lg md:text-xl text-slate-300 mb-9 max-w-2xl font-medium leading-relaxed">
@@ -26,8 +28,8 @@ export function CTASection() {
           
           <div className="flex flex-col sm:flex-row gap-4 w-full justify-center max-w-md mx-auto">
             <Button variant="amber" size="xl" className="w-full sm:w-auto" asChild>
-              <Link href="/search">
-                Explore Properties <ArrowRight className="ml-2 h-5 w-5" />
+              <Link href={propertiesEnabled ? "/search" : "/search?type=projects"}>
+                {propertiesEnabled ? "Explore Properties" : "Explore Projects"} <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button variant="outline" size="xl" className="w-full sm:w-auto text-white border-white/20 hover:bg-white/10" asChild>

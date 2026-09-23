@@ -1,4 +1,5 @@
 "use client";
+import { useVisibleProperties } from "@/components/shared/property-feature";
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -25,7 +26,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { findItemByRefId, getRefId } from "@/lib/ref-id";
 import { matchesPropertySearch, matchesProjectSearch } from "@/lib/search-engine";
@@ -123,7 +123,7 @@ export function RealtorSearchHeader({
   }, []);
 
   const router = useRouter();
-  const properties = usePropertiesStore((state) => state.properties);
+  const properties = useVisibleProperties();
   const projects = useProjectsStore((state) => state.projects);
 
   const refMatch = useMemo(() => {

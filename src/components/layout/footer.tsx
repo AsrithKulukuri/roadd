@@ -1,4 +1,6 @@
 "use client";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
+import { isPropertyOnlyHref } from "@/lib/property-visibility";
 
 import Link from "next/link";
 import { Logo } from "@/components/shared/logo";
@@ -38,6 +40,7 @@ const socialLinks = [
 ];
 
 export function Footer() {
+  const { propertiesEnabled } = useSiteFeatures();
   return (
     <footer className="relative bg-bg-primary border-t border-border-default">
       {/* Amber accent line at top */}
@@ -103,13 +106,13 @@ export function Footer() {
               Company
             </h4>
             <ul className="space-y-2.5">
-              {navigationLinks.footer.company.map((link) => (
+              {navigationLinks.footer.company.filter(link => propertiesEnabled || !isPropertyOnlyHref(link.href)).map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
                     className="text-sm text-text-secondary hover:text-amber-primary transition-colors"
                   >
-                    {link.label}
+                    {propertiesEnabled ? link.label : link.label.replace("Properties", "Projects")}
                   </Link>
                 </li>
               ))}
@@ -121,13 +124,13 @@ export function Footer() {
               For Buyers
             </h4>
             <ul className="space-y-2.5">
-              {navigationLinks.footer.forBuyers.map((link) => (
+              {navigationLinks.footer.forBuyers.filter(link => propertiesEnabled || !isPropertyOnlyHref(link.href)).map((link) => (
                 <li key={link.label}>
                   <Link
                     href={link.href}
                     className="text-sm text-text-secondary hover:text-amber-primary transition-colors"
                   >
-                    {link.label}
+                    {propertiesEnabled ? link.label : link.label.replace("Properties", "Projects")}
                   </Link>
                 </li>
               ))}
@@ -139,13 +142,13 @@ export function Footer() {
               For Owners
             </h4>
             <ul className="space-y-2.5">
-              {navigationLinks.footer.forOwners.map((link) => (
+              {navigationLinks.footer.forOwners.filter(link => propertiesEnabled || !isPropertyOnlyHref(link.href)).map((link) => (
                 <li key={link.label}>
                   <Link
                     href={link.href}
                     className="text-sm text-text-secondary hover:text-amber-primary transition-colors"
                   >
-                    {link.label}
+                    {propertiesEnabled ? link.label : link.label.replace("Properties", "Projects")}
                   </Link>
                 </li>
               ))}
@@ -163,7 +166,7 @@ export function Footer() {
                     href={link.href}
                     className="text-sm text-text-secondary hover:text-amber-primary transition-colors"
                   >
-                    {link.label}
+                    {propertiesEnabled ? link.label : link.label.replace("Properties", "Projects")}
                   </Link>
                 </li>
               ))}
@@ -231,7 +234,7 @@ export function Footer() {
                   href={link.href}
                   className="text-xs text-text-tertiary hover:text-amber-primary transition-colors"
                 >
-                  {link.label}
+                  {propertiesEnabled ? link.label : link.label.replace("Properties", "Projects")}
                 </Link>
               ))}
             </div>

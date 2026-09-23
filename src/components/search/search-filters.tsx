@@ -1,4 +1,7 @@
 "use client";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
+import { useVisibleProperties } from "@/components/shared/property-feature";
+import { PropertyFeature } from "@/components/shared/property-feature";
 
 import { useState, useEffect, useMemo } from "react";
 import {
@@ -397,19 +400,21 @@ export function SearchFiltersModal({
   onApplyFilters,
   totalResults,
 }: SearchFiltersModalProps) {
+  const { propertiesEnabled } = useSiteFeatures();
   const [localFilters, setLocalFilters] = useState<FilterState>(filters);
-  const [activeDesktopTab, setActiveDesktopTab] = useState<TabId>("location");
+  const [selectedDesktopTab, setActiveDesktopTab] = useState<TabId>("location");
+  const activeDesktopTab = !propertiesEnabled && ["saleType", "postedBy", "verified", "furnishing", "agriculture"].includes(selectedDesktopTab) ? "location" : selectedDesktopTab;
   const { cities, fetchLocations } = useLocationsStore();
-  const properties = usePropertiesStore((state) => state.properties);
+  const properties = useVisibleProperties();
   const projects = useProjectsStore((state) => state.projects);
   const fetchProperties = usePropertiesStore((state) => state.fetchProperties);
   const fetchProjects = useProjectsStore((state) => state.fetchProjects);
 
   useEffect(() => {
     fetchLocations();
-    if (properties.length === 0) fetchProperties();
+    if (propertiesEnabled && properties.length === 0) fetchProperties();
     if (projects.length === 0) fetchProjects();
-  }, [fetchLocations, fetchProperties, fetchProjects, properties.length, projects.length]);
+  }, [fetchLocations, fetchProperties, fetchProjects, properties.length, projects.length, propertiesEnabled]);
 
   useEffect(() => {
     if (isOpen) {
@@ -652,7 +657,7 @@ export function SearchFiltersModal({
           {/* 2. Property Type & Sub Property Types */}
           <div className="py-3.5 space-y-3">
             <label className="text-[13px] font-semibold text-slate-900 block mb-1">
-              2. Property Type
+              {propertiesEnabled ? "2. Property Type" : "2. Project Type"}
             </label>
             <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
               {[
@@ -661,7 +666,7 @@ export function SearchFiltersModal({
                 { label: "CRDA Ventures", val: "venture", icon: Landmark },
                 { label: "Plot / Land", val: "residential-land", icon: Trees },
                 { label: "Commercial", val: "commercial-spaces", icon: Briefcase },
-              ].map((item) => {
+              ].filter(item => propertiesEnabled || ["apartment", "villa", "venture"].includes(item.val)).map((item) => {
                 const isSelected = localFilters.propertyType.includes(item.val) || (item.val === "residential-land" && (localFilters.propertyType.includes("residential-plot") || localFilters.propertyType.includes("plot")));
                 const Icon = item.icon;
                 return (
@@ -689,7 +694,7 @@ export function SearchFiltersModal({
             </div>
 
             {/* Sub Property Types Chips */}
-            <div className="pt-2">
+            <PropertyFeature><div className="pt-2">
               <label className="text-xs font-semibold text-slate-700 block mb-1.5">
                 Sub Property Types
               </label>
@@ -722,7 +727,7 @@ export function SearchFiltersModal({
                   );
                 })}
               </div>
-            </div>
+            </div></PropertyFeature>
           </div>
 
           {/* 3. Budget: Dropdowns + Range Slider */}
@@ -777,7 +782,7 @@ export function SearchFiltersModal({
           </div>
 
           {/* 4. Sale Type */}
-          <CollapsibleSection title="4. Sale Type">
+          <PropertyFeature><CollapsibleSection title="4. Sale Type">
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
               {[
                 { label: "New Property", val: "new" },
@@ -794,7 +799,7 @@ export function SearchFiltersModal({
                 );
               })}
             </div>
-          </CollapsibleSection>
+          </CollapsibleSection></PropertyFeature>
 
           {/* 5. BHK & Bathroom */}
           <div className="py-3.5 space-y-3">
@@ -814,7 +819,7 @@ export function SearchFiltersModal({
               })}
             </div>
 
-            <div className="pt-2">
+            <PropertyFeature><div className="pt-2">
               <label className="text-xs font-semibold text-slate-700 block mb-1.5">Bathrooms</label>
               <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
                 {["1", "2", "3", "4", "5+"].map((w) => {
@@ -829,7 +834,7 @@ export function SearchFiltersModal({
                   );
                 })}
               </div>
-            </div>
+            </div></PropertyFeature>
           </div>
 
           {/* 6. Covered Area */}
@@ -917,7 +922,7 @@ export function SearchFiltersModal({
           </CollapsibleSection>
 
           {/* 8. Posted By */}
-          <CollapsibleSection title="8. Posted By">
+          <PropertyFeature><CollapsibleSection title="8. Posted By">
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
               {[
                 { label: "Owners", val: "owner" },
@@ -935,7 +940,7 @@ export function SearchFiltersModal({
                 );
               })}
             </div>
-          </CollapsibleSection>
+          </CollapsibleSection></PropertyFeature>
 
           {/* 9. Photos & Videos */}
           <CollapsibleSection title="9. Photos & Videos">
@@ -961,7 +966,7 @@ export function SearchFiltersModal({
           <CollapsibleSection title="10. Posted Since">
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
               {[
-                { label: "All Properties", val: "any" },
+                { label: propertiesEnabled ? "All Properties" : "All Projects", val: "any" },
                 { label: "Yesterday", val: "1day" },
                 { label: "Last 3 Days", val: "3days" },
                 { label: "Last Week", val: "7days" },
@@ -982,7 +987,7 @@ export function SearchFiltersModal({
           </CollapsibleSection>
 
           {/* 11. Verified Properties */}
-          <CollapsibleSection title="11. Verified Properties">
+          <PropertyFeature><CollapsibleSection title="11. Verified Properties">
             <div className="divide-y divide-slate-100 py-1">
               <ToggleSwitch
                 label="Verified Properties Only"
@@ -990,20 +995,20 @@ export function SearchFiltersModal({
                 onChange={() => toggleArrayFilter("verifiedBadges", "owner_verified")}
               />
               <ToggleSwitch
-                label="RERA Registered Properties"
+                label={propertiesEnabled ? "RERA Registered Properties" : "RERA Registered Projects"}
                 checked={localFilters.reraRegisteredProperties}
                 onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val })}
               />
               <ToggleSwitch
-                label="ROAD Exclusive Properties"
+                label={propertiesEnabled ? "ROAD Exclusive Properties" : "ROAD Exclusive Projects"}
                 checked={localFilters.roadExclusive}
                 onChange={(val) => setLocalFilters({ ...localFilters, roadExclusive: val })}
               />
             </div>
-          </CollapsibleSection>
+          </CollapsibleSection></PropertyFeature>
 
           {/* 12. Furnishing */}
-          <CollapsibleSection title="12. Furnishing">
+          <PropertyFeature><CollapsibleSection title="12. Furnishing">
             <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
               {[
                 { label: "Furnished", val: "furnished" },
@@ -1021,7 +1026,7 @@ export function SearchFiltersModal({
                 );
               })}
             </div>
-          </CollapsibleSection>
+          </CollapsibleSection></PropertyFeature>
 
           {/* 13. Amenities */}
           <CollapsibleSection title="13. Amenities">
@@ -1074,7 +1079,7 @@ export function SearchFiltersModal({
           </CollapsibleSection>
 
           {/* 15. Water & Agriculture */}
-          <CollapsibleSection title="15. Water & Agriculture">
+          <PropertyFeature><CollapsibleSection title="15. Water & Agriculture">
             <div className="space-y-3 py-1">
               <label className="text-xs font-semibold text-slate-700 block">Water Source</label>
               <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
@@ -1096,13 +1101,13 @@ export function SearchFiltersModal({
                 })}
               </div>
             </div>
-          </CollapsibleSection>
+          </CollapsibleSection></PropertyFeature>
 
         </div>
 
         {/* 3. Sticky Bottom CTA — 3 Smart Count Buttons */}
         <div className="p-3 bg-white border-t border-slate-100 fixed bottom-0 left-0 right-0 z-30 shadow-2xl flex items-center gap-1.5">
-          <button
+          <PropertyFeature><button
             type="button"
             onClick={() => handleApply("all")}
             className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-98 text-slate-950 font-black text-xs rounded-full shadow-sm transition-all cursor-pointer text-center flex items-center justify-center gap-1"
@@ -1111,8 +1116,8 @@ export function SearchFiltersModal({
             <span className="px-1.5 py-0.2 rounded-full bg-slate-950/15 text-slate-950 font-black text-[11px]">
               {totalCount}
             </span>
-          </button>
-          <button
+          </button></PropertyFeature>
+          <PropertyFeature><button
             type="button"
             onClick={() => handleApply("properties")}
             className="flex-1 py-2.5 bg-slate-950 hover:bg-slate-900 active:scale-98 text-white font-black text-xs rounded-full shadow-sm transition-all cursor-pointer text-center flex items-center justify-center gap-1"
@@ -1121,7 +1126,7 @@ export function SearchFiltersModal({
             <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-white font-black text-[11px]">
               {propCount}
             </span>
-          </button>
+          </button></PropertyFeature>
           <button
             type="button"
             onClick={() => handleApply("projects")}
@@ -1157,7 +1162,7 @@ export function SearchFiltersModal({
         <div className="flex-1 flex overflow-hidden">
           {/* Left Column */}
           <div className="w-[220px] border-r border-slate-200 bg-white overflow-y-auto shrink-0 divide-y divide-slate-100 no-scrollbar">
-            {DESKTOP_CATEGORY_TABS.map((tab) => {
+            {DESKTOP_CATEGORY_TABS.filter(tab => propertiesEnabled || !["saleType", "postedBy", "verified", "furnishing", "agriculture"].includes(tab.id)).map((tab) => {
               const active = activeDesktopTab === tab.id;
               return (
                 <button
@@ -1169,7 +1174,7 @@ export function SearchFiltersModal({
                     active ? "text-slate-900 font-semibold bg-slate-50/80" : "text-slate-700 hover:bg-slate-50/50"
                   )}
                 >
-                  <span>{tab.label}</span>
+                  <span>{propertiesEnabled ? tab.label : tab.label.replace("Property Type", "Project Type")}</span>
                 </button>
               );
             })}
@@ -1259,12 +1264,12 @@ export function SearchFiltersModal({
                 {/* Quick Toggle Switches */}
                 <div className="divide-y divide-slate-100 pt-3 border-t border-slate-100">
                   <ToggleSwitch
-                    label="ROAD Exclusive Properties"
+                    label={propertiesEnabled ? "ROAD Exclusive Properties" : "ROAD Exclusive Projects"}
                     checked={localFilters.roadExclusive}
                     onChange={(val) => setLocalFilters({ ...localFilters, roadExclusive: val })}
                   />
                   <ToggleSwitch
-                    label="RERA Registered Properties"
+                    label={propertiesEnabled ? "RERA Registered Properties" : "RERA Registered Projects"}
                     checked={localFilters.reraRegisteredProperties}
                     onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val })}
                   />
@@ -1361,7 +1366,7 @@ export function SearchFiltersModal({
             {activeDesktopTab === "propertyType" && (
               <div className="space-y-6">
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">Property Type</label>
+                  <label className="text-[13px] font-semibold text-slate-900 block mb-2.5">{propertiesEnabled ? "Property Type" : "Project Type"}</label>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     {[
                       { label: "Flat / Apartment", val: "apartment", icon: Building },
@@ -1369,7 +1374,7 @@ export function SearchFiltersModal({
                       { label: "CRDA Ventures", val: "venture", icon: Landmark },
                       { label: "Plot / Land", val: "residential-land", icon: Trees },
                       { label: "Commercial Space", val: "commercial-spaces", icon: Briefcase },
-                    ].map((item) => {
+                    ].filter(item => propertiesEnabled || ["apartment", "villa", "venture"].includes(item.val)).map((item) => {
                       const isSelected = localFilters.propertyType.includes(item.val) || (item.val === "residential-land" && (localFilters.propertyType.includes("residential-plot") || localFilters.propertyType.includes("plot")));
                       const Icon = item.icon;
                       return (
@@ -1397,7 +1402,7 @@ export function SearchFiltersModal({
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 space-y-2.5">
+                <PropertyFeature><div className="pt-4 border-t border-slate-100 space-y-2.5">
                   <label className="text-[13px] font-semibold text-slate-900 block">Sub Property Types</label>
                   <div className="flex flex-wrap gap-2.5">
                     {[
@@ -1417,7 +1422,7 @@ export function SearchFiltersModal({
                       />
                     ))}
                   </div>
-                </div>
+                </div></PropertyFeature>
               </div>
             )}
 
@@ -1504,7 +1509,7 @@ export function SearchFiltersModal({
 
 
             {/* 8. Sale Type Tab */}
-            {activeDesktopTab === "saleType" && (
+            {propertiesEnabled && activeDesktopTab === "saleType" && (
               <div className="space-y-4">
                 <label className="text-[13px] font-semibold text-slate-900 block">Sale Type</label>
                 <div className="flex flex-wrap gap-2.5">
@@ -1529,7 +1534,7 @@ export function SearchFiltersModal({
                 <label className="text-[13px] font-semibold text-slate-900 block">Posted Since</label>
                 <div className="flex flex-wrap gap-2.5">
                   {[
-                    { label: "All Properties", val: "any" },
+                    { label: propertiesEnabled ? "All Properties" : "All Projects", val: "any" },
                     { label: "Yesterday", val: "1day" },
                     { label: "Last 3 Days", val: "3days" },
                     { label: "Last 1 Week", val: "7days" },
@@ -1548,7 +1553,7 @@ export function SearchFiltersModal({
             )}
 
             {/* 10. Posted By Tab */}
-            {activeDesktopTab === "postedBy" && (
+            {propertiesEnabled && activeDesktopTab === "postedBy" && (
               <div className="space-y-4">
                 <label className="text-[13px] font-semibold text-slate-900 block">Posted By</label>
                 <div className="flex flex-wrap gap-2.5">
@@ -1569,7 +1574,7 @@ export function SearchFiltersModal({
             )}
 
             {/* 12. Furnishing Tab */}
-            {activeDesktopTab === "furnishing" && (
+            {propertiesEnabled && activeDesktopTab === "furnishing" && (
               <div className="space-y-4">
                 <label className="text-[13px] font-semibold text-slate-900 block">Furnishing Status</label>
                 <div className="flex flex-wrap gap-2.5">
@@ -1613,17 +1618,17 @@ export function SearchFiltersModal({
             )}
 
             {/* 14. Verified Properties Tab */}
-            {activeDesktopTab === "verified" && (
+            {propertiesEnabled && activeDesktopTab === "verified" && (
               <div className="space-y-4">
                 <label className="text-[13px] font-semibold text-slate-900 block">Trust & Verification</label>
                 <div className="divide-y divide-slate-100">
                   <ToggleSwitch
-                    label="RERA Registered Properties"
+                    label={propertiesEnabled ? "RERA Registered Properties" : "RERA Registered Projects"}
                     checked={localFilters.reraRegisteredProperties}
                     onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val })}
                   />
                   <ToggleSwitch
-                    label="ROAD Exclusive Properties"
+                    label={propertiesEnabled ? "ROAD Exclusive Properties" : "ROAD Exclusive Projects"}
                     checked={localFilters.roadExclusive}
                     onChange={(val) => setLocalFilters({ ...localFilters, roadExclusive: val })}
                   />
@@ -1672,7 +1677,7 @@ export function SearchFiltersModal({
             )}
 
             {/* 18. Water & Agriculture Tab */}
-            {activeDesktopTab === "agriculture" && (
+            {propertiesEnabled && activeDesktopTab === "agriculture" && (
               <div className="space-y-4">
                 <label className="text-[13px] font-semibold text-slate-900 block">Water & Crop Type</label>
                 <div className="flex flex-wrap gap-2.5">
@@ -1700,7 +1705,7 @@ export function SearchFiltersModal({
             Clear All
           </button>
           <div className="flex items-center gap-2.5">
-            <button
+            <PropertyFeature><button
               type="button"
               onClick={() => handleApply("all")}
               className="py-2.5 px-5 bg-amber-500 hover:bg-amber-600 active:scale-98 text-slate-950 font-black text-xs rounded-full shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-1.5"
@@ -1709,8 +1714,8 @@ export function SearchFiltersModal({
               <span className="px-1.5 py-0.5 rounded-full bg-slate-950/15 text-slate-950 font-black text-[11px]">
                 {totalCount}
               </span>
-            </button>
-            <button
+            </button></PropertyFeature>
+            <PropertyFeature><button
               type="button"
               onClick={() => handleApply("properties")}
               className="py-2.5 px-5 bg-slate-950 hover:bg-slate-900 active:scale-98 text-white font-black text-xs rounded-full shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-1.5"
@@ -1719,7 +1724,7 @@ export function SearchFiltersModal({
               <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-white font-black text-[11px]">
                 {propCount}
               </span>
-            </button>
+            </button></PropertyFeature>
             <button
               type="button"
               onClick={() => handleApply("projects")}

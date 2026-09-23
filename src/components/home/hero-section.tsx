@@ -1,4 +1,7 @@
 "use client";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
+import { isPropertyOnlyHref } from "@/lib/property-visibility";
+import { useVisibleProperties } from "@/components/shared/property-feature";
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -28,7 +31,6 @@ import {
 import { HOME_SECTION_ICONS } from "@/lib/home-section-icons";
 import { cn, formatINR, formatINRWords, formatPriceCompact } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { useContentStore, DEFAULT_DESKTOP_SEARCH_PHRASES, DEFAULT_MOBILE_SEARCH_PHRASES } from "@/stores/content-store";
 import { useBannersStore } from "@/stores/banners-store";
@@ -143,11 +145,13 @@ const getCategoryIcon = (id: string, name: string, iconName?: string) => {
 };
 
 export function HeroSection() {
+  const { propertiesEnabled } = useSiteFeatures();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { openProject } = useProjectOpenGuard();
-  const [activeTab, setActiveTab] = useState("buy");
+  const [selectedTab, setActiveTab] = useState("buy");
+  const activeTab = !propertiesEnabled && selectedTab === "buy" ? "projects" : selectedTab;
   const [locationTab, setLocationTab] = useState<"trending" | "vijayawada" | "guntur" | "popular" | "nearyou">("trending");
   const [showBuyMenu, setShowBuyMenu] = useState(false);
   const [activeBuySub, setActiveBuySub] = useState<string | null>(null);
@@ -308,7 +312,7 @@ export function HeroSection() {
 
   const currentBanner = banners[currentBannerIndex];
 
-  const properties = usePropertiesStore((state) => state.properties);
+  const properties = useVisibleProperties();
   const projects = useProjectsStore((state) => state.projects);
 
   const handleSearchSubmit = (e?: React.FormEvent, customBudget?: [number, number]) => {
@@ -351,10 +355,10 @@ export function HeroSection() {
       params.set("type", "projects");
       params.set("status", "new-launch");
     } else if (activeTab === "map" || activeTab === "nearme") {
-      params.set("type", "buy");
+      params.set("type", propertiesEnabled ? "buy" : "projects");
       params.set("view", "map");
     } else {
-      params.set("type", "buy");
+      params.set("type", propertiesEnabled ? "buy" : "projects");
     }
 
     if (searchQuery.trim()) {
@@ -625,7 +629,7 @@ export function HeroSection() {
                       {currentBanner.subtitle}
                     </p>
                   )}
-                  {currentBanner?.link_url && (
+                  {currentBanner?.link_url && (propertiesEnabled || !isPropertyOnlyHref(currentBanner.link_url)) && (
                     <Link
                       href={currentBanner.link_url}
                       className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs rounded-xl shadow-2xl transition-all border border-white/20 active:scale-95"
@@ -656,7 +660,7 @@ export function HeroSection() {
 
           {/* Mobile Tabs with Dark Text & Dark/Amber Underline */}
           <div className="flex items-center justify-center gap-2 mb-3 px-1 max-w-full relative z-[100] overflow-visible">
-            {tabs.map((tab) => {
+            {tabs.filter(tab => propertiesEnabled || tab.id !== "buy").map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <div key={`m-tab-${tab.id}`} className="relative group shrink-0">
@@ -832,7 +836,7 @@ export function HeroSection() {
                 <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
                   <span className="text-sm font-medium truncate select-none flex items-center w-full">
                     {activeSuggestions.length === 0 ? (
-                      <span className="text-slate-400">Search properties, projects, locations...</span>
+                      <span className="text-slate-400">{propertiesEnabled ? "Search properties, projects, locations..." : "Search projects, locations..."}</span>
                     ) : (
                       <span className="flex items-center min-w-0 truncate text-slate-400">
                         {!typedText.toLowerCase().startsWith("search") && (
@@ -1204,7 +1208,7 @@ export function HeroSection() {
 
           {/* Realtor.com Search Options Bar (Tabs over Dark Hero Banner) */}
           <div className="flex items-center justify-center gap-3 sm:gap-8 mb-3.5 sm:mb-4.5 px-1 max-w-full relative z-[100] overflow-visible">
-            {tabs.map((tab) => {
+            {tabs.filter(tab => propertiesEnabled || tab.id !== "buy").map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <div
@@ -1520,7 +1524,7 @@ export function HeroSection() {
                 <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
                   <span className="text-sm sm:text-base font-medium truncate select-none flex items-center w-full">
                     {activeSuggestions.length === 0 ? (
-                      <span className="text-slate-400">Search properties, projects, locations...</span>
+                      <span className="text-slate-400">{propertiesEnabled ? "Search properties, projects, locations..." : "Search projects, locations..."}</span>
                     ) : (
                       <span className="flex items-center min-w-0 truncate text-slate-400">
                         {!typedText.toLowerCase().startsWith("search") && (
@@ -2189,7 +2193,7 @@ export function HeroSection() {
                     {currentBanner.subtitle}
                   </p>
                 )}
-                {currentBanner?.link_url && (
+                {currentBanner?.link_url && (propertiesEnabled || !isPropertyOnlyHref(currentBanner.link_url)) && (
                   <Link
                     href={currentBanner.link_url}
                     className="inline-flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-2xl transition-all hover:scale-105 active:scale-95 border border-white/20 hover:border-amber-400 cursor-pointer"
@@ -2237,7 +2241,7 @@ export function HeroSection() {
         {/* Header row with Title and Desktop Slider Chevrons */}
         <div className="flex items-center justify-between">
           <h2 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-            Browse properties
+            {propertiesEnabled ? "Browse properties" : "Browse projects"}
           </h2>
           <div className="flex items-center gap-3">
             {/* Slide View Navigation Buttons */}
@@ -2267,7 +2271,7 @@ export function HeroSection() {
           ref={scrollContainerRef}
           className="flex items-stretch gap-3 sm:gap-4 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory py-2 -mx-4 px-4 sm:mx-0 sm:px-0"
         >
-          {browseCategories.map((cat, idx) => {
+          {browseCategories.filter(cat => propertiesEnabled || !isPropertyOnlyHref(cat.baseHref)).map((cat, idx) => {
             const IconComp = getCategoryIcon(cat.id, cat.title, cat.icon);
 
             return (

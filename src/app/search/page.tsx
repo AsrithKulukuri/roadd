@@ -1,4 +1,8 @@
 "use client";
+import { projectSearchFilters } from "@/lib/property-visibility";
+import { PropertyFeature } from "@/components/shared/property-feature";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
+import { useVisibleProperties } from "@/components/shared/property-feature";
 
 import { useState, useMemo, Suspense, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -74,6 +78,7 @@ export default function UnifiedSearchPageWrapper() {
 }
 
 function UnifiedSearchPage() {
+  const { propertiesEnabled } = useSiteFeatures();
   const searchParams = useSearchParams();
   const router = useRouter();
   
@@ -86,9 +91,10 @@ function UnifiedSearchPage() {
     );
   }, [searchParams]);
 
-  const [activeTab, setActiveTab] = useState<"all" | "properties" | "projects">(
+  const [selectedTab, setActiveTab] = useState<"all" | "properties" | "projects">(
     searchParams.get("type") === "projects" || searchParams.get("status") === "new-launch" ? "projects" : "all"
   );
+  const activeTab = propertiesEnabled ? selectedTab : "projects";
   const urlViewMode = searchParams.get("nearMe") === "true" || searchParams.get("view") === "map" ? "map" : "grid";
   const [userViewMode, setUserViewMode] = useState<"grid" | "map" | null>(null);
   const viewMode = userViewMode ?? urlViewMode;
@@ -120,7 +126,7 @@ function UnifiedSearchPage() {
     }
   }, []);
   
-  const properties = usePropertiesStore((state) => state.properties);
+  const properties = useVisibleProperties();
   const projects = useProjectsStore((state) => state.projects);
   const isLoadingProperties = usePropertiesStore((state) => state.isLoading);
   const isLoadingProjects = useProjectsStore((state) => state.isLoading);
@@ -154,7 +160,7 @@ function UnifiedSearchPage() {
   }, [activeTab, propertiesError, projectsError, properties.length, projects.length, fetchProperties, fetchProjects]);
 
   useEffect(() => {
-    fetchProperties();
+    if (propertiesEnabled) fetchProperties();
     fetchProjects();
 
     // Check for nearMe parameter and trigger geolocation
@@ -174,7 +180,7 @@ function UnifiedSearchPage() {
         );
       }
     }
-  }, [searchParams, fetchProperties, fetchProjects, isLocating, userLocation]);
+  }, [searchParams, fetchProperties, fetchProjects, isLocating, userLocation, propertiesEnabled]);
 
   // Lock body and html scroll when map view is active so ONLY the list pane / drawer scrolls
   useEffect(() => {
@@ -312,7 +318,8 @@ function UnifiedSearchPage() {
     };
   }, [searchParams]);
 
-  const [filters, setFilters] = useState<FilterState>(parseInitialParams);
+  const [storedFilters, setFilters] = useState<FilterState>(parseInitialParams);
+  const filters = useMemo(() => propertiesEnabled ? storedFilters : projectSearchFilters(storedFilters), [propertiesEnabled, storedFilters]);
 
   const [visibleCount, setVisibleCount] = useState<number>(12);
   const searchParamsString = searchParams.toString();
@@ -381,7 +388,7 @@ function UnifiedSearchPage() {
   }, [projects, filters, searchParams, userLocation]);
 
   // Combine and Sort
-  const isRentActive = (filters.listingType || []).includes("rent") || filters.transactionType === "rent";
+  const isRentActive = propertiesEnabled && (filters.listingType || []).includes("rent") || (propertiesEnabled && filters.transactionType === "rent");
 
   const combinedResults = useMemo(() => {
     let propList = activeTab !== "projects" ? filteredProperties : [];
@@ -476,7 +483,7 @@ function UnifiedSearchPage() {
     }
 
     // 1. Tab / Type / Listing Type
-    const currentTab = targetTab || activeTab;
+    const currentTab = propertiesEnabled ? targetTab || activeTab : "projects";
     if (currentTab === "properties" || currentTab === "projects") {
       newParams.set("type", currentTab);
     } else if (newFilters.listingType && newFilters.listingType.length > 0) {
@@ -849,7 +856,7 @@ function UnifiedSearchPage() {
                   </>
                 ) : (
                   <>
-                    <button
+                    <PropertyFeature><button
                       type="button"
                       onClick={() => handleTabChange("all")}
                       className={cn(
@@ -860,8 +867,8 @@ function UnifiedSearchPage() {
                       )}
                     >
                       All ({allCount})
-                    </button>
-                    <button
+                    </button></PropertyFeature>
+                    <PropertyFeature><button
                       type="button"
                       onClick={() => handleTabChange("properties")}
                       className={cn(
@@ -872,7 +879,7 @@ function UnifiedSearchPage() {
                       )}
                     >
                       Properties ({propCount})
-                    </button>
+                    </button></PropertyFeature>
                     <button
                       type="button"
                       onClick={() => handleTabChange("projects")}
@@ -962,7 +969,7 @@ function UnifiedSearchPage() {
                     if (activeTab === "properties") fetchProperties();
                     else if (activeTab === "projects") fetchProjects();
                     else {
-                      fetchProperties();
+                      if (propertiesEnabled) fetchProperties();
                       fetchProjects();
                     }
                   }}
@@ -992,7 +999,7 @@ function UnifiedSearchPage() {
                       className="px-6 py-3 rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 hover:border-[#f1a010] text-slate-900 dark:text-white font-extrabold text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer group"
                     >
                       <Plus className="w-4 h-4 text-[#f1a010] group-hover:rotate-90 transition-transform duration-200" />
-                      <span>Load More Properties</span>
+                      <span>{propertiesEnabled ? "Load More Properties" : "Load More Projects"}</span>
                       <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold ml-1">
                         ({displayedResults.length} of {combinedResults.length})
                       </span>

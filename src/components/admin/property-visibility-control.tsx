@@ -13,7 +13,7 @@ export function PropertyVisibilityControl() {
     setSaving(true);
     try {
       await save(!propertiesEnabled);
-      toast.success(propertiesEnabled ? "Properties hidden. Projects-only mode is live." : "Properties are visible again.");
+      toast.success(propertiesEnabled ? "Property features hidden. Your website layout is unchanged." : "Properties are visible again.");
     } catch (error) { toast.error(error instanceof Error ? error.message : "Could not save settings."); }
     finally { setSaving(false); }
   }
@@ -34,7 +34,7 @@ export function PropertyVisibilityControl() {
       </button>
     </div>
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border-default pt-4 text-xs text-text-secondary">
-      <p role="status">{error || (ready ? propertiesEnabled ? "Full experience · Properties and projects" : "Projects-only experience · Property features hidden" : "Checking current website mode…")}</p>
+      <p role="status">{error || (ready ? propertiesEnabled ? "Full experience · Properties and projects" : "Original website layout · Property features hidden" : "Checking current website mode…")}</p>
       {error ? <button className="cursor-pointer underline" onClick={() => void refresh()}>Retry</button> : <Link href="/" target="_blank" className="font-semibold underline underline-offset-4">Preview website</Link>}
     </div>
   </section>;

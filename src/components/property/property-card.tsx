@@ -1,4 +1,5 @@
 "use client";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
@@ -410,7 +411,12 @@ export function resolvePropertyCardDetails(property: Property) {
   };
 }
 
-export function PropertyCard({
+export function PropertyCard(props: PropertyCardProps) {
+  const { propertiesEnabled } = useSiteFeatures();
+  return propertiesEnabled ? <PropertyCardContent {...props} /> : null;
+}
+
+function PropertyCardContent({
   property,
   variant = "default",
   className,

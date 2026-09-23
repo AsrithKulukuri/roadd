@@ -1,4 +1,8 @@
 "use client";
+import { PropertyFeature } from "@/components/shared/property-feature";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
+import { isPropertyOnlyHref } from "@/lib/property-visibility";
+import { useVisibleProperties } from "@/components/shared/property-feature";
 import { requireActionSession } from "@/lib/action-auth";
 
 import { useState, useEffect, useMemo, useRef } from "react";
@@ -20,6 +24,7 @@ import { haptic } from "@/lib/haptics";
 import { useIsMounted } from "@/hooks/use-is-mounted";
 
 export function MobileBottomNav() {
+  const { propertiesEnabled } = useSiteFeatures();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,7 +36,7 @@ export function MobileBottomNav() {
   const savedPropertyIds = useFavoritesStore((state) => state.savedPropertyIds);
   const setSavedPropertyIds = useFavoritesStore((state) => state.setSavedPropertyIds);
   const syncWithSupabase = useFavoritesStore((state) => state.syncWithSupabase);
-  const storeProperties = usePropertiesStore((state) => state.properties);
+  const storeProperties = useVisibleProperties();
   const fetchProperties = usePropertiesStore((state) => state.fetchProperties);
   const storeProjects = useProjectsStore((state) => state.projects);
   const fetchProjects = useProjectsStore((state) => state.fetchProjects);
@@ -82,13 +87,13 @@ export function MobileBottomNav() {
 
   // Purge any orphan/phantom IDs that do not match active properties or projects
   useEffect(() => {
-    if (mounted && (storeProperties.length > 0 || storeProjects.length > 0)) {
+    if (propertiesEnabled && mounted && (storeProperties.length > 0 || storeProjects.length > 0)) {
       const cleanIds = savedPropertyIds.filter((id) => validIdSet.has(id));
       if (cleanIds.length !== savedPropertyIds.length) {
         setSavedPropertyIds(cleanIds);
       }
     }
-  }, [mounted, savedPropertyIds, validIdSet, storeProperties.length, storeProjects.length, setSavedPropertyIds]);
+  }, [mounted, savedPropertyIds, validIdSet, storeProperties.length, storeProjects.length, setSavedPropertyIds, propertiesEnabled]);
 
   const savedCount = useMemo(() => {
     if (!mounted || !savedPropertyIds || savedPropertyIds.length === 0) return 0;
@@ -517,7 +522,7 @@ export function MobileBottomNav() {
 
                 {/* 2. Navigation Links */}
                 <div className="flex flex-col space-y-4 px-1">
-                  {menuLinks.map((link) => (
+                  {menuLinks.filter(link => propertiesEnabled || !isPropertyOnlyHref(link.href)).map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
@@ -536,14 +541,14 @@ export function MobileBottomNav() {
                 {/* 4. Action Buttons */}
                 <div className="space-y-3">
                   {/* List Property Free Black Button */}
-                  <Link
+                  <PropertyFeature><Link
                     href="/list-with-us"
                     onClick={() => setIsMenuOpen(false)}
                     className="w-full py-3.5 px-4 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg active:scale-98 transition-all border border-slate-800"
                   >
                     <Plus className="w-4 h-4 stroke-[3] text-amber-400" />
                     <span>List Property Free</span>
-                  </Link>
+                  </Link></PropertyFeature>
 
                   {/* My Dashboard or Log In */}
                   {user ? (

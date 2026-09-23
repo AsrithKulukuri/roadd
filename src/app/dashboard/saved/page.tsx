@@ -1,4 +1,7 @@
 "use client";
+import { useSiteFeatures } from "@/components/providers/site-features-provider";
+import { PropertyFeature } from "@/components/shared/property-feature";
+import { useVisibleProperties } from "@/components/shared/property-feature";
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -35,11 +38,13 @@ export default function SavedPropertiesPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuthSession();
 
-  const [activeTab, setActiveTab] = useState<"all" | "properties" | "projects">("all");
+  const { propertiesEnabled } = useSiteFeatures();
+  const [selectedTab, setActiveTab] = useState<"all" | "properties" | "projects">("all");
+  const activeTab = propertiesEnabled ? selectedTab : "projects";
   const mounted = useIsMounted();
 
   const { savedPropertyIds, toggleFavorite } = useFavoritesStore();
-  const storeProperties = usePropertiesStore((s) => s.properties);
+  const storeProperties = useVisibleProperties();
   const fetchProperties = usePropertiesStore((s) => s.fetchProperties);
   const storeProjects = useProjectsStore((s) => s.projects);
   const fetchProjects = useProjectsStore((s) => s.fetchProjects);
@@ -84,7 +89,7 @@ export default function SavedPropertiesPage() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="font-heading text-3xl font-bold text-text-primary">
-            Saved Properties & Projects
+            {propertiesEnabled ? "Saved Properties & Projects" : "Saved Projects"}
           </h1>
           <p className="text-text-secondary mt-1">
             Organize and manage your favorite properties and projects.
@@ -105,7 +110,7 @@ export default function SavedPropertiesPage() {
         >
           All Saved ({totalSavedCount})
         </button>
-        <button
+        <PropertyFeature><button
           onClick={() => setActiveTab("properties")}
           className={cn(
             "px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all border cursor-pointer",
@@ -115,7 +120,7 @@ export default function SavedPropertiesPage() {
           )}
         >
           Properties ({savedProperties.length})
-        </button>
+        </button></PropertyFeature>
         <button
           onClick={() => setActiveTab("projects")}
           className={cn(
