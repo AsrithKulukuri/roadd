@@ -30,14 +30,11 @@ test("mobile header selects a city then an area without the old hero pills", asy
   await page.screenshot({ path: "test-results/compact-mobile-home.png" });
   await picker.click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("heading", { name: "Choose your city" })).toBeVisible();
-  await dialog.getByRole("button", { name: "Guntur", exact: true }).click();
-  await expect(dialog.getByRole("heading", { name: "Areas in Guntur" })).toBeVisible();
-  await dialog.getByRole("textbox", { name: "Search sublocations" }).fill("Gorantla");
+  await expect(dialog.getByRole("heading", { name: /Areas in Vijayawada/i })).toBeVisible();
   await page.screenshot({ path: "test-results/mobile-location-picker.png" });
-  await dialog.getByRole("button", { name: "Gorantla", exact: true }).click();
-  await expect(page).toHaveURL(/city=Guntur/);
-  await expect(page).toHaveURL(/locality=Gorantla/);
+  await dialog.getByRole("button", { name: "Benz Circle", exact: true }).click();
+  await expect(page).toHaveURL(/city=Vijayawada/);
+  await expect(page).toHaveURL(/locality=Benz(\+|%20)Circle/);
   await expect(page).toHaveURL(/type=projects/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
 });
