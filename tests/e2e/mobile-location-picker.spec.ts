@@ -44,8 +44,13 @@ test("mobile header selects a city then an area without the old hero pills", asy
   await picker.click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("heading", { name: /Areas in Vijayawada/i })).toBeVisible();
+  // Verify deleted cities and sublocations are NOT present in the dialog
+  await expect(dialog.getByRole("button", { name: "Guntur", exact: true })).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "Amaravati", exact: true })).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "Visakhapatnam", exact: true })).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "Benz Circle", exact: true })).toHaveCount(0);
   await page.screenshot({ path: "test-results/mobile-location-picker.png" });
-  const subBtn = dialog.locator("button").filter({ hasText: /Edupugallu|Benz Circle|Whole City/i }).first();
+  const subBtn = dialog.locator("button").filter({ hasText: /Edupugallu|Whole City/i }).first();
   await subBtn.click();
   await dialog.getByRole("button", { name: /^Apply/ }).click();
   await expect(page).toHaveURL(/city=Vijayawada/);

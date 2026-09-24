@@ -96,8 +96,8 @@ export function MobileLocationPicker() {
 
   const row = "flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-border-default bg-bg-card px-3.5 py-3 text-left text-sm font-semibold transition-colors hover:border-amber-500 hover:bg-amber-500/5 focus-visible:outline-2 focus-visible:outline-amber-500";
 
-  // Cities that have available listings or hero pills
-  const availableCities = cities.filter(c => c.isHeroPill || (c.sublocations && c.sublocations.length > 0) || c.name.toLowerCase() === cityName.toLowerCase());
+  // Only show cities that have available sublocations or match the current city
+  const availableCities = cities.filter(c => (c.sublocations && c.sublocations.length > 0) || c.name.toLowerCase() === cityName.toLowerCase());
 
   return (
     <div className="ml-auto shrink-0 sm:hidden">

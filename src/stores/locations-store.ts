@@ -30,85 +30,7 @@ export const INITIAL_CITIES: LocationCity[] = [
     isHeroPill: true,
     order: 1,
     sublocations: [
-      { id: "sub-vja-1", name: "Benz Circle", tagline: "Prime Commercial Hub", count: "45+ Homes" },
-      { id: "sub-vja-2", name: "Poranki", tagline: "Fastest Growing Residential", count: "32+ Homes" },
-      { id: "sub-vja-3", name: "Kanuru", tagline: "Premium Villas & Apartments", count: "28+ Homes" },
-      { id: "sub-vja-4", name: "Patamata", tagline: "Central City Living", count: "38+ Homes" },
-      { id: "sub-vja-5", name: "Tadepalli", tagline: "Near Capital Region", count: "25+ Homes" },
-      { id: "sub-vja-6", name: "Penamaluru", tagline: "Gated Communities", count: "20+ Homes" },
-      { id: "sub-vja-7", name: "Auto Nagar", tagline: "Commercial & Plots", count: "18+ Homes" },
-      { id: "sub-vja-8", name: "Gollapudi", tagline: "High Growth Hub", count: "15+ Homes" },
-      { id: "sub-vja-9", name: "Enikepadu", tagline: "NH-16 Corridor", count: "22+ Homes" },
-      { id: "sub-vja-10", name: "Edupugallu", tagline: "Residential Township", count: "18+ Homes" },
-    ],
-  },
-  {
-    id: "city-guntur",
-    name: "Guntur",
-    tagline: "Education & Commercial Epicenter",
-    icon: "Building2",
-    isHeroPill: true,
-    order: 2,
-    sublocations: [
-      { id: "sub-gtr-1", name: "Gorantla", tagline: "Top Residential Location", count: "35+ Homes" },
-      { id: "sub-gtr-2", name: "Amaravati Road", tagline: "Capital Highway Corridor", count: "42+ Homes" },
-      { id: "sub-gtr-3", name: "Brodipet", tagline: "Commercial & Premium Flats", count: "30+ Homes" },
-      { id: "sub-gtr-4", name: "Pattabhipuram", tagline: "Established Housing", count: "24+ Homes" },
-      { id: "sub-gtr-5", name: "Kaza", tagline: "High-yield Plots & Villas", count: "22+ Homes" },
-      { id: "sub-gtr-6", name: "Mangalagiri", tagline: "Near AIIMS & Highway", count: "40+ Homes" },
-      { id: "sub-gtr-7", name: "Pedakakani", tagline: "Connecting Corridor", count: "16+ Homes" },
-      { id: "sub-gtr-8", name: "Vidya Nagar", tagline: "Educational Hub", count: "14+ Homes" },
-    ],
-  },
-  {
-    id: "city-amaravati",
-    name: "Amaravati",
-    tagline: "AP Capital Mega Region",
-    icon: "MapPin",
-    isHeroPill: true,
-    order: 3,
-    sublocations: [
-      { id: "sub-amr-1", name: "Secretariat Zone", tagline: "Core Government District", count: "30+ Projects" },
-      { id: "sub-amr-2", name: "Rayapudi", tagline: "High Rise Township", count: "22+ Projects" },
-      { id: "sub-amr-3", name: "Tulluru", tagline: "Central Capital Corridor", count: "28+ Projects" },
-      { id: "sub-amr-4", name: "Velagapudi", tagline: "Administrative Hub", count: "18+ Projects" },
-      { id: "sub-amr-5", name: "Mandadam", tagline: "Premium Riverside Lands", count: "15+ Projects" },
-      { id: "sub-amr-6", name: "Uddandarayunipalem", tagline: "Foundation Corridor", count: "12+ Projects" },
-      { id: "sub-amr-7", name: "Nelapadu", tagline: "Judicial Complex Corridor", count: "16+ Projects" },
-      { id: "sub-amr-8", name: "Inavolu", tagline: "Institutional Zone", count: "14+ Projects" },
-    ],
-  },
-  {
-    id: "city-visakhapatnam",
-    name: "Visakhapatnam",
-    tagline: "Coastal Smart City & IT Hub",
-    icon: "Building2",
-    isHeroPill: false,
-    order: 4,
-    sublocations: [
-      { id: "sub-vzg-1", name: "Rushikonda", tagline: "IT SEZ & Beachside Villas", count: "50+ Homes" },
-      { id: "sub-vzg-2", name: "Madhurawada", tagline: "Fast Growing High-Rise Hub", count: "65+ Homes" },
-      { id: "sub-vzg-3", name: "MVP Colony", tagline: "Asia's Largest Layout", count: "45+ Homes" },
-      { id: "sub-vzg-4", name: "Gajuwaka", tagline: "Industrial & Housing Hub", count: "38+ Homes" },
-      { id: "sub-vzg-5", name: "Seethammadhara", tagline: "Prime Central Living", count: "30+ Homes" },
-      { id: "sub-vzg-6", name: "Yendada", tagline: "Coastal Scenic Corridor", count: "25+ Homes" },
-      { id: "sub-vzg-7", name: "Siripuram", tagline: "Commercial Heart", count: "20+ Homes" },
-    ],
-  },
-  {
-    id: "city-hyderabad",
-    name: "Hyderabad",
-    tagline: "Global Tech Mega City",
-    icon: "Building2",
-    isHeroPill: false,
-    order: 5,
-    sublocations: [
-      { id: "sub-hyd-1", name: "Gachibowli", tagline: "Financial District Hub", count: "120+ Homes" },
-      { id: "sub-hyd-2", name: "Madhapur", tagline: "IT Corridor Heart", count: "95+ Homes" },
-      { id: "sub-hyd-3", name: "Kondapur", tagline: "Premium Residential", count: "80+ Homes" },
-      { id: "sub-hyd-4", name: "Hitec City", tagline: "Tech Hub Living", count: "70+ Homes" },
-      { id: "sub-hyd-5", name: "Tellapur", tagline: "Luxury Villa Township", count: "55+ Homes" },
-      { id: "sub-hyd-6", name: "Kukatpally", tagline: "Metro & Commercial Hub", count: "60+ Homes" },
+      { id: "sub-vja-10", name: "Edupugallu", tagline: "Edupugallu, Vijayawada", count: "1 Home" },
     ],
   },
 ];
@@ -148,6 +70,18 @@ interface LocationsState {
   toggleHeroPill: (cityId: string) => void;
   resetToDefaults: () => void;
 }
+
+const saveCitiesToServer = async (cities: LocationCity[]) => {
+  try {
+    await fetch("/api/content/locations", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cities }),
+    });
+  } catch (err) {
+    console.warn("[LocationsStore] saveCitiesToServer error:", err);
+  }
+};
 
 export const useLocationsStore = create<LocationsState>()(
   persist(
@@ -189,6 +123,7 @@ export const useLocationsStore = create<LocationsState>()(
         const currentCities = get().cities;
         const existingCityIndex = currentCities.findIndex(c => c.name.toLowerCase() === cleanCity.toLowerCase());
 
+        let updatedCities: LocationCity[];
         if (existingCityIndex >= 0) {
           const target = currentCities[existingCityIndex];
           const existingSubIndex = target.sublocations.findIndex(s => s.name.toLowerCase() === cleanLoc.toLowerCase());
@@ -206,9 +141,8 @@ export const useLocationsStore = create<LocationsState>()(
               tagline: `${cleanLoc}, ${cleanCity}`,
             });
           }
-          const updatedCities = [...currentCities];
+          updatedCities = [...currentCities];
           updatedCities[existingCityIndex] = { ...target, sublocations: newSubs };
-          set({ cities: updatedCities });
         } else {
           const newCity: LocationCity = {
             id: `city-auto-${Date.now()}-${cleanCity.toLowerCase()}`,
@@ -226,8 +160,11 @@ export const useLocationsStore = create<LocationsState>()(
               }
             ]
           };
-          set({ cities: [...currentCities, newCity] });
+          updatedCities = [...currentCities, newCity];
         }
+
+        set({ cities: updatedCities });
+        void saveCitiesToServer(updatedCities);
       },
 
       fetchDefaultLocation: async () => {
@@ -273,117 +210,128 @@ export const useLocationsStore = create<LocationsState>()(
       fetchLocations: async () => {
         set({ isLoading: true });
         void get().fetchDefaultLocation();
+        let baseCities: LocationCity[] = [];
         try {
-          // Fetch master list from Supabase trending_locations, properties, and projects
-          const [trendRes, propsRes, projsRes] = await Promise.all([
-            supabase.from("trending_locations").select("*").order("created_at", { ascending: true }),
+          // 1. Fetch admin saved master locations from /api/content/locations
+          try {
+            const locRes = await fetch("/api/content/locations", { cache: "no-store" });
+            if (locRes.ok) {
+              const locData = await locRes.json();
+              if (locData.configured && Array.isArray(locData.cities)) {
+                baseCities = locData.cities;
+              }
+            }
+          } catch (e) {
+            console.warn("[LocationsStore] fetch /api/content/locations error:", e);
+          }
+
+          // If no admin configured cities found in DB, use current store cities or INITIAL_CITIES
+          if (baseCities.length === 0) {
+            const current = get().cities;
+            baseCities = current.length > 0 ? current : INITIAL_CITIES;
+          }
+
+          // 2. Fetch properties & projects to get live listing counts & dynamic sublocations
+          const [propsRes, projsRes] = await Promise.all([
             supabase.from("properties").select("location"),
             supabase.from("projects").select("location"),
           ]);
 
-          const cityLocalitiesMap: Record<string, Record<string, {
-            id: string;
-            name: string;
-            tagline?: string;
-            propCount: number;
-            projCount: number;
-            savedCount?: number;
-          }>> = {};
-
-          const ensureLocality = (cityName: string, locName: string) => {
-            const c = cityName.trim();
-            const l = (locName || c).trim();
-            if (!c || !l) return null;
-            if (!cityLocalitiesMap[c]) cityLocalitiesMap[c] = {};
-            if (!cityLocalitiesMap[c][l]) {
-              cityLocalitiesMap[c][l] = {
-                id: `sub-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-                name: l,
-                tagline: `${l}, ${c}`,
-                propCount: 0,
-                projCount: 0,
-              };
+          const cityLocalitiesCounts: Record<string, Record<string, { propCount: number; projCount: number }>> = {};
+          const recordCount = (cName: string, lName: string, type: "prop" | "proj") => {
+            const c = (cName || "").trim();
+            const l = (lName || c).trim();
+            if (!c || !l) return;
+            const cKey = c.toLowerCase();
+            const lKey = l.toLowerCase();
+            if (!cityLocalitiesCounts[cKey]) cityLocalitiesCounts[cKey] = {};
+            if (!cityLocalitiesCounts[cKey][lKey]) {
+              cityLocalitiesCounts[cKey][lKey] = { propCount: 0, projCount: 0 };
             }
-            return cityLocalitiesMap[c][l];
+            if (type === "prop") cityLocalitiesCounts[cKey][lKey].propCount += 1;
+            else cityLocalitiesCounts[cKey][lKey].projCount += 1;
           };
 
-          // 1. Process active properties
           if (propsRes.data) {
             for (const item of propsRes.data) {
               const loc = (item.location || {}) as { city?: string; locality?: string };
-              if (loc.city) {
-                const meta = ensureLocality(loc.city, loc.locality || loc.city);
-                if (meta) meta.propCount += 1;
-              }
+              if (loc.city) recordCount(loc.city, loc.locality || loc.city, "prop");
             }
           }
-
-          // 2. Process active projects
           if (projsRes.data) {
             for (const item of projsRes.data) {
               const loc = (item.location || {}) as { city?: string; locality?: string };
-              if (loc.city) {
-                const meta = ensureLocality(loc.city, loc.locality || loc.city);
-                if (meta) meta.projCount += 1;
-              }
+              if (loc.city) recordCount(loc.city, loc.locality || loc.city, "proj");
             }
           }
 
-          // 3. Process trending_locations (explicit admin saved sublocations)
-          if (trendRes.data) {
-            for (const row of trendRes.data) {
-              if (row.city) {
-                const meta = ensureLocality(row.city, row.locality || row.city);
-                if (meta) {
-                  meta.id = row.id;
-                  meta.savedCount = row.properties_count;
-                }
+          // 3. For each city in baseCities, update its sublocations with live counts
+          const updatedCities: LocationCity[] = baseCities.map((city) => {
+            const cityCounts = cityLocalitiesCounts[city.name.toLowerCase()] || {};
+            const existingSubs = city.sublocations || [];
+
+            // Update counts on existing sublocations
+            const updatedSubs = existingSubs.map((sub) => {
+              const counts = cityCounts[sub.name.toLowerCase()];
+              let countStr = sub.count || "Available";
+              if (counts && (counts.propCount > 0 || counts.projCount > 0)) {
+                const parts: string[] = [];
+                if (counts.propCount > 0) parts.push(`${counts.propCount} Home${counts.propCount > 1 ? "s" : ""}`);
+                if (counts.projCount > 0) parts.push(`${counts.projCount} Project${counts.projCount > 1 ? "s" : ""}`);
+                countStr = parts.join(" • ");
               }
-            }
-          }
-
-          // Build available sublocations with real dynamic counts
-          const cityMap: Record<string, SubLocation[]> = {};
-          for (const [cityName, localities] of Object.entries(cityLocalitiesMap)) {
-            cityMap[cityName] = Object.values(localities).map((meta) => {
-              const countParts: string[] = [];
-              if (meta.propCount > 0) countParts.push(`${meta.propCount} Home${meta.propCount > 1 ? "s" : ""}`);
-              if (meta.projCount > 0) countParts.push(`${meta.projCount} Project${meta.projCount > 1 ? "s" : ""}`);
-              const countStr = countParts.length > 0
-                ? countParts.join(" • ")
-                : (meta.savedCount ? `${meta.savedCount}+ Homes` : "Available");
-
-              return {
-                id: meta.id,
-                name: meta.name,
-                tagline: meta.tagline,
-                count: countStr,
-              };
+              return { ...sub, count: countStr };
             });
-          }
 
-          // Merge with current base cities, ensuring ONLY available sublocations are shown
-          const currentCities = get().cities.length > 0 ? get().cities : INITIAL_CITIES;
-          const updatedCities: LocationCity[] = currentCities.map((c) => {
-            const matchingSubs = cityMap[c.name] || cityMap[c.name.toLowerCase()];
+            // If a property or project was added in this city with a new locality, auto-append it
+            Object.entries(cityCounts).forEach(([subLower, counts]) => {
+              const exists = updatedSubs.some((s) => s.name.toLowerCase() === subLower);
+              if (!exists && (counts.propCount > 0 || counts.projCount > 0)) {
+                const parts: string[] = [];
+                if (counts.propCount > 0) parts.push(`${counts.propCount} Home${counts.propCount > 1 ? "s" : ""}`);
+                if (counts.projCount > 0) parts.push(`${counts.projCount} Project${counts.projCount > 1 ? "s" : ""}`);
+                const formattedName = subLower.charAt(0).toUpperCase() + subLower.slice(1);
+                updatedSubs.push({
+                  id: `sub-auto-${Date.now()}-${subLower.replace(/\s+/g, "-")}`,
+                  name: formattedName,
+                  tagline: `${formattedName}, ${city.name}`,
+                  count: parts.join(" • "),
+                });
+              }
+            });
+
             return {
-              ...c,
-              sublocations: matchingSubs && matchingSubs.length > 0 ? matchingSubs : (c.sublocations || []),
+              ...city,
+              sublocations: updatedSubs,
             };
           });
 
-          // Append any dynamic cities discovered from listings or trending locations
-          Object.keys(cityMap).forEach((cityName) => {
-            const exists = updatedCities.some((c) => c.name.toLowerCase() === cityName.toLowerCase());
+          // 4. If a property or project was added in a completely NEW city not in baseCities, auto-append that city
+          Object.entries(cityLocalitiesCounts).forEach(([cityNameLower, localities]) => {
+            const exists = updatedCities.some((c) => c.name.toLowerCase() === cityNameLower);
             if (!exists) {
+              const formattedCityName = cityNameLower.charAt(0).toUpperCase() + cityNameLower.slice(1);
+              const subs: SubLocation[] = Object.entries(localities).map(([locLower, counts]) => {
+                const parts: string[] = [];
+                if (counts.propCount > 0) parts.push(`${counts.propCount} Home${counts.propCount > 1 ? "s" : ""}`);
+                if (counts.projCount > 0) parts.push(`${counts.projCount} Project${counts.projCount > 1 ? "s" : ""}`);
+                const formattedLoc = locLower.charAt(0).toUpperCase() + locLower.slice(1);
+                return {
+                  id: `sub-auto-${Date.now()}-${locLower.replace(/\s+/g, "-")}`,
+                  name: formattedLoc,
+                  tagline: `${formattedLoc}, ${formattedCityName}`,
+                  count: parts.join(" • "),
+                };
+              });
+
               updatedCities.push({
-                id: `city-${Date.now()}-${cityName.toLowerCase()}`,
-                name: cityName,
-                tagline: `${cityName} Region`,
+                id: `city-auto-${Date.now()}-${cityNameLower}`,
+                name: formattedCityName,
+                tagline: `${formattedCityName} Region`,
                 icon: "MapPin",
                 isHeroPill: false,
                 order: updatedCities.length + 1,
-                sublocations: cityMap[cityName],
+                sublocations: subs,
               });
             }
           });
@@ -391,7 +339,7 @@ export const useLocationsStore = create<LocationsState>()(
           set({ cities: updatedCities, isLoading: false });
         } catch (err) {
           console.warn("[LocationsStore] fetchLocations error:", err);
-          set({ isLoading: false });
+          set({ cities: baseCities.length > 0 ? baseCities : get().cities, isLoading: false });
         }
       },
 
@@ -408,6 +356,7 @@ export const useLocationsStore = create<LocationsState>()(
 
         const updatedCities = [...get().cities, newCity];
         set({ cities: updatedCities });
+        void saveCitiesToServer(updatedCities);
 
         // Also insert default entry into Supabase
         try {
@@ -427,6 +376,7 @@ export const useLocationsStore = create<LocationsState>()(
           c.id === id ? { ...c, ...cityData } : c
         );
         set({ cities: updatedCities });
+        void saveCitiesToServer(updatedCities);
         toast.success("Location updated successfully!");
       },
 
@@ -434,6 +384,7 @@ export const useLocationsStore = create<LocationsState>()(
         const targetCity = get().cities.find((c) => c.id === id);
         const updatedCities = get().cities.filter((c) => c.id !== id);
         set({ cities: updatedCities });
+        void saveCitiesToServer(updatedCities);
 
         if (targetCity) {
           try {
@@ -476,6 +427,7 @@ export const useLocationsStore = create<LocationsState>()(
         });
 
         set({ cities: updatedCities });
+        void saveCitiesToServer(updatedCities);
 
         // Save directly to Supabase trending_locations via server API
         if (targetCity) {
@@ -495,17 +447,17 @@ export const useLocationsStore = create<LocationsState>()(
               const resData = await res.json();
               if (resData.data?.id) {
                 // Update local state with real Supabase uuid
-                set({
-                  cities: get().cities.map((c) => {
-                    if (c.id === cityId) {
-                      return {
-                        ...c,
-                        sublocations: c.sublocations.map((s) => s.id === newSubId ? { ...s, id: resData.data.id } : s),
-                      };
-                    }
-                    return c;
-                  }),
+                const finalCities = get().cities.map((c) => {
+                  if (c.id === cityId) {
+                    return {
+                      ...c,
+                      sublocations: c.sublocations.map((s) => s.id === newSubId ? { ...s, id: resData.data.id } : s),
+                    };
+                  }
+                  return c;
                 });
+                set({ cities: finalCities });
+                void saveCitiesToServer(finalCities);
               }
             }
           } catch (err) {
@@ -532,6 +484,7 @@ export const useLocationsStore = create<LocationsState>()(
         });
 
         set({ cities: updatedCities });
+        void saveCitiesToServer(updatedCities);
 
         // Update in Supabase via server API
         if (targetCity && subData.name) {
@@ -569,6 +522,7 @@ export const useLocationsStore = create<LocationsState>()(
         });
 
         set({ cities: updatedCities });
+        void saveCitiesToServer(updatedCities);
 
         // Delete from Supabase via server API
         if (targetCity) {
@@ -597,15 +551,21 @@ export const useLocationsStore = create<LocationsState>()(
           c.id === cityId ? { ...c, isHeroPill: !c.isHeroPill } : c
         );
         set({ cities: updatedCities });
+        void saveCitiesToServer(updatedCities);
       },
 
       resetToDefaults: () => {
         set({ cities: INITIAL_CITIES });
+        void saveCitiesToServer(INITIAL_CITIES);
         toast.info("Reset to default AP locations");
       },
     }),
     {
       name: "road_master_locations_store",
+      partialize: (state) => ({
+        userSelectedCity: state.userSelectedCity,
+        userSelectedLocalities: state.userSelectedLocalities,
+      }),
     }
   )
 );
