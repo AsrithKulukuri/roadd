@@ -41,6 +41,7 @@ import { toast } from "sonner";
 import { logoutUser } from "@/hooks/use-auth-session";
 import { PostRequirementModal } from "@/components/shared/post-requirement-modal";
 import { useProjectsStore } from "@/stores/projects-store";
+import { usePropertiesStore } from "@/stores/properties-store";
 import { useLocationsStore } from "@/stores/locations-store";
 import { useContentStore, DEFAULT_DESKTOP_SEARCH_PHRASES } from "@/stores/content-store";
 import { Slider } from "@/components/ui/slider";
@@ -88,14 +89,20 @@ export function Navbar() {
   const navDropdownRef = useRef<HTMLDivElement>(null);
 
   const { cities, fetchLocations, defaultLocation, fetchDefaultLocation, userSelectedCity, setUserSelectedLocation } = useLocationsStore();
-  const properties = useVisibleProperties();
+  const { fetchProperties } = usePropertiesStore();
+  const { fetchProjects } = useProjectsStore();
+  const visibleProps = useVisibleProperties();
+  const storeProps = usePropertiesStore((state) => state.properties);
+  const properties = visibleProps.length > 0 ? visibleProps : storeProps;
   const projects = useProjectsStore((state) => state.projects);
 
-  // Fetch admin master locations on mount
+  // Fetch admin master locations, properties and projects on mount
   useEffect(() => {
     fetchLocations();
     fetchDefaultLocation?.();
-  }, [fetchLocations, fetchDefaultLocation]);
+    fetchProperties?.();
+    fetchProjects?.();
+  }, [fetchLocations, fetchDefaultLocation, fetchProperties, fetchProjects]);
 
   // Admin-configured Hero Cities (matching hero-section pills exactly)
   const heroCities = useMemo(() => {

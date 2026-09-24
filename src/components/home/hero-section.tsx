@@ -32,6 +32,7 @@ import { HOME_SECTION_ICONS } from "@/lib/home-section-icons";
 import { cn, formatINR, formatINRWords, formatPriceCompact } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProjectsStore } from "@/stores/projects-store";
+import { usePropertiesStore } from "@/stores/properties-store";
 import { useContentStore, DEFAULT_DESKTOP_SEARCH_PHRASES, DEFAULT_MOBILE_SEARCH_PHRASES } from "@/stores/content-store";
 import { useBannersStore } from "@/stores/banners-store";
 import { useLocationsStore } from "@/stores/locations-store";
@@ -290,6 +291,8 @@ export function HeroSection() {
   }, [typedText, isDeleting, loopNum, activeSuggestions, searchTypewriterSpeed, searchTypewriterPause]);
 
   const { banners, fetchBanners } = useBannersStore();
+  const { fetchProperties } = usePropertiesStore();
+  const { fetchProjects } = useProjectsStore();
   const {
     cities,
     fetchLocations: fetchMasterLocations,
@@ -304,7 +307,9 @@ export function HeroSection() {
     fetchBanners();
     fetchMasterLocations();
     fetchCategories();
-  }, [fetchBanners, fetchMasterLocations, fetchCategories]);
+    fetchProperties();
+    fetchProjects();
+  }, [fetchBanners, fetchMasterLocations, fetchCategories, fetchProperties, fetchProjects]);
 
   // Hero cities (only those marked as isHeroPill, or fallback to first 3)
   const heroCities = useMemo(() => {
@@ -322,7 +327,9 @@ export function HeroSection() {
 
   const currentBanner = banners[currentBannerIndex];
 
-  const properties = useVisibleProperties();
+  const visibleProperties = useVisibleProperties();
+  const storeProperties = usePropertiesStore((state) => state.properties);
+  const properties = visibleProperties.length > 0 ? visibleProperties : storeProperties;
   const projects = useProjectsStore((state) => state.projects);
 
   const handleSearchSubmit = (e?: React.FormEvent, customBudget?: [number, number]) => {
@@ -420,31 +427,47 @@ export function HeroSection() {
     const targetCity = (userSelectedCity || "").toLowerCase().trim();
     const targetLocs = (userSelectedLocalities || []).map((l) => l.toLowerCase().trim()).filter(Boolean);
 
-    if (activeTab !== "projects") {
-      count = properties.filter((p) => {
-        if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
-        if (targetCity && p.location?.city && p.location.city.toLowerCase().trim() !== targetCity) {
-          return false;
-        }
-        if (targetLocs.length > 0) {
-          const propLoc = (p.location?.locality || "").toLowerCase().trim();
-          if (!targetLocs.some((tl) => propLoc.includes(tl) || tl.includes(propLoc))) return false;
-        }
-        return p.price >= heroBudget[0] && (isAnyMax || p.price <= heroBudget[1]);
-      }).length;
-    }
+    // Get all sublocalities for targetCity (e.g. Edupugallu for Vijayawada)
+    const activeCityObj = cities.find((c) => c.name.toLowerCase().trim() === targetCity);
+    const citySubNames = (activeCityObj?.sublocations || []).map((s) => s.name.toLowerCase().trim());
 
-    // Always count projects since all tabs (buy, nearme, projects) involve buying
+    const isLocationMatch = (loc?: { city?: string; locality?: string; address?: string }) => {
+      if (!targetCity) return true;
+      if (!loc) return true;
+      const c = (loc.city || "").toLowerCase().trim();
+      const l = (loc.locality || "").toLowerCase().trim();
+      const a = (loc.address || "").toLowerCase().trim();
+
+      // If user selected specific sublocalities (e.g. ['edupugallu'])
+      if (targetLocs.length > 0) {
+        return targetLocs.some((tl) => l.includes(tl) || c.includes(tl) || a.includes(tl) || tl.includes(l) || tl.includes(c));
+      }
+
+      // If user selected city (e.g. 'vijayawada')
+      // 1. Direct match with city name
+      if (c === targetCity || l === targetCity || a.includes(targetCity)) return true;
+
+      // 2. Check if the listing's city or locality is one of the sublocations of targetCity
+      // (e.g. Edupugallu is a sublocation of Vijayawada)
+      if (citySubNames.some((sub) => c === sub || l === sub || a.includes(sub) || sub.includes(c) || sub.includes(l))) {
+        return true;
+      }
+
+      return false;
+    };
+
+    // Count matching properties
+    count += properties.filter((p) => {
+      if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
+      if (!isLocationMatch(p.location)) return false;
+      return p.price >= heroBudget[0] && (isAnyMax || p.price <= heroBudget[1]);
+    }).length;
+
+    // Count matching projects
     count += projects.filter((p) => {
       if (p.isSoldOut || p.isPublished === false) return false;
-      if (targetCity && p.location?.city && p.location.city.toLowerCase().trim() !== targetCity) {
-        return false;
-      }
-      if (targetLocs.length > 0) {
-        const projLoc = (p.location?.locality || "").toLowerCase().trim();
-        if (!targetLocs.some((tl) => projLoc.includes(tl) || tl.includes(projLoc))) return false;
-      }
-      if (!p.configurations || p.configurations.length === 0) return false;
+      if (!isLocationMatch(p.location)) return false;
+      if (!p.configurations || p.configurations.length === 0) return true;
       return p.configurations.some((cfg) => {
         const pMin = cfg.priceMin || 0;
         const pMax = cfg.priceMax || pMin;
@@ -453,7 +476,7 @@ export function HeroSection() {
     }).length;
 
     return count;
-  }, [properties, projects, heroBudget, activeTab, userSelectedCity, userSelectedLocalities]);
+  }, [properties, projects, heroBudget, userSelectedCity, userSelectedLocalities, cities]);
 
   /** true whenever the user has moved either slider handle away from the full range */
   const budgetActive = heroBudget[0] > 1000000 || heroBudget[1] < 500000000;

@@ -267,12 +267,16 @@ export const useLocationsStore = create<LocationsState>()(
 
           // 3. For each city in baseCities, update its sublocations with live counts
           const updatedCities: LocationCity[] = baseCities.map((city) => {
-            const cityCounts = cityLocalitiesCounts[city.name.toLowerCase()] || {};
+            const cityKey = city.name.toLowerCase();
+            const cityCounts = cityLocalitiesCounts[cityKey] || {};
             const existingSubs = city.sublocations || [];
 
             // Update counts on existing sublocations
             const updatedSubs = existingSubs.map((sub) => {
-              const counts = cityCounts[sub.name.toLowerCase()];
+              const subKey = sub.name.toLowerCase();
+              // Check direct city counts, or if the listing's city was entered as the sublocation name (e.g. Edupugallu)
+              const counts = cityCounts[subKey]
+                || (cityLocalitiesCounts[subKey] && (cityLocalitiesCounts[subKey][subKey] || Object.values(cityLocalitiesCounts[subKey])[0]));
               let countStr = sub.count || "Available";
               if (counts && (counts.propCount > 0 || counts.projCount > 0)) {
                 const parts: string[] = [];
@@ -307,9 +311,11 @@ export const useLocationsStore = create<LocationsState>()(
           });
 
           // 4. If a property or project was added in a completely NEW city not in baseCities, auto-append that city
+          // ONLY if it is not already an existing city OR a sublocation of an existing city
           Object.entries(cityLocalitiesCounts).forEach(([cityNameLower, localities]) => {
-            const exists = updatedCities.some((c) => c.name.toLowerCase() === cityNameLower);
-            if (!exists) {
+            const existsAsCity = updatedCities.some((c) => c.name.toLowerCase() === cityNameLower);
+            const existsAsSub = updatedCities.some((c) => (c.sublocations || []).some((s) => s.name.toLowerCase() === cityNameLower));
+            if (!existsAsCity && !existsAsSub) {
               const formattedCityName = cityNameLower.charAt(0).toUpperCase() + cityNameLower.slice(1);
               const subs: SubLocation[] = Object.entries(localities).map(([locLower, counts]) => {
                 const parts: string[] = [];
