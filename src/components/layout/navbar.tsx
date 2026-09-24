@@ -87,7 +87,7 @@ export function Navbar() {
   const [navLocalitySearch, setNavLocalitySearch] = useState<string>("");
   const navDropdownRef = useRef<HTMLDivElement>(null);
 
-  const { cities, fetchLocations, defaultLocation, fetchDefaultLocation } = useLocationsStore();
+  const { cities, fetchLocations, defaultLocation, fetchDefaultLocation, userSelectedCity, setUserSelectedLocation } = useLocationsStore();
   const properties = useVisibleProperties();
   const projects = useProjectsStore((state) => state.projects);
 
@@ -103,17 +103,19 @@ export function Navbar() {
     return pills.length > 0 ? pills : cities.slice(0, 3);
   }, [cities]);
 
-  // Auto-sync active selected city with admin default location or available admin hero cities
+  // Auto-sync active selected city with userSelectedCity, admin default location or available admin hero cities
   useEffect(() => {
     const urlCity = searchParams.get("city") || searchParams.get("cities");
     if (urlCity) {
       setNavSelectedCity(urlCity);
+    } else if (userSelectedCity) {
+      setNavSelectedCity(userSelectedCity);
     } else if (defaultLocation?.city) {
       setNavSelectedCity(defaultLocation.city);
     } else if (heroCities.length > 0 && !heroCities.some((c) => c.name.toLowerCase() === navSelectedCity.toLowerCase())) {
       setNavSelectedCity(heroCities[0].name);
     }
-  }, [defaultLocation, heroCities, searchParams]);
+  }, [userSelectedCity, defaultLocation, heroCities, searchParams]);
 
   const matchingCount = useMemo(() => {
     let count = 0;
@@ -208,13 +210,21 @@ export function Navbar() {
     return () => clearTimeout(timer);
   }, [navTypedText, navIsDeleting, navLoopNum, activeNavSuggestions, searchTypewriterSpeed, searchTypewriterPause]);
 
-  const handleNavSearchSubmit = (e?: React.FormEvent, customLocation?: string) => {
+  const handleNavSearchSubmit = (e?: React.FormEvent, customCity?: string, customLocality?: string) => {
     if (e) e.preventDefault();
     const params = new URLSearchParams();
     params.set("type", "buy");
-    const loc = customLocation !== undefined ? customLocation : navSearchQuery.trim();
-    if (loc) {
-      params.set("location", loc);
+    const targetCity = customCity || navSelectedCity;
+    if (targetCity) {
+      params.set("city", targetCity);
+    }
+    if (customLocality) {
+      params.set("locality", customLocality);
+      setUserSelectedLocation(targetCity, [customLocality]);
+    } else if (navSearchQuery.trim()) {
+      params.set("q", navSearchQuery.trim());
+    } else if (targetCity) {
+      setUserSelectedLocation(targetCity, []);
     }
     const isAnyMax = navBudget[1] >= 30000000;
     if (navBudget[0] > 1000000 || !isAnyMax) {
@@ -644,8 +654,8 @@ export function Navbar() {
                             <div
                               onClick={() => {
                                 setOpenNavDropdown(null);
-                                setNavSearchQuery(navSelectedCity);
-                                handleNavSearchSubmit(undefined, navSelectedCity);
+                                setNavSearchQuery("");
+                                handleNavSearchSubmit(undefined, navSelectedCity, "");
                               }}
                               className="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-500/30 cursor-pointer flex items-center justify-between text-xs font-black text-slate-950 transition-all"
                             >
@@ -659,8 +669,8 @@ export function Navbar() {
                                 key={sub.id}
                                 onClick={() => {
                                   setOpenNavDropdown(null);
-                                  setNavSearchQuery(sub.name);
-                                  handleNavSearchSubmit(undefined, sub.name);
+                                  setNavSearchQuery("");
+                                  handleNavSearchSubmit(undefined, navSelectedCity, sub.name);
                                 }}
                                 className="px-3 py-2 rounded-xl hover:bg-amber-500/10 cursor-pointer flex items-center justify-between text-xs font-semibold text-slate-900 hover:text-amber-600 transition-colors"
                               >

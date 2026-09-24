@@ -4,6 +4,7 @@ import { publicListing } from "@/lib/public-listing";
 import { supabase } from '@/lib/supabase';
 import type { Property } from '@/types/property';
 import { toast } from 'sonner';
+import { useLocationsStore } from './locations-store';
 
 // Valid columns in Supabase properties table
 const VALID_PROPERTY_COLUMNS = new Set([
@@ -234,6 +235,11 @@ export const usePropertiesStore = create<PropertiesState>()(
           set((state) => ({
             properties: [property, ...state.properties.filter((p) => p.id !== property.id)],
           }));
+
+          const loc = property.location;
+          if (loc?.city) {
+            useLocationsStore.getState().autoRegisterLocation(loc.city, loc.locality);
+          }
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           toast.error(`Property was not saved: ${message}`);
@@ -483,6 +489,11 @@ export const usePropertiesStore = create<PropertiesState>()(
               p.id === id ? { ...updatedProperty, id, updatedAt: new Date().toISOString() } : p
             ),
           }));
+
+          const loc = updatedProperty.location;
+          if (loc?.city) {
+            useLocationsStore.getState().autoRegisterLocation(loc.city, loc.locality);
+          }
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           toast.error(`Property changes were not saved: ${message}`);

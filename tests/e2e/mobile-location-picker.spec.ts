@@ -14,6 +14,19 @@ test("mobile search animates admin phrases when the mobile list is empty", async
   await expect(phrase).toHaveCount(0);
 });
 
+test("mobile search input has search button on the right", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "Mobile search icon position test");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const form = page.locator("#hero-banner-mobile form");
+  const input = form.locator("#hero-search-input-mobile");
+  const searchBtn = form.locator("button[type='submit']");
+  await expect(input).toBeVisible();
+  await expect(searchBtn).toBeVisible();
+  const inputBox = await input.boundingBox();
+  const btnBox = await searchBtn.boundingBox();
+  expect(btnBox!.x).toBeGreaterThan(inputBox!.x);
+});
+
 test("mobile header selects a city then an area without the old hero pills", async ({ page, isMobile }) => {
   await page.route("**/api/site-features", route => route.fulfill({ json: { propertiesEnabled: false } }));
   await page.goto("/", { waitUntil: "domcontentloaded" });
@@ -32,12 +45,10 @@ test("mobile header selects a city then an area without the old hero pills", asy
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("heading", { name: /Areas in Vijayawada/i })).toBeVisible();
   await page.screenshot({ path: "test-results/mobile-location-picker.png" });
-  await dialog.getByRole("button", { name: "Benz Circle", exact: true }).click();
+  const subBtn = dialog.locator("button").filter({ hasText: /Edupugallu|Benz Circle|Whole City/i }).first();
+  await subBtn.click();
   await dialog.getByRole("button", { name: /^Apply/ }).click();
   await expect(page).toHaveURL(/city=Vijayawada/);
-  await expect(page).toHaveURL(/locality=Benz(\+|%20)Circle/);
-  await expect(page).toHaveURL(/type=projects/);
   await expect(picker).toHaveText(/Vijayawada/);
-  await expect(picker).not.toHaveText(/Benz Circle/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
 });

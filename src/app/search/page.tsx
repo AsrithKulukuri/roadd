@@ -8,6 +8,7 @@ import { useState, useMemo, Suspense, useEffect, useRef, useCallback } from "rea
 import { useSearchParams, useRouter } from "next/navigation";
 import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
+import { useLocationsStore } from "@/stores/locations-store";
 import { PropertyCard } from "@/components/property/property-card";
 import { SearchProjectCard } from "@/components/project/search-project-card";
 import type { Property } from "@/types/property";
@@ -260,6 +261,9 @@ function UnifiedSearchPage() {
     let cities: string[] = [];
     if (cityParam) {
       cities = cityParam.split(",").map(c => c.trim()).filter(Boolean);
+    } else {
+      const globalCity = useLocationsStore.getState().userSelectedCity;
+      if (globalCity) cities = [globalCity];
     }
 
     // Parse localities / sublocation
@@ -267,6 +271,9 @@ function UnifiedSearchPage() {
     let localities: string[] = [];
     if (localityParam) {
       localities = localityParam.split(",").map(l => l.trim()).filter(Boolean);
+    } else if (!cityParam) {
+      const globalLocs = useLocationsStore.getState().userSelectedLocalities;
+      if (globalLocs && globalLocs.length > 0) localities = globalLocs;
     }
 
     // Parse status / possessionStatus
@@ -589,6 +596,9 @@ function UnifiedSearchPage() {
   }, [searchParams, activeTab, router]);
 
   const handleFilterChange = (newFilters: FilterState) => {
+    if (newFilters.cities && newFilters.cities.length > 0) {
+      useLocationsStore.getState().setUserSelectedLocation(newFilters.cities[0], newFilters.localities || []);
+    }
     syncFiltersToUrl(newFilters, undefined, { removeModalParams: false });
   };
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/server-auth-guard";
 import { stampCrdaReview, validMeasurements, hasCompleteCrdaEvidence, type CrdaReview } from "@/lib/listing-quality";
+import { syncLocationToTrending } from "@/lib/location-sync";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -164,6 +165,15 @@ export async function POST(request: NextRequest) {
     if (body.mode === "update" && !saveResult.data) {
       return NextResponse.json({ success: false, error: "Project was not found" }, { status: 404 });
     }
+
+    // Automatically update sublocations & locations in trending_locations
+    const loc = (rawPayload.location || location) as Record<string, unknown> | undefined;
+    const city = typeof loc?.city === "string" ? loc.city : undefined;
+    const locality = typeof loc?.locality === "string" ? loc.locality : undefined;
+    if (city) {
+      void syncLocationToTrending(city, locality);
+    }
+
     return NextResponse.json({ success: true, project: saveResult.data });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Project persistence failed";

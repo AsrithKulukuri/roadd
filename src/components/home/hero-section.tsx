@@ -290,7 +290,14 @@ export function HeroSection() {
   }, [typedText, isDeleting, loopNum, activeSuggestions, searchTypewriterSpeed, searchTypewriterPause]);
 
   const { banners, fetchBanners } = useBannersStore();
-  const { cities, fetchLocations: fetchMasterLocations } = useLocationsStore();
+  const {
+    cities,
+    fetchLocations: fetchMasterLocations,
+    userSelectedCity,
+    userSelectedLocalities,
+    setUserSelectedLocation,
+    setUserSelectedCity,
+  } = useLocationsStore();
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
   useEffect(() => {
@@ -367,7 +374,14 @@ export function HeroSection() {
     if (searchQuery.trim()) {
       params.set("location", searchQuery.trim());
     } else {
-      params.set("focus", "search");
+      if (userSelectedCity) {
+        params.set("city", userSelectedCity);
+        if (userSelectedLocalities && userSelectedLocalities.length > 0) {
+          params.set("locality", userSelectedLocalities.join(","));
+        }
+      } else {
+        params.set("focus", "search");
+      }
     }
     const isAnyMax = b[1] >= 500000000;
     if (b[0] > 1000000 || !isAnyMax) {
@@ -403,9 +417,19 @@ export function HeroSection() {
   const matchingCount = useMemo(() => {
     let count = 0;
     const isAnyMax = heroBudget[1] >= 500000000;
+    const targetCity = (userSelectedCity || "").toLowerCase().trim();
+    const targetLocs = (userSelectedLocalities || []).map((l) => l.toLowerCase().trim()).filter(Boolean);
+
     if (activeTab !== "projects") {
       count = properties.filter((p) => {
         if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
+        if (targetCity && p.location?.city && p.location.city.toLowerCase().trim() !== targetCity) {
+          return false;
+        }
+        if (targetLocs.length > 0) {
+          const propLoc = (p.location?.locality || "").toLowerCase().trim();
+          if (!targetLocs.some((tl) => propLoc.includes(tl) || tl.includes(propLoc))) return false;
+        }
         return p.price >= heroBudget[0] && (isAnyMax || p.price <= heroBudget[1]);
       }).length;
     }
@@ -413,6 +437,13 @@ export function HeroSection() {
     // Always count projects since all tabs (buy, nearme, projects) involve buying
     count += projects.filter((p) => {
       if (p.isSoldOut || p.isPublished === false) return false;
+      if (targetCity && p.location?.city && p.location.city.toLowerCase().trim() !== targetCity) {
+        return false;
+      }
+      if (targetLocs.length > 0) {
+        const projLoc = (p.location?.locality || "").toLowerCase().trim();
+        if (!targetLocs.some((tl) => projLoc.includes(tl) || tl.includes(projLoc))) return false;
+      }
       if (!p.configurations || p.configurations.length === 0) return false;
       return p.configurations.some((cfg) => {
         const pMin = cfg.priceMin || 0;
@@ -422,7 +453,7 @@ export function HeroSection() {
     }).length;
 
     return count;
-  }, [properties, projects, heroBudget, activeTab]);
+  }, [properties, projects, heroBudget, activeTab, userSelectedCity, userSelectedLocalities]);
 
   /** true whenever the user has moved either slider handle away from the full range */
   const budgetActive = heroBudget[0] > 1000000 || heroBudget[1] < 500000000;
@@ -805,24 +836,10 @@ export function HeroSection() {
               handleSearchSubmit(e);
             }}
             className={cn(
-              "relative w-full max-w-[760px] h-[52px] mx-auto flex items-center bg-white border border-slate-200/90 rounded-xl px-4 shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] transition-all duration-200 group",
+              "relative w-full max-w-[760px] h-[52px] mx-auto flex items-center bg-white border border-slate-200/90 rounded-xl pl-4 pr-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] transition-all duration-200 group",
               isFocused ? "z-[60] border-slate-400 ring-2 ring-slate-200/60" : "z-30 hover:border-slate-300"
             )}
           >
-            <button
-              type="submit"
-              disabled={isNavigating}
-              aria-label="Search properties"
-              title="Search"
-              className="p-1 -ml-1 text-amber-500 hover:text-amber-600 transition-colors mr-2.5 shrink-0 cursor-pointer disabled:opacity-70"
-            >
-              {isNavigating ? (
-                <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
-              ) : (
-                <SolidSearch className="w-5 h-5" />
-              )}
-            </button>
-
             <div className="relative flex-1 min-w-0 h-full flex items-center">
               {!searchQuery && (
                 <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden text-left">
@@ -887,12 +904,26 @@ export function HeroSection() {
                   setSearchQuery("");
                   inputRef.current?.focus();
                 }}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 mr-1 cursor-pointer"
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 mr-1 cursor-pointer shrink-0"
                 aria-label="Clear search query"
               >
                 <X className="w-4 h-4" />
               </button>
             )}
+
+            <button
+              type="submit"
+              disabled={isNavigating}
+              aria-label="Search properties"
+              title="Search"
+              className="p-2 text-amber-500 hover:text-amber-600 transition-colors shrink-0 cursor-pointer disabled:opacity-70 flex items-center justify-center"
+            >
+              {isNavigating ? (
+                <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+              ) : (
+                <SolidSearch className="w-5 h-5" />
+              )}
+            </button>
 
 
 
@@ -1437,25 +1468,10 @@ export function HeroSection() {
               handleSearchSubmit(e);
             }}
             className={cn(
-              "relative w-full max-w-[760px] h-[52px] sm:h-[58px] mx-auto flex items-center bg-white border border-slate-200/90 rounded-full px-4 sm:px-5 shadow-[0_8px_30px_rgba(0,0,0,0.18)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-200 group",
+              "relative w-full max-w-[760px] h-[52px] sm:h-[58px] mx-auto flex items-center bg-white border border-slate-200/90 rounded-full pl-5 pr-2.5 sm:pr-3 shadow-[0_8px_30px_rgba(0,0,0,0.18)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-200 group",
               isFocused ? "z-[60] ring-2 ring-amber-500/30 border-amber-500" : "z-30 hover:border-slate-300"
             )}
           >
-            {/* Left: Search Action Button */}
-            <button
-              type="submit"
-              disabled={isNavigating}
-              aria-label="Search properties"
-              title="Search"
-              className="p-1.5 -ml-1 text-slate-500 hover:text-amber-500 transition-colors mr-2 sm:mr-3 shrink-0 cursor-pointer disabled:opacity-70"
-            >
-              {isNavigating ? (
-                <Loader2 className="w-5 h-5 sm:w-5.5 sm:h-5.5 animate-spin text-amber-500" />
-              ) : (
-                <Search className="w-5 h-5 sm:w-5.5 sm:h-5.5 stroke-[2.2]" />
-              )}
-            </button>
-
             {/* Input text wrapper */}
             <div className="relative flex-1 min-w-0 h-full flex items-center">
               {/* Animated placeholder overlay - shown only when searchQuery is empty */}
@@ -1524,12 +1540,27 @@ export function HeroSection() {
                   setSearchQuery("");
                   inputRef.current?.focus();
                 }}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 mr-1 cursor-pointer"
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 mr-1.5 cursor-pointer shrink-0"
                 aria-label="Clear search query"
               >
                 <X className="w-4 h-4" />
               </button>
             )}
+
+            {/* Right: Search Action Button */}
+            <button
+              type="submit"
+              disabled={isNavigating}
+              aria-label="Search properties"
+              title="Search"
+              className="p-2 sm:p-2.5 text-amber-500 hover:text-amber-600 transition-colors shrink-0 cursor-pointer disabled:opacity-70 flex items-center justify-center"
+            >
+              {isNavigating ? (
+                <Loader2 className="w-5 h-5 sm:w-5.5 sm:h-5.5 animate-spin text-amber-500" />
+              ) : (
+                <Search className="w-5 h-5 sm:w-5.5 sm:h-5.5 stroke-[2.2]" />
+              )}
+            </button>
 
 
 
@@ -1648,6 +1679,7 @@ export function HeroSection() {
             >
               {heroCities.map((city) => {
                 const isOpen = openLocationTab === city.id;
+                const isSelectedCity = (userSelectedCity || "").toLowerCase().trim() === city.name.toLowerCase().trim();
                 const hasSublocations = city.sublocations && city.sublocations.length > 0;
 
                 return (
@@ -1655,18 +1687,19 @@ export function HeroSection() {
                     key={city.id}
                     type="button"
                     onClick={() => {
+                      setUserSelectedCity(city.name);
                       setShowBuyMenu(false);
                       setShowProjectsMenu(false);
                       if (hasSublocations) {
                         setOpenLocationTab(isOpen ? null : city.id);
                         setSublocationSearch("");
                       } else {
-                        router.push(`/search?type=${activeTab}&location=${encodeURIComponent(city.name)}`);
+                        router.push(`/search?type=${activeTab}&city=${encodeURIComponent(city.name)}`);
                       }
                     }}
                     className={cn(
                       "h-[36px] sm:h-[40px] px-2.5 sm:px-4 rounded-full text-xs sm:text-[13px] flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border w-full text-center whitespace-nowrap",
-                      isOpen
+                      isOpen || isSelectedCity
                         ? "bg-white border-amber-500 text-slate-950 font-black shadow-md ring-2 ring-amber-500/25"
                         : "bg-white/95 hover:bg-white border-slate-200/90 hover:border-amber-400 text-slate-950 font-bold hover:shadow-md shadow-[0_2px_12px_rgba(0,0,0,0.08)]"
                     )}
@@ -1783,8 +1816,9 @@ export function HeroSection() {
                                   e.stopPropagation();
                                   setOpenLocationTab(null);
                                   setSublocationSearch("");
+                                  setUserSelectedLocation(activeCity.name, [sub.name]);
                                   router.push(
-                                    `/search?type=${activeTab}&location=${encodeURIComponent(
+                                    `/search?type=${activeTab}&city=${encodeURIComponent(
                                       activeCity.name
                                     )}&locality=${encodeURIComponent(sub.name)}`
                                   );

@@ -124,6 +124,15 @@ interface LocationsState {
   defaultLocation: DefaultLocationConfig;
   isLoading: boolean;
   
+  // Global User Selected Location
+  userSelectedCity: string;
+  userSelectedLocalities: string[];
+  setUserSelectedLocation: (city: string, localities?: string[]) => void;
+  setUserSelectedCity: (city: string) => void;
+  setUserSelectedLocalities: (localities: string[]) => void;
+  clearUserSelectedLocalities: () => void;
+  autoRegisterLocation: (city: string, locality?: string) => void;
+
   // Actions
   fetchLocations: () => Promise<void>;
   fetchDefaultLocation: () => Promise<void>;
@@ -149,7 +158,77 @@ export const useLocationsStore = create<LocationsState>()(
         locality: "",
         label: "Vijayawada",
       },
+      userSelectedCity: "Vijayawada",
+      userSelectedLocalities: [],
       isLoading: false,
+
+      setUserSelectedLocation: (city: string, localities?: string[]) => {
+        set({
+          userSelectedCity: city,
+          userSelectedLocalities: localities || [],
+        });
+      },
+
+      setUserSelectedCity: (city: string) => {
+        set({ userSelectedCity: city, userSelectedLocalities: [] });
+      },
+
+      setUserSelectedLocalities: (localities: string[]) => {
+        set({ userSelectedLocalities: localities });
+      },
+
+      clearUserSelectedLocalities: () => {
+        set({ userSelectedLocalities: [] });
+      },
+
+      autoRegisterLocation: (city: string, locality?: string) => {
+        const cleanCity = (city || "").trim();
+        const cleanLoc = (locality || cleanCity).trim();
+        if (!cleanCity) return;
+
+        const currentCities = get().cities;
+        const existingCityIndex = currentCities.findIndex(c => c.name.toLowerCase() === cleanCity.toLowerCase());
+
+        if (existingCityIndex >= 0) {
+          const target = currentCities[existingCityIndex];
+          const existingSubIndex = target.sublocations.findIndex(s => s.name.toLowerCase() === cleanLoc.toLowerCase());
+          const newSubs = [...target.sublocations];
+          if (existingSubIndex >= 0) {
+            newSubs[existingSubIndex] = {
+              ...newSubs[existingSubIndex],
+              count: "1+ Listings",
+            };
+          } else {
+            newSubs.unshift({
+              id: `sub-auto-${Date.now()}-${cleanLoc.toLowerCase().replace(/\s+/g, '-')}`,
+              name: cleanLoc,
+              count: "1 Home",
+              tagline: `${cleanLoc}, ${cleanCity}`,
+            });
+          }
+          const updatedCities = [...currentCities];
+          updatedCities[existingCityIndex] = { ...target, sublocations: newSubs };
+          set({ cities: updatedCities });
+        } else {
+          const newCity: LocationCity = {
+            id: `city-auto-${Date.now()}-${cleanCity.toLowerCase()}`,
+            name: cleanCity,
+            tagline: `${cleanCity} Region`,
+            icon: "MapPin",
+            isHeroPill: false,
+            order: currentCities.length + 1,
+            sublocations: [
+              {
+                id: `sub-auto-${Date.now()}-${cleanLoc.toLowerCase().replace(/\s+/g, '-')}`,
+                name: cleanLoc,
+                count: "1 Home",
+                tagline: `${cleanLoc}, ${cleanCity}`,
+              }
+            ]
+          };
+          set({ cities: [...currentCities, newCity] });
+        }
+      },
 
       fetchDefaultLocation: async () => {
         try {
@@ -157,13 +236,14 @@ export const useLocationsStore = create<LocationsState>()(
           if (res.ok) {
             const data = await res.json();
             if (data?.city) {
-              set({
+              set((state) => ({
                 defaultLocation: {
                   city: data.city,
                   locality: data.locality || "",
                   label: data.label || data.city,
                 },
-              });
+                userSelectedCity: state.userSelectedCity || data.city,
+              }));
             }
           }
         } catch (err) {
@@ -194,58 +274,123 @@ export const useLocationsStore = create<LocationsState>()(
         set({ isLoading: true });
         void get().fetchDefaultLocation();
         try {
-          // Fetch master list from Supabase trending_locations
-          const { data, error } = await supabase
-            .from("trending_locations")
-            .select("*")
-            .order("created_at", { ascending: true });
+          // Fetch master list from Supabase trending_locations, properties, and projects
+          const [trendRes, propsRes, projsRes] = await Promise.all([
+            supabase.from("trending_locations").select("*").order("created_at", { ascending: true }),
+            supabase.from("properties").select("location"),
+            supabase.from("projects").select("location"),
+          ]);
 
-          if (!error && data && data.length > 0) {
-            // Group by city
-            const cityMap: Record<string, SubLocation[]> = {};
-            for (const row of data) {
-              const cityName = row.city;
-              if (!cityName) continue;
-              if (!cityMap[cityName]) cityMap[cityName] = [];
-              cityMap[cityName].push({
-                id: row.id,
-                name: row.locality || cityName,
-                tagline: row.locality ? `${row.locality}, ${cityName}` : undefined,
-                count: row.properties_count ? `${row.properties_count}+ Homes` : "20+ Homes",
-              });
+          const cityLocalitiesMap: Record<string, Record<string, {
+            id: string;
+            name: string;
+            tagline?: string;
+            propCount: number;
+            projCount: number;
+            savedCount?: number;
+          }>> = {};
+
+          const ensureLocality = (cityName: string, locName: string) => {
+            const c = cityName.trim();
+            const l = (locName || c).trim();
+            if (!c || !l) return null;
+            if (!cityLocalitiesMap[c]) cityLocalitiesMap[c] = {};
+            if (!cityLocalitiesMap[c][l]) {
+              cityLocalitiesMap[c][l] = {
+                id: `sub-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                name: l,
+                tagline: `${l}, ${c}`,
+                propCount: 0,
+                projCount: 0,
+              };
             }
+            return cityLocalitiesMap[c][l];
+          };
 
-            // Map existing base cities and append dynamic cities
-            const currentCities = get().cities.length > 0 ? get().cities : INITIAL_CITIES;
-            const updatedCities: LocationCity[] = currentCities.map((c) => {
-              const matchingSubs = cityMap[c.name] || cityMap[c.name.toLowerCase()];
+          // 1. Process active properties
+          if (propsRes.data) {
+            for (const item of propsRes.data) {
+              const loc = (item.location || {}) as { city?: string; locality?: string };
+              if (loc.city) {
+                const meta = ensureLocality(loc.city, loc.locality || loc.city);
+                if (meta) meta.propCount += 1;
+              }
+            }
+          }
+
+          // 2. Process active projects
+          if (projsRes.data) {
+            for (const item of projsRes.data) {
+              const loc = (item.location || {}) as { city?: string; locality?: string };
+              if (loc.city) {
+                const meta = ensureLocality(loc.city, loc.locality || loc.city);
+                if (meta) meta.projCount += 1;
+              }
+            }
+          }
+
+          // 3. Process trending_locations (explicit admin saved sublocations)
+          if (trendRes.data) {
+            for (const row of trendRes.data) {
+              if (row.city) {
+                const meta = ensureLocality(row.city, row.locality || row.city);
+                if (meta) {
+                  meta.id = row.id;
+                  meta.savedCount = row.properties_count;
+                }
+              }
+            }
+          }
+
+          // Build available sublocations with real dynamic counts
+          const cityMap: Record<string, SubLocation[]> = {};
+          for (const [cityName, localities] of Object.entries(cityLocalitiesMap)) {
+            cityMap[cityName] = Object.values(localities).map((meta) => {
+              const countParts: string[] = [];
+              if (meta.propCount > 0) countParts.push(`${meta.propCount} Home${meta.propCount > 1 ? "s" : ""}`);
+              if (meta.projCount > 0) countParts.push(`${meta.projCount} Project${meta.projCount > 1 ? "s" : ""}`);
+              const countStr = countParts.length > 0
+                ? countParts.join(" • ")
+                : (meta.savedCount ? `${meta.savedCount}+ Homes` : "Available");
+
               return {
-                ...c,
-                sublocations: matchingSubs && matchingSubs.length > 0 ? matchingSubs : c.sublocations,
+                id: meta.id,
+                name: meta.name,
+                tagline: meta.tagline,
+                count: countStr,
               };
             });
-
-            // Check if any cities in cityMap aren't in updatedCities yet
-            Object.keys(cityMap).forEach((cityName) => {
-              const exists = updatedCities.some((c) => c.name.toLowerCase() === cityName.toLowerCase());
-              if (!exists) {
-                updatedCities.push({
-                  id: `city-${Date.now()}-${cityName.toLowerCase()}`,
-                  name: cityName,
-                  tagline: `${cityName} Region`,
-                  icon: "MapPin",
-                  isHeroPill: false,
-                  order: updatedCities.length + 1,
-                  sublocations: cityMap[cityName],
-                });
-              }
-            });
-
-            set({ cities: updatedCities, isLoading: false });
-          } else {
-            set({ isLoading: false });
           }
-        } catch {
+
+          // Merge with current base cities, ensuring ONLY available sublocations are shown
+          const currentCities = get().cities.length > 0 ? get().cities : INITIAL_CITIES;
+          const updatedCities: LocationCity[] = currentCities.map((c) => {
+            const matchingSubs = cityMap[c.name] || cityMap[c.name.toLowerCase()];
+            return {
+              ...c,
+              sublocations: matchingSubs && matchingSubs.length > 0 ? matchingSubs : (c.sublocations || []),
+            };
+          });
+
+          // Append any dynamic cities discovered from listings or trending locations
+          Object.keys(cityMap).forEach((cityName) => {
+            const exists = updatedCities.some((c) => c.name.toLowerCase() === cityName.toLowerCase());
+            if (!exists) {
+              updatedCities.push({
+                id: `city-${Date.now()}-${cityName.toLowerCase()}`,
+                name: cityName,
+                tagline: `${cityName} Region`,
+                icon: "MapPin",
+                isHeroPill: false,
+                order: updatedCities.length + 1,
+                sublocations: cityMap[cityName],
+              });
+            }
+          });
+
+          set({ cities: updatedCities, isLoading: false });
+        } catch (err) {
+          console.warn("[LocationsStore] fetchLocations error:", err);
           set({ isLoading: false });
         }
       },

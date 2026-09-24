@@ -4,6 +4,7 @@ import { publicListing } from "@/lib/public-listing";
 import { supabase } from '@/lib/supabase';
 import type { Project } from '@/types/project';
 import { toast } from 'sonner';
+import { useLocationsStore } from './locations-store';
 
 // Valid columns in Supabase projects table (matching actual database schema)
 const VALID_PROJECT_COLUMNS = new Set([
@@ -440,6 +441,11 @@ export const useProjectsStore = create<ProjectsState>()(
           if (!response.ok || !result?.success) {
             throw new Error(result?.error || 'Project could not be saved');
           }
+
+          const loc = project.location;
+          if (loc?.city) {
+            useLocationsStore.getState().autoRegisterLocation(loc.city, loc.locality);
+          }
         } catch (err: unknown) {
           set({ projects: previousProjects });
           const message = err instanceof Error ? err.message : String(err);
@@ -473,6 +479,12 @@ export const useProjectsStore = create<ProjectsState>()(
           if (!response.ok || !result?.success) {
             throw new Error(result?.error || 'Project could not be updated');
           }
+
+          const loc = cleanData.location;
+          if (loc?.city) {
+            useLocationsStore.getState().autoRegisterLocation(loc.city, loc.locality);
+          }
+
           await get().fetchProjects();
         } catch (err: unknown) {
           set({ projects: previousProjects });

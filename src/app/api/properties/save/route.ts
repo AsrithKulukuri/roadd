@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/server-auth-guard";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { validatePropertySpecifications } from "@/lib/property-specifications";
 import type { Property } from "@/types/property";
+import { syncLocationToTrending } from "@/lib/location-sync";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -89,6 +90,15 @@ export async function POST(request: Request) {
 
     if (error) throw error;
     if (mode === "update" && !data) return NextResponse.json({ success: false, error: "Property not found." }, { status: 404 });
+
+    // Automatically update sublocations & locations in trending_locations
+    const loc = (payload.location || cleanPayload.location) as Record<string, unknown> | undefined;
+    const city = typeof loc?.city === "string" ? loc.city : undefined;
+    const locality = typeof loc?.locality === "string" ? loc.locality : undefined;
+    if (city) {
+      void syncLocationToTrending(city, locality);
+    }
+
     return NextResponse.json({ success: true, property: data });
   } catch (error: unknown) {
     console.error("[PROPERTY SAVE ERROR]", error);

@@ -9,12 +9,21 @@ import { useSiteFeatures } from "@/components/providers/site-features-provider";
 import { cn } from "@/lib/utils";
 
 export function MobileLocationPicker() {
-  const { cities, defaultLocation, fetchLocations, fetchDefaultLocation } = useLocationsStore();
+  const {
+    cities,
+    defaultLocation,
+    fetchLocations,
+    fetchDefaultLocation,
+    userSelectedCity,
+    userSelectedLocalities,
+    setUserSelectedLocation,
+  } = useLocationsStore();
   const { propertiesEnabled } = useSiteFeatures();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const [open, setOpen] = useState(false);
+  const [activeCityId, setActiveCityId] = useState<string>("");
   const [selectedLocalities, setSelectedLocalities] = useState<string[]>([]);
 
   useEffect(() => {
@@ -22,26 +31,35 @@ export function MobileLocationPicker() {
     fetchDefaultLocation?.();
   }, [fetchLocations, fetchDefaultLocation]);
 
-  const targetCity = cities.find(item => item.name.toLowerCase() === (defaultLocation?.city || "vijayawada").toLowerCase())
-    || cities.find(item => item.name.toLowerCase() === "vijayawada")
+  const activeCityName = userSelectedCity || defaultLocation?.city || "Vijayawada";
+
+  // Find target city object
+  const targetCity = (activeCityId ? cities.find(c => c.id === activeCityId) : null)
+    || cities.find(item => item.name.toLowerCase() === activeCityName.toLowerCase())
+    || cities.find(item => item.name.toLowerCase() === (defaultLocation?.city || "vijayawada").toLowerCase())
     || cities[0];
-  const cityName = targetCity?.name || "Vijayawada";
+
+  const cityName = targetCity?.name || activeCityName;
+  // Available sublocations for target city
   const sublocations = targetCity?.sublocations || [];
 
-  // When opening, initialize selected localities from URL
+  // When opening, initialize selected localities from URL or global store
   useEffect(() => {
     if (open) {
+      if (targetCity) setActiveCityId(targetCity.id);
       const localityParam = params.get("locality") || params.get("localities") || "";
       if (localityParam) {
         setSelectedLocalities(localityParam.split(",").map(l => l.trim()).filter(Boolean));
+      } else if (userSelectedLocalities && userSelectedLocalities.length > 0) {
+        setSelectedLocalities(userSelectedLocalities);
       } else {
         setSelectedLocalities([]);
       }
     }
-  }, [open, params]);
+  }, [open, params, userSelectedLocalities, targetCity]);
 
-  // Always show ONLY default location name in the top navbar, not sublocation
-  const label = defaultLocation?.label || defaultLocation?.city || "Vijayawada";
+  // Always show ONLY default location or selected city name in the top navbar, not sublocation
+  const label = userSelectedCity || defaultLocation?.label || defaultLocation?.city || "Vijayawada";
 
   const toggleSublocation = (name: string) => {
     setSelectedLocalities((prev) => {
@@ -59,6 +77,10 @@ export function MobileLocationPicker() {
   };
 
   const applySelection = () => {
+    // 1. Flow globally into store so the entire website immediately inherits it
+    setUserSelectedLocation(cityName, selectedLocalities);
+
+    // 2. Direct to search / update URL
     const next = new URLSearchParams(pathname === "/search" ? params.toString() : "");
     for (const key of ["city", "cities", "locality", "localities", "sublocation", "location", "q", "search", "nearMe", "page", "focus", "openFilters"]) {
       next.delete(key);
@@ -73,6 +95,9 @@ export function MobileLocationPicker() {
   };
 
   const row = "flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-border-default bg-bg-card px-3.5 py-3 text-left text-sm font-semibold transition-colors hover:border-amber-500 hover:bg-amber-500/5 focus-visible:outline-2 focus-visible:outline-amber-500";
+
+  // Cities that have available listings or hero pills
+  const availableCities = cities.filter(c => c.isHeroPill || (c.sublocations && c.sublocations.length > 0) || c.name.toLowerCase() === cityName.toLowerCase());
 
   return (
     <div className="ml-auto shrink-0 sm:hidden">
@@ -95,6 +120,33 @@ export function MobileLocationPicker() {
               Select one or multiple sublocations to explore.
             </DialogDescription>
           </div>
+
+          {/* Quick city switcher tabs if multiple cities exist */}
+          {availableCities.length > 1 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              {availableCities.map((c) => {
+                const isActive = (targetCity?.id === c.id) || (cityName.toLowerCase() === c.name.toLowerCase());
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveCityId(c.id);
+                      setSelectedLocalities([]);
+                    }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap shrink-0 border cursor-pointer",
+                      isActive
+                        ? "bg-amber-500 text-slate-950 border-amber-500 shadow-2xs"
+                        : "bg-bg-primary text-text-secondary border-border-default hover:text-text-primary hover:border-slate-300"
+                    )}
+                  >
+                    {c.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           <div className="min-h-0 space-y-2 overflow-y-auto overscroll-contain pr-0.5">
             {/* Option to select All of City */}
