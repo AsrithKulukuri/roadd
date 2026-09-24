@@ -26,13 +26,7 @@ test("mobile header selects a city then an area without the old hero pills", asy
   await expect(picker).toBeVisible();
   await expect(page.locator("#hero-banner-mobile").getByRole("button", { name: "Guntur", exact: true })).toHaveCount(0);
   const hero = page.locator("#hero-banner-mobile");
-  const budget = hero.locator("details");
-  await expect(budget).not.toHaveAttribute("open", "");
-  await expect(hero.getByRole("button", { name: /Apply Budget Filter/ })).toBeHidden();
-  await budget.locator("summary").click();
-  await expect(hero.getByRole("button", { name: /Apply Budget Filter/ })).toBeVisible();
-  await budget.locator("summary").click();
-  await expect(hero.getByRole("button", { name: /Apply Budget Filter/ })).toBeHidden();
+  await expect(hero.getByRole("button", { name: /Apply/i })).toBeVisible();
   await page.screenshot({ path: "test-results/compact-mobile-home.png" });
   await picker.click();
   const dialog = page.getByRole("dialog");

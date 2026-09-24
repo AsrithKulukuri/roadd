@@ -113,12 +113,21 @@ export const INITIAL_CITIES: LocationCity[] = [
   },
 ];
 
+export interface DefaultLocationConfig {
+  city: string;
+  locality?: string;
+  label: string;
+}
+
 interface LocationsState {
   cities: LocationCity[];
+  defaultLocation: DefaultLocationConfig;
   isLoading: boolean;
   
   // Actions
   fetchLocations: () => Promise<void>;
+  fetchDefaultLocation: () => Promise<void>;
+  setDefaultLocation: (config: DefaultLocationConfig) => Promise<void>;
   addCity: (city: Omit<LocationCity, "id" | "order" | "sublocations"> & { sublocations?: SubLocation[] }) => Promise<void>;
   updateCity: (id: string, city: Partial<LocationCity>) => Promise<void>;
   deleteCity: (id: string) => Promise<void>;
@@ -135,10 +144,55 @@ export const useLocationsStore = create<LocationsState>()(
   persist(
     (set, get) => ({
       cities: INITIAL_CITIES,
+      defaultLocation: {
+        city: "Vijayawada",
+        locality: "",
+        label: "Vijayawada",
+      },
       isLoading: false,
+
+      fetchDefaultLocation: async () => {
+        try {
+          const res = await fetch("/api/content/default-location", { cache: "no-store" });
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.city) {
+              set({
+                defaultLocation: {
+                  city: data.city,
+                  locality: data.locality || "",
+                  label: data.label || data.city,
+                },
+              });
+            }
+          }
+        } catch (err) {
+          console.warn("[LocationsStore] fetchDefaultLocation error:", err);
+        }
+      },
+
+      setDefaultLocation: async (config) => {
+        set({ defaultLocation: config });
+        try {
+          const res = await fetch("/api/content/default-location", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(config),
+          });
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || "Failed to update default location");
+          }
+          toast.success(`Default top location set to "${config.label || config.city}"!`);
+        } catch (err: any) {
+          console.error("Failed to save default location to server:", err);
+          toast.error(err.message || "Failed to save default location to server");
+        }
+      },
 
       fetchLocations: async () => {
         set({ isLoading: true });
+        void get().fetchDefaultLocation();
         try {
           // Fetch master list from Supabase trending_locations
           const { data, error } = await supabase

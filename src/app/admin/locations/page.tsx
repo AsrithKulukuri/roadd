@@ -22,6 +22,8 @@ import {
   EyeOff,
   Flame,
   TrendingUp,
+  Loader2,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +40,9 @@ export default function AdminLocationsPage() {
     deleteSublocation,
     toggleHeroPill,
     resetToDefaults,
+    defaultLocation,
+    fetchDefaultLocation,
+    setDefaultLocation,
   } = useLocationsStore();
 
   const [expandedCityId, setExpandedCityId] = useState<string | null>(null);
@@ -57,9 +62,40 @@ export default function AdminLocationsPage() {
   const [subTagline, setSubTagline] = useState("");
   const [subCount, setSubCount] = useState("20+ Homes");
 
+  const [defaultCityInput, setDefaultCityInput] = useState(defaultLocation?.city || "Vijayawada");
+  const [defaultLocalityInput, setDefaultLocalityInput] = useState(defaultLocation?.locality || "");
+  const [defaultLabelInput, setDefaultLabelInput] = useState(defaultLocation?.label || "Vijayawada");
+  const [isSavingDefault, setIsSavingDefault] = useState(false);
+
   useEffect(() => {
     fetchLocations();
-  }, [fetchLocations]);
+    fetchDefaultLocation?.();
+  }, [fetchLocations, fetchDefaultLocation]);
+
+  useEffect(() => {
+    if (defaultLocation?.city) {
+      setDefaultCityInput(defaultLocation.city);
+      setDefaultLocalityInput(defaultLocation.locality || "");
+      setDefaultLabelInput(defaultLocation.label || defaultLocation.city);
+    }
+  }, [defaultLocation]);
+
+  const handleSaveDefaultLocation = async () => {
+    if (!defaultCityInput.trim()) {
+      toast.error("Please choose a valid default city");
+      return;
+    }
+    setIsSavingDefault(true);
+    try {
+      await setDefaultLocation({
+        city: defaultCityInput.trim(),
+        locality: defaultLocalityInput.trim(),
+        label: defaultLabelInput.trim() || defaultCityInput.trim(),
+      });
+    } finally {
+      setIsSavingDefault(false);
+    }
+  };
 
   // Handle City Save
   const handleSaveCity = async () => {
@@ -186,6 +222,145 @@ export default function AdminLocationsPage() {
         </div>
       </div>
 
+      {/* Default Location At Top Manager (Public Header / Navbar) */}
+      <div className="bg-bg-card border-2 border-amber-500/40 rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border-default pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 font-black flex items-center justify-center shadow-xs shrink-0">
+              <MapPin className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                <span>Default Location at Top</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                  Header Sync
+                </span>
+              </h2>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Choose which location displays by default at the top of the mobile and desktop header for new visitors.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 bg-bg-primary/80 border border-border-default rounded-xl px-3 py-1.5 self-start sm:self-auto">
+            <span className="text-[11px] text-text-tertiary">Active Default:</span>
+            <span className="text-xs font-black text-amber-500 flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5" />
+              {defaultLocation?.label || defaultLocation?.city || "Vijayawada"}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          {/* 1. Select City */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider">
+              1. Choose Default City
+            </label>
+            <select
+              value={defaultCityInput}
+              onChange={(e) => {
+                const newCity = e.target.value;
+                setDefaultCityInput(newCity);
+                setDefaultLocalityInput("");
+                setDefaultLabelInput(newCity);
+              }}
+              className="w-full h-11 px-3 rounded-xl border border-border-default bg-bg-primary text-text-primary text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            >
+              {cities.map((c) => (
+                <option key={c.id} value={c.name}>
+                  {c.name} {c.isHeroPill ? "★" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 2. Optional Sublocation */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider">
+              2. Optional Sublocation
+            </label>
+            <select
+              value={defaultLocalityInput}
+              onChange={(e) => {
+                const newSub = e.target.value;
+                setDefaultLocalityInput(newSub);
+                if (newSub) {
+                  setDefaultLabelInput(newSub);
+                } else {
+                  setDefaultLabelInput(defaultCityInput);
+                }
+              }}
+              className="w-full h-11 px-3 rounded-xl border border-border-default bg-bg-primary text-text-primary text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            >
+              <option value="">Whole City ({defaultCityInput})</option>
+              {(cities.find((c) => c.name.toLowerCase() === defaultCityInput.toLowerCase())?.sublocations || []).map((s) => (
+                <option key={s.id} value={s.name}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. Display Label & Save Button */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider">
+              3. Display Label at Top
+            </label>
+            <div className="flex gap-2">
+              <Input
+                value={defaultLabelInput}
+                onChange={(e) => setDefaultLabelInput(e.target.value)}
+                placeholder="e.g. Vijayawada"
+                className="h-11 bg-bg-primary text-sm font-semibold flex-1"
+              />
+              <Button
+                onClick={handleSaveDefaultLocation}
+                disabled={isSavingDefault}
+                className="h-11 px-5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black gap-1.5 shrink-0 shadow-sm cursor-pointer"
+              >
+                {isSavingDefault ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4 stroke-[3]" />
+                )}
+                <span>Save Default</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick select pills */}
+        <div className="flex items-center gap-2 pt-1 flex-wrap">
+          <span className="text-[11px] font-bold text-text-tertiary">Quick Select:</span>
+          {cities.slice(0, 6).map((c) => {
+            const isSelected = defaultLocation?.city.toLowerCase() === c.name.toLowerCase() && !defaultLocation?.locality;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  setDefaultCityInput(c.name);
+                  setDefaultLocalityInput("");
+                  setDefaultLabelInput(c.name);
+                  void setDefaultLocation({ city: c.name, locality: "", label: c.name });
+                }}
+                className={cn(
+                  "px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1 cursor-pointer",
+                  isSelected
+                    ? "bg-amber-500 text-slate-950 shadow-xs"
+                    : "bg-bg-primary hover:bg-amber-500/10 text-text-secondary hover:text-text-primary border border-border-default"
+                )}
+              >
+                <MapPin className="w-3 h-3" />
+                <span>{c.name}</span>
+                {isSelected && <span className="text-[10px] ml-0.5 font-black">✓ Active</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Info Banner */}
       <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex items-start gap-4">
         <Sparkles className="w-6 h-6 text-amber-primary shrink-0 mt-0.5" />
@@ -237,6 +412,28 @@ export default function AdminLocationsPage() {
 
                 {/* City Action Buttons */}
                 <div className="flex items-center gap-2">
+                  {defaultLocation?.city.toLowerCase() === city.name.toLowerCase() && !defaultLocation?.locality ? (
+                    <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-black flex items-center gap-1 shrink-0">
+                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> Top Default
+                    </span>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setDefaultCityInput(city.name);
+                        setDefaultLocalityInput("");
+                        setDefaultLabelInput(city.name);
+                        void setDefaultLocation({ city: city.name, locality: "", label: city.name });
+                      }}
+                      className="text-xs font-bold gap-1 h-9 hover:border-amber-500 hover:text-amber-500 shrink-0"
+                      title="Set as Default Top Location"
+                    >
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>Set Top Default</span>
+                    </Button>
+                  )}
+
                   <Button
                     variant="outline"
                     size="sm"

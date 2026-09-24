@@ -87,14 +87,15 @@ export function Navbar() {
   const [navLocalitySearch, setNavLocalitySearch] = useState<string>("");
   const navDropdownRef = useRef<HTMLDivElement>(null);
 
-  const { cities, fetchLocations } = useLocationsStore();
+  const { cities, fetchLocations, defaultLocation, fetchDefaultLocation } = useLocationsStore();
   const properties = useVisibleProperties();
   const projects = useProjectsStore((state) => state.projects);
 
   // Fetch admin master locations on mount
   useEffect(() => {
     fetchLocations();
-  }, [fetchLocations]);
+    fetchDefaultLocation?.();
+  }, [fetchLocations, fetchDefaultLocation]);
 
   // Admin-configured Hero Cities (matching hero-section pills exactly)
   const heroCities = useMemo(() => {
@@ -102,12 +103,17 @@ export function Navbar() {
     return pills.length > 0 ? pills : cities.slice(0, 3);
   }, [cities]);
 
-  // Auto-sync active selected city with available admin hero cities
+  // Auto-sync active selected city with admin default location or available admin hero cities
   useEffect(() => {
-    if (heroCities.length > 0 && !heroCities.some((c) => c.name.toLowerCase() === navSelectedCity.toLowerCase())) {
+    const urlCity = searchParams.get("city") || searchParams.get("cities");
+    if (urlCity) {
+      setNavSelectedCity(urlCity);
+    } else if (defaultLocation?.city) {
+      setNavSelectedCity(defaultLocation.city);
+    } else if (heroCities.length > 0 && !heroCities.some((c) => c.name.toLowerCase() === navSelectedCity.toLowerCase())) {
       setNavSelectedCity(heroCities[0].name);
     }
-  }, [heroCities, navSelectedCity]);
+  }, [defaultLocation, heroCities, searchParams]);
 
   const matchingCount = useMemo(() => {
     let count = 0;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ChevronDown, ChevronRight, MapPin, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -8,7 +8,7 @@ import { useLocationsStore } from "@/stores/locations-store";
 import { useSiteFeatures } from "@/components/providers/site-features-provider";
 
 export function MobileLocationPicker() {
-  const { cities } = useLocationsStore();
+  const { cities, defaultLocation, fetchDefaultLocation } = useLocationsStore();
   const { propertiesEnabled } = useSiteFeatures();
   const router = useRouter();
   const pathname = usePathname();
@@ -16,10 +16,16 @@ export function MobileLocationPicker() {
   const [open, setOpen] = useState(false);
   const [cityId, setCityId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    fetchDefaultLocation?.();
+  }, [fetchDefaultLocation]);
+
   const city = cities.find(item => item.id === cityId);
   const selectedCity = params.get("city") || params.get("cities");
   const selectedLocality = params.get("locality") || params.get("localities");
-  const label = selectedLocality || selectedCity || "Location";
+  const fallbackLabel = defaultLocation?.label || defaultLocation?.city || "Location";
+  const label = selectedLocality || selectedCity || fallbackLabel;
   const matches = (name: string) => name.toLowerCase().includes(query.trim().toLowerCase());
 
   function choose(cityName?: string, locality?: string) {
