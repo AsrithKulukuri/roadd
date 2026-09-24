@@ -295,6 +295,7 @@ export function HeroSection() {
   const { fetchProjects } = useProjectsStore();
   const {
     cities,
+    defaultLocation,
     fetchLocations: fetchMasterLocations,
     userSelectedCity,
     userSelectedLocalities,
@@ -424,7 +425,7 @@ export function HeroSection() {
   const matchingCount = useMemo(() => {
     let count = 0;
     const isAnyMax = heroBudget[1] >= 500000000;
-    const targetCity = (userSelectedCity || "").toLowerCase().trim();
+    const targetCity = (userSelectedCity || defaultLocation?.city || "Vijayawada").toLowerCase().trim();
     const targetLocs = (userSelectedLocalities || []).map((l) => l.toLowerCase().trim()).filter(Boolean);
 
     // Get all sublocalities for targetCity (e.g. Edupugallu for Vijayawada)
