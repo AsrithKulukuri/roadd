@@ -46,6 +46,65 @@ export function MobileBottomNav() {
   const [user, setUser] = useState<{ name: string; role?: string } | null>(null);
   const mounted = useIsMounted();
   const [showMapTooltip, setShowMapTooltip] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  // Hide bottom nav when any input or search bar is focused
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        setIsInputFocused(true);
+      }
+    };
+
+    const handleFocusOut = () => {
+      setTimeout(() => {
+        const active = document.activeElement as HTMLElement | null;
+        if (
+          !active ||
+          (active.tagName !== "INPUT" &&
+            active.tagName !== "TEXTAREA" &&
+            !active.isContentEditable)
+        ) {
+          setIsInputFocused(false);
+        }
+      }, 100);
+    };
+
+    window.addEventListener("focusin", handleFocusIn);
+    window.addEventListener("focusout", handleFocusOut);
+
+    return () => {
+      window.removeEventListener("focusin", handleFocusIn);
+      window.removeEventListener("focusout", handleFocusOut);
+    };
+  }, []);
+
+  // Monitor visualViewport resize (virtual keyboard presence)
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+
+    const handleViewportResize = () => {
+      if (!window.visualViewport) return;
+      const heightDifference = window.innerHeight - window.visualViewport.height;
+      setIsKeyboardOpen(heightDifference > 120);
+    };
+
+    window.visualViewport.addEventListener("resize", handleViewportResize);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", handleViewportResize);
+    };
+  }, []);
+
+  const isKeyboardActive = isInputFocused || isKeyboardOpen;
 
   useEffect(() => {
     // Show map discovery tooltip once for 3 seconds on initial home visit
@@ -297,7 +356,11 @@ export function MobileBottomNav() {
       {/* ── Fixed Mobile Bottom Nav Bar ── */}
       <nav 
         aria-label="Mobile Navigation"
-        className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl border-t border-slate-200/90 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] py-1.5 px-3 safe-bottom"
+        aria-hidden={isKeyboardActive}
+        className={cn(
+          "fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl border-t border-slate-200/90 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] py-1.5 px-3 safe-bottom transition-all duration-200",
+          isKeyboardActive && "hidden pointer-events-none opacity-0"
+        )}
       >
         <div className="grid grid-cols-5 items-center justify-around max-w-md mx-auto relative">
           {navItems.map((item) => {

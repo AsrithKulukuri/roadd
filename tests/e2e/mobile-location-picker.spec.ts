@@ -33,8 +33,11 @@ test("mobile header selects a city then an area without the old hero pills", asy
   await expect(dialog.getByRole("heading", { name: /Areas in Vijayawada/i })).toBeVisible();
   await page.screenshot({ path: "test-results/mobile-location-picker.png" });
   await dialog.getByRole("button", { name: "Benz Circle", exact: true }).click();
+  await dialog.getByRole("button", { name: /^Apply/ }).click();
   await expect(page).toHaveURL(/city=Vijayawada/);
   await expect(page).toHaveURL(/locality=Benz(\+|%20)Circle/);
   await expect(page).toHaveURL(/type=projects/);
+  await expect(picker).toHaveText(/Vijayawada/);
+  await expect(picker).not.toHaveText(/Benz Circle/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
 });

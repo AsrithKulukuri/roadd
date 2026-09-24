@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, ChevronRight, MapPin } from "lucide-react";
+import { Check, ChevronDown, MapPin } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useLocationsStore } from "@/stores/locations-store";
 import { useSiteFeatures } from "@/components/providers/site-features-provider";
@@ -15,6 +15,7 @@ export function MobileLocationPicker() {
   const pathname = usePathname();
   const params = useSearchParams();
   const [open, setOpen] = useState(false);
+  const [selectedLocalities, setSelectedLocalities] = useState<string[]>([]);
 
   useEffect(() => {
     fetchLocations?.();
@@ -27,22 +28,51 @@ export function MobileLocationPicker() {
   const cityName = targetCity?.name || "Vijayawada";
   const sublocations = targetCity?.sublocations || [];
 
-  const selectedCity = params.get("city") || params.get("cities");
-  const selectedLocality = params.get("locality") || params.get("localities");
-  const fallbackLabel = defaultLocation?.label || defaultLocation?.city || "Vijayawada";
-  const label = selectedLocality || selectedCity || fallbackLabel;
+  // When opening, initialize selected localities from URL
+  useEffect(() => {
+    if (open) {
+      const localityParam = params.get("locality") || params.get("localities") || "";
+      if (localityParam) {
+        setSelectedLocalities(localityParam.split(",").map(l => l.trim()).filter(Boolean));
+      } else {
+        setSelectedLocalities([]);
+      }
+    }
+  }, [open, params]);
 
-  function choose(cityToSelect?: string, locality?: string) {
+  // Always show ONLY default location name in the top navbar, not sublocation
+  const label = defaultLocation?.label || defaultLocation?.city || "Vijayawada";
+
+  const toggleSublocation = (name: string) => {
+    setSelectedLocalities((prev) => {
+      const exists = prev.some((l) => l.toLowerCase() === name.toLowerCase());
+      if (exists) {
+        return prev.filter((l) => l.toLowerCase() !== name.toLowerCase());
+      } else {
+        return [...prev, name];
+      }
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedLocalities([]);
+  };
+
+  const applySelection = () => {
     const next = new URLSearchParams(pathname === "/search" ? params.toString() : "");
-    for (const key of ["city", "cities", "locality", "localities", "sublocation", "location", "q", "search", "nearMe", "page", "focus", "openFilters"]) next.delete(key);
+    for (const key of ["city", "cities", "locality", "localities", "sublocation", "location", "q", "search", "nearMe", "page", "focus", "openFilters"]) {
+      next.delete(key);
+    }
     if (!propertiesEnabled) next.set("type", "projects");
-    if (cityToSelect) next.set("city", cityToSelect);
-    if (locality) next.set("locality", locality);
+    next.set("city", cityName);
+    if (selectedLocalities.length > 0) {
+      next.set("locality", selectedLocalities.join(","));
+    }
     setOpen(false);
     router.push(`/search?${next}`);
-  }
+  };
 
-  const row = "flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-border-default bg-bg-card px-4 py-3 text-left text-sm font-semibold transition-colors hover:border-amber-500 hover:bg-amber-500/5 focus-visible:outline-2 focus-visible:outline-amber-500";
+  const row = "flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-border-default bg-bg-card px-3.5 py-3 text-left text-sm font-semibold transition-colors hover:border-amber-500 hover:bg-amber-500/5 focus-visible:outline-2 focus-visible:outline-amber-500";
 
   return (
     <div className="ml-auto shrink-0 sm:hidden">
@@ -58,31 +88,47 @@ export function MobileLocationPicker() {
             <ChevronDown size={13} className="shrink-0" />
           </button>
         </DialogTrigger>
-        <DialogContent className="flex max-h-[85dvh] w-[calc(100%-2rem)] flex-col gap-4 rounded-2xl p-5">
+        <DialogContent className="flex max-h-[85dvh] w-[calc(100%-2rem)] flex-col gap-3.5 rounded-2xl p-5">
           <div className="pr-7">
             <DialogTitle>Areas in {cityName}</DialogTitle>
             <DialogDescription className="mt-1">
-              Choose a sublocation or explore all of {cityName}.
+              Select one or multiple sublocations to explore.
             </DialogDescription>
           </div>
 
           <div className="min-h-0 space-y-2 overflow-y-auto overscroll-contain pr-0.5">
+            {/* Option to select All of City */}
             <button
               type="button"
               className={cn(
                 row,
-                !selectedLocality
+                selectedLocalities.length === 0
                   ? "border-amber-400 bg-amber-500/10 text-amber-950 font-bold"
                   : "border-border-default hover:border-amber-500 hover:bg-amber-500/5"
               )}
-              onClick={() => choose(cityName)}
+              onClick={selectAll}
             >
-              <span>All of {cityName}</span>
-              <ChevronRight size={16} className={!selectedLocality ? "text-amber-600" : "text-slate-400"} />
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className={cn(
+                    "w-5 h-5 rounded-md flex items-center justify-center border transition-all shrink-0",
+                    selectedLocalities.length === 0
+                      ? "bg-amber-500 border-amber-500 text-slate-950 shadow-2xs"
+                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                  )}
+                >
+                  {selectedLocalities.length === 0 && <Check size={13} strokeWidth={3} />}
+                </div>
+                <span>All of {cityName}</span>
+              </div>
+              <span className="text-[11px] font-bold text-amber-700 shrink-0">Whole City</span>
             </button>
 
+            {/* List of Sublocations with multi-select toggles */}
             {sublocations.map((item) => {
-              const isSelected = selectedLocality?.toLowerCase() === item.name.toLowerCase();
+              const isSelected = selectedLocalities.some(
+                (l) => l.toLowerCase() === item.name.toLowerCase()
+              );
               return (
                 <button
                   type="button"
@@ -93,10 +139,26 @@ export function MobileLocationPicker() {
                       ? "border-amber-400 bg-amber-500/10 text-amber-950 font-bold"
                       : "border-border-default hover:border-amber-500 hover:bg-amber-500/5"
                   )}
-                  onClick={() => choose(cityName, item.name)}
+                  onClick={() => toggleSublocation(item.name)}
                 >
-                  <span className="truncate">{item.name}</span>
-                  <ChevronRight size={16} className={isSelected ? "text-amber-600" : "text-slate-400"} />
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div
+                      className={cn(
+                        "w-5 h-5 rounded-md flex items-center justify-center border transition-all shrink-0",
+                        isSelected
+                          ? "bg-amber-500 border-amber-500 text-slate-950 shadow-2xs"
+                          : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                      )}
+                    >
+                      {isSelected && <Check size={13} strokeWidth={3} />}
+                    </div>
+                    <span className="truncate">{item.name}</span>
+                  </div>
+                  {item.count && (
+                    <span className="text-[11px] font-normal text-slate-500 shrink-0">
+                      {item.count}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -106,6 +168,29 @@ export function MobileLocationPicker() {
                 No sublocations added yet for {cityName}.
               </p>
             )}
+          </div>
+
+          {/* Bottom Action Footer */}
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 shrink-0">
+            {selectedLocalities.length > 0 && (
+              <button
+                type="button"
+                onClick={selectAll}
+                className="h-11 px-3 text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer shrink-0"
+              >
+                Clear ({selectedLocalities.length})
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={applySelection}
+              className="flex-1 min-h-11 bg-slate-950 hover:bg-slate-900 active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+            >
+              <span>Apply</span>
+              <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] sm:text-[11px] font-black shadow-2xs">
+                {selectedLocalities.length > 0 ? `${selectedLocalities.length} Selected` : "All Areas"}
+              </span>
+            </button>
           </div>
         </DialogContent>
       </Dialog>
