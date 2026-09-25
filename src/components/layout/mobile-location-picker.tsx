@@ -106,11 +106,11 @@ export function MobileLocationPicker() {
           <button
             type="button"
             aria-label={`Choose location: ${label}`}
-            className="flex min-h-11 max-w-[155px] cursor-pointer items-center gap-1.5 rounded-full border border-white/20 px-3 text-xs font-semibold text-white focus-visible:outline-2 focus-visible:outline-amber-400"
+            className="flex min-h-11 max-w-[155px] cursor-pointer items-center gap-1.5 px-1 text-xs font-semibold text-white hover:text-amber-300 transition-colors focus-visible:outline-2 focus-visible:outline-amber-400"
           >
             <MapPin size={15} className="shrink-0 text-amber-400" />
             <span className="truncate">{label}</span>
-            <ChevronDown size={13} className="shrink-0" />
+            <ChevronDown size={13} className="shrink-0 opacity-80" />
           </button>
         </DialogTrigger>
         <DialogContent className="flex max-h-[85dvh] w-[calc(100%-2rem)] flex-col gap-3.5 rounded-2xl p-5">
