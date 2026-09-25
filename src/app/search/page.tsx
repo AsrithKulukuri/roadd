@@ -864,9 +864,9 @@ function UnifiedSearchPage() {
                       Villas ({villaCount})
                     </button>
                   </>
-                ) : (
+                ) : propertiesEnabled ? (
                   <>
-                    <PropertyFeature><button
+                    <button
                       type="button"
                       onClick={() => handleTabChange("all")}
                       className={cn(
@@ -877,8 +877,8 @@ function UnifiedSearchPage() {
                       )}
                     >
                       All ({allCount})
-                    </button></PropertyFeature>
-                    <PropertyFeature><button
+                    </button>
+                    <button
                       type="button"
                       onClick={() => handleTabChange("properties")}
                       className={cn(
@@ -889,7 +889,7 @@ function UnifiedSearchPage() {
                       )}
                     >
                       Properties ({propCount})
-                    </button></PropertyFeature>
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleTabChange("projects")}
@@ -903,7 +903,7 @@ function UnifiedSearchPage() {
                       Projects ({projCount})
                     </button>
                   </>
-                )}
+                ) : null}
               </div>
 
               <button

@@ -1483,7 +1483,7 @@ const BUDGET_PRESETS = [
   const [internalListingTypeFilter, setInternalListingTypeFilter] = useState<"all" | "properties" | "projects">("all");
   
   const selectedListingType = entityTypeFilter !== undefined ? entityTypeFilter : internalListingTypeFilter;
-  const listingTypeFilter = !propertiesEnabled && selectedListingType === "properties" ? "projects" : selectedListingType;
+  const listingTypeFilter = !propertiesEnabled ? "projects" : selectedListingType;
 
   const setListingTypeFilter = useCallback((newType: "all" | "properties" | "projects") => {
     setInternalListingTypeFilter(newType);
@@ -2271,82 +2271,82 @@ const BUDGET_PRESETS = [
               </div>
             )}
 
-            {/* Entity Type Filter Buttons (All, Properties, Projects) with Dynamic Live Counts */}
-            <div className="space-y-1.5 shrink-0">
-              <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-slate-500 px-0.5">
-                <span>Show On Map</span>
-                <span className="text-amber-600 font-bold">{displayedPropertiesFiltered.length} Active Found</span>
-              </div>
-              <div className={cn("grid p-1 bg-slate-100/90 border border-slate-200 rounded-2xl gap-1 shadow-inner", propertiesEnabled ? "grid-cols-[0.85fr_1.35fr_1.1fr]" : "grid-cols-2")}>
-                <button
-                  type="button"
-                  onClick={() => setListingTypeFilter("all")}
-                  className={cn(
-                    "h-9 px-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer select-none",
-                    listingTypeFilter === "all"
-                      ? "bg-amber-500 text-slate-950 shadow-xs"
-                      : "text-slate-600 hover:text-slate-950 hover:bg-white"
-                  )}
-                >
-                  <Layers className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "all" ? "text-slate-950" : "text-amber-600")} />
-                  <span className="whitespace-nowrap">All</span>
-                  <span className={cn(
-                    "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-black shrink-0 transition-colors",
-                    listingTypeFilter === "all"
-                      ? "bg-white text-slate-950 shadow-xs border border-amber-600/20"
-                      : "bg-white text-slate-700 font-bold border border-slate-200"
-                  )}>
-                    {liveAllCount}
-                  </span>
-                </button>
+            {/* Entity Type Filter Buttons (All, Properties, Projects) with Dynamic Live Counts - Only show when properties are unhidden */}
+            {propertiesEnabled && (
+              <div className="space-y-1.5 shrink-0">
+                <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-slate-500 px-0.5">
+                  <span>Show On Map</span>
+                  <span className="text-amber-600 font-bold">{displayedPropertiesFiltered.length} Active Found</span>
+                </div>
+                <div className="grid p-1 bg-slate-100/90 border border-slate-200 rounded-2xl gap-1 shadow-inner grid-cols-[0.85fr_1.35fr_1.1fr]">
+                  <button
+                    type="button"
+                    onClick={() => setListingTypeFilter("all")}
+                    className={cn(
+                      "h-9 px-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer select-none",
+                      listingTypeFilter === "all"
+                        ? "bg-amber-500 text-slate-950 shadow-xs"
+                        : "text-slate-600 hover:text-slate-950 hover:bg-white"
+                    )}
+                  >
+                    <Layers className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "all" ? "text-slate-950" : "text-amber-600")} />
+                    <span className="whitespace-nowrap">All</span>
+                    <span className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-black shrink-0 transition-colors",
+                      listingTypeFilter === "all"
+                        ? "bg-white text-slate-950 shadow-xs border border-amber-600/20"
+                        : "bg-white text-slate-700 font-bold border border-slate-200"
+                    )}>
+                      {liveAllCount}
+                    </span>
+                  </button>
 
-                {propertiesEnabled && (
-                <button
-                  type="button"
-                  onClick={() => setListingTypeFilter("properties")}
-                  className={cn(
-                    "h-9 px-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer select-none",
-                    listingTypeFilter === "properties"
-                      ? "bg-amber-500 text-slate-950 shadow-xs"
-                      : "text-slate-600 hover:text-slate-950 hover:bg-white"
-                  )}
-                >
-                  <Home className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "properties" ? "text-slate-950" : "text-blue-600")} />
-                  <span className="whitespace-nowrap">Properties</span>
-                  <span className={cn(
-                    "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-black shrink-0 transition-colors",
-                    listingTypeFilter === "properties"
-                      ? "bg-white text-slate-950 shadow-xs border border-amber-600/20"
-                      : "bg-white text-slate-700 font-bold border border-slate-200"
-                  )}>
-                    {livePropertiesCount}
-                  </span>
-                </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => setListingTypeFilter("properties")}
+                    className={cn(
+                      "h-9 px-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer select-none",
+                      listingTypeFilter === "properties"
+                        ? "bg-amber-500 text-slate-950 shadow-xs"
+                        : "text-slate-600 hover:text-slate-950 hover:bg-white"
+                    )}
+                  >
+                    <Home className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "properties" ? "text-slate-950" : "text-blue-600")} />
+                    <span className="whitespace-nowrap">Properties</span>
+                    <span className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-black shrink-0 transition-colors",
+                      listingTypeFilter === "properties"
+                        ? "bg-white text-slate-950 shadow-xs border border-amber-600/20"
+                        : "bg-white text-slate-700 font-bold border border-slate-200"
+                    )}>
+                      {livePropertiesCount}
+                    </span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setListingTypeFilter("projects")}
-                  className={cn(
-                    "h-9 px-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer select-none",
-                    listingTypeFilter === "projects"
-                      ? "bg-amber-500 text-slate-950 shadow-xs"
-                      : "text-slate-600 hover:text-slate-950 hover:bg-white"
-                  )}
-                >
-                  <Building2 className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "projects" ? "text-slate-950" : "text-emerald-600")} />
-                  <span className="whitespace-nowrap">Projects</span>
-                  <span className={cn(
-                    "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-black shrink-0 transition-colors",
-                    listingTypeFilter === "projects"
-                      ? "bg-white text-slate-950 shadow-xs border border-amber-600/20"
-                      : "bg-white text-slate-700 font-bold border border-slate-200"
-                  )}>
-                    {liveProjectsCount}
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setListingTypeFilter("projects")}
+                    className={cn(
+                      "h-9 px-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer select-none",
+                      listingTypeFilter === "projects"
+                        ? "bg-amber-500 text-slate-950 shadow-xs"
+                        : "text-slate-600 hover:text-slate-950 hover:bg-white"
+                    )}
+                  >
+                    <Building2 className={cn("w-3.5 h-3.5 shrink-0", listingTypeFilter === "projects" ? "text-slate-950" : "text-emerald-600")} />
+                    <span className="whitespace-nowrap">Projects</span>
+                    <span className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-black shrink-0 transition-colors",
+                      listingTypeFilter === "projects"
+                        ? "bg-white text-slate-950 shadow-xs border border-amber-600/20"
+                        : "bg-white text-slate-700 font-bold border border-slate-200"
+                    )}>
+                      {liveProjectsCount}
+                    </span>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 1. LOCATIONS & SUBLOCATIONS (First Section) - Multi-Select */}
             <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 space-y-3 shadow-xs">
@@ -2997,23 +2997,25 @@ const BUDGET_PRESETS = [
             </button>
           )}
           
-          {/* TOP: Entity Type Pills (All / Properties / Projects) - Centered on mobile only, hidden on desktop */}
-          <div className={cn("absolute top-3 left-1/2 -translate-x-1/2 z-[550] items-center gap-1 sm:gap-1.5 pointer-events-auto md:hidden", showMapExplorer ? "hidden" : "flex")}>
-            {(["all", "properties", "projects"] as const).filter(type => propertiesEnabled || type !== "properties").map((lt) => (
-              <button
-                key={lt}
-                onClick={() => setListingTypeFilter(lt)}
-                className={cn(
-                  "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold shadow-lg border transition-all active:scale-95 cursor-pointer whitespace-nowrap",
-                  listingTypeFilter === lt
-                    ? "bg-[#f1a010] text-slate-950 border-[#f1a010]"
-                    : "bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-[#f1a010]"
-                )}
-              >
-                {lt === "all" ? "All" : lt === "properties" ? "Properties" : "Projects"}
-              </button>
-            ))}
-          </div>
+          {/* TOP: Entity Type Pills (All / Properties / Projects) - Only show when properties are unhidden */}
+          {propertiesEnabled && (
+            <div className={cn("absolute top-3 left-1/2 -translate-x-1/2 z-[550] items-center gap-1 sm:gap-1.5 pointer-events-auto md:hidden", showMapExplorer ? "hidden" : "flex")}>
+              {(["all", "properties", "projects"] as const).map((lt) => (
+                <button
+                  key={lt}
+                  onClick={() => setListingTypeFilter(lt)}
+                  className={cn(
+                    "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold shadow-lg border transition-all active:scale-95 cursor-pointer whitespace-nowrap",
+                    listingTypeFilter === lt
+                      ? "bg-[#f1a010] text-slate-950 border-[#f1a010]"
+                      : "bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-[#f1a010]"
+                  )}
+                >
+                  {lt === "all" ? "All" : lt === "properties" ? "Properties" : "Projects"}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* RIGHT SIDE CONTROLS: Layer switcher, Draw */}
           <div className={cn("absolute top-14 md:top-3 right-3 z-[550] flex-col items-center gap-2.5 pointer-events-auto", showMapExplorer ? "hidden md:flex" : "flex")}>
