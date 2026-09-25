@@ -1,7 +1,8 @@
 "use client";
 
+import { GoogleMapLayer } from "@/components/map/google-map-layer";
 import { useEffect, useState, useRef } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -135,10 +136,7 @@ export default function CoordinatePickerMap({
         scrollWheelZoom={true} 
         style={{ height: "100%", width: "100%", zIndex: 0 }}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
-        />
+        <GoogleMapLayer />
         <MapViewController center={initialPosition} />
         <LocationMarker position={position} setPosition={setPosition} />
       </MapContainer>

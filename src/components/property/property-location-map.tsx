@@ -1,8 +1,9 @@
 "use client";
 
+import { GoogleMapLayer } from "@/components/map/google-map-layer";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from "react-leaflet";
+import { MapContainer, Marker, Popup, useMap, Circle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Button } from "@/components/ui/button";
@@ -116,17 +117,7 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
           zoomControl={false}
           style={{ height: "100%", width: "100%" }}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-            url={
-              process.env.NEXT_PUBLIC_MAP_TILE_URL ||
-              (process.env.NEXT_PUBLIC_CARTO_API_KEY
-                ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?api_key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}`
-                : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}")
-            }
-            maxNativeZoom={18}
-            maxZoom={19}
-          />
+          <GoogleMapLayer />
           {/* Approximate circle rather than pinpoint for privacy */}
           <Circle
             center={propertyPos}
@@ -160,8 +151,10 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
           )}
         </MapContainer>
 
-        {/* Privacy Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-bg-card/80 backdrop-blur-md border-t border-border-default/50 z-[1000] flex flex-col sm:flex-row items-center justify-between gap-4">
+      </div>
+
+        {/* Keep the privacy action below Google attribution. */}
+        <div className="relative p-4 bg-bg-card/80 backdrop-blur-md border-t border-border-default/50 z-[1000] flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-sm font-medium text-text-primary text-center sm:text-left flex-1">
             <span className="text-amber-primary mr-2">🔒</span>
             Exact location is protected for privacy
@@ -191,7 +184,6 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
             </Button>
           )}
         </div>
-      </div>
     </div>
   );
 }

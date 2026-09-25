@@ -53,11 +53,11 @@ test("manual 1.2 denied GPS gives feedback and keeps map usable", async ({ page 
   await expect(page.locator(".leaflet-container").first()).toBeVisible();
 });
 
-test("manual 3.1 street tile source is Esri without key watermark provider", async ({ page }) => {
+test("manual 3.1 Google basemap loads without legacy tile providers", async ({ page }) => {
   await page.goto("/search?view=map");
   await expect(page.locator(".leaflet-container").first()).toBeVisible();
-  await expect.poll(async () => page.locator("img.leaflet-tile").count()).toBeGreaterThan(0);
-  const urls = await page.locator("img.leaflet-tile").evaluateAll(images => images.map(image => (image as HTMLImageElement).src));
-  expect(urls.some(url => url.includes("World_Street_Map"))).toBe(true);
-  expect(urls.some(url => url.includes("cartocdn"))).toBe(false);
+  await expect(page.locator('[data-map-provider="google"]').first()).toBeVisible({ timeout: 45000 });
+  const urls = await page.locator(".leaflet-tile img, img.leaflet-tile").evaluateAll(images => images.map(image => (image as HTMLImageElement).src));
+  expect(urls.some(url => url.includes("google"))).toBe(true);
+  expect(urls.some(url => url.includes("arcgisonline") || url.includes("cartocdn"))).toBe(false);
 });

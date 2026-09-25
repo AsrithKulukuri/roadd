@@ -1,11 +1,11 @@
 "use client";
+import { GoogleMapLayer } from "@/components/map/google-map-layer";
 import { useSiteFeatures } from "@/components/providers/site-features-provider";
 import { useVisibleProperties } from "@/components/shared/property-feature";
 
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import {
   MapContainer,
-  TileLayer,
   Marker,
   Popup,
   Polyline,
@@ -3480,55 +3480,7 @@ const BUDGET_PRESETS = [
             />
 
 
-            {mapLayerType === "streets" ? (
-              <TileLayer
-                attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-                url={
-                  process.env.NEXT_PUBLIC_MAP_TILE_URL ||
-                  (process.env.NEXT_PUBLIC_CARTO_API_KEY
-                    ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?api_key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}`
-                    : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}")
-                }
-                maxNativeZoom={18}
-                maxZoom={19}
-                updateWhenIdle={true}
-                keepBuffer={4}
-              />
-            ) : mapLayerType === "terrain" ? (
-              <TileLayer
-                attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
-                maxNativeZoom={18}
-                maxZoom={19}
-                updateWhenIdle={true}
-                keepBuffer={4}
-              />
-            ) : (
-              <>
-                <TileLayer
-                  attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                  maxNativeZoom={18}
-                  maxZoom={19}
-                  updateWhenIdle={true}
-                  keepBuffer={4}
-                />
-                {/* Place names labels overlay on satellite */}
-                <TileLayer
-                  attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-                  url={
-                    process.env.NEXT_PUBLIC_CARTO_API_KEY
-                      ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png?api_key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}`
-                      : "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-                  }
-                  maxNativeZoom={19}
-                  maxZoom={20}
-                  opacity={0.9}
-                  updateWhenIdle={true}
-                  keepBuffer={4}
-                />
-              </>
-            )}
+            <GoogleMapLayer type={mapLayerType === "streets" ? "roadmap" : mapLayerType === "terrain" ? "terrain" : "hybrid"} />
 
             {/* Custom Drag Pin Marker */}
             <LocationMarker position={position} setPosition={setPosition} isDrawing={isDrawing} />

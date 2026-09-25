@@ -1,5 +1,6 @@
+import { GoogleMapLayer } from "@/components/map/google-map-layer";
 import { useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility";
@@ -83,17 +84,7 @@ export default function ProjectMapView({
         zoomControl={false}
         style={{ height: "100%", width: "100%", zIndex: 0 }}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-          url={
-            process.env.NEXT_PUBLIC_MAP_TILE_URL ||
-            (process.env.NEXT_PUBLIC_CARTO_API_KEY
-              ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?api_key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}`
-              : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}")
-          }
-          maxNativeZoom={18}
-          maxZoom={19}
-        />
+        <GoogleMapLayer />
         <FlyTo center={center} />
         <AutoOpenMarker center={center}>
           <Popup closeButton={false} autoPan={false} offset={[0, -8]}>
