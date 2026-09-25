@@ -4,6 +4,7 @@ import { useState, useMemo, Suspense, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePropertiesStore } from "@/stores/properties-store";
+import { useProjectsStore } from "@/stores/projects-store";
 import { PropertyCard } from "@/components/property/property-card";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { SearchFiltersModal, initialFilterState, type FilterState } from "@/components/search/search-filters";
@@ -12,7 +13,8 @@ import { LocationCarousels } from "@/components/search/location-carousels";
 import { MapWrapper } from "@/components/map/map-wrapper";
 import { Building2, ChevronDown, Heart, HelpCircle, ArrowLeft, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { matchesPropertySearch } from "@/lib/search-engine";
+import { matchesPropertySearch, evaluateProjectFilters } from "@/lib/search-engine";
+import type { SharedMapItem } from "@/types/map";
 import { toast } from "sonner";
 
 function PropertiesPageSkeleton() {
@@ -52,12 +54,15 @@ function PropertiesPage() {
   const isLoading = usePropertiesStore((state) => state.isLoading);
   const error = usePropertiesStore((state) => state.error);
   const fetchProperties = usePropertiesStore((state) => state.fetchProperties);
+  const projects = useProjectsStore((state) => state.projects);
+  const fetchProjects = useProjectsStore((state) => state.fetchProjects);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     fetchProperties();
-  }, [fetchProperties]);
+    fetchProjects();
+  }, [fetchProperties, fetchProjects]);
 
   // Keep viewMode in sync with URL searchParams
   useEffect(() => {
@@ -322,6 +327,48 @@ function PropertiesPage() {
     });
   }, [properties, filters, sortBy, filterReferenceTime]);
 
+  // Filter projects based on FilterState
+  const filteredProjects = useMemo(() => {
+    return projects.filter((project) => {
+      if (project.isPublished === false) return false;
+      return evaluateProjectFilters(project, filters);
+    });
+  }, [projects, filters]);
+
+  // Combine properties and projects into SharedMapItem[] for MapWrapper
+  const mapItems = useMemo((): SharedMapItem[] => {
+    const propItems = filteredProperties.filter((p) => p.showOnMap !== false && p.status !== 'sold');
+    const isRentActive = filters.listingType?.includes("rent");
+    const projItems: SharedMapItem[] = (isRentActive ? [] : filteredProjects)
+      .filter((p) => p.isPublished !== false && !p.isSoldOut && p.location?.latitude && p.location?.longitude)
+      .map((p) => ({
+        id: p.id,
+        slug: p.slug,
+        title: p.name,
+        price: p.configurations?.[0]?.priceMin || 0,
+        propertyType: p.projectType || "Project",
+        listingType: "project",
+        status: "active",
+        location: {
+          address: p.location?.address || "",
+          locality: p.location?.locality || "",
+          city: p.location?.city || "",
+          state: p.location?.state || "",
+          latitude: Number(p.location?.latitude),
+          longitude: Number(p.location?.longitude),
+        },
+        coverImage: p.coverImage,
+        images: p.images?.map((img: any) => (typeof img === "string" ? img : img?.url || "")) || [],
+        showOnMap: true,
+        builderName: p.builderName,
+        configurations: p.configurations,
+        _isProject: true,
+        _originalProjectData: p,
+      }));
+
+    return [...propItems, ...projItems];
+  }, [filteredProperties, filteredProjects, filters.listingType]);
+
   const handleSelectLocationFromCarousel = (locationName: string) => {
     setFilters((prev) => ({
       ...prev,
@@ -464,7 +511,7 @@ function PropertiesPage() {
             {/* Mobile View: Fill full available height directly below header with zero page scroll */}
             <div className="md:hidden w-full h-full min-h-0 overflow-hidden flex flex-col bg-white">
               <MapWrapper
-                filteredItems={filteredProperties}
+                filteredItems={mapItems}
                 activeFilters={filters}
                 onFiltersChange={setFilters}
               />
@@ -473,7 +520,7 @@ function PropertiesPage() {
             {/* Desktop View: Full height Map Container */}
             <div className="hidden md:block w-full h-[calc(100vh-190px)] min-h-[620px] rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white relative z-0">
               <MapWrapper
-                filteredItems={filteredProperties}
+                filteredItems={mapItems}
                 activeFilters={filters}
                 onFiltersChange={setFilters}
               />

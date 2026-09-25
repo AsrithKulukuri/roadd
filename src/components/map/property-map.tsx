@@ -30,6 +30,7 @@ import { useFavoritesStore } from "@/stores/favorites-store";
 import { shareItem } from "@/lib/share-utils";
 import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
 import { toast } from "sonner";
+import { LOCATION_ALIASES } from "@/lib/search-engine";
 import type { SharedMapItem, PropertyMapProps } from "@/types/map";
 
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -59,6 +60,11 @@ const quickLocalityCoords = [
   { name: "Auto Nagar", lat: 16.4950, lng: 80.6650 },
   { name: "Poranki", lat: 16.4833, lng: 80.7000 },
   { name: "Kanuru", lat: 16.4950, lng: 80.6800 },
+  { name: "Edupugallu", lat: 16.4641, lng: 80.7549 },
+  { name: "Penamaluru", lat: 16.4710, lng: 80.7180 },
+  { name: "Gannavaram", lat: 16.5360, lng: 80.8030 },
+  { name: "Tadepalli", lat: 16.4830, lng: 80.6050 },
+  { name: "Mangalagiri", lat: 16.4300, lng: 80.5600 },
   { name: "Gorantla", lat: 16.3200, lng: 80.4500 },
   { name: "Amaravati Road", lat: 16.5131, lng: 80.5165 },
   { name: "Brodipet", lat: 16.3050, lng: 80.4350 },
@@ -73,6 +79,17 @@ interface LocalityBoundary {
 }
 
 const LOCALITY_BOUNDARIES: Record<string, LocalityBoundary> = {
+  "edupugallu": {
+    name: "Edupugallu",
+    city: "Vijayawada",
+    center: [16.4641, 80.7549],
+    bounds: [
+      [16.4760, 80.7420],
+      [16.4760, 80.7680],
+      [16.4520, 80.7680],
+      [16.4520, 80.7420],
+    ],
+  },
   "auto nagar": {
     name: "Auto Nagar",
     city: "Vijayawada",
@@ -284,22 +301,29 @@ function getLandmarkIcon(type: string, name: string) {
   });
 }
 
-function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean, isBlinking: boolean = false) {
+function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean, isBlinking: boolean = false, isProject: boolean = false) {
   if (typeof window === "undefined" || !L || !L.divIcon) return undefined;
 
   const priceText = formatPriceCompact(price);
 
-  const bg = isSelected || hasSearch ? '#F5A623' : '#0F172A';
+  const bg = isSelected || hasSearch ? '#F5A623' : isProject ? '#059669' : '#0F172A';
   const color = isSelected || hasSearch ? '#020617' : '#FFFFFF';
-  const border = isSelected || hasSearch ? '2.5px solid #FFFFFF' : '1.5px solid rgba(255, 255, 255, 0.3)';
+  const border = isSelected || hasSearch ? '2.5px solid #FFFFFF' : isProject ? '2px solid #34D399' : '1.5px solid rgba(255, 255, 255, 0.3)';
   const scale = isSelected ? 'scale(1.25)' : hasSearch ? 'scale(1.15)' : 'scale(1)';
   const shadow = hasSearch
     ? '0 0 20px rgba(245, 166, 37, 0.9), 0 4px 14px rgba(0,0,0,0.5)'
     : isSelected
     ? '0 0 18px rgba(245, 166, 37, 0.9)'
+    : isProject
+    ? '0 4px 14px rgba(5, 150, 105, 0.5)'
     : '0 4px 12px rgba(0, 0, 0, 0.4)';
 
   const blinkClass = isBlinking ? 'animate-pulse ring-4 ring-amber-500 shadow-2xl' : '';
+  const prefixIcon = hasSearch
+    ? '<span style="font-size: 11px;">⭐</span>'
+    : isProject
+    ? '<span style="font-size: 11px; margin-right: 2px;">🏢</span>'
+    : `<span style="color: ${isSelected || hasSearch ? '#020617' : '#F5A623'}; font-weight: 900;">₹</span>`;
 
   return L.divIcon({
     className: `realtor-price-pill-marker ${blinkClass}`,
@@ -322,12 +346,12 @@ function getPricePillIcon(price: number, isSelected: boolean, hasSearch: boolean
         transition: transform 0.2s ease;
         z-index: ${isSelected || isBlinking ? 9999 : 1};
       ">
-        ${hasSearch ? '<span style="font-size: 11px;">⭐</span>' : `<span style="color: ${isSelected || hasSearch ? '#020617' : '#F5A623'}; font-weight: 900;">₹</span>`}
+        ${prefixIcon}
         <span>${priceText.replace('₹', '')}</span>
       </div>
     `,
-    iconSize: [68, 30],
-    iconAnchor: [34, 15],
+    iconSize: [isProject ? 76 : 68, 30],
+    iconAnchor: [isProject ? 38 : 34, 15],
   });
 }
 
@@ -541,10 +565,15 @@ function checkPropertyMatchesQuery(p: SharedMapItem, query: string): boolean {
   if (!query.trim()) return false;
   const rawTerm = query.toLowerCase().trim();
 
+  const configs = (p as any).configurations || (p as any)._originalProjectData?.configurations || [];
+  const projectBedrooms: number[] = Array.isArray(configs)
+    ? configs.map((c: any) => Number(c.bedrooms || (c.label ? c.label.match(/\d+/)?.[0] : 0))).filter(Boolean)
+    : [];
+
   const bhkMatch = rawTerm.match(/(\d+)\s*(bhk|bed|bedroom)?/);
   if (bhkMatch && (rawTerm.includes("bhk") || rawTerm.includes("bed"))) {
     const bedrooms = parseInt(bhkMatch[1]);
-    if (p.bedrooms === bedrooms) return true;
+    if (p.bedrooms === bedrooms || projectBedrooms.includes(bedrooms)) return true;
   }
 
   const stopWords = ["in", "at", "near", "for", "a", "an", "the", "of"];
@@ -557,17 +586,19 @@ function checkPropertyMatchesQuery(p: SharedMapItem, query: string): boolean {
   const address = (p.location?.address || "").toLowerCase();
   const title = (p.title || ("name" in p && typeof p.name === "string" ? p.name : "") || "").toLowerCase();
   const desc = (p.description || "").toLowerCase();
+  const builder = ((p as any).builderName || "").toLowerCase();
+  const configLabels = Array.isArray(configs) ? configs.map((c: any) => (c.label || "").toLowerCase()).join(" ") : "";
 
-  const searchableText = `${title} ${locality} ${city} ${address} ${pType} ${lType} ${desc}`;
+  const searchableText = `${title} ${locality} ${city} ${address} ${pType} ${lType} ${builder} ${configLabels} ${desc}`;
 
   if (tokens.length > 0) {
     return tokens.every(token => {
       const stem = token.length > 3 && token.endsWith('s') ? token.slice(0, -1) : token;
       
-      if (stem === "3bhk" || token === "3bhk") return p.bedrooms === 3;
-      if (stem === "2bhk" || token === "2bhk") return p.bedrooms === 2;
-      if (stem === "4bhk" || token === "4bhk") return p.bedrooms === 4;
-      if (stem === "1bhk" || token === "1bhk") return p.bedrooms === 1;
+      if (stem === "3bhk" || token === "3bhk") return p.bedrooms === 3 || projectBedrooms.includes(3);
+      if (stem === "2bhk" || token === "2bhk") return p.bedrooms === 2 || projectBedrooms.includes(2);
+      if (stem === "4bhk" || token === "4bhk") return p.bedrooms === 4 || projectBedrooms.includes(4);
+      if (stem === "1bhk" || token === "1bhk") return p.bedrooms === 1 || projectBedrooms.includes(1);
 
       if (stem === "apartment" || token === "flats" || token === "flat") {
         return pType.includes("apartment") || searchableText.includes("apartment");
@@ -1025,11 +1056,23 @@ export default function PropertyMap({
   const properties = useVisibleProperties();
   const projects = useProjectsStore((state) => state.projects);
   const isLoading = usePropertiesStore((state) => state.isLoading);
+  const fetchProperties = usePropertiesStore((state) => state.fetchProperties);
+  const fetchProjects = useProjectsStore((state) => state.fetchProjects);
+
+  useEffect(() => {
+    fetchProperties();
+    fetchProjects();
+  }, [fetchProperties, fetchProjects]);
 
   const defaultAllItems = useMemo((): SharedMapItem[] => {
     const propItems = properties.filter((p) => p.showOnMap !== false && p.status !== 'sold');
     const projItems: SharedMapItem[] = projects
-      .filter((p) => p.isPublished !== false && !p.isSoldOut && p.location?.latitude && p.location?.longitude)
+      .filter((p) => {
+        if (p.isPublished === false || p.isSoldOut) return false;
+        const lat = Number(p.location?.latitude);
+        const lng = Number(p.location?.longitude);
+        return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+      })
       .map((p) => ({
         id: p.id,
         slug: p.slug,
@@ -1039,12 +1082,12 @@ export default function PropertyMap({
         listingType: "project",
         status: "active",
         location: {
-          address: p.location.address,
-          locality: p.location.locality,
-          city: p.location.city,
-          state: p.location.state,
-          latitude: p.location.latitude,
-          longitude: p.location.longitude,
+          address: p.location.address || "",
+          locality: p.location.locality || "",
+          city: p.location.city || "",
+          state: p.location.state || "",
+          latitude: Number(p.location.latitude),
+          longitude: Number(p.location.longitude),
         },
         coverImage: p.coverImage,
         images: p.images?.map((img) => (typeof img === "string" ? img : img.url || "")) || [],
@@ -1059,7 +1102,13 @@ export default function PropertyMap({
 
   const mapProperties = useMemo(() => {
     if (filteredItems && Array.isArray(filteredItems)) {
-      return propertiesEnabled ? filteredItems : filteredItems.filter(item => "_isProject" in item && item._isProject);
+      const base = propertiesEnabled ? filteredItems : filteredItems.filter(item => "_isProject" in item && item._isProject);
+      const hasProjectsInFiltered = base.some((i: any) => i._isProject);
+      if (!hasProjectsInFiltered && defaultAllItems.some((i: any) => i._isProject)) {
+        const projItems = defaultAllItems.filter((i: any) => i._isProject);
+        return [...base, ...projItems];
+      }
+      return base;
     }
     return defaultAllItems;
   }, [filteredItems, defaultAllItems, propertiesEnabled]);
@@ -1100,6 +1149,25 @@ export default function PropertyMap({
       }
     }
   }, [initialCenter.lat, initialCenter.lng]);
+
+  const hasAutoCentered = useRef(false);
+  useEffect(() => {
+    if (hasAutoCentered.current || !mapRef.current || mapProperties.length === 0) return;
+    if (initialQuery.trim()) return;
+
+    const itemsWithCoords = mapProperties.filter(
+      (p) => Number(p.location?.latitude) && Number(p.location?.longitude)
+    );
+    if (itemsWithCoords.length > 0) {
+      hasAutoCentered.current = true;
+      const bounds = L.latLngBounds(
+        itemsWithCoords.map((p) => [Number(p.location!.latitude), Number(p.location!.longitude)])
+      );
+      if (bounds.isValid()) {
+        mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+      }
+    }
+  }, [mapProperties, initialQuery]);
 
   // Keep internal search input in sync with external query params
   useEffect(() => {
@@ -1422,7 +1490,21 @@ const BUDGET_PRESETS = [
     if (onEntityTypeFilterChange) {
       onEntityTypeFilterChange(newType);
     }
-  }, [onEntityTypeFilterChange]);
+    if (newType === "projects" && mapRef.current) {
+      const projs = mapProperties.filter((p: any) => Boolean(p._isProject));
+      if (projs.length > 0) {
+        const coords = projs.map((p) => resolvePropertyMapCoords(p));
+        if (coords.length === 1) {
+          mapRef.current.flyTo([coords[0].lat, coords[0].lng], 14, { duration: 1.2 });
+        } else {
+          const bounds = L.latLngBounds(coords.map((c) => [c.lat, c.lng] as [number, number]));
+          if (bounds.isValid()) {
+            mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, duration: 1.2 });
+          }
+        }
+      }
+    }
+  }, [onEntityTypeFilterChange, mapProperties]);
 
   // Track exact bottom of RealtorSearchHeader dynamically so drawer aligns perfectly with zero gap & zero overlap
   const [headerBottom, setHeaderBottom] = useState(191);
@@ -1662,9 +1744,29 @@ const BUDGET_PRESETS = [
     if (selectedMapCities.length > 0) {
       const cityQueries = selectedMapCities.map((c) => c.toLowerCase().trim());
       source = source.filter((p) => {
-        const pCity = (p.location?.city || "").toLowerCase();
-        const pAddr = (p.location?.address || "").toLowerCase();
-        return cityQueries.some((q) => pCity.includes(q) || pAddr.includes(q));
+        const pCity = (p.location?.city || "").toLowerCase().trim();
+        const pLoc = (p.location?.locality || "").toLowerCase().trim();
+        const pAddr = (p.location?.address || "").toLowerCase().trim();
+        const pTitle = (p.title || "").toLowerCase().trim();
+
+        return cityQueries.some((q) => {
+          if (pCity.includes(q) || pLoc.includes(q) || pAddr.includes(q) || pTitle.includes(q)) {
+            return true;
+          }
+          const aliases = LOCATION_ALIASES[q];
+          if (aliases && aliases.some((alias) => pCity.includes(alias) || pLoc.includes(alias) || pAddr.includes(alias))) {
+            return true;
+          }
+          const matchingAdminCity = adminCities.find((c) => c.name.toLowerCase() === q);
+          if (matchingAdminCity?.sublocations?.some((s) => pCity.includes(s.name.toLowerCase()) || pLoc.includes(s.name.toLowerCase()) || pAddr.includes(s.name.toLowerCase()))) {
+            return true;
+          }
+          const pCityAliases = LOCATION_ALIASES[pCity];
+          if (pCityAliases && pCityAliases.some((alias) => alias.includes(q) || q.includes(alias))) {
+            return true;
+          }
+          return false;
+        });
       });
     }
 
@@ -1672,35 +1774,42 @@ const BUDGET_PRESETS = [
     if (selectedMapLocalities.length > 0) {
       const locQueries = selectedMapLocalities.map((l) => l.toLowerCase().trim());
       source = source.filter((p) => {
-        const pLoc = (p.location?.locality || "").toLowerCase();
-        const pAddr = (p.location?.address || "").toLowerCase();
-        const pTitle = (p.title || "").toLowerCase();
-        return locQueries.some((q) => pLoc.includes(q) || pAddr.includes(q) || pTitle.includes(q));
+        const pLoc = (p.location?.locality || "").toLowerCase().trim();
+        const pAddr = (p.location?.address || "").toLowerCase().trim();
+        const pTitle = (p.title || "").toLowerCase().trim();
+        const pCity = (p.location?.city || "").toLowerCase().trim();
+        return locQueries.some((q) => pLoc.includes(q) || pAddr.includes(q) || pTitle.includes(q) || pCity.includes(q));
       });
     }
+
+    const matchesBudgetRange = (p: any, min: number, max: number) => {
+      const price = Number(p.price || 0);
+      if (price > 0 && price >= min && price <= max) return true;
+      const configs = p.configurations || p._originalProjectData?.configurations;
+      if (Array.isArray(configs) && configs.length > 0) {
+        return configs.some((c: any) => {
+          const cMin = Number(c.priceMin || c.price || 0);
+          const cMax = Number(c.priceMax || c.priceMin || c.price || 0);
+          if (cMin === 0 && cMax === 0) return true;
+          return (cMin >= min && cMin <= max) || (cMax >= min && cMax <= max) || (cMin <= min && cMax >= max);
+        });
+      }
+      return price === 0;
+    };
 
     // Price Range Filter from Map Explorer (Multi-preset or slider)
     if (selectedBudgetKeys.length > 0) {
       source = source.filter((p) => {
-        const price = Number(p.price || 0);
-        if (price === 0) return true; // Price on request
         return selectedBudgetKeys.some((key) => {
           const preset = BUDGET_PRESETS.find((b) => b.key === key);
           if (!preset) return false;
-          return price >= preset.min && price <= preset.max;
+          return matchesBudgetRange(p, preset.min, preset.max);
         });
       });
     } else if (mapPriceRange[0] > 0 || mapPriceRange[1] < 100000000) {
-      source = source.filter((p) => {
-        const price = Number(p.price || 0);
-        if (price === 0) return true; // Price on request
-        return price >= mapPriceRange[0] && price <= mapPriceRange[1];
-      });
+      source = source.filter((p) => matchesBudgetRange(p, mapPriceRange[0], mapPriceRange[1]));
     } else if (parsedBudget && !filteredItems) {
-      source = source.filter((p) => {
-        const price = Number(p.price || 0);
-        return price >= parsedBudget[0] && price <= parsedBudget[1];
-      });
+      source = source.filter((p) => matchesBudgetRange(p, parsedBudget[0], parsedBudget[1]));
     }
 
     if (!mapSearchInput.trim()) {
@@ -1743,7 +1852,8 @@ const BUDGET_PRESETS = [
       const pLoc = (p.location?.locality || "").toLowerCase();
       const pAddr = (p.location?.address || "").toLowerCase();
       const pTitle = (p.title || "").toLowerCase();
-      return pLoc.includes(q) || pAddr.includes(q) || pTitle.includes(q);
+      const pCity = (p.location?.city || "").toLowerCase();
+      return pLoc.includes(q) || pAddr.includes(q) || pTitle.includes(q) || pCity.includes(q);
     }).length;
   }, [displayedProperties]);
 
@@ -1751,17 +1861,11 @@ const BUDGET_PRESETS = [
     return displayedProperties.find((p) => p.id === selectedPropertyId);
   }, [displayedProperties, selectedPropertyId]);
 
-  // Entity type filter & subtype filter applied on top of displayedProperties
-  // Real-time viewport boundary filter: Show ONLY what is shown on the map!
-  const displayedPropertiesFiltered = useMemo(() => {
+  // Items to display as markers on the map:
+  // Must respect listingTypeFilter ("all" | "properties" | "projects") and selected subtypes,
+  // but MUST NOT be pruned by visibleAreaIds (Leaflet manages viewport rendering natively).
+  const mapMarkerItems = useMemo(() => {
     let list = displayedProperties;
-
-    // Filter to items currently visible within the map viewport bounds in real time
-    if (visibleAreaIds !== null) {
-      const areaSet = new Set(visibleAreaIds);
-      list = list.filter((p) => areaSet.has(p.id));
-    }
-
     if (listingTypeFilter === "properties") list = list.filter((p: any) => !p._isProject);
     else if (listingTypeFilter === "projects") list = list.filter((p: any) => Boolean(p._isProject));
 
@@ -1769,24 +1873,63 @@ const BUDGET_PRESETS = [
       list = list.filter((p) => selectedSubtypes.some((key) => itemMatchesSubtype(p, key)));
     }
     return list;
+  }, [displayedProperties, listingTypeFilter, selectedSubtypes]);
+
+  // Entity type filter & subtype filter applied on top of displayedProperties
+  // Real-time viewport boundary filter: Show listings in viewport, or all if none currently in center view
+  const displayedPropertiesFiltered = useMemo(() => {
+    let list = displayedProperties;
+
+    if (listingTypeFilter === "properties") list = list.filter((p: any) => !p._isProject);
+    else if (listingTypeFilter === "projects") list = list.filter((p: any) => Boolean(p._isProject));
+
+    if (selectedSubtypes.length > 0) {
+      list = list.filter((p) => selectedSubtypes.some((key) => itemMatchesSubtype(p, key)));
+    }
+
+    if (visibleAreaIds !== null) {
+      const areaSet = new Set(visibleAreaIds);
+      const inViewport = list.filter((p) => areaSet.has(p.id));
+      if (inViewport.length > 0) {
+        return inViewport;
+      }
+    }
+    return list;
   }, [displayedProperties, visibleAreaIds, listingTypeFilter, selectedSubtypes]);
 
   // Live item counts reflecting map area, locations, budget, AND selected subtypes
   const allMatchingAreaItems = useMemo(() => {
     let list = displayedProperties;
-    if (visibleAreaIds !== null) {
-      const areaSet = new Set(visibleAreaIds);
-      list = list.filter((p) => areaSet.has(p.id));
-    }
     if (selectedSubtypes.length > 0) {
       list = list.filter((p) => selectedSubtypes.some((key) => itemMatchesSubtype(p, key)));
+    }
+    if (visibleAreaIds !== null) {
+      const areaSet = new Set(visibleAreaIds);
+      const inViewport = list.filter((p) => areaSet.has(p.id));
+      if (inViewport.length > 0) {
+        return inViewport;
+      }
     }
     return list;
   }, [displayedProperties, visibleAreaIds, selectedSubtypes]);
 
-  const liveAllCount = allMatchingAreaItems.length;
-  const livePropertiesCount = useMemo(() => allMatchingAreaItems.filter((p: any) => !p._isProject).length, [allMatchingAreaItems]);
-  const liveProjectsCount = useMemo(() => allMatchingAreaItems.filter((p: any) => Boolean(p._isProject)).length, [allMatchingAreaItems]);
+  const totalProjectsCount = useMemo(() => displayedProperties.filter((p: any) => Boolean(p._isProject)).length, [displayedProperties]);
+  const totalPropertiesCount = useMemo(() => displayedProperties.filter((p: any) => !p._isProject).length, [displayedProperties]);
+
+  const liveProjectsCount = useMemo(() => {
+    const inArea = allMatchingAreaItems.filter((p: any) => Boolean(p._isProject)).length;
+    return inArea > 0 ? inArea : totalProjectsCount;
+  }, [allMatchingAreaItems, totalProjectsCount]);
+
+  const livePropertiesCount = useMemo(() => {
+    const inArea = allMatchingAreaItems.filter((p: any) => !p._isProject).length;
+    return inArea > 0 ? inArea : totalPropertiesCount;
+  }, [allMatchingAreaItems, totalPropertiesCount]);
+
+  const liveAllCount = useMemo(() => {
+    const inArea = allMatchingAreaItems.length;
+    return inArea > 0 ? inArea : displayedProperties.length;
+  }, [allMatchingAreaItems, displayedProperties.length]);
 
   const allCount = liveAllCount;
   const propertiesCount = livePropertiesCount;
@@ -1800,7 +1943,10 @@ const BUDGET_PRESETS = [
     let areaFiltered = displayedProperties;
     if (visibleAreaIds !== null) {
       const areaSet = new Set(visibleAreaIds);
-      areaFiltered = areaFiltered.filter((p) => areaSet.has(p.id));
+      const inViewport = areaFiltered.filter((p) => areaSet.has(p.id));
+      if (inViewport.length > 0) {
+        areaFiltered = inViewport;
+      }
     }
 
     const baseItems = listingTypeFilter === "properties" 
@@ -3482,11 +3628,12 @@ const BUDGET_PRESETS = [
             )}
 
             {/* Realtor.com Style Price Pill Markers */}
-            {displayedPropertiesFiltered.map((property) => {
+            {mapMarkerItems.map((property) => {
               const isSelected = selectedPropertyId === property.id;
               const isBlinking = blinkingPropertyId === property.id;
               const hasSearch = Boolean(mapSearchInput.trim());
-              const pricePillIcon = getPricePillIcon(property.price ?? 0, isSelected, hasSearch, isBlinking);
+              const isProj = Boolean((property as any)._isProject);
+              const pricePillIcon = getPricePillIcon(property.price ?? 0, isSelected, hasSearch, isBlinking, isProj);
               const coords = resolvePropertyMapCoords(property);
 
               const firstImg = property.images && property.images[0];

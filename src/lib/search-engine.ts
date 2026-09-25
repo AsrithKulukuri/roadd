@@ -453,7 +453,7 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
   };
 }
 
-const LOCATION_ALIASES: Record<string, string[]> = {
+export const LOCATION_ALIASES: Record<string, string[]> = {
   "benz circle": ["benz circle", "patamata", "mg road", "m.g. road", "bandar road"],
   "amaravati": ["amaravati", "amaravathi", "thullur", "velagapudi", "mandadam", "rayapudi", "nekkallu", "inavolu", "anantavaram", "dharanikota"],
   "guntur": ["guntur", "gorantla", "brodipet", "pattabhipuram", "amaravati road", "kaza", "pedakakani", "vidhyanagar", "nallapadu"],
@@ -1167,9 +1167,10 @@ export function evaluateProjectFilters(
       const target = l.toLowerCase().trim();
       if (!target) return false;
       const projLocality = String(project.location?.locality || "").toLowerCase();
+      const projCity = String(project.location?.city || "").toLowerCase();
       const projAddress = String(project.location?.address || "").toLowerCase();
       const projLandmark = String((project.location as any)?.landmark || "").toLowerCase();
-      return projLocality.includes(target) || projAddress.includes(target) || projLandmark.includes(target);
+      return projLocality.includes(target) || projCity.includes(target) || projAddress.includes(target) || projLandmark.includes(target);
     });
     if (!matchesLoc) return false;
   }
