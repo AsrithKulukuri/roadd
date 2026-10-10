@@ -48,6 +48,8 @@ export function MobileBottomNav() {
   const [showMapTooltip, setShowMapTooltip] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Hide bottom nav when any input or search bar is focused
   useEffect(() => {
@@ -293,9 +295,6 @@ export function MobileBottomNav() {
   if (isDetailPage || isMapView) {
     return null;
   }
-
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const handleSignOut = async () => {
     await logoutUser();
