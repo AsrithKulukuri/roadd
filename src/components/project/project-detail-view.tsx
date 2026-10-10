@@ -922,8 +922,8 @@ export function ProjectDetailView({
                       </div>
                     </div>
 
-                    {/* Row 2: Available | Area Range | Status */}
-                    <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-800 text-center">
+                    {/* Row 2: Available | Status */}
+                    <div className="grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-800 text-center">
                       <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0 bg-amber-500/5 dark:bg-amber-400/5">
                         <span className="text-[10px] sm:text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider truncate">
                           Available
@@ -934,21 +934,6 @@ export function ProjectDetailView({
                               ? formatAvailableBhk(project.configurations.map((c) => c.label))
                               : "";
                             return configs || (project.projectType === "venture" ? "Plots" : "3 BHK");
-                          })()}
-                        </span>
-                      </div>
-                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0">
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
-                          Area Range
-                        </span>
-                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-1 truncate">
-                          {(() => {
-                            const sizes = project.configurations?.flatMap(c => [c.builtUpAreaMin, c.builtUpAreaMax, c.plotSizeMin, c.plotSizeMax]).filter(Boolean) as number[];
-                            if (!sizes || !sizes.length) return "On Request";
-                            const min = Math.min(...sizes);
-                            const max = Math.max(...sizes);
-                            const unit = project.projectType === "venture" ? "sq.yds" : "sq.ft";
-                            return min === max ? `${min} ${unit}` : `${min} to ${max} ${unit}`;
                           })()}
                         </span>
                       </div>
