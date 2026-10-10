@@ -24,7 +24,6 @@ export default async function Image() {
             "radial-gradient(circle at 10% 20%, rgba(250, 173, 19, 0.15) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(250, 173, 19, 0.1) 0%, transparent 50%)",
           color: "#ffffff",
           padding: "64px 72px",
-          fontFamily: "system-ui, -apple-system, sans-serif",
           position: "relative",
         }}
       >
@@ -55,18 +54,21 @@ export default async function Image() {
               R
             </div>
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <span
+              <div
                 style={{
+                  display: "flex",
                   fontSize: "30px",
                   fontWeight: 900,
                   letterSpacing: "-0.03em",
                   color: "#ffffff",
                 }}
               >
-                ROAD <span style={{ color: "#faad13" }}>FACING</span>
-              </span>
-              <span
+                <span>ROAD</span>
+                <span style={{ color: "#faad13", marginLeft: "8px" }}>FACING</span>
+              </div>
+              <div
                 style={{
+                  display: "flex",
                   fontSize: "13px",
                   fontWeight: 700,
                   color: "#94a3b8",
@@ -75,7 +77,7 @@ export default async function Image() {
                 }}
               >
                 Real Estate Portal • AP Capital Region
-              </span>
+              </div>
             </div>
           </div>
 
@@ -95,36 +97,37 @@ export default async function Image() {
               letterSpacing: "0.06em",
             }}
           >
-            ✓ RERA & CRDA Verified
+            VERIFIED • RERA & CRDA
           </div>
         </div>
 
         {/* Center Main Content */}
         <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "980px" }}>
-          <h1
+          <div
             style={{
+              display: "flex",
+              flexDirection: "column",
               fontSize: "56px",
               fontWeight: 900,
               lineHeight: 1.15,
               letterSpacing: "-0.03em",
               color: "#ffffff",
-              margin: 0,
             }}
           >
-            Real Projects. Real People. <br />
+            <span>Real Projects. Real People.</span>
             <span style={{ color: "#faad13" }}>Real Video Updates.</span>
-          </h1>
-          <p
+          </div>
+          <div
             style={{
+              display: "flex",
               fontSize: "24px",
               color: "#94a3b8",
               lineHeight: 1.45,
               fontWeight: 500,
-              margin: 0,
             }}
           >
             Explore verified apartments, villas, and plots across Vijayawada, Guntur & Amaravati with 100% on-ground transparency.
-          </p>
+          </div>
         </div>
 
         {/* Bottom Feature Badges */}
@@ -141,6 +144,7 @@ export default async function Image() {
             <div
               key={loc}
               style={{
+                display: "flex",
                 padding: "8px 18px",
                 borderRadius: "10px",
                 backgroundColor: "rgba(30, 41, 59, 0.7)",
@@ -150,11 +154,12 @@ export default async function Image() {
                 color: "#e2e8f0",
               }}
             >
-              📍 {loc}
+              {loc}
             </div>
           ))}
           <div
             style={{
+              display: "flex",
               marginLeft: "auto",
               fontSize: "18px",
               fontWeight: 800,
