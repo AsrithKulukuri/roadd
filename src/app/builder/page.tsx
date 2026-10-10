@@ -24,7 +24,9 @@ import {
   CheckCircle2,
   Share2,
   Copy,
-  Activity
+  Activity,
+  CreditCard,
+  ChevronRight
 } from "lucide-react";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -330,6 +332,44 @@ export default function BuilderOverviewPage() {
           </div>
         </div>
       </div>
+
+      {/* SUBSCRIPTION STATUS WIDGET */}
+      {currentBuilder?.subscription && (
+        <div className="bg-gradient-to-r from-zinc-900 via-zinc-900 to-amber-950/20 border border-zinc-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+              <CreditCard className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-white">
+                  Portal Subscription: {currentBuilder.subscription.status === "active" ? "Active" : currentBuilder.subscription.status === "expiring_soon" ? "Expiring Soon" : "Lapsed"}
+                </h4>
+                <span className={cn(
+                  "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
+                  currentBuilder.subscription.daysRemaining <= 7
+                    ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                    : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                )}>
+                  {currentBuilder.subscription.daysRemaining} Days Left
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Standard Rate: ₹3,500 / 30 Days • Valid through {new Date(currentBuilder.subscription.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <Link
+              href="/builder/subscription"
+              className="text-xs font-semibold px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 flex items-center gap-1.5 transition-all shadow font-bold"
+            >
+              Subscription Hub <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* 2. REAL METRIC CARDS (STRICTLY ASSIGNED DATA) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

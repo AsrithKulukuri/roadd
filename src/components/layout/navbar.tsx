@@ -30,6 +30,7 @@ import {
   SlidersHorizontal,
   Shield,
   MessageSquare,
+  Trash2,
 } from "lucide-react";
 import { MobileLocationPicker } from "@/components/layout/mobile-location-picker";
 import { Logo } from "@/components/shared/logo";
@@ -38,7 +39,7 @@ import { cn, formatINRWords } from "@/lib/utils";
 import { navigationLinks } from "@/config/site";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
-import { logoutUser } from "@/hooks/use-auth-session";
+import { logoutUser, deleteAccountUser } from "@/hooks/use-auth-session";
 import { PostRequirementModal } from "@/components/shared/post-requirement-modal";
 import { useProjectsStore } from "@/stores/projects-store";
 import { usePropertiesStore } from "@/stores/properties-store";
@@ -78,6 +79,8 @@ export function Navbar() {
   const [openMobileSubmenus, setOpenMobileSubmenus] = useState<Record<string, boolean>>({});
   const [user, setUser] = useState<NavUser | null>(null);
   const isAdmin = user?.role === "admin";
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Compact Navbar Search States
   const [navSearchQuery, setNavSearchQuery] = useState("");
@@ -461,8 +464,22 @@ export function Navbar() {
   const handleSignOut = async () => {
     await logoutUser();
     setUser(null);
-    toast.success("Signed out successfully");
+    toast.success("Signed out successfully. Profile remembered for next login.");
     window.location.href = "/";
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      await deleteAccountUser();
+      setUser(null);
+      setShowDeleteConfirm(false);
+      toast.success("Account permanently deleted. All saved details cleared.");
+      window.location.href = "/";
+    } catch {
+      toast.error("Failed to delete account. Please try again.");
+      setIsDeletingAccount(false);
+    }
   };
 
   const isActive = (href: string) => {
@@ -866,27 +883,55 @@ export function Navbar() {
                   </button>
 
                   {/* Dropdown Menu */}
-                  <div className="absolute top-full right-0 pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
-                    <div className="bg-white dark:bg-slate-900 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden p-1.5 text-xs">
+                  <div className="absolute top-full right-0 pt-2 w-52 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden p-2 text-xs">
+                      {/* User Info Header */}
+                      <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/60 rounded-xl mb-1.5 border border-slate-100 dark:border-slate-800">
+                        <div className="font-bold text-slate-900 dark:text-white truncate">
+                          {user.name || "User"}
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                          {user.phone || (isAdmin ? "Administrator" : "Account")}
+                        </div>
+                      </div>
+
+                      {/* Admin link if user is administrator */}
                       {isAdmin && (
                         <>
                           <Link
                             href="/admin"
-                            className="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-slate-800 dark:text-slate-100 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-600 dark:hover:text-amber-400 rounded-xl font-bold cursor-pointer transition-colors"
+                            className="w-full text-left flex items-center gap-2.5 px-3 py-2 text-slate-800 dark:text-slate-100 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-600 dark:hover:text-amber-400 rounded-xl font-bold cursor-pointer transition-colors"
                           >
                             <Shield className="w-4 h-4 text-amber-500 shrink-0" />
-                            <span>My Dashboard</span>
+                            <span>Admin Dashboard</span>
                           </Link>
                           <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
                         </>
                       )}
+
+                      {/* Sign Out (Remembers user on this device) */}
                       <button
                         type="button"
                         onClick={handleSignOut}
-                        className="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-700 rounded-xl font-bold cursor-pointer transition-colors"
+                        className="w-full text-left flex items-center justify-between px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold cursor-pointer transition-colors"
                       >
-                        <LogOut className="w-4 h-4 text-red-500 shrink-0" />
-                        <span>Sign Out</span>
+                        <div className="flex items-center gap-2.5">
+                          <LogOut className="w-4 h-4 text-slate-500 shrink-0" />
+                          <span>Sign Out</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-normal">Remember me</span>
+                      </button>
+
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                      {/* Delete My Account */}
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="w-full text-left flex items-center gap-2.5 px-3 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-700 rounded-xl font-bold cursor-pointer transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500 shrink-0" />
+                        <span>Delete My Account</span>
                       </button>
                     </div>
                   </div>
@@ -1049,9 +1094,19 @@ export function Navbar() {
                   <Button
                     onClick={handleSignOut}
                     variant="ghost"
-                    className="w-full text-red-600 dark:text-red-400 font-extrabold hover:bg-slate-100 dark:hover:bg-slate-800 justify-start"
+                    className="w-full text-slate-700 dark:text-slate-300 font-extrabold hover:bg-slate-100 dark:hover:bg-slate-800 justify-start"
                   >
                     <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setShowDeleteConfirm(true);
+                    }}
+                    variant="ghost"
+                    className="w-full text-red-600 dark:text-red-400 font-extrabold hover:bg-red-50 dark:hover:bg-red-950/30 justify-start"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" /> Delete My Account
                   </Button>
                 </div>
               ) : (
@@ -1078,6 +1133,68 @@ export function Navbar() {
         isOpen={isRequirementModalOpen}
         onClose={() => setIsRequirementModalOpen(false)}
       />
+
+      {/* Delete Account Confirmation Dialog */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !isDeletingAccount && setShowDeleteConfirm(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md cursor-pointer"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 space-y-5 text-slate-900 dark:text-white"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-2 text-left">
+                <h3 className="font-heading text-xl font-bold text-slate-950 dark:text-white">
+                  Delete My Account?
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                  This action is permanent and irreversible. All your profile information, inquiries, verified sessions, and saved preferences will be completely deleted from our servers and wiped from this device.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isDeletingAccount}
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 h-11 rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={isDeletingAccount}
+                  onClick={handleDeleteAccount}
+                  className="flex-1 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold gap-1.5 cursor-pointer shadow-md shadow-red-500/20"
+                >
+                  {isDeletingAccount ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      Deleting...
+                    </span>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete Permanently
+                    </>
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

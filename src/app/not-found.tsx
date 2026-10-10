@@ -1,6 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Home, Search, Building2, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "404 - Page Not Found",
+  description: "The property, project, or page you are looking for could not be found on Road Facing.",
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 export default function NotFound() {
   return (
@@ -37,7 +47,7 @@ export default function NotFound() {
 
         <div className="pt-6 border-t border-border-default flex items-center justify-center gap-6 text-xs text-text-tertiary">
           <Link href="/search?type=projects" className="hover:text-amber-500 transition-colors font-medium">
-            New Projects
+            Pre Projects
           </Link>
           <span>•</span>
           <Link href="/properties" className="hover:text-amber-500 transition-colors font-medium">

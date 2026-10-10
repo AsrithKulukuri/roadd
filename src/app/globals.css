@@ -25,16 +25,23 @@
   --color-bg-card: var(--bg-card);
   --color-bg-elevated: var(--bg-elevated);
   --color-bg-hover: var(--bg-hover);
+  --color-background: var(--bg-primary);
+  --color-card: var(--bg-card);
+  --color-muted: var(--bg-hover);
 
   /* Borders */
   --color-border-default: var(--border-default);
   --color-border-subtle: var(--border-subtle);
   --color-border-amber: #faad1340;
+  --color-border: var(--border-default);
 
   /* Text */
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
+  --color-foreground: var(--text-primary);
+  --color-card-foreground: var(--text-primary);
+  --color-muted-foreground: var(--text-tertiary);
 
   /* Semantic */
   --color-success: #3BB273;

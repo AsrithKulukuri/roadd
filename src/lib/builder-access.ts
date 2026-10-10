@@ -2,6 +2,8 @@ import { authenticateServerRequest } from "@/lib/server-auth-guard";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { NextResponse } from "next/server";
 
+import { calculateSubscriptionDetails, decodeSubscriptionPayload } from "@/lib/builder-subscription";
+
 export class PortalError extends Error {
   constructor(message: string, public status = 400) { super(message); }
 }
@@ -9,7 +11,17 @@ export function portalError(error: unknown) {
   return NextResponse.json({ success: false, error: error instanceof PortalError ? error.message : "The portal service could not complete this operation. Please retry." }, { status: error instanceof PortalError ? error.status : 503 });
 }
 export function camelRow(row: Record<string, any>) {
-  return Object.fromEntries(Object.entries(row).filter(([key]) => key !== "login_credentials_hint").map(([key, value]) => [key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase()), value]));
+  const base = Object.fromEntries(
+    Object.entries(row)
+      .filter(([key]) => key !== "login_credentials_hint")
+      .map(([key, value]) => [key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase()), value])
+  );
+  const decoded = decodeSubscriptionPayload(row.login_credentials_hint);
+  base.subscription = calculateSubscriptionDetails(decoded.subscription, row.created_at);
+  if (decoded.credentialsHint) {
+    base.credentialsHint = decoded.credentialsHint;
+  }
+  return base;
 }
 export function ownsProject(assignments: unknown, project: { id: string; slug?: string }) {
   return Array.isArray(assignments) && assignments.some(id => typeof id === "string" && !!id && (id === project.id || id === project.slug));

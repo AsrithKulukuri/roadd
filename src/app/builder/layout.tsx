@@ -20,7 +20,9 @@ import {
   Plus,
   SlidersHorizontal,
   Bell,
-  Award
+  Award,
+  CreditCard,
+  AlertTriangle
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 
@@ -50,6 +52,10 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
   const [isAuthChecking, setIsAuthChecking] = useState(pathname !== "/builder/login");
   const currentBuilder = getCurrentBuilder();
 
+  const sub = currentBuilder?.subscription;
+  const isExpired = sub?.status === "expired" || sub?.status === "pending_payment" || (sub?.daysRemaining !== undefined && sub.daysRemaining <= 0);
+  const isExpiringSoon = sub?.status === "expiring_soon" || (sub?.daysRemaining !== undefined && sub.daysRemaining > 0 && sub.daysRemaining <= 7);
+
   useEffect(() => {
     setMounted(true);
     if (pathname === "/builder/login") { setIsAuthChecking(false); return; }
@@ -65,6 +71,14 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
     });
     return () => { cancelled = true; };
   }, [fetchFromSupabase, fetchSchedules, pathname, router]);
+
+  // Subscription Guard: If subscription is expired, direct towards payment portal
+  useEffect(() => {
+    if (mounted && !isAuthChecking && currentBuilder && isExpired && pathname !== "/builder/subscription" && pathname !== "/builder/login") {
+      toast.warning("Subscription expired. Directing to Payment Portal...");
+      router.replace("/builder/subscription");
+    }
+  }, [mounted, isAuthChecking, currentBuilder, isExpired, pathname, router]);
 
   // If on builder login page, render full screen without layout shell
   if (pathname === "/builder/login") {
@@ -149,10 +163,29 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
       icon: Sparkles,
       badge: myPendingRequests > 0 ? myPendingRequests : undefined,
     },
+    {
+      href: "/builder/subscription",
+      label: "Subscription & Billing",
+      icon: CreditCard,
+      badge: isExpired ? "Expired" : isExpiringSoon ? `${sub?.daysRemaining}d` : undefined,
+    },
   ];
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
+      {/* 7-DAY ADVANCE WARNING TOP BANNER */}
+      {isExpiringSoon && !isExpired && (
+        <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2 text-center text-xs text-amber-200 flex items-center justify-center gap-2">
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <span>
+            Advance Notice: Your builder subscription expires in <strong className="text-amber-400 font-bold">{sub?.daysRemaining} days</strong>.
+          </span>
+          <Link href="/builder/subscription" className="underline font-bold text-amber-400 hover:text-white ml-1">
+            Renew via Razorpay →
+          </Link>
+        </div>
+      )}
+
       {/* TOP LUXURY BUILDER NAV */}
       <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
@@ -187,6 +220,22 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
 
           {/* RIGHT ACTIONS */}
           <div className="flex items-center gap-3">
+            {/* Subscription Quick Badge */}
+            <Link
+              href="/builder/subscription"
+              className={cn(
+                "hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all",
+                isExpired
+                  ? "bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20"
+                  : isExpiringSoon
+                  ? "bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
+                  : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+              )}
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              <span>{isExpired ? "Plan Expired" : isExpiringSoon ? `${sub?.daysRemaining}d Left` : `${sub?.daysRemaining || 30}d Active`}</span>
+            </Link>
+
             <Link
               href="/builder/requests"
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-all shadow-sm"

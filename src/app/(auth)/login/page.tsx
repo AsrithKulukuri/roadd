@@ -9,6 +9,7 @@ import { OTPInput } from "@/components/auth/otp-input";
 import { CompleteProfileStep } from "@/components/auth/complete-profile-step";
 import { useWhatsAppAuth } from "@/hooks/useWhatsAppAuth";
 import { MessageSquare, Lock, UserCheck, ShieldCheck, Building2 } from "lucide-react";
+import { getRememberedProfile, getLastRememberedPhone, saveRememberedProfile } from "@/lib/user-profile-memory";
 
 function LoginForm() {
   const router = useRouter();
@@ -45,6 +46,12 @@ function LoginForm() {
     }
   }, [router, redirectTarget]);
 
+  const [rememberedPhone, setRememberedPhone] = useState("");
+
+  useEffect(() => {
+    setRememberedPhone(getLastRememberedPhone());
+  }, []);
+
   const handlePhoneSubmit = async (targetPhone: string) => {
     const ok = await sendOTP(targetPhone);
     if (ok) {
@@ -58,39 +65,72 @@ function LoginForm() {
       const user = res.user;
       setCurrentUser(user);
 
-      const isComplete = Boolean(
+      // 1. Check if backend database already holds full profile details
+      let isComplete = Boolean(
         res.isProfileComplete ||
         (user?.name && user.name.trim().length >= 2 && !user.name.toLowerCase().includes("user"))
       );
 
+      let effectiveUser = user;
+
+      // 2. Fallback: If backend was missing profile, check if this user is remembered on this device!
+      if (!isComplete) {
+        const remembered = getRememberedProfile(user?.phone || phone);
+        if (remembered && remembered.name && remembered.name.trim().length >= 2) {
+          isComplete = true;
+          effectiveUser = {
+            id: user?.id || "",
+            phone: user?.phone || phone,
+            name: remembered.name,
+            email: remembered.email || user?.email || "",
+            role: remembered.role || user?.role || "buyer",
+            isProfileComplete: true,
+            isVerified: true,
+          };
+
+          // Synchronize remembered profile to the backend database
+          fetch("/api/auth/complete-profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              phone: user?.phone || phone,
+              name: remembered.name,
+              email: remembered.email || "",
+              role: remembered.role || "buyer",
+            }),
+          }).catch((e) => console.warn("Background profile sync warning:", e));
+        }
+      }
+
       if (typeof window !== "undefined") {
-        localStorage.setItem(
-          "road_user",
-          JSON.stringify({
-            isLoggedIn: true,
-            id: user?.id,
-            phone: user?.phone,
-            name: user?.name,
-            email: user?.email || "",
-            role: user?.role || "buyer",
-            isProfileComplete: isComplete,
-            isVerified: (user as any)?.isVerified ?? true,
-          })
-        );
+        const sessionPayload = {
+          isLoggedIn: true,
+          id: effectiveUser?.id,
+          phone: effectiveUser?.phone || phone,
+          name: effectiveUser?.name,
+          email: effectiveUser?.email || "",
+          role: effectiveUser?.role || "buyer",
+          isProfileComplete: isComplete,
+          isVerified: (effectiveUser as any)?.isVerified ?? true,
+        };
+        localStorage.setItem("road_user", JSON.stringify(sessionPayload));
+        if (isComplete) {
+          saveRememberedProfile(sessionPayload.phone, sessionPayload);
+        }
         window.dispatchEvent(new Event("road_auth_changed"));
       }
 
       if (isComplete) {
-        // User has full details (name & email)! Redirect to target property or homepage
+        // User has full details! Redirect straight away without asking again
         setTimeout(() => {
           if (typeof window !== "undefined") {
             window.location.href = redirectTarget;
           } else {
             router.push(redirectTarget);
           }
-        }, 500);
+        }, 400);
       } else {
-        // Profile incomplete: ask for Name & Email
+        // Only brand-new users who have never set a name are prompted
         setActiveStep("profile");
       }
     }
@@ -98,19 +138,18 @@ function LoginForm() {
 
   const handleProfileComplete = (updatedUser: any) => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(
-        "road_user",
-        JSON.stringify({
-          isLoggedIn: true,
-          id: updatedUser?.id,
-          phone: updatedUser?.phone || phone,
-          name: updatedUser?.name,
-          email: updatedUser?.email || "",
-          role: updatedUser?.role || "buyer",
-          isProfileComplete: true,
-          isVerified: updatedUser?.isVerified ?? true,
-        })
-      );
+      const sessionPayload = {
+        isLoggedIn: true,
+        id: updatedUser?.id,
+        phone: updatedUser?.phone || phone,
+        name: updatedUser?.name,
+        email: updatedUser?.email || "",
+        role: updatedUser?.role || "buyer",
+        isProfileComplete: true,
+        isVerified: updatedUser?.isVerified ?? true,
+      };
+      localStorage.setItem("road_user", JSON.stringify(sessionPayload));
+      saveRememberedProfile(sessionPayload.phone, sessionPayload);
       window.dispatchEvent(new Event("road_auth_changed"));
     }
     setTimeout(() => {
@@ -119,7 +158,7 @@ function LoginForm() {
       } else {
         router.push(redirectTarget);
       }
-    }, 500);
+    }, 400);
   };
 
   const handleResend = async () => {
@@ -158,7 +197,7 @@ function LoginForm() {
           <PhoneInput
             onSubmit={handlePhoneSubmit}
             isLoading={isSending}
-            initialValue={phone}
+            initialValue={phone || rememberedPhone}
             error={error}
           />
         )}

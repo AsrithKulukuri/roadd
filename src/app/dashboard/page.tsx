@@ -26,7 +26,8 @@ import {
   CheckCircle,
   Edit3,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  Trash2
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PropertyCard } from "@/components/property/property-card";
@@ -37,7 +38,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { logoutUser } from "@/hooks/use-auth-session";
+import { logoutUser, deleteAccountUser } from "@/hooks/use-auth-session";
+import { saveRememberedProfile } from "@/lib/user-profile-memory";
 
 const countryCodes = [
   { code: "+91", country: "India", flag: "🇮🇳" },
@@ -70,6 +72,8 @@ export default function DashboardPage() {
   const [user, setUser] = useState<UserSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Multi-phase wizard step (1: Role, 2: Contact, 3: Password)
   const [wizardStep, setWizardStep] = useState(1);
@@ -329,6 +333,7 @@ export default function DashboardPage() {
     };
 
     localStorage.setItem("road_user", JSON.stringify(updatedUser));
+    saveRememberedProfile(fullPhone, updatedUser);
     setUser(updatedUser);
 
     try {
@@ -363,8 +368,23 @@ export default function DashboardPage() {
     await logoutUser();
     setUser(null);
     setIsModalOpen(false);
-    toast.success("Signed out successfully.");
+    toast.success("Signed out successfully. Profile remembered for next login.");
     window.location.href = "/login";
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      await deleteAccountUser();
+      setUser(null);
+      setIsModalOpen(false);
+      setShowDeleteConfirm(false);
+      toast.success("Account permanently deleted. All saved details have been cleared.");
+      window.location.href = "/";
+    } catch {
+      toast.error("Failed to delete account. Please try again.");
+      setIsDeletingAccount(false);
+    }
   };
 
   const stats = [
@@ -645,10 +665,93 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Account Privacy & Delete My Account Section */}
+              <div className="mt-8 pt-6 border-t border-border-default/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1 text-left">
+                  <div className="text-xs font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-error" /> Account Data & Device Memory
+                  </div>
+                  <p className="text-xs text-text-tertiary max-w-lg">
+                    Your profile details are remembered across logouts on this device for seamless sign-in. To permanently wipe your account and delete all data from both our servers and this device, select Delete My Account.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="border-error/30 text-error hover:bg-error/10 hover:border-error shrink-0 text-xs font-bold gap-1.5 rounded-xl h-10 px-4 cursor-pointer transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete My Account
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
       )}
+
+      {/* Delete Account Confirmation Dialog */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !isDeletingAccount && setShowDeleteConfirm(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md cursor-pointer"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="w-full max-w-md bg-bg-card border border-border-default rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 space-y-5"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-error/10 border border-error/20 flex items-center justify-center text-error">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-2 text-left">
+                <h3 className="font-heading text-xl font-bold text-text-primary">
+                  Delete My Account?
+                </h3>
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  This action is permanent and irreversible. All your profile information, inquiries, verified sessions, and saved preferences will be completely deleted from our servers and wiped from this device.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isDeletingAccount}
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 h-11 rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={isDeletingAccount}
+                  onClick={handleDeleteAccount}
+                  className="flex-1 h-11 rounded-xl bg-error hover:bg-error/90 text-white text-xs font-bold gap-1.5 cursor-pointer shadow-md shadow-error/20"
+                >
+                  {isDeletingAccount ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      Deleting...
+                    </span>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete Permanently
+                    </>
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Multi-Phase Profile Completion Dialog Modal */}
       <AnimatePresence>

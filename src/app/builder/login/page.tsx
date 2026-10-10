@@ -61,7 +61,7 @@ export default function BuilderLoginPage() {
   }, [resendSeconds]);
 
   // Complete builder sign in
-  const completeBuilderSignIn = (builder: BuilderProfile) => {
+  const completeBuilderSignIn = (builder: BuilderProfile, explicitRedirect?: string) => {
     setCurrentBuilderId(builder.id);
 
     const builderSession = {
@@ -101,9 +101,15 @@ export default function BuilderLoginPage() {
       userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "Desktop",
     });
 
+    const isExpired = builder.subscription?.status === "expired" ||
+      builder.subscription?.status === "pending_payment" ||
+      (builder.subscription?.daysRemaining !== undefined && builder.subscription.daysRemaining <= 0);
+
+    const target = explicitRedirect || (isExpired ? "/builder/subscription" : redirectTarget);
+
     toast.success(`Welcome back, ${builder.companyName}!`);
     setTimeout(() => {
-      window.location.href = redirectTarget;
+      window.location.href = target;
     }, 400);
   };
 
@@ -125,7 +131,7 @@ export default function BuilderLoginPage() {
       const data = await res.json();
 
       if (data.success && data.builder) {
-        completeBuilderSignIn(data.builder);
+        completeBuilderSignIn(data.builder, data.redirectTo);
       } else {
         toast.error(data.error || "Invalid builder credentials. Please verify with ROAD admin.");
       }
@@ -349,7 +355,7 @@ export default function BuilderLoginPage() {
                         });
                         const data = await res.json();
                         if (data.success && data.builder) {
-                          completeBuilderSignIn(data.builder);
+                          completeBuilderSignIn(data.builder, data.redirectTo);
                         } else {
                           toast.error(data.error || "Verification failed. Unregistered phone number.");
                         }

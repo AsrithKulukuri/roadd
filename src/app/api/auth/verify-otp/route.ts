@@ -207,57 +207,157 @@ export async function POST(request: Request) {
       );
     }
 
-    // 7. Indexed User Lookup
+    // 7. Robust Multi-Format Indexed User & Profile Lookup
     let userPayload: { id: string; phone: string; name: string; email: string; role: string } | null = null;
     let userId: string | null = null;
     let existingProfile: { id?: string; full_name?: string; email?: string; role?: string; phone?: string; is_profile_complete?: boolean } | null = null;
 
+    const phone10 = cleanPhone.replace(/\D/g, "").slice(-10);
+    const phoneVariants = Array.from(new Set([cleanPhone, `+91${phone10}`, `91${phone10}`, phone10])).filter(Boolean);
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
     try {
+      // 7a. Look up existing profile in profiles table
       const { data: profile } = await supabaseAdmin
         .from("profiles")
         .select("id, full_name, email, role, phone, is_profile_complete")
-        .or(`phone.eq.${cleanPhone},phone.eq.${cleanPhone.replace(/\D/g, "")}`)
+        .or(phoneVariants.map((p) => `phone.eq.${p}`).join(","))
         .maybeSingle();
 
       if (profile) {
         existingProfile = profile;
-        userId = profile.id;
+        if (profile.id && uuidRegex.test(profile.id)) {
+          userId = profile.id;
+        }
       }
     } catch (profileErr: unknown) {
-      const msg = profileErr instanceof Error ? profileErr.message : String(profileErr);
-      console.warn("[VERIFY OTP] Profile lookup warn:", msg);
+      console.warn("[VERIFY OTP] profiles table lookup warning:", profileErr);
     }
 
-    // If profile not found, ensure Supabase Auth user exists
-    if (!userId) {
+    // 7b. Fallback: Check user_profiles table if not found in profiles
+    if (!existingProfile?.full_name) {
       try {
-        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-          phone: cleanPhone,
-          phone_confirm: true,
-          user_metadata: {
-            phone: cleanPhone,
-            role: "buyer",
-            auth_provider: "whatsapp",
-            created_via: "ROAD_WhatsApp_OTP",
-          },
-        });
+        const { data: upProfile } = await supabaseAdmin
+          .from("user_profiles")
+          .select("id, full_name, email, role, phone, is_profile_complete")
+          .or(phoneVariants.map((p) => `phone.eq.${p}`).join(","))
+          .maybeSingle();
 
-        if (!createError && newUser?.user) {
-          userId = newUser.user.id;
-        } else {
-          userId = `wa_${cleanPhone.replace(/\D/g, "")}`;
+        if (upProfile) {
+          existingProfile = { ...existingProfile, ...upProfile };
+          if (!userId && upProfile.id && uuidRegex.test(upProfile.id)) {
+            userId = upProfile.id;
+          }
         }
-      } catch {
-        userId = `wa_${cleanPhone.replace(/\D/g, "")}`;
+      } catch (upErr: unknown) {
+        console.warn("[VERIFY OTP] user_profiles table lookup warning:", upErr);
       }
     }
 
-    const existingName = existingProfile?.full_name || "";
-    const rawEmail = existingProfile?.email || "";
+    // 7c. Ensure Supabase Auth user exists and resolve real UUID
+    let authUserRecord: any = null;
+    if (!userId || !uuidRegex.test(userId)) {
+      try {
+        const { data: authList } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+        const found = authList?.users?.find((u) => {
+          const uPhone = (u.phone || "").replace(/\D/g, "");
+          const metaPhone = (String(u.user_metadata?.phone || "")).replace(/\D/g, "");
+          return (uPhone && uPhone.includes(phone10)) || (metaPhone && metaPhone.includes(phone10));
+        });
+
+        if (found?.id) {
+          userId = found.id;
+          authUserRecord = found;
+        } else {
+          // Attempt to create user if does not exist
+          const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+            phone: cleanPhone,
+            phone_confirm: true,
+            user_metadata: {
+              phone: cleanPhone,
+              role: "buyer",
+              auth_provider: "whatsapp",
+              created_via: "ROAD_WhatsApp_OTP",
+            },
+          });
+
+          if (!createError && newUser?.user?.id) {
+            userId = newUser.user.id;
+            authUserRecord = newUser.user;
+          } else if (createError) {
+            // If already registered, fetch again
+            const { data: retryList } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+            const reFound = retryList?.users?.find((u) => {
+              const uPhone = (u.phone || "").replace(/\D/g, "");
+              const metaPhone = (String(u.user_metadata?.phone || "")).replace(/\D/g, "");
+              return (uPhone && uPhone.includes(phone10)) || (metaPhone && metaPhone.includes(phone10));
+            });
+            if (reFound?.id) {
+              userId = reFound.id;
+              authUserRecord = reFound;
+            }
+          }
+        }
+      } catch (authErr) {
+        console.warn("[VERIFY OTP] Auth user resolution warning:", authErr);
+      }
+    }
+
+    // Fallback if auth admin API could not generate UUID
+    if (!userId) {
+      userId = `wa_${cleanPhone.replace(/\D/g, "")}`;
+    }
+
+    const existingName =
+      existingProfile?.full_name ||
+      authUserRecord?.user_metadata?.full_name ||
+      authUserRecord?.user_metadata?.name ||
+      "";
+    const rawEmail = existingProfile?.email || authUserRecord?.email || "";
     const isInternalEmail = rawEmail.endsWith("@road.internal");
     const cleanEmail = isInternalEmail ? "" : rawEmail;
-    const userRole = existingProfile?.role || "buyer";
-    const isProfileComplete = Boolean(existingProfile?.is_profile_complete || existingName.length >= 2);
+    const userRole = existingProfile?.role || authUserRecord?.user_metadata?.role || "buyer";
+    const isProfileComplete = Boolean(
+      existingProfile?.is_profile_complete ||
+      (existingName && existingName.trim().length >= 2 && !existingName.toLowerCase().includes("user"))
+    );
+
+    // 7d. If profile is already complete, ensure both database tables are synchronized
+    if (isProfileComplete && userId && uuidRegex.test(userId)) {
+      const fallbackEmail = rawEmail || `${phone10}@road.internal`;
+      try {
+        await Promise.allSettled([
+          supabaseAdmin.from("profiles").upsert(
+            {
+              id: userId,
+              phone: cleanPhone,
+              full_name: existingName,
+              email: fallbackEmail,
+              role: userRole,
+              is_verified: true,
+              is_profile_complete: true,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "id" }
+          ),
+          supabaseAdmin.from("user_profiles").upsert(
+            {
+              id: userId,
+              phone: cleanPhone,
+              full_name: existingName,
+              email: fallbackEmail,
+              role: userRole,
+              is_verified: true,
+              is_profile_complete: true,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "id" }
+          ),
+        ]);
+      } catch (syncErr) {
+        console.warn("[VERIFY OTP] Profile sync warning:", syncErr);
+      }
+    }
 
     userPayload = {
       id: userId,

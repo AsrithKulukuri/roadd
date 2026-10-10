@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import "./globals.css";
 import { readSiteFeatures } from "@/lib/site-features";
 import { SiteFeaturesProvider } from "@/components/providers/site-features-provider";
+import { CookieConsentBanner } from "@/components/shared/cookie-consent-banner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -188,6 +189,7 @@ export default async function RootLayout({
           </div>
           <ActionAuthProvider />
           </SiteFeaturesProvider>
+          <CookieConsentBanner />
           <Toaster
             position="bottom-right"
             toastOptions={{

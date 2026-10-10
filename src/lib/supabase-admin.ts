@@ -2,6 +2,10 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dns from "node:dns";
 
 // Configure standard Node DNS resolution order (IPv4 first) without custom socket wrappers
+if (typeof window !== "undefined") {
+  throw new Error("SECURITY VIOLATION: supabase-admin contains private server credentials and must NEVER be imported on the client side.");
+}
+
 if (typeof dns?.setDefaultResultOrder === "function") {
   try {
     dns.setDefaultResultOrder("ipv4first");

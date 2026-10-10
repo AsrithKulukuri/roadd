@@ -24,7 +24,8 @@ import {
   ExternalLink,
   MousePointerClick,
   Share2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Layers,
 } from "lucide-react";
 import { useBuilderStore } from "@/stores/builder-store";
 import { VerificationSubmission } from "@/components/builder/verification-submission";
@@ -32,6 +33,9 @@ import { useProjectsStore } from "@/stores/projects-store";
 import { useSchedulesStore } from "@/stores/schedules-store";
 import { ProjectRealtimeActivity } from "@/components/builder/project-realtime-activity";
 import { ProjectActivityModal } from "@/components/admin/project-activity-modal";
+import { InventoryMatrixModal } from "@/components/builder/inventory-matrix-modal";
+import { MilestonesJourneyModal } from "@/components/builder/milestones-journey-modal";
+import { BrochureTrackerModal } from "@/components/builder/brochure-tracker-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,6 +67,11 @@ export default function BuilderProjectsPage() {
   const [proposedCaption, setProposedCaption] = useState("");
   const [captionReason, setCaptionReason] = useState("");
   const [activityModalProject, setActivityModalProject] = useState<Project | null>(null);
+
+  // Feature Expansion Modals
+  const [inventoryModalProject, setInventoryModalProject] = useState<Project | null>(null);
+  const [milestonesModalProject, setMilestonesModalProject] = useState<Project | null>(null);
+  const [brochureModalProject, setBrochureModalProject] = useState<Project | null>(null);
 
 
 
@@ -268,28 +277,49 @@ export default function BuilderProjectsPage() {
                   </div>
 
                   {/* Buttons */}
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <Button
+                      onClick={() => setInventoryModalProject(project)}
+                      className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold gap-1.5 h-8 shadow-sm"
+                    >
+                      <Layers className="h-3.5 w-3.5" />
+                      Unit Matrix
+                    </Button>
+                    <Button
+                      onClick={() => setMilestonesModalProject(project)}
+                      className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold gap-1.5 h-8 shadow-sm"
+                    >
+                      <Calendar className="h-3.5 w-3.5" />
+                      Milestones
+                    </Button>
+                    <Button
+                      onClick={() => setBrochureModalProject(project)}
+                      className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-xs font-bold gap-1.5 h-8 shadow-sm"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Digital Brochure
+                    </Button>
                     <Link
                       href={`/projects/${project.slug}`}
                       target="_blank"
-                      className="px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium border border-zinc-700/60 inline-flex items-center gap-1.5"
+                      className="px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-xs font-medium border border-border inline-flex items-center gap-1.5 h-8"
                     >
-                      <ExternalLink className="h-3.5 w-3.5 text-amber-400" />
-                      Live Listing
+                      <ExternalLink className="h-3.5 w-3.5 text-amber-500" />
+                      Live Page
                     </Link>
                     <Button
                       onClick={() => handleOpenEdit(project)}
-                      className="bg-amber-500 hover:bg-amber-600 text-zinc-950 text-xs font-semibold gap-1.5"
+                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold gap-1.5 h-8 shadow-sm"
                     >
                       <Edit3 className="h-3.5 w-3.5" />
-                      Edit Text & Milestones
+                      Edit Content
                     </Button>
                     <Button
                       onClick={() => setActivityModalProject(project)}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold gap-1.5 shadow-sm"
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold gap-1.5 h-8 shadow-sm"
                     >
                       <FileSpreadsheet className="h-3.5 w-3.5" />
-                      Activity & Excel
+                      Excel Sheet
                     </Button>
                   </div>
                 </div>
@@ -524,6 +554,37 @@ export default function BuilderProjectsPage() {
         onClose={() => setActivityModalProject(null)}
         project={activityModalProject}
       />
+
+      {/* Unit Inventory & Plot Matrix Modal (P2) */}
+      {inventoryModalProject && (
+        <InventoryMatrixModal
+          isOpen={Boolean(inventoryModalProject)}
+          onClose={() => setInventoryModalProject(null)}
+          projectId={inventoryModalProject.id}
+          projectName={inventoryModalProject.name}
+        />
+      )}
+
+      {/* Construction Milestone Journey Modal (P4) */}
+      {milestonesModalProject && (
+        <MilestonesJourneyModal
+          isOpen={Boolean(milestonesModalProject)}
+          onClose={() => setMilestonesModalProject(null)}
+          projectId={milestonesModalProject.id}
+          projectName={milestonesModalProject.name}
+        />
+      )}
+
+      {/* Digital Brochure & Open Tracker Modal (P5) */}
+      {brochureModalProject && (
+        <BrochureTrackerModal
+          isOpen={Boolean(brochureModalProject)}
+          onClose={() => setBrochureModalProject(null)}
+          projectSlug={brochureModalProject.slug}
+          projectName={brochureModalProject.name}
+          builderPhone={brochureModalProject.builderWhatsapp || brochureModalProject.builderPhone}
+        />
+      )}
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { searchNavigationCategory } from "@/lib/search-navigation";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { X, Sparkles, Plus, User, LogOut, LogIn, Shield } from "lucide-react";
+import { X, Sparkles, Plus, User, LogOut, LogIn, Shield, Trash2 } from "lucide-react";
 import { SolidHome, SolidSearch, SolidMapPin, SolidHeart, SolidMenu } from "@/components/ui/solid-icons";
 import { cn } from "@/lib/utils";
 import { useFavoritesStore } from "@/stores/favorites-store";
@@ -18,7 +18,7 @@ import { useProjectsStore } from "@/stores/projects-store";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
-import { logoutUser } from "@/hooks/use-auth-session";
+import { logoutUser, deleteAccountUser } from "@/hooks/use-auth-session";
 import { PostRequirementModal } from "@/components/shared/post-requirement-modal";
 import { haptic } from "@/lib/haptics";
 import { useIsMounted } from "@/hooks/use-is-mounted";
@@ -294,12 +294,30 @@ export function MobileBottomNav() {
     return null;
   }
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
   const handleSignOut = async () => {
     await logoutUser();
     setUser(null);
-    toast.success("Signed out successfully");
     setIsMenuOpen(false);
-    router.refresh();
+    toast.success("Signed out successfully. Profile remembered for next login.");
+    window.location.href = "/";
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      await deleteAccountUser();
+      setUser(null);
+      setShowDeleteConfirm(false);
+      setIsMenuOpen(false);
+      toast.success("Account permanently deleted. All saved details cleared.");
+      window.location.href = "/";
+    } catch {
+      toast.error("Failed to delete account. Please try again.");
+      setIsDeletingAccount(false);
+    }
   };
 
   const navItems = [
@@ -345,7 +363,7 @@ export function MobileBottomNav() {
   ];
 
   const menuLinks = [
-    { label: "New Projects", href: "/search?type=projects" },
+    { label: "Pre Projects", href: "/search?type=projects" },
     { label: "Gated Communities", href: "/search?type=buy&propertyType=gated-community" },
     { label: "Commercial", href: "/search?type=buy&propertyType=commercial" },
     { label: "CRDA Ventures", href: "/search?type=projects&projectType=venture" },
@@ -638,16 +656,32 @@ export function MobileBottomNav() {
                     </Link>
                   )}
 
-                  {/* Sign Out Button */}
+                  {/* Sign Out & Delete Account Buttons */}
                   {user && (
-                    <button
-                      type="button"
-                      onClick={handleSignOut}
-                      className="w-full flex items-center gap-2 py-3 px-1 text-red-500 hover:text-red-600 font-bold text-sm transition-colors cursor-pointer"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Sign Out</span>
-                    </button>
+                    <div className="space-y-1 pt-1 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={handleSignOut}
+                        className="w-full flex items-center justify-between py-2.5 px-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-sm transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <LogOut className="w-4 h-4 text-slate-500" />
+                          <span>Sign Out</span>
+                        </div>
+                        <span className="text-[11px] text-slate-400 font-normal">Remembered on device</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setShowDeleteConfirm(true);
+                        }}
+                        className="w-full flex items-center gap-2 py-2.5 px-2 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 font-bold text-sm transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <span>Delete My Account</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -661,6 +695,64 @@ export function MobileBottomNav() {
         isOpen={isRequirementModalOpen}
         onClose={() => setIsRequirementModalOpen(false)}
       />
+
+      {/* Delete Account Confirmation Dialog */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !isDeletingAccount && setShowDeleteConfirm(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md cursor-pointer"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 space-y-5 text-slate-900 dark:text-white"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-2 text-left">
+                <h3 className="font-heading text-xl font-bold text-slate-950 dark:text-white">
+                  Delete My Account?
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                  This action is permanent and irreversible. All your profile information, inquiries, verified sessions, and saved preferences will be completely deleted from our servers and wiped from this device.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={isDeletingAccount}
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 h-11 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 cursor-pointer text-slate-700 dark:text-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeletingAccount}
+                  onClick={handleDeleteAccount}
+                  className="flex-1 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold gap-1.5 cursor-pointer shadow-md shadow-red-500/20"
+                >
+                  {isDeletingAccount ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      Deleting...
+                    </span>
+                  ) : (
+                    "Delete Permanently"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

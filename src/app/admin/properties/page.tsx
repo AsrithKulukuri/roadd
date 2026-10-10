@@ -178,7 +178,7 @@ export default function AdminPropertiesPage() {
               <div key={property.id} className="p-4 space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 rounded-xl bg-border-default overflow-hidden shrink-0">
-                    <img src={property.images[0]?.url} alt="" className="w-full h-full object-cover" />
+                    <img src={property.images[0]?.url} alt={property.title || "Property thumbnail"} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-text-primary text-sm truncate">
@@ -316,7 +316,7 @@ export default function AdminPropertiesPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-md bg-border-default overflow-hidden shrink-0">
-                          <img src={property.images[0]?.url} alt="" className="w-full h-full object-cover" />
+                          <img src={property.images[0]?.url} alt={property.title || "Property thumbnail"} className="w-full h-full object-cover" />
                         </div>
                         <div>
                           <div className="font-bold text-text-primary truncate max-w-[200px]">

@@ -87,7 +87,7 @@ export interface IconOptionMeta {
 export const ICON_OPTIONS_META: IconOptionMeta[] = [
   // Properties
   { name: "Building2", label: "Apartments", category: "Properties" },
-  { name: "Building", label: "New Projects", category: "Properties" },
+  { name: "Building", label: "Pre Projects", category: "Properties" },
   { name: "Home", label: "Villas & Houses", category: "Properties" },
   { name: "Castle", label: "Luxury Estates", category: "Properties" },
   { name: "Warehouse", label: "Warehouses", category: "Properties" },

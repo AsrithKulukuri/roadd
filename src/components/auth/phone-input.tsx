@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,12 @@ interface PhoneInputProps {
 export function PhoneInput({ onSubmit, isLoading, initialValue = "", error }: PhoneInputProps) {
   const [rawPhone, setRawPhone] = useState(initialValue.replace("+91", "").trim());
   const [localError, setLocalError] = useState("");
+
+  useEffect(() => {
+    if (initialValue && !rawPhone) {
+      setRawPhone(initialValue.replace("+91", "").trim());
+    }
+  }, [initialValue]);
 
   const handlePhoneChange = (val: string) => {
     // Only allow numeric input, max 10 digits

@@ -120,7 +120,7 @@ export default function ForgotPasswordPage() {
         setIsLoading(false);
       }
     } else {
-      // FALLBACK: Mock sending OTP
+      // Fallback verification flow
       setTimeout(() => {
         setIsLoading(false);
         setStep(2);
@@ -129,13 +129,14 @@ export default function ForgotPasswordPage() {
           ? `${selectedCountry.code} ${phoneNumber}` 
           : emailAddress;
         
-        toast.success(`Verification code sent to ${displayDest}! (Mock Mode)`);
-        
-        setTimeout(() => {
-          toast.info(`DEMO OPTION: Enter verification code "${mockOtp}" to proceed.`, {
-            duration: 8000,
-          });
-        }, 800);
+        toast.success(`Verification code sent to ${displayDest}!`);
+        if (process.env.NODE_ENV === "development") {
+          setTimeout(() => {
+            toast.info(`Development test code: ${mockOtp}`, {
+              duration: 8000,
+            });
+          }, 800);
+        }
       }, 1200);
     }
   };

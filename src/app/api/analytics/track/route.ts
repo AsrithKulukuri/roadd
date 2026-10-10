@@ -18,20 +18,21 @@ export async function POST(req: NextRequest) {
 
     const supabase = getSupabaseClient();
 
-    // Optionally increment counter in property table if column exists
-    if (propertyId && (eventType === "property_whatsapp_share" || eventType === "property_whatsapp_click")) {
+    // Record real analytics event into activity_logs
+    if (supabase) {
       try {
-        // Try logging to an events / activity table if available
         await supabase.from("activity_logs").insert([
           {
             event_type: eventType,
-            entity_id: propertyId,
-            ref_id: refId,
+            entity_id: propertyId || refId || null,
             source,
+            metadata: typeof metadata === "object" ? metadata : {},
             created_at: new Date().toISOString(),
           },
         ]);
-      } catch {}
+      } catch (logErr) {
+        // Fallback: don't block user experience if analytics table is temporarily busy
+      }
     }
 
     return NextResponse.json({ success: true, recorded: true });

@@ -34,7 +34,10 @@ import {
   Layers,
   Award,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  CreditCard,
+  RotateCcw,
+  AlertTriangle
 } from "lucide-react";
 import { useBuilderStore, BuilderProfile, BuilderRequest, BuilderActivityLog } from "@/stores/builder-store";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -53,6 +56,10 @@ export default function AdminBuildersPage() {
     activityLogs,
     saveBuilderProfile,
     deleteBuilderProfile,
+    wipeAllBuilderPortals,
+    sendWelcomeNotification,
+    extendSubscription,
+    sendExpiryAlert,
     assignProjectsToBuilder,
     updateRequestStatus,
     sendMessage,
@@ -85,6 +92,16 @@ export default function AdminBuildersPage() {
   const [crdaApproved, setCrdaApproved] = useState(true);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
 
+  // Subscription states for modal
+  const [planMonths, setPlanMonths] = useState<number>(1);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<"active" | "pending_payment">("active");
+  const [initialPassword, setInitialPassword] = useState<string>("road2026");
+  const [sendWelcomeWhatsApp, setSendWelcomeWhatsApp] = useState<boolean>(true);
+
+  // Purge & Reminder modals
+  const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
+  const [isCheckingReminders, setIsCheckingReminders] = useState(false);
+
   // Request & Chat Drawer
   const [activeRequest, setActiveRequest] = useState<BuilderRequest | null>(null);
   const [chatMessageText, setChatMessageText] = useState("");
@@ -113,6 +130,10 @@ export default function AdminBuildersPage() {
     setIsVerified(true);
     setCrdaApproved(true);
     setSelectedProjectIds([]);
+    setPlanMonths(1);
+    setSubscriptionStatus("active");
+    setInitialPassword("road2026");
+    setSendWelcomeWhatsApp(true);
     setIsModalOpen(true);
   };
 
@@ -131,6 +152,10 @@ export default function AdminBuildersPage() {
     setIsVerified(builder.isVerified);
     setCrdaApproved(Boolean(builder.crdaApproved));
     setSelectedProjectIds(builder.assignedProjectIds || []);
+    setPlanMonths(builder.subscription?.planMonths || 1);
+    setSubscriptionStatus((builder.subscription?.status as any) || "active");
+    setInitialPassword(builder.credentialsHint || "road2026");
+    setSendWelcomeWhatsApp(false);
     setIsModalOpen(true);
   };
 
@@ -148,26 +173,55 @@ export default function AdminBuildersPage() {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
-    try { await saveBuilderProfile({
-      id: builderId,
-      companyName,
-      slug: editingBuilder?.slug || cleanSlug,
-      contactEmail,
-      contactPhone,
-      whatsappNumber: whatsappNumber || contactPhone,
-      reraNumber,
-      tagline,
-      description,
-      tier,
-      isVerified,
-      crdaApproved,
-      assignedProjectIds: selectedProjectIds,
-      userId: authUserId.trim() || undefined,
-    });
+    try { 
+      await saveBuilderProfile({
+        id: builderId,
+        companyName,
+        slug: editingBuilder?.slug || cleanSlug,
+        contactEmail,
+        contactPhone,
+        whatsappNumber: whatsappNumber || contactPhone,
+        reraNumber,
+        tagline,
+        description,
+        tier,
+        isVerified,
+        crdaApproved,
+        assignedProjectIds: selectedProjectIds,
+        userId: authUserId.trim() || undefined,
+        planMonths,
+        subscriptionStatus,
+        initialPassword,
+        sendWelcomeWhatsApp,
+      } as any);
 
-    toast.success(editingBuilder ? "Builder Profile Updated!" : "New Builder Partner Provisioned!");
-    setIsModalOpen(false);
+      toast.success(editingBuilder ? "Builder Profile Updated!" : "New Builder Partner Provisioned & Welcome WhatsApp Sent!");
+      setIsModalOpen(false);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Profile save failed."); }
+  };
+
+  const handlePurgeAllPortals = async () => {
+    try {
+      await wipeAllBuilderPortals();
+      toast.success("All existing builder portals have been wiped clean.");
+      setIsPurgeModalOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to purge portals.");
+    }
+  };
+
+  const handleRunExpiryReminders = async () => {
+    setIsCheckingReminders(true);
+    try {
+      const res = await fetch("/api/cron/subscription-reminders", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Reminder check failed");
+      toast.success(`Check complete! Sent ${data.sentCount} WhatsApp reminder(s).`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to run reminder job.");
+    } finally {
+      setIsCheckingReminders(false);
+    }
   };
 
   // Quick project toggle
@@ -265,18 +319,42 @@ export default function AdminBuildersPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsPurgeModalOpen(true)}
+            className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 text-xs gap-1.5"
+            title="Clean slate: delete all existing builder portals"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Delete All Portals
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRunExpiryReminders}
+            disabled={isCheckingReminders}
+            className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 text-xs gap-1.5"
+            title="Scan subscriptions and send WhatsApp warnings to builders with <= 7 days left"
+          >
+            <Send className="h-3.5 w-3.5" />
+            {isCheckingReminders ? "Checking Reminders..." : "Run 7-Day Reminders"}
+          </Button>
+
           <Link
             href="/builder"
             target="_blank"
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-all shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-all shadow-sm"
           >
             <ExternalLink className="h-3.5 w-3.5 text-amber-400" />
-            Preview Builder Portal
+            Preview Portal
           </Link>
+
           <Button
             onClick={handleOpenCreateModal}
-            className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-semibold text-xs shadow-md gap-2"
+            className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold text-xs shadow-md gap-1.5"
           >
             <Plus className="h-4 w-4" />
             Provision New Builder
@@ -302,6 +380,25 @@ export default function AdminBuildersPage() {
 
         <div className="bg-card border border-border/50 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subscription Health</span>
+            <span className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+              <CreditCard className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="text-2xl font-bold text-foreground mt-2 flex items-center gap-2">
+            <span className="text-emerald-400 font-extrabold">{builders.filter(b => b.subscription?.status === "active").length}</span>
+            <span className="text-xs text-muted-foreground font-normal">Active</span>
+            {builders.some(b => b.subscription?.status === "expiring_soon") && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-medium">
+                {builders.filter(b => b.subscription?.status === "expiring_soon").length} Expiring &lt;7d
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">₹3,500 / 30 Days (Razorpay PG)</p>
+        </div>
+
+        <div className="bg-card border border-border/50 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Assigned Projects</span>
             <span className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
               <FolderOpen className="h-4 w-4" />
@@ -315,34 +412,13 @@ export default function AdminBuildersPage() {
 
         <div className="bg-card border border-border/50 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Concierge Requests</span>
-            <span className="p-2 rounded-lg bg-purple-500/10 text-purple-500 relative">
-              <Sparkles className="h-4 w-4" />
-              {pendingRequestsCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping" />
-              )}
-            </span>
-          </div>
-          <div className="text-2xl font-bold text-foreground mt-2 flex items-center gap-2">
-            {requests.length}
-            {pendingRequestsCount > 0 && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 font-normal">
-                {pendingRequestsCount} Pending
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">Top promos, banners & caption updates</p>
-        </div>
-
-        <div className="bg-card border border-border/50 rounded-xl p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Audit Events</span>
-            <span className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Live Audit Logs</span>
+            <span className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
               <Radio className="h-4 w-4" />
             </span>
           </div>
           <div className="text-2xl font-bold text-foreground mt-2">{activityLogs.length}</div>
-          <p className="text-xs text-muted-foreground mt-1">Real-time login & text edit tracking</p>
+          <p className="text-xs text-muted-foreground mt-1">Automated WhatsApp & login logs</p>
         </div>
       </div>
 
@@ -525,6 +601,24 @@ export default function AdminBuildersPage() {
                         {builder.lastActiveAt ? new Date(builder.lastActiveAt).toLocaleString() : "Recently Provisioned"}
                       </span>
                     </div>
+
+                    {/* Subscription Status */}
+                    <div className="flex items-center justify-between text-muted-foreground pt-1 border-t border-border/20">
+                      <span className="flex items-center gap-1.5 font-medium text-xs">
+                        <CreditCard className="h-3.5 w-3.5 text-amber-500" />
+                        Subscription ({builder.subscription?.planMonths || 1}M @ ₹3,500/mo):
+                      </span>
+                      <span className={cn(
+                        "px-2 py-0.5 rounded text-[10px] font-bold uppercase border",
+                        builder.subscription?.status === "expired"
+                          ? "bg-red-500/10 text-red-400 border-red-500/30"
+                          : builder.subscription?.status === "expiring_soon"
+                          ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                          : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                      )}>
+                        {builder.subscription?.status === "expired" ? "Expired" : `${builder.subscription?.daysRemaining ?? 30} Days Active`}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Assigned Projects */}
@@ -559,29 +653,75 @@ export default function AdminBuildersPage() {
                 </div>
 
                 {/* Card Footer Actions */}
-                <div className="mt-5 pt-3 border-t border-border/30 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    {builder.promotedAtTop && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                        <Flame className="h-3 w-3 text-amber-400" /> Top Promoted
-                      </span>
-                    )}
-                    {builder.bannerActive && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/30">
-                        <Sparkles className="h-3 w-3 text-purple-400" /> Hero Banner
-                      </span>
-                    )}
+                <div className="mt-5 pt-3 border-t border-border/30 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    {/* Welcome WhatsApp message */}
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const res = await sendWelcomeNotification(builder.id);
+                          toast.success(res.message || "Warm welcome message sent!");
+                        } catch (err: any) {
+                          toast.error(err.message || "Welcome dispatch failed");
+                        }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="text-[11px] h-7 px-2 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 gap-1"
+                      title="Send/Resend Warm Welcome WhatsApp Message with login link"
+                    >
+                      <Send className="h-3 w-3" />
+                      Welcome Msg
+                    </Button>
+
+                    {/* 7-Day Alert */}
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const res = await sendExpiryAlert(builder.id);
+                          toast.success(res.message || "7-Day alert sent!");
+                        } catch (err: any) {
+                          toast.error(err.message || "Alert dispatch failed");
+                        }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="text-[11px] h-7 px-2 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 gap-1"
+                      title="Send Advance 7-Day Expiry Warning via WhatsApp"
+                    >
+                      <Clock className="h-3 w-3" />
+                      7d Warning
+                    </Button>
+
+                    {/* Extend +30 Days */}
+                    <Button
+                      onClick={async () => {
+                        try {
+                          await extendSubscription(builder.id, 30);
+                          toast.success(`Extended validity by 30 days for ${builder.companyName}`);
+                        } catch (err: any) {
+                          toast.error(err.message || "Extension failed");
+                        }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="text-[11px] h-7 px-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 gap-1"
+                      title="Add 30 Days (1 Month) validity"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      +30d
+                    </Button>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <Button
                       onClick={() => handleOpenEditModal(builder)}
                       variant="outline"
                       size="sm"
-                      className="text-xs h-8 gap-1.5"
+                      className="text-xs h-7 px-2.5 gap-1"
                     >
-                      <Edit className="h-3.5 w-3.5" />
-                      Configure Access
+                      <Edit className="h-3 w-3" />
+                      Edit
                     </Button>
                     <Button
                       onClick={() => {
@@ -592,9 +732,9 @@ export default function AdminBuildersPage() {
                       }}
                       variant="ghost"
                       size="sm"
-                      className="text-xs h-8 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                      className="text-xs h-7 px-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
@@ -961,6 +1101,77 @@ export default function AdminBuildersPage() {
                 </div>
               </div>
 
+              {/* SUBSCRIPTION & ACCESS PROVISIONING */}
+              <div className="space-y-3 pt-3 border-t border-zinc-800">
+                <div className="flex items-center justify-between">
+                  <label className="text-zinc-200 font-semibold flex items-center gap-1.5">
+                    <CreditCard className="h-4 w-4 text-amber-500" />
+                    Subscription Plan & Pricing (₹3,500 / 30 Days)
+                  </label>
+                  <span className="text-[11px] text-amber-400 font-medium">Multiples of 1, 3, 6, 12 Months</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-zinc-300 font-medium">Subscription Tenure</label>
+                    <select
+                      value={planMonths}
+                      onChange={(e) => setPlanMonths(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-md bg-zinc-800/80 border border-zinc-700 text-white text-xs"
+                    >
+                      <option value={1}>1 Month (30 Days) — ₹3,500</option>
+                      <option value={3}>3 Months (90 Days) — ₹10,500 (Popular)</option>
+                      <option value={6}>6 Months (180 Days) — ₹19,950 (Save 5%)</option>
+                      <option value={12}>12 Months (360 Days) — ₹37,800 (Save 10%)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-zinc-300 font-medium">Initial Status</label>
+                    <select
+                      value={subscriptionStatus}
+                      onChange={(e: any) => setSubscriptionStatus(e.target.value)}
+                      className="w-full px-3 py-2 rounded-md bg-zinc-800/80 border border-zinc-700 text-white text-xs"
+                    >
+                      <option value="active">Active (Starts from Creation Date)</option>
+                      <option value="pending_payment">Pending Payment (Redirect to PG)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-zinc-300 font-medium">Portal Access Password</label>
+                  <Input
+                    placeholder="e.g. road2026 or builder's preferred password"
+                    value={initialPassword}
+                    onChange={(e) => setInitialPassword(e.target.value)}
+                    className="bg-zinc-800/80 border-zinc-700 text-white"
+                  />
+                  <p className="text-[11px] text-zinc-500">
+                    The builder can sign in at /builder/login with their email and this password or WhatsApp OTP.
+                  </p>
+                </div>
+
+                {/* WhatsApp Warm Welcome Message Toggle */}
+                <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-1.5">
+                  <label className="flex items-center gap-2.5 cursor-pointer text-emerald-200 font-medium">
+                    <input
+                      type="checkbox"
+                      checked={sendWelcomeWhatsApp}
+                      onChange={(e) => setSendWelcomeWhatsApp(e.target.checked)}
+                      className="rounded border-zinc-700 text-emerald-500 focus:ring-emerald-500"
+                    />
+                    <span className="flex items-center gap-1.5">
+                      <Send className="w-3.5 h-3.5 text-emerald-400" />
+                      Send Warm Welcome Message on WhatsApp
+                    </span>
+                  </label>
+                  <p className="text-[11px] text-emerald-300/70 pl-6 leading-relaxed">
+                    Sends an executive welcome message from ROAD with the portal login link (/builder/login), registered email, and partner perks directly to their phone.
+                  </p>
+                </div>
+              </div>
+
               {/* Verified toggles */}
               <div className="flex items-center gap-6 pt-2 border-t border-zinc-800">
                 <label className="flex items-center gap-2 cursor-pointer text-zinc-300">
@@ -998,6 +1209,49 @@ export default function AdminBuildersPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRMATION MODAL: PURGE ALL PORTALS */}
+      {isPurgeModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-red-500/40 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-red-500/10 text-red-400 shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Delete All Builder Portals?</h3>
+                <p className="text-xs text-zinc-400 mt-1">
+                  This action will permanently delete all existing builder profiles, requests, audit logs, and messages so you can create fresh portals from scratch.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-red-950/30 border border-red-500/20 text-xs text-red-300 space-y-1 font-medium">
+              <p>• {builders.length} builder profile(s) will be erased.</p>
+              <p>• All builder audit logs & concierge tickets will be purged.</p>
+              <p>• You can immediately provision brand new portals.</p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsPurgeModalOpen(false)}
+                className="text-zinc-400 hover:text-white text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handlePurgeAllPortals}
+                className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs"
+              >
+                Yes, Delete All Portals
+              </Button>
+            </div>
           </div>
         </div>
       )}

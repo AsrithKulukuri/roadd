@@ -37,6 +37,8 @@ export interface VerifyOTPResponse {
     name?: string;
     email?: string;
     role: string;
+    isProfileComplete?: boolean;
+    isVerified?: boolean;
   };
   session?: {
     accessToken: string;

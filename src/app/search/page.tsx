@@ -17,11 +17,12 @@ import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { SearchFiltersModal, initialFilterState, type FilterState } from "@/components/search/search-filters";
 import { RealtorSearchHeader } from "@/components/search/realtor-search-header";
 import { MapWrapper } from "@/components/map/map-wrapper";
-import { Search as SearchIcon, Loader2, Plus, Map } from "lucide-react";
+import { Search as SearchIcon, Loader2, Plus, Map, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { matchesPropertySearch, matchesProjectSearch, parseSearchIntent, evaluatePropertyFilters, evaluateProjectFilters, matchesStructuredLocation, matchingProjectConfigurations, searchRelevanceScore } from "@/lib/search-engine";
 import { useIsMounted } from "@/hooks/use-is-mounted";
+import { NotifyMeModal } from "@/components/shared/notify-me-modal";
 
 type SortByOption = "relevant" | "price-asc" | "price-desc" | "newest";
 
@@ -107,6 +108,7 @@ function UnifiedSearchPage() {
     () => searchParams.get("openFilters") === "true" || searchParams.get("focus") === "filters"
   );
   const mounted = useIsMounted();
+  const [showSearchNotifyMe, setShowSearchNotifyMe] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("openFilters") === "true" || searchParams.get("focus") === "filters") {
@@ -811,109 +813,103 @@ function UnifiedSearchPage() {
 
             {/* Controls Bar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-2 w-full min-w-0 sm:w-auto">
-              <div className="flex items-center overflow-x-auto no-scrollbar whitespace-nowrap min-w-0 max-w-full bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200 dark:border-slate-800 shadow-xs gap-0.5 sm:gap-1">
-                {isNewLaunches ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => handleNewLaunchTypeChange("all")}
-                      className={cn(
-                        "px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
-                        currentNewLaunchType === "all"
-                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                      )}
-                    >
-                      All ({allNewLaunchCount})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNewLaunchTypeChange("apartment")}
-                      className={cn(
-                        "px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
-                        currentNewLaunchType === "apartment"
-                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                      )}
-                    >
-                      Apartments ({apartmentCount})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNewLaunchTypeChange("venture")}
-                      className={cn(
-                        "px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
-                        currentNewLaunchType === "venture"
-                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                      )}
-                    >
-                      Ventures ({ventureCount})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNewLaunchTypeChange("villa")}
-                      className={cn(
-                        "px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
-                        currentNewLaunchType === "villa"
-                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                      )}
-                    >
-                      Villas ({villaCount})
-                    </button>
-                  </>
-                ) : propertiesEnabled ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => handleTabChange("all")}
-                      className={cn(
-                        "px-2 sm:px-4 py-2.5 sm:py-2 rounded-xl text-[10px] sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
-                        activeTab === "all"
-                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                      )}
-                    >
-                      All ({allCount})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleTabChange("properties")}
-                      className={cn(
-                        "px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
-                        activeTab === "properties"
-                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                      )}
-                    >
-                      Properties ({propCount})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleTabChange("projects")}
-                      className={cn(
-                        "px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
-                        activeTab === "projects"
-                          ? "bg-amber-500 text-slate-950 shadow-sm font-black"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                      )}
-                    >
-                      Projects ({projCount})
-                    </button>
-                  </>
-                ) : null}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleViewModeChange("map")}
-                className="sm:hidden inline-flex items-center justify-center gap-1 shrink-0 min-h-11 px-2 rounded-xl border border-slate-200 bg-white text-slate-800 text-[11px] font-bold shadow-xs focus-visible:outline-2 focus-visible:outline-amber-500"
-              >
-                <Map className="w-3.5 h-3.5 text-amber-600" />Map View
-              </button>
-              </div>
+              {(isNewLaunches || propertiesEnabled) && (
+                <div className="flex items-center gap-2 w-full min-w-0 sm:w-auto">
+                  <div className="flex items-center overflow-x-auto no-scrollbar whitespace-nowrap min-w-0 max-w-full bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200 dark:border-slate-800 shadow-xs gap-0.5 sm:gap-1">
+                    {isNewLaunches ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleNewLaunchTypeChange("all")}
+                          className={cn(
+                            "px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                            currentNewLaunchType === "all"
+                              ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                          )}
+                        >
+                          All ({allNewLaunchCount})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleNewLaunchTypeChange("apartment")}
+                          className={cn(
+                            "px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                            currentNewLaunchType === "apartment"
+                              ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                          )}
+                        >
+                          Apartments ({apartmentCount})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleNewLaunchTypeChange("venture")}
+                          className={cn(
+                            "px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                            currentNewLaunchType === "venture"
+                              ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                          )}
+                        >
+                          Ventures ({ventureCount})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleNewLaunchTypeChange("villa")}
+                          className={cn(
+                            "px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                            currentNewLaunchType === "villa"
+                              ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                          )}
+                        >
+                          Villas ({villaCount})
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleTabChange("all")}
+                          className={cn(
+                            "px-2 sm:px-4 py-2.5 sm:py-2 rounded-xl text-[10px] sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                            activeTab === "all"
+                              ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                          )}
+                        >
+                          All ({allCount})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleTabChange("properties")}
+                          className={cn(
+                            "px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                            activeTab === "properties"
+                              ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                          )}
+                        >
+                          Properties ({propCount})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleTabChange("projects")}
+                          className={cn(
+                            "px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                            activeTab === "projects"
+                              ? "bg-amber-500 text-slate-950 shadow-sm font-black"
+                              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                          )}
+                        >
+                          Projects ({projCount})
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {viewMode !== "map" && (
                 <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -995,7 +991,7 @@ function UnifiedSearchPage() {
                     if (item.type === "property") {
                       return <PropertyCard key={`prop-${item.data.id}-${idx}`} property={item.data as unknown as Property} index={idx} />;
                     } else {
-                      return <div key={`proj-${item.data.id}-${idx}`} className="min-w-0"><SearchProjectCard project={item.data as unknown as Project} /></div>;
+                      return <div key={`proj-${item.data.id}-${idx}`} className="min-w-0 h-fit"><SearchProjectCard project={item.data as unknown as Project} /></div>;
                     }
                   })}
                 </div>
@@ -1018,15 +1014,100 @@ function UnifiedSearchPage() {
                 )}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="w-20 h-20 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center mb-4">
-                  <SearchIcon className="w-8 h-8 text-slate-400" />
+              <div className="flex flex-col items-center justify-center py-10 text-center w-full max-w-4xl mx-auto">
+                <div className="w-16 h-16 bg-amber-500/10 text-amber-600 rounded-2xl flex items-center justify-center mb-4 shadow-xs">
+                  <SearchIcon className="w-8 h-8" />
                 </div>
-                <h3 className="text-xl font-heading font-bold text-text-primary mb-2">No matches found</h3>
-                <p className="text-text-secondary mb-6 max-w-md">Try adjusting your filters or search terms to find what you&apos;re looking for.</p>
-                <button onClick={() => { syncFiltersToUrl(initialFilterState, "all"); }} className="px-6 py-2.5 bg-amber-primary hover:bg-amber-600 text-slate-950 font-bold rounded-xl transition-colors">
-                  Clear all filters
-                </button>
+                <h3 className="text-xl sm:text-2xl font-heading font-black text-slate-900 dark:text-white mb-2">
+                  No exact matches found
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm max-w-md mx-auto mb-5">
+                  {filters.query
+                    ? `We couldn't find listings matching "${filters.query}". Try clearing filters or exploring verified developments nearby.`
+                    : "Try broadening your budget or location filters to see available projects."}
+                </p>
+
+                {/* Quick Recovery Buttons */}
+                <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+                  <button
+                    type="button"
+                    onClick={() => syncFiltersToUrl(initialFilterState, "all")}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
+                  >
+                    Clear all filters
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      syncFiltersToUrl({ ...initialFilterState, cities: ["Vijayawada"] }, "all");
+                    }}
+                    className="px-4 py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-white font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
+                  >
+                    All Vijayawada
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      syncFiltersToUrl({ ...initialFilterState, cities: ["Guntur"] }, "all");
+                    }}
+                    className="px-4 py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-white font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
+                  >
+                    All Guntur
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowSearchNotifyMe(true)}
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-950 font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer active:scale-95 flex items-center gap-1.5"
+                  >
+                    <Bell className="w-3.5 h-3.5 text-amber-500" /> Notify Me for New Launches
+                  </button>
+                </div>
+
+                {/* WhatsApp Concierge Card */}
+                <div className="w-full bg-linear-to-r from-emerald-500/10 via-teal-500/10 to-amber-500/10 border border-emerald-500/30 rounded-3xl p-5 sm:p-6 mb-10 text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                  <div className="space-y-1">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-white inline-block">
+                      Free Concierge Service
+                    </span>
+                    <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+                      Looking for a specific flat, villa, or CRDA plot?
+                    </h4>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 max-w-lg">
+                      Tell our local property team what you need (budget, BHK, preferred area). We will connect you directly with verified developers with upcoming or unlisted inventory.
+                    </p>
+                  </div>
+                  <a
+                    href={`https://wa.me/919491624444?text=${encodeURIComponent(
+                      `Hi Road Facing, I was searching for ${filters.query || "property"} in ${filters.cities?.[0] || "AP"} and need assistance finding verified projects.`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95 transition-all shrink-0 cursor-pointer whitespace-nowrap"
+                  >
+                    Chat on WhatsApp
+                  </a>
+                </div>
+
+                {/* Popular Verified Projects Fallback Showcase */}
+                {projects.length > 0 && (
+                  <div className="w-full text-left pt-2">
+                    <div className="mb-4">
+                      <h4 className="text-base sm:text-lg font-heading font-black text-slate-900 dark:text-white">
+                        Featured Verified Developments
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Top developer projects in Vijayawada & Amaravati with verified RERA/CRDA status
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {projects.slice(0, 3).map((proj) => (
+                        <div key={`fallback-${proj.id}`} className="min-w-0 h-fit">
+                          <SearchProjectCard project={proj} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1071,6 +1152,13 @@ function UnifiedSearchPage() {
           syncFiltersToUrl(newFilters, targetTab, { removeModalParams: true });
         }}
         totalResults={combinedResults.length}
+      />
+
+      <NotifyMeModal
+        isOpen={showSearchNotifyMe}
+        onClose={() => setShowSearchNotifyMe(false)}
+        location={filters.query || filters.cities?.join(", ") || "Vijayawada & Amaravati Corridor"}
+        initialType="new_launch"
       />
     </div>
   );

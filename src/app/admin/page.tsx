@@ -603,7 +603,7 @@ export default function AdminDashboardPage() {
                   <div key={p.id} className="p-4 space-y-3">
                     <div className="flex items-center gap-3">
                       <div className="w-14 h-14 rounded-xl bg-slate-800 overflow-hidden shrink-0">
-                        <img src={p.images[0]?.url} alt="" className="w-full h-full object-cover" />
+                        <img src={p.images[0]?.url} alt={p.title || "Property thumbnail"} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
@@ -747,7 +747,7 @@ export default function AdminDashboardPage() {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-slate-800 overflow-hidden shrink-0">
-                              <img src={p.images[0]?.url} alt="" className="w-full h-full object-cover" />
+                              <img src={p.images[0]?.url} alt={p.title || "Property thumbnail"} className="w-full h-full object-cover" />
                             </div>
                             <div className="truncate max-w-[220px]">
                               <div className="font-extrabold text-slate-900 dark:text-white truncate">

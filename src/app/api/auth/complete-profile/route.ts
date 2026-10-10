@@ -59,41 +59,104 @@ export async function POST(request: Request) {
       );
     }
 
-    const userId = authenticatedUser.id;
+    const phone10 = cleanPhone.replace(/\D/g, "").slice(-10);
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let validUserId = uuidRegex.test(authenticatedUser.id) ? authenticatedUser.id : null;
+
+    // 1. If session ID is not a valid UUID, resolve real Supabase Auth UUID
+    if (!validUserId) {
+      try {
+        const { data: p } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .or(`phone.eq.${cleanPhone},phone.eq.+91${phone10},phone.eq.91${phone10},phone.eq.${phone10}`)
+          .maybeSingle();
+
+        if (p?.id && uuidRegex.test(p.id)) {
+          validUserId = p.id;
+        } else {
+          const { data: up } = await supabaseAdmin
+            .from("user_profiles")
+            .select("id")
+            .or(`phone.eq.${cleanPhone},phone.eq.+91${phone10},phone.eq.91${phone10},phone.eq.${phone10}`)
+            .maybeSingle();
+
+          if (up?.id && uuidRegex.test(up.id)) {
+            validUserId = up.id;
+          } else {
+            const { data: authList } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+            const found = authList?.users?.find((u) => {
+              const uPhone = (u.phone || "").replace(/\D/g, "");
+              const metaPhone = (String(u.user_metadata?.phone || "")).replace(/\D/g, "");
+              return (uPhone && uPhone.includes(phone10)) || (metaPhone && metaPhone.includes(phone10));
+            });
+
+            if (found?.id) {
+              validUserId = found.id;
+            } else {
+              const { data: created } = await supabaseAdmin.auth.admin.createUser({
+                phone: cleanPhone,
+                phone_confirm: true,
+                user_metadata: { phone: cleanPhone, role: role || "buyer", name, full_name: name },
+              });
+              if (created?.user?.id) {
+                validUserId = created.user.id;
+              }
+            }
+          }
+        }
+      } catch (idErr) {
+        console.warn("[CompleteProfile] Error resolving auth UUID:", idErr);
+      }
+    }
+
+    const userId = validUserId || authenticatedUser.id;
     const userRole = authenticatedUser.role === "admin" ? "admin" : (role || "buyer");
 
     // 2. Upsert profile into public.profiles and user_profiles tables
-    try {
-      const cleanEmail = email ? email.toLowerCase() : null;
+    // Note: profiles.email has a NOT NULL constraint, so empty emails use internal placeholder
+    const cleanEmail = email ? email.toLowerCase() : `${phone10}@road.internal`;
 
-      await Promise.allSettled([
-        supabaseAdmin.from("profiles").upsert(
-          {
-            id: userId,
-            phone: cleanPhone,
-            full_name: name,
-            email: cleanEmail,
-            role: userRole,
-            is_verified: true,
-            is_profile_complete: true,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "id" }
-        ),
-        supabaseAdmin.from("user_profiles").upsert(
-          {
-            id: userId,
-            phone: cleanPhone,
-            full_name: name,
-            email: cleanEmail,
-            role: userRole,
-            is_verified: true,
-            is_profile_complete: true,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "id" }
-        ),
-      ]);
+    try {
+      if (uuidRegex.test(userId)) {
+        await Promise.allSettled([
+          supabaseAdmin.from("profiles").upsert(
+            {
+              id: userId,
+              phone: cleanPhone,
+              full_name: name,
+              email: cleanEmail,
+              role: userRole,
+              is_verified: true,
+              is_profile_complete: true,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "id" }
+          ),
+          supabaseAdmin.from("user_profiles").upsert(
+            {
+              id: userId,
+              phone: cleanPhone,
+              full_name: name,
+              email: cleanEmail,
+              role: userRole,
+              is_verified: true,
+              is_profile_complete: true,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "id" }
+          ),
+          supabaseAdmin.auth.admin.updateUserById(userId, {
+            user_metadata: {
+              name,
+              full_name: name,
+              role: userRole,
+              phone: cleanPhone,
+              isProfileComplete: true,
+            },
+          }),
+        ]);
+      }
     } catch (error) {
       logger.error("Profile persistence failed", {
         error: error instanceof Error ? error.message : String(error),

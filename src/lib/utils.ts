@@ -406,3 +406,59 @@ export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
     timeoutId = setTimeout(() => func(...args), wait);
   };
 }
+
+/**
+ * Formats BHK configurations into a clean, grouped format.
+ * Examples:
+ *   ["3 BHK", "2 BHK"] => "2, 3 BHK"
+ *   ["2 BHK", "4 BHK"] => "2, 4 BHK"
+ *   ["1 BHK", "2 BHK", "3 BHK"] => "1, 2, 3 BHK"
+ *   ["Plots"] => "Plots"
+ *   ["2 BHK", "Villa"] => "2 BHK, Villa"
+ */
+export function formatAvailableBhk(labels: (string | undefined | null)[]): string {
+  if (!labels || labels.length === 0) return "";
+
+  const valid = labels
+    .map((l) => (typeof l === "string" ? l.trim() : ""))
+    .filter(Boolean);
+
+  if (!valid.length) return "";
+
+  const bhkNumbers: number[] = [];
+  const nonBhkLabels: string[] = [];
+
+  for (const item of valid) {
+    if (/\bbhk\b/i.test(item)) {
+      const matches = item.match(/\d+(?:\.\d+)?/g);
+      if (matches && matches.length > 0) {
+        for (const m of matches) {
+          const num = parseFloat(m);
+          if (!isNaN(num) && !bhkNumbers.includes(num)) {
+            bhkNumbers.push(num);
+          }
+        }
+      } else {
+        if (!nonBhkLabels.includes(item)) {
+          nonBhkLabels.push(item);
+        }
+      }
+    } else {
+      if (!nonBhkLabels.includes(item)) {
+        nonBhkLabels.push(item);
+      }
+    }
+  }
+
+  bhkNumbers.sort((a, b) => a - b);
+
+  const parts: string[] = [];
+  if (bhkNumbers.length > 0) {
+    parts.push(`${bhkNumbers.join(", ")} BHK`);
+  }
+  if (nonBhkLabels.length > 0) {
+    parts.push(nonBhkLabels.join(", "));
+  }
+
+  return parts.join(", ");
+}

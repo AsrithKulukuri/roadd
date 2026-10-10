@@ -399,11 +399,11 @@ export function RealtorSearchHeader({
               <span>Save search</span>
             </button>
 
-            {/* Desktop toggle; retain the mobile return control while the map is open. */}
+            {/* View Mode Toggle: Map View / List View (Visible on both mobile & desktop, exactly as in Map View) */}
             <button
               type="button"
               onClick={() => onViewModeChange(viewMode === "grid" ? "map" : "grid")}
-              className={cn("h-10 sm:h-11 px-4 rounded-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 shadow-sm font-bold text-xs items-center gap-1.5 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap", viewMode === "grid" ? "hidden sm:flex" : "flex")}
+              className="flex h-10 sm:h-11 px-3 sm:px-4 rounded-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 shadow-xs font-bold text-xs items-center gap-1.5 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
             >
               {viewMode === "grid" ? (
                 <>
@@ -412,9 +412,8 @@ export function RealtorSearchHeader({
                 </>
               ) : (
                 <>
-                  <List className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 shrink-0" />
-                  <span className="text-slate-800 hidden sm:inline">Close Map</span>
-                  <span className="text-slate-800 sm:hidden">List View</span>
+                  <List className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700 shrink-0" />
+                  <span className="text-slate-800">List View</span>
                 </>
               )}
             </button>

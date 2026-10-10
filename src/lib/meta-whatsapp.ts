@@ -417,8 +417,8 @@ export class MetaWhatsAppService {
       };
     }
 
-    // 1. Explicit template requested
-    if (options?.templateName) {
+    // 1. Explicit template requested with components
+    if (options?.templateName && options?.components && options.components.length > 0) {
       return this.sendTemplateMessage(cleanPhone, options.templateName, {
         languageCode: options.languageCode,
         components: options.components as any,
@@ -450,18 +450,21 @@ export class MetaWhatsAppService {
     // 3. Outbound Business Notification:
     // Sanitize parameter to comply with Meta's strict template rules:
     // Positional parameters cannot have newlines (\n, \r), tabs (\t), or 4+ consecutive spaces.
+    // Also, total template body + param length must not exceed 1024 characters (cap param at 750).
     const sanitizedParam = message
       .replace(/\r?\n+/g, " • ")
       .replace(/\s{2,}/g, " ")
       .replace(/[•\s]+$/, "")
       .trim()
-      .slice(0, 1024);
+      .slice(0, 750);
 
     const templateName =
-      getSanitizedEnv("META_NOTIFICATION_TEMPLATE_NAME") || "road_listing_update";
+      options?.templateName ||
+      getSanitizedEnv("META_NOTIFICATION_TEMPLATE_NAME") ||
+      "road_alert_notification";
     const languageCode = options?.languageCode || getSanitizedEnv("META_TEMPLATE_LANGUAGE") || "en_US";
 
-    const templatePayload = {
+    const buildTemplatePayload = (textParam: string) => ({
       messaging_product: "whatsapp",
       recipient_type: "individual",
       to: cleanPhone,
@@ -472,18 +475,29 @@ export class MetaWhatsAppService {
         components: [
           {
             type: "body",
-            parameters: [{ type: "text", text: sanitizedParam }],
+            parameters: [{ type: "text", text: textParam }],
           },
         ],
       },
-    };
+    });
 
-    const templateResult = await this.executeGraphApi(templatePayload, {
+    let templateResult = await this.executeGraphApi(buildTemplatePayload(sanitizedParam), {
       requestId,
       mode,
       startTime,
       logPrefix: "NOTIF_TEMPLATE",
     });
+
+    // If Meta returns "Translated text too long" (132005), retry once with compact param
+    if (!templateResult.success && templateResult.error?.includes("132005")) {
+      const compactParam = sanitizedParam.slice(0, 450) + " • Visit portal for full details.";
+      templateResult = await this.executeGraphApi(buildTemplatePayload(compactParam), {
+        requestId,
+        mode,
+        startTime,
+        logPrefix: "NOTIF_TEMPLATE_RETRY",
+      });
+    }
 
     if (templateResult.success) {
       return templateResult;

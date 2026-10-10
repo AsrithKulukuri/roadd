@@ -28,6 +28,8 @@ function isValidSessionUser(data: unknown): data is SessionUser {
   return Boolean(hasPhone || hasEmail || hasId);
 }
 
+import { purgeAllAccountData, getLastRememberedPhone } from "@/lib/user-profile-memory";
+
 export async function logoutUser() {
   try {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -45,15 +47,112 @@ export async function logoutUser() {
 
   if (typeof window !== "undefined") {
     try {
+      // Clear ONLY the active session token; preserve remembered profile for next login
       localStorage.removeItem("road_user");
       localStorage.removeItem("road_admin_user");
       // Clear cookie session flags
       document.cookie = "road_user=; Max-Age=0; path=/; SameSite=Lax";
+      document.cookie = "road_auth_token=; Max-Age=0; path=/; SameSite=Lax";
     } catch {}
 
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new CustomEvent("road_auth_changed"));
   }
+}
+
+/**
+ * Permanently deletes user account on backend and purges all device profile memory.
+ */
+export async function deleteAccountUser(): Promise<boolean> {
+  let candidateUserId: string | null = null;
+  let candidatePhone = "";
+  let candidateEmail = "";
+  let supabaseToken: string | null = null;
+
+  // 1. Gather identifiers from Supabase Auth session if present
+  if (isSupabaseConfigured()) {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) {
+        candidateUserId = session.user.id || null;
+        candidatePhone = session.user.phone || session.user.user_metadata?.phone || "";
+        candidateEmail = session.user.email || "";
+      }
+      if (session?.access_token) {
+        supabaseToken = session.access_token;
+      }
+    } catch (e) {
+      console.warn("[DeleteAccount] Supabase session read error:", e);
+    }
+  }
+
+  // 2. Gather identifiers from localStorage (road_user and road_admin_user)
+  if (typeof window !== "undefined") {
+    try {
+      const rawUser = localStorage.getItem("road_user");
+      if (rawUser && rawUser !== "true" && rawUser !== "null" && rawUser !== "undefined") {
+        const parsed = JSON.parse(rawUser);
+        if (!candidateUserId && parsed?.id) candidateUserId = parsed.id;
+        if (!candidatePhone && parsed?.phone) candidatePhone = parsed.phone;
+        if (!candidateEmail && parsed?.email) candidateEmail = parsed.email;
+      }
+    } catch {}
+
+    try {
+      const rawAdmin = localStorage.getItem("road_admin_user");
+      if (rawAdmin && rawAdmin !== "null" && rawAdmin !== "undefined") {
+        const parsedAdmin = JSON.parse(rawAdmin);
+        if (!candidateUserId && parsedAdmin?.id) candidateUserId = parsedAdmin.id;
+        if (!candidatePhone && parsedAdmin?.phone) candidatePhone = parsedAdmin.phone;
+        if (!candidateEmail && parsedAdmin?.email) candidateEmail = parsedAdmin.email;
+      }
+    } catch {}
+
+    if (!candidatePhone) {
+      candidatePhone = getLastRememberedPhone();
+    }
+  }
+
+  // 3. Make robust POST request with all candidate parameters and headers
+  try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (supabaseToken) {
+      headers["Authorization"] = `Bearer ${supabaseToken}`;
+    }
+
+    const res = await fetch("/api/auth/delete-account", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        userId: candidateUserId,
+        phone: candidatePhone,
+        email: candidateEmail,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+      console.error("Server delete-account warning:", data?.error || data);
+    }
+  } catch (error) {
+    console.error("Delete account request error:", error);
+  }
+
+  // 4. Global Supabase sign out
+  if (isSupabaseConfigured()) {
+    try {
+      await supabase.auth.signOut({ scope: "global" });
+    } catch (e) {
+      console.error("Supabase sign out error:", e);
+    }
+  }
+
+  // 5. Purge ALL local profile memory, tokens, and session keys
+  purgeAllAccountData();
+  return true;
 }
 
 export function useAuthSession() {

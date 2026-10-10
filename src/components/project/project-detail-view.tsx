@@ -32,6 +32,7 @@ import {
   trackShareDetailsWithBuilder,
 } from "@/lib/project-activity-tracker";
 import { ScheduleVisitModal } from "@/components/project/schedule-visit-modal";
+import { formatAvailableBhk } from "@/lib/utils";
 
 // ─── Lazy map (SSR unsafe) ─────────────────────────────────────────────────────
 const ProjectMapView = dynamic(
@@ -888,42 +889,98 @@ export function ProjectDetailView({
                   </div>
                 </div>
 
-                {/* Project Snapshot Specs (Introduction) */}
-                <div className="pt-4 border-t border-slate-200 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                  <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
-                    <span className="text-[10px] font-bold text-text-tertiary uppercase block">Project Type</span>
-                    <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.projectType}</span>
-                  </div>
-                  <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
-                    <span className="text-[10px] font-bold text-text-tertiary uppercase block">Total Area</span>
-                    <span className="text-xs sm:text-sm font-bold text-text-primary">{project.totalArea || "On Request"}</span>
-                  </div>
-                  <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
-                    <span className="text-[10px] font-bold text-text-tertiary uppercase block">Total Units</span>
-                    <span className="text-xs sm:text-sm font-bold text-text-primary leading-tight block">
-                      {(() => {
-                        const configs = project.configurations && project.configurations.length > 0
-                          ? [...new Set(project.configurations.map((c) => c.label).filter(Boolean))].join(", ")
-                          : "";
-                        if (project.totalUnits && configs) {
-                          return `${project.totalUnits} Units - ${configs}`;
-                        }
-                        if (project.totalUnits) {
-                          return `${project.totalUnits} Units`;
-                        }
-                        return configs || "On Request";
-                      })()}
-                    </span>
-                  </div>
-                  <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60">
-                    <span className="text-[10px] font-bold text-text-tertiary uppercase block">Possession</span>
-                    <span className="text-xs sm:text-sm font-bold text-text-primary">
-                      {project.possessionDate || project.configurations?.find(c => c.possessionDate)?.possessionDate || (project.constructionStatus === 'ready-to-move' ? 'Ready to Move' : 'On Request')}
-                    </span>
-                  </div>
-                  <div className="bg-bg-primary p-3 rounded-xl border border-border-default/60 col-span-2 sm:col-span-1">
-                    <span className="text-[10px] font-bold text-text-tertiary uppercase block">Status</span>
-                    <span className="text-xs sm:text-sm font-bold text-text-primary capitalize">{project.constructionStatus.replace("-", " ")}</span>
+                {/* Project Snapshot Specs Matrix (Client Specification — Diagram 2: Inside) */}
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-800/80">
+                  <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 overflow-hidden divide-y divide-slate-200 dark:divide-slate-800 shadow-xs">
+                    {/* Row 1: Project Type | Total Area | Total Units */}
+                    <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-800 text-center">
+                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0">
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+                          Project Type
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white capitalize mt-1 truncate">
+                          {project.projectType === "apartment" ? "Apartment" : project.projectType === "villa" ? "Villa" : "CRDA Venture"}
+                        </span>
+                      </div>
+                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0">
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+                          Total Area
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-1 truncate">
+                          {project.totalArea || (project.location as any)?.totalArea || "On Request"}
+                        </span>
+                      </div>
+                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0">
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+                          Total Units
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-1 truncate">
+                          {project.totalUnits
+                            ? `${project.totalUnits} ${project.projectType === "villa" ? "Villas" : project.projectType === "venture" ? "Plots" : "Units"}`
+                            : project.projectType === "venture" ? "Plots" : "On Request"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Available | Area Range | Status */}
+                    <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-800 text-center">
+                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0 bg-amber-500/5 dark:bg-amber-400/5">
+                        <span className="text-[10px] sm:text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider truncate">
+                          Available
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-1 truncate">
+                          {(() => {
+                            const configs = project.configurations && project.configurations.length > 0
+                              ? formatAvailableBhk(project.configurations.map((c) => c.label))
+                              : "";
+                            return configs || (project.projectType === "venture" ? "Plots" : "3 BHK");
+                          })()}
+                        </span>
+                      </div>
+                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0">
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+                          Area Range
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-1 truncate">
+                          {(() => {
+                            const sizes = project.configurations?.flatMap(c => [c.builtUpAreaMin, c.builtUpAreaMax, c.plotSizeMin, c.plotSizeMax]).filter(Boolean) as number[];
+                            if (!sizes || !sizes.length) return "On Request";
+                            const min = Math.min(...sizes);
+                            const max = Math.max(...sizes);
+                            const unit = project.projectType === "venture" ? "sq.yds" : "sq.ft";
+                            return min === max ? `${min} ${unit}` : `${min} to ${max} ${unit}`;
+                          })()}
+                        </span>
+                      </div>
+                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0">
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+                          Status
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white capitalize mt-1 truncate">
+                          {STATUS_LABELS[project.constructionStatus] || "Under Construction"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Row 3: Possession | Price Range */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-800 text-center">
+                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0">
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+                          Possession
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-1 truncate">
+                          {project.possessionDate || project.configurations?.find(c => c.possessionDate)?.possessionDate || (project.constructionStatus === "ready-to-move" ? "Ready to Move" : "On Request")}
+                        </span>
+                      </div>
+                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0 bg-emerald-500/5 dark:bg-emerald-400/5">
+                        <span className="text-[10px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider truncate">
+                          Price Range
+                        </span>
+                        <span className="text-sm sm:text-base font-black text-emerald-800 dark:text-emerald-300 mt-1 truncate">
+                          {getPriceRange(project.configurations)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1088,7 +1145,7 @@ export function ProjectDetailView({
                   </p>
                   {project.configurations[0] && (
                     <p className="text-xs sm:text-sm text-text-secondary mt-1 font-medium">
-                      Available in {[...new Set(project.configurations.map((c) => c.label))].join(", ")} {project.projectType === "venture" ? "Plots" : project.projectType === "villa" ? "Villas" : "Apartments"}
+                      Available in {formatAvailableBhk(project.configurations.map((c) => c.label))} {project.projectType === "venture" ? "Plots" : project.projectType === "villa" ? "Villas" : "Apartments"}
                     </p>
                   )}
                 </div>
@@ -1436,7 +1493,7 @@ export function ProjectDetailView({
                               <div className="text-xs font-bold text-text-primary mt-0.5 leading-tight">
                                 {(() => {
                                   const configs = project.configurations && project.configurations.length > 0
-                                    ? [...new Set(project.configurations.map((c) => c.label).filter(Boolean))].join(", ")
+                                    ? formatAvailableBhk(project.configurations.map((c) => c.label))
                                     : "";
                                   if (project.totalUnits && configs) {
                                     return `${project.totalUnits} Units - ${configs}`;

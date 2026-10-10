@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { cn, formatPriceCompact } from "@/lib/utils";
+import { cn, formatPriceCompact, formatAvailableBhk } from "@/lib/utils";
 import type { Project, ProjectType } from "@/types/project";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { getRefId } from "@/lib/ref-id";
@@ -431,17 +431,17 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
         </div>
 
         {/* Details Section */}
-        <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+        <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between gap-3">
 
-          <div className="space-y-3">
-            {/* Title (2 lines clamp) & Locality (wraps to 2nd line if long) */}
+          <div className="space-y-2.5">
+            {/* Title & Locality */}
             <div>
-              <h3 className="font-bold text-text-primary text-base sm:text-lg leading-snug group-hover:text-amber-primary transition-colors line-clamp-2">
+              <h3 className="font-bold text-text-primary text-base sm:text-lg leading-snug group-hover:text-amber-primary transition-colors line-clamp-1">
                 {project.name}
               </h3>
-              <div className="flex items-start gap-1.5 text-text-secondary text-xs mt-1.5">
+              <div className="flex items-start gap-1.5 text-text-secondary text-xs mt-1">
                 <MapPin className="w-3.5 h-3.5 shrink-0 text-amber-primary mt-0.5" />
-                <span className="line-clamp-2 leading-relaxed font-medium">
+                <span className="line-clamp-1 leading-relaxed font-medium">
                   {project.location?.locality
                     ? `${project.location.locality}, ${project.location.city}`
                     : (project.location?.address || project.location?.city || "")}
@@ -449,46 +449,74 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
               </div>
             </div>
 
-            {/* Little Glass Boxes for Configurations and Specifications */}
-            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-              {specItems.map((item, idx) => {
-                const ItemIcon = item.icon;
-                return (
-                  <div
-                    key={idx}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold backdrop-blur-xs shadow-2xs transition-colors",
-                      item.isMore
-                        ? "bg-amber-500/10 dark:bg-amber-400/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 font-bold"
-                        : "bg-slate-100/90 dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-amber-500/40 hover:bg-amber-500/5"
-                    )}
-                  >
-                    {ItemIcon && <ItemIcon className={cn("w-3.5 h-3.5 shrink-0", item.isMore ? "text-amber-600 dark:text-amber-400" : "text-amber-500")} />}
-                    <span className="truncate max-w-[150px]">{item.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+            {/* 6-Cell Specification Matrix (Client Specification — Diagram 1) */}
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 overflow-hidden divide-y divide-slate-200 dark:divide-slate-800 text-center shadow-2xs">
+              {/* Row 1: Total Project | Total Units | Available */}
+              <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-800">
+                {/* Cell 1: 12 Acres / Total Project */}
+                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center min-w-0">
+                  <span className="text-[12px] sm:text-[13px] font-black text-slate-900 dark:text-white leading-tight">
+                    {projectArea || "On Request"}
+                  </span>
+                  <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
+                    Total Project
+                  </span>
+                </div>
 
-          {/* Locked Bottom Price & Builder Row */}
-          <div className="mt-auto pt-3 border-t border-border-default">
-            {/* Top Sub-row: Category label on left, Ref ID on right so it doesn't steal price width */}
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <p className="text-[9.5px] text-text-tertiary uppercase tracking-wider font-extrabold truncate">
-                {isVenture ? "Starting Price" : "Price Range"}
-              </p>
-            </div>
+                {/* Cell 2: 70 Units / Total Units */}
+                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center min-w-0">
+                  <span className="text-[12px] sm:text-[13px] font-black text-slate-900 dark:text-white leading-tight">
+                    {project.totalUnits
+                      ? `${project.totalUnits} ${isVilla ? "Villas" : isVenture ? "Plots" : "Units"}`
+                      : isVenture ? "Plots" : "On Request"}
+                  </span>
+                  <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
+                    Total Units
+                  </span>
+                </div>
 
-            {/* Main Row: Big Bold Price (Left, broad) + Builder (Right, compact) */}
-            <div className="flex items-end justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-black text-text-primary text-xl leading-tight break-words">
-                  {priceLabel}
-                </p>
-                {pricePerUnit && !isVenture && pricePerUnit !== priceLabel && (
-                  <p className="text-[10px] text-text-secondary font-semibold truncate mt-0.5">{pricePerUnit}</p>
-                )}
+                {/* Cell 3: Available / 3 BHK */}
+                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center min-w-0 bg-amber-500/5 dark:bg-amber-400/5">
+                  <span className="text-[9.5px] sm:text-[10px] font-bold text-amber-700 dark:text-amber-400 leading-tight">
+                    Available
+                  </span>
+                  <span className="text-[12px] sm:text-[13px] font-black text-slate-900 dark:text-white leading-tight mt-0.5 truncate" title={configLabels.length > 0 ? (formatAvailableBhk(configLabels) || (isVenture ? "Plots" : TC.label)) : isVenture ? "Plots" : TC.label}>
+                    {configLabels.length > 0 ? (formatAvailableBhk(configLabels) || (isVenture ? "Plots" : TC.label)) : isVenture ? "Plots" : TC.label}
+                  </span>
+                </div>
+              </div>
+
+              {/* Row 2: Area Range | Price Range | Possession */}
+              <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-800">
+                {/* Cell 4: Area Range / 2000 Sqft */}
+                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center min-w-0">
+                  <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-tight">
+                    Area Range
+                  </span>
+                  <span className="text-[11.5px] sm:text-[12.5px] font-black text-slate-900 dark:text-white leading-tight mt-0.5">
+                    {(isApartment || isVilla) ? (builtUpRange || "On Request") : (plotSizeRange || "On Request")}
+                  </span>
+                </div>
+
+                {/* Cell 5: Price Range / 1 Cr to 2 Cr */}
+                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center min-w-0 bg-emerald-500/5 dark:bg-emerald-400/5">
+                  <span className="text-[9.5px] sm:text-[10px] font-bold text-emerald-700 dark:text-emerald-400 leading-tight">
+                    Price Range
+                  </span>
+                  <span className="text-[11.5px] sm:text-[12.5px] font-black text-emerald-700 dark:text-emerald-300 leading-tight mt-0.5">
+                    {priceLabel}
+                  </span>
+                </div>
+
+                {/* Cell 6: Possession / March */}
+                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center min-w-0">
+                  <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-tight">
+                    Possession
+                  </span>
+                  <span className="text-[11.5px] sm:text-[12.5px] font-black text-slate-900 dark:text-white leading-tight mt-0.5">
+                    {rawPossession?.trim() || (project.constructionStatus === "ready-to-move" ? "Ready" : "On Request")}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

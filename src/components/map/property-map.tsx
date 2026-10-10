@@ -23,7 +23,7 @@ import { usePropertiesStore } from "@/stores/properties-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { useLocationsStore } from "@/stores/locations-store";
 import { Slider } from "@/components/ui/slider";
-import { formatPriceCompact, formatINR, cn } from "@/lib/utils";
+import { formatPriceCompact, formatINR, cn, formatAvailableBhk } from "@/lib/utils";
 import { useSearchParams, useRouter } from "next/navigation";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { useFavoritesStore } from "@/stores/favorites-store";
@@ -3603,6 +3603,7 @@ const BUDGET_PRESETS = [
                   eventHandlers={{
                     click: () => {
                       setSelectedPropertyId(property.id);
+                      setShowPropertiesTray(true);
                       if (mapRef.current) {
                         mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
                       }
@@ -3702,7 +3703,7 @@ const BUDGET_PRESETS = [
                               <>
                                 <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center gap-1.5 flex-wrap">
                                   {configLabels.length > 0 ? (
-                                    <span className="text-white font-extrabold drop-shadow-sm">{configLabels.join(", ")}</span>
+                                    <span className="text-white font-extrabold drop-shadow-sm">{formatAvailableBhk(configLabels)}</span>
                                   ) : null}
                                   <span className="truncate">{property.title}</span>
                                 </div>
@@ -3717,7 +3718,7 @@ const BUDGET_PRESETS = [
                                   {property.bedrooms ? (
                                     <span>{property.bedrooms} BHK</span>
                                   ) : configLabels.length > 0 ? (
-                                    <span className="text-white font-extrabold drop-shadow-sm">{configLabels.join(", ")}</span>
+                                    <span className="text-white font-extrabold drop-shadow-sm">{formatAvailableBhk(configLabels)}</span>
                                   ) : null}
                                   {property.bathrooms ? <span>• {property.bathrooms} ba</span> : null}
                                   {property.area ? <span>• {property.area.toLocaleString()} sqft</span> : null}

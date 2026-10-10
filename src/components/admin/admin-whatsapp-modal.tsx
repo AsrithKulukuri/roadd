@@ -130,7 +130,7 @@ export function AdminWhatsAppModal({
             <div className="flex gap-3 bg-bg-card/90 border border-border-subtle rounded-xl p-3">
               {imageUrl && (
                 <div className="w-20 h-20 rounded-lg overflow-hidden bg-bg-primary shrink-0">
-                  <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+                  <img src={imageUrl} alt={title || "Share preview thumbnail"} className="w-full h-full object-cover" />
                 </div>
               )}
               <div className="flex-1 min-w-0 text-xs space-y-1">

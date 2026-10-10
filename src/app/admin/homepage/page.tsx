@@ -996,7 +996,7 @@ export default function HomepageShelvesAdminPage() {
                                 className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100 cursor-pointer hover:opacity-90"
                                 title="Click to customize text & colors"
                               >
-                                {listing?.image && <Image src={listing.image} alt="" fill unoptimized className="object-cover" sizes="64px" />}
+                                {listing?.image && <Image src={listing.image} alt={listing?.title || "Listing preview"} fill unoptimized className="object-cover" sizes="64px" />}
                               </div>
                               <div
                                 onClick={() => setEditingCardTarget({ sectionId: section.id, itemId: item.id, itemType: item.type })}
@@ -1221,7 +1221,7 @@ export default function HomepageShelvesAdminPage() {
               {filteredCandidates.map((candidate) => {
                 const selected = pickerSection.items.some((item) => item.id === candidate.id && item.type === candidate.type);
                 return <button key={`${candidate.type}:${candidate.id}`} type="button" onClick={() => toggleItem(pickerSection.id, { id: candidate.id, type: candidate.type })} className={cn("flex min-w-0 items-center gap-3 rounded-lg border p-2.5 text-left transition-colors", selected ? "border-[#faad13] bg-[#faad13]/10" : "border-slate-200 hover:border-slate-400")}>
-                  <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-md bg-slate-100">{candidate.image && <Image src={candidate.image} alt="" fill unoptimized className="object-cover" sizes="80px" />}</div>
+                  <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-md bg-slate-100">{candidate.image && <Image src={candidate.image} alt={candidate.title || "Listing preview"} fill unoptimized className="object-cover" sizes="80px" />}</div>
                   <div className="min-w-0 flex-1"><div className="mb-1 flex items-center gap-2"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-black uppercase text-slate-600">{candidate.type}</span><span className="text-xs font-black text-slate-950">{candidate.price}</span></div><p className="truncate text-sm font-extrabold text-slate-950">{candidate.title}</p><p className="truncate text-xs text-slate-500">{candidate.location}</p></div>
                   <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full border", selected ? "border-[#faad13] bg-[#faad13] text-slate-950" : "border-slate-300 text-transparent")}><Check className="h-3.5 w-3.5" /></span>
                 </button>;

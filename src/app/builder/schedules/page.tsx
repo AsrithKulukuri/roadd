@@ -27,6 +27,7 @@ import {
 import { useSchedulesStore, SiteVisitSchedule } from "@/stores/schedules-store";
 import { useBuilderStore } from "@/stores/builder-store";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
+import { SalesDeskLeadAlerts } from "@/components/builder/sales-desk-lead-alerts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -130,6 +131,15 @@ export default function BuilderSchedulesPage() {
           </Button>
         </div>
       </div>
+
+      {/* Real-Time WhatsApp Lead Auto-Routing Panel (P1) */}
+      {currentBuilder && (
+        <SalesDeskLeadAlerts
+          builderId={currentBuilder.id}
+          builderName={currentBuilder.companyName}
+          defaultPhone={currentBuilder.whatsappNumber || currentBuilder.contactPhone}
+        />
+      )}
 
       {/* KPI Counters */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

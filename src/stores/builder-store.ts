@@ -5,6 +5,8 @@ import { useProjectsStore, fromSupabaseProject } from "@/stores/projects-store";
 import { useSchedulesStore } from "@/stores/schedules-store";
 import { toast } from "sonner";
 
+import type { BuilderSubscription } from "@/lib/builder-subscription";
+
 export interface BuilderProfile {
   id: string;
   userId?: string;
@@ -31,6 +33,8 @@ export interface BuilderProfile {
   lastLoginAt?: string;
   lastActiveAt?: string;
   loginCredentialsHint?: string; // e.g. "builder@demo.com / road2026"
+  credentialsHint?: string;
+  subscription?: BuilderSubscription;
   createdAt: string;
   updatedAt: string;
 }
@@ -146,6 +150,12 @@ interface BuilderStoreState {
 
   // Real-time sync helpers
   fetchFromSupabase: () => Promise<void>;
+
+  // Subscription & Admin Actions
+  wipeAllBuilderPortals: () => Promise<void>;
+  sendWelcomeNotification: (builderId: string) => Promise<{ success: boolean; message: string }>;
+  extendSubscription: (builderId: string, days: number) => Promise<void>;
+  sendExpiryAlert: (builderId: string) => Promise<{ success: boolean; message: string }>;
 }
 
 async function portalFetch(url: string, method = "GET", body?: unknown) {
@@ -167,6 +177,22 @@ export const useBuilderStore = create<BuilderStoreState>()(
       useProjectsStore.setState({ projects: [] });
       for (const key of ["road_builder_user", "road_user", "road-builder-store", "road_schedules_storage"]) localStorage.removeItem(key);
       window.dispatchEvent(new CustomEvent("road_auth_changed"));
+    },
+    wipeAllBuilderPortals: async () => {
+      await portalFetch("/api/admin/builders?all=true", "DELETE");
+      set({ builders: [], requests: [], activityLogs: [], messages: [] });
+    },
+    sendWelcomeNotification: async (builderId: string) => {
+      const data = await portalFetch("/api/admin/builders/welcome-message", "POST", { builderId });
+      return data;
+    },
+    extendSubscription: async (builderId: string, days: number) => {
+      const data = await portalFetch("/api/admin/builders/subscription", "POST", { builderId, days });
+      set(state => ({ builders: state.builders.map(b => b.id === builderId ? data.builder : b) }));
+    },
+    sendExpiryAlert: async (builderId: string) => {
+      const data = await portalFetch("/api/admin/builders/subscription", "PATCH", { builderId });
+      return data;
     },
     saveBuilderProfile: async (profile) => {
       const existing = get().builders.find(b => b.id === profile.id);

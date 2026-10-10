@@ -215,7 +215,7 @@ export const amenitiesList = [
 
 export const navigationLinks = {
   main: [
-    { label: "New Projects", href: "/search?type=projects" },
+    { label: "Pre Projects", href: "/search?type=projects" },
     { label: "Gated Communities", href: "/search?type=buy&propertyType=gated-community" },
     { label: "Commercial", href: "/search?type=buy&propertyType=commercial" },
     { label: "CRDA Ventures", href: "/search?type=projects&projectType=venture" },
@@ -229,7 +229,7 @@ export const navigationLinks = {
     ],
     forBuyers: [
       { label: "Browse Properties", href: "/search" },
-      { label: "New Projects", href: "/search?type=projects" },
+      { label: "Pre Projects", href: "/search?type=projects" },
       { label: "EMI Calculator", href: "/mortgage-calculator" },
       { label: "Saved Properties", href: "/dashboard/saved" },
       { label: "RERA Verified", href: "/search?reraApproved=true" },
