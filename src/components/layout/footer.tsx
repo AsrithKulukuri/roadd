@@ -223,7 +223,7 @@ export function Footer() {
         <div className="border-t border-border-default py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-xs text-text-tertiary">
-              <span>© {new Date().getFullYear()} ROAD FACING. All rights reserved.</span>
+              <span>© {new Date().getFullYear()} ROADFACING. All rights reserved.</span>
               <span className="hidden md:inline">•</span>
               <span className="hidden md:inline">Made with ❤️ in India</span>
             </div>

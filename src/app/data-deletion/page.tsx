@@ -13,9 +13,9 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "User Data Deletion | Road Facing",
+  title: "User Data Deletion | RoadFacing",
   description:
-    "Instructions and policy for requesting account and personal data deletion from the Road Facing real estate platform.",
+    "Instructions and policy for requesting account and personal data deletion from the RoadFacing real estate platform.",
 };
 
 export default function UserDataDeletionPage() {
@@ -39,14 +39,14 @@ export default function UserDataDeletionPage() {
             User Data Deletion
           </h1>
           <p className="text-text-tertiary text-xs">
-            Road Facing Platform &bull; Last updated: September 2026
+            RoadFacing Platform &bull; Last updated: September 2026
           </p>
         </div>
 
         {/* Introduction */}
         <div className="p-6 rounded-3xl bg-bg-card border border-border-default space-y-3 text-sm text-text-secondary leading-relaxed">
           <p>
-            At <strong>Road Facing</strong> (<code>roadfacing.com</code>), we respect your privacy and give you full control over your personal information. In accordance with applicable data protection regulations and Meta platform developer policies, you have the right to request the permanent deletion of your account and all associated personal data stored on our servers.
+            At <strong>RoadFacing</strong> (<code>roadfacing.com</code>), we respect your privacy and give you full control over your personal information. In accordance with applicable data protection regulations and Meta platform developer policies, you have the right to request the permanent deletion of your account and all associated personal data stored on our servers.
           </p>
         </div>
 

@@ -979,7 +979,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                       </label>
                     </div>
                     <p className="text-xs text-slate-400 mt-2 pl-8">
-                      Marks this project as an exclusive partner development managed directly by ROAD Facing. Tagged with exclusive badges and included in exclusive filters.
+                      Marks this project as an exclusive partner development managed directly by ROADFACING. Tagged with exclusive badges and included in exclusive filters.
                     </p>
                   </div>
 

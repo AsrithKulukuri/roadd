@@ -173,7 +173,7 @@ async function analyzeWithGemini(userText: string, conversationHistory: string, 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const prompt = `You are "ROAD Facing AI Concierge" 🏡 — the friendly, expert AI real estate assistant on WhatsApp for "ROAD FACING" (Andhra Pradesh's verified real estate platform in Vijayawada, Guntur, Amaravati, Visakhapatnam).
+    const prompt = `You are "ROADFACING AI Concierge" 🏡 — the friendly, expert AI real estate assistant on WhatsApp for "ROADFACING" (Andhra Pradesh's verified real estate platform in Vijayawada, Guntur, Amaravati, Visakhapatnam).
 User Name: ${userName || "Valued Member"}
 
 Recent Conversation Context:
@@ -542,7 +542,7 @@ export async function processInboundWhatsAppMessage(
 
   if (isIdentityQuestion) {
     const identityMsg =
-      `🤖 *I am the ROAD Facing AI Concierge!*\n\n` +
+      `🤖 *I am the ROADFACING AI Concierge!*\n\n` +
       `I am your 24/7 personal real estate assistant for Andhra Pradesh 🏡\n\n` +
       `I can find verified properties, builder projects, gated villas, apartments, and open plots across *Vijayawada, Guntur, Amaravati, and Visakhapatnam* in real-time.\n\n` +
       `*How can I help you today? Try asking:*\n` +
@@ -577,7 +577,7 @@ export async function processInboundWhatsAppMessage(
   if (isRobotQuestion) {
     const botMsg =
       `🤖 *Yes, I am an AI Real Estate Assistant!*\n\n` +
-      `I use advanced AI to instantly search verified properties, compare configurations, and deliver project insights for ROAD FACING.\n\n` +
+      `I use advanced AI to instantly search verified properties, compare configurations, and deliver project insights for ROADFACING.\n\n` +
       `If you'd like to speak with a human property consultant, simply reply *"Talk to agent"* anytime! 👨‍💼`;
 
     await WhatsAppService.sendTextMessage(cleanPhone, botMsg, {
@@ -627,7 +627,7 @@ export async function processInboundWhatsAppMessage(
   if (isGreeting) {
     const greetingHeader = userName ? `👋 *Hello ${userName}!*` : `👋 *Hello!*`;
     const greetingMsg =
-      `${greetingHeader} Welcome to ROAD Facing Concierge 🏡\n\n` +
+      `${greetingHeader} Welcome to ROADFACING Concierge 🏡\n\n` +
       `I am your AI Real Estate Assistant. I can find verified properties, builder projects, villas, apartments, and open plots for you in real-time.\n\n` +
       `*Try asking:*\n` +
       `• _"3 bhk flats in Poranki"_\n` +
@@ -812,7 +812,7 @@ export async function processInboundWhatsAppMessage(
       `Reply with specific requirements (e.g. *"3 bhk in Poranki"*) or type *"Talk to agent"* anytime!`;
   } else {
     fallbackMsg =
-      `🤖 *I am the ROAD Facing AI Concierge!*\n\n` +
+      `🤖 *I am the ROADFACING AI Concierge!*\n\n` +
       `I can find verified properties, builder projects, villas, apartments, and open plots for you in real-time.\n\n` +
       `*Try asking:*\n` +
       `• _"3 bhk flats in Poranki"_\n` +

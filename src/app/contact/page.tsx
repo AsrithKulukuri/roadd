@@ -116,7 +116,7 @@ export default function ContactPage() {
               <ShieldCheck className="w-3.5 h-3.5" /> Support & Inquiries
             </div>
             <h1 className="font-heading text-4xl md:text-5xl font-black text-text-primary tracking-tight">
-              Get in Touch with Road Facing
+              Get in Touch with RoadFacing
             </h1>
             <p className="text-base sm:text-lg text-text-secondary leading-relaxed">
               Have questions about a verified project, need assistance booking a site visit, or want to partner with us in Vijayawada, Guntur or Amaravati? We are here to help.
@@ -169,7 +169,7 @@ export default function ContactPage() {
                     <div>
                       <h4 className="font-bold text-text-primary mb-1">Regional Office</h4>
                       <p className="text-text-secondary text-sm leading-relaxed">
-                        ROAD FACING Real Estate Media Pvt. Ltd.<br />
+                        ROADFACING Real Estate Media Pvt. Ltd.<br />
                         Benz Circle & Capital Highway Corridor<br />
                         Vijayawada, Andhra Pradesh, India
                       </p>

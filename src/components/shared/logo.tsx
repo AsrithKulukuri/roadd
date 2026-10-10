@@ -42,7 +42,7 @@ export function Logo({
       >
         <span
           role="img"
-          aria-label="ROAD FACING Logo"
+          aria-label="ROADFACING Logo"
           className="block h-full bg-[#faad13] drop-shadow-sm transition-transform duration-300 group-hover:scale-105"
           style={{
             width: `${Math.round(iconHeight * 0.73)}px`,
@@ -61,7 +61,7 @@ export function Logo({
         <div className="flex flex-col justify-center">
           <div
             className={cn(
-              "font-heading font-black tracking-tight leading-none flex items-center gap-1",
+              "font-heading font-black tracking-tight leading-none flex items-center",
               textClass
             )}
             style={{ fontWeight: 900 }}

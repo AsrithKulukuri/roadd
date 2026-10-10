@@ -16,7 +16,7 @@ export function AiChatbot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "model",
-      parts: [{ text: "Hi! I'm the ROAD FACING AI Assistant. How can I help you find your dream property today?" }],
+      parts: [{ text: "Hi! I'm the ROADFACING AI Assistant. How can I help you find your dream property today?" }],
     }
   ]);
   const [input, setInput] = useState("");
@@ -139,7 +139,7 @@ export function AiChatbot() {
               <Bot className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-heading font-bold text-sm text-text-primary">ROAD FACING Assistant</h3>
+              <h3 className="font-heading font-bold text-sm text-text-primary">ROADFACING Assistant</h3>
               <p className="text-xs text-text-secondary">Powered by AI</p>
             </div>
           </div>

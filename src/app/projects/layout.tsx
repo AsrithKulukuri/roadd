@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Pre Projects — Apartments, Villas & Ventures | ROAD FACING",
+  title: "New Projects — Apartments, Villas & Ventures | ROADFACING",
   description:
     "Explore builder projects across Andhra Pradesh — RERA-approved apartments, luxury villas, and gated ventures. Compare floor plans, pricing, and amenities from top builders.",
   keywords: [
-    "pre projects in Andhra Pradesh",
+    "new projects in Andhra Pradesh",
     "apartments for sale",
     "villas for sale",
     "gated ventures plots",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "ready to move apartments",
   ],
   openGraph: {
-    title: "Pre Builder Projects | ROAD FACING",
+    title: "New Builder Projects | ROADFACING",
     description:
       "Discover RERA-approved apartments, villas & ventures from top builders in Andhra Pradesh.",
     url: "https://road.in/projects",

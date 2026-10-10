@@ -254,7 +254,7 @@ export async function POST(req: NextRequest) {
         `⏰ *Time Slot:* ${timeSlot}\n` +
         `📍 *Location:* ${resolvedProjectLocation || "Project Site"}\n\n` +
         `Our project team will be ready to guide you through the property. We will also send you a reminder 1 hour before your visit.\n\n` +
-        `Thank you for using ROAD Facing!`;
+        `Thank you for using ROADFACING!`;
 
       if (cleanCustomerPhone) {
         const custResult = await sendSiteVisitNotification(cleanCustomerPhone, customerMsg, {
@@ -282,7 +282,7 @@ export async function POST(req: NextRequest) {
           `📍 *Location:* ${resolvedProjectLocation || "Site"}\n` +
           (notes ? `📝 *Notes:* ${notes}\n` : "") +
           `\nPlease ensure a site executive is available for the visit.\n\n` +
-          `ROAD Facing Admin`;
+          `ROADFACING Admin`;
 
         for (const recipient of new Set([targetBuilderPhone, adminPhone].filter(Boolean))) {
           try {

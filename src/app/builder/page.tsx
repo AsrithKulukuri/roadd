@@ -209,7 +209,7 @@ export default function BuilderOverviewPage() {
     let csvContent = "\uFEFF";
 
     // 1. Executive Summary
-    csvContent += `ROAD FACING - BUILDER PERFORMANCE REPORT\n`;
+    csvContent += `ROADFACING - BUILDER PERFORMANCE REPORT\n`;
     csvContent += `Company Name,${cell(builderName)}\n`;
     csvContent += `RERA Number,${cell(currentBuilder?.reraNumber || "N/A")}\n`;
     csvContent += `Developer Tier,${cell(currentBuilder?.tier || "Standard")}\n`;
@@ -654,7 +654,7 @@ export default function BuilderOverviewPage() {
             <Users className="h-8 w-8 text-muted-foreground mx-auto" />
             <h4 className="text-sm font-semibold text-foreground">No direct contacts or tours shared yet</h4>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
-              When prospective buyers view your property listing on ROAD Facing and schedule a site visit or reveal your contact, their details will appear here automatically.
+              When prospective buyers view your property listing on ROADFACING and schedule a site visit or reveal your contact, their details will appear here automatically.
             </p>
           </div>
         )}

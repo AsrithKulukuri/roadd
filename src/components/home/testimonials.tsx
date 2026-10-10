@@ -15,7 +15,7 @@ export function Testimonials() {
           </h2>
           <p className="text-text-secondary text-lg">
             Don't just take our word for it. Here's what buyers, owners, and
-            agents have to say about their experience with ROAD FACING.
+            agents have to say about their experience with ROADFACING.
           </p>
         </div>
 

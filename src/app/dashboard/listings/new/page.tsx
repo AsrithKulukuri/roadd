@@ -35,7 +35,7 @@ export default function PostPropertyPage() {
           Back to Listings
         </Link>
         <h1 className="font-heading text-3xl font-bold text-text-primary">Post New Property</h1>
-        <p className="text-text-secondary mt-1">Fill in the details to list your property on ROAD FACING.</p>
+        <p className="text-text-secondary mt-1">Fill in the details to list your property on ROADFACING.</p>
       </div>
 
       {/* Progress Bar */}

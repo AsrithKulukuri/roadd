@@ -1042,7 +1042,7 @@ export function ShelfCard({
                 </span>
                 <span className="px-2.5 py-1 rounded-xl bg-slate-950/70 backdrop-blur-md border border-white/20 text-[10px] sm:text-[11px] font-bold text-white flex items-center gap-1.5 shadow-sm">
                   <ShieldCheck className="w-3 h-3 text-sky-400" />
-                  <span>Road Facing Verified</span>
+                  <span>RoadFacing Verified</span>
                 </span>
               </div>
             </div>

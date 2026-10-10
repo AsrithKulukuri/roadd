@@ -260,7 +260,7 @@ export default function RegisterPage() {
             Create an Account
           </h1>
           <p className="text-text-secondary text-sm text-center mt-1">
-            Join ROAD FACING to unlock premium properties
+            Join ROADFACING to unlock premium properties
           </p>
         </div>
 

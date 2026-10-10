@@ -1,5 +1,5 @@
 export const siteConfig = {
-  name: "ROAD FACING",
+  name: "ROADFACING",
   fullName: "Real Projects. Real People. Real Updates.",
   description:
     "Real Projects. Real People. Real Updates. RoadFacing brings you closer to projects through real, on-ground videos and regular updates so you can see the location, development, and progress for yourself.",
@@ -215,7 +215,7 @@ export const amenitiesList = [
 
 export const navigationLinks = {
   main: [
-    { label: "Pre Projects", href: "/search?type=projects" },
+    { label: "New Projects", href: "/search?type=projects" },
     { label: "Gated Communities", href: "/search?type=buy&propertyType=gated-community" },
     { label: "Commercial", href: "/search?type=buy&propertyType=commercial" },
     { label: "CRDA Ventures", href: "/search?type=projects&projectType=venture" },
@@ -229,7 +229,7 @@ export const navigationLinks = {
     ],
     forBuyers: [
       { label: "Browse Properties", href: "/search" },
-      { label: "Pre Projects", href: "/search?type=projects" },
+      { label: "New Projects", href: "/search?type=projects" },
       { label: "EMI Calculator", href: "/mortgage-calculator" },
       { label: "Saved Properties", href: "/dashboard/saved" },
       { label: "RERA Verified", href: "/search?reraApproved=true" },

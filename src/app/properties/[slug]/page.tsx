@@ -182,7 +182,7 @@ export default async function PropertyDetailPage({
       // TODO: For future production hardening, strip private owner contact fields (ownerPhone, ownerEmail) from unauthenticated public Supabase queries and API responses
       seller: {
         "@type": "RealEstateAgent",
-        name: property.ownerName || "Road Facing Verified Partner",
+        name: property.ownerName || "RoadFacing Verified Partner",
       },
     },
   };
@@ -229,7 +229,7 @@ export default async function PropertyDetailPage({
           <div className="text-xs">
             <span className="text-text-tertiary font-bold block">Marketed & Brokered by:</span>
             <span className="font-extrabold text-text-primary">
-              {property.ownerName || "ROAD FACING Premier Realty AP"}
+              {property.ownerName || "ROADFACING Premier Realty AP"}
             </span>
           </div>
         </div>

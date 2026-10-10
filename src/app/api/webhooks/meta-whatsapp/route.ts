@@ -243,7 +243,7 @@ export async function POST(request: Request) {
               try {
                 await WhatsAppService.sendTextMessage(
                   phone,
-                  "You have unsubscribed from ROAD FACING property updates. You will not receive broadcast messages.\n\nReply YES (or any message) to resume receiving updates again.",
+                  "You have unsubscribed from ROADFACING property updates. You will not receive broadcast messages.\n\nReply YES (or any message) to resume receiving updates again.",
                   { requestId: `meta-stop-${Date.now()}` }
                 );
               } catch (replyErr) {
@@ -297,7 +297,7 @@ export async function POST(request: Request) {
                   try {
                     await WhatsAppService.sendTextMessage(
                       phone,
-                      "Welcome back! You have successfully resubscribed to ROAD FACING property updates.\n\nYou will now receive alerts on new properties, verified listings, and projects.",
+                      "Welcome back! You have successfully resubscribed to ROADFACING property updates.\n\nYou will now receive alerts on new properties, verified listings, and projects.",
                       { requestId: `meta-resume-${Date.now()}` }
                     );
                   } catch (sendErr) {

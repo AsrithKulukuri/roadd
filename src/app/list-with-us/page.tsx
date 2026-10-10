@@ -73,7 +73,7 @@ export default function ListWithUsPage() {
             </h1>
             
             <p className="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto mb-10 leading-relaxed">
-              Join ROAD FACING's premium network. Showcase your projects, track every interaction on a dedicated dashboard, and dominate the homepage.
+              Join ROADFACING's premium network. Showcase your projects, track every interaction on a dedicated dashboard, and dominate the homepage.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

@@ -112,7 +112,7 @@ export async function GET(request: Request) {
             `⏰ *Time Slot:* ${visit.time_slot}\n` +
             `📍 *Location:* ${visit.project_location || "Project Site"}\n\n` +
             `Our site executive is ready to welcome and guide you. See you shortly!\n\n` +
-            `— ROAD Facing Support`;
+            `— ROADFACING Support`;
 
           try {
             await sendSiteVisitNotification(cleanCustomerPhone, customerMsg, {
@@ -137,7 +137,7 @@ export async function GET(request: Request) {
             `📍 *Location:* ${visit.project_location || "Project Site"}\n` +
             (visit.notes ? `📝 *Notes:* ${visit.notes}\n` : "") +
             `\nPlease ensure a site executive is available at the property.\n\n` +
-            `— ROAD Facing Support`;
+            `— ROADFACING Support`;
 
           const builderRecipients = [...new Set([targetBuilderPhone, adminPhone].filter(Boolean))];
           for (const recipient of builderRecipients) {

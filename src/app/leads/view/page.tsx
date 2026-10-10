@@ -179,7 +179,7 @@ function LeadBookContent() {
 
               const cleanPhone = lead.viewer_phone.replace(/\D/g, "");
               const whatsappLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-                `Hello ${lead.viewer_name || ""}, thank you for exploring ${lead.project_name || "our project"} on ROAD FACING. Would you like to schedule a site visit or get floor plans?`
+                `Hello ${lead.viewer_name || ""}, thank you for exploring ${lead.project_name || "our project"} on ROADFACING. Would you like to schedule a site visit or get floor plans?`
               )}`;
 
               return (

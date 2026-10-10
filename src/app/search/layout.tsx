@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description:
     "Explore verified residential apartments, luxury villas, commercial spaces, and CRDA approved plots with real on-ground video updates across AP Capital Region.",
   openGraph: {
-    title: "Search Properties & Projects | Road Facing",
+    title: "Search Properties & Projects | RoadFacing",
     description:
       "Explore verified residential apartments, luxury villas, and CRDA plots across Vijayawada, Guntur & Amaravati.",
   },

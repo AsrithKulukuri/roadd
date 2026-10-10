@@ -1059,7 +1059,7 @@ function UnifiedSearchPage() {
                     onClick={() => setShowSearchNotifyMe(true)}
                     className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-950 font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer active:scale-95 flex items-center gap-1.5"
                   >
-                    <Bell className="w-3.5 h-3.5 text-amber-500" /> Notify Me for New Launches
+                    <Bell className="w-3.5 h-3.5 text-amber-500" /> Notify Me for Pre Launches
                   </button>
                 </div>
 
@@ -1078,7 +1078,7 @@ function UnifiedSearchPage() {
                   </div>
                   <a
                     href={`https://wa.me/919491624444?text=${encodeURIComponent(
-                      `Hi Road Facing, I was searching for ${filters.query || "property"} in ${filters.cities?.[0] || "AP"} and need assistance finding verified projects.`
+                      `Hi ROADFACING, I was searching for ${filters.query || "property"} in ${filters.cities?.[0] || "AP"} and need assistance finding verified projects.`
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"

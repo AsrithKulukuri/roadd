@@ -136,7 +136,7 @@ export function SmartPageLoader() {
             role="status"
             aria-live="polite"
             aria-busy="true"
-            aria-label="Loading Road Facing"
+            aria-label="Loading RoadFacing"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 1.01, filter: "blur(4px)" }}
@@ -167,7 +167,7 @@ export function SmartPageLoader() {
                 <div className="relative w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center drop-shadow-[0_0_20px_rgba(245,158,11,0.6)]">
                   <Image
                     src="/logo.png"
-                    alt="ROAD FACING"
+                    alt="ROADFACING"
                     width={56}
                     height={56}
                     priority

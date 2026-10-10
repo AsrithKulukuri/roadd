@@ -78,7 +78,7 @@ export async function recordListingAction(request: Request, type: "project" | "p
       timeStyle: "short",
     });
     const message =
-      (action === "callback_request" ? `📞 *Callback requested on ROAD Facing!*\n\n` : `🔔 *New Lead Alert on ROAD Facing!*\n\n`) +
+      (action === "callback_request" ? `📞 *Callback requested on ROADFACING!*\n\n` : `🔔 *New Lead Alert on ROADFACING!*\n\n`) +
       `📌 *Listing:* ${row.listing_name}\n` +
       `⚡ *Action:* ${ACTION_LABELS[action]}\n\n` +
       `👤 *Viewer Details:*\n` +
@@ -87,7 +87,7 @@ export async function recordListingAction(request: Request, type: "project" | "p
       (user.email ? `• *Email:* ${user.email}\n` : "") +
       `• *Time:* ${timeFormatted}\n\n` +
       (action === "callback_request" ? `This buyer wants a callback. Please call them shortly on the number above.\n\n` : `Please connect with this interested buyer.\n\n`) +
-      `— ROAD Facing`;
+      `— ROADFACING`;
     const recipients = [...new Set([phone, adminPhone].filter(Boolean))];
     const delivered = new Set<string>();
     for (const recipient of recipients) {
@@ -101,7 +101,7 @@ export async function recordListingAction(request: Request, type: "project" | "p
     if (action === "callback_request") {
       try {
         const confirmation = await sendListingNotification(formatWhatsAppPhone(user.phone),
-          `Hello ${user.name || "there"}! Your callback request for ${row.listing_name} has been received. Our team will call you shortly on your verified number. — ROAD Facing`,
+          `Hello ${user.name || "there"}! Your callback request for ${row.listing_name} has been received. Our team will call you shortly on your verified number. — ROADFACING`,
           { requestId: data.id + ":callback:user", recipientType: "user" }, true);
         notifications.userAccepted = confirmation.success && !confirmation.simulated;
       } catch { /* A confirmation failure must not discard the saved callback. */ }

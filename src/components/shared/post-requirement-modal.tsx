@@ -105,7 +105,7 @@ ${email.trim() ? `📧 *Email*: ${email.trim()}\n` : ""}🎯 *Looking To*: ${pur
 🛏️ *Configuration*: ${bhk}
 ⏱️ *Timeline*: ${timeline}
 ${notes.trim() ? `📝 *Specific Notes*: ${notes.trim()}\n` : ""}━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-_Submitted via Road Facing Portal_`;
+_Submitted via ROADFACING Portal_`;
 
     const encodedMessage = encodeURIComponent(whatsappMessage);
     const whatsappUrl = `https://wa.me/91${WHATSAPP_NUMBER}?text=${encodedMessage}`;

@@ -53,7 +53,7 @@ export const ALL_PRESET_CATEGORIES: HomeCategory[] = [
   },
   {
     id: "new-apartments",
-    name: "Pre Projects",
+    name: "New Projects",
     subtitle: "Launches & upcoming",
     href: "/search?type=projects",
     type: "apartment",

@@ -63,7 +63,7 @@ export default function DigitalBrochurePage({ params }: { params: Promise<{ slug
     if (navigator.share) {
       navigator.share({
         title: `${project?.name} — Official Digital Brochure`,
-        text: `Explore verified CRDA & RERA layout, pricing and floor plans for ${project?.name} on ROAD Facing.`,
+        text: `Explore verified CRDA & RERA layout, pricing and floor plans for ${project?.name} on ROADFACING.`,
         url: window.location.href,
       }).catch(() => null);
     } else {

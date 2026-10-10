@@ -283,7 +283,7 @@ export function AiAssistantWidget() {
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <h3 className="font-bold text-slate-900 dark:text-white text-sm leading-none">ROAD Facing Concierge</h3>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-sm leading-none">ROADFACING Concierge</h3>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-500/10 dark:bg-amber-400/10 px-1.5 py-0.5 rounded">AI</span>
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Real Estate Assistant</p>
@@ -291,11 +291,11 @@ export function AiAssistantWidget() {
               </div>
               <div className="flex items-center gap-1.5">
                 <a
-                  href="https://wa.me/918977311418?text=Hi%20ROAD%20Facing%20Concierge"
+                  href="https://wa.me/918977311418?text=Hi%20ROADFACING%20Concierge"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 px-2.5 py-1 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
-                  title="Chat with ROAD Facing Concierge on WhatsApp"
+                  title="Chat with ROADFACING Concierge on WhatsApp"
                 >
                   <MessageCircle className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" />
                   <span>WhatsApp</span>

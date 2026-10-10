@@ -76,11 +76,11 @@ const HERO_BUDGET_MAX_OPTS = [
   { label: "₹ 10 Cr", value: 100000000 },
 ];
 
-// Search Tabs: Buy, Projects, New Launches and Map View
+// Search Tabs: Buy, Projects, Pre Launches and Map View
 const tabs = [
   { id: "buy", label: "Buy" },
   { id: "projects", label: "Projects" },
-  { id: "new-launch", label: "New Launches" },
+  { id: "new-launch", label: "Pre Launches" },
   { id: "map", label: "Map View" },
 ];
 

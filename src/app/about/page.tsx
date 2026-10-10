@@ -6,7 +6,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "About Us — Real Projects. Real People. Real Updates",
   description:
-    "Learn about Road Facing — Andhra Pradesh's premier real estate transparency platform bringing real on-ground video updates and verified builder listings.",
+    "Learn about RoadFacing — Andhra Pradesh's premier real estate transparency platform bringing real on-ground video updates and verified builder listings.",
 };
 
 export default function AboutPage() {

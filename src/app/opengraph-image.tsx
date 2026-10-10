@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "nodejs";
 
-export const alt = "Road Facing — Real Projects. Real People. Real Updates";
+export const alt = "RoadFacing — Real Projects. Real People. Real Updates";
 export const size = {
   width: 1200,
   height: 630,
@@ -64,7 +64,7 @@ export default async function Image() {
                 }}
               >
                 <span>ROAD</span>
-                <span style={{ color: "#faad13", marginLeft: "8px" }}>FACING</span>
+                <span style={{ color: "#faad13" }}>FACING</span>
               </div>
               <div
                 style={{

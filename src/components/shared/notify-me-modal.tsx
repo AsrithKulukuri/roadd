@@ -173,7 +173,7 @@ export function NotifyMeModal({
                   <Sparkles className="w-3 h-3" /> Priority Real Estate Alert
                 </span>
                 <h2 id="notify-modal-title" className="font-heading text-lg sm:text-xl font-black text-text-primary tracking-tight truncate">
-                  Notify Me: {projectName || "Pre Projects"}
+                  Notify Me: {projectName || "New Projects"}
                 </h2>
               </div>
             </div>

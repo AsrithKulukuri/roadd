@@ -25,7 +25,7 @@ export default function AdminSettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1">Platform Name</label>
-              <Input defaultValue="ROAD FACING" className="bg-bg-primary/50" />
+              <Input defaultValue="ROADFACING" className="bg-bg-primary/50" />
             </div>
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1">Support Email</label>
@@ -47,12 +47,12 @@ export default function AdminSettingsPage() {
           
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">Meta Title</label>
-            <Input defaultValue="ROAD FACING — India's Premium Real Estate Platform" className="bg-bg-primary/50" />
+            <Input defaultValue="ROADFACING — India's Premium Real Estate Platform" className="bg-bg-primary/50" />
           </div>
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">Meta Description</label>
             <textarea 
-              defaultValue="Buy, sell, and rent properties across India with ROAD FACING. Verified listings, RERA-compliant, AI-powered search, and trusted agents."
+              defaultValue="Buy, sell, and rent properties across India with ROADFACING. Verified listings, RERA-compliant, AI-powered search, and trusted agents."
               className="w-full h-24 rounded-xl border border-border-input bg-bg-primary/50 px-3 py-2 text-sm text-text-primary outline-none focus-visible:ring-1 focus-visible:ring-amber-primary"
             />
           </div>

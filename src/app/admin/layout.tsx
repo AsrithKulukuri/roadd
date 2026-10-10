@@ -184,7 +184,7 @@ export default function AdminLayout({
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-black text-text-primary truncate">Admin Control</p>
-                    <p className="text-[10px] text-text-tertiary truncate">Road Facing AP</p>
+                    <p className="text-[10px] text-text-tertiary truncate">RoadFacing AP</p>
                   </div>
                 </div>
                 <Link

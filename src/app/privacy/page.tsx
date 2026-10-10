@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Privacy Policy",
-  description: "Privacy Policy and Data Protection standards at Road Facing real estate platform.",
+  description: "Privacy Policy and Data Protection standards at RoadFacing real estate platform.",
 };
 
 export default function PrivacyPolicyPage() {
@@ -30,7 +30,7 @@ export default function PrivacyPolicyPage() {
               <Lock className="w-4 h-4 text-amber-500" /> 1. Information We Collect
             </h2>
             <p>
-              At Road Facing, we collect information you provide directly to us when you browse properties, create an inquiry, submit property requirements, or contact builders and agents. This includes your name, phone number, email address, and property preferences.
+              At RoadFacing, we collect information you provide directly to us when you browse properties, create an inquiry, submit property requirements, or contact builders and agents. This includes your name, phone number, email address, and property preferences.
             </p>
           </section>
 

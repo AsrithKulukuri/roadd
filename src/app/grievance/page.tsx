@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Grievance Redressal",
-  description: "Official Grievance Redressal & Customer Support Officer contact details for Road Facing.",
+  description: "Official Grievance Redressal & Customer Support Officer contact details for RoadFacing.",
 };
 
 export default function GrievancePage() {
@@ -22,7 +22,7 @@ export default function GrievancePage() {
             Grievance Redressal
           </h1>
           <p className="text-text-secondary text-sm">
-            In accordance with IT Rules and Consumer Protection regulations, Road Facing maintains a dedicated Grievance Officer.
+            In accordance with IT Rules and Consumer Protection regulations, RoadFacing maintains a dedicated Grievance Officer.
           </p>
         </div>
 

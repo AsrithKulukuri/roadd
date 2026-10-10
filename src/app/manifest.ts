@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Road Facing — Real Projects. Real People. Real Updates",
-    short_name: "Road Facing",
+    name: "RoadFacing — Real Projects. Real People. Real Updates",
+    short_name: "RoadFacing",
     description:
       "Verified properties, luxury apartments, gated villas, and CRDA approved plots across Vijayawada, Guntur & Amaravati.",
     start_url: "/",

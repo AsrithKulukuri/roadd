@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Terms of Service",
-  description: "Terms and conditions of using Road Facing real estate platform.",
+  description: "Terms and conditions of using RoadFacing real estate platform.",
 };
 
 export default function TermsOfServicePage() {
@@ -30,7 +30,7 @@ export default function TermsOfServicePage() {
               <FileCheck className="w-4 h-4 text-amber-500" /> 1. Acceptance of Terms
             </h2>
             <p>
-              By accessing and using Road Facing (&quot;the Platform&quot;), you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.
+              By accessing and using RoadFacing (&quot;the Platform&quot;), you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.
             </p>
           </section>
 
@@ -39,7 +39,7 @@ export default function TermsOfServicePage() {
               <AlertTriangle className="w-4 h-4 text-amber-500" /> 2. Real Estate Information & Listings
             </h2>
             <p>
-              Road Facing acts as an informational platform providing verified on-ground visuals and project status. While we make every effort to ensure information accuracy, users are encouraged to perform independent legal title checks and verify RERA registrations before executing any property transactions.
+              RoadFacing acts as an informational platform providing verified on-ground visuals and project status. While we make every effort to ensure information accuracy, users are encouraged to perform independent legal title checks and verify RERA registrations before executing any property transactions.
             </p>
           </section>
 

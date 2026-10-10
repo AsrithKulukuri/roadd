@@ -1,5 +1,5 @@
 /**
- * ROAD FACING - Project Unit Inventory & Availability Matrix Library
+ * ROADFACING - Project Unit Inventory & Availability Matrix Library
  */
 
 export interface InventoryUnit {

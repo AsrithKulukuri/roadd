@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
       const projectUrl = `${siteUrl}/projects/${lead.project_slug || lead.project_id || ""}`;
 
       const retryMessage = [
-        `*New Buyer Interest on ROAD FACING* 🏢`,
+        `*New Buyer Interest on ROADFACING* 🏢`,
         ``,
         `Hello! A verified buyer explored *${lead.project_name || "your project"}* (Ref: ${lead.project_ref_id || "-"}).`,
         ``,

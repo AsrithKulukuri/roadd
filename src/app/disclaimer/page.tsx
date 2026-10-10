@@ -30,7 +30,7 @@ export default function DisclaimerPage() {
               <AlertCircle className="w-4 h-4 text-amber-500" /> RERA & Regulatory Notice
             </h2>
             <p>
-              Road Facing is a digital marketplace connecting buyers, developers, and property owners. The project details, floor plans, pricing estimates, specifications, and timelines showcased on this platform are for informational purposes only.
+              RoadFacing is a digital marketplace connecting buyers, developers, and property owners. The project details, floor plans, pricing estimates, specifications, and timelines showcased on this platform are for informational purposes only.
             </p>
             <p>
               Prospective buyers are advised to independently verify the RERA registration details of developers and projects on the respective state RERA official portals (such as AP RERA, TG RERA, Karnataka RERA, and MahaRERA).
@@ -42,7 +42,7 @@ export default function DisclaimerPage() {
               <FileText className="w-4 h-4 text-amber-500" /> Visuals & Construction Updates
             </h2>
             <p>
-              Ground inspection videos, drone footage, and construction progress photography displayed on Road Facing reflect conditions at the time of recording. Road Facing does not warrant that future construction will adhere strictly to early artist impressions.
+              Ground inspection videos, drone footage, and construction progress photography displayed on RoadFacing reflect conditions at the time of recording. RoadFacing does not warrant that future construction will adhere strictly to early artist impressions.
             </p>
           </section>
         </div>

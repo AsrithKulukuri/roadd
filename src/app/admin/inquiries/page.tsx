@@ -189,7 +189,7 @@ export default function AdminInquiriesPage() {
             });
 
             const whatsappUrl = `https://wa.me/91${req.phone}?text=${encodeURIComponent(
-              `Hi ${req.name}, greetings from Road Facing! We received your requirement for ${req.propertyType} in ${req.location} (${req.budget}). We have verified properties that match your preference.`
+              `Hi ${req.name}, greetings from ROADFACING! We received your requirement for ${req.propertyType} in ${req.location} (${req.budget}). We have verified properties that match your preference.`
             )}`;
 
             return (

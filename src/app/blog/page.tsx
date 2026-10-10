@@ -14,7 +14,7 @@ export default function BlogPage() {
               Real Estate Insights
             </h1>
             <p className="text-lg text-text-secondary">
-              Stay updated with the latest market trends, investment tips, and platform news from the ROAD FACING editorial team.
+              Stay updated with the latest market trends, investment tips, and platform news from the ROADFACING editorial team.
             </p>
           </div>
         </div>

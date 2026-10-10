@@ -8,7 +8,7 @@ const FALLBACK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" heigh
   <rect width="1200" height="600" fill="#1e293b"/>
   <path d="M540 340L580 290L630 350L660 310L720 380H480L540 340Z" fill="#334155"/>
   <circle cx="530" cy="270" r="25" fill="#f59e0b" fill-opacity="0.3"/>
-  <text x="600" y="430" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="20" font-weight="bold">ROAD FACING Media</text>
+  <text x="600" y="430" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="20" font-weight="bold">ROADFACING Media</text>
 </svg>`;
 
 export async function GET(

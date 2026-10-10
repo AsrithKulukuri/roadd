@@ -6,7 +6,7 @@ export default function Loading() {
       className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-950 text-white select-none overflow-hidden"
       style={{ touchAction: "none" }}
       aria-busy="true"
-      aria-label="Loading Road Facing"
+      aria-label="Loading RoadFacing"
     >
       {/* ── Top Slim Glowing Progress Bar ── */}
       <div className="fixed top-0 left-0 right-0 z-[999999] h-[3px] bg-slate-900/40">
@@ -32,7 +32,7 @@ export default function Loading() {
           <div className="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center drop-shadow-[0_0_24px_rgba(245,158,11,0.7)]">
             <Image
               src="/logo.png"
-              alt="ROAD FACING"
+              alt="ROADFACING"
               width={64}
               height={64}
               priority
@@ -43,7 +43,7 @@ export default function Loading() {
 
         {/* Brand Title */}
         <div className="flex flex-col items-center gap-1.5">
-          <div className="flex items-center gap-1.5 font-heading text-xl sm:text-2xl font-black tracking-tight leading-none">
+          <div className="flex items-center font-heading text-xl sm:text-2xl font-black tracking-tight leading-none">
             <span className="text-[#faad13] drop-shadow-[0_0_16px_rgba(250,173,19,0.6)]">ROAD</span>
             <span className="text-white tracking-wider drop-shadow-md">FACING</span>
           </div>

@@ -352,7 +352,7 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
       {/* FOOTER */}
       <footer className="border-t border-border/40 py-6 text-center text-xs text-muted-foreground">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>ROAD Facing Enterprise Partner Network • Vijayawada & Amaravati</span>
+          <span>ROADFACING Enterprise Partner Network • Vijayawada & Amaravati</span>
           <span>Logged in as {currentBuilder?.companyName || "Developer"}</span>
         </div>
       </footer>

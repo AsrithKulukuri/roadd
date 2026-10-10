@@ -22,8 +22,8 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://roadd-three.vercel.
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Road Facing — Real Projects. Real People. Real Updates | Vijayawada, Guntur & Amaravati",
-    template: "%s | Road Facing",
+    default: "RoadFacing — Real Projects. Real People. Real Updates | Vijayawada, Guntur & Amaravati",
+    template: "%s | RoadFacing",
   },
   description:
     "Explore verified properties, luxury apartments, gated villas, and CRDA approved plots across Vijayawada, Guntur, Amaravati, Mangalagiri, and Tadepalli. Real on-ground video updates & developer transparency.",
@@ -40,11 +40,11 @@ export const metadata: Metadata = {
     "Gorantla Guntur flats",
     "buy property Andhra Pradesh",
     "RERA verified projects AP",
-    "Road Facing real estate",
+    "RoadFacing real estate",
   ],
-  authors: [{ name: "Road Facing", url: "https://www.roadfacing.com" }],
-  creator: "Road Facing",
-  publisher: "Road Facing",
+  authors: [{ name: "RoadFacing", url: "https://www.roadfacing.com" }],
+  creator: "RoadFacing",
+  publisher: "RoadFacing",
   alternates: {
     canonical: "https://www.roadfacing.com",
   },
@@ -52,8 +52,8 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_IN",
     url: "https://www.roadfacing.com",
-    siteName: "Road Facing",
-    title: "Road Facing — Real Projects. Real People. Real Updates",
+    siteName: "RoadFacing",
+    title: "RoadFacing — Real Projects. Real People. Real Updates",
     description:
       "Buy, sell, and rent verified properties across Vijayawada, Guntur, Amaravati & Andhra Pradesh with real video updates and AI search.",
     images: [
@@ -61,13 +61,13 @@ export const metadata: Metadata = {
         url: "/api/og?title=Find+Verified+Homes+in+Vijayawada,+Guntur+&+Amaravati&location=AP+Capital+Region&type=Real+Estate+Portal&badge=RERA+%26+CRDA+Verified",
         width: 1200,
         height: 630,
-        alt: "Road Facing — Real Projects. Real People. Real Updates",
+        alt: "RoadFacing — Real Projects. Real People. Real Updates",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Road Facing — Real Projects. Real People. Real Updates",
+    title: "RoadFacing — Real Projects. Real People. Real Updates",
     description:
       "Verified properties, luxury apartments & plots across Vijayawada, Guntur, and Amaravati.",
     images: [
@@ -111,7 +111,7 @@ const jsonLdWebsite = {
     {
       "@type": "RealEstateAgent",
       "@id": "https://www.roadfacing.com/#organization",
-      name: "Road Facing",
+      name: "RoadFacing",
       url: "https://www.roadfacing.com",
       logo: "https://www.roadfacing.com/favicon.ico",
       description:
@@ -141,7 +141,7 @@ const jsonLdWebsite = {
       "@type": "WebSite",
       "@id": "https://www.roadfacing.com/#website",
       url: "https://www.roadfacing.com",
-      name: "Road Facing",
+      name: "RoadFacing",
       publisher: {
         "@id": "https://www.roadfacing.com/#organization",
       },

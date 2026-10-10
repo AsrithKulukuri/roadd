@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Cookie Policy",
-  description: "Learn how Road Facing uses cookies to enhance your browsing experience.",
+  description: "Learn how RoadFacing uses cookies to enhance your browsing experience.",
 };
 
 export default function CookiePolicyPage() {
@@ -30,7 +30,7 @@ export default function CookiePolicyPage() {
               <Cookie className="w-4 h-4 text-amber-500" /> How We Use Cookies
             </h2>
             <p>
-              Road Facing uses cookies and local storage tokens to remember your saved favorite properties, search filter preferences, theme settings (dark / light mode), and session login states.
+              RoadFacing uses cookies and local storage tokens to remember your saved favorite properties, search filter preferences, theme settings (dark / light mode), and session login states.
             </p>
             <p>
               We do not use intrusive cross-site ad tracking cookies. You can manage or clear your browser cookies at any time via your browser settings.
