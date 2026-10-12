@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { portalAccess, PortalError, portalError } from "@/lib/builder-access";
-import { SUBSCRIPTION_PLANS, BASE_MONTHLY_PRICE, DAYS_PER_MONTH } from "@/lib/builder-subscription";
+import { 
+  DAYS_PER_MONTH, 
+  decodeSubscriptionPayload, 
+  calculateSubscriptionPlans 
+} from "@/lib/builder-subscription";
+import { getPlatformBasePrice } from "@/lib/pricing-service";
 import { createRazorpayOrder, getRazorpayConfig } from "@/lib/razorpay";
 
 export async function POST(request: Request) {
@@ -11,9 +16,16 @@ export async function POST(request: Request) {
     const body = await request.json();
     const months = Number(body.months) || 1;
 
-    // Find predefined plan or calculate
-    const matchedPlan = SUBSCRIPTION_PLANS.find(p => p.months === months);
-    const amount = matchedPlan ? matchedPlan.finalPrice : months * BASE_MONTHLY_PRICE;
+    // Check if this specific builder has a custom rate set by admin, otherwise use global platform rate
+    const decoded = decodeSubscriptionPayload(access.builder.login_credentials_hint);
+    const builderCustomRate = Number(decoded.subscription?.pricePerMonth);
+    const platformRate = await getPlatformBasePrice();
+    const effectiveMonthlyRate = builderCustomRate > 0 ? builderCustomRate : platformRate;
+
+    // Calculate dynamically customized plans based on effective rate
+    const dynamicPlans = calculateSubscriptionPlans(effectiveMonthlyRate);
+    const matchedPlan = dynamicPlans.find(p => p.months === months);
+    const amount = matchedPlan ? matchedPlan.finalPrice : months * effectiveMonthlyRate;
     const days = months * DAYS_PER_MONTH;
 
     const receipt = `rcpt_${access.builder.id.slice(0, 8)}_${Date.now().toString().slice(-6)}`;
@@ -26,6 +38,7 @@ export async function POST(request: Request) {
         builderName: access.builder.company_name,
         months: String(months),
         days: String(days),
+        ratePerMonth: String(effectiveMonthlyRate),
       },
     });
 
@@ -38,7 +51,7 @@ export async function POST(request: Request) {
         months,
         days,
         amount,
-        ratePerMonth: BASE_MONTHLY_PRICE,
+        ratePerMonth: effectiveMonthlyRate,
       },
       razorpayKeyId: keyId || "rzp_test_road_partner",
       isSimulation: order.isSimulated || !isConfigured,

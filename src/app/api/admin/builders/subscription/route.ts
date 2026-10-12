@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/server-auth-guard";
 import { camelRow, PortalError, portalError } from "@/lib/builder-access";
 import { decodeSubscriptionPayload, encodeSubscriptionPayload, calculateSubscriptionDetails, BASE_MONTHLY_PRICE } from "@/lib/builder-subscription";
+import { getPlatformBasePrice } from "@/lib/pricing-service";
 import { sendBuilderExpiryWarningWhatsApp } from "@/lib/whatsapp/builder-notifications";
 
 export async function GET(request: Request) {
@@ -22,10 +23,11 @@ export async function GET(request: Request) {
     const active = mapped.filter(b => b.subscription?.status === "active").length;
     const expiringSoon = mapped.filter(b => b.subscription?.status === "expiring_soon").length;
     const expired = mapped.filter(b => b.subscription?.status === "expired" || b.subscription?.status === "pending_payment").length;
+    const currentRate = await getPlatformBasePrice();
 
     return NextResponse.json({
       success: true,
-      stats: { total, active, expiringSoon, expired, ratePerMonth: BASE_MONTHLY_PRICE },
+      stats: { total, active, expiringSoon, expired, ratePerMonth: currentRate },
       builders: mapped,
     });
   } catch (error) {

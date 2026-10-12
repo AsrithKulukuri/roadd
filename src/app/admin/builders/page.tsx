@@ -48,6 +48,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { calculateSubscriptionPlans } from "@/lib/builder-subscription";
 
 export default function AdminBuildersPage() {
   const {
@@ -95,6 +96,7 @@ export default function AdminBuildersPage() {
   // Subscription states for modal
   const [planMonths, setPlanMonths] = useState<number>(1);
   const [subscriptionStatus, setSubscriptionStatus] = useState<"active" | "pending_payment">("active");
+  const [customPricePerMonth, setCustomPricePerMonth] = useState<number>(3600);
   const [initialPassword, setInitialPassword] = useState<string>("road2026");
   const [sendWelcomeWhatsApp, setSendWelcomeWhatsApp] = useState<boolean>(true);
 
@@ -132,6 +134,7 @@ export default function AdminBuildersPage() {
     setSelectedProjectIds([]);
     setPlanMonths(1);
     setSubscriptionStatus("active");
+    setCustomPricePerMonth(3600);
     setInitialPassword("road2026");
     setSendWelcomeWhatsApp(true);
     setIsModalOpen(true);
@@ -154,6 +157,7 @@ export default function AdminBuildersPage() {
     setSelectedProjectIds(builder.assignedProjectIds || []);
     setPlanMonths(builder.subscription?.planMonths || 1);
     setSubscriptionStatus((builder.subscription?.status as any) || "active");
+    setCustomPricePerMonth(builder.subscription?.pricePerMonth || 3600);
     setInitialPassword(builder.credentialsHint || "road2026");
     setSendWelcomeWhatsApp(false);
     setIsModalOpen(true);
@@ -191,6 +195,7 @@ export default function AdminBuildersPage() {
         userId: authUserId.trim() || undefined,
         planMonths,
         subscriptionStatus,
+        pricePerMonth: customPricePerMonth,
         initialPassword,
         sendWelcomeWhatsApp,
       } as any);
@@ -1106,12 +1111,25 @@ export default function AdminBuildersPage() {
                 <div className="flex items-center justify-between">
                   <label className="text-zinc-200 font-semibold flex items-center gap-1.5">
                     <CreditCard className="h-4 w-4 text-amber-500" />
-                    Subscription Plan & Pricing (₹3,500 / 30 Days)
+                    Subscription Plan & Pricing (₹{customPricePerMonth.toLocaleString("en-IN")} / Month)
                   </label>
-                  <span className="text-[11px] text-amber-400 font-medium">Multiples of 1, 3, 6, 12 Months</span>
+                  <span className="text-[11px] text-amber-400 font-medium">Admin Customizable</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-zinc-300 font-medium">Monthly Rate (₹)</label>
+                    <Input
+                      type="number"
+                      min="100"
+                      step="50"
+                      value={customPricePerMonth}
+                      onChange={(e) => setCustomPricePerMonth(Math.max(100, Number(e.target.value) || 0))}
+                      className="bg-zinc-800/80 border-zinc-700 text-white"
+                      placeholder="3600"
+                    />
+                  </div>
+
                   <div className="space-y-1">
                     <label className="text-zinc-300 font-medium">Subscription Tenure</label>
                     <select
@@ -1119,10 +1137,11 @@ export default function AdminBuildersPage() {
                       onChange={(e) => setPlanMonths(Number(e.target.value))}
                       className="w-full px-3 py-2 rounded-md bg-zinc-800/80 border border-zinc-700 text-white text-xs"
                     >
-                      <option value={1}>1 Month (30 Days) — ₹3,500</option>
-                      <option value={3}>3 Months (90 Days) — ₹10,500 (Popular)</option>
-                      <option value={6}>6 Months (180 Days) — ₹19,950 (Save 5%)</option>
-                      <option value={12}>12 Months (360 Days) — ₹37,800 (Save 10%)</option>
+                      {calculateSubscriptionPlans(customPricePerMonth).map((plan) => (
+                        <option key={plan.months} value={plan.months}>
+                          {plan.months} Month{plan.months > 1 ? "s" : ""} ({plan.days} Days) — ₹{plan.finalPrice.toLocaleString("en-IN")}{plan.savings > 0 ? ` (Save ${plan.discountPercent}%)` : ""}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

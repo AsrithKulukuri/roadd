@@ -54,28 +54,43 @@ function getRazorpayClient(): Razorpay | null {
  * Creates an order in Razorpay (or generates a valid test order if keys are not configured yet)
  */
 export async function createRazorpayOrder(params: CreateOrderParams): Promise<RazorpayOrderResponse> {
-  const client = getRazorpayClient();
+  const { keyId, keySecret, isConfigured } = getRazorpayConfig();
   const amountInPaise = Math.round(params.amount * 100);
 
-  if (client) {
+  if (isConfigured && keyId && keySecret) {
     try {
-      const order = await client.orders.create({
-        amount: amountInPaise,
-        currency: "INR",
-        receipt: params.receipt,
-        notes: params.notes,
+      const basicAuth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+      const res = await fetch("https://api.razorpay.com/v1/orders", {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${basicAuth}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: amountInPaise,
+          currency: "INR",
+          receipt: params.receipt,
+          notes: params.notes,
+        }),
       });
 
-      return {
-        id: order.id,
-        amount: Number(order.amount),
-        currency: order.currency,
-        receipt: order.receipt || params.receipt,
-        status: order.status,
-        isSimulated: false,
-      };
+      const orderData = await res.json();
+      if (res.ok && orderData.id) {
+        return {
+          id: orderData.id,
+          amount: Number(orderData.amount),
+          currency: orderData.currency,
+          receipt: orderData.receipt || params.receipt,
+          status: orderData.status,
+          isSimulated: false,
+        };
+      } else {
+        const errorMsg = orderData.error?.description || orderData.error?.message || "Razorpay API error";
+        console.warn("Razorpay order creation response not ok:", errorMsg);
+      }
     } catch (error: any) {
-      console.warn("Razorpay Live Order creation failed, falling back to simulation:", error.message);
+      const errorMsg = error?.error?.description || error?.description || error?.message || "Authentication or network error";
+      console.warn("Razorpay Live Order creation failed, falling back to simulation:", errorMsg);
     }
   }
 

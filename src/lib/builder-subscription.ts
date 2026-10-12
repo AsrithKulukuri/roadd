@@ -3,10 +3,11 @@
  * 
  * Pricing Rule:
  * - 1 Month = 30 days from portal creation / start date
- * - Price: ₹3,500 per month (multiples of 1, 3, 6, 9, 12 months)
+ * - Default Base Price: ₹3,600 per month (multiples of 1, 3, 6, 12 months)
+ * - Configurable by Platform Admin
  */
 
-export const BASE_MONTHLY_PRICE = 3500;
+export const BASE_MONTHLY_PRICE = 3600;
 export const DAYS_PER_MONTH = 30;
 
 export interface SubscriptionPlan {
@@ -21,49 +22,54 @@ export interface SubscriptionPlan {
   popular?: boolean;
 }
 
-export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
-  {
-    months: 1,
-    days: 30,
-    originalPrice: 3500,
-    discountPercent: 0,
-    finalPrice: 3500,
-    savings: 0,
-    label: "1 Month Starter",
-    badge: "Base Plan",
-  },
-  {
-    months: 3,
-    days: 90,
-    originalPrice: 10500,
-    discountPercent: 0,
-    finalPrice: 10500,
-    savings: 0,
-    label: "3 Months Quarterly",
-    badge: "Quarterly Growth",
-    popular: true,
-  },
-  {
-    months: 6,
-    days: 180,
-    originalPrice: 21000,
-    discountPercent: 5,
-    finalPrice: 19950,
-    savings: 1050,
-    label: "6 Months Semi-Annual",
-    badge: "Save 5%",
-  },
-  {
-    months: 12,
-    days: 360,
-    originalPrice: 42000,
-    discountPercent: 10,
-    finalPrice: 37800,
-    savings: 4200,
-    label: "12 Months Annual Enterprise",
-    badge: "Save 10% (Best Value)",
-  },
-];
+export function calculateSubscriptionPlans(basePrice: number = BASE_MONTHLY_PRICE): SubscriptionPlan[] {
+  const price = Number(basePrice) > 0 ? Math.round(Number(basePrice)) : BASE_MONTHLY_PRICE;
+  return [
+    {
+      months: 1,
+      days: 30,
+      originalPrice: price,
+      discountPercent: 0,
+      finalPrice: price,
+      savings: 0,
+      label: "1 Month Starter",
+      badge: "Base Plan",
+    },
+    {
+      months: 3,
+      days: 90,
+      originalPrice: price * 3,
+      discountPercent: 0,
+      finalPrice: price * 3,
+      savings: 0,
+      label: "3 Months Quarterly",
+      badge: "Quarterly Growth",
+      popular: true,
+    },
+    {
+      months: 6,
+      days: 180,
+      originalPrice: price * 6,
+      discountPercent: 5,
+      finalPrice: Math.round(price * 6 * 0.95),
+      savings: Math.round(price * 6 * 0.05),
+      label: "6 Months Semi-Annual",
+      badge: "Save 5%",
+    },
+    {
+      months: 12,
+      days: 360,
+      originalPrice: price * 12,
+      discountPercent: 10,
+      finalPrice: Math.round(price * 12 * 0.90),
+      savings: Math.round(price * 12 * 0.10),
+      label: "12 Months Annual Enterprise",
+      badge: "Save 10% (Best Value)",
+    },
+  ];
+}
+
+export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = calculateSubscriptionPlans(BASE_MONTHLY_PRICE);
 
 export type SubscriptionStatus = "active" | "expiring_soon" | "expired" | "pending_payment";
 

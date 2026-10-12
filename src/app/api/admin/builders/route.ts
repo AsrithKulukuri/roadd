@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/server-auth-guard";
 import { camelRow, PortalError, portalError } from "@/lib/builder-access";
 import { encodeSubscriptionPayload, decodeSubscriptionPayload, calculateSubscriptionDetails, BASE_MONTHLY_PRICE } from "@/lib/builder-subscription";
+import { getPlatformBasePrice } from "@/lib/pricing-service";
 import { sendBuilderWelcomeWhatsApp } from "@/lib/whatsapp/builder-notifications";
 
 const fields = [
@@ -76,10 +77,15 @@ export async function POST(request: Request) {
     const endDateMs = new Date(startDate).getTime() + (planMonths * 30 * 24 * 60 * 60 * 1000);
     const endDate = body.subscriptionEndDate || decodedExisting.subscription?.endDate || new Date(endDateMs).toISOString();
 
+    const platformRate = await getPlatformBasePrice();
+    const effectivePricePerMonth = Number(body.pricePerMonth) > 0 
+      ? Number(body.pricePerMonth) 
+      : (Number(decodedExisting.subscription?.pricePerMonth) > 0 ? Number(decodedExisting.subscription?.pricePerMonth) : platformRate);
+
     const subData = {
       status: body.subscriptionStatus || decodedExisting.subscription?.status || "active",
       planMonths,
-      pricePerMonth: BASE_MONTHLY_PRICE,
+      pricePerMonth: effectivePricePerMonth,
       startDate,
       endDate,
       lastPaymentAmount: body.lastPaymentAmount ?? decodedExisting.subscription?.lastPaymentAmount,

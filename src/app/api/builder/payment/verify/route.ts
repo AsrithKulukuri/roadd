@@ -8,8 +8,10 @@ import {
   decodeSubscriptionPayload, 
   encodeSubscriptionPayload, 
   calculateSubscriptionDetails,
+  calculateSubscriptionPlans,
   generateTaxInvoice 
 } from "@/lib/builder-subscription";
+import { getPlatformBasePrice } from "@/lib/pricing-service";
 import { verifyRazorpayPaymentSignature } from "@/lib/razorpay";
 import { sendBuilderPaymentSuccessWhatsApp } from "@/lib/whatsapp/builder-notifications";
 
@@ -35,11 +37,6 @@ export async function POST(request: Request) {
       throw new PortalError("Payment signature verification failed.", 400);
     }
 
-    const planMonths = Number(months) || 1;
-    const matchedPlan = SUBSCRIPTION_PLANS.find(p => p.months === planMonths);
-    const amount = matchedPlan ? matchedPlan.finalPrice : planMonths * BASE_MONTHLY_PRICE;
-    const daysToAdd = planMonths * DAYS_PER_MONTH;
-
     // Load existing builder subscription
     const { data: currentRecord, error: fetchErr } = await supabaseAdmin
       .from("builder_profiles")
@@ -51,6 +48,16 @@ export async function POST(request: Request) {
 
     const decoded = decodeSubscriptionPayload(currentRecord.login_credentials_hint);
     const existingSub = calculateSubscriptionDetails(decoded.subscription, currentRecord.created_at);
+
+    const builderCustomRate = Number(decoded.subscription?.pricePerMonth);
+    const platformRate = await getPlatformBasePrice();
+    const effectiveMonthlyRate = builderCustomRate > 0 ? builderCustomRate : platformRate;
+
+    const planMonths = Number(months) || 1;
+    const dynamicPlans = calculateSubscriptionPlans(effectiveMonthlyRate);
+    const matchedPlan = dynamicPlans.find(p => p.months === planMonths);
+    const amount = matchedPlan ? matchedPlan.finalPrice : planMonths * effectiveMonthlyRate;
+    const daysToAdd = planMonths * DAYS_PER_MONTH;
 
     const now = Date.now();
     const currentEndMs = new Date(existingSub.endDate).getTime();
@@ -69,7 +76,7 @@ export async function POST(request: Request) {
       ...decoded.subscription,
       status: "active" as const,
       planMonths,
-      pricePerMonth: BASE_MONTHLY_PRICE,
+      pricePerMonth: effectiveMonthlyRate,
       startDate: newStartDate,
       endDate: newEndDate,
       lastPaymentId: razorpay_payment_id,

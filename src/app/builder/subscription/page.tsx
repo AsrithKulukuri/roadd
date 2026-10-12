@@ -25,7 +25,13 @@ import {
   Zap,
 } from "lucide-react";
 import { useBuilderStore } from "@/stores/builder-store";
-import { SUBSCRIPTION_PLANS, SubscriptionPlan, BASE_MONTHLY_PRICE, DAYS_PER_MONTH } from "@/lib/builder-subscription";
+import { 
+  SUBSCRIPTION_PLANS, 
+  SubscriptionPlan, 
+  BASE_MONTHLY_PRICE, 
+  DAYS_PER_MONTH, 
+  calculateSubscriptionPlans 
+} from "@/lib/builder-subscription";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -45,20 +51,103 @@ export default function BuilderSubscriptionPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [lastInvoice, setLastInvoice] = useState<any>(null);
-  const [testSimMode, setTestSimMode] = useState(false);
+
+  // Dynamic Plans & Monthly Rate
+  const [monthlyRate, setMonthlyRate] = useState<number>(BASE_MONTHLY_PRICE);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(SUBSCRIPTION_PLANS);
 
   useEffect(() => {
     fetchFromSupabase().catch(() => null);
   }, [fetchFromSupabase]);
+
+  // Load latest customized platform or builder rate
+  useEffect(() => {
+    fetch("/api/builder/subscription/pricing")
+      .then((res) => res.json())
+      .then((data) => {
+        const platformRate = data.success && data.baseMonthlyPrice ? data.baseMonthlyPrice : BASE_MONTHLY_PRICE;
+        const builderCustomRate = Number(builder?.subscription?.pricePerMonth);
+        const effective = builderCustomRate > 0 ? builderCustomRate : platformRate;
+        setMonthlyRate(effective);
+        setPlans(calculateSubscriptionPlans(effective));
+      })
+      .catch(() => {
+        const builderCustomRate = Number(builder?.subscription?.pricePerMonth);
+        if (builderCustomRate > 0) {
+          setMonthlyRate(builderCustomRate);
+          setPlans(calculateSubscriptionPlans(builderCustomRate));
+        }
+      });
+  }, [builder?.subscription?.pricePerMonth]);
 
   const sub = builder?.subscription;
   const daysRemaining = sub?.daysRemaining ?? 0;
   const isExpired = sub?.status === "expired" || sub?.status === "pending_payment" || daysRemaining <= 0;
   const isExpiringSoon = sub?.status === "expiring_soon" || (daysRemaining > 0 && daysRemaining <= 7);
 
-  const selectedPlan = SUBSCRIPTION_PLANS.find(p => p.months === selectedMonths) || SUBSCRIPTION_PLANS[0];
+  const selectedPlan = plans.find(p => p.months === selectedMonths) || plans[0];
 
-  // Initiate Razorpay Payment
+  // Helper to dynamically load Razorpay Checkout SDK if needed
+  const loadRazorpaySDK = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window === "undefined") return resolve(false);
+      if (window.Razorpay) return resolve(true);
+
+      const existingScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+      if (existingScript) {
+        existingScript.addEventListener("load", () => resolve(true));
+        existingScript.addEventListener("error", () => resolve(false));
+        if (window.Razorpay) return resolve(true);
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  // Complete verified payment after Razorpay checkout succeeds
+  const handleCompleteVerification = async ({
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    months,
+  }: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    months: number;
+  }) => {
+    try {
+      const verifyRes = await fetch("/api/builder/payment/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          razorpay_order_id,
+          razorpay_payment_id,
+          razorpay_signature,
+          months,
+        }),
+      });
+
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok || !verifyData.success) {
+        throw new Error(verifyData.error || "Payment verification failed.");
+      }
+
+      await fetchFromSupabase();
+      setLastInvoice(verifyData.invoice);
+      setShowInvoiceModal(true);
+      toast.success(`🎉 Subscription renewed! ${months * 30} days added to your portal access.`);
+    } catch (err: any) {
+      toast.error(err.message || "Payment verification encountered an issue.");
+      throw err;
+    }
+  };
+
+  // Initiate Razorpay Payment directly
   const handleInitiatePayment = async () => {
     if (!builder) {
       toast.error("Builder session not found. Please log in.");
@@ -67,7 +156,13 @@ export default function BuilderSubscriptionPage() {
 
     setIsProcessing(true);
     try {
-      // 1. Create order on server
+      // 1. Ensure Razorpay SDK is loaded
+      const isLoaded = await loadRazorpaySDK();
+      if (!isLoaded || typeof window.Razorpay === "undefined") {
+        throw new Error("Unable to load Razorpay Checkout SDK. Please check your internet connection.");
+      }
+
+      // 2. Create order on server
       const orderRes = await fetch("/api/builder/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -79,41 +174,16 @@ export default function BuilderSubscriptionPage() {
         throw new Error(orderData.error || "Failed to initialize payment order.");
       }
 
-      // Check if simulation mode or window.Razorpay unavailable
-      if (orderData.isSimulation || testSimMode || typeof window.Razorpay === "undefined") {
-        // Direct simulation completion for easy testing
-        const verifyRes = await fetch("/api/builder/payment/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            razorpay_order_id: orderData.order.id,
-            razorpay_payment_id: `pay_sim_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-            razorpay_signature: "simulated_signature_approved",
-            months: selectedMonths,
-          }),
-        });
+      // 3. Open official Razorpay Checkout popup directly
+      const hasRealOrder = orderData.order?.id && !orderData.order.id.startsWith("order_sim_");
 
-        const verifyData = await verifyRes.json();
-        if (!verifyRes.ok || !verifyData.success) {
-          throw new Error(verifyData.error || "Simulation verification failed.");
-        }
-
-        await fetchFromSupabase();
-        setLastInvoice(verifyData.invoice);
-        toast.success(`🎉 Subscription renewed! ${selectedMonths * 30} days added to your portal access.`);
-        setIsProcessing(false);
-        return;
-      }
-
-      // 2. Open standard Razorpay Checkout
-      const options = {
-        key: orderData.razorpayKeyId,
+      const options: any = {
+        key: orderData.razorpayKeyId || "rzp_test_Tn2DFXi9z8hLbK",
         amount: orderData.order.amount,
         currency: "INR",
-        name: "ROAD Developer Partner",
-        description: `Portal Subscription (${selectedMonths} Month${selectedMonths > 1 ? "s" : ""})`,
+        name: "ROAD Platform",
+        description: `Builder Subscription Renewal (${selectedMonths} Month${selectedMonths > 1 ? "s" : ""})`,
         image: "/logo-faad13-exact.png",
-        order_id: orderData.order.id,
         prefill: {
           name: builder.companyName,
           email: builder.contactEmail,
@@ -124,27 +194,14 @@ export default function BuilderSubscriptionPage() {
         },
         handler: async function (response: any) {
           try {
-            const verifyRes = await fetch("/api/builder/payment/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                months: selectedMonths,
-              }),
+            await handleCompleteVerification({
+              razorpay_order_id: response.razorpay_order_id || orderData.order.id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature || "rzp_direct_signature",
+              months: selectedMonths,
             });
-
-            const verifyData = await verifyRes.json();
-            if (!verifyRes.ok || !verifyData.success) {
-              throw new Error(verifyData.error || "Payment verification failed.");
-            }
-
-            await fetchFromSupabase();
-            setLastInvoice(verifyData.invoice);
-            toast.success(`🎉 Payment verified! Your portal is renewed until ${new Date(verifyData.builder.subscription?.endDate).toLocaleDateString()}.`);
           } catch (err: any) {
-            toast.error(err.message || "Payment verification encountered an issue.");
+            toast.error(err.message || "Payment verification failed.");
           } finally {
             setIsProcessing(false);
           }
@@ -152,15 +209,25 @@ export default function BuilderSubscriptionPage() {
         modal: {
           ondismiss: function () {
             setIsProcessing(false);
-            toast.info("Payment cancelled.");
+            toast.info("Payment cancelled. No charges were made.");
           },
         },
       };
 
+      // Only pass order_id if it's a real order ID created via Razorpay
+      if (hasRealOrder) {
+        options.order_id = orderData.order.id;
+      }
+
       const rzp = new window.Razorpay(options);
       rzp.on("payment.failed", function (resp: any) {
         setIsProcessing(false);
-        toast.error(`Payment failed: ${resp.error.description}`);
+        const desc = resp.error?.description || resp.error?.reason || "Payment was declined or failed.";
+        if (desc.toLowerCase().includes("auth") || desc.toLowerCase().includes("key")) {
+          toast.error(`Razorpay Key Error: ${desc}. Please verify your active RAZORPAY_KEY_ID in .env.local.`);
+        } else {
+          toast.error(`Razorpay: ${desc}`);
+        }
       });
       rzp.open();
     } catch (error: any) {
@@ -179,7 +246,7 @@ export default function BuilderSubscriptionPage() {
 
   return (
     <>
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
 
       <div className="space-y-8 pb-16 max-w-6xl mx-auto">
         {/* Header */}
@@ -320,7 +387,7 @@ export default function BuilderSubscriptionPage() {
               <span className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Standard Rate</span>
               <div className="pt-1">
                 <div className="text-2xl font-black text-foreground">
-                  ₹3,500 <span className="text-xs text-muted-foreground font-normal">/ 30 Days</span>
+                  ₹{monthlyRate.toLocaleString("en-IN")} <span className="text-xs text-muted-foreground font-normal">/ 30 Days</span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
                   Multiples of 1, 3, 6, 12 months with extended duration savings.
@@ -339,24 +406,10 @@ export default function BuilderSubscriptionPage() {
                 1 Month = 30 Calendar Days from portal activation / renewal. Choose your preferred renewal tenure:
               </p>
             </div>
-
-            {/* Simulation Toggle for Developer Testing */}
-            <button
-              onClick={() => setTestSimMode(!testSimMode)}
-              className={cn(
-                "text-xs px-3 py-1.5 rounded-lg border font-semibold transition-all flex items-center gap-1.5 self-start sm:self-auto",
-                testSimMode
-                  ? "bg-amber-500/20 border-amber-500/40 text-amber-700 dark:text-amber-300"
-                  : "bg-muted border-border text-muted-foreground hover:text-foreground hover:bg-muted/80"
-              )}
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-500" />
-              {testSimMode ? "Dev Sim Mode ON (Instant Test)" : "Standard Razorpay Checkout"}
-            </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {SUBSCRIPTION_PLANS.map((plan) => {
+            {plans.map((plan) => {
               const isSelected = selectedMonths === plan.months;
               return (
                 <div
