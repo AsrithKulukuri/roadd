@@ -20,9 +20,9 @@ export function PropertyContact({ property }: { property: Property }) {
   }
   return <div className="sticky top-28 bg-bg-card border border-border-default rounded-3xl p-6 shadow-xl space-y-5">
     <h3 className="text-xl font-bold">Contact owner / agent</h3>
-    <button type="button" className="w-full rounded-2xl border border-border-default p-3 font-bold" onClick={async () => {
-      try { if (await performListingAction("property", property.id, "schedule_visit")) setOpen(true); }
-      catch { toast.error("Unable to verify your session. Please try again."); }
+    <button type="button" className="w-full rounded-2xl border border-border-default p-3 font-bold" onClick={() => {
+      setOpen(true);
+      void performListingAction("property", property.id, "schedule_visit").catch(() => {});
     }}>Schedule Private Site Visit</button>
     <ListingContactActions listingType="property" listingId={property.id} />
     {(property.brochureUrl || (property as Property & { hasBrochure?: boolean }).hasBrochure) && <div className="flex gap-3">

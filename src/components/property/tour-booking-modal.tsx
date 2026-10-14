@@ -114,11 +114,11 @@ export function TourBookingModal({
     if (!isOpen) return;
     let active = true;
     void readActionSession().then(user => {
-      if (!active) return;
-      setCustomerName(user?.name || "");
-      setCustomerPhone(user?.phone || "");
-      setCustomerEmail(user?.email || "");
-    }).catch(() => { if (active) setErrorMessage("Unable to load your verified contact. Please reopen this form."); });
+      if (!active || !user) return;
+      if (user.name) setCustomerName(user.name);
+      if (user.phone) setCustomerPhone(user.phone);
+      if (user.email) setCustomerEmail(user.email);
+    }).catch(() => {});
     return () => { active = false; };
   }, [isOpen]);
 
@@ -168,11 +168,22 @@ export function TourBookingModal({
     };
 
     try {
-      const verified = await requireActionSession("schedule_visit");
-      if (!verified) return;
-      payload.customerName = verified.name || payload.customerName;
-      payload.customerPhone = verified.phone || "";
-      payload.customerEmail = verified.email || undefined;
+      const user = await readActionSession().catch(() => null);
+      if (user && user.phone) {
+        payload.customerName = user.name || payload.customerName;
+        payload.customerPhone = user.phone;
+        payload.customerEmail = user.email || payload.customerEmail;
+      } else {
+        const verified = await requireActionSession("schedule_visit");
+        if (!verified) {
+          setIsSubmitting(false);
+          return;
+        }
+        payload.customerName = verified.name || payload.customerName;
+        payload.customerPhone = verified.phone || payload.customerPhone;
+        payload.customerEmail = verified.email || payload.customerEmail;
+      }
+
       // 1. Call Backend API for WhatsApp triggers & Supabase DB record
       const res = await fetch("/api/projects/schedule-visit", {
         method: "POST",
@@ -385,7 +396,6 @@ export function TourBookingModal({
                       type="text"
                       placeholder="Your Full Name *"
                       value={customerName}
-                      readOnly
                       onChange={(e) => setCustomerName(e.target.value)}
                       required
                       className="w-full pl-9 pr-3 py-2 bg-white border border-neutral-300 rounded-xl text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
@@ -400,7 +410,6 @@ export function TourBookingModal({
                       type="tel"
                       placeholder="WhatsApp Number (e.g. 9876543210) *"
                       value={customerPhone}
-                      readOnly
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       required
                       className="w-full pl-9 pr-3 py-2 bg-white border border-neutral-300 rounded-xl text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
@@ -419,7 +428,6 @@ export function TourBookingModal({
                       type="email"
                       placeholder="Email Address (Optional)"
                       value={customerEmail}
-                      readOnly
                       onChange={(e) => setCustomerEmail(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 bg-white border border-neutral-300 rounded-xl text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                     />

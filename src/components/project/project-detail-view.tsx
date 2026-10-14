@@ -1843,7 +1843,10 @@ export function ProjectDetailView({
                 <div className="space-y-3">
                   <button
                     type="button"
-                    onClick={async () => { try { if (await performListingAction("project", project.id, "schedule_visit")) setIsScheduleModalOpen(true); } catch { toast.error("Unable to verify your session. Please try again."); } }}
+                    onClick={() => {
+                      setIsScheduleModalOpen(true);
+                      void performListingAction("project", project.id, "schedule_visit").catch(() => {});
+                    }}
                     className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-300 font-bold text-sm shadow-xs transition-all cursor-pointer active:scale-98"
                   >
                     <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
@@ -1966,7 +1969,10 @@ export function ProjectDetailView({
 
               {/* Schedule a Visit Button */}
               <button
-                onClick={async () => { try { if (await performListingAction("project", project.id, "schedule_visit")) setIsScheduleModalOpen(true); } catch (err) { toast.error(err instanceof Error ? err.message : "Please retry."); } }}
+                onClick={() => {
+                  setIsScheduleModalOpen(true);
+                  void performListingAction("project", project.id, "schedule_visit").catch(() => {});
+                }}
                 className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl border border-slate-200 bg-white font-bold text-xs text-slate-950 shadow-sm hover:bg-slate-50 active:scale-95 transition-all duration-150"
                 id="mobile-cta-schedule-visit"
               >

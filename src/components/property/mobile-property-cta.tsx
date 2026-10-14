@@ -25,12 +25,9 @@ export function MobilePropertyCta({ property }: { property: Property }) {
     }
   }
 
-  async function openSchedule() {
-    try {
-      if (await performListingAction("property", property.id, "schedule_visit")) setIsScheduleOpen(true);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Please retry.");
-    }
+  function openSchedule() {
+    setIsScheduleOpen(true);
+    void performListingAction("property", property.id, "schedule_visit").catch(() => {});
   }
 
   const location = `${property.location?.locality || ""}, ${property.location?.city || ""}`.replace(/^,\s*|,\s*$/g, "");

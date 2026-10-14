@@ -136,7 +136,6 @@ export function SearchProjectCard({ project }: { project: Project }) {
         <div className="grid grid-cols-3 divide-x-2 divide-black bg-white">
           {/* Cell 1: Total Project */}
           <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
-            <Maximize2 className="w-3.5 h-3.5 text-[#faad13] mb-0.5 shrink-0" />
             <span className={cn("font-black text-black leading-tight truncate w-full text-center", getAutoFitClass(totalAreaVal))}>
               {totalAreaVal}
             </span>
@@ -147,7 +146,6 @@ export function SearchProjectCard({ project }: { project: Project }) {
 
           {/* Cell 2: Total Units */}
           <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
-            <Building2 className="w-3.5 h-3.5 text-[#faad13] mb-0.5 shrink-0" />
             <span className={cn("font-black text-black leading-tight truncate w-full text-center", getAutoFitClass(totalUnitsVal))}>
               {totalUnitsVal}
             </span>
@@ -158,7 +156,6 @@ export function SearchProjectCard({ project }: { project: Project }) {
 
           {/* Cell 3: Available (Auto-fitting text, no abrupt truncation) */}
           <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
-            <Key className="w-3.5 h-3.5 text-[#faad13] mb-0.5 shrink-0" />
             <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight text-center">
               Available
             </span>
@@ -172,7 +169,6 @@ export function SearchProjectCard({ project }: { project: Project }) {
         <div className="grid grid-cols-3 divide-x-2 divide-black bg-white">
           {/* Cell 4: Area Range strictly in 2 lines */}
           <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
-            <Ruler className="w-3.5 h-3.5 text-[#faad13] mb-0.5 shrink-0" />
             <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight text-center">
               Area Range
             </span>
@@ -190,7 +186,6 @@ export function SearchProjectCard({ project }: { project: Project }) {
 
           {/* Cell 5: Price Range (Dynamic Auto-Fit Font Size, Never Cuts) */}
           <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
-            <IndianRupee className="w-3.5 h-3.5 text-[#faad13] mb-0.5 shrink-0" />
             <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight text-center">
               Price Range
             </span>
@@ -218,7 +213,6 @@ export function SearchProjectCard({ project }: { project: Project }) {
             const isTwoPart = parts.length === 2 && parts[0] && parts[1];
             return (
               <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
-                <CalendarDays className="w-3.5 h-3.5 text-[#faad13] mb-0.5 shrink-0" />
                 <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight text-center">
                   Possession
                 </span>
