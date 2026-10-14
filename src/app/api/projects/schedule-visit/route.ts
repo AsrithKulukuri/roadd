@@ -245,8 +245,11 @@ export async function POST(req: NextRequest) {
     if (saved.error?.code === "23505") return NextResponse.json({ success: true, duplicate: true, message: "This visit has already been requested." });
     if (saved.error) throw saved.error;
 
-    // 1. Send WhatsApp notification to Customer
-    try {
+    // Parallelize WhatsApp notifications to customer and builder
+    const notifPromises: Promise<void>[] = [];
+
+    // 1. WhatsApp notification to Customer
+    if (cleanCustomerPhone) {
       const customerMsg =
         `Hello ${customerName}! 🏡\n\n` +
         `Your site visit for *${resolvedProjectName}* is *CONFIRMED*!\n\n` +
@@ -256,44 +259,53 @@ export async function POST(req: NextRequest) {
         `Our project team will be ready to guide you through the property. We will also send you a reminder 1 hour before your visit.\n\n` +
         `Thank you for using ROADFACING!`;
 
-      if (cleanCustomerPhone) {
-        const custResult = await sendSiteVisitNotification(cleanCustomerPhone, customerMsg, {
+      notifPromises.push(
+        sendSiteVisitNotification(cleanCustomerPhone, customerMsg, {
           requestId: `sched-cust-${scheduleId}`,
-        });
-        customerNotified = custResult.success && !custResult.simulated;
-      }
-    } catch (msgErr) {
-      console.warn("[SCHEDULE VISIT] Failed to send WhatsApp to customer:", msgErr);
+        })
+          .then((custResult) => {
+            customerNotified = custResult.success && !custResult.simulated;
+          })
+          .catch((err) => {
+            console.warn("[SCHEDULE VISIT] Failed to send WhatsApp to customer:", err);
+          })
+      );
     }
 
-    // 2. Send WhatsApp notification to Builder
-    try {
-      const adminPhone = formatWhatsAppPhone(process.env.ADMIN_WHATSAPP_PHONE || process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE || "");
-      const targetBuilderPhone = cleanBuilderPhone || adminPhone;
-      if (targetBuilderPhone) {
-        const builderMsg =
-          `New Site Visit Scheduled! 🔔\n\n` +
-          `Project: *${resolvedProjectName}*\n` +
-          `Customer: *${customerName}*\n` +
-          `Phone: ${cleanCustomerPhone}\n` +
-          (customerEmail ? `Email: ${customerEmail}\n` : "") +
-          `📅 *Date:* ${visitDate}\n` +
-          `⏰ *Time Slot:* ${timeSlot}\n` +
-          `📍 *Location:* ${resolvedProjectLocation || "Site"}\n` +
-          (notes ? `📝 *Notes:* ${notes}\n` : "") +
-          `\nPlease ensure a site executive is available for the visit.\n\n` +
-          `ROADFACING Admin`;
+    // 2. WhatsApp notification to Builder & Admin
+    const adminPhone = formatWhatsAppPhone(process.env.ADMIN_WHATSAPP_PHONE || process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE || "");
+    const targetBuilderPhone = cleanBuilderPhone || adminPhone;
+    if (targetBuilderPhone) {
+      const builderMsg =
+        `New Site Visit Scheduled! 🔔\n\n` +
+        `Project: *${resolvedProjectName}*\n` +
+        `Customer: *${customerName}*\n` +
+        `Phone: ${cleanCustomerPhone}\n` +
+        (customerEmail ? `Email: ${customerEmail}\n` : "") +
+        `📅 *Date:* ${visitDate}\n` +
+        `⏰ *Time Slot:* ${timeSlot}\n` +
+        `📍 *Location:* ${resolvedProjectLocation || "Site"}\n` +
+        (notes ? `📝 *Notes:* ${notes}\n` : "") +
+        `\nPlease ensure a site executive is available for the visit.\n\n` +
+        `ROADFACING Admin`;
 
-        for (const recipient of new Set([targetBuilderPhone, adminPhone].filter(Boolean))) {
-          try {
-            const result = await sendSiteVisitNotification(recipient, builderMsg, { requestId: `sched-${scheduleId}-${recipient}`, recipientType: recipient === cleanBuilderPhone ? "builder" : "admin" });
-            if (recipient === cleanBuilderPhone) builderNotified = result.success && !result.simulated;
-          } catch { /* One failed recipient must not prevent notifying the other. */ }
-        }
+      for (const recipient of new Set([targetBuilderPhone, adminPhone].filter(Boolean))) {
+        notifPromises.push(
+          sendSiteVisitNotification(recipient, builderMsg, {
+            requestId: `sched-${scheduleId}-${recipient}`,
+            recipientType: recipient === cleanBuilderPhone ? "builder" : "admin",
+          })
+            .then((res) => {
+              if (recipient === cleanBuilderPhone) {
+                builderNotified = res.success && !res.simulated;
+              }
+            })
+            .catch(() => {})
+        );
       }
-    } catch (bldErr) {
-      console.warn("[SCHEDULE VISIT] Failed to send WhatsApp to builder:", bldErr);
     }
+
+    await Promise.allSettled(notifPromises);
 
     const delivery = await supabaseAdmin.from("project_site_visits").update({ customer_notified: customerNotified, builder_notified: builderNotified }).eq("id", scheduleId);
     if (delivery.error) console.error("Visit delivery status update failed:", delivery.error.code);

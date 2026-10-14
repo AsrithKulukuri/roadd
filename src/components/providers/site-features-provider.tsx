@@ -56,12 +56,20 @@ export function SiteFeaturesProvider({ children, initialFeatures }: { children: 
     }
   }, []);
   useEffect(() => {
-    const initialRefresh = setTimeout(() => void refresh(), 0);
-    const interval = setInterval(() => { if (!document.hidden) void refresh(); }, 30000);
+    let initialRefresh: NodeJS.Timeout | null = null;
+    if (!initialFeatures) {
+      initialRefresh = setTimeout(() => void refresh(), 0);
+    }
+    const interval = setInterval(() => { if (!document.hidden) void refresh(); }, 60000);
     window.addEventListener("focus", refresh);
     const channel = new BroadcastChannel("road-site-features");
     channel.onmessage = () => void refresh();
-    return () => { clearTimeout(initialRefresh); clearInterval(interval); window.removeEventListener("focus", refresh); channel.close(); };
-  }, [refresh]);
+    return () => {
+      if (initialRefresh) clearTimeout(initialRefresh);
+      clearInterval(interval);
+      window.removeEventListener("focus", refresh);
+      channel.close();
+    };
+  }, [refresh, initialFeatures]);
   return <SiteFeaturesContext.Provider value={{ propertiesEnabled, ready, error, refresh, save }}>{children}</SiteFeaturesContext.Provider>;
 }

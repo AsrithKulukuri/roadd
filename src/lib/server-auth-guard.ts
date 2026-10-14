@@ -191,30 +191,35 @@ export async function authenticateServerRequest(
 
     // 3. Check Supabase SSR cookies if still not resolved
     if (!user && cookieHeader) {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const hasSupabaseCookie = Array.from(cookieMap.keys()).some(
+        (k) => k.startsWith("sb-") || k.includes("-auth-token")
+      );
+      if (hasSupabaseCookie) {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-      if (supabaseUrl && supabaseAnonKey) {
-        try {
-          const ssrClient = createServerClient(supabaseUrl, supabaseAnonKey, {
-            cookies: {
-              getAll() {
-                return Array.from(cookieMap.entries()).map(([name, value]) => ({
-                  name,
-                  value,
-                }));
+        if (supabaseUrl && supabaseAnonKey) {
+          try {
+            const ssrClient = createServerClient(supabaseUrl, supabaseAnonKey, {
+              cookies: {
+                getAll() {
+                  return Array.from(cookieMap.entries()).map(([name, value]) => ({
+                    name,
+                    value,
+                  }));
+                },
+                setAll() {},
               },
-              setAll() {},
-            },
-          });
+            });
 
-          const {
-            data: { user: cookieUser },
-          } = await ssrClient.auth.getUser();
-          if (cookieUser) {
-            user = cookieUser as unknown as AuthenticatedUser;
-          }
-        } catch {}
+            const {
+              data: { user: cookieUser },
+            } = await ssrClient.auth.getUser();
+            if (cookieUser) {
+              user = cookieUser as unknown as AuthenticatedUser;
+            }
+          } catch {}
+        }
       }
     }
 

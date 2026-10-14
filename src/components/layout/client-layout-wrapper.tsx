@@ -55,9 +55,18 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!ready) return;
+    if (isDetailPage) {
+      // On detail pages, defer heavy global catalog sync so user interactions (WhatsApp, Schedule Visit)
+      // get 100% of the network sockets and CPU without connection queue stalls.
+      const timer = setTimeout(() => {
+        if (propertiesEnabled || isStandalonePortal) fetchProperties();
+        fetchProjects();
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
     if (propertiesEnabled || isStandalonePortal) fetchProperties();
     fetchProjects();
-  }, [fetchProperties, fetchProjects, ready, propertiesEnabled, isStandalonePortal]);
+  }, [fetchProperties, fetchProjects, ready, propertiesEnabled, isStandalonePortal, isDetailPage]);
 
   if (!isStandalonePortal && !ready) return <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4" aria-live="polite"><p>{error || "Loading your experience…"}</p>{error && <button className="cursor-pointer underline" onClick={() => void refresh()}>Retry</button>}</main>;
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Property } from "@/types/property";
 import { performListingAction } from "./listing-contact-actions";
@@ -10,8 +10,11 @@ import { WhatsAppIcon } from "./whatsapp-share-button";
 
 export function MobilePropertyCta({ property }: { property: Property }) {
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [isWhatsAppConnecting, setIsWhatsAppConnecting] = useState(false);
 
   async function openWhatsApp() {
+    if (isWhatsAppConnecting) return;
+    setIsWhatsAppConnecting(true);
     try {
       const action = await performListingAction("property", property.id, "whatsapp_click");
       if (!action?.phone) return;
@@ -22,12 +25,13 @@ export function MobilePropertyCta({ property }: { property: Property }) {
       anchor.click();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Please retry.");
+    } finally {
+      setIsWhatsAppConnecting(false);
     }
   }
 
   function openSchedule() {
     setIsScheduleOpen(true);
-    void performListingAction("property", property.id, "schedule_visit").catch(() => {});
   }
 
   const location = `${property.location?.locality || ""}, ${property.location?.city || ""}`.replace(/^,\s*|,\s*$/g, "");
@@ -35,11 +39,29 @@ export function MobilePropertyCta({ property }: { property: Property }) {
   return <>
     <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200/70 bg-white/90 p-3 shadow-[0_-8px_32px_rgba(0,0,0,0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90" style={{ paddingBottom: "env(safe-area-inset-bottom, 12px)" }}>
       <div className="flex items-center gap-3">
-        <button type="button" onClick={openWhatsApp} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-950 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
-          <WhatsAppIcon className="h-4.5 w-4.5 shrink-0" />
-          <span>WhatsApp</span>
+        <button
+          type="button"
+          onClick={openWhatsApp}
+          disabled={isWhatsAppConnecting}
+          className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-950 shadow-sm transition-all hover:bg-slate-50 active:scale-95 touch-manipulation disabled:opacity-75"
+        >
+          {isWhatsAppConnecting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
+              <span>Connecting...</span>
+            </>
+          ) : (
+            <>
+              <WhatsAppIcon className="h-4.5 w-4.5 shrink-0" />
+              <span>WhatsApp</span>
+            </>
+          )}
         </button>
-        <button type="button" onClick={openSchedule} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-950 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+        <button
+          type="button"
+          onClick={openSchedule}
+          className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-950 shadow-sm transition-all hover:bg-slate-50 active:scale-95 touch-manipulation"
+        >
           <Calendar className="h-4 w-4 shrink-0" />
           <span>Schedule Visit</span>
         </button>

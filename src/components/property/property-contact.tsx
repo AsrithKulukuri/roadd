@@ -22,7 +22,6 @@ export function PropertyContact({ property }: { property: Property }) {
     <h3 className="text-xl font-bold">Contact owner / agent</h3>
     <button type="button" className="w-full rounded-2xl border border-border-default p-3 font-bold" onClick={() => {
       setOpen(true);
-      void performListingAction("property", property.id, "schedule_visit").catch(() => {});
     }}>Schedule Private Site Visit</button>
     <ListingContactActions listingType="property" listingId={property.id} />
     {(property.brochureUrl || (property as Property & { hasBrochure?: boolean }).hasBrochure) && <div className="flex gap-3">

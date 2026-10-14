@@ -184,6 +184,7 @@ export function ProjectDetailView({
   const [builderContact, setBuilderContact] = useState<{ phone: string | null; whatsapp: string | null } | null>(null);
   const [builderContactError, setBuilderContactError] = useState<string | null>(null);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isWhatsAppConnecting, setIsWhatsAppConnecting] = useState(false);
 
   const scrollConfigLeft = () => {
     if (configSliderRef.current) {
@@ -263,7 +264,11 @@ export function ProjectDetailView({
   const { scrollY } = useScroll();
   const yHero = useTransform(scrollY, [0, 800], [0, 200]);
 
-  useEffect(() => { fetchProjects(); }, [fetchProjects]);
+  useEffect(() => {
+    if (!initialProject && projects.length === 0) {
+      fetchProjects();
+    }
+  }, [fetchProjects, initialProject, projects.length]);
 
   const project = projects.find((p) => (p.slug === slug || p.id === slug) && p.isPublished !== false) || initialProject;
 
@@ -299,22 +304,26 @@ export function ProjectDetailView({
       }
     } catch {}
 
-    // 2. Automatically request current position via HTML5 Geolocation API
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        try {
-          sessionStorage.setItem("user_coords", JSON.stringify({ latitude: lat, longitude: lng }));
-        } catch {}
-        const dist = calculateDistanceKm(lat, lng, projLat, projLng);
-        setUserDistanceKm(dist);
-      },
-      (err) => {
-        console.warn("Geolocation prompt skipped or error:", err.message);
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
-    );
+    // 2. Defer request for current position to keep mobile CPU and network free during initial load
+    const geoTimer = setTimeout(() => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          try {
+            sessionStorage.setItem("user_coords", JSON.stringify({ latitude: lat, longitude: lng }));
+          } catch {}
+          const dist = calculateDistanceKm(lat, lng, projLat, projLng);
+          setUserDistanceKm(dist);
+        },
+        (err) => {
+          console.warn("Geolocation prompt skipped or error:", err.message);
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+      );
+    }, 2500);
+
+    return () => clearTimeout(geoTimer);
   }, [project?.location?.latitude, project?.location?.longitude]);
 
   // Track genuine impression and active dwell time (WITHOUT sending WhatsApp viewing messages)
@@ -1845,7 +1854,6 @@ export function ProjectDetailView({
                     type="button"
                     onClick={() => {
                       setIsScheduleModalOpen(true);
-                      void performListingAction("project", project.id, "schedule_visit").catch(() => {});
                     }}
                     className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-300 font-bold text-sm shadow-xs transition-all cursor-pointer active:scale-98"
                   >
@@ -1931,7 +1939,7 @@ export function ProjectDetailView({
         <motion.div
           initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.6 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
           className="pointer-events-auto"
         >
           {/* Frosted glass backdrop */}
@@ -1943,6 +1951,8 @@ export function ProjectDetailView({
               {/* WhatsApp Button */}
               <button
                 onClick={async () => {
+                  if (isWhatsAppConnecting) return;
+                  setIsWhatsAppConnecting(true);
                   try {
                     const action = await performListingAction("project", project.id, "whatsapp_click");
                     if (!action?.phone) return;
@@ -1958,22 +1968,33 @@ export function ProjectDetailView({
                     document.body.removeChild(a);
                   } catch (err) {
                     toast.error(err instanceof Error ? err.message : "Please retry.");
+                  } finally {
+                    setIsWhatsAppConnecting(false);
                   }
                 }}
-                className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl border border-slate-200 bg-white font-bold text-xs text-slate-950 shadow-sm hover:bg-slate-50 active:scale-95 transition-all duration-150"
+                disabled={isWhatsAppConnecting}
+                className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl border border-slate-200 bg-white font-bold text-xs text-slate-950 shadow-sm hover:bg-slate-50 active:scale-95 transition-all duration-150 touch-manipulation disabled:opacity-75"
                 id="mobile-cta-whatsapp"
               >
-                <WhatsAppIcon className="w-4.5 h-4.5 shrink-0" />
-                <span>WhatsApp</span>
+                {isWhatsAppConnecting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+                    <span>Connecting...</span>
+                  </>
+                ) : (
+                  <>
+                    <WhatsAppIcon className="w-4.5 h-4.5 shrink-0" />
+                    <span>WhatsApp</span>
+                  </>
+                )}
               </button>
 
               {/* Schedule a Visit Button */}
               <button
                 onClick={() => {
                   setIsScheduleModalOpen(true);
-                  void performListingAction("project", project.id, "schedule_visit").catch(() => {});
                 }}
-                className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl border border-slate-200 bg-white font-bold text-xs text-slate-950 shadow-sm hover:bg-slate-50 active:scale-95 transition-all duration-150"
+                className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl border border-slate-200 bg-white font-bold text-xs text-slate-950 shadow-sm hover:bg-slate-50 active:scale-95 transition-all duration-150 touch-manipulation"
                 id="mobile-cta-schedule-visit"
               >
                 <Calendar className="w-4 h-4 shrink-0" />

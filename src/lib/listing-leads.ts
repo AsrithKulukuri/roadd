@@ -89,24 +89,67 @@ export async function recordListingAction(request: Request, type: "project" | "p
       (action === "callback_request" ? `This buyer wants a callback. Please call them shortly on the number above.\n\n` : `Please connect with this interested buyer.\n\n`) +
       `— ROADFACING`;
     const recipients = [...new Set([phone, adminPhone].filter(Boolean))];
-    const delivered = new Set<string>();
-    for (const recipient of recipients) {
-      try {
-        const sent = await sendListingNotification(recipient, message, { requestId: data.id + (action === "callback_request" ? ":callback-v2:" : ":") + recipient, recipientType: recipient === phone ? "builder" : "admin" }, action === "callback_request");
-        if (sent.success && !sent.simulated) delivered.add(recipient);
-      } catch { /* Saved lead remains available for admin follow-up. */ }
+
+    const dispatchNotifications = async () => {
+      const results = await Promise.allSettled(
+        recipients.map(async (recipient) => {
+          try {
+            const sent = await sendListingNotification(
+              recipient,
+              message,
+              {
+                requestId: data.id + (action === "callback_request" ? ":callback-v2:" : ":") + recipient,
+                recipientType: recipient === phone ? "builder" : "admin",
+              },
+              action === "callback_request"
+            );
+            return { recipient, success: sent.success && !sent.simulated };
+          } catch {
+            return { recipient, success: false };
+          }
+        })
+      );
+
+      const delivered = new Set<string>();
+      results.forEach((r) => {
+        if (r.status === "fulfilled" && r.value.success) delivered.add(r.value.recipient);
+      });
+
+      const bAccepted = !!phone && delivered.has(phone);
+      const aAccepted = !!adminPhone && delivered.has(adminPhone);
+
+      let uAccepted = false;
+      if (action === "callback_request") {
+        try {
+          const confirmation = await sendListingNotification(
+            formatWhatsAppPhone(user.phone),
+            `Hello ${user.name || "there"}! Your callback request for ${row.listing_name} has been received. Our team will call you shortly on your verified number. — ROADFACING`,
+            { requestId: data.id + ":callback:user", recipientType: "user" },
+            true
+          );
+          uAccepted = confirmation.success && !confirmation.simulated;
+        } catch {}
+      }
+
+      await supabaseAdmin
+        .from("listing_action_leads")
+        .update({ builder_notified: bAccepted, admin_notified: aAccepted })
+        .eq("id", data.id);
+
+      return { builderAccepted: bAccepted, adminAccepted: aAccepted, userAccepted: uAccepted };
+    };
+
+    if (action === "whatsapp_click") {
+      // For WhatsApp click, return target phone in <50ms so mobile browser preserves the user-gesture
+      // and doesn't get throttled/blocked by iOS Safari or Android Chrome popup guards!
+      void dispatchNotifications().catch(() => {});
+      return { listing, phone: targetRecipient, duplicate: !saved.data, notifications: null };
     }
-    notifications.builderAccepted = !!phone && delivered.has(phone);
-    notifications.adminAccepted = !!adminPhone && delivered.has(adminPhone);
-    if (action === "callback_request") {
-      try {
-        const confirmation = await sendListingNotification(formatWhatsAppPhone(user.phone),
-          `Hello ${user.name || "there"}! Your callback request for ${row.listing_name} has been received. Our team will call you shortly on your verified number. — ROADFACING`,
-          { requestId: data.id + ":callback:user", recipientType: "user" }, true);
-        notifications.userAccepted = confirmation.success && !confirmation.simulated;
-      } catch { /* A confirmation failure must not discard the saved callback. */ }
-    }
-    await supabaseAdmin.from("listing_action_leads").update({ builder_notified: notifications.builderAccepted, admin_notified: notifications.adminAccepted }).eq("id", data.id);
+
+    const nResults = await dispatchNotifications();
+    notifications.builderAccepted = nResults.builderAccepted;
+    notifications.adminAccepted = nResults.adminAccepted;
+    notifications.userAccepted = nResults.userAccepted;
   }
   return { listing, phone: targetRecipient, duplicate: !saved.data, notifications: data ? notifications : null };
 }
