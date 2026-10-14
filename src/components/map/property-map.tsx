@@ -15,7 +15,7 @@ import {
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart, ChevronLeft, ChevronRight, Plus, Share2, Home, Building2, Landmark, Trees, Briefcase } from "lucide-react";
+import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart, ChevronLeft, ChevronRight, Plus, Share2, Home, Building2, Landmark, Trees, Briefcase, Maximize2 } from "lucide-react";
 import L from "leaflet";
 import Link from "next/link";
 import { PropertyCard } from "@/components/property/property-card";
@@ -919,7 +919,52 @@ function SidebarCardSkeleton() {
       </div>
       <div className="h-3 bg-slate-200 rounded w-16"></div>
     </div>
-  )
+  );
+}
+
+// Automatically moves out and fits all properties/projects into the visible viewport
+function AutoFitBoundsController({ items }: { items: SharedMapItem[] }) {
+  const map = useMap();
+  const lastFitKeyRef = useRef<string>("");
+
+  useEffect(() => {
+    if (!map || !items || items.length === 0) return;
+
+    const coords: [number, number][] = [];
+    for (const item of items) {
+      const c = resolvePropertyMapCoords(item);
+      if (c && typeof c.lat === "number" && typeof c.lng === "number" && !isNaN(c.lat) && !isNaN(c.lng) && c.lat !== 0 && c.lng !== 0) {
+        coords.push([c.lat, c.lng]);
+      }
+    }
+
+    if (coords.length === 0) return;
+
+    // Fast change detection key to avoid re-triggering during manual drag/zoom
+    const key = `${coords.length}:${coords[0][0].toFixed(3)},${coords[0][1].toFixed(3)}:${coords[coords.length - 1][0].toFixed(3)},${coords[coords.length - 1][1].toFixed(3)}`;
+    if (key === lastFitKeyRef.current) return;
+    lastFitKeyRef.current = key;
+
+    try {
+      const bounds = L.latLngBounds(coords);
+      if (bounds.isValid()) {
+        if (coords.length === 1) {
+          map.setView(coords[0], 13, { animate: true });
+        } else {
+          // Smoothly move out to show all properties with comfortable padding
+          map.fitBounds(bounds, {
+            padding: [60, 60],
+            maxZoom: 13,
+            animate: true,
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to auto-fit map bounds:", err);
+    }
+  }, [map, items]);
+
+  return null;
 }
 
 function MapViewportListener({
@@ -1125,49 +1170,32 @@ export default function PropertyMap({
         }
       }
     }
-    if (filteredItems && filteredItems.length > 0) {
-      const firstWithCoords = filteredItems.find((p) => p.location?.latitude && p.location?.longitude);
-      if (firstWithCoords) {
-        return new L.LatLng(Number(firstWithCoords.location.latitude), Number(firstWithCoords.location.longitude));
+    // Calculate geographic center of all valid properties/projects
+    const targetItems = mapProperties.length > 0 ? mapProperties : defaultAllItems;
+    const coords: [number, number][] = [];
+    for (const item of targetItems) {
+      const c = resolvePropertyMapCoords(item);
+      if (c && typeof c.lat === "number" && typeof c.lng === "number" && !isNaN(c.lat) && !isNaN(c.lng) && c.lat !== 0 && c.lng !== 0) {
+        coords.push([c.lat, c.lng]);
       }
     }
-    if (mapProperties.length > 0 && mapProperties[0].location?.latitude && mapProperties[0].location?.longitude) {
-      return new L.LatLng(Number(mapProperties[0].location.latitude), Number(mapProperties[0].location.longitude));
+    if (coords.length > 0) {
+      const bounds = L.latLngBounds(coords);
+      if (bounds.isValid()) {
+        return bounds.getCenter();
+      }
     }
-    return new L.LatLng(16.5062, 80.6480);
-  }, [externalUserLocation, initialQuery, filteredItems, mapProperties]);
+
+    return new L.LatLng(16.4800, 80.6000);
+  }, [externalUserLocation, initialQuery, mapProperties, defaultAllItems]);
 
   const [position, setPosition] = useState<L.LatLng | null>(initialCenter);
   const [mapSearchInput, setMapSearchInput] = useState(initialQuery);
   
-  // Keep position and map in sync if initialCenter or initialQuery changes
+  // Keep position and map in sync if initialCenter changes
   useEffect(() => {
     setPosition(initialCenter);
-    if (mapRef.current) {
-      if (!mapRef.current.getCenter().equals(initialCenter)) {
-        mapRef.current.setView(initialCenter, 13, { animate: false });
-      }
-    }
   }, [initialCenter.lat, initialCenter.lng]);
-
-  const hasAutoCentered = useRef(false);
-  useEffect(() => {
-    if (hasAutoCentered.current || !mapRef.current || mapProperties.length === 0) return;
-    if (initialQuery.trim()) return;
-
-    const itemsWithCoords = mapProperties.filter(
-      (p) => Number(p.location?.latitude) && Number(p.location?.longitude)
-    );
-    if (itemsWithCoords.length > 0) {
-      hasAutoCentered.current = true;
-      const bounds = L.latLngBounds(
-        itemsWithCoords.map((p) => [Number(p.location!.latitude), Number(p.location!.longitude)])
-      );
-      if (bounds.isValid()) {
-        mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
-      }
-    }
-  }, [mapProperties, initialQuery]);
 
   // Keep internal search input in sync with external query params
   useEffect(() => {
@@ -2087,6 +2115,27 @@ const BUDGET_PRESETS = [
       alert("Geolocation is not supported by your browser.");
     }
   };
+
+  const handleFitAllProperties = useCallback((animate = true) => {
+    if (!mapRef.current) return;
+    const targetItems = mapMarkerItems.length > 0 ? mapMarkerItems : (mapProperties.length > 0 ? mapProperties : defaultAllItems);
+    const coords: [number, number][] = [];
+    for (const item of targetItems) {
+      const c = resolvePropertyMapCoords(item);
+      if (c && typeof c.lat === "number" && typeof c.lng === "number" && !isNaN(c.lat) && !isNaN(c.lng) && c.lat !== 0 && c.lng !== 0) {
+        coords.push([c.lat, c.lng]);
+      }
+    }
+    if (coords.length === 0) return;
+    if (coords.length === 1) {
+      mapRef.current.setView(coords[0], 13, { animate });
+    } else {
+      const bounds = L.latLngBounds(coords);
+      if (bounds.isValid()) {
+        mapRef.current.fitBounds(bounds, { padding: [60, 60], maxZoom: 13, animate });
+      }
+    }
+  }, [mapMarkerItems, mapProperties, defaultAllItems]);
 
   const handleFlyToLocality = (lat: number, lng: number) => {
     const newPos = new L.LatLng(lat, lng);
@@ -3428,6 +3477,14 @@ const BUDGET_PRESETS = [
             </button>
             <button
               type="button"
+              onClick={() => handleFitAllProperties(true)}
+              title="View All Properties (Fit Bounds)"
+              className="w-10 h-10 md:w-9 md:h-9 rounded-xl bg-white/95 dark:bg-slate-900/95 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center hover:bg-[#f1a010] hover:text-slate-950 hover:border-[#f1a010] transition-all active:scale-95 cursor-pointer mb-1 backdrop-blur-md"
+            >
+              <Maximize2 className="w-4 h-4 md:w-4 md:h-4" />
+            </button>
+            <button
+              type="button"
               onClick={() => mapRef.current?.zoomIn()}
               title="Zoom In"
               className="w-10 h-10 md:w-9 md:h-9 rounded-t-xl rounded-b-none bg-white/95 dark:bg-slate-900/95 text-slate-800 dark:text-white border border-b-0 border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center font-black text-lg hover:bg-[#f1a010] hover:text-slate-950 transition-all active:scale-95 cursor-pointer backdrop-blur-md select-none"
@@ -3446,8 +3503,8 @@ const BUDGET_PRESETS = [
 
           <MapContainer
             ref={mapRef}
-            center={position ? [position.lat, position.lng] : [16.5062, 80.6480]}
-            zoom={12}
+            center={position ? [position.lat, position.lng] : [16.4800, 80.6000]}
+            zoom={11}
             maxZoom={18}
             preferCanvas={true}
             zoomControl={false}
@@ -3465,6 +3522,9 @@ const BUDGET_PRESETS = [
           >
             {/* Must be first child — forces Leaflet to re-measure container & load tiles */}
             <MapInvalidator />
+
+            {/* Automatically moves out to fit and show all properties by default */}
+            <AutoFitBoundsController items={mapMarkerItems} />
 
             <FreehandDrawListener
               isDrawing={isDrawing}
