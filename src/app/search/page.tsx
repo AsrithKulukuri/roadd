@@ -910,34 +910,6 @@ function UnifiedSearchPage() {
                   </div>
                 </div>
               )}
-
-              {viewMode !== "map" && (
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <select
-                    aria-label="Sort search results"
-                    value={sortBy}
-                    onChange={(e) => {
-                      const newSort = e.target.value as SortByOption;
-                      setSortBy(newSort);
-                      setFilters(prev => ({ ...prev, sortBy: newSort }));
-                      const newParams = new URLSearchParams(searchParams.toString());
-                      if (newSort === "relevant") {
-                        newParams.delete("sort");
-                      } else {
-                        newParams.set("sort", newSort);
-                      }
-                      const queryStr = newParams.toString();
-                      router.replace(`/search${queryStr ? `?${queryStr}` : ""}`, { scroll: false });
-                    }}
-                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border-2 border-amber-500 bg-white text-slate-950 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/30 cursor-pointer shadow-xs"
-                  >
-                    <option value="relevant">Relevant / Best Match</option>
-                    <option value="newest">Newest Listed First</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
-                  </select>
-                </div>
-              )}
             </div>
 
             {/* Partial failure banner if one dataset failed but the other succeeded */}
@@ -991,7 +963,7 @@ function UnifiedSearchPage() {
                     if (item.type === "property") {
                       return <PropertyCard key={`prop-${item.data.id}-${idx}`} property={item.data as unknown as Property} index={idx} />;
                     } else {
-                      return <div key={`proj-${item.data.id}-${idx}`} className="min-w-0 h-fit"><SearchProjectCard project={item.data as unknown as Project} /></div>;
+                      return <div key={`proj-${item.data.id}-${idx}`} className="min-w-0 h-full flex flex-col"><SearchProjectCard project={item.data as unknown as Project} /></div>;
                     }
                   })}
                 </div>
@@ -1101,7 +1073,7 @@ function UnifiedSearchPage() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {projects.slice(0, 3).map((proj) => (
-                        <div key={`fallback-${proj.id}`} className="min-w-0 h-fit">
+                        <div key={`fallback-${proj.id}`} className="min-w-0 h-full flex flex-col">
                           <SearchProjectCard project={proj} />
                         </div>
                       ))}

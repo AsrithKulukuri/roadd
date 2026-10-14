@@ -32,14 +32,14 @@ export function WatermarkOverlay({
     <div
       aria-hidden="true"
       className={cn(
-        "absolute z-20 pointer-events-none select-none flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950/70 backdrop-blur-xs border border-white/20 shadow-lg text-white font-black tracking-wide transition-all",
-        "text-[10px] sm:text-xs leading-none",
+        "absolute z-20 pointer-events-none select-none flex items-center gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-black/25 backdrop-blur-sm border border-white/15 shadow-xs text-white/75 font-semibold tracking-wide transition-all",
+        "text-[9.5px] sm:text-[11px] leading-none",
         positionClass,
         className
       )}
     >
-      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-500 shadow-xs shrink-0" />
-      <span className="text-white/95 drop-shadow-md">{text}</span>
+      <span className="w-1.5 h-1.5 rounded-full bg-amber-400/80 shadow-xs shrink-0" />
+      <span className="text-white/80">{text}</span>
     </div>
   );
 }

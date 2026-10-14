@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight, Ruler, SquareDashed, Trees, Heart, Share2, Sparkles, Award, Tag, Shield, Image as ImageIcon, Maximize2, Building, Calendar, Plus } from "lucide-react";
+import { MapPin, Building2, Home, Landmark, CheckCircle2, Navigation, ArrowRight, Ruler, SquareDashed, Trees, Heart, Share2, Sparkles, Award, Tag, Shield, Image as ImageIcon, Maximize2, Building, Calendar, CalendarDays, Plus, Key, IndianRupee } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -100,6 +100,26 @@ function getAreaRange(project: Project): string | null {
   const min = Math.min(...sizes);
   const max = Math.max(...sizes);
   return min === max ? `${min} sq.ft` : `${min}–${max} sq.ft`;
+}
+
+function getTitleAutoFitClass(name: string | null | undefined): string {
+  if (!name) return "text-base sm:text-lg";
+  const len = name.length;
+  if (len <= 10) return "text-base sm:text-lg";
+  if (len <= 14) return "text-[14.5px] sm:text-[16px]";
+  if (len <= 18) return "text-[13px] sm:text-[14.5px]";
+  if (len <= 24) return "text-[12px] sm:text-[13px]";
+  return "text-[11px] sm:text-[12px]";
+}
+
+function getAutoFitClass(text: string | null | undefined, base: string = "text-[11px] sm:text-[12px]"): string {
+  if (!text) return base;
+  const len = text.length;
+  if (len <= 7) return "text-[11.5px] sm:text-[12.5px]";
+  if (len <= 10) return "text-[10.5px] sm:text-[11.5px]";
+  if (len <= 14) return "text-[9.5px] sm:text-[10.5px]";
+  if (len <= 18) return "text-[8.5px] sm:text-[9.5px] tracking-tight";
+  return "text-[8px] sm:text-[8.5px] tracking-tighter";
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -436,7 +456,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
           <div className="space-y-2.5">
             {/* Title & Locality */}
             <div>
-              <h3 className="font-bold text-text-primary text-base sm:text-lg leading-snug group-hover:text-amber-primary transition-colors line-clamp-1">
+              <h3 className={cn("font-bold text-text-primary leading-snug group-hover:text-amber-primary transition-colors line-clamp-2", getTitleAutoFitClass(project.name))}>
                 {project.name}
               </h3>
               <div className="flex items-start gap-1.5 text-text-secondary text-xs mt-1">
@@ -449,74 +469,134 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
               </div>
             </div>
 
-            {/* 6-Cell Specification Matrix (Client Specification — Diagram 1) */}
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 overflow-hidden divide-y divide-slate-200 dark:divide-slate-800 text-center shadow-2xs">
+            {/* 6-Cell Specification Matrix (All white boxes, black text & borders, logo colour icons) */}
+            <div className="rounded-xl border-2 border-black bg-white overflow-hidden divide-y-2 divide-black text-center shadow-xs">
               {/* Row 1: Total Project | Total Units | Available */}
-              <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-800">
-                {/* Cell 1: 12 Acres / Total Project */}
-                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center min-w-0">
-                  <span className="text-[12px] sm:text-[13px] font-black text-slate-900 dark:text-white leading-tight">
+              <div className="grid grid-cols-3 divide-x-2 divide-black bg-white">
+                {/* Cell 1: Total Project */}
+                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
+                  <Maximize2 className="w-3.5 h-3.5 text-[#faad13] mb-0.5 shrink-0" />
+                  <span className="text-[12px] sm:text-[13px] font-black text-black leading-tight truncate w-full text-center">
                     {projectArea || "On Request"}
                   </span>
-                  <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
+                  <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight mt-0.5 text-center">
                     Total Project
                   </span>
                 </div>
 
-                {/* Cell 2: 70 Units / Total Units */}
-                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center min-w-0">
-                  <span className="text-[12px] sm:text-[13px] font-black text-slate-900 dark:text-white leading-tight">
+                {/* Cell 2: Total Units */}
+                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
+                  <Building2 className="w-3.5 h-3.5 text-[#faad13] mb-0.5 shrink-0" />
+                  <span className="text-[12px] sm:text-[13px] font-black text-black leading-tight truncate w-full text-center">
                     {project.totalUnits
                       ? `${project.totalUnits} ${isVilla ? "Villas" : isVenture ? "Plots" : "Units"}`
                       : isVenture ? "Plots" : "On Request"}
                   </span>
-                  <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
+                  <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight mt-0.5 text-center">
                     Total Units
                   </span>
                 </div>
 
-                {/* Cell 3: Available / 3 BHK */}
-                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center min-w-0 bg-amber-500/5 dark:bg-amber-400/5">
-                  <span className="text-[9.5px] sm:text-[10px] font-bold text-amber-700 dark:text-amber-400 leading-tight">
+                {/* Cell 3: Available */}
+                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
+                  <Key className="w-3.5 h-3.5 text-[#faad13] mb-0.5 shrink-0" />
+                  <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight text-center">
                     Available
                   </span>
-                  <span className="text-[12px] sm:text-[13px] font-black text-slate-900 dark:text-white leading-tight mt-0.5 truncate" title={configLabels.length > 0 ? (formatAvailableBhk(configLabels) || (isVenture ? "Plots" : TC.label)) : isVenture ? "Plots" : TC.label}>
+                  <span className="text-[11px] sm:text-[12px] font-black text-black leading-tight mt-0.5 text-center break-words w-full" title={configLabels.length > 0 ? (formatAvailableBhk(configLabels) || (isVenture ? "Plots" : TC.label)) : isVenture ? "Plots" : TC.label}>
                     {configLabels.length > 0 ? (formatAvailableBhk(configLabels) || (isVenture ? "Plots" : TC.label)) : isVenture ? "Plots" : TC.label}
                   </span>
                 </div>
               </div>
 
               {/* Row 2: Area Range | Price Range | Possession */}
-              <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-800">
-                {/* Cell 4: Area Range / 2000 Sqft */}
-                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center min-w-0">
-                  <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-tight">
-                    Area Range
-                  </span>
-                  <span className="text-[11.5px] sm:text-[12.5px] font-black text-slate-900 dark:text-white leading-tight mt-0.5">
-                    {(isApartment || isVilla) ? (builtUpRange || "On Request") : (plotSizeRange || "On Request")}
-                  </span>
-                </div>
+              <div className="grid grid-cols-3 divide-x-2 divide-black bg-white">
+                {/* Cell 4: Area Range strictly in 2 lines */}
+                {(() => {
+                  const rawArea = (isApartment || isVilla) ? (builtUpRange || "On Request") : (plotSizeRange || "On Request");
+                  const parts = rawArea.trim().split(" ");
+                  const numStr = parts.length > 1 ? parts.slice(0, -1).join(" ") : parts[0];
+                  const unitStr = parts.length > 1 ? parts[parts.length - 1] : "";
+                  return (
+                    <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
+                      <Ruler className="w-3.5 h-3.5 text-[#faad13] mb-0.5 shrink-0" />
+                      <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight text-center">
+                        Area Range
+                      </span>
+                      <div className="flex flex-col items-center justify-center leading-tight mt-0.5">
+                        <span className="text-[11px] sm:text-[12px] font-black text-black whitespace-nowrap">
+                          {numStr}
+                        </span>
+                        {unitStr && (
+                          <span className="text-[9px] sm:text-[9.5px] font-bold text-black leading-none">
+                            {unitStr}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
-                {/* Cell 5: Price Range / 1 Cr to 2 Cr */}
-                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center min-w-0 bg-emerald-500/5 dark:bg-emerald-400/5">
-                  <span className="text-[9.5px] sm:text-[10px] font-bold text-emerald-700 dark:text-emerald-400 leading-tight">
-                    Price Range
-                  </span>
-                  <span className="text-[11.5px] sm:text-[12.5px] font-black text-emerald-700 dark:text-emerald-300 leading-tight mt-0.5">
-                    {priceLabel}
-                  </span>
-                </div>
+                {/* Cell 5: Price Range (Dynamic Auto-Fit, Never Cuts) */}
+                {(() => {
+                  const priceParts = priceLabel ? priceLabel.split(" – ") : [];
+                  const isRange = priceParts.length === 2 && priceParts[0] && priceParts[1];
+                  return (
+                    <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
+                      <IndianRupee className="w-3.5 h-3.5 text-[#faad13] mb-0.5 shrink-0" />
+                      <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight text-center">
+                        Price Range
+                      </span>
+                      <div className="flex flex-col items-center justify-center leading-tight mt-0.5 w-full">
+                        {isRange ? (
+                          <div className="flex flex-col items-center justify-center leading-tight">
+                            <span className={cn("font-black text-black whitespace-nowrap", getAutoFitClass(priceParts[0], "text-[10.5px] sm:text-[11.5px]"))}>
+                              {priceParts[0]} –
+                            </span>
+                            <span className={cn("font-black text-black whitespace-nowrap", getAutoFitClass(priceParts[1], "text-[10.5px] sm:text-[11.5px]"))}>
+                              {priceParts[1]}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className={cn("font-black text-black leading-tight text-center whitespace-nowrap", getAutoFitClass(priceLabel, "text-[11px] sm:text-[12px]"))}>
+                            {priceLabel}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
-                {/* Cell 6: Possession / March */}
-                <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center min-w-0">
-                  <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-tight">
-                    Possession
-                  </span>
-                  <span className="text-[11.5px] sm:text-[12.5px] font-black text-slate-900 dark:text-white leading-tight mt-0.5">
-                    {rawPossession?.trim() || (project.constructionStatus === "ready-to-move" ? "Ready" : "On Request")}
-                  </span>
-                </div>
+                {/* Cell 6: Possession (Dynamic Auto-Fit, Never Cuts) */}
+                {(() => {
+                  const possVal = rawPossession?.trim() || (project.constructionStatus === "ready-to-move" ? "Ready" : "On Request");
+                  const parts = possVal.split(" ");
+                  const isTwoPart = parts.length === 2 && parts[0] && parts[1];
+                  return (
+                    <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
+                      <CalendarDays className="w-3.5 h-3.5 text-[#faad13] mb-0.5 shrink-0" />
+                      <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight text-center">
+                        Possession
+                      </span>
+                      <div className="flex flex-col items-center justify-center leading-tight mt-0.5 w-full">
+                        {isTwoPart ? (
+                          <div className="flex flex-col items-center justify-center leading-tight">
+                            <span className={cn("font-black text-black whitespace-nowrap", getAutoFitClass(parts[0], "text-[10.5px] sm:text-[11.5px]"))}>
+                              {parts[0]}
+                            </span>
+                            <span className={cn("font-black text-black whitespace-nowrap", getAutoFitClass(parts[1], "text-[10px] sm:text-[11px]"))}>
+                              {parts[1]}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className={cn("font-black text-black leading-tight text-center break-words w-full", getAutoFitClass(possVal, "text-[10.5px] sm:text-[11.5px]"))}>
+                            {possVal}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>

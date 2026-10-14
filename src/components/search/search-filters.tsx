@@ -345,12 +345,12 @@ function PillTag({
       className={cn(
         "py-2 px-4 rounded-full text-xs sm:text-[13px] font-medium border transition-all cursor-pointer flex items-center gap-1.5 select-none shrink-0 whitespace-nowrap",
         isSelected
-          ? "bg-[#e6f4f2] text-[#008075] border-[#008075]/40 font-semibold"
+          ? "bg-white/80 dark:bg-slate-900/80 backdrop-blur-md text-slate-950 dark:text-white border-2 border-slate-950 dark:border-white font-bold shadow-xs"
           : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
       )}
     >
       {isSelected ? (
-        <Check className="w-3.5 h-3.5 text-[#008075] stroke-[2.5]" />
+        <Check className="w-3.5 h-3.5 text-slate-950 dark:text-white stroke-[3]" />
       ) : (
         <Plus className="w-3.5 h-3.5 text-slate-400 stroke-[2]" />
       )}
@@ -566,7 +566,7 @@ export function SearchFiltersModal({
                     className={cn(
                       "py-2 px-4 rounded-full text-xs sm:text-[13px] font-medium border transition-all cursor-pointer whitespace-nowrap select-none shrink-0",
                       isSelected
-                        ? "bg-[#e6f4f2] text-[#008075] border-[#008075]/40 font-semibold"
+                        ? "bg-white/80 dark:bg-slate-900/80 backdrop-blur-md text-slate-950 dark:text-white border-2 border-slate-950 dark:border-white font-bold shadow-xs"
                         : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
                     )}
                   >
@@ -602,11 +602,11 @@ export function SearchFiltersModal({
                     className={cn(
                       "py-2 px-4 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer border",
                       isSelected
-                        ? "bg-[#e6f4f2] text-[#008075] border-[#008075]/40"
+                        ? "bg-white/85 dark:bg-slate-900/85 backdrop-blur-md text-slate-950 dark:text-white border-2 border-slate-950 dark:border-white font-bold shadow-xs"
                         : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
                     )}
                   >
-                    {isSelected && <Check className="w-3.5 h-3.5 inline mr-1 stroke-[2.5]" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 inline mr-1 text-slate-950 dark:text-white stroke-[3]" />}
                     {city.name}
                   </button>
                 );
@@ -622,10 +622,15 @@ export function SearchFiltersModal({
               </label>
               <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
                 {(() => {
+                  const isProjectOrBuilder = (name: string) => {
+                    if (!name) return false;
+                    const lower = name.toLowerCase().trim();
+                    return lower.includes(" by ") || /\b(by\s+[a-z]+|realty|builders|developers)\b/i.test(lower);
+                  };
                   const relevantCities = (localFilters.cities || []).length > 0
                     ? cities.filter((c) => (localFilters.cities || []).includes(c.name))
                     : cities;
-                  return relevantCities.flatMap((c) => c.sublocations).map((sub) => {
+                  return relevantCities.flatMap((c) => c.sublocations).filter((sub) => !isProjectOrBuilder(sub.name)).map((sub) => {
                     const isSelected = (localFilters.localities || []).includes(sub.name);
                     return (
                       <button
@@ -640,11 +645,11 @@ export function SearchFiltersModal({
                         className={cn(
                           "py-1.5 px-3 rounded-full text-xs font-medium border transition-all whitespace-nowrap shrink-0 cursor-pointer",
                           isSelected
-                            ? "bg-[#008075] text-white border-[#008075] font-semibold"
+                            ? "bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-slate-950 dark:text-white border-2 border-slate-950 dark:border-white font-bold shadow-xs"
                             : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                         )}
                       >
-                        {isSelected && <Check className="w-3 h-3 inline mr-1 stroke-[2.5]" />}
+                        {isSelected && <Check className="w-3 h-3 inline mr-1 text-slate-950 dark:text-white stroke-[3]" />}
                         {sub.name}
                       </button>
                     );
@@ -677,16 +682,16 @@ export function SearchFiltersModal({
                     className={cn(
                       "w-[112px] min-w-[112px] h-[86px] rounded-2xl border p-2 flex flex-col items-center justify-center text-center relative transition-all cursor-pointer shrink-0 select-none",
                       isSelected
-                        ? "bg-[#e6f4f2] border-[#008075]/40 text-slate-950 font-semibold shadow-xs"
+                        ? "bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-2 border-slate-950 dark:border-white text-slate-950 dark:text-white font-bold shadow-xs"
                         : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
                     )}
                   >
                     {isSelected && (
-                      <span className="absolute top-2 right-2 text-[#008075]">
+                      <span className="absolute top-2 right-2 text-slate-950 dark:text-white">
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </span>
                     )}
-                    <Icon className={cn("w-6 h-6 mb-1.5 shrink-0", isSelected ? "text-[#008075]" : "text-slate-600")} />
+                    <Icon className={cn("w-6 h-6 mb-1.5 shrink-0", isSelected ? "text-[#faad13]" : "text-slate-600")} />
                     <span className="text-xs font-semibold leading-tight text-center line-clamp-2 px-0.5">{item.label}</span>
                   </button>
                 );
@@ -842,7 +847,7 @@ export function SearchFiltersModal({
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold text-slate-500">Selected Range</span>
-                <span className="text-xs font-black text-[#008075] bg-[#e6f4f2] px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-black text-slate-950 dark:text-white bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-2.5 py-0.5 rounded-full">
                   {localFilters.coveredArea[0] === 0 ? "0 sqft" : `${localFilters.coveredArea[0].toLocaleString()} sqft`} – {localFilters.coveredArea[1] >= 10000 ? "10,000+ sqft" : `${localFilters.coveredArea[1].toLocaleString()} sqft`}
                 </span>
               </div>
@@ -1042,7 +1047,7 @@ export function SearchFiltersModal({
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => toggleArrayFilter("amenities", amenity.val)}
-                      className="w-4 h-4 rounded border-slate-300 text-[#008075] focus:ring-[#008075] accent-[#008075]"
+                      className="w-4 h-4 rounded border-slate-300 text-slate-950 focus:ring-amber-500 accent-[#faad13]"
                     />
                     <span className="truncate">{amenity.label}</span>
                   </label>
@@ -1209,11 +1214,11 @@ export function SearchFiltersModal({
                           className={cn(
                             "py-2 px-4 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer border",
                             isSelected
-                              ? "bg-[#e6f4f2] text-[#008075] border-[#008075]/40"
+                              ? "bg-white/85 dark:bg-slate-900/85 backdrop-blur-md text-slate-950 dark:text-white border-2 border-slate-950 dark:border-white font-bold shadow-xs"
                               : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
                           )}
                         >
-                          {isSelected && <Check className="w-3.5 h-3.5 inline mr-1 stroke-[2.5]" />}
+                          {isSelected && <Check className="w-3.5 h-3.5 inline mr-1 text-slate-950 dark:text-white stroke-[3]" />}
                           {city.name}
                         </button>
                       );
@@ -1230,10 +1235,15 @@ export function SearchFiltersModal({
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {(() => {
+                      const isProjectOrBuilder = (name: string) => {
+                        if (!name) return false;
+                        const lower = name.toLowerCase().trim();
+                        return lower.includes(" by ") || /\b(by\s+[a-z]+|realty|builders|developers)\b/i.test(lower);
+                      };
                       const relevantCities = (localFilters.cities || []).length > 0
                         ? cities.filter((c) => (localFilters.cities || []).includes(c.name))
                         : cities;
-                      return relevantCities.flatMap((c) => c.sublocations).map((sub) => {
+                      return relevantCities.flatMap((c) => c.sublocations).filter((sub) => !isProjectOrBuilder(sub.name)).map((sub) => {
                         const isSelected = (localFilters.localities || []).includes(sub.name);
                         return (
                           <button
@@ -1248,11 +1258,11 @@ export function SearchFiltersModal({
                             className={cn(
                               "py-1.5 px-3 rounded-full text-xs font-medium border transition-all whitespace-nowrap shrink-0 cursor-pointer",
                               isSelected
-                                ? "bg-[#008075] text-white border-[#008075] font-semibold"
+                                ? "bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-slate-950 dark:text-white border-2 border-slate-950 dark:border-white font-bold shadow-xs"
                                 : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                             )}
                           >
-                            {isSelected && <Check className="w-3 h-3 inline mr-1 stroke-[2.5]" />}
+                            {isSelected && <Check className="w-3 h-3 inline mr-1 text-slate-950 dark:text-white stroke-[3]" />}
                             {sub.name}
                           </button>
                         );
@@ -1281,8 +1291,8 @@ export function SearchFiltersModal({
             {activeDesktopTab === "budget" && (
               <div className="space-y-5">
                 <div className="flex justify-between items-center pr-10">
-                  <span className="text-[13px] font-semibold text-slate-900">Budget Range</span>
-                  <span className="text-xs font-semibold text-[#008075]">
+                  <span className="text-[13px] font-semibold text-slate-900 dark:text-white">Budget Range</span>
+                  <span className="text-xs font-bold text-slate-950 dark:text-white bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-2.5 py-0.5 rounded-full">
                     {formatINRWords(localFilters.budget[0])} – {formatINRWords(localFilters.budget[1], true)}
                   </span>
                 </div>
@@ -1385,17 +1395,17 @@ export function SearchFiltersModal({
                           className={cn(
                             "h-24 rounded-2xl border p-3 flex flex-col items-center justify-center relative transition-all cursor-pointer select-none",
                             isSelected
-                              ? "bg-[#e6f4f2] border-[#008075]/40 text-slate-950 font-semibold shadow-xs"
+                              ? "bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-2 border-slate-950 dark:border-white text-slate-950 dark:text-white font-bold shadow-xs"
                               : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
                           )}
                         >
                           {isSelected && (
-                            <span className="absolute top-2 right-2 text-[#008075]">
+                            <span className="absolute top-2 right-2 text-slate-950 dark:text-white">
                               <Check className="w-3.5 h-3.5 stroke-[3]" />
                             </span>
                           )}
-                          <Icon className={cn("w-6 h-6 mb-1.5", isSelected ? "text-[#008075]" : "text-slate-600")} />
-                          <span className="text-xs text-center">{item.label}</span>
+                          <Icon className={cn("w-6 h-6 mb-1.5", isSelected ? "text-[#faad13]" : "text-slate-600")} />
+                          <span className="text-xs text-center font-bold">{item.label}</span>
                         </button>
                       );
                     })}
@@ -1467,8 +1477,8 @@ export function SearchFiltersModal({
             {activeDesktopTab === "coveredArea" && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center pr-10">
-                  <span className="text-[13px] font-semibold text-slate-900">Covered Area (sqft)</span>
-                  <span className="text-xs font-semibold text-[#008075]">
+                  <span className="text-[13px] font-semibold text-slate-900 dark:text-white">Covered Area (sqft)</span>
+                  <span className="text-xs font-bold text-slate-950 dark:text-white bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-2.5 py-0.5 rounded-full">
                     {localFilters.coveredArea[0]} sqft – {localFilters.coveredArea[1] >= 10000 ? "10,000+ sqft" : `${localFilters.coveredArea[1]} sqft`}
                   </span>
                 </div>
@@ -1608,7 +1618,7 @@ export function SearchFiltersModal({
                         type="checkbox"
                         checked={localFilters.amenities.includes(amenity.val)}
                         onChange={() => toggleArrayFilter("amenities", amenity.val)}
-                        className="w-4 h-4 rounded border-slate-300 text-[#008075] focus:ring-[#008075] accent-[#008075]"
+                        className="w-4 h-4 rounded border-slate-300 text-slate-950 focus:ring-amber-500 accent-[#faad13]"
                       />
                       <span className="truncate">{amenity.label}</span>
                     </label>

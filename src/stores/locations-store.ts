@@ -238,14 +238,35 @@ export const useLocationsStore = create<LocationsState>()(
           // 2. Fetch properties & projects to get live listing counts & dynamic sublocations
           const [propsRes, projsRes] = await Promise.all([
             supabase.from("properties").select("location"),
-            supabase.from("projects").select("location"),
+            supabase.from("projects").select("name, location"),
           ]);
+
+          // Collect known project names to ensure project names are NEVER treated as sublocations
+          const projectNames = new Set<string>();
+          if (projsRes.data) {
+            for (const item of projsRes.data) {
+              if (item.name) projectNames.add(item.name.toLowerCase().trim());
+            }
+          }
+
+          const isProjectName = (lName: string) => {
+            if (!lName) return false;
+            const lower = lName.toLowerCase().trim();
+            if (lower.includes(" by ")) return true;
+            if (/\b(by\s+[a-z]+|realty|builders|developers)\b/i.test(lower)) return true;
+            if (projectNames.has(lower)) return true;
+            for (const pName of projectNames) {
+              if (pName.length >= 4 && lower.includes(pName)) return true;
+            }
+            return false;
+          };
 
           const cityLocalitiesCounts: Record<string, Record<string, { propCount: number; projCount: number }>> = {};
           const recordCount = (cName: string, lName: string, type: "prop" | "proj") => {
             const c = (cName || "").trim();
             const l = (lName || c).trim();
             if (!c || !l) return;
+            if (isProjectName(l)) return; // Never record project names as localities
             const cKey = c.toLowerCase();
             const lKey = l.toLowerCase();
             if (!cityLocalitiesCounts[cKey]) cityLocalitiesCounts[cKey] = {};
@@ -273,7 +294,8 @@ export const useLocationsStore = create<LocationsState>()(
           const updatedCities: LocationCity[] = baseCities.map((city) => {
             const cityKey = city.name.toLowerCase();
             const cityCounts = cityLocalitiesCounts[cityKey] || {};
-            const existingSubs = city.sublocations || [];
+            // Filter out any accidentally stored project names from existing sublocations
+            const existingSubs = (city.sublocations || []).filter((s) => !isProjectName(s.name));
 
             // Update counts on existing sublocations
             const updatedSubs = existingSubs.map((sub) => {
@@ -291,8 +313,9 @@ export const useLocationsStore = create<LocationsState>()(
               return { ...sub, count: countStr };
             });
 
-            // If a property or project was added in this city with a new locality, auto-append it
+            // If a property or project was added in this city with a new locality, auto-append it (only if not a project name)
             Object.entries(cityCounts).forEach(([subLower, counts]) => {
+              if (isProjectName(subLower)) return;
               const exists = updatedSubs.some((s) => s.name.toLowerCase() === subLower);
               if (!exists && (counts.propCount > 0 || counts.projCount > 0)) {
                 const parts: string[] = [];
@@ -329,6 +352,7 @@ export const useLocationsStore = create<LocationsState>()(
               if (!isKnownCity) {
                 // This listing had city entered as a locality or surrounding town (e.g., Gudavalli, Edupugallu)
                 Object.entries(localities).forEach(([locLower, counts]) => {
+                  if (isProjectName(locLower)) return;
                   const exists = currentSubs.some((s) => s.name.toLowerCase() === locLower || s.name.toLowerCase() === cityNameLower);
                   if (!exists && (counts.propCount > 0 || counts.projCount > 0)) {
                     const parts: string[] = [];

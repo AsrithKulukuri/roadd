@@ -10,7 +10,7 @@ import { getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import {
   MapPin, CheckCircle2, Download, FileText, ExternalLink,
-  ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark,
+  ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark, Maximize2, Tag,
   Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate, Film, Layers, Loader2, Copy, Share2, Lock, ShieldCheck, Navigation
 } from "lucide-react";
 import Link from "next/link";
@@ -889,46 +889,53 @@ export function ProjectDetailView({
                   </div>
                 </div>
 
-                {/* Project Snapshot Specs Matrix (Client Specification — Diagram 2: Inside) */}
+                {/* Project Snapshot Specs Matrix (Client Specification: 4 boxes top, 3 boxes bottom, black text/borders, white boxes, logo colour icons) */}
                 <div className="pt-4 border-t border-slate-200 dark:border-slate-800/80">
-                  <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 overflow-hidden divide-y divide-slate-200 dark:divide-slate-800 shadow-xs">
-                    {/* Row 1: Project Type | Total Area | Total Units */}
-                    <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-800 text-center">
-                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0">
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+                  <div className="rounded-2xl border-2 border-black bg-white overflow-hidden divide-y-2 divide-black shadow-sm">
+                    {/* Row 1: 4 Boxes (Project Type | Total Area | Total Units | Available) - Uniform in Mobile and Desktop */}
+                    <div className="grid grid-cols-4 divide-x-2 divide-black text-center bg-white">
+                      {/* Box 1: Project Type */}
+                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                        <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                        <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
                           Project Type
                         </span>
-                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white capitalize mt-1 truncate">
+                        <span className="text-[10px] sm:text-sm font-black text-black capitalize mt-0.5 sm:mt-1 truncate w-full">
                           {project.projectType === "apartment" ? "Apartment" : project.projectType === "villa" ? "Villa" : "CRDA Venture"}
                         </span>
                       </div>
-                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0">
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+
+                      {/* Box 2: Total Area */}
+                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                        <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                        <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
                           Total Area
                         </span>
-                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-1 truncate">
+                        <span className="text-[10px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
                           {project.totalArea || (project.location as any)?.totalArea || "On Request"}
                         </span>
                       </div>
-                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0">
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+
+                      {/* Box 3: Total Units */}
+                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                        <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                        <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
                           Total Units
                         </span>
-                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-1 truncate">
+                        <span className="text-[10px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
                           {project.totalUnits
                             ? `${project.totalUnits} ${project.projectType === "villa" ? "Villas" : project.projectType === "venture" ? "Plots" : "Units"}`
                             : project.projectType === "venture" ? "Plots" : "On Request"}
                         </span>
                       </div>
-                    </div>
 
-                    {/* Row 2: Available | Status */}
-                    <div className="grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-800 text-center">
-                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0 bg-amber-500/5 dark:bg-amber-400/5">
-                        <span className="text-[10px] sm:text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider truncate">
+                      {/* Box 4: Available */}
+                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                        <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                        <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
                           Available
                         </span>
-                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-1 truncate">
+                        <span className="text-[10px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
                           {(() => {
                             const configs = project.configurations && project.configurations.length > 0
                               ? formatAvailableBhk(project.configurations.map((c) => c.label))
@@ -937,31 +944,39 @@ export function ProjectDetailView({
                           })()}
                         </span>
                       </div>
-                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0">
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+                    </div>
+
+                    {/* Row 2: 3 Boxes (Status | Possession | Price Range) - Uniform in Mobile and Desktop */}
+                    <div className="grid grid-cols-3 divide-x-2 divide-black text-center bg-white">
+                      {/* Box 5: Status */}
+                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                        <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                        <span className="text-[8.5px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
                           Status
                         </span>
-                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white capitalize mt-1 truncate">
+                        <span className="text-[10px] sm:text-sm font-black text-black capitalize mt-0.5 sm:mt-1 truncate w-full">
                           {STATUS_LABELS[project.constructionStatus] || "Under Construction"}
                         </span>
                       </div>
-                    </div>
 
-                    {/* Row 3: Possession | Price Range */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-800 text-center">
-                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0">
-                        <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+                      {/* Box 6: Possession */}
+                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                        <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                        <span className="text-[8.5px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
                           Possession
                         </span>
-                        <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white mt-1 truncate">
+                        <span className="text-[10px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
                           {project.possessionDate || project.configurations?.find(c => c.possessionDate)?.possessionDate || (project.constructionStatus === "ready-to-move" ? "Ready to Move" : "On Request")}
                         </span>
                       </div>
-                      <div className="p-3 sm:p-4 flex flex-col justify-center min-w-0 bg-emerald-500/5 dark:bg-emerald-400/5">
-                        <span className="text-[10px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider truncate">
+
+                      {/* Box 7: Price Range */}
+                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                        <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                        <span className="text-[8.5px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
                           Price Range
                         </span>
-                        <span className="text-sm sm:text-base font-black text-emerald-800 dark:text-emerald-300 mt-1 truncate">
+                        <span className="text-[10.5px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
                           {getPriceRange(project.configurations)}
                         </span>
                       </div>

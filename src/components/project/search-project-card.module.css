@@ -1,7 +1,9 @@
 .card {
   min-width: 0;
-  height: fit-content;
-  align-self: start;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   overflow: hidden;
   border: 1px solid var(--color-border-default, #e2e8f0);
   border-radius: 18px;
@@ -10,6 +12,8 @@
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.03);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
   container-type: inline-size;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .card:hover {
@@ -22,12 +26,14 @@
   aspect-ratio: 4 / 3;
   background: #f1f5f9;
   overflow: hidden;
+  touch-action: pan-y;
 }
 
 .imageLink {
   display: block;
   width: 100%;
   height: 100%;
+  touch-action: pan-y;
 }
 
 .image {
@@ -35,6 +41,7 @@
   height: 100%;
   object-fit: cover;
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  touch-action: pan-y;
 }
 
 .card:hover .image {
@@ -130,10 +137,13 @@
 .body {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: 12px;
   padding: 14px;
   box-sizing: border-box;
   width: 100%;
+  flex: 1;
+  touch-action: pan-y;
 }
 
 /* Row 1: Identity */
@@ -143,21 +153,22 @@
   justify-content: flex-start;
   width: 100%;
   min-width: 0;
+  touch-action: pan-y;
 }
 
 .titleRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
   min-width: 0;
+  min-height: 28px;
 }
 
 .titleRow h3 {
-  font-size: 19px;
   line-height: 1.25;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.3px;
   font-weight: 800;
   min-width: 0;
   flex: 1;
@@ -166,12 +177,13 @@
 
 .titleRow h3 a {
   display: -webkit-box;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   color: #0f172a;
   text-decoration: none;
   transition: color 0.15s ease;
+  word-break: break-word;
 }
 
 .titleRow h3 a:hover {
@@ -181,17 +193,18 @@
 .approval {
   display: inline-flex;
   align-items: center;
-  gap: 3.5px;
+  gap: 3px;
   white-space: nowrap;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #15803d;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  color: #0f172a;
   border-radius: 6px;
-  padding: 2.5px 6px;
-  font-size: 10px;
-  font-weight: 700;
+  padding: 2px 6px;
+  font-size: 9.5px;
+  font-weight: 800;
   letter-spacing: 0.1px;
   flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .location {
@@ -205,12 +218,16 @@
   margin-bottom: 0;
   width: 100%;
   min-width: 0;
+  height: 38px;
+  min-height: 38px;
+  max-height: 38px;
+  overflow: hidden;
+  touch-action: pan-y;
 }
 
 .location svg {
   flex-shrink: 0;
   margin-top: 2px;
-  color: #64748b;
 }
 
 .location span {

@@ -40,8 +40,15 @@ export function MobileLocationPicker() {
     || cities[0];
 
   const cityName = targetCity?.name || activeCityName;
-  // Available sublocations for target city
-  const sublocations = targetCity?.sublocations || [];
+  // Available sublocations for target city (strictly exclude project names / builder branding)
+  const isProjectOrBuilder = (name: string) => {
+    if (!name) return false;
+    const lower = name.toLowerCase().trim();
+    return lower.includes(" by ") || /\b(by\s+[a-z]+|realty|builders|developers)\b/i.test(lower);
+  };
+  const sublocations = (targetCity?.sublocations || []).filter(
+    (sub) => !isProjectOrBuilder(sub.name)
+  );
 
   // When opening, initialize selected localities from URL or global store
   useEffect(() => {

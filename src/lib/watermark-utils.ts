@@ -43,8 +43,8 @@ export async function addWatermarkToImage(
   const {
     text = "roadfacing.com",
     position = "left-middle",
-    opacity = 0.85,
-    fontSizeRatio = 0.026,
+    opacity = 0.45,
+    fontSizeRatio = 0.024,
   } = options;
 
   try {
@@ -65,19 +65,19 @@ export async function addWatermarkToImage(
     ctx.drawImage(img, 0, 0, width, height);
 
     // Dynamic responsive font sizing based on image dimensions
-    const fontSize = Math.max(14, Math.round(width * fontSizeRatio));
-    const paddingX = Math.round(fontSize * 0.75);
-    const paddingY = Math.round(fontSize * 0.45);
+    const fontSize = Math.max(13, Math.round(width * fontSizeRatio));
+    const paddingX = Math.round(fontSize * 0.7);
+    const paddingY = Math.round(fontSize * 0.4);
     const borderRadius = Math.round(fontSize * 0.4);
 
     ctx.save();
-    ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
 
     const textMetrics = ctx.measureText(text);
     const textWidth = textMetrics.width;
     const textHeight = fontSize;
 
-    const badgeWidth = textWidth + paddingX * 2 + Math.round(fontSize * 0.6); // Extra for amber dot
+    const badgeWidth = textWidth + paddingX * 2 + Math.round(fontSize * 0.55); // Extra for amber dot
     const badgeHeight = textHeight + paddingY * 2;
 
     let posX = 0;
@@ -95,10 +95,10 @@ export async function addWatermarkToImage(
       posY = Math.round((height - badgeHeight) / 2);
     }
 
-    // 1. Draw subtle frosted background pill
-    ctx.fillStyle = `rgba(15, 23, 42, ${0.65 * opacity})`;
-    ctx.strokeStyle = `rgba(255, 255, 255, ${0.3 * opacity})`;
-    ctx.lineWidth = Math.max(1, Math.round(fontSize * 0.06));
+    // 1. Draw subtle light frosted background pill
+    ctx.fillStyle = `rgba(15, 23, 42, ${0.35 * opacity})`;
+    ctx.strokeStyle = `rgba(255, 255, 255, ${0.25 * opacity})`;
+    ctx.lineWidth = Math.max(1, Math.round(fontSize * 0.05));
 
     ctx.beginPath();
     ctx.roundRect(posX, posY, badgeWidth, badgeHeight, borderRadius);
@@ -106,24 +106,24 @@ export async function addWatermarkToImage(
     ctx.stroke();
 
     // 2. Draw amber indicator dot
-    const dotRadius = Math.max(3, Math.round(fontSize * 0.18));
+    const dotRadius = Math.max(2.5, Math.round(fontSize * 0.16));
     const dotX = posX + paddingX + dotRadius;
     const dotY = posY + badgeHeight / 2;
 
-    ctx.fillStyle = `rgba(245, 158, 11, ${opacity})`; // Amber #f59e0b
+    ctx.fillStyle = `rgba(245, 158, 11, ${0.85 * opacity})`; // Amber #f59e0b
     ctx.beginPath();
     ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
     ctx.fill();
 
-    // 3. Draw text with subtle drop shadow
-    ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
-    ctx.shadowBlur = Math.round(fontSize * 0.2);
+    // 3. Draw text with subtle light shadow
+    ctx.shadowColor = `rgba(0, 0, 0, ${0.3 * opacity})`;
+    ctx.shadowBlur = Math.round(fontSize * 0.15);
     ctx.shadowOffsetX = 1;
     ctx.shadowOffsetY = 1;
 
-    ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.85 * opacity})`;
     ctx.textBaseline = "middle";
-    ctx.fillText(text, dotX + dotRadius + Math.round(fontSize * 0.4), posY + badgeHeight / 2);
+    ctx.fillText(text, dotX + dotRadius + Math.round(fontSize * 0.35), posY + badgeHeight / 2);
 
     ctx.restore();
 
