@@ -227,7 +227,7 @@ export interface ShelfDefinition {
   enableCarousel?: boolean;
   carouselInterval?: number;
 
-  // Carousel & Motion Configuration
+  // Carousel & Motion Configuration (Desktop / Base)
   carouselConfig?: CarouselConfig;
   carouselLoopMode?: CarouselLoopMode; // "infinite" | "normal" | "static"
   carouselSpeed?: CarouselTransitionSpeed; // "fast" | "normal" | "smooth" | "cinematic"
@@ -235,6 +235,18 @@ export interface ShelfDefinition {
   carouselShowArrows?: boolean;
   carouselArrowPosition?: CarouselArrowPosition; // "header" | "sides" | "hidden"
   carouselShowDots?: boolean;
+
+  // Mobile-specific Carousel & Motion Configuration (Separate from Desktop)
+  mobileCarouselCustom?: boolean;
+  mobileLayoutType?: ShelfLayoutType;
+  mobileEnableCarousel?: boolean;
+  mobileCarouselLoopMode?: CarouselLoopMode;
+  mobileCarouselInterval?: number;
+  mobileCarouselSpeed?: CarouselTransitionSpeed;
+  mobileCarouselPauseOnHover?: boolean;
+  mobileCarouselShowArrows?: boolean;
+  mobileCarouselArrowPosition?: CarouselArrowPosition;
+  mobileCarouselShowDots?: boolean;
 
   // Styling & Borders
   cardBgColor?: string;

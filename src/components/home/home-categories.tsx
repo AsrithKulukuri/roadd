@@ -67,6 +67,16 @@ type RenderSection = {
   gridColumnsDesktop?: number;
   gridColumnsTablet?: number;
   gridColumnsMobile?: number;
+  mobileCarouselCustom?: boolean;
+  mobileLayoutType?: "carousel" | "grid" | "featured-split";
+  mobileEnableCarousel?: boolean;
+  mobileCarouselLoopMode?: CarouselLoopMode;
+  mobileCarouselInterval?: number;
+  mobileCarouselSpeed?: CarouselTransitionSpeed;
+  mobileCarouselPauseOnHover?: boolean;
+  mobileCarouselShowArrows?: boolean;
+  mobileCarouselArrowPosition?: CarouselArrowPosition;
+  mobileCarouselShowDots?: boolean;
   items: MixedItem[];
 };
 
@@ -297,6 +307,16 @@ export function HomeCategories() {
           gridColumnsDesktop: section.gridColumnsDesktop,
           gridColumnsTablet: section.gridColumnsTablet,
           gridColumnsMobile: section.gridColumnsMobile,
+          mobileCarouselCustom: section.mobileCarouselCustom,
+          mobileLayoutType: section.mobileLayoutType,
+          mobileEnableCarousel: section.mobileEnableCarousel,
+          mobileCarouselLoopMode: section.mobileCarouselLoopMode,
+          mobileCarouselInterval: section.mobileCarouselInterval,
+          mobileCarouselSpeed: section.mobileCarouselSpeed,
+          mobileCarouselPauseOnHover: section.mobileCarouselPauseOnHover,
+          mobileCarouselShowArrows: section.mobileCarouselShowArrows,
+          mobileCarouselArrowPosition: section.mobileCarouselArrowPosition,
+          mobileCarouselShowDots: section.mobileCarouselShowDots,
           items: finalItems,
         };
       })
@@ -330,6 +350,16 @@ export function HomeCategories() {
             gridColumnsDesktop={section.gridColumnsDesktop || 4}
             gridColumnsTablet={section.gridColumnsTablet || 2}
             gridColumnsMobile={section.gridColumnsMobile || 1}
+            mobileCarouselCustom={section.mobileCarouselCustom}
+            mobileLayoutType={section.mobileLayoutType}
+            mobileEnableCarousel={section.mobileEnableCarousel}
+            mobileCarouselLoopMode={section.mobileCarouselLoopMode}
+            mobileCarouselInterval={section.mobileCarouselInterval}
+            mobileCarouselSpeed={section.mobileCarouselSpeed}
+            mobileCarouselPauseOnHover={section.mobileCarouselPauseOnHover}
+            mobileCarouselShowArrows={section.mobileCarouselShowArrows}
+            mobileCarouselArrowPosition={section.mobileCarouselArrowPosition}
+            mobileCarouselShowDots={section.mobileCarouselShowDots}
             cardStyle={section.cardStyle || "classic-default"}
             cardSizeDesktop={section.cardSizeDesktop}
             cardSizeMobile={section.cardSizeMobile}

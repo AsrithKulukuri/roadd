@@ -79,6 +79,16 @@ interface MixedCarouselRowProps {
   gridColumnsDesktop?: number;
   gridColumnsTablet?: number;
   gridColumnsMobile?: number;
+  mobileCarouselCustom?: boolean;
+  mobileLayoutType?: "carousel" | "grid" | "featured-split";
+  mobileEnableCarousel?: boolean;
+  mobileCarouselLoopMode?: CarouselLoopMode;
+  mobileCarouselInterval?: number;
+  mobileCarouselSpeed?: CarouselTransitionSpeed;
+  mobileCarouselPauseOnHover?: boolean;
+  mobileCarouselShowArrows?: boolean;
+  mobileCarouselArrowPosition?: CarouselArrowPosition;
+  mobileCarouselShowDots?: boolean;
   hideHeader?: boolean;
   cardVariant?: "default" | "compact" | "horizontal" | "category-style";
   cardStyle?: HomeCardStyleId;
@@ -263,6 +273,16 @@ export function MixedCarouselRow({
   gridColumnsDesktop = 4,
   gridColumnsTablet = 2,
   gridColumnsMobile = 1,
+  mobileCarouselCustom,
+  mobileLayoutType,
+  mobileEnableCarousel,
+  mobileCarouselLoopMode,
+  mobileCarouselInterval,
+  mobileCarouselSpeed,
+  mobileCarouselPauseOnHover,
+  mobileCarouselShowArrows,
+  mobileCarouselArrowPosition,
+  mobileCarouselShowDots,
   hideHeader = false,
   cardVariant = "default",
   cardStyle,
@@ -301,14 +321,35 @@ export function MixedCarouselRow({
   const interactionPauseUntil = useRef(0);
   const isInitialized = useRef(false);
 
+  // Responsive device detection for mobile-specific carousel overrides
+  const [isMobileScreen, setIsMobileScreen] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 639px)");
+    setIsMobileScreen(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobileScreen(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+
+  const isMobileActive = Boolean(mobileCarouselCustom) && isMobileScreen;
+
+  const currentLayoutType = isMobileActive && mobileLayoutType ? mobileLayoutType : layoutType;
+  const currentLoopMode = isMobileActive && mobileCarouselLoopMode !== undefined ? mobileCarouselLoopMode : carouselLoopMode;
+  const currentEnableCarousel = isMobileActive && mobileEnableCarousel !== undefined ? mobileEnableCarousel : enableCarousel;
+  const currentInterval = isMobileActive && mobileCarouselInterval ? mobileCarouselInterval : carouselInterval;
+  const currentPauseOnHover = isMobileActive && mobileCarouselPauseOnHover !== undefined ? mobileCarouselPauseOnHover : carouselPauseOnHover;
+  const currentShowArrows = isMobileActive && mobileCarouselShowArrows !== undefined ? mobileCarouselShowArrows : carouselShowArrows;
+  const currentArrowPosition = isMobileActive && mobileCarouselArrowPosition ? mobileCarouselArrowPosition : carouselArrowPosition;
+  const currentShowDots = isMobileActive && mobileCarouselShowDots !== undefined ? mobileCarouselShowDots : carouselShowDots;
+
   // Determine carousel vs static grid behavior
-  const isGrid = layoutType === "grid" || carouselLoopMode === "static" || enableCarousel === false;
-  const isInfinite = !isGrid && carouselLoopMode !== "normal";
+  const isGrid = currentLayoutType === "grid" || currentLoopMode === "static" || currentEnableCarousel === false;
+  const isInfinite = !isGrid && currentLoopMode !== "normal";
   const hasMultiple = items.length > 1;
   const loopCopies = isInfinite && hasMultiple ? [0, 1, 2] : [0];
-  const showArrows = carouselShowArrows !== false && hasMultiple && !isGrid;
-  const arrowPosition = carouselArrowPosition || "header";
-  const pauseOnHover = carouselPauseOnHover !== false;
+  const showArrows = currentShowArrows !== false && hasMultiple && !isGrid;
+  const arrowPosition = currentArrowPosition || "header";
+  const pauseOnHover = currentPauseOnHover !== false;
 
   const getScrollStep = () => {
     const container = scrollRef.current;
@@ -374,7 +415,7 @@ export function MixedCarouselRow({
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
 
-    const ms = Math.max(1.5, Math.min(30, carouselInterval || 4)) * 1000;
+    const ms = Math.max(1.5, Math.min(30, currentInterval || 4)) * 1000;
     const interval = setInterval(() => {
       const container = scrollRef.current;
       if (!container || Date.now() < interactionPauseUntil.current) return;
@@ -399,7 +440,7 @@ export function MixedCarouselRow({
     }, ms);
 
     return () => clearInterval(interval);
-  }, [isGrid, autoSlide, isHovered, items.length, hasMultiple, carouselInterval, isInfinite, pauseOnHover]);
+  }, [isGrid, autoSlide, isHovered, items.length, hasMultiple, currentInterval, isInfinite, pauseOnHover]);
 
   const scroll = (direction: "left" | "right") => {
     const container = scrollRef.current;
@@ -652,7 +693,7 @@ export function MixedCarouselRow({
             </div>
 
             {/* Optional Pagination Indicator Dots */}
-            {carouselShowDots && hasMultiple && (
+            {currentShowDots && hasMultiple && (
               <div className="flex items-center justify-center gap-1.5 pt-2">
                 {items.slice(0, 8).map((_, dotIdx) => (
                   <span

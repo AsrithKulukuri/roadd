@@ -288,6 +288,16 @@ export interface HomeSection {
   carouselShowArrows?: boolean;
   carouselArrowPosition?: "header" | "sides" | "hidden";
   carouselShowDots?: boolean;
+  mobileCarouselCustom?: boolean;
+  mobileLayoutType?: "carousel" | "grid" | "featured-split";
+  mobileEnableCarousel?: boolean;
+  mobileCarouselLoopMode?: "infinite" | "normal" | "static";
+  mobileCarouselInterval?: number;
+  mobileCarouselSpeed?: "fast" | "normal" | "smooth" | "cinematic";
+  mobileCarouselPauseOnHover?: boolean;
+  mobileCarouselShowArrows?: boolean;
+  mobileCarouselArrowPosition?: "header" | "sides" | "hidden";
+  mobileCarouselShowDots?: boolean;
   cardStyle?: HomeCardStyleId;
   cardSizeDesktop?: HomeCardSize; // Desktop card size: very-small | small | medium | big | very-big
   cardSizeMobile?: HomeCardSize;  // Mobile card size: very-small | small | medium | big | very-big
