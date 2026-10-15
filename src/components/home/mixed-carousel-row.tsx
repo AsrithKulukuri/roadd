@@ -17,6 +17,9 @@ import type {
   ImageArrangementConfig,
   CardElementId,
   ElementConfig,
+  CarouselLoopMode,
+  CarouselTransitionSpeed,
+  CarouselArrowPosition,
 } from "@/types/shelf-builder";
 import { borderConfigToStyles } from "@/lib/shelf-builder-styles";
 import { cn } from "@/lib/utils";
@@ -66,6 +69,16 @@ interface MixedCarouselRowProps {
   autoSlide?: boolean;
   enableCarousel?: boolean;
   carouselInterval?: number;
+  layoutType?: "carousel" | "grid" | "featured-split";
+  carouselLoopMode?: CarouselLoopMode;
+  carouselSpeed?: CarouselTransitionSpeed;
+  carouselPauseOnHover?: boolean;
+  carouselShowArrows?: boolean;
+  carouselArrowPosition?: CarouselArrowPosition;
+  carouselShowDots?: boolean;
+  gridColumnsDesktop?: number;
+  gridColumnsTablet?: number;
+  gridColumnsMobile?: number;
   hideHeader?: boolean;
   cardVariant?: "default" | "compact" | "horizontal" | "category-style";
   cardStyle?: HomeCardStyleId;
@@ -240,6 +253,16 @@ export function MixedCarouselRow({
   autoSlide = false,
   enableCarousel = true,
   carouselInterval = 4,
+  layoutType = "carousel",
+  carouselLoopMode,
+  carouselSpeed = "normal",
+  carouselPauseOnHover = true,
+  carouselShowArrows = true,
+  carouselArrowPosition = "header",
+  carouselShowDots = false,
+  gridColumnsDesktop = 4,
+  gridColumnsTablet = 2,
+  gridColumnsMobile = 1,
   hideHeader = false,
   cardVariant = "default",
   cardStyle,
@@ -278,9 +301,14 @@ export function MixedCarouselRow({
   const interactionPauseUntil = useRef(0);
   const isInitialized = useRef(false);
 
-  // If carousel is disabled, only show 1 set of items without infinite loop
+  // Determine carousel vs static grid behavior
+  const isGrid = layoutType === "grid" || carouselLoopMode === "static" || enableCarousel === false;
+  const isInfinite = !isGrid && carouselLoopMode !== "normal";
   const hasMultiple = items.length > 1;
-  const loopCopies = (enableCarousel && hasMultiple) ? [0, 1, 2] : [0];
+  const loopCopies = isInfinite && hasMultiple ? [0, 1, 2] : [0];
+  const showArrows = carouselShowArrows !== false && hasMultiple && !isGrid;
+  const arrowPosition = carouselArrowPosition || "header";
+  const pauseOnHover = carouselPauseOnHover !== false;
 
   const getScrollStep = () => {
     const container = scrollRef.current;
@@ -295,10 +323,10 @@ export function MixedCarouselRow({
     interactionPauseUntil.current = Date.now() + 5000;
   };
 
-  // Initialize scroll position to the middle copy (copy 1) so user can scroll left or right infinitely
+  // Initialize scroll position to the middle copy (copy 1) for infinite loop
   useEffect(() => {
     const container = scrollRef.current;
-    if (!container || !hasMultiple) return;
+    if (!container || !hasMultiple || !isInfinite) return;
 
     const timer = setTimeout(() => {
       const step = getScrollStep();
@@ -310,12 +338,12 @@ export function MixedCarouselRow({
     }, 60);
 
     return () => clearTimeout(timer);
-  }, [items.length, hasMultiple]);
+  }, [items.length, hasMultiple, isInfinite]);
 
-  // Debounced normalization for manual user scrolling / swipe
+  // Debounced normalization for manual user scrolling / swipe in infinite mode
   useEffect(() => {
     const container = scrollRef.current;
-    if (!container || !hasMultiple) return;
+    if (!container || !hasMultiple || !isInfinite) return;
 
     let timeout: NodeJS.Timeout;
     const handleScroll = () => {
@@ -337,16 +365,16 @@ export function MixedCarouselRow({
       clearTimeout(timeout);
       container.removeEventListener("scroll", handleScroll);
     };
-  }, [items.length, hasMultiple]);
+  }, [items.length, hasMultiple, isInfinite]);
 
-  // Infinite Auto-Slide
+  // Auto-Slide with configurable speed & pause on hover
   useEffect(() => {
-    if (!enableCarousel || !autoSlide || !hasMultiple || isHovered) return;
+    if (isGrid || !autoSlide || !hasMultiple || (pauseOnHover && isHovered)) return;
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
 
-    const ms = Math.max(2, Math.min(30, carouselInterval || 4)) * 1000;
+    const ms = Math.max(1.5, Math.min(30, carouselInterval || 4)) * 1000;
     const interval = setInterval(() => {
       const container = scrollRef.current;
       if (!container || Date.now() < interactionPauseUntil.current) return;
@@ -355,16 +383,23 @@ export function MixedCarouselRow({
       if (step <= 0) return;
 
       const setWidth = items.length * step;
-      // If approaching the end of the 2nd loop, seamlessly reset to middle copy
-      if (container.scrollLeft >= 2 * setWidth - 5) {
-        container.scrollLeft -= setWidth;
+      if (isInfinite) {
+        if (container.scrollLeft >= 2 * setWidth - 5) {
+          container.scrollLeft -= setWidth;
+        }
+        container.scrollBy({ left: step, behavior: "smooth" });
+      } else {
+        // Normal finite mode: if reached end, scroll back to start
+        if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
+          container.scrollTo({ left: 0, behavior: "smooth" });
+        } else {
+          container.scrollBy({ left: step, behavior: "smooth" });
+        }
       }
-
-      container.scrollBy({ left: step, behavior: "smooth" });
     }, ms);
 
     return () => clearInterval(interval);
-  }, [enableCarousel, autoSlide, isHovered, items.length, hasMultiple, carouselInterval]);
+  }, [isGrid, autoSlide, isHovered, items.length, hasMultiple, carouselInterval, isInfinite, pauseOnHover]);
 
   const scroll = (direction: "left" | "right") => {
     const container = scrollRef.current;
@@ -376,12 +411,12 @@ export function MixedCarouselRow({
     const setWidth = items.length * step;
 
     if (direction === "right") {
-      if (container.scrollLeft >= 2 * setWidth - 5) {
+      if (isInfinite && container.scrollLeft >= 2 * setWidth - 5) {
         container.scrollLeft -= setWidth;
       }
       container.scrollBy({ left: step, behavior: "smooth" });
     } else {
-      if (container.scrollLeft <= step) {
+      if (isInfinite && container.scrollLeft <= step) {
         container.scrollLeft += setWidth;
       }
       container.scrollBy({ left: -step, behavior: "smooth" });
@@ -420,8 +455,8 @@ export function MixedCarouselRow({
               )}
             </div>
 
-            {/* Desktop Navigation */}
-            {hasMultiple && (
+            {/* Header Arrow Navigation */}
+            {showArrows && arrowPosition === "header" && (
               <div className="hidden md:flex items-center gap-2">
                 <button
                   type="button"
@@ -444,7 +479,7 @@ export function MixedCarouselRow({
           </div>
         )}
 
-        {hideHeader && hasMultiple && (
+        {hideHeader && showArrows && arrowPosition === "header" && (
           <div className="flex justify-end gap-2 mb-4 hidden md:flex">
             <button
               type="button"
@@ -465,75 +500,170 @@ export function MixedCarouselRow({
           </div>
         )}
 
-        <div className="relative group">
-          <div 
-            ref={scrollRef}
-            onPointerDown={pauseAutoSlide}
-            onWheel={pauseAutoSlide}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+        {/* ───────────────────────────────────────────────────────────── */}
+        {/* PRESENTATION: GRID vs CAROUSEL */}
+        {/* ───────────────────────────────────────────────────────────── */}
+        {isGrid ? (
+          <div
             className={cn(
-              "flex overflow-x-auto snap-x snap-mandatory no-scrollbar",
-              cardStyle
-                ? "gap-3 sm:gap-5 md:gap-6 pb-4 sm:pb-6"
-                : cardVariant === "compact"
-                ? "gap-2.5 sm:gap-4 md:gap-5 pb-1 sm:pb-3"
-                : "gap-4 sm:gap-6 pb-4 sm:pb-6"
+              "grid gap-4 sm:gap-6",
+              gridColumnsDesktop === 2 ? "lg:grid-cols-2" :
+              gridColumnsDesktop === 3 ? "lg:grid-cols-3" :
+              gridColumnsDesktop === 5 ? "lg:grid-cols-5" :
+              "lg:grid-cols-4",
+              gridColumnsTablet === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2",
+              gridColumnsMobile === 2 ? "grid-cols-2" : "grid-cols-1"
             )}
           >
-            {loopCopies.map((loopIndex) =>
-              items.map((item, itemIndex) => (
-                <div 
-                  key={`${item.id}-loop-${loopIndex}-${itemIndex}`} 
-                  className={cn(
-                    "shrink-0 snap-start",
-                    getResponsiveShelfCardWidthClass(cardStyle, cardSizeDesktop, cardSizeMobile, cardVariant)
-                  )}
+            {items.map((item, itemIndex) => (
+              <div key={`${item.id}-${itemIndex}`} className="w-full">
+                {cardStyle ? (
+                  <ShelfCard
+                    item={item}
+                    cardStyle={cardStyle}
+                    cardSizeDesktop={cardSizeDesktop}
+                    cardSizeMobile={cardSizeMobile}
+                    index={itemIndex}
+                    cardBgColor={item.cardBgColor || cardBgColor}
+                    cardTextColor={item.cardTextColor || cardTextColor}
+                    cardAccentColor={item.cardAccentColor || cardAccentColor}
+                    cardBorder={item.cardBorder || cardBorder}
+                    imageArrangement={imageArrangement}
+                    elementOrder={elementOrder}
+                    elements={elements}
+                    customBadge={item.customBadge || customBadge}
+                    customHeadline={item.customHeadline || customHeadline}
+                    customTagline={item.customTagline || customTagline}
+                    customPrice={item.customPrice || customPrice}
+                    customLocation={item.customLocation || customLocation}
+                    customBhk={item.customBhk || customBhk}
+                    customArea={item.customArea || customArea}
+                    customDeveloper={item.customDeveloper || customDeveloper}
+                    customStatus={item.customStatus || customStatus}
+                    customCtaText={item.customCtaText || customCtaText}
+                    progressPercentage={item.progressPercentage}
+                  />
+                ) : item.itemType === 'property' ? (
+                  <PropertyCard
+                    property={item}
+                    index={itemIndex}
+                    variant={cardVariant}
+                  />
+                ) : (
+                  <ProjectCard
+                    project={item}
+                    index={itemIndex}
+                    variant={cardVariant}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="relative group">
+            {/* Floating Side Arrows */}
+            {showArrows && arrowPosition === "sides" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => scroll("left")}
+                  aria-label="Previous items"
+                  className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-slate-950/85 hover:bg-amber-500 hover:text-slate-950 text-white shadow-xl backdrop-blur-md border border-slate-700/80 flex items-center justify-center transition-all cursor-pointer opacity-90 hover:opacity-100 hover:scale-110 active:scale-95"
                 >
-                  {cardStyle ? (
-                    <ShelfCard
-                      item={item}
-                      cardStyle={cardStyle}
-                      cardSizeDesktop={cardSizeDesktop}
-                      cardSizeMobile={cardSizeMobile}
-                      index={itemIndex}
-                      cardBgColor={item.cardBgColor || cardBgColor}
-                      cardTextColor={item.cardTextColor || cardTextColor}
-                      cardAccentColor={item.cardAccentColor || cardAccentColor}
-                      cardBorder={item.cardBorder || cardBorder}
-                      imageArrangement={imageArrangement}
-                      elementOrder={elementOrder}
-                      elements={elements}
-                      customBadge={item.customBadge || customBadge}
-                      customHeadline={item.customHeadline || customHeadline}
-                      customTagline={item.customTagline || customTagline}
-                      customPrice={item.customPrice || customPrice}
-                      customLocation={item.customLocation || customLocation}
-                      customBhk={item.customBhk || customBhk}
-                      customArea={item.customArea || customArea}
-                      customDeveloper={item.customDeveloper || customDeveloper}
-                      customStatus={item.customStatus || customStatus}
-                      customCtaText={item.customCtaText || customCtaText}
-                      progressPercentage={item.progressPercentage}
-                    />
-                  ) : item.itemType === 'property' ? (
-                    <PropertyCard
-                      property={item}
-                      index={itemIndex}
-                      variant={cardVariant}
-                    />
-                  ) : (
-                    <ProjectCard
-                      project={item}
-                      index={itemIndex}
-                      variant={cardVariant}
-                    />
-                  )}
-                </div>
-              ))
+                  <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scroll("right")}
+                  aria-label="Next items"
+                  className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-slate-950/85 hover:bg-amber-500 hover:text-slate-950 text-white shadow-xl backdrop-blur-md border border-slate-700/80 flex items-center justify-center transition-all cursor-pointer opacity-90 hover:opacity-100 hover:scale-110 active:scale-95"
+                >
+                  <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+                </button>
+              </>
+            )}
+
+            <div 
+              ref={scrollRef}
+              onPointerDown={pauseAutoSlide}
+              onWheel={pauseAutoSlide}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              className={cn(
+                "flex overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth",
+                cardStyle
+                  ? "gap-3 sm:gap-5 md:gap-6 pb-4 sm:pb-6"
+                  : cardVariant === "compact"
+                  ? "gap-2.5 sm:gap-4 md:gap-5 pb-1 sm:pb-3"
+                  : "gap-4 sm:gap-6 pb-4 sm:pb-6"
+              )}
+            >
+              {loopCopies.map((loopIndex) =>
+                items.map((item, itemIndex) => (
+                  <div 
+                    key={`${item.id}-loop-${loopIndex}-${itemIndex}`} 
+                    className={cn(
+                      "shrink-0 snap-start",
+                      getResponsiveShelfCardWidthClass(cardStyle, cardSizeDesktop, cardSizeMobile, cardVariant)
+                    )}
+                  >
+                    {cardStyle ? (
+                      <ShelfCard
+                        item={item}
+                        cardStyle={cardStyle}
+                        cardSizeDesktop={cardSizeDesktop}
+                        cardSizeMobile={cardSizeMobile}
+                        index={itemIndex}
+                        cardBgColor={item.cardBgColor || cardBgColor}
+                        cardTextColor={item.cardTextColor || cardTextColor}
+                        cardAccentColor={item.cardAccentColor || cardAccentColor}
+                        cardBorder={item.cardBorder || cardBorder}
+                        imageArrangement={imageArrangement}
+                        elementOrder={elementOrder}
+                        elements={elements}
+                        customBadge={item.customBadge || customBadge}
+                        customHeadline={item.customHeadline || customHeadline}
+                        customTagline={item.customTagline || customTagline}
+                        customPrice={item.customPrice || customPrice}
+                        customLocation={item.customLocation || customLocation}
+                        customBhk={item.customBhk || customBhk}
+                        customArea={item.customArea || customArea}
+                        customDeveloper={item.customDeveloper || customDeveloper}
+                        customStatus={item.customStatus || customStatus}
+                        customCtaText={item.customCtaText || customCtaText}
+                        progressPercentage={item.progressPercentage}
+                      />
+                    ) : item.itemType === 'property' ? (
+                      <PropertyCard
+                        property={item}
+                        index={itemIndex}
+                        variant={cardVariant}
+                      />
+                    ) : (
+                      <ProjectCard
+                        project={item}
+                        index={itemIndex}
+                        variant={cardVariant}
+                      />
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Optional Pagination Indicator Dots */}
+            {carouselShowDots && hasMultiple && (
+              <div className="flex items-center justify-center gap-1.5 pt-2">
+                {items.slice(0, 8).map((_, dotIdx) => (
+                  <span
+                    key={dotIdx}
+                    className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700 transition-all hover:bg-amber-500"
+                  />
+                ))}
+              </div>
             )}
           </div>
-        </div>
+        )}
 
       </div>
     </section>

@@ -15,6 +15,9 @@ import type {
   ImageArrangementConfig,
   CardElementId,
   ElementConfig,
+  CarouselLoopMode,
+  CarouselTransitionSpeed,
+  CarouselArrowPosition,
 } from "@/types/shelf-builder";
 import { evaluateShelfFilters } from "@/lib/shelf-builder-defaults";
 
@@ -54,6 +57,16 @@ type RenderSection = {
   customCtaText?: string;
   enableCarousel?: boolean;
   carouselInterval?: number;
+  layoutType?: "carousel" | "grid" | "featured-split";
+  carouselLoopMode?: CarouselLoopMode;
+  carouselSpeed?: CarouselTransitionSpeed;
+  carouselPauseOnHover?: boolean;
+  carouselShowArrows?: boolean;
+  carouselArrowPosition?: CarouselArrowPosition;
+  carouselShowDots?: boolean;
+  gridColumnsDesktop?: number;
+  gridColumnsTablet?: number;
+  gridColumnsMobile?: number;
   items: MixedItem[];
 };
 
@@ -274,6 +287,16 @@ export function HomeCategories() {
           customCtaText: section.customCtaText,
           enableCarousel: section.enableCarousel !== false,
           carouselInterval: section.carouselInterval || 4,
+          layoutType: section.layoutType,
+          carouselLoopMode: section.carouselLoopMode,
+          carouselSpeed: section.carouselSpeed,
+          carouselPauseOnHover: section.carouselPauseOnHover,
+          carouselShowArrows: section.carouselShowArrows,
+          carouselArrowPosition: section.carouselArrowPosition,
+          carouselShowDots: section.carouselShowDots,
+          gridColumnsDesktop: section.gridColumnsDesktop,
+          gridColumnsTablet: section.gridColumnsTablet,
+          gridColumnsMobile: section.gridColumnsMobile,
           items: finalItems,
         };
       })
@@ -294,9 +317,19 @@ export function HomeCategories() {
             icon={section.icon}
             items={section.items}
             hideHeader={false}
-            autoSlide={section.enableCarousel !== false}
-            enableCarousel={section.enableCarousel !== false}
+            autoSlide={section.enableCarousel !== false && section.carouselLoopMode !== "static"}
+            enableCarousel={section.enableCarousel !== false && section.layoutType !== "grid"}
             carouselInterval={section.carouselInterval || 4}
+            layoutType={section.layoutType || (section.enableCarousel === false ? "grid" : "carousel")}
+            carouselLoopMode={section.carouselLoopMode || (section.enableCarousel === false ? "static" : "infinite")}
+            carouselSpeed={section.carouselSpeed || "normal"}
+            carouselPauseOnHover={section.carouselPauseOnHover !== false}
+            carouselShowArrows={section.carouselShowArrows !== false}
+            carouselArrowPosition={section.carouselArrowPosition || "header"}
+            carouselShowDots={Boolean(section.carouselShowDots)}
+            gridColumnsDesktop={section.gridColumnsDesktop || 4}
+            gridColumnsTablet={section.gridColumnsTablet || 2}
+            gridColumnsMobile={section.gridColumnsMobile || 1}
             cardStyle={section.cardStyle || "classic-default"}
             cardSizeDesktop={section.cardSizeDesktop}
             cardSizeMobile={section.cardSizeMobile}

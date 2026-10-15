@@ -225,12 +225,24 @@ export function ShelfManagerOverview({
                       {shelf.subtitle || `Style: ${shelf.cardStyle} • Source: ${shelf.contentSource}`}
                     </p>
 
-                    <div className="flex items-center gap-3 text-[10px] text-slate-500 mt-1">
+                    <div className="flex items-center gap-2 flex-wrap text-[10px] text-slate-500 mt-1">
                       <span>{shelf.items?.length || 0} manual listings</span>
                       <span>•</span>
                       <span>Source: {shelf.contentSource}</span>
                       <span>•</span>
-                      <span>Layout: {shelf.layoutType || "carousel"}</span>
+                      <span className="text-amber-400 font-medium">
+                        {shelf.carouselLoopMode === "static" || shelf.layoutType === "grid"
+                          ? `Static Grid (${shelf.gridColumnsDesktop || 4} cols)`
+                          : `${shelf.carouselLoopMode === "normal" ? "Normal Slider" : "Infinite Ribbon"} (${shelf.carouselInterval || 4}s)`}
+                      </span>
+                      {shelf.carouselShowArrows !== false && shelf.carouselLoopMode !== "static" && shelf.layoutType !== "grid" && (
+                        <>
+                          <span>•</span>
+                          <span className="text-slate-400">
+                            arrows: {shelf.carouselArrowPosition || "header"}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

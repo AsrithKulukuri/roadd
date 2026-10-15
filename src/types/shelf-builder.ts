@@ -145,6 +145,20 @@ export interface AutoFilterConfig {
 export type ShelfType = "projects" | "properties" | "rentals" | "commercial" | "custom";
 export type ShelfStatus = "published" | "draft" | "hidden";
 export type ShelfLayoutType = "carousel" | "grid" | "featured-split";
+export type CarouselLoopMode = "infinite" | "normal" | "static";
+export type CarouselTransitionSpeed = "fast" | "normal" | "smooth" | "cinematic";
+export type CarouselArrowPosition = "header" | "sides" | "hidden";
+
+export interface CarouselConfig {
+  mode: CarouselLoopMode;
+  autoplay: boolean;
+  interval: number;
+  speed: CarouselTransitionSpeed;
+  pauseOnHover: boolean;
+  showArrows: boolean;
+  arrowPosition: CarouselArrowPosition;
+  showDots?: boolean;
+}
 
 export interface ShelfListingItem {
   id: string;
@@ -212,6 +226,15 @@ export interface ShelfDefinition {
   cardSizeMobile?: HomeCardSize;
   enableCarousel?: boolean;
   carouselInterval?: number;
+
+  // Carousel & Motion Configuration
+  carouselConfig?: CarouselConfig;
+  carouselLoopMode?: CarouselLoopMode; // "infinite" | "normal" | "static"
+  carouselSpeed?: CarouselTransitionSpeed; // "fast" | "normal" | "smooth" | "cinematic"
+  carouselPauseOnHover?: boolean;
+  carouselShowArrows?: boolean;
+  carouselArrowPosition?: CarouselArrowPosition; // "header" | "sides" | "hidden"
+  carouselShowDots?: boolean;
 
   // Styling & Borders
   cardBgColor?: string;

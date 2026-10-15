@@ -282,6 +282,12 @@ export interface HomeSection {
   items: HomeSectionItem[];
   enableCarousel?: boolean;
   carouselInterval?: number;
+  carouselLoopMode?: "infinite" | "normal" | "static";
+  carouselSpeed?: "fast" | "normal" | "smooth" | "cinematic";
+  carouselPauseOnHover?: boolean;
+  carouselShowArrows?: boolean;
+  carouselArrowPosition?: "header" | "sides" | "hidden";
+  carouselShowDots?: boolean;
   cardStyle?: HomeCardStyleId;
   cardSizeDesktop?: HomeCardSize; // Desktop card size: very-small | small | medium | big | very-big
   cardSizeMobile?: HomeCardSize;  // Mobile card size: very-small | small | medium | big | very-big
