@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MessageSquare, Lock, UserCheck } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
@@ -17,6 +18,7 @@ interface WhatsAppAuthModalProps {
 }
 
 export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthModalProps) {
+  const pathname = usePathname();
   const {
     phone,
     isSending,
@@ -39,7 +41,7 @@ export function WhatsAppAuthModal({ isOpen, onClose, onSuccess }: WhatsAppAuthMo
     }
   }, []);
 
-  if (!isOpen) return null;
+  if (!isOpen || pathname?.startsWith("/admin")) return null;
 
   const handlePhoneSubmit = async (targetPhone: string) => {
     const ok = await sendOTP(targetPhone);
