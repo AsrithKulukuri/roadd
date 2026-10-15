@@ -1,72 +1,130 @@
 import { NextResponse } from "next/server";
-import { parseGoogleMapsUrl } from "@/lib/utils";
+import { parseGoogleMapsUrl, isValidCoordinateRange } from "@/lib/utils";
 
-const ALLOWED_MAPS_HOSTS = new Set([
-  "maps.app.goo.gl",
-  "goo.gl",
-  "google.com",
-  "www.google.com",
-  "maps.google.com",
-  "google.co.in",
-  "www.google.co.in",
-  "maps.google.co.in",
-]);
 const MAX_REDIRECTS = 5;
-const MAX_MAPS_RESPONSE_BYTES = 2 * 1024 * 1024;
+const MAX_MAPS_RESPONSE_BYTES = 2 * 1024 * 1024; // 2MB limit
 
-function isValidFetchedCoords(lat: number, lng: number): boolean {
-  if (isNaN(lat) || isNaN(lng)) return false;
-  // Ignore US default center 39.0268, -77.8443
-  if (Math.abs(lat - 39.0268) < 0.1 && Math.abs(lng - (-77.8443)) < 0.1) return false;
-  return true;
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: CORS_HEADERS,
+  });
 }
 
-function isAllowedMapsUrl(url: URL): boolean {
-  return url.protocol === "https:" && ALLOWED_MAPS_HOSTS.has(url.hostname.toLowerCase());
+/**
+ * SSRF Protection: Checks if hostname resolves to private, loopback, link-local,
+ * cloud metadata (e.g. AWS 169.254.169.254), or local network addresses.
+ */
+function isPrivateOrLocalIp(hostname: string): boolean {
+  const host = hostname.toLowerCase().trim();
+
+  // Localhost and internal domains
+  if (
+    host === "localhost" ||
+    host.endsWith(".local") ||
+    host.endsWith(".internal") ||
+    host.endsWith(".localhost")
+  ) {
+    return true;
+  }
+
+  // Reject IPv6 / bracketed addresses
+  if (host.startsWith("[") || host.includes(":")) {
+    return true;
+  }
+
+  // Reject IPv4 addresses and numeric host encodings (Google Maps will never be an IP address)
+  const ipv4Pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+  const match = host.match(ipv4Pattern);
+  if (match) {
+    const [, a, b, c, d] = match.map(Number);
+    // Range sanity check
+    if (a > 255 || b > 255 || c > 255 || d > 255) return true;
+    // Private & loopback ranges:
+    if (a === 0 || a === 10 || a === 127) return true; // 0.0.0.0/8, 10.0.0.0/8, 127.0.0.0/8
+    if (a === 169 && b === 254) return true; // 169.254.0.0/16 Link-local / AWS / GCP metadata
+    if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
+    if (a === 192 && b === 168) return true; // 192.168.0.0/16
+    if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT 100.64.0.0/10
+    if (a >= 224) return true; // Multicast / reserved
+    return true; // Block ALL IP literals
+  }
+
+  // Decimal / hex IP representations (e.g. 2130706433 or 0x7f000001)
+  if (/^(?:0x[0-9a-f]+|\d+)$/i.test(host)) {
+    return true;
+  }
+
+  return false;
 }
 
-function parseAllowedMapsUrl(value: string): URL | null {
+/**
+ * Validates that the hostname is an authentic Google Maps domain.
+ * Accepts:
+ * - maps.app.goo.gl, goo.gl, g.co
+ * - google.com, maps.google.com, www.google.com, consent.google.com
+ * - google.co.in, maps.google.co.in, www.google.co.in, and international Google ccTLDs
+ */
+function isAllowedGoogleHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().trim();
+
+  if (isPrivateOrLocalIp(host)) {
+    return false;
+  }
+
+  // Shortlink domains
+  if (host === "maps.app.goo.gl" || host === "goo.gl" || host === "g.co") {
+    return true;
+  }
+
+  // Google domains (e.g. google.com, maps.google.com, consent.google.com, google.co.in, maps.google.co.uk)
+  // Matches: [subdomain.]google.[tld]
+  const googleDomainRegex =
+    /^(?:[a-z0-9-]+\.)*google\.(?:com|co\.[a-z]{2}|com\.[a-z]{2}|org\.[a-z]{2}|[a-z]{2,})$/i;
+  return googleDomainRegex.test(host);
+}
+
+/**
+ * Validates protocol, port, credentials, and host for SSRF safety.
+ */
+function validateSafeGoogleUrl(url: URL): boolean {
+  if (url.protocol !== "https:") return false;
+  if (url.port !== "" && url.port !== "443") return false;
+  if (url.username || url.password) return false;
+  return isAllowedGoogleHost(url.hostname);
+}
+
+/**
+ * Safely parses and normalizes user input into a validated Google URL.
+ */
+function parseInitialGoogleUrl(value: string): URL | null {
   try {
-    const url = new URL(value);
-    return isAllowedMapsUrl(url) ? url : null;
+    let clean = value.trim();
+    if (!clean) return null;
+
+    // Auto-prefix protocol if missing
+    if (!/^https?:\/\//i.test(clean)) {
+      clean = "https://" + clean;
+    } else if (clean.startsWith("http://")) {
+      clean = "https://" + clean.slice(7);
+    }
+
+    const url = new URL(clean);
+    return validateSafeGoogleUrl(url) ? url : null;
   } catch {
     return null;
   }
 }
 
-async function fetchAllowedMapsUrl(initialUrl: URL): Promise<{ response: Response; finalUrl: string }> {
-  let currentUrl = initialUrl;
-
-  for (let redirectCount = 0; redirectCount <= MAX_REDIRECTS; redirectCount++) {
-    if (!isAllowedMapsUrl(currentUrl)) {
-      throw new Error("Only Google Maps links can be resolved.");
-    }
-
-    const response = await fetch(currentUrl, {
-      method: "GET",
-      redirect: "manual",
-      signal: AbortSignal.timeout(8000),
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      },
-    });
-
-    if (![301, 302, 303, 307, 308].includes(response.status)) {
-      return { response, finalUrl: currentUrl.toString() };
-    }
-
-    const location = response.headers.get("location");
-    if (!location) {
-      return { response, finalUrl: currentUrl.toString() };
-    }
-
-    currentUrl = new URL(location, currentUrl);
-  }
-
-  throw new Error("Too many Google Maps redirects.");
-}
-
+/**
+ * Safely reads the text of an HTTP response with a strict byte limit.
+ */
 async function readTextWithLimit(response: Response): Promise<string> {
   const contentLength = Number(response.headers.get("content-length") || "0");
   if (contentLength > MAX_MAPS_RESPONSE_BYTES) {
@@ -94,198 +152,365 @@ async function readTextWithLimit(response: Response): Promise<string> {
   return text + decoder.decode();
 }
 
+/**
+ * Extracts coordinates from an HTML response body (fallback).
+ */
+function extractCoordsFromHtml(html: string): { latitude: number; longitude: number } | null {
+  // 1. !3dLAT!4dLNG
+  const lat3d = html.match(/(?:!|%21)3d(-?\d+(?:\.\d+)?)/);
+  const lng4d = html.match(/(?:!|%21)4d(-?\d+(?:\.\d+)?)/);
+  if (lat3d && lng4d) {
+    const lat = parseFloat(lat3d[1]);
+    const lng = parseFloat(lng4d[1]);
+    if (isValidCoordinateRange(lat, lng)) return { latitude: lat, longitude: lng };
+  }
+
+  // 2. Static map meta tag center=LAT,LNG
+  const staticMapMatch = html.match(
+    /staticmap\?center=(-?\d+(?:\.\d+)?)(?:%2C|,)(-?\d+(?:\.\d+)?)/i
+  );
+  if (staticMapMatch) {
+    const lat = parseFloat(staticMapMatch[1]);
+    const lng = parseFloat(staticMapMatch[2]);
+    if (isValidCoordinateRange(lat, lng)) return { latitude: lat, longitude: lng };
+  }
+
+  // 3. og:image or twitter:image with @LAT,LNG or ll=LAT,LNG
+  const imageMatch = html.match(
+    /property="og:image"\s+content="[^"]*?(?:@|center=|ll=)(-?\d+(?:\.\d+)?)(?:%2C|,)(-?\d+(?:\.\d+)?)/i
+  );
+  if (imageMatch) {
+    const lat = parseFloat(imageMatch[1]);
+    const lng = parseFloat(imageMatch[2]);
+    if (isValidCoordinateRange(lat, lng)) return { latitude: lat, longitude: lng };
+  }
+
+  return null;
+}
+
+/**
+ * Extracts place name from URL path or query params.
+ */
+function extractPlaceNameFromUrl(urlStr: string): string {
+  try {
+    const decoded = decodeURIComponent(urlStr);
+    if (decoded.includes("/place/")) {
+      const match = decoded.match(/\/place\/([^\/@?#]+)/);
+      if (match && match[1]) {
+        // If it's just raw coordinates in the path, ignore as place name
+        if (!/^-?\d+(?:\.\d+)?[,\s]+-?\d+(?:\.\d+)?$/.test(match[1])) {
+          return match[1].replace(/\+/g, " ").trim();
+        }
+      }
+    }
+    const qMatch = decoded.match(/[?&]q=([^&#]+)/);
+    if (qMatch && qMatch[1]) {
+      if (!/^-?\d+(?:\.\d+)?[,\s]+-?\d+(?:\.\d+)?$/.test(qMatch[1])) {
+        return qMatch[1].replace(/\+/g, " ").trim();
+      }
+    }
+  } catch {}
+  return "";
+}
+
+/**
+ * Reverse geocodes coordinates to address details using OpenStreetMap Nominatim.
+ */
+async function reverseGeocode(
+  lat: number,
+  lng: number
+): Promise<{
+  city: string;
+  locality: string;
+  state: string;
+  pincode: string;
+  address: string;
+} | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+      {
+        signal: AbortSignal.timeout(4000),
+        headers: {
+          "Accept-Language": "en",
+          "User-Agent": "ROADFacingApp/1.0 (care@roadfacing.com)",
+        },
+      }
+    );
+
+    if (res.ok) {
+      const data = await res.json();
+      const addr = data.address || {};
+      const city =
+        addr.city || addr.town || addr.village || addr.county || addr.suburb || "";
+      const locality =
+        addr.suburb ||
+        addr.neighbourhood ||
+        addr.residential ||
+        addr.quarter ||
+        addr.town ||
+        addr.village ||
+        city ||
+        "";
+
+      return {
+        city,
+        locality,
+        state: addr.state || "",
+        pincode: addr.postcode || "",
+        address: data.display_name || "",
+      };
+    }
+  } catch {}
+
+  // Fallback to Photon reverse API
+  try {
+    const photonRes = await fetch(
+      `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}`,
+      {
+        signal: AbortSignal.timeout(3000),
+      }
+    );
+    if (photonRes.ok) {
+      const data = await photonRes.json();
+      if (data.features && data.features[0]) {
+        const props = data.features[0].properties || {};
+        const city = props.city || props.county || props.district || props.state || "";
+        const locality = props.locality || props.name || props.street || props.suburb || city;
+        const formatted = [props.name, props.street, props.locality || props.city, props.state, props.postcode]
+          .filter(Boolean)
+          .join(", ");
+        return {
+          city,
+          locality,
+          state: props.state || "",
+          pincode: props.postcode || "",
+          address: formatted || "",
+        };
+      }
+    }
+  } catch {}
+
+  return null;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const targetUrl = searchParams.get("url");
 
   if (!targetUrl || typeof targetUrl !== "string") {
-    return NextResponse.json({ error: "Missing url parameter" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing url parameter" },
+      { status: 400, headers: CORS_HEADERS }
+    );
   }
 
   const trimmed = targetUrl.trim();
 
-  // 1. Direct synchronous pattern check for raw coordinates or @lat,lng in URL
+  // 1. Direct synchronous check for raw coordinates or @lat,lng in the input string
   const directMatch = parseGoogleMapsUrl(trimmed);
-  if (directMatch && isValidFetchedCoords(directMatch.latitude, directMatch.longitude)) {
-    return NextResponse.json({ success: true, ...directMatch, resolvedUrl: trimmed });
-  }
-
-  const allowedTargetUrl = parseAllowedMapsUrl(trimmed);
-  if (!allowedTargetUrl) {
+  if (directMatch && isValidCoordinateRange(directMatch.latitude, directMatch.longitude)) {
+    const geo = await reverseGeocode(directMatch.latitude, directMatch.longitude);
     return NextResponse.json(
-      { error: "Only HTTPS Google Maps links can be resolved." },
-      { status: 400 }
+      {
+        success: true,
+        latitude: directMatch.latitude,
+        longitude: directMatch.longitude,
+        city: geo?.city || "",
+        locality: geo?.locality || "",
+        state: geo?.state || "",
+        pincode: geo?.pincode || "",
+        address: geo?.address || "",
+        resolvedUrl: trimmed,
+      },
+      { headers: CORS_HEADERS }
     );
   }
 
-  // 2. Resolve shortened Google Maps URL redirect (e.g. maps.app.goo.gl / goo.gl)
+  // 2. Validate URL format and SSRF guard
+  const allowedInitialUrl = parseInitialGoogleUrl(trimmed);
+  if (!allowedInitialUrl) {
+    return NextResponse.json(
+      {
+        error:
+          "Only valid Google Maps links (e.g. maps.app.goo.gl, maps.google.com, google.com/maps) can be resolved.",
+      },
+      { status: 400, headers: CORS_HEADERS }
+    );
+  }
+
   try {
-    const { response, finalUrl } = await fetchAllowedMapsUrl(allowedTargetUrl);
-    let coords = parseGoogleMapsUrl(finalUrl);
-    if (coords && !isValidFetchedCoords(coords.latitude, coords.longitude)) {
-      coords = null;
-    }
+    let currentUrl = allowedInitialUrl;
+    let coords: { latitude: number; longitude: number } | null = null;
+    let finalUrl = currentUrl.toString();
+    let placeAddress = extractPlaceNameFromUrl(finalUrl);
 
-    let placeAddress = "";
-
-    // 3. Extract place name / address from URL path (e.g. /place/Dr+no:.../ or /maps/search/...)
-    if (finalUrl.includes("/place/")) {
-      const placeMatch = finalUrl.match(/\/place\/([^\/]+)/);
-      if (placeMatch && placeMatch[1]) {
-        placeAddress = decodeURIComponent(placeMatch[1].replace(/\+/g, " "));
+    // 3. Follow redirects with strict SSRF checking & early coordinate extraction
+    for (let redirectCount = 0; redirectCount <= MAX_REDIRECTS; redirectCount++) {
+      if (!validateSafeGoogleUrl(currentUrl)) {
+        return NextResponse.json(
+          { error: "Redirected to an unauthorized or invalid destination." },
+          { status: 400, headers: CORS_HEADERS }
+        );
       }
-    } else if (finalUrl.includes("q=")) {
-      const qMatch = finalUrl.match(/q=([^&]+)/);
-      if (qMatch && qMatch[1]) {
-        placeAddress = decodeURIComponent(qMatch[1].replace(/\+/g, " "));
-      }
-    }
 
-    // 4. Geocode extracted placeAddress using Photon API (fuzzy locality & street geocoder)
-    if (placeAddress) {
-      const parts = placeAddress.split(",").map((s) => s.trim()).filter(Boolean);
-      
-      const searchQueries: string[] = [];
-      if (parts.length >= 3) {
-        searchQueries.push(parts.slice(2).join(" "));
-      }
-      if (parts.length >= 2) {
-        searchQueries.push(parts.slice(-3).join(" "));
-      }
-      searchQueries.push(placeAddress);
-
-      for (const q of searchQueries) {
-        try {
-          const photonRes = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}`);
-          if (photonRes.ok) {
-            const photonData = await photonRes.json();
-            if (photonData.features && photonData.features[0]) {
-              const feat = photonData.features[0];
-              const lng = feat.geometry.coordinates[0];
-              const lat = feat.geometry.coordinates[1];
-              const props = feat.properties || {};
-
-              if (isValidFetchedCoords(lat, lng)) {
-                const cityVal = props.city || props.county || props.district || props.state || "";
-                const localityVal = props.locality || props.name || props.street || props.suburb || cityVal;
-                const formattedAddr = [props.name, props.street, props.locality || props.city, props.state, props.postcode]
-                  .filter(Boolean)
-                  .join(", ");
-
-                return NextResponse.json({
-                  success: true,
-                  latitude: lat,
-                  longitude: lng,
-                  city: cityVal,
-                  locality: localityVal,
-                  state: props.state || "Andhra Pradesh",
-                  pincode: props.postcode || "",
-                  address: formattedAddr || placeAddress,
-                  resolvedUrl: finalUrl,
-                });
-              }
-            }
+      // If Google redirected to consent wall, extract destination from 'continue' param
+      if (currentUrl.hostname.toLowerCase().startsWith("consent.google.")) {
+        const continueTarget = currentUrl.searchParams.get("continue");
+        if (continueTarget) {
+          const continueCoords = parseGoogleMapsUrl(continueTarget);
+          if (
+            continueCoords &&
+            isValidCoordinateRange(continueCoords.latitude, continueCoords.longitude)
+          ) {
+            coords = continueCoords;
+            finalUrl = continueTarget;
+            placeAddress = placeAddress || extractPlaceNameFromUrl(continueTarget);
+            break;
           }
-        } catch (e) {}
-      }
-
-      // Fallback to Nominatim if Photon yields no match
-      for (const q of searchQueries) {
-        try {
-          const nomRes = await fetch(
-            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1`,
-            {
-              headers: {
-                "User-Agent": "ROADFacingApp/1.0 (care@roadfacing.com)",
-                "Accept-Language": "en",
-              },
-            }
-          );
-          if (nomRes.ok) {
-            const nomData = await nomRes.json();
-            if (nomData && nomData[0]) {
-              const item = nomData[0];
-              const lat = parseFloat(item.lat);
-              const lng = parseFloat(item.lon);
-              if (isValidFetchedCoords(lat, lng)) {
-                const addr = item.address || {};
-                const cityVal = addr.city || addr.town || addr.village || addr.county || addr.suburb || "";
-                const localityVal = addr.suburb || addr.neighbourhood || addr.residential || addr.quarter || addr.town || addr.village || cityVal || "";
-                
-                return NextResponse.json({
-                  success: true,
-                  latitude: lat,
-                  longitude: lng,
-                  city: cityVal,
-                  locality: localityVal,
-                  state: addr.state || "",
-                  pincode: addr.postcode || "",
-                  address: item.display_name || placeAddress,
-                  resolvedUrl: finalUrl,
-                });
-              }
-            }
-          }
-        } catch (e) {}
-      }
-    }
-
-    // 5. Final Fallback: Parse Google Maps HTML body ONLY for explicit pin coordinates (!3dlat!4dlng)
-    if (!coords) {
-      const htmlText = await readTextWithLimit(response);
-      const dMatch = htmlText.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
-      if (dMatch) {
-        const lat = parseFloat(dMatch[1]);
-        const lng = parseFloat(dMatch[2]);
-        if (isValidFetchedCoords(lat, lng)) {
-          coords = { latitude: lat, longitude: lng };
         }
       }
+
+      const response = await fetch(currentUrl.toString(), {
+        method: "GET",
+        redirect: "manual",
+        signal: AbortSignal.timeout(6000),
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+          Cookie: "CONSENT=YES+; SOCS=CAESHAgBEhJnd3NfMjAyNDA2MDktMF9SQzIaAmVuIAEaBgiA_LuuBg",
+        },
+      });
+
+      // Handle Redirects
+      if ([301, 302, 303, 307, 308].includes(response.status)) {
+        const location = response.headers.get("location");
+        if (!location) break;
+
+        const nextUrl = new URL(location, currentUrl);
+        if (!validateSafeGoogleUrl(nextUrl)) {
+          return NextResponse.json(
+            { error: "Redirected to an unauthorized or invalid destination." },
+            { status: 400, headers: CORS_HEADERS }
+          );
+        }
+
+        finalUrl = nextUrl.toString();
+        placeAddress = placeAddress || extractPlaceNameFromUrl(finalUrl);
+
+        // Check if redirect location header already contains coordinates
+        const locCoords = parseGoogleMapsUrl(finalUrl);
+        if (locCoords && isValidCoordinateRange(locCoords.latitude, locCoords.longitude)) {
+          coords = locCoords;
+          break; // Coordinates resolved early from redirect header!
+        }
+
+        currentUrl = nextUrl;
+      } else {
+        // Reached destination page (200 OK)
+        finalUrl = currentUrl.toString();
+        placeAddress = placeAddress || extractPlaceNameFromUrl(finalUrl);
+
+        coords = parseGoogleMapsUrl(finalUrl);
+        if (!coords || !isValidCoordinateRange(coords.latitude, coords.longitude)) {
+          // Read HTML body fallback
+          const html = await readTextWithLimit(response);
+          coords = extractCoordsFromHtml(html);
+        }
+        break;
+      }
     }
 
-    if (coords) {
-      // Reverse geocode extracted coords to populate city, state, pincode, locality
+    // 4. If coordinates resolved, reverse geocode and return
+    if (coords && isValidCoordinateRange(coords.latitude, coords.longitude)) {
+      const geo = await reverseGeocode(coords.latitude, coords.longitude);
+      return NextResponse.json(
+        {
+          success: true,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          city: geo?.city || "",
+          locality: geo?.locality || "",
+          state: geo?.state || "Andhra Pradesh",
+          pincode: geo?.pincode || "",
+          address: geo?.address || placeAddress,
+          resolvedUrl: finalUrl,
+        },
+        { headers: CORS_HEADERS }
+      );
+    }
+
+    // 5. Fallback: If place address was extracted but no coordinates found in link, geocode place address
+    if (placeAddress) {
       try {
-        const revRes = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.latitude}&lon=${coords.longitude}`,
+        const nomRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+            placeAddress
+          )}&format=json&addressdetails=1`,
           {
+            signal: AbortSignal.timeout(4000),
             headers: {
-              "Accept-Language": "en",
               "User-Agent": "ROADFacingApp/1.0 (care@roadfacing.com)",
+              "Accept-Language": "en",
             },
           }
         );
-        if (revRes.ok) {
-          const revData = await revRes.json();
-          const addr = revData.address || {};
-          const cityVal = addr.city || addr.town || addr.village || addr.county || addr.suburb || "";
-          const localityVal = addr.suburb || addr.neighbourhood || addr.residential || addr.quarter || addr.town || addr.village || cityVal || "";
-
-          return NextResponse.json({
-            success: true,
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-            city: cityVal,
-            locality: localityVal,
-            state: addr.state || "",
-            pincode: addr.postcode || "",
-            address: revData.display_name || "",
-            resolvedUrl: finalUrl,
-          });
+        if (nomRes.ok) {
+          const items = await nomRes.json();
+          if (items && items[0]) {
+            const lat = parseFloat(items[0].lat);
+            const lng = parseFloat(items[0].lon);
+            if (isValidCoordinateRange(lat, lng)) {
+              const addr = items[0].address || {};
+              const city =
+                addr.city || addr.town || addr.village || addr.county || addr.suburb || "";
+              const locality =
+                addr.suburb ||
+                addr.neighbourhood ||
+                addr.residential ||
+                addr.quarter ||
+                city ||
+                "";
+              return NextResponse.json(
+                {
+                  success: true,
+                  latitude: lat,
+                  longitude: lng,
+                  city,
+                  locality,
+                  state: addr.state || "",
+                  pincode: addr.postcode || "",
+                  address: items[0].display_name || placeAddress,
+                  resolvedUrl: finalUrl,
+                },
+                { headers: CORS_HEADERS }
+              );
+            }
+          }
         }
-      } catch (e) {}
-
-      return NextResponse.json({ success: true, ...coords, resolvedUrl: finalUrl });
+      } catch {}
     }
 
     return NextResponse.json(
-      { error: "Could not extract location from link" },
-      { status: 422 }
+      {
+        error:
+          "Could not extract coordinates from the provided Google Maps link. Please verify the link has a selected pin or location.",
+      },
+      { status: 422, headers: CORS_HEADERS }
     );
   } catch (err: any) {
+    if (err.name === "TimeoutError" || err.message?.includes("timeout")) {
+      return NextResponse.json(
+        { error: "Google Maps request timed out. Please try again." },
+        { status: 504, headers: CORS_HEADERS }
+      );
+    }
     return NextResponse.json(
       { error: err.message || "Failed to resolve Google Maps link" },
-      { status: 500 }
+      { status: 500, headers: CORS_HEADERS }
     );
   }
 }
