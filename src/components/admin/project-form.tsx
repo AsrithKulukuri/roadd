@@ -77,12 +77,19 @@ const formatCurrency = (value: number) => {
 };
 
 // ─── Upload helper ─────────────────────────────────────────────────────────────
-async function uploadFile(file: File, bucket: string, folder: string): Promise<string> {
+async function uploadFile(file: File, bucket: string, folder: string, watermark?: boolean): Promise<string> {
   const targetFolder = bucket === 'brochures' || folder === 'brochures' ? 'brochures' : 'projects';
+  const isFloorPlan =
+    folder === 'floor-plans' ||
+    folder === 'master-plans' ||
+    folder === 'layout-maps' ||
+    /floor[-_ ]?plan|master[-_ ]?plan|layout[-_ ]?map/i.test(file.name);
   const s3Res = await uploadToS3({
     file,
     folder: targetFolder,
     compress: targetFolder !== 'brochures',
+    watermark: watermark !== undefined ? watermark : !isFloorPlan,
+    isFloorPlan,
   });
 
   if (s3Res.success && s3Res.fileUrl) {
@@ -329,7 +336,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     if (!file) return;
     setUpl("master-plan", true);
     try {
-      const url = await uploadFile(file, "projects", "master-plans");
+      const url = await uploadFile(file, "projects", "master-plans", false);
       setMasterPlanUrl(url);
       toast.success("Master Plan uploaded!");
     } catch {
@@ -453,7 +460,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const handleConfigImageUpload = async (id: string, file: File) => {
     setUpl(`config-${id}`, true);
     try {
-      const url = await uploadFile(file, "projects", "floor-plans");
+      const url = await uploadFile(file, "projects", "floor-plans", false);
       updateConfigField(id, "floorPlanUrl", url);
       toast.success("Floor plan uploaded!");
     } catch {
@@ -1683,6 +1690,8 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                   entityId={initialData?.id}
                   accept="image/*,.pdf"
                   maxSizeMB={500}
+                  watermark={false}
+                  isFloorPlan={true}
                   icon={Map}
                 />
               </div>

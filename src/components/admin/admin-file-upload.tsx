@@ -21,6 +21,7 @@ export interface AdminFileUploadProps {
   maxSizeMB?: number;
   compress?: boolean;
   watermark?: boolean;
+  isFloorPlan?: boolean;
   icon?: LucideIcon;
   allowDirectUrl?: boolean;
   className?: string;
@@ -45,6 +46,7 @@ export function AdminFileUpload({
   maxSizeMB = 500,
   compress = false,
   watermark = false,
+  isFloorPlan = false,
   icon: Icon = FileText,
   allowDirectUrl = true,
   className = "",
@@ -81,12 +83,19 @@ export function AdminFileUpload({
     });
 
     try {
+      const isFloorPlanUpload =
+        isFloorPlan ||
+        /floor[-_ ]?plan|master[-_ ]?plan|layout[-_ ]?map/i.test(label || "") ||
+        /floor[-_ ]?plan|master[-_ ]?plan|layout[-_ ]?map/i.test(hint || "") ||
+        /floor[-_ ]?plan|master[-_ ]?plan|layout[-_ ]?map/i.test(file.name);
+
       const result = await uploadToS3({
         file,
         folder,
         entityId,
         compress: compress && file.type.startsWith("image/"),
-        watermark: watermark && file.type.startsWith("image/"),
+        watermark: !isFloorPlanUpload && watermark && file.type.startsWith("image/"),
+        isFloorPlan: isFloorPlanUpload,
         onProgress: (info) => {
           setStats({
             percent: info.percent,

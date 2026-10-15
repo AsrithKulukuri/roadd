@@ -27,10 +27,10 @@ export function PropertyVisibilityControl() {
         </div>
       </div>
       <button type="button" role="switch" aria-checked={propertiesEnabled} aria-label="Show properties on website" disabled={!ready || saving || !!error} onClick={toggle}
-        className="flex min-h-12 shrink-0 cursor-pointer items-center justify-center gap-3 rounded-xl border border-border-default px-4 py-3 text-sm font-semibold transition-colors hover:bg-amber-500/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-500 disabled:cursor-wait disabled:opacity-60">
+        className="flex min-h-12 shrink-0 cursor-pointer items-center justify-center gap-3 rounded-xl border border-border-default px-5 py-3 text-sm font-bold transition-all hover:bg-amber-500/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-500 disabled:cursor-wait disabled:opacity-60 shadow-xs">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-        <span>{saving ? "Saving…" : !ready ? "Loading…" : propertiesEnabled ? "Visible" : "Hidden"}</span>
-        <span aria-hidden className={`flex h-6 w-11 items-center rounded-full p-1 ${propertiesEnabled ? "bg-emerald-600" : "bg-slate-400"}`}><span className={`h-4 w-4 rounded-full bg-white transition-transform motion-reduce:transition-none ${propertiesEnabled ? "translate-x-5" : ""}`} /></span>
+        <span>{saving ? "Saving…" : !ready ? "Loading…" : propertiesEnabled ? "Hide Properties" : "Show All Properties"}</span>
+        <span aria-hidden className={`flex h-6 w-11 items-center rounded-full p-1 ${propertiesEnabled ? "bg-emerald-600" : "bg-amber-500"}`}><span className={`h-4 w-4 rounded-full bg-slate-950 transition-transform motion-reduce:transition-none ${propertiesEnabled ? "translate-x-5 !bg-white" : ""}`} /></span>
       </button>
     </div>
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border-default pt-4 text-xs text-text-secondary">

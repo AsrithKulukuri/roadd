@@ -592,6 +592,8 @@ export default function AddPropertyPage() {
                     folder="properties"
                     accept="image/*,.pdf"
                     maxSizeMB={500}
+                    watermark={false}
+                    isFloorPlan={true}
                     icon={Map}
                   />
                   <AdminFileUpload
@@ -602,6 +604,8 @@ export default function AddPropertyPage() {
                     folder="properties"
                     accept="image/*,.pdf"
                     maxSizeMB={500}
+                    watermark={false}
+                    isFloorPlan={true}
                     icon={FileText}
                   />
                 </div>

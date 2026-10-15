@@ -1,5 +1,6 @@
 "use client";
 import { PropertyVisibilityControl } from "@/components/admin/property-visibility-control";
+import { AdminPropertyToggle } from "@/components/admin/admin-property-toggle";
 import { useSiteFeatures } from "@/components/providers/site-features-provider";
 import { ListingQualityPanel } from "@/components/admin/listing-quality-panel";
 
@@ -289,20 +290,17 @@ export default function AdminDashboardPage() {
     setRegImage("");
   };
 
-  if (!ready || !propertiesEnabled) return (
-    <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold">Admin Control Center</h1>
-      <PropertyVisibilityControl />
-      <section className="grid gap-4 sm:grid-cols-3">
-        {[{ label: "Projects", count: totalProjects, href: "/admin/projects" }, { label: "Published projects", count: publishedProjects, href: "/admin/projects" }, { label: "Upcoming visits", count: upcomingSchedules, href: "/admin/schedules" }].map(item => <Link key={item.label} href={item.href} className="rounded-2xl border border-border-default bg-bg-card p-6 transition-colors hover:border-amber-500"><p className="text-sm text-text-secondary">{item.label}</p><p className="mt-3 text-3xl font-bold">{item.count}</p></Link>)}
-      </section>
-      <Link href="/admin/projects/new" className="inline-flex rounded-xl bg-amber-500 px-5 py-3 font-bold text-slate-950">Add project</Link>
-    </div>
-  );
+  if (!ready) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center p-10 space-y-3">
+        <div className="w-8 h-8 rounded-full border-3 border-amber-500 border-t-transparent animate-spin" />
+        <p className="text-xs text-text-tertiary font-bold tracking-wider uppercase">Loading Admin Dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto space-y-6">
-      <PropertyVisibilityControl />
       
       {/* MOBILE-FIRST HEADER & REFERENCE ID TEST DOCK */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-3xl p-5 sm:p-6 shadow-sm">
@@ -318,89 +316,105 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-        {/* INSTANT REFERENCE ID QUICK LOOKUP BAR */}
-        <form
-          onSubmit={handleExecuteRefSearch}
-          className="relative flex items-center bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700/80 rounded-2xl p-1.5 w-full md:w-80 shadow-xs"
-        >
-          <Hash className="w-4 h-4 text-amber-500 ml-2 shrink-0" />
-          <input
-            type="text"
-            value={refSearchQuery}
-            onChange={(e) => setRefSearchQuery(e.target.value)}
-            placeholder="Test Ref ID e.g. ref345, REF101..."
-            className="w-full pl-2 pr-2 py-1.5 bg-transparent text-xs text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none font-bold"
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+          {/* Quick Property Visibility Toggle Button */}
+          <AdminPropertyToggle
+            variant="header"
+            onToggled={(nowEnabled) => {
+              if (nowEnabled) setActiveTab("properties");
+            }}
           />
-          <button
-            type="submit"
-            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1 transition-all cursor-pointer shrink-0"
-          >
-            <span>Jump</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
 
-          {/* Instant Match Dropdown */}
-          {liveRefMatch && (
-            <div
-              onClick={() => {
-                toast.success(`🎯 Direct match for ${liveRefMatch.refId} (${liveRefMatch.title})! Opening...`);
-                router.push(liveRefMatch.url);
-              }}
-              className="absolute left-0 right-0 top-full mt-2 z-[100] bg-amber-500 text-slate-950 p-3 rounded-2xl shadow-2xl flex items-center justify-between font-bold text-xs cursor-pointer border-2 border-slate-950 animate-in fade-in"
+          {/* INSTANT REFERENCE ID QUICK LOOKUP BAR */}
+          <form
+            onSubmit={handleExecuteRefSearch}
+            className="relative flex items-center bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700/80 rounded-2xl p-1.5 w-full md:w-72 shadow-xs"
+          >
+            <Hash className="w-4 h-4 text-amber-500 ml-2 shrink-0" />
+            <input
+              type="text"
+              value={refSearchQuery}
+              onChange={(e) => setRefSearchQuery(e.target.value)}
+              placeholder="Test Ref ID e.g. ref345..."
+              className="w-full pl-2 pr-2 py-1.5 bg-transparent text-xs text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none font-bold"
+            />
+            <button
+              type="submit"
+              className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1 transition-all cursor-pointer shrink-0"
             >
-              <div className="truncate pr-2">
-                <span className="bg-slate-950 text-amber-400 px-1.5 py-0.5 rounded text-[10px] uppercase mr-1">
-                  {liveRefMatch.refId}
-                </span>
-                <span className="truncate">{liveRefMatch.title}</span>
+              <span>Jump</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Instant Match Dropdown */}
+            {liveRefMatch && (
+              <div
+                onClick={() => {
+                  toast.success(`🎯 Direct match for ${liveRefMatch.refId} (${liveRefMatch.title})! Opening...`);
+                  router.push(liveRefMatch.url);
+                }}
+                className="absolute left-0 right-0 top-full mt-2 z-[100] bg-amber-500 text-slate-950 p-3 rounded-2xl shadow-2xl flex items-center justify-between font-bold text-xs cursor-pointer border-2 border-slate-950 animate-in fade-in"
+              >
+                <div className="truncate pr-2">
+                  <span className="bg-slate-950 text-amber-400 px-1.5 py-0.5 rounded text-[10px] uppercase mr-1">
+                    {liveRefMatch.refId}
+                  </span>
+                  <span className="truncate">{liveRefMatch.title}</span>
+                </div>
+                <ChevronRight className="w-4 h-4 shrink-0" />
               </div>
-              <ChevronRight className="w-4 h-4 shrink-0" />
-            </div>
-          )}
-        </form>
+            )}
+          </form>
+        </div>
       </div>
 
       {/* QUICK STATS CARDS GRID */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Total Listings</span>
-            <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0" />
-          </div>
-          <div className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading truncate">
-            {totalProperties}
-          </div>
-        </div>
+        {propertiesEnabled ? (
+          <>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Total Listings</span>
+                <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0" />
+              </div>
+              <div className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading truncate">
+                {totalProperties}
+              </div>
+            </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Active Homes</span>
-            <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0" />
-          </div>
-          <div className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading truncate">
-            {activeProperties}
-          </div>
-        </div>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Active Homes</span>
+                <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0" />
+              </div>
+              <div className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading truncate">
+                {activeProperties}
+              </div>
+            </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Featured Homes</span>
-            <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 fill-amber-500/20 shrink-0" />
-          </div>
-          <div className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading truncate">
-            {featuredProperties}
-          </div>
-        </div>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Featured Homes</span>
+                <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 fill-amber-500/20 shrink-0" />
+              </div>
+              <div className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading truncate">
+                {featuredProperties}
+              </div>
+            </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Portfolio Value</span>
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 shrink-0" />
-          </div>
-          <div className="text-lg sm:text-2xl font-black text-amber-500 font-heading truncate">
-            {formatPriceCompact(totalValue)}
-          </div>
-        </div>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">Portfolio Value</span>
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 shrink-0" />
+              </div>
+              <div className="text-lg sm:text-2xl font-black text-amber-500 font-heading truncate">
+                {formatPriceCompact(totalValue)}
+              </div>
+            </div>
+          </>
+        ) : (
+          <AdminPropertyToggle variant="banner" className="col-span-2 lg:col-span-4" />
+        )}
 
         {/* Projects quick stat */}
         <Link href="/admin/projects" className="col-span-2 lg:col-span-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-3.5 sm:p-5 shadow-sm flex items-center justify-between gap-4 hover:from-amber-500/20 hover:to-orange-500/20 transition-all">
@@ -458,7 +472,7 @@ export default function AdminDashboardPage() {
             className="w-full h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white font-extrabold text-xs px-3 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
           >
             <option value="overview">✨ Overview & Charts</option>
-            <option value="properties">🏢 Properties & Ref IDs ({properties.length})</option>
+            {propertiesEnabled && <option value="properties">🏢 Properties & Ref IDs ({properties.length})</option>}
             <option value="locations">🔥 Trending Locations ({trendingLocations.length})</option>
             <option value="categories">📐 Home Categories ({homeCategories.length})</option>
             <option value="regions">🌐 Explore AP & Sub-regions ({apRegions.length})</option>
@@ -479,17 +493,26 @@ export default function AdminDashboardPage() {
             <Sparkles className="w-4 h-4 shrink-0" /> Overview & Charts
           </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("properties")}
-            className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer select-none ${
-              activeTab === "properties"
-                ? "bg-amber-500 text-slate-950 font-black shadow-sm"
-                : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Building2 className="w-4 h-4 shrink-0" /> Properties & Ref IDs ({properties.length})
-          </button>
+          {propertiesEnabled ? (
+            <button
+              type="button"
+              onClick={() => setActiveTab("properties")}
+              className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer select-none ${
+                activeTab === "properties"
+                  ? "bg-amber-500 text-slate-950 font-black shadow-sm"
+                  : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              <Building2 className="w-4 h-4 shrink-0" /> Properties & Ref IDs ({properties.length})
+            </button>
+          ) : (
+            <AdminPropertyToggle
+              variant="pill"
+              onToggled={(nowEnabled) => {
+                if (nowEnabled) setActiveTab("properties");
+              }}
+            />
+          )}
 
           <button
             type="button"
@@ -541,7 +564,26 @@ export default function AdminDashboardPage() {
       )}
 
       {/* TAB 2: PROPERTIES & REFERENCE IDs MANAGER */}
-      {activeTab === "properties" && (
+      {activeTab === "properties" && !propertiesEnabled && (
+        <div className="p-8 sm:p-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4 animate-in fade-in">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto shadow-inner">
+            <Building2 className="w-7 h-7" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+              Properties Are Currently Hidden
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+              Property listings, filters, and reference IDs are currently hidden. Click below to show all properties.
+            </p>
+          </div>
+          <div className="pt-2 flex justify-center">
+            <AdminPropertyToggle variant="header" />
+          </div>
+        </div>
+      )}
+
+      {activeTab === "properties" && propertiesEnabled && (
         <div className="space-y-4 animate-in fade-in duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <div>

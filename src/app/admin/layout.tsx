@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSiteFeatures } from "@/components/providers/site-features-provider";
 import { PropertyVisibilityControl } from "@/components/admin/property-visibility-control";
+import { AdminPropertyToggle } from "@/components/admin/admin-property-toggle";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/shared/logo";
 
@@ -277,6 +278,9 @@ export default function AdminLayout({
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {/* Button to show all properties / hide properties */}
+              <AdminPropertyToggle variant="header" />
+
               <Link
                 href="/"
                 target="_blank"
@@ -286,7 +290,6 @@ export default function AdminLayout({
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span>Live Site</span>
               </Link>
-
 
               <button
                 type="button"
@@ -328,22 +331,40 @@ export default function AdminLayout({
                   <span className="truncate">Home</span>
                 </Link>
 
-                {/* 2. Properties */}
-                <Link
-                  href="/admin/properties"
-                  className={cn(
-                    "flex flex-col items-center justify-center h-full py-1 gap-1 text-[10px] font-bold transition-all relative",
-                    (pathname.startsWith("/admin/properties"))
-                      ? "text-amber-500 font-black"
-                      : "text-text-tertiary hover:text-text-primary"
-                  )}
-                >
-                  {pathname.startsWith("/admin/properties") && (
-                    <span className="absolute top-1 w-8 h-1 bg-amber-500 rounded-full" />
-                  )}
-                  <Building2 className="w-5 h-5 shrink-0" />
-                  <span className="truncate">Properties</span>
-                </Link>
+                {/* 2. Properties (when enabled) OR Site Visits (when properties hidden) */}
+                {propertiesEnabled ? (
+                  <Link
+                    href="/admin/properties"
+                    className={cn(
+                      "flex flex-col items-center justify-center h-full py-1 gap-1 text-[10px] font-bold transition-all relative",
+                      pathname.startsWith("/admin/properties")
+                        ? "text-amber-500 font-black"
+                        : "text-text-tertiary hover:text-text-primary"
+                    )}
+                  >
+                    {pathname.startsWith("/admin/properties") && (
+                      <span className="absolute top-1 w-8 h-1 bg-amber-500 rounded-full" />
+                    )}
+                    <Building2 className="w-5 h-5 shrink-0" />
+                    <span className="truncate">Properties</span>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/admin/schedules"
+                    className={cn(
+                      "flex flex-col items-center justify-center h-full py-1 gap-1 text-[10px] font-bold transition-all relative",
+                      pathname.startsWith("/admin/schedules")
+                        ? "text-amber-500 font-black"
+                        : "text-text-tertiary hover:text-text-primary"
+                    )}
+                  >
+                    {pathname.startsWith("/admin/schedules") && (
+                      <span className="absolute top-1 w-8 h-1 bg-amber-500 rounded-full" />
+                    )}
+                    <Calendar className="w-5 h-5 shrink-0" />
+                    <span className="truncate">Visits</span>
+                  </Link>
+                )}
 
                 {/* 3. Projects */}
                 <Link

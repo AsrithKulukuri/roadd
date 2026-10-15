@@ -1,5 +1,6 @@
 "use client";
 import { ListingQualityPanel } from "@/components/admin/listing-quality-panel";
+import { AdminPropertyToggle } from "@/components/admin/admin-property-toggle";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -122,11 +123,14 @@ export default function AdminProjectsPage() {
               Manage builder projects — Apartments, Villas & Ventures.
             </p>
           </div>
-          <Button variant="amber" asChild className="w-full sm:w-auto">
-            <Link href="/admin/projects/new" className="gap-2 text-xs sm:text-sm">
-              <Plus className="w-4 h-4" /> Add New Project
-            </Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            <AdminPropertyToggle variant="header" />
+            <Button variant="amber" asChild className="flex-1 sm:flex-initial">
+              <Link href="/admin/projects/new" className="gap-2 text-xs sm:text-sm">
+                <Plus className="w-4 h-4" /> Add New Project
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <ListingQualityPanel scope="projects" />

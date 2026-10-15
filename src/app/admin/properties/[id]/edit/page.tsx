@@ -640,6 +640,8 @@ export default function EditPropertyPage() {
                     entityId={targetProperty?.id}
                     accept="image/*,.pdf"
                     maxSizeMB={500}
+                    watermark={false}
+                    isFloorPlan={true}
                     icon={Map}
                   />
                   <AdminFileUpload
@@ -651,6 +653,8 @@ export default function EditPropertyPage() {
                     entityId={targetProperty?.id}
                     accept="image/*,.pdf"
                     maxSizeMB={500}
+                    watermark={false}
+                    isFloorPlan={true}
                     icon={FileText}
                   />
                 </div>

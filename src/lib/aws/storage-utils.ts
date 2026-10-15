@@ -24,6 +24,7 @@ export interface UploadOptions {
   entityId?: string;
   compress?: boolean;
   watermark?: boolean;
+  isFloorPlan?: boolean;
   onProgress?: (info: UploadProgressInfo) => void;
 }
 
@@ -124,6 +125,7 @@ export async function uploadToS3({
   entityId,
   compress = true,
   watermark = true,
+  isFloorPlan = false,
   onProgress,
 }: UploadOptions): Promise<UploadResult> {
   try {
@@ -131,8 +133,26 @@ export async function uploadToS3({
     const effectiveMime = detectMimeType(file.name, file.type);
 
     // 1. Watermark images automatically with roadfacing.com (left side in middle)
+    // CRITICAL: Floor plans, layout maps, and master plans MUST NOT have any watermark applied
     const isImage = effectiveMime.startsWith("image/") && !effectiveMime.includes("svg");
-    const shouldWatermark = watermark !== false && isImage && folder !== "avatars" && folder !== "brochures";
+    const isFloorPlanFolder =
+      (folder as string) === "floor-plans" ||
+      (folder as string) === "master-plans" ||
+      (folder as string) === "floorplans" ||
+      (folder as string) === "floor_plans" ||
+      (folder as string) === "layout-maps";
+    const isFloorPlanName =
+      /floor[-_ ]?plan|master[-_ ]?plan|layout[-_ ]?map/i.test(file.name);
+
+    const shouldWatermark =
+      watermark !== false &&
+      isImage &&
+      folder !== "avatars" &&
+      folder !== "brochures" &&
+      !isFloorPlanFolder &&
+      !isFloorPlanName &&
+      !isFloorPlan;
+
     if (shouldWatermark) {
       try {
         fileToUpload = await addWatermarkToImage(fileToUpload, {
