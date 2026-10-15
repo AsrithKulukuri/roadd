@@ -32,6 +32,18 @@ import {
   type HomeCardSize,
   getValidCardSize,
 } from "@/types/home-section";
+import type {
+  BorderConfig,
+  TypographyConfig,
+  ElementConfig,
+  CardElementId,
+  ImageArrangementConfig,
+} from "@/types/shelf-builder";
+import {
+  borderConfigToStyles,
+  typographyConfigToStyles,
+  getSplitRatioPercentages,
+} from "@/lib/shelf-builder-styles";
 
 interface ShelfCardProps {
   item: MixedItem & {
@@ -46,6 +58,7 @@ interface ShelfCardProps {
     customDeveloper?: string;
     customStatus?: string;
     customCtaText?: string;
+    cardBorder?: BorderConfig;
   };
   cardStyle?: HomeCardStyleId;
   cardSizeDesktop?: HomeCardSize;
@@ -55,6 +68,12 @@ interface ShelfCardProps {
   cardBgColor?: string;
   cardTextColor?: string;
   cardAccentColor?: string;
+  cardBorder?: BorderConfig;
+  imageArrangement?: ImageArrangementConfig;
+  elementOrder?: CardElementId[];
+  elements?: Partial<Record<CardElementId, ElementConfig>>;
+  selectedElementId?: CardElementId | null;
+  onSelectElement?: (elementId: CardElementId) => void;
   customBadge?: string;
   customHeadline?: string;
   customTagline?: string;
@@ -93,6 +112,12 @@ export function ShelfCard({
   cardBgColor,
   cardTextColor,
   cardAccentColor = "#faad13",
+  cardBorder,
+  imageArrangement,
+  elementOrder,
+  elements,
+  selectedElementId,
+  onSelectElement,
   customBadge,
   customHeadline,
   customTagline,
@@ -158,15 +183,44 @@ export function ShelfCard({
   const effectiveText = item.cardTextColor || cardTextColor || "#0f172a";
   const effectiveAccent = item.cardAccentColor || cardAccentColor || "#faad13";
 
+  const effectiveCardBorder = item.cardBorder || cardBorder;
+  const cardBorderStyles = borderConfigToStyles(effectiveCardBorder);
+
   const containerStyle: React.CSSProperties = {
     backgroundColor: effectiveBg,
     color: effectiveText,
+    ...cardBorderStyles,
   };
   const textStyle: React.CSSProperties = { color: effectiveText };
   const accentTextStyle: React.CSSProperties = { color: effectiveAccent };
   const accentBgStyle: React.CSSProperties = {
     backgroundColor: effectiveAccent,
     color: "#0f172a",
+  };
+
+  // Visual builder element typography & border helper hooks
+  const elTypo = (id: CardElementId): React.CSSProperties => {
+    return typographyConfigToStyles(elements?.[id]?.typography);
+  };
+  const elBorder = (id: CardElementId): React.CSSProperties => {
+    return borderConfigToStyles(elements?.[id]?.border);
+  };
+  const isElVisible = (id: CardElementId): boolean => {
+    return elements?.[id]?.visible !== false;
+  };
+  const isSelected = (id: CardElementId): boolean => {
+    return Boolean(isEditable && selectedElementId === id);
+  };
+
+  const handleSelect = (id: CardElementId, fallback?: () => void) => (e: React.MouseEvent) => {
+    if (!isEditable) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (onSelectElement) {
+      onSelectElement(id);
+    } else if (fallback) {
+      fallback();
+    }
   };
 
   const data = useMemo(() => {
@@ -356,13 +410,16 @@ export function ShelfCard({
   // Render purely as a <div> with NO Link, NO <a> tag, and NO href.
   // This physically forbids any click navigation or redirect to /properties/... or /projects/...
   const CardRoot = (isEditable ? "div" : Link) as React.ElementType;
+  const isContainerSelected = isSelected("container");
   const cardRootProps: Record<string, any> = isEditable
     ? {
         role: "region",
         "aria-label": `Card preview: ${data.title}`,
         onClick: (e: React.MouseEvent) => {
           e.preventDefault();
-          if (onClick) {
+          if (onSelectElement) {
+            onSelectElement("container");
+          } else if (onClick) {
             onClick(e);
           }
         },

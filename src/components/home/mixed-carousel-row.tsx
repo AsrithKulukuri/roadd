@@ -12,6 +12,13 @@ import {
   type HomeCardSize,
   getValidCardSize,
 } from "@/types/home-section";
+import type {
+  BorderConfig,
+  ImageArrangementConfig,
+  CardElementId,
+  ElementConfig,
+} from "@/types/shelf-builder";
+import { borderConfigToStyles } from "@/lib/shelf-builder-styles";
 import { cn } from "@/lib/utils";
 
 export type MixedItem = 
@@ -31,6 +38,7 @@ export type MixedItem =
       cardBgColor?: string;
       cardTextColor?: string;
       cardAccentColor?: string;
+      cardBorder?: BorderConfig;
     })
   | (Project & {
       itemType: 'project';
@@ -48,6 +56,7 @@ export type MixedItem =
       cardBgColor?: string;
       cardTextColor?: string;
       cardAccentColor?: string;
+      cardBorder?: BorderConfig;
     });
 
 interface MixedCarouselRowProps {
@@ -65,6 +74,20 @@ interface MixedCarouselRowProps {
   cardBgColor?: string;
   cardTextColor?: string;
   cardAccentColor?: string;
+  shelfBorder?: BorderConfig;
+  cardBorder?: BorderConfig;
+  imageArrangement?: ImageArrangementConfig;
+  elementOrder?: CardElementId[];
+  elements?: Partial<Record<CardElementId, ElementConfig>>;
+  sectionBgColor?: string;
+  sectionBgImage?: string;
+  sectionPaddingTop?: number;
+  sectionPaddingBottom?: number;
+  headingAlignment?: "left" | "center" | "right";
+  headingSize?: "text-xl" | "text-2xl" | "text-3xl" | "text-4xl";
+  headingColor?: string;
+  subtitle?: string;
+  subtitleColor?: string;
   customBadge?: string;
   customHeadline?: string;
   customTagline?: string;
@@ -225,6 +248,20 @@ export function MixedCarouselRow({
   cardBgColor,
   cardTextColor,
   cardAccentColor,
+  shelfBorder,
+  cardBorder,
+  imageArrangement,
+  elementOrder,
+  elements,
+  sectionBgColor,
+  sectionBgImage,
+  sectionPaddingTop,
+  sectionPaddingBottom,
+  headingAlignment = "left",
+  headingSize,
+  headingColor,
+  subtitle,
+  subtitleColor,
   customBadge,
   customHeadline,
   customTagline,
@@ -353,16 +390,34 @@ export function MixedCarouselRow({
 
   if (items.length === 0) return null;
 
+  const shelfBorderStyle = borderConfigToStyles(shelfBorder);
+  const sectionStyle: React.CSSProperties = {
+    ...shelfBorderStyle,
+    backgroundColor: sectionBgColor,
+    backgroundImage: sectionBgImage ? `url(${sectionBgImage})` : undefined,
+    paddingTop: sectionPaddingTop !== undefined ? `${sectionPaddingTop}px` : undefined,
+    paddingBottom: sectionPaddingBottom !== undefined ? `${sectionPaddingBottom}px` : undefined,
+  };
+
   return (
-    <section className="py-1 relative">
+    <section className="py-2 relative transition-all" style={sectionStyle}>
       <div className="container-road">
         {!hideHeader && (
-          <div className="mb-3 flex items-center justify-between gap-3 sm:mb-4">
-            <div className="max-w-2xl">
+          <div className={cn(
+            "mb-3 flex items-center justify-between gap-3 sm:mb-4",
+            headingAlignment === "center" && "justify-center text-center",
+            headingAlignment === "right" && "justify-end text-right"
+          )}>
+            <div className={cn("max-w-2xl", headingAlignment === "center" && "mx-auto")}>
               <div className="inline-flex min-h-10 items-center gap-2.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-extrabold text-slate-950 shadow-sm">
                 <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-950 text-[#faad13]"><Icon className="h-3.5 w-3.5 shrink-0" /></span>
-                <span>{title}</span>
+                <span style={headingColor ? { color: headingColor } : undefined} className={headingSize || "text-sm font-extrabold"}>{title}</span>
               </div>
+              {subtitle && (
+                <p style={subtitleColor ? { color: subtitleColor } : undefined} className="text-xs text-slate-500 mt-1 pl-1">
+                  {subtitle}
+                </p>
+              )}
             </div>
 
             {/* Desktop Navigation */}
@@ -445,6 +500,10 @@ export function MixedCarouselRow({
                       cardBgColor={item.cardBgColor || cardBgColor}
                       cardTextColor={item.cardTextColor || cardTextColor}
                       cardAccentColor={item.cardAccentColor || cardAccentColor}
+                      cardBorder={item.cardBorder || cardBorder}
+                      imageArrangement={imageArrangement}
+                      elementOrder={elementOrder}
+                      elements={elements}
                       customBadge={item.customBadge || customBadge}
                       customHeadline={item.customHeadline || customHeadline}
                       customTagline={item.customTagline || customTagline}

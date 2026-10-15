@@ -271,6 +271,7 @@ export interface HomeSectionItem {
   cardBgColor?: string;        // optional per-item background color override
   cardTextColor?: string;      // optional per-item text color override
   cardAccentColor?: string;    // optional per-item accent / logo color override
+  cardBorder?: any;            // optional per-item border configuration
 }
 
 export interface HomeSection {
@@ -279,6 +280,8 @@ export interface HomeSection {
   icon: HomeSectionIconName;
   isActive: boolean;
   items: HomeSectionItem[];
+  enableCarousel?: boolean;
+  carouselInterval?: number;
   cardStyle?: HomeCardStyleId;
   cardSizeDesktop?: HomeCardSize; // Desktop card size: very-small | small | medium | big | very-big
   cardSizeMobile?: HomeCardSize;  // Mobile card size: very-small | small | medium | big | very-big
@@ -295,9 +298,40 @@ export interface HomeSection {
   customDeveloper?: string;   // default developer override for shelf
   customStatus?: string;      // default status pill for shelf
   customCtaText?: string;     // default CTA button text for shelf
-  enableCarousel?: boolean;   // default: true (turn on / turn off carousel)
-  carouselInterval?: number;  // default: 4 (seconds per shelf rotation)
+  name?: string;              // internal name
+  subtitle?: string;          // subtitle
+  description?: string;       // description
+  eyebrow?: string;           // eyebrow text
+  shelfType?: "projects" | "properties" | "rentals" | "commercial" | "custom";
+  status?: "published" | "draft" | "hidden";
+  isCustom?: boolean;
+  contentSource?: "manual" | "automatic" | "hybrid";
+  autoFilters?: any;
+  pinnedIds?: string[];
+  pinningMode?: "manual" | "pinned-first" | "pinned-slots";
+  maxItems?: number;
+  layoutType?: "carousel" | "grid" | "featured-split";
+  gridColumnsDesktop?: number;
+  gridColumnsTablet?: number;
+  gridColumnsMobile?: number;
+  sectionBgColor?: string;
+  sectionBgImage?: string;
+  sectionBgOverlay?: string;
+  headingAlignment?: "left" | "center" | "right";
+  headingSize?: "text-xl" | "text-2xl" | "text-3xl" | "text-4xl";
+  headingColor?: string;
+  subtitleColor?: string;
+  sectionPaddingTop?: number;
+  sectionPaddingBottom?: number;
+  sectionWidth?: "contained" | "full" | "narrow";
+  shelfBorder?: any;
+  cardBorder?: any;
+  imageArrangement?: any;
+  elementOrder?: string[];
+  elements?: Record<string, any>;
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
-export const MAX_HOME_SECTIONS = 8;
-export const MAX_HOME_SECTION_ITEMS = 8;
+export const MAX_HOME_SECTIONS = 16;
+export const MAX_HOME_SECTION_ITEMS = 12;

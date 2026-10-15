@@ -13,8 +13,55 @@ import {
   type HomeCardStyleId,
   type HomeCardSize,
 } from "@/types/home-section";
+import { CANONICAL_EIGHT_SHELVES } from "@/lib/shelf-builder-defaults";
 
 const VALID_CARD_STYLES = new Set<string>(HOME_CARD_STYLES.map((s) => s.id));
+
+function sanitizeBorder(border: any) {
+  if (!border || typeof border !== "object") return undefined;
+  return {
+    enabled: Boolean(border.enabled),
+    style: typeof border.style === "string" ? border.style : "solid",
+    color: typeof border.color === "string" ? border.color : "#e2e8f0",
+    width: typeof border.width === "number" ? Math.max(0, Math.min(20, border.width)) : 1,
+    opacity: typeof border.opacity === "number" ? Math.max(0, Math.min(100, border.opacity)) : 100,
+    radius: typeof border.radius === "number" ? Math.max(0, Math.min(100, border.radius)) : 16,
+    linkCorners: border.linkCorners !== false,
+    radiusTopLeft: typeof border.radiusTopLeft === "number" ? border.radiusTopLeft : undefined,
+    radiusTopRight: typeof border.radiusTopRight === "number" ? border.radiusTopRight : undefined,
+    radiusBottomLeft: typeof border.radiusBottomLeft === "number" ? border.radiusBottomLeft : undefined,
+    radiusBottomRight: typeof border.radiusBottomRight === "number" ? border.radiusBottomRight : undefined,
+    outlineEnabled: Boolean(border.outlineEnabled),
+    outlineColor: typeof border.outlineColor === "string" ? border.outlineColor : undefined,
+    outlineWidth: typeof border.outlineWidth === "number" ? border.outlineWidth : undefined,
+    outlineOffset: typeof border.outlineOffset === "number" ? border.outlineOffset : undefined,
+    shadow: typeof border.shadow === "string" ? border.shadow : undefined,
+    hoverColor: typeof border.hoverColor === "string" ? border.hoverColor : undefined,
+    hoverWidth: typeof border.hoverWidth === "number" ? border.hoverWidth : undefined,
+    hoverShadow: typeof border.hoverShadow === "string" ? border.hoverShadow : undefined,
+  };
+}
+
+function sanitizeTypography(typo: any) {
+  if (!typo || typeof typo !== "object") return undefined;
+  return {
+    fontFamily: typeof typo.fontFamily === "string" ? typo.fontFamily.slice(0, 50) : undefined,
+    fontSize: typeof typo.fontSize === "number" ? Math.max(8, Math.min(96, typo.fontSize)) : undefined,
+    fontSizeUnit: typo.fontSizeUnit === "rem" || typo.fontSizeUnit === "em" ? typo.fontSizeUnit : "px",
+    fontWeight: typeof typo.fontWeight === "number" ? typo.fontWeight : undefined,
+    fontStyle: typo.fontStyle === "italic" ? "italic" : "normal",
+    textColor: typeof typo.textColor === "string" ? typo.textColor : undefined,
+    textOpacity: typeof typo.textOpacity === "number" ? typo.textOpacity : undefined,
+    textTransform: typeof typo.textTransform === "string" ? typo.textTransform : undefined,
+    textDecoration: typeof typo.textDecoration === "string" ? typo.textDecoration : undefined,
+    textAlign: typeof typo.textAlign === "string" ? typo.textAlign : undefined,
+    lineHeight: typo.lineHeight,
+    letterSpacing: typo.letterSpacing,
+    lineClamp: typeof typo.lineClamp === "number" ? typo.lineClamp : undefined,
+    textShadow: typeof typo.textShadow === "string" ? typo.textShadow : undefined,
+    hoverColor: typeof typo.hoverColor === "string" ? typo.hoverColor : undefined,
+  };
+}
 
 function validateSections(input: unknown): HomeSection[] | null {
   if (!Array.isArray(input) || input.length > MAX_HOME_SECTIONS) return null;
@@ -27,14 +74,16 @@ function validateSections(input: unknown): HomeSection[] | null {
     const value = raw as Record<string, unknown>;
     const id = typeof value.id === "string" ? value.id.trim() : "";
     const title = typeof value.title === "string" ? value.title.trim() : "";
-    const icon = typeof value.icon === "string" ? value.icon : "";
-    const items = Array.isArray(value.items) ? value.items : null;
+    const icon = typeof value.icon === "string" && HOME_SECTION_ICON_NAMES.includes(value.icon as any)
+      ? value.icon
+      : "Sparkles";
+    const items = Array.isArray(value.items) ? value.items : [];
     const rawCardStyle = typeof value.cardStyle === "string" ? value.cardStyle.trim() : "";
     const cardStyle: HomeCardStyleId = VALID_CARD_STYLES.has(rawCardStyle)
       ? (rawCardStyle as HomeCardStyleId)
       : DEFAULT_CARD_STYLE;
 
-    // Card sizes: separate for desktop and mobile, validated against card style compatibility
+    // Card sizes: separate for desktop and mobile
     const cardSizeDesktop: HomeCardSize = getValidCardSize(
       cardStyle,
       "desktop",
@@ -46,7 +95,7 @@ function validateSections(input: unknown): HomeSection[] | null {
       typeof value.cardSizeMobile === "string" ? (value.cardSizeMobile as HomeCardSize) : undefined
     );
 
-    if (!id || ids.has(id) || !title || title.length > 40 || !HOME_SECTION_ICON_NAMES.includes(icon as HomeSection["icon"]) || !items || items.length > MAX_HOME_SECTION_ITEMS) {
+    if (!id || ids.has(id) || !title || title.length > 80 || items.length > MAX_HOME_SECTION_ITEMS) {
       return null;
     }
 
@@ -94,63 +143,30 @@ function validateSections(input: unknown): HomeSection[] | null {
       if (typeof entry.customCtaText === "string" && entry.customCtaText.trim()) {
         cleanItem.customCtaText = entry.customCtaText.trim().slice(0, 50);
       }
-      if (typeof entry.cardBgColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(entry.cardBgColor.trim())) {
-        cleanItem.cardBgColor = entry.cardBgColor.trim();
-      }
-      if (typeof entry.cardTextColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(entry.cardTextColor.trim())) {
-        cleanItem.cardTextColor = entry.cardTextColor.trim();
-      }
-      if (typeof entry.cardAccentColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(entry.cardAccentColor.trim())) {
-        cleanItem.cardAccentColor = entry.cardAccentColor.trim();
-      }
+      if (typeof entry.cardBgColor === "string") cleanItem.cardBgColor = entry.cardBgColor.trim();
+      if (typeof entry.cardTextColor === "string") cleanItem.cardTextColor = entry.cardTextColor.trim();
+      if (typeof entry.cardAccentColor === "string") cleanItem.cardAccentColor = entry.cardAccentColor.trim();
       return [cleanItem];
     });
 
-    if (cleanItems.length !== items.length) return null;
     ids.add(id);
 
-    // Color customizations (fallback to default white box, dark text, gold logo/icon)
-    const cardBgColor = typeof value.cardBgColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(value.cardBgColor.trim())
-      ? value.cardBgColor.trim()
-      : undefined;
-    const cardTextColor = typeof value.cardTextColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(value.cardTextColor.trim())
-      ? value.cardTextColor.trim()
-      : undefined;
-    const cardAccentColor = typeof value.cardAccentColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(value.cardAccentColor.trim())
-      ? value.cardAccentColor.trim()
-      : undefined;
+    // Color customizations
+    const cardBgColor = typeof value.cardBgColor === "string" ? value.cardBgColor.trim() : undefined;
+    const cardTextColor = typeof value.cardTextColor === "string" ? value.cardTextColor.trim() : undefined;
+    const cardAccentColor = typeof value.cardAccentColor === "string" ? value.cardAccentColor.trim() : undefined;
 
     // Label customizations
-    const customBadge = typeof value.customBadge === "string" && value.customBadge.trim()
-      ? value.customBadge.trim().slice(0, 50)
-      : undefined;
-    const customHeadline = typeof value.customHeadline === "string" && value.customHeadline.trim()
-      ? value.customHeadline.trim().slice(0, 100)
-      : undefined;
-    const customTagline = typeof value.customTagline === "string" && value.customTagline.trim()
-      ? value.customTagline.trim().slice(0, 120)
-      : undefined;
-    const customPrice = typeof value.customPrice === "string" && value.customPrice.trim()
-      ? value.customPrice.trim().slice(0, 50)
-      : undefined;
-    const customLocation = typeof value.customLocation === "string" && value.customLocation.trim()
-      ? value.customLocation.trim().slice(0, 100)
-      : undefined;
-    const customBhk = typeof value.customBhk === "string" && value.customBhk.trim()
-      ? value.customBhk.trim().slice(0, 60)
-      : undefined;
-    const customArea = typeof value.customArea === "string" && value.customArea.trim()
-      ? value.customArea.trim().slice(0, 60)
-      : undefined;
-    const customDeveloper = typeof value.customDeveloper === "string" && value.customDeveloper.trim()
-      ? value.customDeveloper.trim().slice(0, 100)
-      : undefined;
-    const customStatus = typeof value.customStatus === "string" && value.customStatus.trim()
-      ? value.customStatus.trim().slice(0, 60)
-      : undefined;
-    const customCtaText = typeof value.customCtaText === "string" && value.customCtaText.trim()
-      ? value.customCtaText.trim().slice(0, 50)
-      : undefined;
+    const customBadge = typeof value.customBadge === "string" && value.customBadge.trim() ? value.customBadge.trim().slice(0, 50) : undefined;
+    const customHeadline = typeof value.customHeadline === "string" && value.customHeadline.trim() ? value.customHeadline.trim().slice(0, 100) : undefined;
+    const customTagline = typeof value.customTagline === "string" && value.customTagline.trim() ? value.customTagline.trim().slice(0, 120) : undefined;
+    const customPrice = typeof value.customPrice === "string" && value.customPrice.trim() ? value.customPrice.trim().slice(0, 50) : undefined;
+    const customLocation = typeof value.customLocation === "string" && value.customLocation.trim() ? value.customLocation.trim().slice(0, 100) : undefined;
+    const customBhk = typeof value.customBhk === "string" && value.customBhk.trim() ? value.customBhk.trim().slice(0, 60) : undefined;
+    const customArea = typeof value.customArea === "string" && value.customArea.trim() ? value.customArea.trim().slice(0, 60) : undefined;
+    const customDeveloper = typeof value.customDeveloper === "string" && value.customDeveloper.trim() ? value.customDeveloper.trim().slice(0, 100) : undefined;
+    const customStatus = typeof value.customStatus === "string" && value.customStatus.trim() ? value.customStatus.trim().slice(0, 60) : undefined;
+    const customCtaText = typeof value.customCtaText === "string" && value.customCtaText.trim() ? value.customCtaText.trim().slice(0, 50) : undefined;
 
     // Carousel controls
     const enableCarousel = typeof value.enableCarousel === "boolean" ? value.enableCarousel : true;
@@ -158,12 +174,73 @@ function validateSections(input: unknown): HomeSection[] | null {
       ? Math.max(2, Math.min(30, Math.round(value.carouselInterval)))
       : 4;
 
+    // Visual Builder Extended Properties
+    const name = typeof value.name === "string" ? value.name.trim().slice(0, 80) : title;
+    const subtitle = typeof value.subtitle === "string" ? value.subtitle.trim().slice(0, 160) : undefined;
+    const description = typeof value.description === "string" ? value.description.trim().slice(0, 300) : undefined;
+    const eyebrow = typeof value.eyebrow === "string" ? value.eyebrow.trim().slice(0, 60) : undefined;
+    const shelfType = typeof value.shelfType === "string" ? (value.shelfType as any) : "properties";
+    const status = value.status === "draft" || value.status === "hidden" ? value.status : "published";
+    const isCustom = Boolean(value.isCustom);
+    const contentSource = value.contentSource === "manual" || value.contentSource === "automatic" || value.contentSource === "hybrid"
+      ? value.contentSource
+      : "hybrid";
+    const autoFilters = typeof value.autoFilters === "object" && value.autoFilters ? value.autoFilters : undefined;
+    const pinnedIds = Array.isArray(value.pinnedIds) ? value.pinnedIds.filter((p): p is string => typeof p === "string") : [];
+    const pinningMode = typeof value.pinningMode === "string" ? (value.pinningMode as any) : "pinned-first";
+    const maxItems = typeof value.maxItems === "number" ? Math.max(1, Math.min(12, value.maxItems)) : 8;
+    const layoutType = value.layoutType === "grid" || value.layoutType === "featured-split" ? value.layoutType : "carousel";
+    const gridColumnsDesktop = typeof value.gridColumnsDesktop === "number" ? Math.max(1, Math.min(6, value.gridColumnsDesktop)) : 3;
+    const gridColumnsTablet = typeof value.gridColumnsTablet === "number" ? Math.max(1, Math.min(4, value.gridColumnsTablet)) : 2;
+    const gridColumnsMobile = typeof value.gridColumnsMobile === "number" ? Math.max(1, Math.min(2, value.gridColumnsMobile)) : 1;
+
+    // Borders & Elements
+    const shelfBorder = sanitizeBorder(value.shelfBorder);
+    const cardBorder = sanitizeBorder(value.cardBorder);
+    const imageArrangement = typeof value.imageArrangement === "object" && value.imageArrangement ? value.imageArrangement : undefined;
+    const elementOrder = Array.isArray(value.elementOrder) ? value.elementOrder.filter((e): e is any => typeof e === "string") : undefined;
+    
+    let sanitizedElements: Record<string, any> | undefined = undefined;
+    if (value.elements && typeof value.elements === "object") {
+      sanitizedElements = {};
+      for (const [k, el] of Object.entries(value.elements as Record<string, any>)) {
+        if (el && typeof el === "object") {
+          sanitizedElements[k] = {
+            id: k,
+            label: typeof el.label === "string" ? el.label : k,
+            visible: el.visible !== false,
+            labelOverride: typeof el.labelOverride === "string" ? el.labelOverride : undefined,
+            typography: sanitizeTypography(el.typography),
+            border: sanitizeBorder(el.border),
+            backgroundColor: typeof el.backgroundColor === "string" ? el.backgroundColor : undefined,
+            padding: typeof el.padding === "string" ? el.padding : undefined,
+            margin: typeof el.margin === "string" ? el.margin : undefined,
+          };
+        }
+      }
+    }
+
     sections.push({
       id,
       title,
+      name,
+      subtitle,
+      description,
+      eyebrow,
       icon: icon as HomeSection["icon"],
+      shelfType,
       isActive: value.isActive !== false,
-      items: cleanItems,
+      status,
+      isCustom,
+      contentSource,
+      autoFilters,
+      pinnedIds,
+      pinningMode,
+      maxItems,
+      layoutType,
+      gridColumnsDesktop,
+      gridColumnsTablet,
+      gridColumnsMobile,
       cardStyle,
       cardSizeDesktop,
       cardSizeMobile,
@@ -182,50 +259,145 @@ function validateSections(input: unknown): HomeSection[] | null {
       customCtaText,
       enableCarousel,
       carouselInterval,
+      shelfBorder,
+      cardBorder,
+      imageArrangement,
+      elementOrder,
+      elements: sanitizedElements,
+      items: cleanItems,
+      updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : undefined,
+      updatedBy: typeof value.updatedBy === "string" ? value.updatedBy : undefined,
     });
   }
 
   return sections;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const isDraftRequest = searchParams.get("status") === "draft";
+  const targetId = isDraftRequest ? "draft" : "default";
+
   try {
     const { data, error } = await supabaseAdmin
       .from("homepage_layouts")
       .select("sections, updated_at")
-      .eq("id", "default")
+      .eq("id", targetId)
       .maybeSingle();
 
     if (error) throw error;
-    const sections = validateSections(data?.sections);
-    return NextResponse.json({ sections: sections ?? [], configured: Boolean(data && sections), updatedAt: data?.updated_at ?? null });
+
+    let sections = validateSections(data?.sections);
+
+    // Fallback: If requesting draft but draft is empty, read default
+    if (isDraftRequest && (!sections || sections.length === 0)) {
+      const { data: defaultData } = await supabaseAdmin
+        .from("homepage_layouts")
+        .select("sections, updated_at")
+        .eq("id", "default")
+        .maybeSingle();
+      sections = validateSections(defaultData?.sections);
+    }
+
+    // Default Fallback: If DB has not been configured yet, return canonical 8 shelves
+    const finalSections = sections && sections.length > 0 ? sections : CANONICAL_EIGHT_SHELVES;
+
+    return NextResponse.json({
+      sections: finalSections,
+      configured: Boolean(sections && sections.length > 0),
+      isDraft: isDraftRequest,
+      updatedAt: data?.updated_at ?? null,
+    });
   } catch (error) {
-    console.warn("Homepage layout is unavailable; using legacy shelves.", error);
-    return NextResponse.json({ sections: [], configured: false, updatedAt: null });
+    console.warn("Homepage layout fetch fallback to canonical defaults:", error);
+    return NextResponse.json({
+      sections: CANONICAL_EIGHT_SHELVES,
+      configured: false,
+      isDraft: isDraftRequest,
+      updatedAt: null,
+    });
   }
 }
 
 export async function PUT(request: NextRequest) {
-  const { errorResponse } = await requireAdmin(request);
+  const { errorResponse, user } = await requireAdmin(request);
   if (errorResponse) return errorResponse;
 
   try {
     const body = await request.json();
-    const sections = validateSections(body?.sections);
-    if (!sections) {
-      return NextResponse.json({ error: `Invalid layout. Use up to ${MAX_HOME_SECTIONS} shelves and ${MAX_HOME_SECTION_ITEMS} unique listings per shelf.` }, { status: 400 });
+    const action = body?.action || "publish"; // 'publish' | 'save_draft' | 'restore_defaults'
+
+    if (action === "restore_defaults") {
+      const defaultSections = CANONICAL_EIGHT_SHELVES;
+      await supabaseAdmin.from("homepage_layouts").upsert([
+        { id: "default", sections: defaultSections, updated_at: new Date().toISOString() },
+        { id: "draft", sections: defaultSections, updated_at: new Date().toISOString() },
+      ]);
+      return NextResponse.json({ success: true, action: "restore_defaults", sections: defaultSections });
     }
 
-    const { error } = await supabaseAdmin.from("homepage_layouts").upsert({
-      id: "default",
-      sections,
-      updated_at: new Date().toISOString(),
-    });
-    if (error) throw error;
+    const sections = validateSections(body?.sections);
+    if (!sections) {
+      return NextResponse.json(
+        { error: `Invalid layout configuration. Use up to ${MAX_HOME_SECTIONS} shelves.` },
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json({ success: true, sections });
+    const now = new Date().toISOString();
+    const userIdentifier = user?.name || user?.email || user?.phone || "Admin";
+
+    if (action === "save_draft") {
+      // Save exclusively to draft record (does not affect live homepage!)
+      const { error } = await supabaseAdmin.from("homepage_layouts").upsert({
+        id: "draft",
+        sections: sections.map((s) => ({ ...s, status: "draft", updatedAt: now, updatedBy: userIdentifier })),
+        updated_at: now,
+      });
+      if (error) throw error;
+      return NextResponse.json({ success: true, action: "save_draft", sections });
+    }
+
+    // Action: Publish
+    // 1. Save to default (live public homepage)
+    const publishedSections = sections.map((s) => ({
+      ...s,
+      status: "published",
+      updatedAt: now,
+      updatedBy: userIdentifier,
+    }));
+
+    const { error: pubError } = await supabaseAdmin.from("homepage_layouts").upsert({
+      id: "default",
+      sections: publishedSections,
+      updated_at: now,
+    });
+    if (pubError) throw pubError;
+
+    // 2. Also sync draft to match published
+    await supabaseAdmin.from("homepage_layouts").upsert({
+      id: "draft",
+      sections: publishedSections,
+      updated_at: now,
+    });
+
+    // 3. Snapshot to revisions table if available
+    try {
+      await supabaseAdmin.from("homepage_layout_revisions").insert({
+        layout_id: "default",
+        sections: publishedSections,
+        saved_at: now,
+      });
+    } catch {
+      // Non-fatal if revision table hasn't been migrated
+    }
+
+    return NextResponse.json({ success: true, action: "publish", sections: publishedSections });
   } catch (error) {
     console.error("Failed to save homepage layout:", error);
-    return NextResponse.json({ error: "Could not save the homepage layout. Confirm the homepage_layouts migration has been applied." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Could not save the homepage layout. Confirm admin permissions." },
+      { status: 500 }
+    );
   }
 }

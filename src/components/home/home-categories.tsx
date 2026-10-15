@@ -10,6 +10,13 @@ import { useIsMounted } from "@/hooks/use-is-mounted";
 import { HOME_SECTION_ICONS } from "@/lib/home-section-icons";
 import type { LucideIcon } from "lucide-react";
 import type { HomeCardStyleId, HomeCardSize, HomeSection } from "@/types/home-section";
+import type {
+  BorderConfig,
+  ImageArrangementConfig,
+  CardElementId,
+  ElementConfig,
+} from "@/types/shelf-builder";
+import { evaluateShelfFilters } from "@/lib/shelf-builder-defaults";
 
 type RenderSection = {
   id: string;
@@ -21,6 +28,20 @@ type RenderSection = {
   cardBgColor?: string;
   cardTextColor?: string;
   cardAccentColor?: string;
+  shelfBorder?: BorderConfig;
+  cardBorder?: BorderConfig;
+  imageArrangement?: ImageArrangementConfig;
+  elementOrder?: CardElementId[];
+  elements?: Partial<Record<CardElementId, ElementConfig>>;
+  sectionBgColor?: string;
+  sectionBgImage?: string;
+  sectionPaddingTop?: number;
+  sectionPaddingBottom?: number;
+  headingAlignment?: "left" | "center" | "right";
+  headingSize?: "text-xl" | "text-2xl" | "text-3xl" | "text-4xl";
+  headingColor?: string;
+  subtitle?: string;
+  subtitleColor?: string;
   customBadge?: string;
   customHeadline?: string;
   customTagline?: string;
@@ -154,29 +175,8 @@ export function HomeCategories() {
   const projectMap = new Map(activeProjects.map((project) => [project.id, project]));
 
   const sectionsToRender: RenderSection[] = hasCustomLayout
-    ? (customSections ?? []).filter((section) => section.isActive).map((section) => ({
-        id: section.id,
-        title: section.title,
-        icon: HOME_SECTION_ICONS[section.icon],
-        cardStyle: section.cardStyle,
-        cardSizeDesktop: section.cardSizeDesktop,
-        cardSizeMobile: section.cardSizeMobile,
-        cardBgColor: section.cardBgColor,
-        cardTextColor: section.cardTextColor,
-        cardAccentColor: section.cardAccentColor,
-        customBadge: section.customBadge,
-        customHeadline: section.customHeadline,
-        customTagline: section.customTagline,
-        customPrice: section.customPrice,
-        customLocation: section.customLocation,
-        customBhk: section.customBhk,
-        customArea: section.customArea,
-        customDeveloper: section.customDeveloper,
-        customStatus: section.customStatus,
-        customCtaText: section.customCtaText,
-        enableCarousel: section.enableCarousel !== false,
-        carouselInterval: section.carouselInterval || 4,
-        items: section.items.flatMap((item): MixedItem[] => {
+    ? (customSections ?? []).filter((section) => section.isActive).map((section) => {
+        const manualItems = (section.items ?? []).flatMap((item): MixedItem[] => {
           if (item.type === "property") {
             const property = propertyMap.get(item.id);
             return property
@@ -197,6 +197,7 @@ export function HomeCategories() {
                   cardBgColor: item.cardBgColor,
                   cardTextColor: item.cardTextColor,
                   cardAccentColor: item.cardAccentColor,
+                  cardBorder: item.cardBorder,
                 }]
               : [];
           }
@@ -219,10 +220,63 @@ export function HomeCategories() {
                 cardBgColor: item.cardBgColor,
                 cardTextColor: item.cardTextColor,
                 cardAccentColor: item.cardAccentColor,
+                cardBorder: item.cardBorder,
               }]
             : [];
-        }),
-      }))
+        });
+
+        // Content sourcing: Handle automatic and hybrid matching
+        let finalItems = manualItems;
+        if (section.contentSource === "automatic" || (section.contentSource === "hybrid" && section.autoFilters)) {
+          const autoMatches = evaluateShelfFilters(section, activeProperties, activeProjects);
+          if (section.contentSource === "automatic") {
+            finalItems = autoMatches.length > 0 ? autoMatches : manualItems;
+          } else if (section.contentSource === "hybrid") {
+            const manualIds = new Set(manualItems.map((m) => m.id));
+            const remaining = autoMatches.filter((m) => !manualIds.has(m.id));
+            finalItems = [...manualItems, ...remaining].slice(0, section.maxItems || 10);
+          }
+        }
+
+        return {
+          id: section.id,
+          title: section.title,
+          icon: HOME_SECTION_ICONS[section.icon] || HOME_SECTION_ICONS.ThumbsUp,
+          cardStyle: section.cardStyle,
+          cardSizeDesktop: section.cardSizeDesktop,
+          cardSizeMobile: section.cardSizeMobile,
+          cardBgColor: section.cardBgColor,
+          cardTextColor: section.cardTextColor,
+          cardAccentColor: section.cardAccentColor,
+          shelfBorder: section.shelfBorder,
+          cardBorder: section.cardBorder,
+          imageArrangement: section.imageArrangement,
+          elementOrder: section.elementOrder as CardElementId[] | undefined,
+          elements: section.elements,
+          sectionBgColor: section.sectionBgColor,
+          sectionBgImage: section.sectionBgImage,
+          sectionPaddingTop: section.sectionPaddingTop,
+          sectionPaddingBottom: section.sectionPaddingBottom,
+          headingAlignment: section.headingAlignment,
+          headingSize: section.headingSize,
+          headingColor: section.headingColor,
+          subtitle: section.subtitle,
+          subtitleColor: section.subtitleColor,
+          customBadge: section.customBadge,
+          customHeadline: section.customHeadline,
+          customTagline: section.customTagline,
+          customPrice: section.customPrice,
+          customLocation: section.customLocation,
+          customBhk: section.customBhk,
+          customArea: section.customArea,
+          customDeveloper: section.customDeveloper,
+          customStatus: section.customStatus,
+          customCtaText: section.customCtaText,
+          enableCarousel: section.enableCarousel !== false,
+          carouselInterval: section.carouselInterval || 4,
+          items: finalItems,
+        };
+      })
     : [
         { id: "recommended", title: "Recommended", icon: HOME_SECTION_ICONS.ThumbsUp, cardStyle: "classic-default" as const, cardSizeDesktop: "medium" as const, cardSizeMobile: "medium" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: recommendedMixed },
         { id: "featured", title: "Featured", icon: HOME_SECTION_ICONS.Star, cardStyle: "tall-portrait" as const, cardSizeDesktop: "medium" as const, cardSizeMobile: "medium" as const, cardBgColor: "#ffffff", cardTextColor: "#0f172a", cardAccentColor: "#faad13", enableCarousel: true, carouselInterval: 4, items: featuredMixed },
@@ -249,6 +303,20 @@ export function HomeCategories() {
             cardBgColor={section.cardBgColor}
             cardTextColor={section.cardTextColor}
             cardAccentColor={section.cardAccentColor}
+            shelfBorder={section.shelfBorder}
+            cardBorder={section.cardBorder}
+            imageArrangement={section.imageArrangement}
+            elementOrder={section.elementOrder}
+            elements={section.elements}
+            sectionBgColor={section.sectionBgColor}
+            sectionBgImage={section.sectionBgImage}
+            sectionPaddingTop={section.sectionPaddingTop}
+            sectionPaddingBottom={section.sectionPaddingBottom}
+            headingAlignment={section.headingAlignment}
+            headingSize={section.headingSize}
+            headingColor={section.headingColor}
+            subtitle={section.subtitle}
+            subtitleColor={section.subtitleColor}
             customBadge={section.customBadge}
             customHeadline={section.customHeadline}
             customTagline={section.customTagline}
