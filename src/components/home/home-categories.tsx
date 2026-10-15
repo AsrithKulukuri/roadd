@@ -338,10 +338,10 @@ export function HomeCategories() {
             items={section.items}
             hideHeader={false}
             autoSlide={section.enableCarousel !== false && section.carouselLoopMode !== "static"}
-            enableCarousel={section.enableCarousel !== false && section.layoutType !== "grid"}
+            enableCarousel={section.enableCarousel !== false}
             carouselInterval={section.carouselInterval || 4}
-            layoutType={section.layoutType || (section.enableCarousel === false ? "grid" : "carousel")}
-            carouselLoopMode={section.carouselLoopMode || (section.enableCarousel === false ? "static" : "infinite")}
+            layoutType={section.layoutType || "carousel"}
+            carouselLoopMode={section.carouselLoopMode || "infinite"}
             carouselSpeed={section.carouselSpeed || "normal"}
             carouselPauseOnHover={section.carouselPauseOnHover !== false}
             carouselShowArrows={section.carouselShowArrows !== false}

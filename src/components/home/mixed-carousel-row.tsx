@@ -343,7 +343,8 @@ export function MixedCarouselRow({
   const currentShowDots = isMobileActive && mobileCarouselShowDots !== undefined ? mobileCarouselShowDots : carouselShowDots;
 
   // Determine carousel vs static grid behavior
-  const isGrid = currentLayoutType === "grid" || currentLoopMode === "static" || currentEnableCarousel === false;
+  const isGrid = currentLayoutType === "grid" || currentLoopMode === "static";
+  const isAutoSlideActive = currentEnableCarousel !== false && autoSlide;
   const isInfinite = !isGrid && currentLoopMode !== "normal";
   const hasMultiple = items.length > 1;
   const loopCopies = isInfinite && hasMultiple ? [0, 1, 2] : [0];
@@ -410,7 +411,7 @@ export function MixedCarouselRow({
 
   // Auto-Slide with configurable speed & pause on hover
   useEffect(() => {
-    if (isGrid || !autoSlide || !hasMultiple || (pauseOnHover && isHovered)) return;
+    if (isGrid || !isAutoSlideActive || !hasMultiple || (pauseOnHover && isHovered)) return;
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
@@ -440,7 +441,7 @@ export function MixedCarouselRow({
     }, ms);
 
     return () => clearInterval(interval);
-  }, [isGrid, autoSlide, isHovered, items.length, hasMultiple, currentInterval, isInfinite, pauseOnHover]);
+  }, [isGrid, isAutoSlideActive, isHovered, items.length, hasMultiple, currentInterval, isInfinite, pauseOnHover]);
 
   const scroll = (direction: "left" | "right") => {
     const container = scrollRef.current;

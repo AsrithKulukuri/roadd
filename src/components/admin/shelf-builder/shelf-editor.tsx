@@ -2039,12 +2039,12 @@ export function ShelfEditor({
                 const isMobileView = deviceMode === "mobile";
                 const useMobile = isMobileView && Boolean(currentShelf.mobileCarouselCustom);
                 const badgeText = useMobile
-                  ? (currentShelf.mobileLayoutType === "grid" || currentShelf.mobileCarouselLoopMode === "static" || currentShelf.mobileEnableCarousel === false
+                  ? (currentShelf.mobileLayoutType === "grid" || currentShelf.mobileCarouselLoopMode === "static"
                       ? `Mobile Grid (${currentShelf.gridColumnsMobile || 1} col)`
-                      : `Mobile ${currentShelf.mobileCarouselLoopMode || "infinite"} (${currentShelf.mobileCarouselInterval ?? 4}s)`)
-                  : (currentShelf.layoutType === "grid" || currentShelf.carouselLoopMode === "static" || currentShelf.enableCarousel === false
+                      : `Mobile ${currentShelf.mobileCarouselLoopMode || "infinite"}${currentShelf.mobileEnableCarousel !== false ? ` (${currentShelf.mobileCarouselInterval ?? 4}s)` : " (Manual)"}`)
+                  : (currentShelf.layoutType === "grid" || currentShelf.carouselLoopMode === "static"
                       ? `Desktop Grid (${currentShelf.gridColumnsDesktop || 4} cols)`
-                      : `Desktop ${currentShelf.carouselLoopMode || "infinite"} (${currentShelf.carouselInterval ?? 4}s)`);
+                      : `Desktop ${currentShelf.carouselLoopMode || "infinite"}${currentShelf.enableCarousel !== false ? ` (${currentShelf.carouselInterval ?? 4}s)` : " (Manual)"}`);
 
                 return (
                   <button
@@ -2095,8 +2095,7 @@ export function ShelfEditor({
 
             const isStaticGrid =
               activeLayoutType === "grid" ||
-              activeLoopMode === "static" ||
-              activeEnableCarousel === false;
+              activeLoopMode === "static";
 
             return (
               /* Device Mockup Shell */

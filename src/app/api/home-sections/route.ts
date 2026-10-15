@@ -171,8 +171,42 @@ function validateSections(input: unknown): HomeSection[] | null {
     // Carousel controls
     const enableCarousel = typeof value.enableCarousel === "boolean" ? value.enableCarousel : true;
     const carouselInterval = typeof value.carouselInterval === "number" && !isNaN(value.carouselInterval)
-      ? Math.max(2, Math.min(30, Math.round(value.carouselInterval)))
+      ? Math.max(1.5, Math.min(30, Number(value.carouselInterval)))
       : 4;
+    const carouselLoopMode = value.carouselLoopMode === "normal" || value.carouselLoopMode === "static" || value.carouselLoopMode === "infinite"
+      ? value.carouselLoopMode
+      : undefined;
+    const carouselSpeed = value.carouselSpeed === "fast" || value.carouselSpeed === "normal" || value.carouselSpeed === "smooth" || value.carouselSpeed === "cinematic"
+      ? value.carouselSpeed
+      : undefined;
+    const carouselPauseOnHover = typeof value.carouselPauseOnHover === "boolean" ? value.carouselPauseOnHover : undefined;
+    const carouselShowArrows = typeof value.carouselShowArrows === "boolean" ? value.carouselShowArrows : undefined;
+    const carouselArrowPosition = value.carouselArrowPosition === "hidden" || value.carouselArrowPosition === "sides" || value.carouselArrowPosition === "header"
+      ? value.carouselArrowPosition
+      : undefined;
+    const carouselShowDots = typeof value.carouselShowDots === "boolean" ? value.carouselShowDots : undefined;
+
+    // Mobile Carousel controls
+    const mobileCarouselCustom = Boolean(value.mobileCarouselCustom);
+    const mobileLayoutType = value.mobileLayoutType === "grid" || value.mobileLayoutType === "featured-split" || value.mobileLayoutType === "carousel"
+      ? value.mobileLayoutType
+      : undefined;
+    const mobileEnableCarousel = typeof value.mobileEnableCarousel === "boolean" ? value.mobileEnableCarousel : undefined;
+    const mobileCarouselLoopMode = value.mobileCarouselLoopMode === "normal" || value.mobileCarouselLoopMode === "static" || value.mobileCarouselLoopMode === "infinite"
+      ? value.mobileCarouselLoopMode
+      : undefined;
+    const mobileCarouselInterval = typeof value.mobileCarouselInterval === "number" && !isNaN(value.mobileCarouselInterval)
+      ? Math.max(1.5, Math.min(30, Number(value.mobileCarouselInterval)))
+      : undefined;
+    const mobileCarouselSpeed = value.mobileCarouselSpeed === "fast" || value.mobileCarouselSpeed === "normal" || value.mobileCarouselSpeed === "smooth" || value.mobileCarouselSpeed === "cinematic"
+      ? value.mobileCarouselSpeed
+      : undefined;
+    const mobileCarouselPauseOnHover = typeof value.mobileCarouselPauseOnHover === "boolean" ? value.mobileCarouselPauseOnHover : undefined;
+    const mobileCarouselShowArrows = typeof value.mobileCarouselShowArrows === "boolean" ? value.mobileCarouselShowArrows : undefined;
+    const mobileCarouselArrowPosition = value.mobileCarouselArrowPosition === "hidden" || value.mobileCarouselArrowPosition === "sides" || value.mobileCarouselArrowPosition === "header"
+      ? value.mobileCarouselArrowPosition
+      : undefined;
+    const mobileCarouselShowDots = typeof value.mobileCarouselShowDots === "boolean" ? value.mobileCarouselShowDots : undefined;
 
     // Visual Builder Extended Properties
     const name = typeof value.name === "string" ? value.name.trim().slice(0, 80) : title;
@@ -259,6 +293,22 @@ function validateSections(input: unknown): HomeSection[] | null {
       customCtaText,
       enableCarousel,
       carouselInterval,
+      carouselLoopMode,
+      carouselSpeed,
+      carouselPauseOnHover,
+      carouselShowArrows,
+      carouselArrowPosition,
+      carouselShowDots,
+      mobileCarouselCustom,
+      mobileLayoutType,
+      mobileEnableCarousel,
+      mobileCarouselLoopMode,
+      mobileCarouselInterval,
+      mobileCarouselSpeed,
+      mobileCarouselPauseOnHover,
+      mobileCarouselShowArrows,
+      mobileCarouselArrowPosition,
+      mobileCarouselShowDots,
       shelfBorder,
       cardBorder,
       imageArrangement,
