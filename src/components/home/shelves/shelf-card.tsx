@@ -60,6 +60,8 @@ interface ShelfCardProps {
     customCtaText?: string;
     cardBorder?: BorderConfig;
   };
+  itemId?: string;
+  selectedItemId?: string | null;
   cardStyle?: HomeCardStyleId;
   cardSizeDesktop?: HomeCardSize;
   cardSizeMobile?: HomeCardSize;
@@ -73,7 +75,7 @@ interface ShelfCardProps {
   elementOrder?: CardElementId[];
   elements?: Partial<Record<CardElementId, ElementConfig>>;
   selectedElementId?: CardElementId | null;
-  onSelectElement?: (elementId: CardElementId) => void;
+  onSelectElement?: (elementId: CardElementId, itemId?: string) => void;
   customBadge?: string;
   customHeadline?: string;
   customTagline?: string;
@@ -104,6 +106,8 @@ interface ShelfCardProps {
 
 export function ShelfCard({
   item,
+  itemId,
+  selectedItemId,
   cardStyle = "classic-default",
   cardSizeDesktop,
   cardSizeMobile,
@@ -145,6 +149,9 @@ export function ShelfCard({
   onEditAccentColor,
   onClick,
 }: ShelfCardProps) {
+  const effectiveItemId = itemId || item.id;
+  const isCardActive = isEditable && Boolean(selectedItemId && effectiveItemId === selectedItemId);
+
   const dSize = getValidCardSize(cardStyle, "desktop", cardSizeDesktop);
   const mSize = getValidCardSize(cardStyle, "mobile", cardSizeMobile);
   const isCompactMobile = mSize === "very-small" || mSize === "small";
@@ -209,7 +216,10 @@ export function ShelfCard({
     return elements?.[id]?.visible !== false;
   };
   const isSelected = (id: CardElementId): boolean => {
-    return Boolean(isEditable && selectedElementId === id);
+    if (!isEditable) return false;
+    if (selectedElementId !== id) return false;
+    if (selectedItemId && effectiveItemId && selectedItemId !== effectiveItemId) return false;
+    return true;
   };
 
   const handleSelect = (id: CardElementId, fallback?: () => void) => (e: React.MouseEvent) => {
@@ -217,10 +227,36 @@ export function ShelfCard({
     e.preventDefault();
     e.stopPropagation();
     if (onSelectElement) {
-      onSelectElement(id);
-    } else if (fallback) {
+      onSelectElement(id, effectiveItemId);
+    }
+    if (fallback) {
       fallback();
     }
+  };
+
+  const editableElClass = (id: CardElementId, baseClass?: string) => {
+    if (!isEditable) return baseClass;
+    const selected = isSelected(id);
+    return cn(
+      baseClass,
+      "cursor-pointer transition-all duration-200 relative group/el",
+      selected
+        ? "ring-2 ring-amber-500 ring-offset-2 ring-offset-slate-900 shadow-lg shadow-amber-500/30 scale-[1.02]"
+        : "hover:ring-2 hover:ring-amber-400/70 hover:scale-[1.01]"
+    );
+  };
+
+  const renderEditIndicator = (id: CardElementId) => {
+    if (!isEditable) return null;
+    const selected = isSelected(id);
+    if (selected) {
+      return (
+        <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded bg-amber-500 text-slate-950 text-[9px] font-black uppercase tracking-wider ml-1 shadow-xs animate-pulse">
+          ✏️ EDITING
+        </span>
+      );
+    }
+    return <span className="opacity-0 group-hover/el:opacity-80 transition-opacity text-[10px] ml-1">✏️</span>;
   };
 
   const data = useMemo(() => {
@@ -418,7 +454,7 @@ export function ShelfCard({
         onClick: (e: React.MouseEvent) => {
           e.preventDefault();
           if (onSelectElement) {
-            onSelectElement("container");
+            onSelectElement("container", effectiveItemId);
           } else if (onClick) {
             onClick(e);
           }
@@ -438,12 +474,19 @@ export function ShelfCard({
         style={containerStyle}
         className={cn(
           "group relative flex flex-col h-full rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-amber-400/60 transition-all duration-300",
+          isCardActive && "ring-2 ring-amber-500 ring-offset-4 ring-offset-slate-950 shadow-2xl shadow-amber-500/20",
           isEditable && "select-none",
           className
         )}
       >
         {/* Top Image: Aspect 16:10 / 4:3 */}
-        <div className="relative w-full aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-slate-100 shrink-0">
+        <div 
+          onClick={handleSelect("image")}
+          className={cn(
+            "relative w-full aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-slate-100 shrink-0",
+            isEditable && "cursor-pointer"
+          )}
+        >
           <Image
             src={data.primaryImage}
             alt={data.title}
@@ -456,16 +499,17 @@ export function ShelfCard({
           {/* Top-Left Badge */}
           <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
             <span
-              className={cn(
-                "px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold shadow-md tracking-wide transition-all border border-white/20 backdrop-blur-md",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              className={editableElClass(
+                "badge",
+                "px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold shadow-md tracking-wide border border-white/20 backdrop-blur-md"
               )}
               style={accentBgStyle}
               title={isEditable ? "Click to edit badge text" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+              onClick={handleSelect("badge", onEditBadge)}
             >
               {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               {activeBadge || (data.isProject ? "New Project" : "Featured")}
+              {renderEditIndicator("badge")}
             </span>
           </div>
 
@@ -482,15 +526,16 @@ export function ShelfCard({
           {/* Price Tag Overlay on Image bottom-left */}
           <div className="absolute bottom-2 left-2.5 z-10">
             <span
-              className={cn(
-                "text-white font-extrabold text-base sm:text-lg drop-shadow-md tracking-tight block transition-all",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:bg-black/40 rounded px-1"
+              className={editableElClass(
+                "price",
+                "text-white font-extrabold text-base sm:text-lg drop-shadow-md tracking-tight block px-1 rounded"
               )}
               title={isEditable ? "Click to edit price text" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditPrice || onEditTextColor)?.(); } : undefined}
+              onClick={handleSelect("price", onEditPrice)}
             >
               {isEditable && <span className="mr-1 text-xs opacity-80">✏️</span>}
               {data.priceStr}
+              {renderEditIndicator("price")}
             </span>
           </div>
 
@@ -517,7 +562,7 @@ export function ShelfCard({
           onClick={isEditable ? (e) => {
             if (e.target === e.currentTarget) {
               e.preventDefault();
-              onEditBgColor?.();
+              handleSelect("container", onEditBgColor)(e);
             }
           } : undefined}
           title={isEditable ? "Click to choose card background color" : undefined}
@@ -526,48 +571,57 @@ export function ShelfCard({
             {/* Title / Headline */}
             <h4
               style={textStyle}
-              className={cn(
-                "font-extrabold text-slate-900 line-clamp-1 transition-colors group-hover:text-amber-600",
-                isCompactMobile ? "text-xs" : "text-sm",
-                isCompactDesktop ? "sm:text-sm" : isLargeDesktop ? "sm:text-base font-black" : "sm:text-base",
-                isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 rounded px-1"
+              className={editableElClass(
+                "title",
+                cn(
+                  "font-extrabold text-slate-900 line-clamp-1 transition-colors group-hover:text-amber-600 rounded px-1",
+                  isCompactMobile ? "text-xs" : "text-sm",
+                  isCompactDesktop ? "sm:text-sm" : isLargeDesktop ? "sm:text-base font-black" : "sm:text-base"
+                )
               )}
               title={isEditable ? "Click to edit title / headline" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+              onClick={handleSelect("title", onEditHeadline)}
             >
               {isEditable && <span className="mr-1 text-xs opacity-70">✏️</span>}
               {data.title}
+              {renderEditIndicator("title")}
             </h4>
 
             {/* Tagline / Subtitle */}
             {(activeTagline || data.tagline) && (
               <p
-                className={cn(
-                  "text-slate-500 line-clamp-1 transition-all",
-                  isCompactMobile ? "text-[10px] mt-0.5" : "text-[11px] mt-0.5",
-                  isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1"
+                className={editableElClass(
+                  "subtitle",
+                  cn(
+                    "text-slate-500 line-clamp-1 rounded px-1",
+                    isCompactMobile ? "text-[10px] mt-0.5" : "text-[11px] mt-0.5"
+                  )
                 )}
                 title={isEditable ? "Click to edit tagline / subtitle" : undefined}
-                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTagline?.(); } : undefined}
+                onClick={handleSelect("subtitle", onEditTagline)}
               >
                 {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
                 {data.tagline}
+                {renderEditIndicator("subtitle")}
               </p>
             )}
 
             {/* Location */}
             <p
-              className={cn(
-                "text-slate-500 truncate flex items-center gap-1 transition-all font-medium",
-                isCompactMobile ? "text-[10px] mt-1" : "text-xs mt-1.5",
-                isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1"
+              className={editableElClass(
+                "location",
+                cn(
+                  "text-slate-500 truncate flex items-center gap-1 font-medium rounded px-1",
+                  isCompactMobile ? "text-[10px] mt-1" : "text-xs mt-1.5"
+                )
               )}
               title={isEditable ? "Click to edit location text" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditLocation || onEditTextColor)?.(); } : undefined}
+              onClick={handleSelect("location", onEditLocation)}
             >
               <MapPin className={cn("text-amber-500 shrink-0", isCompactMobile ? "w-3 h-3" : "w-3.5 h-3.5")} />
               {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               <span className="truncate">{data.locationStr}</span>
+              {renderEditIndicator("location")}
             </p>
 
             {/* Specs row: BHK & Area */}
@@ -577,29 +631,34 @@ export function ShelfCard({
               isCompactDesktop ? "sm:text-xs" : isLargeDesktop ? "sm:text-sm" : "sm:text-xs"
             )}>
               <span
-                className={cn(
-                  "px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 transition-all font-bold",
-                  isCompactMobile ? "text-[10px]" : "text-[11px]",
-                  isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400"
+                className={editableElClass(
+                  "specs",
+                  cn(
+                    "px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-bold",
+                    isCompactMobile ? "text-[10px]" : "text-[11px]"
+                  )
                 )}
                 title={isEditable ? "Click to edit BHK / configuration" : undefined}
-                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditBhk || onEditTextColor)?.(); } : undefined}
+                onClick={handleSelect("specs", onEditBhk)}
               >
                 {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
                 {data.bhkStr || "Residential"}
+                {renderEditIndicator("specs")}
               </span>
 
               {data.areaStr && (
                 <>
                   <span className="text-slate-300">•</span>
                   <span
-                    className={cn(
-                      "text-slate-600 transition-all",
-                      isCompactMobile ? "text-[10px]" : "text-[11px]",
-                      isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 rounded px-1"
+                    className={editableElClass(
+                      "specs",
+                      cn(
+                        "text-slate-600 rounded px-1",
+                        isCompactMobile ? "text-[10px]" : "text-[11px]"
+                      )
                     )}
                     title={isEditable ? "Click to edit area / size" : undefined}
-                    onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditArea || onEditTextColor)?.(); } : undefined}
+                    onClick={handleSelect("specs", onEditArea)}
                   >
                     {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
                     {data.areaStr}
@@ -615,33 +674,39 @@ export function ShelfCard({
             isCompactMobile ? "pt-1.5 text-[10px]" : "pt-2 text-xs"
           )}>
             <span
-              className={cn(
-                "text-slate-500 font-medium truncate flex items-center gap-1 transition-all",
-                isCompactMobile ? "max-w-[95px] text-[10px]" : "max-w-[140px] text-[11px]",
-                isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1"
+              className={editableElClass(
+                "developer",
+                cn(
+                  "text-slate-500 font-medium truncate flex items-center gap-1 rounded px-1",
+                  isCompactMobile ? "max-w-[95px] text-[10px]" : "max-w-[140px] text-[11px]"
+                )
               )}
               title={isEditable ? "Click to edit developer / partner text" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditDeveloper || onEditTextColor)?.(); } : undefined}
+              onClick={handleSelect("developer", onEditDeveloper)}
             >
               <ShieldCheck className={cn("text-emerald-500 shrink-0", isCompactMobile ? "w-2.5 h-2.5" : "w-3 h-3")} />
               {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               <span className="truncate">{data.developer}</span>
+              {renderEditIndicator("developer")}
             </span>
 
             <span
-              className={cn(
-                "rounded-lg font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 border border-amber-500/40 transition-colors flex items-center gap-1 shrink-0",
-                isCompactMobile ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
-                isCompactDesktop ? "sm:px-2.5 sm:py-1 sm:text-xs" : isLargeDesktop ? "sm:px-3.5 sm:py-1.5 sm:text-xs" : "sm:px-2.5 sm:py-1 sm:text-xs",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105"
+              className={editableElClass(
+                "cta",
+                cn(
+                  "rounded-lg font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 border border-amber-500/40 transition-colors flex items-center gap-1 shrink-0",
+                  isCompactMobile ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
+                  isCompactDesktop ? "sm:px-2.5 sm:py-1 sm:text-xs" : isLargeDesktop ? "sm:px-3.5 sm:py-1.5 sm:text-xs" : "sm:px-2.5 sm:py-1 sm:text-xs"
+                )
               )}
               style={accentBgStyle}
               title={isEditable ? "Click to edit CTA button text" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditCtaText || onEditAccentColor)?.(); } : undefined}
+              onClick={handleSelect("cta", onEditCtaText)}
             >
               {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               <span>{data.ctaText}</span>
               <ArrowRight className="w-3 h-3" />
+              {renderEditIndicator("cta")}
             </span>
           </div>
         </div>
@@ -659,12 +724,19 @@ export function ShelfCard({
         style={containerStyle}
         className={cn(
           "group relative flex flex-col sm:flex-row h-full min-h-[190px] rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-amber-400/60 transition-all duration-300",
+          isCardActive && "ring-2 ring-amber-500 ring-offset-4 ring-offset-slate-950 shadow-2xl shadow-amber-500/20",
           isEditable && "select-none",
           className
         )}
       >
         {/* Left Photo */}
-        <div className="relative w-full sm:w-[42%] aspect-[4/3] sm:aspect-auto shrink-0 overflow-hidden bg-slate-100">
+        <div 
+          onClick={handleSelect("image")}
+          className={cn(
+            "relative w-full sm:w-[42%] aspect-[4/3] sm:aspect-auto shrink-0 overflow-hidden bg-slate-100",
+            isEditable && "cursor-pointer"
+          )}
+        >
           <Image
             src={data.primaryImage}
             alt={data.title}
@@ -705,7 +777,7 @@ export function ShelfCard({
           onClick={isEditable ? (e) => {
             if (e.target === e.currentTarget) {
               e.preventDefault();
-              onEditBgColor?.();
+              handleSelect("container", onEditBgColor)(e);
             }
           } : undefined}
           title={isEditable ? "Click to choose card background color" : undefined}
@@ -715,50 +787,54 @@ export function ShelfCard({
             <div className="flex items-center gap-1.5 flex-wrap">
               {activeBadge ? (
                 <span
-                  className={cn(
-                    "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-xs transition-all",
-                    isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+                  className={editableElClass(
+                    "badge",
+                    "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-xs transition-all"
                   )}
                   style={accentBgStyle}
                   title={isEditable ? "Click to edit badge text & color" : undefined}
-                  onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+                  onClick={handleSelect("badge", onEditBadge)}
                 >
                   {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
                   <Sparkles className="w-3 h-3" /> {activeBadge}
+                  {renderEditIndicator("badge")}
                 </span>
               ) : data.isVerified ? (
                 <span
-                  className={cn(
-                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-[10px] font-bold text-emerald-700 transition-all",
-                    isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400"
+                  className={editableElClass(
+                    "badge",
+                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-[10px] font-bold text-emerald-700 transition-all"
                   )}
                   title={isEditable ? "Click to edit badge text & color" : undefined}
-                  onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+                  onClick={handleSelect("badge", onEditBadge)}
                 >
                   <BadgeCheck className="w-3 h-3" /> Verified
+                  {renderEditIndicator("badge")}
                 </span>
               ) : data.isRera ? (
                 <span
-                  className={cn(
-                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200/80 text-[10px] font-bold text-blue-700 transition-all",
-                    isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400"
+                  className={editableElClass(
+                    "badge",
+                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200/80 text-[10px] font-bold text-blue-700 transition-all"
                   )}
                   title={isEditable ? "Click to edit badge text & color" : undefined}
-                  onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+                  onClick={handleSelect("badge", onEditBadge)}
                 >
                   <ShieldCheck className="w-3 h-3" /> RERA
+                  {renderEditIndicator("badge")}
                 </span>
               ) : (
                 <span
-                  className={cn(
-                    "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-xs transition-all",
-                    isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105"
+                  className={editableElClass(
+                    "badge",
+                    "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-xs transition-all"
                   )}
                   style={accentBgStyle}
                   title={isEditable ? "Click to edit badge text & color" : undefined}
-                  onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+                  onClick={handleSelect("badge", onEditBadge)}
                 >
                   <Sparkles className="w-3 h-3" /> Featured
+                  {renderEditIndicator("badge")}
                 </span>
               )}
             </div>
@@ -766,31 +842,37 @@ export function ShelfCard({
             {/* Title */}
             <h3
               style={textStyle}
-              className={cn(
-                "font-extrabold text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
-                isCompactMobile ? "text-xs" : "text-sm",
-                isCompactDesktop ? "sm:text-sm" : isLargeDesktop ? "sm:text-base font-black" : "sm:text-sm",
-                isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
+              className={editableElClass(
+                "title",
+                cn(
+                  "font-extrabold text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors rounded px-1",
+                  isCompactMobile ? "text-xs" : "text-sm",
+                  isCompactDesktop ? "sm:text-sm" : isLargeDesktop ? "sm:text-base font-black" : "sm:text-sm"
+                )
               )}
               title={isEditable ? "Click to edit headline & text color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+              onClick={handleSelect("title", onEditHeadline)}
             >
               {isEditable && <span className="mr-1 text-[10px] opacity-75">✏️</span>}
               {data.title}
+              {renderEditIndicator("title")}
             </h3>
 
             {/* Location */}
             <p
-              className={cn(
-                "text-slate-500 flex items-center gap-1 line-clamp-1 font-medium",
-                isCompactMobile ? "text-[10px]" : "text-[11px]",
-                isEditable && "cursor-pointer hover:underline hover:text-amber-500"
+              className={editableElClass(
+                "location",
+                cn(
+                  "text-slate-500 flex items-center gap-1 line-clamp-1 font-medium rounded px-1",
+                  isCompactMobile ? "text-[10px]" : "text-[11px]"
+                )
               )}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditLocation || onEditTextColor)?.(); } : undefined}
+              onClick={handleSelect("location", onEditLocation)}
               title={isEditable ? "Click to edit location" : undefined}
             >
               <MapPin className="w-3 h-3 shrink-0" style={accentTextStyle} />
               <span>{data.locationStr}</span>
+              {renderEditIndicator("location")}
             </p>
           </div>
 
@@ -798,16 +880,19 @@ export function ShelfCard({
           <div className="pt-2 border-t border-slate-100 space-y-1">
             <div
               style={textStyle}
-              className={cn(
-                "font-black tracking-tight text-slate-950",
-                isCompactMobile ? "text-sm" : "text-base",
-                isCompactDesktop ? "sm:text-base" : isLargeDesktop ? "sm:text-xl" : "sm:text-lg",
-                isEditable && "cursor-pointer hover:underline hover:text-amber-500"
+              className={editableElClass(
+                "price",
+                cn(
+                  "font-black tracking-tight text-slate-950 rounded px-1",
+                  isCompactMobile ? "text-sm" : "text-base",
+                  isCompactDesktop ? "sm:text-base" : isLargeDesktop ? "sm:text-xl" : "sm:text-lg"
+                )
               )}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditPrice || onEditTextColor)?.(); } : undefined}
+              onClick={handleSelect("price", onEditPrice)}
               title={isEditable ? "Click to edit price" : undefined}
             >
               {data.priceStr}
+              {renderEditIndicator("price")}
             </div>
 
             <div className={cn(
@@ -815,37 +900,38 @@ export function ShelfCard({
               isCompactMobile ? "text-[10px]" : "text-[11px]"
             )}>
               <div
-                className={cn("flex items-center gap-1.5 truncate", isEditable && "cursor-pointer hover:underline hover:text-amber-500")}
-                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditBhk || onEditTextColor)?.(); } : undefined}
+                className={editableElClass("specs", "flex items-center gap-1.5 truncate rounded px-1")}
+                onClick={handleSelect("specs", onEditBhk)}
                 title={isEditable ? "Click to edit BHK & area" : undefined}
               >
                 {data.bhkStr && <span style={textStyle}>{data.bhkStr}</span>}
                 {data.bhkStr && data.areaStr && <span>•</span>}
                 {data.areaStr && <span>{data.areaStr}</span>}
+                {renderEditIndicator("specs")}
               </div>
 
               {/* Ready pill / arrow */}
               <div className="flex items-center gap-1.5 shrink-0">
                 {data.isReadyToMove && (
                   <span
-                    className={cn(
-                      "px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold border border-emerald-200/60",
-                      isEditable && "cursor-pointer hover:ring-1 hover:ring-amber-400"
+                    className={editableElClass(
+                      "specs",
+                      "px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold border border-emerald-200/60"
                     )}
-                    onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditStatus || onEditTextColor)?.(); } : undefined}
+                    onClick={handleSelect("specs", onEditStatus)}
                     title={isEditable ? "Click to edit status" : undefined}
                   >
                     Ready
                   </span>
                 )}
                 <div
-                  className={cn(
-                    "w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center transition-all",
-                    isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105"
+                  className={editableElClass(
+                    "cta",
+                    "w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center transition-all"
                   )}
                   style={{ backgroundColor: `${effectiveAccent}25`, color: effectiveAccent }}
                   title={isEditable ? "Click to choose accent color / button" : undefined}
-                  onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditCtaText || onEditAccentColor)?.(); } : undefined}
+                  onClick={handleSelect("cta", onEditCtaText)}
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </div>
@@ -867,12 +953,19 @@ export function ShelfCard({
         style={containerStyle}
         className={cn(
           "group relative flex flex-col h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
+          isCardActive && "ring-2 ring-amber-500 ring-offset-4 ring-offset-slate-950 shadow-2xl shadow-amber-500/20",
           isEditable && "select-none",
           className
         )}
       >
         {/* Top Architectural Photo */}
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+        <div 
+          onClick={handleSelect("image")}
+          className={cn(
+            "relative aspect-[4/3] w-full overflow-hidden bg-slate-100",
+            isEditable && "cursor-pointer"
+          )}
+        >
           <Image
             src={data.primaryImage}
             alt={data.title}
@@ -885,16 +978,17 @@ export function ShelfCard({
           {/* Top Overlays */}
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
             <span
-              className={cn(
-                "px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 transition-all",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              className={editableElClass(
+                "badge",
+                "px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 transition-all"
               )}
               style={accentBgStyle}
               title={isEditable ? "Click to edit badge text & color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+              onClick={handleSelect("badge", onEditBadge)}
             >
               {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               <Sparkles className="w-3 h-3" /> {activeBadge || (data.isNewLaunch ? "New Launch" : "Premium")}
+              {renderEditIndicator("badge")}
             </span>
 
             <button
@@ -928,7 +1022,7 @@ export function ShelfCard({
           onClick={isEditable ? (e) => {
             if (e.target === e.currentTarget) {
               e.preventDefault();
-              onEditBgColor?.();
+              handleSelect("container", onEditBgColor)(e);
             }
           } : undefined}
           title={isEditable ? "Click to choose card background color" : undefined}
@@ -936,53 +1030,75 @@ export function ShelfCard({
           <div className="space-y-1">
             <div
               style={textStyle}
-              className={cn(
-                "font-black tracking-tight text-slate-950",
-                isCompactMobile ? "text-lg" : "text-xl",
-                isCompactDesktop ? "sm:text-xl" : isLargeDesktop ? "sm:text-3xl" : "sm:text-2xl",
-                isEditable && "cursor-pointer hover:underline"
+              className={editableElClass(
+                "price",
+                cn(
+                  "font-black tracking-tight text-slate-950 rounded px-1",
+                  isCompactMobile ? "text-lg" : "text-xl",
+                  isCompactDesktop ? "sm:text-xl" : isLargeDesktop ? "sm:text-3xl" : "sm:text-2xl"
+                )
               )}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              onClick={handleSelect("price", onEditPrice)}
+              title={isEditable ? "Click to edit price" : undefined}
             >
               {data.priceStr}
+              {renderEditIndicator("price")}
             </div>
             <h3
               style={textStyle}
-              className={cn(
-                "font-heading font-extrabold line-clamp-1 text-slate-900 group-hover:text-amber-600 transition-colors",
-                isCompactMobile ? "text-xs" : "text-sm",
-                isCompactDesktop ? "sm:text-sm" : isLargeDesktop ? "sm:text-lg" : "sm:text-base",
-                isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
+              className={editableElClass(
+                "title",
+                cn(
+                  "font-heading font-extrabold line-clamp-1 text-slate-900 group-hover:text-amber-600 transition-colors rounded px-1",
+                  isCompactMobile ? "text-xs" : "text-sm",
+                  isCompactDesktop ? "sm:text-sm" : isLargeDesktop ? "sm:text-lg" : "sm:text-base"
+                )
               )}
               title={isEditable ? "Click to edit headline & text color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+              onClick={handleSelect("title", onEditHeadline)}
             >
               {isEditable && <span className="mr-1 text-[10px] opacity-75">✏️</span>}
               {data.title}
+              {renderEditIndicator("title")}
             </h3>
             <p
-              className={cn(
-                "text-slate-500 font-medium flex items-center gap-1",
-                isCompactMobile ? "text-[10px]" : "text-xs",
-                isEditable && "cursor-pointer hover:underline"
+              className={editableElClass(
+                "location",
+                cn(
+                  "text-slate-500 font-medium flex items-center gap-1 rounded px-1",
+                  isCompactMobile ? "text-[10px]" : "text-xs"
+                )
               )}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              onClick={handleSelect("location", onEditLocation)}
+              title={isEditable ? "Click to edit location" : undefined}
             >
               <MapPin className="w-3.5 h-3.5 shrink-0" style={accentTextStyle} />
               <span className="line-clamp-1">{data.locationStr}</span>
+              {renderEditIndicator("location")}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-xs">
-            <div className={cn("rounded-xl bg-slate-50 border border-slate-200/80", isCompactMobile ? "p-1.5" : "p-2 sm:p-2.5")}>
+            <div 
+              onClick={handleSelect("specs", onEditBhk)}
+              className={editableElClass(
+                "specs",
+                cn("rounded-xl bg-slate-50 border border-slate-200/80 cursor-pointer", isCompactMobile ? "p-1.5" : "p-2 sm:p-2.5")
+              )}
+            >
               <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 block">Config</span>
               <span style={textStyle} className={cn("font-extrabold text-slate-900 truncate block", isCompactMobile ? "text-xs" : "text-xs sm:text-sm")}>
                 {data.bhkStr || "Available"}
+                {renderEditIndicator("specs")}
               </span>
             </div>
-            <div className={cn("rounded-xl bg-slate-50 border border-slate-200/80", isCompactMobile ? "p-1.5" : "p-2 sm:p-2.5")}>
+            <div 
+              onClick={handleSelect("specs", onEditArea)}
+              className={editableElClass(
+                "specs",
+                cn("rounded-xl bg-slate-50 border border-slate-200/80 cursor-pointer", isCompactMobile ? "p-1.5" : "p-2 sm:p-2.5")
+              )}
+            >
               <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 block">Area</span>
               <span style={textStyle} className={cn("font-extrabold text-slate-900 truncate block", isCompactMobile ? "text-xs" : "text-xs sm:text-sm")}>
                 {data.areaStr || "Spacious"}
@@ -991,17 +1107,27 @@ export function ShelfCard({
           </div>
 
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-[11px] text-slate-700 font-semibold flex items-center gap-1">
+            <span 
+              onClick={handleSelect("specs", onEditStatus)}
+              className={editableElClass("specs", "text-[11px] text-slate-700 font-semibold flex items-center gap-1 rounded px-1")}
+            >
               <Calendar className="w-3.5 h-3.5" style={accentTextStyle} />
               {data.isReadyToMove ? "Ready to Move" : "Possession Soon"}
             </span>
 
             {data.isRera ? (
-              <span className="text-[11px] text-emerald-600 font-extrabold flex items-center gap-1">
+              <span 
+                onClick={handleSelect("badge", onEditBadge)}
+                className={editableElClass("badge", "text-[11px] text-emerald-600 font-extrabold flex items-center gap-1 rounded px-1")}
+              >
                 <CheckCircle2 className="w-3.5 h-3.5" /> RERA Approved
               </span>
             ) : (
-              <span className="text-[11px] font-extrabold flex items-center gap-1" style={accentTextStyle}>
+              <span 
+                onClick={handleSelect("badge", onEditBadge)}
+                className={editableElClass("badge", "text-[11px] font-extrabold flex items-center gap-1 rounded px-1")}
+                style={accentTextStyle}
+              >
                 <Sparkles className="w-3.5 h-3.5" /> Premium
               </span>
             )}
@@ -1021,12 +1147,19 @@ export function ShelfCard({
         style={containerStyle}
         className={cn(
           "group relative flex flex-col md:flex-row h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xl hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
+          isCardActive && "ring-2 ring-amber-500 ring-offset-4 ring-offset-slate-950 shadow-2xl shadow-amber-500/20",
           isEditable && "select-none",
           className
         )}
       >
         {/* Cinematic Panoramic Photo Area */}
-        <div className="relative md:w-[60%] aspect-[16/9] md:aspect-auto min-h-[220px] overflow-hidden bg-slate-950">
+        <div 
+          onClick={handleSelect("image")}
+          className={cn(
+            "relative md:w-[60%] aspect-[16/9] md:aspect-auto min-h-[220px] overflow-hidden bg-slate-950",
+            isEditable && "cursor-pointer"
+          )}
+        >
           <Image
             src={data.primaryImage}
             alt={data.title}
@@ -1040,16 +1173,17 @@ export function ShelfCard({
           <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-between text-white">
             <div className="flex items-center justify-between">
               <span
-                className={cn(
-                  "px-3.5 py-1 rounded-full font-black text-[11px] tracking-wide shadow-md transition-all",
-                  isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+                className={editableElClass(
+                  "badge",
+                  "px-3.5 py-1 rounded-full font-black text-[11px] tracking-wide shadow-md transition-all"
                 )}
                 style={accentBgStyle}
                 title={isEditable ? "Click to edit badge text & color" : undefined}
-                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+                onClick={handleSelect("badge", onEditBadge)}
               >
                 {isEditable && <span className="mr-1 text-[10px]">✏️</span>}
                 {activeBadge || "Featured Campaign"}
+                {renderEditIndicator("badge")}
               </span>
               <button
                 type="button"
@@ -1064,27 +1198,29 @@ export function ShelfCard({
             <div className="space-y-1">
               <p
                 style={item.cardTextColor ? { color: effectiveText } : undefined}
-                className={cn(
-                  "font-serif text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight transition-all",
-                  isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-black/30 rounded-lg p-1"
+                className={editableElClass(
+                  "title",
+                  "font-serif text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight transition-all rounded-lg p-1"
                 )}
                 title={isEditable ? "Click to edit headline & text color" : undefined}
-                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+                onClick={handleSelect("title", onEditHeadline)}
               >
                 {isEditable && <span className="inline-block mr-1 text-xs opacity-75">✏️</span>}
                 {customHeadline || "A Higher Standard of Living"}
+                {renderEditIndicator("title")}
               </p>
               <p
                 style={item.cardTextColor ? { color: effectiveText } : undefined}
-                className={cn(
-                  "text-xs sm:text-sm text-slate-200 font-medium max-w-md line-clamp-1 transition-all",
-                  isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-black/30 rounded-lg p-1"
+                className={editableElClass(
+                  "subtitle",
+                  "text-xs sm:text-sm text-slate-200 font-medium max-w-md line-clamp-1 transition-all rounded-lg p-1"
                 )}
                 title={isEditable ? "Click to edit tagline & text color" : undefined}
-                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTagline?.(); } : undefined}
+                onClick={handleSelect("subtitle", onEditTagline)}
               >
                 {isEditable && <span className="inline-block mr-1 text-[10px] opacity-75">✏️</span>}
                 {customTagline || data.tagline}
+                {renderEditIndicator("subtitle")}
               </p>
 
               {/* Feature Pill Boxes Overlay */}
@@ -1116,20 +1252,20 @@ export function ShelfCard({
           onClick={isEditable ? (e) => {
             if (e.target === e.currentTarget) {
               e.preventDefault();
-              onEditBgColor?.();
+              handleSelect("container", onEditBgColor)(e);
             }
           } : undefined}
           title={isEditable ? "Click to choose card background color" : undefined}
         >
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className={cn(
-                "w-12 h-12 rounded-2xl bg-white font-heading font-black text-lg flex items-center justify-center border shadow-sm shrink-0 transition-all p-1.5 overflow-hidden",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              className={editableElClass(
+                "developer",
+                "w-12 h-12 rounded-2xl bg-white font-heading font-black text-lg flex items-center justify-center border shadow-sm shrink-0 transition-all p-1.5 overflow-hidden"
               )}
               style={{ borderColor: `${effectiveAccent}60`, color: effectiveAccent }}
-              title={isEditable ? "Click to choose accent color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
+              title={isEditable ? "Click to edit developer & logo" : undefined}
+              onClick={handleSelect("developer", onEditDeveloper)}
             >
               {data.developerLogo ? (
                 <img
@@ -1144,42 +1280,46 @@ export function ShelfCard({
             <div className="min-w-0 flex-1">
               <h3
                 style={textStyle}
-                className={cn(
-                  "font-black text-lg text-slate-900 line-clamp-1 group-hover:text-amber-500 transition-colors",
-                  isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1"
+                className={editableElClass(
+                  "title",
+                  "font-black text-lg text-slate-900 line-clamp-1 group-hover:text-amber-500 transition-colors rounded px-1"
                 )}
                 title={isEditable ? "Click to edit title override & text color" : undefined}
-                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+                onClick={handleSelect("title", onEditHeadline)}
               >
                 {data.title}
+                {renderEditIndicator("title")}
               </h3>
               <p
-                className={cn(
-                  "text-xs text-slate-500 font-medium truncate",
-                  isEditable && "cursor-pointer hover:underline"
+                className={editableElClass(
+                  "developer",
+                  "text-xs text-slate-500 font-medium truncate rounded px-1"
                 )}
-                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-                title={isEditable ? "Click to choose text color" : undefined}
+                onClick={handleSelect("developer", onEditDeveloper)}
+                title={isEditable ? "Click to edit developer" : undefined}
               >
                 By {data.developer || "Verified Partner"}
+                {renderEditIndicator("developer")}
               </p>
             </div>
           </div>
 
           <div
-            className={cn(
-              "space-y-1.5 min-w-0",
-              isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400/30 rounded p-1"
-            )}
-            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-            title={isEditable ? "Click to choose text color" : undefined}
+            className={editableElClass("price", "space-y-1.5 min-w-0 rounded p-1")}
+            onClick={handleSelect("price", onEditPrice)}
+            title={isEditable ? "Click to edit price" : undefined}
           >
             <div style={textStyle} className="text-2xl sm:text-3xl font-black tracking-tight text-slate-950">
               {data.priceStr}
+              {renderEditIndicator("price")}
             </div>
-            <p className="text-xs text-slate-500 flex items-center gap-1 font-medium truncate">
+            <p 
+              onClick={handleSelect("location", onEditLocation)}
+              className={editableElClass("location", "text-xs text-slate-500 flex items-center gap-1 font-medium truncate rounded px-1")}
+            >
               <MapPin className="w-3.5 h-3.5 shrink-0" style={accentTextStyle} />
               <span className="truncate">{data.locationStr}</span>
+              {renderEditIndicator("location")}
             </p>
           </div>
 
@@ -1187,12 +1327,12 @@ export function ShelfCard({
           <div className="grid grid-cols-3 gap-2 py-1">
             {/* Box 1: Configuration / BHK */}
             <div
-              className={cn(
-                "flex flex-col items-start justify-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 transition-all shadow-xs min-w-0",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400"
+              className={editableElClass(
+                "specs",
+                "flex flex-col items-start justify-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 transition-all shadow-xs min-w-0 cursor-pointer"
               )}
               title={isEditable ? "Click to edit configuration" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditBhk || onEditTextColor)?.(); } : undefined}
+              onClick={handleSelect("specs", onEditBhk)}
             >
               <div className="flex items-center gap-1 text-slate-400 mb-0.5">
                 <BedDouble className="w-3 h-3 text-amber-500 shrink-0" />
@@ -1200,17 +1340,18 @@ export function ShelfCard({
               </div>
               <span style={textStyle} className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white truncate w-full">
                 {data.bhkStr || "1 BHK"}
+                {renderEditIndicator("specs")}
               </span>
             </div>
 
             {/* Box 2: Super Area */}
             <div
-              className={cn(
-                "flex flex-col items-start justify-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 transition-all shadow-xs min-w-0",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400"
+              className={editableElClass(
+                "specs",
+                "flex flex-col items-start justify-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 transition-all shadow-xs min-w-0 cursor-pointer"
               )}
               title={isEditable ? "Click to edit area" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditArea || onEditTextColor)?.(); } : undefined}
+              onClick={handleSelect("specs", onEditArea)}
             >
               <div className="flex items-center gap-1 text-slate-400 mb-0.5">
                 <Maximize className="w-3 h-3 text-blue-500 shrink-0" />
@@ -1223,12 +1364,12 @@ export function ShelfCard({
 
             {/* Box 3: Status / Possession */}
             <div
-              className={cn(
-                "flex flex-col items-start justify-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 transition-all shadow-xs min-w-0",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400"
+              className={editableElClass(
+                "specs",
+                "flex flex-col items-start justify-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 transition-all shadow-xs min-w-0 cursor-pointer"
               )}
               title={isEditable ? "Click to edit status" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); (onEditStatus || onEditTextColor)?.(); } : undefined}
+              onClick={handleSelect("specs", onEditStatus)}
             >
               <div className="flex items-center gap-1 text-slate-400 mb-0.5">
                 <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
@@ -1247,16 +1388,17 @@ export function ShelfCard({
             </span>
 
             <div
-              className={cn(
-                "px-4 py-2 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 hover:brightness-105 active:scale-95",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              className={editableElClass(
+                "cta",
+                "px-4 py-2 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 hover:brightness-105 active:scale-95"
               )}
               style={accentBgStyle}
-              title={isEditable ? "Click to choose button & accent color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
+              title={isEditable ? "Click to edit CTA button text & color" : undefined}
+              onClick={handleSelect("cta", onEditCtaText)}
             >
               <span>{activeCtaText || "Explore"}</span>
               <ArrowRight className="w-3.5 h-3.5" />
+              {renderEditIndicator("cta")}
             </div>
           </div>
         </div>
@@ -1274,12 +1416,16 @@ export function ShelfCard({
         style={containerStyle}
         className={cn(
           "group relative flex flex-col md:flex-row h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xl hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
+          isCardActive && "ring-2 ring-amber-500 ring-offset-4 ring-offset-slate-950 shadow-2xl shadow-amber-500/20",
           isEditable && "select-none",
           className
         )}
       >
         {/* Left: Dual Stacked Images */}
-        <div className="md:w-[50%] flex flex-col min-h-[220px] shrink-0">
+        <div 
+          onClick={handleSelect("image")}
+          className={cn("md:w-[50%] flex flex-col min-h-[220px] shrink-0", isEditable && "cursor-pointer")}
+        >
           <div className="relative h-1/2 w-full overflow-hidden bg-slate-100 border-b border-white/20">
             <Image
               src={data.primaryImage}
@@ -1289,19 +1435,23 @@ export function ShelfCard({
               className="object-cover transition-transform duration-700 ease-out group-hover:scale-108"
             />
             <div
-              className={cn(
-                "absolute top-3 left-3 px-3 py-1 rounded-full font-black text-[11px] shadow-md flex items-center gap-1 transition-all",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              className={editableElClass(
+                "badge",
+                "absolute top-3 left-3 px-3 py-1 rounded-full font-black text-[11px] shadow-md flex items-center gap-1 transition-all"
               )}
               style={accentBgStyle}
               title={isEditable ? "Click to edit badge text & color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+              onClick={handleSelect("badge", onEditBadge)}
             >
               {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               <Sparkles className="w-3 h-3" /> {activeBadge || "Premium"}
+              {renderEditIndicator("badge")}
             </div>
           </div>
-          <div className="relative h-1/2 w-full overflow-hidden bg-slate-200">
+          <div 
+            onClick={handleSelect("image_secondary")}
+            className="relative h-1/2 w-full overflow-hidden bg-slate-200"
+          >
             <Image
               src={data.secondaryImage}
               alt={`${data.title} interior`}
@@ -1322,7 +1472,7 @@ export function ShelfCard({
           onClick={isEditable ? (e) => {
             if (e.target === e.currentTarget) {
               e.preventDefault();
-              onEditBgColor?.();
+              handleSelect("container", onEditBgColor)(e);
             }
           } : undefined}
           title={isEditable ? "Click to choose card background color" : undefined}
@@ -1330,16 +1480,17 @@ export function ShelfCard({
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <span
-                className={cn(
-                  "text-[11px] font-bold uppercase tracking-wider",
-                  isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1"
+                className={editableElClass(
+                  "subtitle",
+                  "text-[11px] font-bold uppercase tracking-wider rounded px-1"
                 )}
                 style={accentTextStyle}
                 title={isEditable ? "Click to edit tagline & text color" : undefined}
-                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTagline?.(); } : undefined}
+                onClick={handleSelect("subtitle", onEditTagline)}
               >
                 {isEditable && <span className="mr-1 text-[9px]">✏️</span>}
                 {customTagline || "Live Above Ordinary"}
+                {renderEditIndicator("subtitle")}
               </span>
               <button
                 type="button"
@@ -1353,43 +1504,47 @@ export function ShelfCard({
 
             <h3
               style={textStyle}
-              className={cn(
-                "font-heading font-black text-xl text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
-                isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
+              className={editableElClass(
+                "title",
+                "font-heading font-black text-xl text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors rounded px-1"
               )}
               title={isEditable ? "Click to edit headline & text color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+              onClick={handleSelect("title", onEditHeadline)}
             >
               {isEditable && <span className="mr-1 text-[10px] opacity-75">✏️</span>}
               {data.title}
+              {renderEditIndicator("title")}
             </h3>
             <p
-              className={cn("text-xs text-slate-500 flex items-center gap-1", isEditable && "cursor-pointer hover:underline")}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              className={editableElClass("location", "text-xs text-slate-500 flex items-center gap-1 rounded px-1")}
+              onClick={handleSelect("location", onEditLocation)}
+              title={isEditable ? "Click to edit location" : undefined}
             >
               <MapPin className="w-3 h-3 shrink-0" style={accentTextStyle} />
               <span>{data.locationStr}</span>
+              {renderEditIndicator("location")}
             </p>
           </div>
 
           <div className="space-y-1">
             <div
               style={textStyle}
-              className={cn("text-2xl font-black tracking-tight text-slate-950", isEditable && "cursor-pointer hover:underline")}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              className={editableElClass("price", "text-2xl font-black tracking-tight text-slate-950 rounded px-1")}
+              onClick={handleSelect("price", onEditPrice)}
+              title={isEditable ? "Click to edit price" : undefined}
             >
               {data.priceStr}
+              {renderEditIndicator("price")}
             </div>
             <div
-              className={cn("flex items-center gap-2 text-xs font-semibold text-slate-600", isEditable && "cursor-pointer hover:underline")}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              className={editableElClass("specs", "flex items-center gap-2 text-xs font-semibold text-slate-600 rounded px-1")}
+              onClick={handleSelect("specs", onEditBhk)}
+              title={isEditable ? "Click to edit specs & BHK" : undefined}
             >
               {data.bhkStr && <span style={textStyle}>{data.bhkStr}</span>}
               {data.bhkStr && data.areaStr && <span>•</span>}
               {data.areaStr && <span>{data.areaStr}</span>}
+              {renderEditIndicator("specs")}
             </div>
           </div>
 
@@ -1404,18 +1559,25 @@ export function ShelfCard({
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] text-slate-500 font-semibold">{data.developer}</span>
+              <span 
+                onClick={handleSelect("developer", onEditDeveloper)}
+                className={editableElClass("developer", "text-[11px] text-slate-500 font-semibold rounded px-1")}
+              >
+                {data.developer}
+                {renderEditIndicator("developer")}
+              </span>
               <span
-                className={cn(
-                  "px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1 shadow-xs transition-all",
-                  isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+                className={editableElClass(
+                  "cta",
+                  "px-3 py-1.5 rounded-xl font-extrabold text-xs flex items-center gap-1 shadow-xs transition-all"
                 )}
                 style={accentBgStyle}
-                title={isEditable ? "Click to choose button & accent color" : undefined}
-                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
+                title={isEditable ? "Click to edit CTA button text" : undefined}
+                onClick={handleSelect("cta", onEditCtaText)}
               >
                 <span>View Details</span>
                 <ArrowRight className="w-3 h-3" />
+                {renderEditIndicator("cta")}
               </span>
             </div>
           </div>
@@ -1434,12 +1596,16 @@ export function ShelfCard({
         style={containerStyle}
         className={cn(
           "group relative flex flex-col h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xl hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
+          isCardActive && "ring-2 ring-amber-500 ring-offset-4 ring-offset-slate-950 shadow-2xl shadow-amber-500/20",
           isEditable && "select-none",
           className
         )}
       >
         {/* Full-bleed Photo */}
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+        <div 
+          onClick={handleSelect("image")}
+          className={cn("relative aspect-[4/3] w-full overflow-hidden bg-slate-100", isEditable && "cursor-pointer")}
+        >
           <Image
             src={data.primaryImage}
             alt={data.title}
@@ -1452,16 +1618,17 @@ export function ShelfCard({
           {/* Top Overlays */}
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
             <span
-              className={cn(
-                "px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wide shadow-md transition-all",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              className={editableElClass(
+                "badge",
+                "px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wide shadow-md transition-all"
               )}
               style={accentBgStyle}
               title={isEditable ? "Click to edit badge text & color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+              onClick={handleSelect("badge", onEditBadge)}
             >
               {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               {activeBadge || "Featured"}
+              {renderEditIndicator("badge")}
             </span>
             <button
               type="button"
@@ -1484,20 +1651,20 @@ export function ShelfCard({
           onClick={isEditable ? (e) => {
             if (e.target === e.currentTarget) {
               e.preventDefault();
-              onEditBgColor?.();
+              handleSelect("container", onEditBgColor)(e);
             }
           } : undefined}
           title={isEditable ? "Click to choose card background color" : undefined}
         >
           {/* Overlapping Circular Project Logo */}
           <div
-            className={cn(
-              "absolute -top-8 left-4 sm:left-5 w-16 h-16 sm:w-18 sm:h-18 rounded-full border-2 shadow-xl bg-white p-2 flex items-center justify-center overflow-hidden transition-all z-20",
-              isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+            className={editableElClass(
+              "developer",
+              "absolute -top-8 left-4 sm:left-5 w-16 h-16 sm:w-18 sm:h-18 rounded-full border-2 shadow-xl bg-white p-2 flex items-center justify-center overflow-hidden transition-all z-20"
             )}
             style={{ borderColor: effectiveAccent, color: effectiveAccent }}
-            title={isEditable ? "Click to choose accent color" : undefined}
-            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
+            title={isEditable ? "Click to edit developer & logo" : undefined}
+            onClick={handleSelect("developer", onEditDeveloper)}
           >
             {data.developerLogo ? (
               <img
@@ -1515,43 +1682,46 @@ export function ShelfCard({
           <div className="pt-6 sm:pt-7 space-y-1">
             <h3
               style={textStyle}
-              className={cn(
-                "font-heading font-black text-lg sm:text-xl text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
-                isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
+              className={editableElClass(
+                "title",
+                "font-heading font-black text-lg sm:text-xl text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors rounded px-1"
               )}
               title={isEditable ? "Click to edit headline & text color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+              onClick={handleSelect("title", onEditHeadline)}
             >
               {isEditable && <span className="mr-1 text-[10px] opacity-75">✏️</span>}
               {data.title}
+              {renderEditIndicator("title")}
             </h3>
             <p
-              className={cn("text-xs text-slate-500 font-medium", isEditable && "cursor-pointer hover:underline")}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              className={editableElClass("location", "text-xs text-slate-500 font-medium rounded px-1")}
+              onClick={handleSelect("location", onEditLocation)}
+              title={isEditable ? "Click to edit location" : undefined}
             >
               {data.bhkStr ? `${data.bhkStr}, ` : ""}
               {data.locationStr}
+              {renderEditIndicator("location")}
             </p>
           </div>
 
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
             <div
               style={textStyle}
-              className={cn("text-lg sm:text-xl font-black tracking-tight text-slate-950", isEditable && "cursor-pointer hover:underline")}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              className={editableElClass("price", "text-lg sm:text-xl font-black tracking-tight text-slate-950 rounded px-1")}
+              onClick={handleSelect("price", onEditPrice)}
+              title={isEditable ? "Click to edit price" : undefined}
             >
               {data.priceStr}
+              {renderEditIndicator("price")}
             </div>
             <div
-              className={cn(
-                "w-7 h-7 rounded-full bg-slate-100 text-slate-900 transition-all flex items-center justify-center",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105"
+              className={editableElClass(
+                "cta",
+                "w-7 h-7 rounded-full bg-slate-100 text-slate-900 transition-all flex items-center justify-center"
               )}
               style={{ backgroundColor: `${effectiveAccent}25`, color: effectiveAccent }}
-              title={isEditable ? "Click to choose accent color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
+              title={isEditable ? "Click to edit CTA button & color" : undefined}
+              onClick={handleSelect("cta", onEditCtaText)}
             >
               <ChevronRight className="w-4 h-4" />
             </div>
@@ -1571,12 +1741,16 @@ export function ShelfCard({
         style={containerStyle}
         className={cn(
           "group relative flex flex-col h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-amber-400/60 transition-all duration-500",
+          isCardActive && "ring-2 ring-amber-500 ring-offset-4 ring-offset-slate-950 shadow-2xl shadow-amber-500/20",
           isEditable && "select-none",
           className
         )}
       >
         {/* Villa Photo */}
-        <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
+        <div 
+          onClick={handleSelect("image")}
+          className={cn("relative aspect-[16/10] w-full overflow-hidden bg-slate-100", isEditable && "cursor-pointer")}
+        >
           <Image
             src={data.primaryImage}
             alt={data.title}
@@ -1589,16 +1763,17 @@ export function ShelfCard({
           {/* Badges */}
           <div className="absolute top-3 left-3 flex items-center gap-1.5">
             <span
-              className={cn(
-                "px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-md transition-all",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              className={editableElClass(
+                "badge",
+                "px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-md transition-all"
               )}
               style={accentBgStyle}
               title={isEditable ? "Click to edit badge text & color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+              onClick={handleSelect("badge", onEditBadge)}
             >
               {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               <Compass className="w-3 h-3" /> {activeBadge || "3D Tour"}
+              {renderEditIndicator("badge")}
             </span>
             <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold shadow-sm">
               Gated Villa
@@ -1625,7 +1800,7 @@ export function ShelfCard({
           onClick={isEditable ? (e) => {
             if (e.target === e.currentTarget) {
               e.preventDefault();
-              onEditBgColor?.();
+              handleSelect("container", onEditBgColor)(e);
             }
           } : undefined}
           title={isEditable ? "Click to choose card background color" : undefined}
@@ -1634,32 +1809,35 @@ export function ShelfCard({
             <div className="flex items-center justify-between">
               <h3
                 style={textStyle}
-                className={cn(
-                  "font-heading font-black text-base sm:text-lg text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
-                  isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
+                className={editableElClass(
+                  "title",
+                  "font-heading font-black text-base sm:text-lg text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors rounded px-1"
                 )}
                 title={isEditable ? "Click to edit headline & text color" : undefined}
-                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+                onClick={handleSelect("title", onEditHeadline)}
               >
                 {isEditable && <span className="mr-1 text-[10px] opacity-75">✏️</span>}
                 {data.title}
+                {renderEditIndicator("title")}
               </h3>
               <span
                 style={textStyle}
-                className={cn("text-base sm:text-lg font-black shrink-0 ml-2 text-slate-950", isEditable && "cursor-pointer hover:underline")}
-                onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-                title={isEditable ? "Click to choose text color" : undefined}
+                className={editableElClass("price", "text-base sm:text-lg font-black shrink-0 ml-2 text-slate-950 rounded px-1")}
+                onClick={handleSelect("price", onEditPrice)}
+                title={isEditable ? "Click to edit price" : undefined}
               >
                 {data.priceStr}
+                {renderEditIndicator("price")}
               </span>
             </div>
             <p
-              className={cn("text-xs text-slate-500 flex items-center gap-1", isEditable && "cursor-pointer hover:underline")}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              className={editableElClass("location", "text-xs text-slate-500 flex items-center gap-1 rounded px-1")}
+              onClick={handleSelect("location", onEditLocation)}
+              title={isEditable ? "Click to edit location" : undefined}
             >
               <MapPin className="w-3 h-3 shrink-0" style={accentTextStyle} />
               <span>{data.locationStr}</span>
+              {renderEditIndicator("location")}
             </p>
           </div>
 
@@ -1679,20 +1857,22 @@ export function ShelfCard({
           <div className="flex items-center justify-between text-xs pt-1">
             <span
               style={textStyle}
-              className={cn("text-slate-600 font-semibold", isEditable && "cursor-pointer hover:underline")}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              className={editableElClass("specs", "text-slate-600 font-semibold rounded px-1")}
+              onClick={handleSelect("specs", onEditBhk)}
+              title={isEditable ? "Click to edit specs" : undefined}
             >
               {data.bhkStr || "4 BHK"} • {data.areaStr || "3200 sq.ft."}
+              {renderEditIndicator("specs")}
             </span>
 
             <span
               style={accentTextStyle}
-              className={cn("font-black flex items-center gap-1 group-hover:translate-x-0.5 transition-transform", isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 p-1 rounded-lg")}
-              title={isEditable ? "Click to choose accent color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
+              className={editableElClass("cta", "font-black flex items-center gap-1 group-hover:translate-x-0.5 transition-transform p-1 rounded-lg")}
+              title={isEditable ? "Click to edit CTA button & color" : undefined}
+              onClick={handleSelect("cta", onEditCtaText)}
             >
               Know More <ArrowRight className="w-3.5 h-3.5" />
+              {renderEditIndicator("cta")}
             </span>
           </div>
         </div>
@@ -1710,12 +1890,19 @@ export function ShelfCard({
         style={containerStyle}
         className={cn(
           "group relative flex flex-col h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-md hover:shadow-xl hover:border-amber-400/60 transition-all duration-500",
+          isCardActive && "ring-2 ring-amber-500 ring-offset-4 ring-offset-slate-950 shadow-2xl shadow-amber-500/20",
           isEditable && "select-none",
           className
         )}
       >
         {/* Elevation Photo */}
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+        <div 
+          onClick={handleSelect("image")}
+          className={cn(
+            "relative aspect-[4/3] w-full overflow-hidden bg-slate-100",
+            isEditable && "cursor-pointer"
+          )}
+        >
           <Image
             src={data.primaryImage}
             alt={data.title}
@@ -1727,16 +1914,17 @@ export function ShelfCard({
 
           <div className="absolute top-3 left-3 flex items-center gap-1.5">
             <span
-              className={cn(
-                "px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-md transition-all",
-                isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+              className={editableElClass(
+                "badge",
+                "px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-md transition-all"
               )}
               style={accentBgStyle}
               title={isEditable ? "Click to edit badge text & color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+              onClick={handleSelect("badge", onEditBadge)}
             >
               {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
               <Zap className="w-3 h-3" /> {activeBadge || "UNDER CONSTRUCTION"}
+              {renderEditIndicator("badge")}
             </span>
           </div>
 
@@ -1768,7 +1956,7 @@ export function ShelfCard({
           onClick={isEditable ? (e) => {
             if (e.target === e.currentTarget) {
               e.preventDefault();
-              onEditBgColor?.();
+              handleSelect("container", onEditBgColor)(e);
             }
           } : undefined}
           title={isEditable ? "Click to choose card background color" : undefined}
@@ -1776,64 +1964,85 @@ export function ShelfCard({
           <div className="space-y-1">
             <h3
               style={textStyle}
-              className={cn(
-                "font-heading font-black text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors",
-                isCompactMobile ? "text-xs" : "text-sm",
-                isCompactDesktop ? "sm:text-sm" : isLargeDesktop ? "sm:text-lg" : "sm:text-base",
-                isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded px-1"
+              className={editableElClass(
+                "title",
+                cn(
+                  "font-heading font-black text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors rounded px-1",
+                  isCompactMobile ? "text-xs" : "text-sm",
+                  isCompactDesktop ? "sm:text-sm" : isLargeDesktop ? "sm:text-lg" : "sm:text-base"
+                )
               )}
               title={isEditable ? "Click to edit headline & text color" : undefined}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+              onClick={handleSelect("title", onEditHeadline)}
             >
               {isEditable && <span className="mr-1 text-[10px] opacity-75">✏️</span>}
               {data.title}
+              {renderEditIndicator("title")}
             </h3>
             <p
-              className={cn(
-                "text-slate-500 flex items-center gap-1 font-medium",
-                isCompactMobile ? "text-[10px]" : "text-xs",
-                isEditable && "cursor-pointer hover:underline"
+              className={editableElClass(
+                "location",
+                cn(
+                  "text-slate-500 flex items-center gap-1 font-medium rounded px-1",
+                  isCompactMobile ? "text-[10px]" : "text-xs"
+                )
               )}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              onClick={handleSelect("location", onEditLocation)}
+              title={isEditable ? "Click to edit location" : undefined}
             >
               <MapPin className="w-3 h-3 shrink-0" style={accentTextStyle} />
               <span>{data.locationStr}</span>
+              {renderEditIndicator("location")}
             </p>
           </div>
 
           <div className="flex items-center justify-between">
             <div
               style={textStyle}
-              className={cn(
-                "font-black text-slate-950",
-                isCompactMobile ? "text-base" : "text-lg",
-                isCompactDesktop ? "sm:text-lg" : isLargeDesktop ? "sm:text-2xl" : "sm:text-xl",
-                isEditable && "cursor-pointer hover:underline"
+              className={editableElClass(
+                "price",
+                cn(
+                  "font-black text-slate-950 rounded px-1",
+                  isCompactMobile ? "text-base" : "text-lg",
+                  isCompactDesktop ? "sm:text-lg" : isLargeDesktop ? "sm:text-2xl" : "sm:text-xl"
+                )
               )}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              onClick={handleSelect("price", onEditPrice)}
+              title={isEditable ? "Click to edit price" : undefined}
             >
               {data.priceStr}
+              {renderEditIndicator("price")}
             </div>
             <div
               style={textStyle}
-              className={cn(
-                "font-bold text-slate-700",
-                isCompactMobile ? "text-[10px]" : "text-xs",
-                isEditable && "cursor-pointer hover:underline"
+              className={editableElClass(
+                "specs",
+                cn(
+                  "font-bold text-slate-700 rounded px-1",
+                  isCompactMobile ? "text-[10px]" : "text-xs"
+                )
               )}
-              onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-              title={isEditable ? "Click to choose text color" : undefined}
+              onClick={handleSelect("specs", onEditBhk)}
+              title={isEditable ? "Click to edit BHK / specs" : undefined}
             >
               {data.bhkStr}
+              {renderEditIndicator("specs")}
             </div>
           </div>
 
           {/* Construction Progress Bar (Admin Configurable per Project) */}
-          <div className="pt-2 sm:pt-3 border-t border-slate-100 space-y-1.5">
+          <div 
+            onClick={handleSelect("progress")}
+            className={editableElClass(
+              "progress",
+              "pt-2 sm:pt-3 border-t border-slate-100 space-y-1.5 p-1.5 rounded-xl cursor-pointer"
+            )}
+            title={isEditable ? "Click to edit construction progress %" : undefined}
+          >
             <div className="flex items-center justify-between text-xs font-extrabold">
-              <span style={textStyle} className={cn("text-slate-700", isCompactMobile ? "text-[10px]" : "text-xs")}>Construction Progress</span>
+              <span style={textStyle} className={cn("text-slate-700", isCompactMobile ? "text-[10px]" : "text-xs")}>
+                Construction Progress {renderEditIndicator("progress")}
+              </span>
               <span className="font-black" style={{ color: "#10b981", fontSize: isCompactMobile ? "11px" : "12px" }}>
                 {data.progressPercentage ?? 70}%
               </span>
@@ -1857,9 +2066,11 @@ export function ShelfCard({
     <CardRoot
       {...cardRootProps}
       style={containerStyle}
+      onClick={handleSelect("container", onEditBgColor)}
       className={cn(
         "group relative flex flex-col md:flex-row h-full rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xl hover:border-amber-500/60 transition-all duration-500",
-        isEditable && "select-none",
+        isCardActive && "ring-2 ring-amber-500 ring-offset-2 ring-offset-slate-900 shadow-2xl",
+        isEditable && "select-none cursor-pointer",
         className
       )}
     >
@@ -1868,88 +2079,100 @@ export function ShelfCard({
         style={containerStyle}
         className={cn(
           "md:w-[45%] p-5 sm:p-6 flex flex-col justify-between space-y-4 bg-white transition-all",
-          isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
+          editableElClass("container", "")
         )}
-        onClick={isEditable ? (e) => {
-          if (e.target === e.currentTarget) {
-            e.preventDefault();
-            onEditBgColor?.();
-          }
-        } : undefined}
-        title={isEditable ? "Click to choose card background color" : undefined}
       >
         <div className="space-y-2">
           <span
-            className={cn(
-              "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider inline-block shadow-xs transition-all",
-              isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+            className={editableElClass(
+              "badge",
+              "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider inline-block shadow-xs transition-all"
             )}
             style={accentBgStyle}
             title={isEditable ? "Click to edit badge text & color" : undefined}
-            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditBadge?.(); } : undefined}
+            onClick={handleSelect("badge", onEditBadge)}
           >
-            {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
             {activeBadge || "Signature Collection"}
+            {renderEditIndicator("badge")}
           </span>
           <h3
             style={textStyle}
-            className={cn(
-              "font-serif text-xl sm:text-2xl font-black text-slate-900 leading-tight transition-all",
-              isEditable && "cursor-pointer hover:outline-dashed hover:outline-2 hover:outline-amber-400 hover:bg-amber-400/10 rounded p-1"
+            className={editableElClass(
+              "title",
+              "font-serif text-xl sm:text-2xl font-black text-slate-900 leading-tight transition-all rounded p-1"
             )}
-            title={isEditable ? "Click to edit headline & text color" : undefined}
-            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditHeadline?.(); } : undefined}
+            title={isEditable ? "Click to edit headline" : undefined}
+            onClick={handleSelect("title", onEditHeadline)}
           >
-            {isEditable && <span className="mr-1 text-xs opacity-75">✏️</span>}
             {customHeadline || "Premium Living by the Lake"}
+            {renderEditIndicator("title")}
           </h3>
           <p
-            className={cn("text-xs text-slate-600 font-medium transition-all", isEditable && "cursor-pointer hover:outline-dashed hover:outline-1 hover:outline-amber-400 rounded px-1")}
-            title={isEditable ? "Click to edit tagline & text color" : undefined}
-            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTagline?.(); } : undefined}
+            className={editableElClass(
+              "subtitle",
+              "text-xs text-slate-600 font-medium transition-all rounded px-1"
+            )}
+            title={isEditable ? "Click to edit tagline" : undefined}
+            onClick={handleSelect("subtitle", onEditTagline)}
           >
-            {isEditable && <span className="mr-0.5 text-[9px]">✏️</span>}
             {customTagline || (data.bhkStr ? `${data.bhkStr} • ${data.areaStr || "2200–3800 sq.ft."}` : "Exclusive waterfront residences...")}
+            {renderEditIndicator("subtitle")}
           </p>
         </div>
 
         <div className="space-y-1">
           <p
-            className={cn("text-xs text-slate-500 flex items-center gap-1 font-medium", isEditable && "cursor-pointer hover:underline")}
-            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-            title={isEditable ? "Click to choose text color" : undefined}
+            className={editableElClass(
+              "location",
+              "text-xs text-slate-500 flex items-center gap-1 font-medium rounded px-1"
+            )}
+            onClick={handleSelect("location", onEditTextColor)}
+            title={isEditable ? "Click to edit location" : undefined}
           >
             <MapPin className="w-3.5 h-3.5 shrink-0" style={accentTextStyle} />
             <span>{data.locationStr}</span>
+            {renderEditIndicator("location")}
           </p>
           <div
             style={textStyle}
-            className={cn("text-2xl font-black tracking-tight text-slate-950", isEditable && "cursor-pointer hover:underline")}
-            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditTextColor?.(); } : undefined}
-            title={isEditable ? "Click to choose text color" : undefined}
+            className={editableElClass(
+              "price",
+              "text-2xl font-black tracking-tight text-slate-950 rounded px-1"
+            )}
+            onClick={handleSelect("price", onEditPrice)}
+            title={isEditable ? "Click to edit price" : undefined}
           >
             {data.priceStr}
+            {renderEditIndicator("price")}
           </div>
         </div>
 
         <div className="pt-2">
           <span
-            className={cn(
-              "w-full sm:w-auto px-4 py-2 rounded-xl font-black text-xs inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs",
-              isEditable && "cursor-pointer hover:ring-2 hover:ring-amber-400 hover:scale-105 active:scale-95"
+            className={editableElClass(
+              "cta",
+              "w-full sm:w-auto px-4 py-2 rounded-xl font-black text-xs inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs"
             )}
             style={accentBgStyle}
-            title={isEditable ? "Click to choose button & accent color" : undefined}
-            onClick={isEditable ? (e) => { e.preventDefault(); e.stopPropagation(); onEditAccentColor?.(); } : undefined}
+            title={isEditable ? "Click to edit button & accent color" : undefined}
+            onClick={handleSelect("cta", onEditAccentColor)}
           >
-            <span>Discover</span>
+            <span>{data.ctaText || "Discover"}</span>
             <ArrowRight className="w-3.5 h-3.5" />
+            {renderEditIndicator("cta")}
           </span>
         </div>
       </div>
 
       {/* Right Lakefront / Luxury Terrace Photo */}
-      <div className="relative md:w-[55%] aspect-[16/10] md:aspect-auto min-h-[200px] overflow-hidden bg-slate-100">
+      <div 
+        className={editableElClass(
+          "image",
+          "relative md:w-[55%] aspect-[16/10] md:aspect-auto min-h-[200px] overflow-hidden bg-slate-100"
+        )}
+        onClick={handleSelect("image")}
+        title={isEditable ? "Click to edit image" : undefined}
+      >
         <Image
           src={data.primaryImage}
           alt={data.title}
@@ -1967,6 +2190,7 @@ export function ShelfCard({
         >
           <Heart className={cn("w-4 h-4", isSaved && "fill-red-500 text-red-500")} />
         </button>
+        {renderEditIndicator("image")}
       </div>
     </CardRoot>
   );

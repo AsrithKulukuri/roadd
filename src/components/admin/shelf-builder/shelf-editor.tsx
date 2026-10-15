@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import type {
   ShelfDefinition,
+  ShelfListingItem,
   CardElementId,
   ElementConfig,
   BorderConfig,
@@ -110,6 +111,7 @@ export function ShelfEditor({
   const [itemTypeView, setItemTypeView] = useState<"all" | "property" | "project">("all");
   const [leftTab, setLeftTab] = useState<"settings" | "content" | "style" | "images">("settings");
   const [selectedElementId, setSelectedElementId] = useState<CardElementId>("container");
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   // Save / Publish State
   const [isSaving, setIsSaving] = useState(false);
@@ -126,7 +128,7 @@ export function ShelfEditor({
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Evaluate Listings for Live Preview
+  // Evaluate Listings for Live Preview & Merge Live Overrides
   // ─────────────────────────────────────────────────────────────────────────────
   const previewItems = useMemo<MixedItem[]>(() => {
     const propertyMap = new Map(allProperties.map((p) => [p.id, p]));
@@ -154,15 +156,68 @@ export function ShelfEditor({
       }
     }
 
+    // Merge custom overrides from currentShelf.items so edits reflect instantly
+    const overridesMap = new Map((currentShelf.items || []).map((it) => [it.id, it]));
+    const mergedCombined = combined.map((item) => {
+      const override = overridesMap.get(item.id);
+      return override ? { ...item, ...override } : item;
+    });
+
     // Filter by itemTypeView
     if (itemTypeView === "property") {
-      return combined.filter((i: MixedItem) => i.itemType === "property");
+      return mergedCombined.filter((i: MixedItem) => i.itemType === "property");
     }
     if (itemTypeView === "project") {
-      return combined.filter((i: MixedItem) => i.itemType === "project");
+      return mergedCombined.filter((i: MixedItem) => i.itemType === "project");
     }
-    return combined;
+    return mergedCombined;
   }, [currentShelf, allProperties, allProjects, itemTypeView]);
+
+  // Active Item currently targeted for editing
+  const activeItem = useMemo(() => {
+    if (previewItems.length === 0) return null;
+    if (!selectedItemId) return previewItems[0];
+    return previewItems.find((p) => p.id === selectedItemId) || previewItems[0];
+  }, [previewItems, selectedItemId]);
+
+  // Update item field live in currentShelf.items
+  const handleUpdateItemContent = (itemId: string, field: keyof ShelfListingItem, value: any) => {
+    const existingIndex = (currentShelf.items || []).findIndex((i) => i.id === itemId);
+    let updatedItems: ShelfListingItem[];
+    if (existingIndex >= 0) {
+      updatedItems = currentShelf.items.map((it, idx) =>
+        idx === existingIndex ? { ...it, [field]: value } : it
+      );
+    } else {
+      const match = previewItems.find((p) => p.id === itemId);
+      updatedItems = [
+        ...(currentShelf.items || []),
+        {
+          id: itemId,
+          type: match?.itemType || "property",
+          [field]: value,
+        },
+      ];
+    }
+    updateShelf({ items: updatedItems });
+  };
+
+  // Bulk apply styling or content to all items in current shelf
+  const handleApplyToAllCards = (field: keyof ShelfListingItem, value: any) => {
+    const allIds = new Set([
+      ...(currentShelf.items || []).map((it) => it.id),
+      ...previewItems.map((p) => p.id),
+    ]);
+    const updatedItems = Array.from(allIds).map((id) => {
+      const existing = (currentShelf.items || []).find((it) => it.id === id);
+      const match = previewItems.find((p) => p.id === id);
+      return {
+        ...(existing || { id, type: match?.itemType || "property" }),
+        [field]: value,
+      };
+    });
+    updateShelf({ items: updatedItems });
+  };
 
   // Handle Save Draft
   const handleSave = async () => {
@@ -480,6 +535,19 @@ export function ShelfEditor({
 
                 <div>
                   <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                    Eyebrow / Category Tag
+                  </label>
+                  <input
+                    type="text"
+                    value={currentShelf.eyebrow || ""}
+                    onChange={(e) => updateShelf({ eyebrow: e.target.value })}
+                    placeholder="e.g. EXCLUSIVE SELECTION, TRENDING NOW"
+                    className="w-full py-1.5 px-3 rounded-xl border border-slate-700 bg-slate-800 text-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1">
                     Subtitle / Description
                   </label>
                   <input
@@ -489,6 +557,44 @@ export function ShelfEditor({
                     placeholder="e.g. Hand-picked luxury high-rises"
                     className="w-full py-1.5 px-3 rounded-xl border border-slate-700 bg-slate-800 text-white"
                   />
+                </div>
+
+                {/* Heading & Subtitle Colors */}
+                <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block mb-1">Heading Color</span>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={currentShelf.headingColor || "#ffffff"}
+                        onChange={(e) => updateShelf({ headingColor: e.target.value })}
+                        className="w-6 h-6 rounded cursor-pointer border-0 p-0"
+                      />
+                      <input
+                        type="text"
+                        value={currentShelf.headingColor || "#ffffff"}
+                        onChange={(e) => updateShelf({ headingColor: e.target.value })}
+                        className="w-full py-0.5 px-1.5 border border-slate-700 rounded bg-slate-800 font-mono text-[11px] uppercase text-white"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block mb-1">Subtitle Color</span>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={currentShelf.subtitleColor || "#94a3b8"}
+                        onChange={(e) => updateShelf({ subtitleColor: e.target.value })}
+                        className="w-6 h-6 rounded cursor-pointer border-0 p-0"
+                      />
+                      <input
+                        type="text"
+                        value={currentShelf.subtitleColor || "#94a3b8"}
+                        onChange={(e) => updateShelf({ subtitleColor: e.target.value })}
+                        className="w-full py-0.5 px-1.5 border border-slate-700 rounded bg-slate-800 font-mono text-[11px] uppercase text-white"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -508,49 +614,111 @@ export function ShelfEditor({
                   <div>
                     <label className="text-[10px] text-slate-400 block mb-1">Heading Size</label>
                     <select
-                      value={currentShelf.headingSize || "text-base"}
+                      value={currentShelf.headingSize || "text-xl"}
                       onChange={(e) => updateShelf({ headingSize: e.target.value as any })}
                       className="w-full py-1.5 px-2 rounded-lg border border-slate-700 bg-slate-800 text-white"
                     >
-                      <option value="text-sm">Small</option>
-                      <option value="text-base">Medium</option>
-                      <option value="text-lg">Large</option>
-                      <option value="text-xl">Extra Large</option>
+                      <option value="text-base">Small</option>
+                      <option value="text-lg">Medium</option>
+                      <option value="text-xl">Large (Default)</option>
+                      <option value="text-2xl">Extra Large</option>
+                      <option value="text-3xl">Display Hero</option>
                     </select>
                   </div>
                 </div>
 
-                {/* Section Padding & Spacing */}
+                {/* Section Background Color */}
                 <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-white">Shelf Background Color</span>
+                    <button
+                      type="button"
+                      onClick={() => updateShelf({ sectionBgColor: undefined })}
+                      className="text-[10px] text-amber-400 hover:underline cursor-pointer"
+                    >
+                      Reset to Transparent
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={currentShelf.sectionBgColor && currentShelf.sectionBgColor !== "transparent" ? currentShelf.sectionBgColor : "#090d16"}
+                      onChange={(e) => updateShelf({ sectionBgColor: e.target.value })}
+                      className="w-7 h-7 rounded border-0 p-0 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={currentShelf.sectionBgColor || "transparent"}
+                      onChange={(e) => updateShelf({ sectionBgColor: e.target.value })}
+                      placeholder="e.g. #090d16 or transparent"
+                      className="flex-1 py-1 px-2 border border-slate-700 rounded bg-slate-800 font-mono text-xs uppercase text-white"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {[
+                      { label: "Transparent", val: "transparent" },
+                      { label: "Slate 950", val: "#020617" },
+                      { label: "Slate 900", val: "#0f172a" },
+                      { label: "Midnight", val: "#0b1329" },
+                      { label: "Charcoal", val: "#1e293b" },
+                      { label: "Pure Black", val: "#000000" },
+                      { label: "Soft Cream", val: "#faf8f5" },
+                      { label: "Clean White", val: "#ffffff" },
+                    ].map((c) => (
+                      <button
+                        key={c.label}
+                        type="button"
+                        onClick={() => updateShelf({ sectionBgColor: c.val })}
+                        className={cn(
+                          "px-2 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer",
+                          currentShelf.sectionBgColor === c.val
+                            ? "bg-amber-500 text-slate-950 border-amber-400"
+                            : "bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-500"
+                        )}
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section Padding & Spacing */}
+                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2.5">
                   <span className="font-bold text-white block">Section Spacing</span>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
                     <div>
-                      <span className="text-[10px] text-slate-400">Padding Top (px)</span>
+                      <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <span>Padding Top</span>
+                        <span className="font-mono text-white font-bold">{currentShelf.sectionPaddingTop ?? 8}px</span>
+                      </div>
                       <input
-                        type="number"
+                        type="range"
                         min={0}
-                        max={100}
+                        max={120}
                         value={currentShelf.sectionPaddingTop ?? 8}
                         onChange={(e) => updateShelf({ sectionPaddingTop: Number(e.target.value) })}
-                        className="w-full py-1 px-2 border border-slate-700 rounded-md bg-slate-800 text-white font-mono"
+                        className="w-full accent-amber-500 cursor-pointer"
                       />
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400">Padding Bottom (px)</span>
+                      <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <span>Padding Bottom</span>
+                        <span className="font-mono text-white font-bold">{currentShelf.sectionPaddingBottom ?? 16}px</span>
+                      </div>
                       <input
-                        type="number"
+                        type="range"
                         min={0}
-                        max={100}
+                        max={120}
                         value={currentShelf.sectionPaddingBottom ?? 16}
                         onChange={(e) => updateShelf({ sectionPaddingBottom: Number(e.target.value) })}
-                        className="w-full py-1 px-2 border border-slate-700 rounded-md bg-slate-800 text-white font-mono"
+                        className="w-full accent-amber-500 cursor-pointer"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Shelf Section Border Control */}
-                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
+                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-white">Shelf Outer Border</span>
                     <input
@@ -573,7 +741,7 @@ export function ShelfEditor({
                     />
                   </div>
                   {currentShelf.shelfBorder?.enabled && (
-                    <div className="space-y-2 pt-1">
+                    <div className="space-y-2.5 pt-1">
                       <div className="flex items-center gap-2">
                         <input
                           type="color"
@@ -583,7 +751,7 @@ export function ShelfEditor({
                               shelfBorder: { ...currentShelf.shelfBorder!, color: e.target.value },
                             })
                           }
-                          className="w-7 h-7 rounded border-0 p-0"
+                          className="w-7 h-7 rounded border-0 p-0 cursor-pointer"
                         />
                         <input
                           type="text"
@@ -593,7 +761,64 @@ export function ShelfEditor({
                               shelfBorder: { ...currentShelf.shelfBorder!, color: e.target.value },
                             })
                           }
-                          className="flex-1 py-1 px-2 border border-slate-700 rounded bg-slate-800 font-mono uppercase text-xs"
+                          className="flex-1 py-1 px-2 border border-slate-700 rounded bg-slate-800 font-mono uppercase text-xs text-white"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-[10px] text-slate-400 block mb-1">Border Style</span>
+                          <select
+                            value={currentShelf.shelfBorder.style || "solid"}
+                            onChange={(e) =>
+                              updateShelf({
+                                shelfBorder: { ...currentShelf.shelfBorder!, style: e.target.value as any },
+                              })
+                            }
+                            className="w-full py-1 px-2 border border-slate-700 rounded bg-slate-800 text-white text-[11px]"
+                          >
+                            <option value="solid">Solid</option>
+                            <option value="dashed">Dashed</option>
+                            <option value="dotted">Dotted</option>
+                            <option value="double">Double</option>
+                          </select>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                            <span>Width</span>
+                            <span className="font-mono text-white">{currentShelf.shelfBorder.width || 1}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={1}
+                            max={8}
+                            value={currentShelf.shelfBorder.width || 1}
+                            onChange={(e) =>
+                              updateShelf({
+                                shelfBorder: { ...currentShelf.shelfBorder!, width: Number(e.target.value) },
+                              })
+                            }
+                            className="w-full accent-amber-500 cursor-pointer"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                          <span>Corner Radius</span>
+                          <span className="font-mono text-white">{currentShelf.shelfBorder.radius || 16}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={32}
+                          value={currentShelf.shelfBorder.radius || 16}
+                          onChange={(e) =>
+                            updateShelf({
+                              shelfBorder: { ...currentShelf.shelfBorder!, radius: Number(e.target.value) },
+                            })
+                          }
+                          className="w-full accent-amber-500 cursor-pointer"
                         />
                       </div>
                     </div>
@@ -1055,9 +1280,17 @@ export function ShelfEditor({
               </div>
             </div>
 
-            <span className="hidden sm:inline font-mono text-[11px] text-slate-500">
-              Click any element on the card to inspect & restyle
-            </span>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-slate-400">Editing Card:</span>
+              <span className="font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 max-w-[200px] truncate">
+                {activeItem?.customHeadline || (activeItem ? ("title" in activeItem ? activeItem.title : activeItem.name) : "Active Card")}
+              </span>
+              <span className="text-slate-600">›</span>
+              <span className="text-slate-400">Element:</span>
+              <span className="font-bold text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-700 capitalize">
+                {selectedElementId}
+              </span>
+            </div>
           </div>
 
           {/* Device Mockup Shell */}
@@ -1125,6 +1358,8 @@ export function ShelfEditor({
                     >
                       <ShelfCard
                         item={item}
+                        itemId={item.id}
+                        selectedItemId={selectedItemId || activeItem?.id}
                         cardStyle={currentShelf.cardStyle}
                         cardSizeDesktop={currentShelf.cardSizeDesktop}
                         cardSizeMobile={currentShelf.cardSizeMobile}
@@ -1133,7 +1368,10 @@ export function ShelfEditor({
                         elementOrder={currentShelf.elementOrder}
                         elements={currentShelf.elements}
                         selectedElementId={selectedElementId}
-                        onSelectElement={(elId) => setSelectedElementId(elId)}
+                        onSelectElement={(elId, itId) => {
+                          setSelectedElementId(elId);
+                          if (itId) setSelectedItemId(itId);
+                        }}
                         isEditable={true}
                         index={idx}
                       />
@@ -1170,6 +1408,12 @@ export function ShelfEditor({
             cardBorder={currentShelf.cardBorder}
             onChangeCardBorder={(newBorder) => updateShelf({ cardBorder: newBorder })}
             onApplyBorderToAllCards={handleApplyBorderToAllCards}
+            activeItem={activeItem}
+            previewItems={previewItems}
+            selectedItemId={selectedItemId || activeItem?.id}
+            onSelectItemId={(id) => setSelectedItemId(id)}
+            onUpdateItemContent={handleUpdateItemContent}
+            onApplyToAllCards={handleApplyToAllCards}
           />
         </aside>
       </div>
