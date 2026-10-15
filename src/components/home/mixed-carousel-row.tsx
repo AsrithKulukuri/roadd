@@ -141,9 +141,9 @@ export function getResponsiveShelfCardWidthClass(
   switch (cardStyle) {
     case "classic-default": {
       const mobileW =
-        mSize === "very-small" ? "w-[200px]" :
-        mSize === "small" ? "w-[230px]" :
-        mSize === "big" ? "w-[300px]" : "w-[260px]";
+        mSize === "very-small" ? "w-[210px]" :
+        mSize === "small" ? "w-[240px]" :
+        mSize === "big" ? "w-[88vw] max-w-[340px]" : "w-[82vw] max-w-[310px]";
       const desktopW =
         dSize === "very-small" ? "sm:w-[230px] md:w-[250px]" :
         dSize === "small" ? "sm:w-[260px] md:w-[280px]" :
@@ -157,7 +157,7 @@ export function getResponsiveShelfCardWidthClass(
       const mobileW =
         mSize === "very-small" ? "w-[240px]" :
         mSize === "small" ? "w-[270px]" :
-        mSize === "big" ? "w-[340px]" : "w-[300px]";
+        mSize === "big" ? "w-[88vw] max-w-[340px]" : "w-[82vw] max-w-[310px]";
       const desktopW =
         dSize === "very-small" ? "sm:w-[280px] md:w-[320px]" :
         dSize === "small" ? "sm:w-[320px] md:w-[360px]" :
@@ -170,7 +170,7 @@ export function getResponsiveShelfCardWidthClass(
       const mobileW =
         mSize === "very-small" ? "w-[200px]" :
         mSize === "small" ? "w-[230px]" :
-        mSize === "big" ? "w-[300px]" : "w-[260px]";
+        mSize === "big" ? "w-[85vw] max-w-[320px]" : "w-[78vw] max-w-[280px]";
       const desktopW =
         dSize === "very-small" ? "sm:w-[230px] md:w-[250px]" :
         dSize === "small" ? "sm:w-[260px] md:w-[280px]" :
@@ -204,9 +204,9 @@ export function getResponsiveShelfCardWidthClass(
 
     case "bottom-floating": {
       const mobileW =
-        mSize === "very-small" ? "w-[230px]" :
-        mSize === "small" ? "w-[260px]" :
-        mSize === "big" ? "w-[340px]" : "w-[290px]";
+        mSize === "very-small" ? "w-[240px]" :
+        mSize === "small" ? "w-[270px]" :
+        mSize === "big" ? "w-[88vw] max-w-[340px]" : "w-[82vw] max-w-[310px]";
       const desktopW =
         dSize === "small" ? "sm:w-[340px] md:w-[400px]" :
         dSize === "big" ? "sm:w-[460px] md:w-[540px]" :
@@ -218,7 +218,7 @@ export function getResponsiveShelfCardWidthClass(
     case "modern-villa": {
       const mobileW =
         mSize === "small" ? "w-[250px]" :
-        mSize === "big" ? "w-[330px]" : "w-[280px]";
+        mSize === "big" ? "w-[88vw] max-w-[340px]" : "w-[82vw] max-w-[310px]";
       const desktopW =
         dSize === "small" ? "sm:w-[340px] md:w-[390px]" :
         dSize === "big" ? "sm:w-[460px] md:w-[540px]" :
@@ -230,8 +230,8 @@ export function getResponsiveShelfCardWidthClass(
     case "construction-progress": {
       const mobileW =
         mSize === "very-small" ? "w-[210px]" :
-        mSize === "small" ? "w-[235px]" :
-        mSize === "big" ? "w-[300px]" : "w-[260px]";
+        mSize === "small" ? "w-[240px]" :
+        mSize === "big" ? "w-[88vw] max-w-[340px]" : "w-[82vw] max-w-[310px]";
       const desktopW =
         dSize === "very-small" ? "sm:w-[240px] md:w-[260px]" :
         dSize === "small" ? "sm:w-[270px] md:w-[295px]" :
@@ -252,7 +252,7 @@ export function getResponsiveShelfCardWidthClass(
     }
 
     default:
-      return "w-[260px] sm:w-[290px] md:w-[320px]";
+      return "w-[82vw] max-w-[310px] sm:w-[290px] md:w-[320px]";
   }
 }
 
@@ -342,10 +342,12 @@ export function MixedCarouselRow({
   const currentArrowPosition = isMobileActive && mobileCarouselArrowPosition ? mobileCarouselArrowPosition : carouselArrowPosition;
   const currentShowDots = isMobileActive && mobileCarouselShowDots !== undefined ? mobileCarouselShowDots : carouselShowDots;
 
+  const [activeIndex, setActiveIndex] = useState(0);
+
   // Determine carousel vs static grid behavior
   const isGrid = currentLayoutType === "grid" || currentLoopMode === "static";
   const isAutoSlideActive = currentEnableCarousel !== false && autoSlide;
-  const isInfinite = !isGrid && currentLoopMode !== "normal";
+  const isInfinite = !isGrid && currentLoopMode !== "normal" && items.length >= 3;
   const hasMultiple = items.length > 1;
   const loopCopies = isInfinite && hasMultiple ? [0, 1, 2] : [0];
   const showArrows = currentShowArrows !== false && hasMultiple && !isGrid;
@@ -365,7 +367,50 @@ export function MixedCarouselRow({
     interactionPauseUntil.current = Date.now() + 5000;
   };
 
-  // Initialize scroll position to the middle copy (copy 1) for infinite loop
+  // Track active slide index on user scroll or touch swipe
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container || !hasMultiple) return;
+
+    let ticking = false;
+    const updateActiveIndex = () => {
+      const step = getScrollStep();
+      if (step <= 0) return;
+      const scrollPos = container.scrollLeft;
+      const rawIndex = Math.round(scrollPos / step);
+      const normalizedIndex = ((rawIndex % items.length) + items.length) % items.length;
+      setActiveIndex(normalizedIndex);
+      ticking = false;
+    };
+
+    const handleScrollEvent = () => {
+      if (!ticking) {
+        requestAnimationFrame(updateActiveIndex);
+        ticking = true;
+      }
+    };
+
+    container.addEventListener("scroll", handleScrollEvent, { passive: true });
+    return () => container.removeEventListener("scroll", handleScrollEvent);
+  }, [items.length, hasMultiple]);
+
+  // Click dot to smoothly slide to specific card
+  const scrollToSlide = (index: number) => {
+    const container = scrollRef.current;
+    if (!container) return;
+    pauseAutoSlide();
+    const step = getScrollStep();
+    if (step <= 0) return;
+
+    const targetOffset = isInfinite && loopCopies.length > 1
+      ? (items.length + index) * step
+      : index * step;
+
+    container.scrollTo({ left: targetOffset, behavior: "smooth" });
+    setActiveIndex(index);
+  };
+
+  // Initialize scroll position to middle copy for infinite loop
   useEffect(() => {
     const container = scrollRef.current;
     if (!container || !hasMultiple || !isInfinite) return;
@@ -382,7 +427,7 @@ export function MixedCarouselRow({
     return () => clearTimeout(timer);
   }, [items.length, hasMultiple, isInfinite]);
 
-  // Debounced normalization for manual user scrolling / swipe in infinite mode
+  // Normalization for infinite mode (instant wrap without smooth animation conflicts)
   useEffect(() => {
     const container = scrollRef.current;
     if (!container || !hasMultiple || !isInfinite) return;
@@ -394,7 +439,7 @@ export function MixedCarouselRow({
         const step = getScrollStep();
         if (step <= 0) return;
         const setWidth = items.length * step;
-        if (container.scrollLeft >= 2 * setWidth) {
+        if (container.scrollLeft >= 2 * setWidth - 5) {
           container.scrollLeft -= setWidth;
         } else if (container.scrollLeft < setWidth - step) {
           container.scrollLeft += setWidth;
@@ -499,22 +544,22 @@ export function MixedCarouselRow({
 
             {/* Header Arrow Navigation */}
             {showArrows && arrowPosition === "header" && (
-              <div className="hidden md:flex items-center gap-2">
+              <div className={cn("items-center gap-1.5 sm:gap-2", isMobileScreen ? "flex" : "hidden md:flex")}>
                 <button
                   type="button"
                   onClick={() => scroll("left")}
                   aria-label="Previous items"
-                  className="p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-all bg-white dark:bg-slate-900 hover:bg-amber-500 hover:border-amber-500 hover:text-slate-950 text-slate-800 dark:text-slate-200 active:scale-95 cursor-pointer shadow-xs"
+                  className="p-1.5 sm:p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-all bg-white dark:bg-slate-900 hover:bg-amber-500 hover:border-amber-500 hover:text-slate-950 text-slate-800 dark:text-slate-200 active:scale-95 cursor-pointer shadow-xs"
                 >
-                  <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
                 </button>
                 <button
                   type="button"
                   onClick={() => scroll("right")}
                   aria-label="Next items"
-                  className="p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-all bg-white dark:bg-slate-900 hover:bg-amber-500 hover:border-amber-500 hover:text-slate-950 text-slate-800 dark:text-slate-200 active:scale-95 cursor-pointer shadow-xs"
+                  className="p-1.5 sm:p-2 rounded-full border border-slate-200 dark:border-slate-800 transition-all bg-white dark:bg-slate-900 hover:bg-amber-500 hover:border-amber-500 hover:text-slate-950 text-slate-800 dark:text-slate-200 active:scale-95 cursor-pointer shadow-xs"
                 >
-                  <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
                 </button>
               </div>
             )}
@@ -610,17 +655,17 @@ export function MixedCarouselRow({
                   type="button"
                   onClick={() => scroll("left")}
                   aria-label="Previous items"
-                  className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-slate-950/85 hover:bg-amber-500 hover:text-slate-950 text-white shadow-xl backdrop-blur-md border border-slate-700/80 flex items-center justify-center transition-all cursor-pointer opacity-90 hover:opacity-100 hover:scale-110 active:scale-95"
+                  className="absolute -left-2 sm:-left-5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-11 sm:h-11 rounded-full bg-slate-950/85 hover:bg-amber-500 hover:text-slate-950 text-white shadow-xl backdrop-blur-md border border-slate-700/80 flex items-center justify-center transition-all cursor-pointer opacity-90 hover:opacity-100 hover:scale-110 active:scale-95"
                 >
-                  <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
                 </button>
                 <button
                   type="button"
                   onClick={() => scroll("right")}
                   aria-label="Next items"
-                  className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-slate-950/85 hover:bg-amber-500 hover:text-slate-950 text-white shadow-xl backdrop-blur-md border border-slate-700/80 flex items-center justify-center transition-all cursor-pointer opacity-90 hover:opacity-100 hover:scale-110 active:scale-95"
+                  className="absolute -right-2 sm:-right-5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-11 sm:h-11 rounded-full bg-slate-950/85 hover:bg-amber-500 hover:text-slate-950 text-white shadow-xl backdrop-blur-md border border-slate-700/80 flex items-center justify-center transition-all cursor-pointer opacity-90 hover:opacity-100 hover:scale-110 active:scale-95"
                 >
-                  <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
                 </button>
               </>
             )}
@@ -629,10 +674,15 @@ export function MixedCarouselRow({
               ref={scrollRef}
               onPointerDown={pauseAutoSlide}
               onWheel={pauseAutoSlide}
-              onMouseEnter={() => setIsHovered(true)}
+              onTouchStart={pauseAutoSlide}
+              onMouseEnter={() => {
+                if (typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches) {
+                  setIsHovered(true);
+                }
+              }}
               onMouseLeave={() => setIsHovered(false)}
               className={cn(
-                "flex overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth",
+                "flex overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-px-4",
                 cardStyle
                   ? "gap-3 sm:gap-5 md:gap-6 pb-4 sm:pb-6"
                   : cardVariant === "compact"
@@ -693,14 +743,26 @@ export function MixedCarouselRow({
               )}
             </div>
 
-            {/* Optional Pagination Indicator Dots */}
+            {/* Interactive Pagination Indicator Dots */}
             {currentShowDots && hasMultiple && (
-              <div className="flex items-center justify-center gap-1.5 pt-2">
-                {items.slice(0, 8).map((_, dotIdx) => (
-                  <span
+              <div className="flex items-center justify-center gap-1 pt-2.5">
+                {items.map((_, dotIdx) => (
+                  <button
                     key={dotIdx}
-                    className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700 transition-all hover:bg-amber-500"
-                  />
+                    type="button"
+                    onClick={() => scrollToSlide(dotIdx)}
+                    aria-label={`Go to slide ${dotIdx + 1}`}
+                    className="p-1.5 focus:outline-none cursor-pointer flex items-center justify-center"
+                  >
+                    <span
+                      className={cn(
+                        "block h-1.5 rounded-full transition-all duration-300",
+                        activeIndex === dotIdx
+                          ? "w-5 bg-amber-500 shadow-sm"
+                          : "w-1.5 bg-slate-300 dark:bg-slate-600 hover:bg-slate-400"
+                      )}
+                    />
+                  </button>
                 ))}
               </div>
             )}

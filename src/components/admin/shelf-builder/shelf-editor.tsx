@@ -2283,11 +2283,16 @@ export function ShelfEditor({
 
                       {/* Pagination Indicator Dots */}
                       {!isStaticGrid && Boolean(activeShowDots) && (
-                        <div className="flex items-center justify-center gap-1.5 pt-2">
+                        <div className="flex items-center justify-center gap-1.5 pt-3">
                           {previewItems.slice(0, 8).map((_, dotIdx) => (
                             <span
                               key={dotIdx}
-                              className="w-2 h-2 rounded-full bg-slate-700 hover:bg-amber-500 transition-colors"
+                              className={cn(
+                                "h-2 rounded-full transition-all duration-300",
+                                dotIdx === 0
+                                  ? "w-6 bg-amber-500 shadow-sm"
+                                  : "w-2 bg-slate-700 hover:bg-slate-600"
+                              )}
                             />
                           ))}
                         </div>
