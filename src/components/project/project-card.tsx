@@ -188,7 +188,8 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
   // "no need to that units use that whole just for showing configs like 2bhk 3bhk 4bkh like that added ones if configs more configs are there show + 1 more like that"
 
   // Area (Total Project Area e.g. "5.5 Acres", or built-up range, or plot size range)
-  const projectArea = project.totalArea || (project.location as Record<string, unknown> | undefined)?.totalArea as string | undefined;
+  const rawProjectArea = project.totalArea || (project.location as Record<string, unknown> | undefined)?.totalArea as string | undefined;
+  const projectArea = rawProjectArea ? rawProjectArea.replace(/[`'"]/g, "").trim() : undefined;
   if (projectArea && projectArea.trim()) {
     specItems.push({
       label: projectArea.trim(),
@@ -475,23 +476,23 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
               <div className="grid grid-cols-3 divide-x-2 divide-black bg-white">
                 {/* Cell 1: Total Project */}
                 <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
-                  <span className="text-[12px] sm:text-[13px] font-black text-black leading-tight truncate w-full text-center">
-                    {projectArea || "On Request"}
-                  </span>
-                  <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight mt-0.5 text-center">
+                  <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight text-center">
                     Total Project
+                  </span>
+                  <span className="text-[12px] sm:text-[13px] font-black text-black leading-tight mt-0.5 truncate w-full text-center">
+                    {projectArea || "On Request"}
                   </span>
                 </div>
 
                 {/* Cell 2: Total Units */}
                 <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
-                  <span className="text-[12px] sm:text-[13px] font-black text-black leading-tight truncate w-full text-center">
+                  <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight text-center">
+                    Total Units
+                  </span>
+                  <span className="text-[12px] sm:text-[13px] font-black text-black leading-tight mt-0.5 truncate w-full text-center">
                     {project.totalUnits
                       ? `${project.totalUnits} ${isVilla ? "Villas" : isVenture ? "Plots" : "Units"}`
                       : isVenture ? "Plots" : "On Request"}
-                  </span>
-                  <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight mt-0.5 text-center">
-                    Total Units
                   </span>
                 </div>
 

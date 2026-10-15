@@ -63,7 +63,8 @@ export function SearchProjectCard({ project }: { project: Project }) {
   const approval = plots && isCrdaVerified(project) ? "CRDA Verified" : project.reraApproved ? "RERA Approved" : null;
 
   // 6-Cell Matrix Calculations
-  const totalAreaVal = project.totalArea || (project.location as any)?.totalArea || "On request";
+  const rawTotalArea = project.totalArea || (project.location as any)?.totalArea || "On request";
+  const totalAreaVal = typeof rawTotalArea === "string" ? rawTotalArea.replace(/[`'"]/g, "").trim() : rawTotalArea;
   const totalUnitsVal = project.totalUnits
     ? `${project.totalUnits.toLocaleString("en-IN")} ${plots ? "plots" : villa ? "villas" : "units"}`
     : plots ? "Plots" : "On request";
@@ -136,21 +137,21 @@ export function SearchProjectCard({ project }: { project: Project }) {
         <div className="grid grid-cols-3 divide-x-2 divide-black bg-white">
           {/* Cell 1: Total Project */}
           <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
-            <span className={cn("font-black text-black leading-tight truncate w-full text-center", getAutoFitClass(totalAreaVal))}>
-              {totalAreaVal}
-            </span>
-            <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight mt-0.5 text-center">
+            <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight text-center">
               Total Project
+            </span>
+            <span className={cn("font-black text-black leading-tight mt-0.5 truncate w-full text-center", getAutoFitClass(totalAreaVal))}>
+              {totalAreaVal}
             </span>
           </div>
 
           {/* Cell 2: Total Units */}
           <div className="px-1.5 py-2 sm:px-2 sm:py-2.5 flex flex-col justify-center items-center min-w-0 bg-white">
-            <span className={cn("font-black text-black leading-tight truncate w-full text-center", getAutoFitClass(totalUnitsVal))}>
-              {totalUnitsVal}
-            </span>
-            <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight mt-0.5 text-center">
+            <span className="text-[9px] sm:text-[9.5px] font-bold text-black uppercase tracking-tight leading-tight text-center">
               Total Units
+            </span>
+            <span className={cn("font-black text-black leading-tight mt-0.5 truncate w-full text-center", getAutoFitClass(totalUnitsVal))}>
+              {totalUnitsVal}
             </span>
           </div>
 
