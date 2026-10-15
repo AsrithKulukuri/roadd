@@ -32,7 +32,7 @@ export function getBaseUrl(): string {
     }
   }
 
-  return process.env.NEXT_PUBLIC_SITE_URL || "https://roadd-three.vercel.app";
+  return process.env.NEXT_PUBLIC_SITE_URL || "https://www.roadfacing.com";
 }
 
 /**
