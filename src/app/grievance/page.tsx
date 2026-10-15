@@ -33,13 +33,15 @@ export default function GrievancePage() {
               <p className="font-bold text-text-primary">Koteswara Rao / Support Lead</p>
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-amber-500 shrink-0" />
-                <a href="mailto:grievance@roadfacing.in" className="hover:text-amber-500 transition-colors">
-                  grievance@roadfacing.in
+                <a href="mailto:care@roadfacing.com" className="hover:text-amber-500 transition-colors">
+                  care@roadfacing.com
                 </a>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-amber-500 shrink-0" />
-                <span>+91 89773 11418</span>
+                <a href="tel:+918885005567" className="hover:text-amber-500 transition-colors">
+                  +91 88850 05567
+                </a>
               </div>
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />

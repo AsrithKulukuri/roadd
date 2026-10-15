@@ -83,7 +83,7 @@ export default function DigitalBrochurePage({ params }: { params: Promise<{ slug
     );
   }
 
-  const phone = project.builderWhatsapp || project.builderPhone || "918977311418";
+  const phone = project.builderWhatsapp || project.builderPhone || "918885005567";
   const cleanPhone = phone.replace(/\D/g, "");
 
   return (

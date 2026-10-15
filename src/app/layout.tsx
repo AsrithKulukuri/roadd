@@ -17,7 +17,7 @@ const inter = Inter({
   weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://roadd-three.vercel.app";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.roadfacing.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -73,7 +73,6 @@ export const metadata: Metadata = {
     images: [
       "/api/og?title=Find+Verified+Homes+in+Vijayawada,+Guntur+&+Amaravati&location=AP+Capital+Region&type=Real+Estate+Portal&badge=RERA+%26+CRDA+Verified",
     ],
-    creator: "@roadfacing",
   },
   robots: {
     index: true,
@@ -117,7 +116,7 @@ const jsonLdWebsite = {
       description:
         "India's premier real estate platform bringing real on-ground video updates for properties and projects across Vijayawada, Guntur, and Amaravati.",
       email: "care@roadfacing.com",
-      telephone: "+91 98765 43210",
+      telephone: "+91 88850 05567",
       areaServed: [
         { "@type": "City", name: "Vijayawada" },
         { "@type": "City", name: "Guntur" },
@@ -132,9 +131,9 @@ const jsonLdWebsite = {
         addressCountry: "IN",
       },
       sameAs: [
-        "https://www.instagram.com/roadfacing",
-        "https://twitter.com/roadfacing",
-        "https://www.youtube.com/@roadfacing",
+        "https://instagram.com/roadfacing?mdxt=bWM5MWdtazg5ZnQy",
+        "https://www.facebook.com/roadfacingcom/",
+        "https://youtube.com/@roadfacing?si=1iZf-9cItg4Ol5a1",
       ],
     },
     {

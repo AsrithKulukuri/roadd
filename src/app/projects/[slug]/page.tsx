@@ -62,7 +62,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const project = await getProject(slug);
 
-  if (!project) return { title: "Project Not Found | ROAD" };
+  if (!project) return { title: "Project Not Found | RoadFacing" };
 
   const allPrices = project.configurations?.flatMap((c) => [c.priceMin, c.priceMax]).filter(Boolean) || [];
   const min = allPrices.length > 0 ? Math.min(...allPrices) : 0;
@@ -74,7 +74,7 @@ export async function generateMetadata({
     : "Price on Request";
 
   const locationFormatted = `${project.location?.locality || ""}, ${project.location?.city || "Andhra Pradesh"}`;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://roadd-three.vercel.app";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.roadfacing.com";
   const canonicalUrl = `${siteUrl}/projects/${project.slug || slug}`;
 
   // Resolve direct publicly accessible primary photo
@@ -92,11 +92,11 @@ export async function generateMetadata({
     finalImageUrl = `${siteUrl}/images/property-placeholder.jpg`;
   }
 
-  const pageTitle = `${project.name} — ${priceFormatted} | ROAD`;
+  const pageTitle = `${project.name} — ${priceFormatted} | RoadFacing`;
   const pageDescription =
     project.tagline ||
     project.description?.slice(0, 160) ||
-    `Verified project in ${locationFormatted}. View floor plans, verified construction updates, and walkthrough on ROAD.`;
+    `Verified project in ${locationFormatted}. View floor plans, verified construction updates, and walkthrough on RoadFacing.`;
 
   return {
     title: pageTitle,
@@ -110,7 +110,7 @@ export async function generateMetadata({
       url: canonicalUrl,
       title: pageTitle,
       description: pageDescription,
-      siteName: "ROAD",
+      siteName: "RoadFacing",
       images: [
         {
           url: finalImageUrl,

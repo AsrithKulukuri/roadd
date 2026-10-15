@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     title: "New Builder Projects | ROADFACING",
     description:
       "Discover RERA-approved apartments, villas & ventures from top builders in Andhra Pradesh.",
-    url: "https://road.in/projects",
+    url: "https://www.roadfacing.com/projects",
     type: "website",
   },
 };

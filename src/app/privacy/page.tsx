@@ -48,7 +48,7 @@ export default function PrivacyPolicyPage() {
               <FileText className="w-4 h-4 text-amber-500" /> 3. Data Security & Storage
             </h2>
             <p>
-              Your personal data and inquiry details are secured using modern encryption standards. You have the right at any time to request data modification or deletion by reaching out to us at <a href="mailto:hello@roadfacing.in" className="text-amber-500 font-bold hover:underline">hello@roadfacing.in</a>.
+              Your personal data and inquiry details are secured using modern encryption standards. You have the right at any time to request data modification or deletion by reaching out to us at <a href="mailto:care@roadfacing.com" className="text-amber-500 font-bold hover:underline">care@roadfacing.com</a>.
             </p>
           </section>
         </div>

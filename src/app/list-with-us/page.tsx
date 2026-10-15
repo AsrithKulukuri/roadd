@@ -16,7 +16,7 @@ import {
 import { Logo } from "@/components/shared/logo";
 
 export default function ListWithUsPage() {
-  const WHATSAPP_URL = "https://wa.me/918977311418?text=I%20want%20to%20list%20my%20properties%20as%20a%20builder/owner";
+  const WHATSAPP_URL = "https://wa.me/9188466965567?text=I%20want%20to%20list%20my%20properties%20as%20a%20builder/owner";
 
   const features = [
     {

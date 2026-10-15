@@ -205,8 +205,8 @@ export function generateTaxInvoice(builder: {
       gstin: "37AAACR9284Q1Z5",
       pan: "AAACR9284Q",
       sacCode: "998314", // IT & Web Portal Services
-      supportEmail: "partner-support@roadfacing.com",
-      supportPhone: "+91 98490 12345",
+      supportEmail: "care@roadfacing.com",
+      supportPhone: "+91 88850 05567",
     },
     builder: {
       companyName: builder.companyName,

@@ -21,22 +21,14 @@ const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
 );
-const LinkedinIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
-);
-const TwitterIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
-);
 const YoutubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>
 );
 
 const socialLinks = [
-  { icon: TwitterIcon, href: siteConfig.socials.twitter, label: "Twitter" },
   { icon: InstagramIcon, href: siteConfig.socials.instagram, label: "Instagram" },
-  { icon: LinkedinIcon, href: siteConfig.socials.linkedin, label: "LinkedIn" },
-  { icon: YoutubeIcon, href: siteConfig.socials.youtube, label: "YouTube" },
   { icon: FacebookIcon, href: siteConfig.socials.facebook, label: "Facebook" },
+  { icon: YoutubeIcon, href: siteConfig.socials.youtube, label: "YouTube" },
 ];
 
 export function Footer() {
@@ -71,13 +63,13 @@ export function Footer() {
                 {siteConfig.phone}
               </a>
               <a
-                href="https://wa.me/918977311418?text=Hi%20ROAD%20Facing%20Concierge"
+                href="https://wa.me/9188466965567?text=Hi%20ROAD%20Facing%20Concierge"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2.5 text-sm font-semibold text-emerald-800 hover:text-emerald-950 dark:text-emerald-400 transition-colors"
               >
                 <span className="flex h-2 w-2 rounded-full bg-emerald-600 animate-pulse" />
-                WhatsApp Concierge: +91 8977311418
+                WhatsApp Concierge: +91 88466965567
               </a>
               <div className="flex items-center gap-2.5 text-sm text-text-secondary">
                 <MapPin className="h-4 w-4 text-amber-primary/70 flex-shrink-0" />

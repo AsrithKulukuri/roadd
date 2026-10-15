@@ -196,7 +196,7 @@ export async function GET(request: Request) {
             `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1`,
             {
               headers: {
-                "User-Agent": "ROADFacingApp/1.0 (contact@road.in)",
+                "User-Agent": "ROADFacingApp/1.0 (care@roadfacing.com)",
                 "Accept-Language": "en",
               },
             }
@@ -251,7 +251,7 @@ export async function GET(request: Request) {
           {
             headers: {
               "Accept-Language": "en",
-              "User-Agent": "ROADFacingApp/1.0 (contact@road.in)",
+              "User-Agent": "ROADFacingApp/1.0 (care@roadfacing.com)",
             },
           }
         );

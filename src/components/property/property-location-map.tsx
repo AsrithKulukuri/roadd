@@ -162,7 +162,7 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
           {isLoggedIn ? (
             <Button variant="amber" size="sm" className="w-full sm:w-auto shadow-amber-glow" asChild>
               <a 
-                href={`https://wa.me/918977311418?text=${encodeURIComponent("Hi! I'm looking for this property: " + title + ". Could you share the exact location?")}`}
+                href={`https://wa.me/9188466965567?text=${encodeURIComponent("Hi! I'm looking for this property: " + title + ". Could you share the exact location?")}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >

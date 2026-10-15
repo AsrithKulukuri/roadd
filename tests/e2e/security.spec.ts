@@ -15,7 +15,7 @@ test("protected pages redirect anonymous visitors", async ({ page }) => {
 });
 
 const protectedRequests = [
-  { path: "/api/auth/complete-profile", body: { phone: "918977311418", name: "Test User", email: "test@example.com" }, status: 401 },
+  { path: "/api/auth/complete-profile", body: { phone: "918885005567", name: "Test User", email: "test@example.com" }, status: 401 },
   { path: "/api/locations/sync", body: { action: "add_sublocation", city: "Test", locality: "Test" }, status: 403 },
   { path: "/api/locations/delete", body: { type: "city", cityName: "Test" }, status: 403 },
   { path: "/api/banners/delete", body: { id: "test" }, status: 403 },
@@ -24,7 +24,7 @@ const protectedRequests = [
   { path: "/api/projects/delete", body: { id: "test" }, status: 403 },
   { path: "/api/properties/delete", body: { id: "test" }, status: 403 },
   { path: "/api/ai-generate-desc", body: { title: "test" }, status: 403 },
-  { path: "/api/whatsapp/property", body: { propertyId: "test", recipientPhone: "918977311418" }, status: 403 },
+  { path: "/api/whatsapp/property", body: { propertyId: "test", recipientPhone: "918885005567" }, status: 403 },
   { path: "/api/projects/leads/retry-failed", body: {}, status: 403 },
   { path: "/api/storage/delete", body: { key: "properties/test.jpg" }, status: 403 },
   { path: "/api/storage/upload", body: { filename: "test.jpg" }, status: 401 },

@@ -9,8 +9,8 @@ import { calculateSubscriptionPlans } from "@/lib/builder-subscription";
 
 export default function AdminSettingsPage() {
   const [platformName, setPlatformName] = useState("ROADFACING");
-  const [supportEmail, setSupportEmail] = useState("support@road.com");
-  const [contactPhone, setContactPhone] = useState("+91 8977311418");
+  const [supportEmail, setSupportEmail] = useState("care@roadfacing.com");
+  const [contactPhone, setContactPhone] = useState("+91 88850 05567");
   
   // Dynamic Subscription Pricing State (Default ₹3,600)
   const [baseMonthlyPrice, setBaseMonthlyPrice] = useState<number>(3600);

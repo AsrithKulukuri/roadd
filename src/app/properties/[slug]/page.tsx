@@ -60,7 +60,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const property = await getProperty(slug);
 
-  if (!property) return { title: "Property Not Found | ROAD" };
+  if (!property) return { title: "Property Not Found | RoadFacing" };
 
   const priceFormatted =
     property.price >= 10000000
@@ -78,7 +78,7 @@ export async function generateMetadata({
     .filter(Boolean)
     .join(" • ");
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://roadd-three.vercel.app";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.roadfacing.com";
   const canonicalUrl = `${siteUrl}/properties/${property.slug}`;
 
   // Resolve direct publicly accessible primary photo
@@ -96,10 +96,10 @@ export async function generateMetadata({
     finalImageUrl = `${siteUrl}/images/property-placeholder.jpg`;
   }
 
-  const pageTitle = `${property.title} — ${priceFormatted} | ROAD`;
+  const pageTitle = `${property.title} — ${priceFormatted} | RoadFacing`;
   const pageDescription =
     property.description?.slice(0, 160) ||
-    `${property.title} for sale in ${locationFormatted}. ${specsFormatted ? `${specsFormatted}. ` : ""}Explore photos and verified details on ROAD.`;
+    `${property.title} for sale in ${locationFormatted}. ${specsFormatted ? `${specsFormatted}. ` : ""}Explore photos and verified details on RoadFacing.`;
 
   return {
     title: pageTitle,
@@ -113,7 +113,7 @@ export async function generateMetadata({
       url: canonicalUrl,
       title: pageTitle,
       description: pageDescription,
-      siteName: "ROAD",
+      siteName: "RoadFacing",
       images: [
         {
           url: finalImageUrl,

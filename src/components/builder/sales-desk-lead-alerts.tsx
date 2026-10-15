@@ -31,7 +31,7 @@ export function SalesDeskLeadAlerts({
   defaultPhone,
   projectName = "Serene Grande Luxury Residences",
 }: SalesDeskLeadAlertsProps) {
-  const [salesPhone, setSalesPhone] = useState(defaultPhone || "918977311418");
+  const [salesPhone, setSalesPhone] = useState(defaultPhone || "918885005567");
   const [alerts, setAlerts] = useState<any[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

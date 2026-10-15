@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
         timeStyle: "short",
       });
 
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://road.in";
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.roadfacing.com";
       const projectUrl = `${siteUrl}/projects/${lead.project_slug || lead.project_id || ""}`;
 
       const retryMessage = [

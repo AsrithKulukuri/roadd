@@ -48,7 +48,7 @@ export default function TermsOfServicePage() {
               <Shield className="w-4 h-4 text-amber-500" /> 3. Contact & Inquiries
             </h2>
             <p>
-              For legal inquiries or questions regarding our terms, please contact our legal desk at <a href="mailto:legal@roadfacing.in" className="text-amber-500 font-bold hover:underline">legal@roadfacing.in</a>.
+              For legal inquiries or questions regarding our terms, please contact our legal desk at <a href="mailto:care@roadfacing.com" className="text-amber-500 font-bold hover:underline">care@roadfacing.com</a>.
             </p>
           </section>
         </div>
