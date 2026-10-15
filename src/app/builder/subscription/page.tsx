@@ -178,7 +178,10 @@ export default function BuilderSubscriptionPage() {
       const hasRealOrder = orderData.order?.id && !orderData.order.id.startsWith("order_sim_");
 
       const options: any = {
-        key: orderData.razorpayKeyId || "rzp_test_Tn2DFXi9z8hLbK",
+        key:
+          orderData.razorpayKeyId ||
+          process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+          "rzp_live_ToCbZ42PGyUhoQ",
         amount: orderData.order.amount,
         currency: "INR",
         name: "ROAD Platform",
