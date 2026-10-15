@@ -39,7 +39,7 @@ const BHK_OPTIONS = ["1 BHK", "2 BHK", "3 BHK", "4+ BHK", "Plot / Land", "Commer
 
 const TIMELINES = ["Immediate (Within 15 days)", "Within 1 - 3 Months", "Within 3 - 6 Months", "Exploring / Long term"];
 
-const WHATSAPP_NUMBER = "88466965567";
+const WHATSAPP_NUMBER = "8466965567";
 
 export function PostRequirementModal({ isOpen, onClose }: PostRequirementModalProps) {
   const { addRequirement } = useInquiriesStore();

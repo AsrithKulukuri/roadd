@@ -1259,322 +1259,304 @@ export function ShelfEditor({
                 {/* ───────────────────────────────────────────────────────────── */}
                 {carouselDeviceTab === "mobile" && (
                   <div className="space-y-4">
-                    {/* Mobile Custom Toggle Card */}
-                    <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+                    {/* Mobile Settings Status Header */}
+                    <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2.5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Smartphone className="w-4 h-4 text-amber-400" />
-                          <span className="font-extrabold text-xs text-white">Independent Mobile Carousel</span>
+                          <span className="font-extrabold text-xs text-white">Mobile Carousel Settings</span>
                         </div>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(currentShelf.mobileCarouselCustom)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              updateShelf({
-                                mobileCarouselCustom: true,
-                                mobileLayoutType: currentShelf.mobileLayoutType || currentShelf.layoutType || "carousel",
-                                mobileCarouselLoopMode: currentShelf.mobileCarouselLoopMode || currentShelf.carouselLoopMode || "infinite",
-                                mobileEnableCarousel: currentShelf.mobileEnableCarousel !== undefined ? currentShelf.mobileEnableCarousel : (currentShelf.enableCarousel !== false),
-                                mobileCarouselInterval: currentShelf.mobileCarouselInterval || currentShelf.carouselInterval || 4,
-                                mobileCarouselSpeed: currentShelf.mobileCarouselSpeed || currentShelf.carouselSpeed || "normal",
-                                mobileCarouselPauseOnHover: currentShelf.mobileCarouselPauseOnHover !== undefined ? currentShelf.mobileCarouselPauseOnHover : (currentShelf.carouselPauseOnHover !== false),
-                                mobileCarouselShowArrows: currentShelf.mobileCarouselShowArrows !== undefined ? currentShelf.mobileCarouselShowArrows : false,
-                                mobileCarouselArrowPosition: currentShelf.mobileCarouselArrowPosition || "hidden",
-                                mobileCarouselShowDots: currentShelf.mobileCarouselShowDots !== undefined ? currentShelf.mobileCarouselShowDots : true,
-                              });
-                            } else {
-                              updateShelf({ mobileCarouselCustom: false });
-                            }
-                          }}
-                          className="accent-amber-500 w-4 h-4 cursor-pointer"
-                        />
+                        <span className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
+                          Phones &lt;768px
+                        </span>
                       </div>
                       <p className="text-[11px] text-slate-400">
                         {currentShelf.mobileCarouselCustom
-                          ? "Mobile uses custom settings independent from desktop."
-                          : "Currently mirroring desktop carousel settings. Enable to set different options for phones."}
+                          ? "Custom mobile settings active. These options will be applied on mobile screens."
+                          : "Currently mirroring desktop settings. Changing any option below will automatically activate independent mobile settings."}
                       </p>
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-800/80">
+                        <span className="text-[10px] text-slate-500 font-medium">Independent Mobile Mode</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateShelf({
+                                mobileCarouselCustom: false,
+                                mobileLayoutType: currentShelf.layoutType,
+                                mobileCarouselLoopMode: currentShelf.carouselLoopMode,
+                                mobileEnableCarousel: currentShelf.enableCarousel,
+                                mobileCarouselInterval: currentShelf.carouselInterval,
+                                mobileCarouselSpeed: currentShelf.carouselSpeed,
+                                mobileCarouselPauseOnHover: currentShelf.carouselPauseOnHover,
+                                mobileCarouselShowArrows: currentShelf.carouselShowArrows,
+                                mobileCarouselArrowPosition: currentShelf.carouselArrowPosition,
+                                mobileCarouselShowDots: currentShelf.carouselShowDots,
+                              });
+                            }}
+                            className="px-2 py-1 rounded text-[10px] font-bold text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-colors cursor-pointer"
+                            title="Reset mobile settings to match desktop"
+                          >
+                            Copy Desktop
+                          </button>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(currentShelf.mobileCarouselCustom)}
+                            onChange={(e) => updateShelf({ mobileCarouselCustom: e.target.checked })}
+                            className="accent-amber-500 w-4 h-4 cursor-pointer"
+                            title="Toggle custom mobile settings"
+                          />
+                        </div>
+                      </div>
                     </div>
 
-                    {!currentShelf.mobileCarouselCustom ? (
-                      <div className="p-6 rounded-2xl border border-dashed border-slate-800 text-center space-y-3">
-                        <Smartphone className="w-8 h-8 text-slate-600 mx-auto" />
-                        <div>
-                          <p className="font-bold text-xs text-white">Mobile Mirrors Desktop Settings</p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
-                            Any changes you make to Desktop Carousel apply to mobile automatically.
-                          </p>
+                    <div className="space-y-4">
+                      {/* Mobile Mode Selector */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
+                            Mobile Presentation Mode
+                          </label>
+                          <span className="text-[10px] text-amber-400 font-mono font-bold">&lt;768px Phones</span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            updateShelf({
-                              mobileCarouselCustom: true,
-                              mobileLayoutType: currentShelf.layoutType || "carousel",
-                              mobileCarouselLoopMode: currentShelf.carouselLoopMode || "infinite",
-                              mobileEnableCarousel: currentShelf.enableCarousel !== false,
-                              mobileCarouselInterval: currentShelf.carouselInterval || 4,
-                              mobileCarouselSpeed: currentShelf.carouselSpeed || "normal",
-                              mobileCarouselPauseOnHover: currentShelf.carouselPauseOnHover !== false,
-                              mobileCarouselShowArrows: false,
-                              mobileCarouselArrowPosition: "hidden",
-                              mobileCarouselShowDots: true,
-                            });
-                          }}
-                          className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs cursor-pointer shadow-md active:scale-95 transition-all inline-flex items-center gap-1.5"
-                        >
-                          <Smartphone className="w-3.5 h-3.5" />
-                          <span>Customize Mobile Separately</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {/* Mobile Mode Selector */}
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
-                              Mobile Presentation Mode
-                            </label>
-                            <span className="text-[10px] text-amber-400 font-mono font-bold">&lt;640px Phones</span>
-                          </div>
-                          <div className="space-y-2">
-                            {[
-                              {
-                                mode: "infinite" as CarouselLoopMode,
-                                title: "Infinite Loop Ribbon",
-                                badge: "Seamless 360°",
-                                desc: "Continuous touch swipe loop with automatic looping on mobile.",
-                                icon: Repeat,
-                                activeBorder: "border-amber-500 bg-amber-500/10 text-white ring-1 ring-amber-400",
-                              },
-                              {
-                                mode: "normal" as CarouselLoopMode,
-                                title: "Normal Slider (Touch Swipe)",
-                                badge: "Standard",
-                                desc: "Traditional swipe slider with start and end card stops on phone.",
-                                icon: ArrowRight,
-                                activeBorder: "border-sky-500 bg-sky-500/10 text-white ring-1 ring-sky-400",
-                              },
-                              {
-                                mode: "static" as CarouselLoopMode,
-                                title: "Static Card Grid (No Swipe)",
-                                badge: "1-2 Columns",
-                                desc: "Fixed vertical card grid on mobile without horizontal scrolling.",
-                                icon: LayoutGrid,
-                                activeBorder: "border-emerald-500 bg-emerald-500/10 text-white ring-1 ring-emerald-400",
-                              },
-                            ].map((m) => {
-                              const isSelected =
-                                m.mode === "static"
-                                  ? currentShelf.mobileCarouselLoopMode === "static" || currentShelf.mobileLayoutType === "grid"
-                                  : currentShelf.mobileCarouselLoopMode === m.mode ||
-                                    (!currentShelf.mobileCarouselLoopMode && m.mode === "infinite" && currentShelf.mobileLayoutType !== "grid");
-                              const IconComp = m.icon;
+                        <div className="space-y-2">
+                          {[
+                            {
+                              mode: "infinite" as CarouselLoopMode,
+                              title: "Infinite Loop Ribbon",
+                              badge: "Seamless 360°",
+                              desc: "Continuous touch swipe loop with automatic looping on mobile.",
+                              icon: Repeat,
+                              activeBorder: "border-amber-500 bg-amber-500/10 text-white ring-1 ring-amber-400",
+                            },
+                            {
+                              mode: "normal" as CarouselLoopMode,
+                              title: "Normal Slider (Touch Swipe)",
+                              badge: "Standard",
+                              desc: "Traditional swipe slider with start and end card stops on phone.",
+                              icon: ArrowRight,
+                              activeBorder: "border-sky-500 bg-sky-500/10 text-white ring-1 ring-sky-400",
+                            },
+                            {
+                              mode: "static" as CarouselLoopMode,
+                              title: "Static Card Grid (No Swipe)",
+                              badge: "1-2 Columns",
+                              desc: "Fixed vertical card grid on mobile without horizontal scrolling.",
+                              icon: LayoutGrid,
+                              activeBorder: "border-emerald-500 bg-emerald-500/10 text-white ring-1 ring-emerald-400",
+                            },
+                          ].map((m) => {
+                            const isSelected =
+                              m.mode === "static"
+                                ? currentShelf.mobileCarouselLoopMode === "static" || currentShelf.mobileLayoutType === "grid"
+                                : currentShelf.mobileCarouselLoopMode === m.mode ||
+                                  (!currentShelf.mobileCarouselLoopMode && m.mode === "infinite" && currentShelf.mobileLayoutType !== "grid");
+                            const IconComp = m.icon;
 
-                              return (
-                                <button
-                                  key={m.mode}
-                                  type="button"
-                                  onClick={() => {
-                                    if (m.mode === "static") {
-                                      updateShelf({
-                                        mobileCarouselLoopMode: "static",
-                                        mobileLayoutType: "grid",
-                                        mobileEnableCarousel: false,
-                                      });
-                                    } else {
-                                      updateShelf({
-                                        mobileCarouselLoopMode: m.mode,
-                                        mobileLayoutType: "carousel",
-                                        mobileEnableCarousel: true,
-                                      });
-                                    }
-                                  }}
+                            return (
+                              <button
+                                key={m.mode}
+                                type="button"
+                                onClick={() => {
+                                  if (m.mode === "static") {
+                                    updateShelf({
+                                      mobileCarouselCustom: true,
+                                      mobileCarouselLoopMode: "static",
+                                      mobileLayoutType: "grid",
+                                      mobileEnableCarousel: false,
+                                    });
+                                  } else {
+                                    updateShelf({
+                                      mobileCarouselCustom: true,
+                                      mobileCarouselLoopMode: m.mode,
+                                      mobileLayoutType: "carousel",
+                                      mobileEnableCarousel: true,
+                                    });
+                                  }
+                                }}
+                                className={cn(
+                                  "w-full p-3 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3",
+                                  isSelected
+                                    ? m.activeBorder
+                                    : "border-slate-800 bg-slate-950/40 hover:border-slate-700 text-slate-300"
+                                )}
+                              >
+                                <div
                                   className={cn(
-                                    "w-full p-3 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3",
-                                    isSelected
-                                      ? m.activeBorder
-                                      : "border-slate-800 bg-slate-950/40 hover:border-slate-700 text-slate-300"
+                                    "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
+                                    isSelected ? "bg-amber-500 text-slate-950" : "bg-slate-800 text-slate-400"
                                   )}
                                 >
-                                  <div
-                                    className={cn(
-                                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
-                                      isSelected ? "bg-amber-500 text-slate-950" : "bg-slate-800 text-slate-400"
-                                    )}
-                                  >
-                                    <IconComp className="w-4 h-4" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between gap-1">
-                                      <span className="font-extrabold text-sm">{m.title}</span>
-                                      <span
-                                        className={cn(
-                                          "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider",
-                                          isSelected ? "bg-amber-500/20 text-amber-300" : "bg-slate-800 text-slate-500"
-                                        )}
-                                      >
-                                        {m.badge}
-                                      </span>
-                                    </div>
-                                    <span className="text-[11px] text-slate-400 block mt-1 leading-snug">{m.desc}</span>
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Controls for Mobile Carousel */}
-                        {currentShelf.mobileCarouselLoopMode !== "static" && currentShelf.mobileLayoutType !== "grid" && (
-                          <div className="space-y-4 pt-1">
-                            {/* Mobile Autoplay Toggle */}
-                            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
-                              <div>
-                                <span className="font-bold text-white block">Mobile Autoplay</span>
-                                <span className="text-[10px] text-slate-400">Automatically scroll cards on mobile</span>
-                              </div>
-                              <input
-                                type="checkbox"
-                                checked={currentShelf.mobileEnableCarousel !== false}
-                                onChange={(e) => updateShelf({ mobileEnableCarousel: e.target.checked })}
-                                className="accent-amber-500 w-4 h-4 cursor-pointer"
-                              />
-                            </div>
-
-                            {/* Mobile Slide Interval / Speed */}
-                            {currentShelf.mobileEnableCarousel !== false && (
-                              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <span className="font-bold text-white flex items-center gap-1.5">
-                                    <Gauge className="w-3.5 h-3.5 text-amber-400" />
-                                    <span>Mobile Slide Speed</span>
-                                  </span>
-                                  <span className="font-mono text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                                    {currentShelf.mobileCarouselInterval ?? 4}s
-                                  </span>
+                                  <IconComp className="w-4 h-4" />
                                 </div>
-
-                                <input
-                                  type="range"
-                                  min={1.5}
-                                  max={12}
-                                  step={0.5}
-                                  value={currentShelf.mobileCarouselInterval ?? 4}
-                                  onChange={(e) => updateShelf({ mobileCarouselInterval: Number(e.target.value) })}
-                                  className="w-full accent-amber-500 cursor-pointer"
-                                />
-
-                                <div className="grid grid-cols-3 gap-1.5">
-                                  {[
-                                    { label: "2s Fast", sec: 2 },
-                                    { label: "3s Quick", sec: 3 },
-                                    { label: "4s Standard", sec: 4 },
-                                    { label: "5s Relaxed", sec: 5 },
-                                    { label: "7s Slow", sec: 7 },
-                                    { label: "10s Pan", sec: 10 },
-                                  ].map((preset) => (
-                                    <button
-                                      key={preset.sec}
-                                      type="button"
-                                      onClick={() => updateShelf({ mobileCarouselInterval: preset.sec })}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <span className="font-extrabold text-sm">{m.title}</span>
+                                    <span
                                       className={cn(
-                                        "py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all cursor-pointer text-center",
-                                        (currentShelf.mobileCarouselInterval ?? 4) === preset.sec
-                                          ? "bg-amber-500 text-slate-950 border-amber-400 font-black shadow-sm"
-                                          : "bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-500"
+                                        "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider",
+                                        isSelected ? "bg-amber-500/20 text-amber-300" : "bg-slate-800 text-slate-500"
                                       )}
                                     >
-                                      {preset.label}
-                                    </button>
-                                  ))}
+                                      {m.badge}
+                                    </span>
+                                  </div>
+                                  <span className="text-[11px] text-slate-400 block mt-1 leading-snug">{m.desc}</span>
                                 </div>
-                              </div>
-                            )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
 
-                            {/* Mobile Navigation Arrows */}
+                      {/* Controls for Mobile Carousel */}
+                      {currentShelf.mobileCarouselLoopMode !== "static" && currentShelf.mobileLayoutType !== "grid" && (
+                        <div className="space-y-4 pt-1">
+                          {/* Mobile Autoplay Toggle */}
+                          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+                            <div>
+                              <span className="font-bold text-white block">Mobile Autoplay</span>
+                              <span className="text-[10px] text-slate-400">Automatically scroll cards on mobile</span>
+                            </div>
+                            <input
+                              type="checkbox"
+                              checked={currentShelf.mobileEnableCarousel !== false}
+                              onChange={(e) => updateShelf({ mobileCarouselCustom: true, mobileEnableCarousel: e.target.checked })}
+                              className="accent-amber-500 w-4 h-4 cursor-pointer"
+                            />
+                          </div>
+
+                          {/* Mobile Slide Interval / Speed */}
+                          {currentShelf.mobileEnableCarousel !== false && (
                             <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
                               <div className="flex items-center justify-between">
-                                <div>
-                                  <span className="font-bold text-white block">Mobile Arrow Buttons</span>
-                                  <span className="text-[10px] text-slate-400">Display navigation arrows on phone</span>
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  checked={Boolean(currentShelf.mobileCarouselShowArrows)}
-                                  onChange={(e) => updateShelf({ mobileCarouselShowArrows: e.target.checked })}
-                                  className="accent-amber-500 w-4 h-4 cursor-pointer"
-                                />
+                                <span className="font-bold text-white flex items-center gap-1.5">
+                                  <Gauge className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>Mobile Slide Speed</span>
+                                </span>
+                                <span className="font-mono text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                  {currentShelf.mobileCarouselInterval ?? 4}s
+                                </span>
                               </div>
 
-                              {currentShelf.mobileCarouselShowArrows && (
-                                <div className="grid grid-cols-3 gap-1.5">
-                                  {[
-                                    { pos: "hidden" as CarouselArrowPosition, label: "Hidden", desc: "Swipe only" },
-                                    { pos: "sides" as CarouselArrowPosition, label: "Sides", desc: "Edge buttons" },
-                                    { pos: "header" as CarouselArrowPosition, label: "Header", desc: "Next to title" },
-                                  ].map((ap) => (
-                                    <button
-                                      key={ap.pos}
-                                      type="button"
-                                      onClick={() => updateShelf({ mobileCarouselArrowPosition: ap.pos })}
-                                      className={cn(
-                                        "p-2 rounded-lg border text-left transition-all cursor-pointer",
-                                        (currentShelf.mobileCarouselArrowPosition || "hidden") === ap.pos
-                                          ? "border-amber-500 bg-amber-500/10 text-white ring-1 ring-amber-400"
-                                          : "border-slate-800 bg-slate-900 text-slate-400 hover:text-white"
-                                      )}
-                                    >
-                                      <span className="font-bold text-[11px] block">{ap.label}</span>
-                                      <span className="text-[9px] text-slate-500 block">{ap.desc}</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
+                              <input
+                                type="range"
+                                min={1.5}
+                                max={12}
+                                step={0.5}
+                                value={currentShelf.mobileCarouselInterval ?? 4}
+                                onChange={(e) => updateShelf({ mobileCarouselCustom: true, mobileCarouselInterval: Number(e.target.value) })}
+                                className="w-full accent-amber-500 cursor-pointer"
+                              />
 
-                            {/* Mobile Pagination Indicator Dots */}
-                            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+                              <div className="grid grid-cols-3 gap-1.5">
+                                {[
+                                  { label: "2s Fast", sec: 2 },
+                                  { label: "3s Quick", sec: 3 },
+                                  { label: "4s Standard", sec: 4 },
+                                  { label: "5s Relaxed", sec: 5 },
+                                  { label: "7s Slow", sec: 7 },
+                                  { label: "10s Pan", sec: 10 },
+                                ].map((preset) => (
+                                  <button
+                                    key={preset.sec}
+                                    type="button"
+                                    onClick={() => updateShelf({ mobileCarouselCustom: true, mobileCarouselInterval: preset.sec })}
+                                    className={cn(
+                                      "py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all cursor-pointer text-center",
+                                      (currentShelf.mobileCarouselInterval ?? 4) === preset.sec
+                                        ? "bg-amber-500 text-slate-950 border-amber-400 font-black shadow-sm"
+                                        : "bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-500"
+                                    )}
+                                  >
+                                    {preset.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Mobile Navigation Arrows */}
+                          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
+                            <div className="flex items-center justify-between">
                               <div>
-                                <span className="font-bold text-white block">Mobile Pagination Dots</span>
-                                <span className="text-[10px] text-slate-400">Position dots below cards (recommended for phones)</span>
+                                <span className="font-bold text-white block">Mobile Arrow Buttons</span>
+                                <span className="text-[10px] text-slate-400">Display navigation arrows on phone</span>
                               </div>
                               <input
                                 type="checkbox"
-                                checked={currentShelf.mobileCarouselShowDots !== false}
-                                onChange={(e) => updateShelf({ mobileCarouselShowDots: e.target.checked })}
+                                checked={Boolean(currentShelf.mobileCarouselShowArrows)}
+                                onChange={(e) => updateShelf({ mobileCarouselCustom: true, mobileCarouselShowArrows: e.target.checked })}
                                 className="accent-amber-500 w-4 h-4 cursor-pointer"
                               />
                             </div>
-                          </div>
-                        )}
 
-                        {/* Controls for Mobile Static Grid */}
-                        {(currentShelf.mobileCarouselLoopMode === "static" || currentShelf.mobileLayoutType === "grid") && (
-                          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
-                            <span className="font-bold text-white block">Mobile Grid Columns (&lt;640px)</span>
-                            <div className="grid grid-cols-2 gap-2">
-                              {[1, 2].map((cols) => (
-                                <button
-                                  key={cols}
-                                  type="button"
-                                  onClick={() => updateShelf({ gridColumnsMobile: cols })}
-                                  className={cn(
-                                    "py-2 rounded-lg text-xs font-bold border transition-all cursor-pointer text-center",
-                                    (currentShelf.gridColumnsMobile || 1) === cols
-                                      ? "bg-emerald-500 text-slate-950 border-emerald-400 font-black shadow-sm"
-                                      : "bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-500"
-                                  )}
-                                >
-                                  {cols === 1 ? "1 Col (Full Width)" : "2 Cols (Compact)"}
-                                </button>
-                              ))}
-                            </div>
+                            {currentShelf.mobileCarouselShowArrows && (
+                              <div className="grid grid-cols-3 gap-1.5">
+                                {[
+                                  { pos: "hidden" as CarouselArrowPosition, label: "Hidden", desc: "Swipe only" },
+                                  { pos: "sides" as CarouselArrowPosition, label: "Sides", desc: "Edge buttons" },
+                                  { pos: "header" as CarouselArrowPosition, label: "Header", desc: "Next to title" },
+                                ].map((ap) => (
+                                  <button
+                                    key={ap.pos}
+                                    type="button"
+                                    onClick={() => updateShelf({ mobileCarouselCustom: true, mobileCarouselArrowPosition: ap.pos })}
+                                    className={cn(
+                                      "p-2 rounded-lg border text-left transition-all cursor-pointer",
+                                      (currentShelf.mobileCarouselArrowPosition || "hidden") === ap.pos
+                                        ? "border-amber-500 bg-amber-500/10 text-white ring-1 ring-amber-400"
+                                        : "border-slate-800 bg-slate-900 text-slate-400 hover:text-white"
+                                    )}
+                                  >
+                                    <span className="font-bold text-[11px] block">{ap.label}</span>
+                                    <span className="text-[9px] text-slate-500 block">{ap.desc}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    )}
+
+                          {/* Mobile Pagination Indicator Dots */}
+                          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+                            <div>
+                              <span className="font-bold text-white block">Mobile Pagination Dots</span>
+                              <span className="text-[10px] text-slate-400">Position dots below cards (recommended for phones)</span>
+                            </div>
+                            <input
+                              type="checkbox"
+                              checked={currentShelf.mobileCarouselShowDots !== false}
+                              onChange={(e) => updateShelf({ mobileCarouselCustom: true, mobileCarouselShowDots: e.target.checked })}
+                              className="accent-amber-500 w-4 h-4 cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Controls for Mobile Static Grid */}
+                      {(currentShelf.mobileCarouselLoopMode === "static" || currentShelf.mobileLayoutType === "grid") && (
+                        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
+                          <span className="font-bold text-white block">Mobile Grid Columns (&lt;768px)</span>
+                          <div className="grid grid-cols-2 gap-2">
+                            {[1, 2].map((cols) => (
+                              <button
+                                key={cols}
+                                type="button"
+                                onClick={() => updateShelf({ mobileCarouselCustom: true, gridColumnsMobile: cols })}
+                                className={cn(
+                                  "py-2 rounded-lg text-xs font-bold border transition-all cursor-pointer text-center",
+                                  (currentShelf.gridColumnsMobile || 1) === cols
+                                    ? "bg-emerald-500 text-slate-950 border-emerald-400 font-black shadow-sm"
+                                    : "bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-500"
+                                )}
+                              >
+                                {cols === 1 ? "1 Col (Full Width)" : "2 Cols (Compact)"}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -2037,7 +2019,16 @@ export function ShelfEditor({
               {/* Shelf Motion Mode Badge */}
               {(() => {
                 const isMobileView = deviceMode === "mobile";
-                const useMobile = isMobileView && Boolean(currentShelf.mobileCarouselCustom);
+                const hasMobileSettings = Boolean(
+                  currentShelf.mobileCarouselCustom ||
+                  currentShelf.mobileLayoutType ||
+                  currentShelf.mobileCarouselLoopMode ||
+                  currentShelf.mobileEnableCarousel !== undefined ||
+                  currentShelf.mobileCarouselInterval ||
+                  currentShelf.mobileCarouselShowArrows !== undefined ||
+                  currentShelf.mobileCarouselShowDots !== undefined
+                );
+                const useMobile = isMobileView && hasMobileSettings;
                 const badgeText = useMobile
                   ? (currentShelf.mobileLayoutType === "grid" || currentShelf.mobileCarouselLoopMode === "static"
                       ? `Mobile Grid (${currentShelf.gridColumnsMobile || 1} col)`
@@ -2084,7 +2075,16 @@ export function ShelfEditor({
 
           {(() => {
             const isMobileView = deviceMode === "mobile";
-            const useMobile = isMobileView && Boolean(currentShelf.mobileCarouselCustom);
+            const hasMobileSettings = Boolean(
+              currentShelf.mobileCarouselCustom ||
+              currentShelf.mobileLayoutType ||
+              currentShelf.mobileCarouselLoopMode ||
+              currentShelf.mobileEnableCarousel !== undefined ||
+              currentShelf.mobileCarouselInterval ||
+              currentShelf.mobileCarouselShowArrows !== undefined ||
+              currentShelf.mobileCarouselShowDots !== undefined
+            );
+            const useMobile = isMobileView && hasMobileSettings;
 
             const activeLayoutType = useMobile && currentShelf.mobileLayoutType ? currentShelf.mobileLayoutType : currentShelf.layoutType;
             const activeLoopMode = useMobile && currentShelf.mobileCarouselLoopMode !== undefined ? currentShelf.mobileCarouselLoopMode : currentShelf.carouselLoopMode;

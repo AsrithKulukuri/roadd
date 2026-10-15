@@ -16,6 +16,10 @@ export interface ConciergeExecutionResult {
   message?: string;
 }
 
+export const WHATSAPP_CONCIERGE_NUMBER = "8466965567";
+export const WHATSAPP_CONCIERGE_DISPLAY = "+91 8466965567";
+export const WHATSAPP_CONCIERGE_URL = "https://wa.me/918466965567";
+
 type LooseRecord = Record<string, any>;
 
 function str(val: unknown): string {

@@ -10,7 +10,7 @@ import { sanitizeIndianPhoneNumber } from "@/lib/validations/auth";
 
 export const dynamic = "force-dynamic";
 
-const SUPPORT_WHATSAPP_PHONE = "+91 88466965567";
+const SUPPORT_WHATSAPP_PHONE = "+91 8466965567";
 const MAX_BODY_BYTES = 12 * 1024;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const MAX_VISITS_PER_WINDOW = 3;

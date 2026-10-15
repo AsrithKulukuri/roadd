@@ -179,6 +179,122 @@ export function findPropertyByRefId<T extends { id: string; slug?: string; title
 }
 
 /**
+ * Extracts the numeric sequence and padding length from any reference ID string.
+ * Supports patterns like "REF0002", "ref0002v", "REF-0002", "ref 0002", "0002".
+ * Ignores raw entity timestamps (like "proj-1791887791922") and UUIDs.
+ */
+export function extractRefNumber(rawRef: unknown): { num: number; padLength: number; digitStr: string } | null {
+  if (!rawRef || typeof rawRef !== "string") return null;
+  const trimmed = rawRef.trim();
+  if (!trimmed) return null;
+
+  // Ignore raw entity IDs like "proj-1791887791922" or UUIDs
+  if (/^(proj|prop|usr)-/i.test(trimmed)) return null;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(trimmed)) return null;
+
+  // Match prefix (REF, ref, #, REF-) followed by digits, or find the primary digit sequence
+  const match = trimmed.match(/^(?:#?REF[\s-_]*)?(\d+)/i) || trimmed.match(/(\d+)/);
+  if (!match) return null;
+
+  const digitStr = match[1] || match[0];
+  if (!digitStr || !/^\d+$/.test(digitStr)) return null;
+
+  const num = parseInt(digitStr, 10);
+  if (isNaN(num) || num > 999999) return null;
+
+  return {
+    num,
+    padLength: digitStr.length,
+    digitStr,
+  };
+}
+
+/**
+ * Computes the next sequential Reference ID for a new project based on existing projects.
+ * Considers the most recent and greatest refId (e.g. if the recent one is "ref0002v" or "REF0002",
+ * it automatically fills "REF0003").
+ */
+export function getNextProjectRefId(
+  existingProjects: (Project | Record<string, unknown>)[] = []
+): string {
+  const existingRefs = new Set<string>();
+  let maxNum = 0;
+  let padLength = 4; // Default to 4 digits (e.g. REF0001, REF0002, REF0003)
+
+  // 1. Scan all existing projects for greatest numeric refId
+  for (const item of existingProjects) {
+    if (!item || typeof item !== "object") continue;
+    const raw = item as Record<string, unknown>;
+    const loc = typeof raw.location === "object" && raw.location !== null
+      ? (raw.location as Record<string, unknown>)
+      : undefined;
+
+    // Check explicit ref fields
+    const explicitRef = (typeof raw.refId === "string" && raw.refId.trim())
+      || (typeof loc?.refId === "string" && (loc.refId as string).trim())
+      || (typeof raw.ref_id === "string" && (raw.ref_id as string).trim())
+      || undefined;
+
+    if (explicitRef) {
+      const cleanUpper = explicitRef.trim().toUpperCase();
+      existingRefs.add(cleanUpper);
+      const normalized = cleanUpper.startsWith("REF") ? cleanUpper : `REF${cleanUpper}`;
+      existingRefs.add(normalized);
+
+      const extracted = extractRefNumber(explicitRef);
+      if (extracted) {
+        if (extracted.num > maxNum) {
+          maxNum = extracted.num;
+          padLength = Math.max(extracted.padLength, 4);
+        }
+      }
+    }
+  }
+
+  // 2. Also inspect the most recent project sorted by creation/update timestamp
+  const sortedProjects = [...existingProjects].sort((a, b) => {
+    const aDate = (a as any).createdAt || (a as any).updatedAt || "";
+    const bDate = (b as any).createdAt || (b as any).updatedAt || "";
+    return String(bDate).localeCompare(String(aDate));
+  });
+
+  for (const item of sortedProjects) {
+    const raw = item as Record<string, unknown>;
+    const loc = typeof raw.location === "object" && raw.location !== null
+      ? (raw.location as Record<string, unknown>)
+      : undefined;
+
+    const explicitRef = (typeof raw.refId === "string" && raw.refId.trim())
+      || (typeof loc?.refId === "string" && (loc.refId as string).trim())
+      || (typeof raw.ref_id === "string" && (raw.ref_id as string).trim())
+      || undefined;
+
+    if (explicitRef) {
+      const extracted = extractRefNumber(explicitRef);
+      if (extracted) {
+        if (extracted.num > maxNum) {
+          maxNum = extracted.num;
+          padLength = Math.max(extracted.padLength, 4);
+        }
+        break; // Found the most recent project with a valid refId
+      }
+    }
+  }
+
+  // Calculate next number: greatest/recent + 1 (if no projects exist, starts at 1 -> REF0001)
+  let nextNum = maxNum + 1;
+  let candidate = `REF${String(nextNum).padStart(padLength, "0")}`;
+
+  // Ensure candidate does not collide with any existing reference ID
+  while (existingRefs.has(candidate.toUpperCase())) {
+    nextNum++;
+    candidate = `REF${String(nextNum).padStart(padLength, "0")}`;
+  }
+
+  return candidate;
+}
+
+/**
  * Helper to generate a new unique refId not currently in use
  */
 export function generateNewRefId(existingItems: (Property | Project)[] = []): string {
@@ -191,3 +307,4 @@ export function generateNewRefId(existingItems: (Property | Project)[] = []): st
   }
   return `REF${Math.floor(1000 + Math.random() * 9000)}`;
 }
+

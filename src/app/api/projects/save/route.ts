@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/server-auth-guard";
 import { stampCrdaReview, validMeasurements, hasCompleteCrdaEvidence, type CrdaReview } from "@/lib/listing-quality";
 import { syncLocationToTrending } from "@/lib/location-sync";
+import { getNextProjectRefId } from "@/lib/ref-id";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,6 +66,15 @@ export async function POST(request: NextRequest) {
     if (rawPayload.refId !== undefined) {
       const cleanRef = typeof rawPayload.refId === "string" ? rawPayload.refId.trim().toUpperCase() : undefined;
       if (cleanRef) location.refId = cleanRef;
+    }
+
+    if (body.mode === "create" && !location.refId) {
+      const { data: existingProjects } = await supabaseAdmin
+        .from("projects")
+        .select("id, location, createdAt, updatedAt");
+      const nextRef = getNextProjectRefId(existingProjects || []);
+      location.refId = nextRef;
+      rawPayload.refId = nextRef;
     }
 
     // Always mirror possessionDate into location JSONB for fail-safe persistence

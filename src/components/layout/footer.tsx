@@ -63,13 +63,13 @@ export function Footer() {
                 {siteConfig.phone}
               </a>
               <a
-                href="https://wa.me/9188466965567?text=Hi%20ROAD%20Facing%20Concierge"
+                href="https://wa.me/918466965567?text=Hi%20ROAD%20Facing%20Concierge"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2.5 text-sm font-semibold text-emerald-800 hover:text-emerald-950 dark:text-emerald-400 transition-colors"
               >
                 <span className="flex h-2 w-2 rounded-full bg-emerald-600 animate-pulse" />
-                WhatsApp Concierge: +91 88466965567
+                WhatsApp Concierge: +91 8466965567
               </a>
               <div className="flex items-center gap-2.5 text-sm text-text-secondary">
                 <MapPin className="h-4 w-4 text-amber-primary/70 flex-shrink-0" />

@@ -321,17 +321,36 @@ export function MixedCarouselRow({
   const interactionPauseUntil = useRef(0);
   const isInitialized = useRef(false);
 
-  // Responsive device detection for mobile-specific carousel overrides
-  const [isMobileScreen, setIsMobileScreen] = useState(false);
+  // Responsive device detection for mobile-specific carousel overrides (standard <768px mobile breakpoint)
+  const [isMobileScreen, setIsMobileScreen] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.matchMedia("(max-width: 767px)").matches;
+    }
+    return false;
+  });
+
   useEffect(() => {
-    const mql = window.matchMedia("(max-width: 639px)");
+    const mql = window.matchMedia("(max-width: 767px)");
     setIsMobileScreen(mql.matches);
     const handler = (e: MediaQueryListEvent) => setIsMobileScreen(e.matches);
     mql.addEventListener("change", handler);
     return () => mql.removeEventListener("change", handler);
   }, []);
 
-  const isMobileActive = Boolean(mobileCarouselCustom) && isMobileScreen;
+  const hasMobileOverrides = Boolean(
+    mobileCarouselCustom ||
+    mobileLayoutType !== undefined ||
+    mobileCarouselLoopMode !== undefined ||
+    mobileEnableCarousel !== undefined ||
+    mobileCarouselInterval !== undefined ||
+    mobileCarouselSpeed !== undefined ||
+    mobileCarouselPauseOnHover !== undefined ||
+    mobileCarouselShowArrows !== undefined ||
+    mobileCarouselArrowPosition !== undefined ||
+    mobileCarouselShowDots !== undefined
+  );
+
+  const isMobileActive = hasMobileOverrides && isMobileScreen;
 
   const currentLayoutType = isMobileActive && mobileLayoutType ? mobileLayoutType : layoutType;
   const currentLoopMode = isMobileActive && mobileCarouselLoopMode !== undefined ? mobileCarouselLoopMode : carouselLoopMode;
@@ -344,10 +363,10 @@ export function MixedCarouselRow({
 
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Determine carousel vs static grid behavior
+  // Determine carousel vs static grid behavior (independent for mobile vs desktop)
   const isGrid = currentLayoutType === "grid" || currentLoopMode === "static";
-  const isAutoSlideActive = currentEnableCarousel !== false && autoSlide;
-  const isInfinite = !isGrid && currentLoopMode !== "normal" && items.length >= 3;
+  const isAutoSlideActive = currentEnableCarousel !== false && currentLoopMode !== "static";
+  const isInfinite = !isGrid && currentLoopMode !== "normal" && items.length >= 2;
   const hasMultiple = items.length > 1;
   const loopCopies = isInfinite && hasMultiple ? [0, 1, 2] : [0];
   const showArrows = currentShowArrows !== false && hasMultiple && !isGrid;
@@ -476,9 +495,12 @@ export function MixedCarouselRow({
         }
         container.scrollBy({ left: step, behavior: "smooth" });
       } else {
-        // Normal finite mode: if reached end, scroll back to start
-        if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
+        // Normal finite mode: advance smoothly or wrap back to start when reaching end
+        const maxScroll = container.scrollWidth - container.clientWidth;
+        const isNearEnd = maxScroll <= 0 || container.scrollLeft >= maxScroll - Math.max(step * 0.4, 15);
+        if (isNearEnd) {
           container.scrollTo({ left: 0, behavior: "smooth" });
+          setActiveIndex(0);
         } else {
           container.scrollBy({ left: step, behavior: "smooth" });
         }

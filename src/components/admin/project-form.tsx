@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useProjectsStore } from "@/stores/projects-store";
+import { getNextProjectRefId } from "@/lib/ref-id";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -116,9 +117,12 @@ interface ProjectFormProps {
 }
 
 export function ProjectForm({ initialData, mode }: ProjectFormProps) {
-  const generatedRefId = useId().replace(/\D/g, "").padStart(3, "0").slice(-3);
   const router = useRouter();
-  const { addProject, updateProject } = useProjectsStore();
+  const { projects, fetchProjects, addProject, updateProject } = useProjectsStore();
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const [submitting, setSubmitting] = useState(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
@@ -176,7 +180,28 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     (initialData?.location as any)?.refId || 
     (initialData as any)?.ref_id || 
     "";
-  const [refId, setRefId]                     = useState(initialRefId || `REF${generatedRefId}`);
+  const [refId, setRefId]                     = useState(() => initialRefId || getNextProjectRefId(projects));
+  const [isUserEditedRefId, setIsUserEditedRefId] = useState(false);
+
+  // Auto-fill next sequential Ref ID when creating a new project
+  useEffect(() => {
+    if (mode === "new" && !initialRefId && !isUserEditedRefId) {
+      if (projects.length > 0) {
+        setRefId(getNextProjectRefId(projects));
+      }
+      // Also query next-ref endpoint to ensure sync with server database
+      fetch("/api/projects/next-ref")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.success && data?.nextRefId && !isUserEditedRefId) {
+            setRefId(data.nextRefId);
+          }
+        })
+        .catch(() => {
+          // Fallback to local store calculation
+        });
+    }
+  }, [mode, projects, initialRefId, isUserEditedRefId]);
 
   useEffect(() => {
     if (initialData) {
@@ -578,11 +603,12 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
 
     setSubmitting(true);
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const finalRefId = (refId.trim().toUpperCase() || getNextProjectRefId(projects));
 
     const project: Project = {
       id: initialData?.id ?? `proj-${Date.now()}`,
       slug: initialData?.slug ?? slug,
-      refId: refId.trim().toUpperCase() || undefined,
+      refId: finalRefId || undefined,
       name: name.trim(),
       tagline: tagline.trim() || undefined,
       description: description.trim() || undefined,
@@ -596,7 +622,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       builderProjectsCount: builderProjectsCount.trim() || undefined,
       location: {
         address: address.trim(), locality: locality.trim(), city: city.trim(), state: locState.trim(), pincode: pincode.trim() || undefined, latitude: lat, longitude: lng,
-        refId: refId.trim().toUpperCase() || undefined,
+        refId: finalRefId || undefined,
         totalArea: totalArea.trim() || undefined,
         possessionDate: possessionDate.trim() || undefined,
         builderDescription: builderDescription.trim() || undefined,
@@ -774,19 +800,30 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                   </label>
                   <button
                     type="button"
-                    onClick={() => setRefId(`REF${generatedRefId}`)}
-                    className="text-[11px] font-bold text-amber-500 hover:text-amber-400 cursor-pointer"
+                    onClick={() => {
+                      const nextRef = getNextProjectRefId(projects);
+                      setRefId(nextRef);
+                      setIsUserEditedRefId(false);
+                      toast.info(`Auto-filled next reference ID: ${nextRef}`);
+                    }}
+                    className="text-[11px] font-bold text-amber-500 hover:text-amber-400 cursor-pointer flex items-center gap-1 transition"
+                    title="Calculate next sequential Reference ID"
                   >
-                    🎲 Generate New
+                    ✨ Auto Next Ref ID ({getNextProjectRefId(projects)})
                   </button>
                 </div>
                 <Input
                   value={refId}
-                  onChange={(e) => setRefId(e.target.value.toUpperCase())}
-                  placeholder="e.g. REF101"
+                  onChange={(e) => {
+                    setIsUserEditedRefId(true);
+                    setRefId(e.target.value.toUpperCase());
+                  }}
+                  placeholder="e.g. REF0003"
                   className={cn(ic(), "uppercase font-black tracking-wider text-amber-500")}
                 />
-                <p className="text-[11px] text-text-tertiary">Direct search key for users (e.g. searching &ldquo;{refId || 'REF101'}&rdquo; opens this project directly)</p>
+                <p className="text-[11px] text-text-tertiary">
+                  Automatically filled from the most recent project Ref ID ({refId || 'REF0003'}). Direct search key for users.
+                </p>
               </div>
 
               <div className="md:col-span-2 space-y-2">

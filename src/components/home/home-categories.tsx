@@ -337,7 +337,7 @@ export function HomeCategories() {
             icon={section.icon}
             items={section.items}
             hideHeader={false}
-            autoSlide={section.enableCarousel !== false && section.carouselLoopMode !== "static"}
+            autoSlide={true}
             enableCarousel={section.enableCarousel !== false}
             carouselInterval={section.carouselInterval || 4}
             layoutType={section.layoutType || "carousel"}

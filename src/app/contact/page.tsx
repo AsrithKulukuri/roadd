@@ -161,13 +161,13 @@ export default function ContactPage() {
                           <span>Direct Call:</span> {siteConfig.phone}
                         </a>
                         <a 
-                          href="https://wa.me/9188466965567?text=Hi%20RoadFacing%20Support" 
+                          href="https://wa.me/918466965567?text=Hi%20RoadFacing%20Support" 
                           target="_blank" 
                           rel="noopener noreferrer" 
                           className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline text-sm inline-flex items-center gap-1.5"
                         >
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span>WhatsApp Concierge:</span> +91 88466965567
+                          <span>WhatsApp Concierge:</span> +91 8466965567
                         </a>
                       </div>
                     </div>
