@@ -63,7 +63,9 @@ export default function ProjectMapView({
   projectType,
   distanceText,
 }: ProjectMapViewProps) {
-  const center: [number, number] = [latitude, longitude];
+  const safeLat = typeof latitude === "number" && !isNaN(latitude) && latitude !== 0 ? latitude : 16.5062;
+  const safeLng = typeof longitude === "number" && !isNaN(longitude) && longitude !== 0 ? longitude : 80.6480;
+  const center: [number, number] = [safeLat, safeLng];
 
   const typeLabel =
     projectType === "apartment" ? "Apartment Project"

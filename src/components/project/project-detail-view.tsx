@@ -855,7 +855,7 @@ export function ProjectDetailView({
                       <div className="flex items-center gap-1.5 text-text-secondary text-xs sm:text-sm font-medium mt-1 flex-wrap">
                         <MapPin className="w-3.5 h-3.5 text-[#faad13] shrink-0" />
                         <span>
-                          {project.location.locality}, {project.location.city}
+                          {project.location?.locality || "Vijayawada"}, {project.location?.city || "Andhra Pradesh"}
                           {userDistanceKm !== null && (
                             <span className="font-bold text-slate-900 dark:text-amber-400">
                               , just located {formatDistanceText(userDistanceKm)} from you
@@ -1678,7 +1678,7 @@ export function ProjectDetailView({
                   <div className="flex items-center gap-2 text-text-secondary text-sm flex-wrap">
                     <MapPin className="w-4 h-4 text-amber-primary shrink-0" />
                     <span>
-                      {project.location.address || `${project.location.locality}, ${project.location.city}, ${project.location.state}`}
+                      {project.location?.address || [project.location?.locality, project.location?.city, project.location?.state].filter(Boolean).join(", ") || "Vijayawada, Andhra Pradesh"}
                       {userDistanceKm !== null && (
                         <span className="font-bold text-slate-900 dark:text-amber-400 ml-1">
                           , just located {formatDistanceText(userDistanceKm)} from you
@@ -1690,11 +1690,11 @@ export function ProjectDetailView({
                   {/* Map */}
                   <div className="h-[240px] sm:h-[260px] w-full">
                     <ProjectMapView
-                      latitude={project.location.latitude}
-                      longitude={project.location.longitude}
+                      latitude={project.location?.latitude || 16.5062}
+                      longitude={project.location?.longitude || 80.6480}
                       projectName={project.name}
-                      locality={project.location.locality}
-                      city={project.location.city}
+                      locality={project.location?.locality || "Vijayawada"}
+                      city={project.location?.city || "Vijayawada"}
                       projectType={project.projectType}
                       distanceText={userDistanceKm !== null ? `just located ${formatDistanceText(userDistanceKm)} from you` : undefined}
                     />
@@ -1703,14 +1703,14 @@ export function ProjectDetailView({
                   {/* Commute Radius Map */}
                   <div className="pt-6 mt-6 border-t border-border-default">
                     <CommuteRadiusMap
-                      latitude={project.location.latitude}
-                      longitude={project.location.longitude}
+                      latitude={project.location?.latitude || 16.5062}
+                      longitude={project.location?.longitude || 80.6480}
                       projectName={project.name}
-                      city={project.location.city}
+                      city={project.location?.city || "Vijayawada"}
                     />
                   </div>
 
-                  {project.location.pincode && (
+                  {project.location?.pincode && (
                     <p className="text-xs text-text-tertiary">Pincode: {project.location.pincode}</p>
                   )}
                 </div>

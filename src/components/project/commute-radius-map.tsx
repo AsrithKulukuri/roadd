@@ -106,6 +106,9 @@ export default function CommuteRadiusMap({
   projectName,
   city,
 }: CommuteRadiusMapProps) {
+  const safeLat = typeof latitude === "number" && !isNaN(latitude) && latitude !== 0 ? latitude : 16.5062;
+  const safeLng = typeof longitude === "number" && !isNaN(longitude) && longitude !== 0 ? longitude : 80.6480;
+
   const [vehicle, setVehicle] = useState<"car" | "bike">("car");
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -149,7 +152,7 @@ export default function CommuteRadiusMap({
 
   // Calculate commute data from coordinates
   const computeCommute = (targetLat: number, targetLng: number, name: string) => {
-    const rawDist = calculateDistanceKm(latitude, longitude, targetLat, targetLng);
+    const rawDist = calculateDistanceKm(safeLat, safeLng, targetLat, targetLng);
     // 1.22x road routing detour factor
     const roadDist = Math.max(0.4, rawDist * 1.22);
     const travelTime = Math.max(2, Math.round((roadDist / speed) * 60));
@@ -378,7 +381,7 @@ export default function CommuteRadiusMap({
             </div>
 
             <a
-              href={`https://www.google.com/maps/dir/?api=1&origin=${latitude},${longitude}&destination=${result.destinationLat},${result.destinationLng}&travelmode=${vehicle === "car" ? "driving" : "bicycling"}`}
+              href={`https://www.google.com/maps/dir/?api=1&origin=${safeLat},${safeLng}&destination=${result.destinationLat},${result.destinationLng}&travelmode=${vehicle === "car" ? "driving" : "bicycling"}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors border border-white/15 shrink-0"

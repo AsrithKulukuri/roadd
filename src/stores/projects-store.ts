@@ -273,8 +273,20 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
       : undefined);
   const builderProjectsCount = rawBuilderProjectsCount && rawBuilderProjectsCount.trim() ? rawBuilderProjectsCount.trim() : undefined;
 
+  const safeLocation: Project["location"] = {
+    ...rawLocation,
+    address: typeof rawLocation.address === "string" && rawLocation.address.trim() ? rawLocation.address.trim() : (typeof p.name === "string" ? `${p.name}, Vijayawada` : "Vijayawada"),
+    locality: typeof rawLocation.locality === "string" && rawLocation.locality.trim() ? rawLocation.locality.trim() : "Vijayawada",
+    city: typeof rawLocation.city === "string" && rawLocation.city.trim() ? rawLocation.city.trim() : "Vijayawada",
+    state: typeof rawLocation.state === "string" && rawLocation.state.trim() ? rawLocation.state.trim() : "Andhra Pradesh",
+    pincode: typeof rawLocation.pincode === "string" ? rawLocation.pincode : undefined,
+    latitude: typeof rawLocation.latitude === "number" && !isNaN(rawLocation.latitude) && rawLocation.latitude !== 0 ? rawLocation.latitude : 16.5062,
+    longitude: typeof rawLocation.longitude === "number" && !isNaN(rawLocation.longitude) && rawLocation.longitude !== 0 ? rawLocation.longitude : 80.6480,
+  };
+
   return {
     ...(cleanObj as unknown as Project),
+    location: safeLocation,
     crdaLpNumber: (p.crdaLpNumber as string | undefined) || (evidence.crdaLpNumber as string | undefined),
     surveyNumber: (p.surveyNumber as string | undefined) || (evidence.surveyNumber as string | undefined),
     crdaDocumentUrl: (p.crdaDocumentUrl as string | undefined) || (evidence.crdaDocumentUrl as string | undefined),
