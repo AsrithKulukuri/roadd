@@ -198,6 +198,10 @@ export function ShelfCard({
     color: effectiveText,
     ...cardBorderStyles,
   };
+  const innerContentStyle: React.CSSProperties = {
+    backgroundColor: effectiveBg,
+    color: effectiveText,
+  };
   const textStyle: React.CSSProperties = { color: effectiveText };
   const accentTextStyle: React.CSSProperties = { color: effectiveAccent };
   const accentBgStyle: React.CSSProperties = {
@@ -214,6 +218,19 @@ export function ShelfCard({
   };
   const isElVisible = (id: CardElementId): boolean => {
     return elements?.[id]?.visible !== false;
+  };
+  const getElStyle = (id: CardElementId, baseStyle?: React.CSSProperties): React.CSSProperties => {
+    const borderStyle = elBorder(id);
+    const typoStyle = elTypo(id);
+    const bgStyle: React.CSSProperties = elements?.[id]?.backgroundColor
+      ? { backgroundColor: elements[id]?.backgroundColor }
+      : {};
+    return {
+      ...baseStyle,
+      ...bgStyle,
+      ...borderStyle,
+      ...typoStyle,
+    };
   };
   const isSelected = (id: CardElementId): boolean => {
     if (!isEditable) return false;
@@ -241,8 +258,8 @@ export function ShelfCard({
       baseClass,
       "cursor-pointer transition-all duration-200 relative group/el",
       selected
-        ? "ring-2 ring-amber-500 ring-offset-2 ring-offset-slate-900 shadow-lg shadow-amber-500/30 scale-[1.02]"
-        : "hover:ring-2 hover:ring-amber-400/70 hover:scale-[1.01]"
+        ? "ring-2 ring-amber-500 shadow-md shadow-amber-500/25 scale-[1.01] z-10"
+        : "hover:ring-1 hover:ring-amber-400/60"
     );
   };
 
@@ -503,7 +520,7 @@ export function ShelfCard({
                 "badge",
                 "px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold shadow-md tracking-wide border border-white/20 backdrop-blur-md"
               )}
-              style={accentBgStyle}
+              style={getElStyle("badge", accentBgStyle)}
               title={isEditable ? "Click to edit badge text" : undefined}
               onClick={handleSelect("badge", onEditBadge)}
             >
@@ -526,6 +543,7 @@ export function ShelfCard({
           {/* Price Tag Overlay on Image bottom-left */}
           <div className="absolute bottom-2 left-2.5 z-10">
             <span
+              style={getElStyle("price")}
               className={editableElClass(
                 "price",
                 "text-white font-extrabold text-base sm:text-lg drop-shadow-md tracking-tight block px-1 rounded"
@@ -558,7 +576,7 @@ export function ShelfCard({
             isCompactDesktop ? "sm:p-3 sm:gap-2" : isLargeDesktop ? "sm:p-4.5 sm:gap-3" : "sm:p-4 sm:gap-2.5",
             isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/30 cursor-pointer"
           )}
-          style={containerStyle}
+          style={innerContentStyle}
           onClick={isEditable ? (e) => {
             if (e.target === e.currentTarget) {
               e.preventDefault();
@@ -570,7 +588,7 @@ export function ShelfCard({
           <div>
             {/* Title / Headline */}
             <h4
-              style={textStyle}
+              style={getElStyle("title", textStyle)}
               className={editableElClass(
                 "title",
                 cn(
@@ -590,6 +608,7 @@ export function ShelfCard({
             {/* Tagline / Subtitle */}
             {(activeTagline || data.tagline) && (
               <p
+                style={getElStyle("subtitle")}
                 className={editableElClass(
                   "subtitle",
                   cn(
@@ -608,6 +627,7 @@ export function ShelfCard({
 
             {/* Location */}
             <p
+              style={getElStyle("location")}
               className={editableElClass(
                 "location",
                 cn(
@@ -631,6 +651,7 @@ export function ShelfCard({
               isCompactDesktop ? "sm:text-xs" : isLargeDesktop ? "sm:text-sm" : "sm:text-xs"
             )}>
               <span
+                style={getElStyle("specs")}
                 className={editableElClass(
                   "specs",
                   cn(
@@ -650,6 +671,7 @@ export function ShelfCard({
                 <>
                   <span className="text-slate-300">•</span>
                   <span
+                    style={getElStyle("specs")}
                     className={editableElClass(
                       "specs",
                       cn(
@@ -674,6 +696,7 @@ export function ShelfCard({
             isCompactMobile ? "pt-1.5 text-[10px]" : "pt-2 text-xs"
           )}>
             <span
+              style={getElStyle("developer")}
               className={editableElClass(
                 "developer",
                 cn(
@@ -699,7 +722,7 @@ export function ShelfCard({
                   isCompactDesktop ? "sm:px-2.5 sm:py-1 sm:text-xs" : isLargeDesktop ? "sm:px-3.5 sm:py-1.5 sm:text-xs" : "sm:px-2.5 sm:py-1 sm:text-xs"
                 )
               )}
-              style={accentBgStyle}
+              style={getElStyle("cta", accentBgStyle)}
               title={isEditable ? "Click to edit CTA button text" : undefined}
               onClick={handleSelect("cta", onEditCtaText)}
             >
@@ -773,7 +796,7 @@ export function ShelfCard({
             isCompactDesktop ? "sm:p-3" : isLargeDesktop ? "sm:p-4.5" : "sm:p-3.5",
             isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/30 cursor-pointer"
           )}
-          style={containerStyle}
+          style={innerContentStyle}
           onClick={isEditable ? (e) => {
             if (e.target === e.currentTarget) {
               e.preventDefault();
@@ -841,7 +864,7 @@ export function ShelfCard({
 
             {/* Title */}
             <h3
-              style={textStyle}
+              style={getElStyle("title", textStyle)}
               className={editableElClass(
                 "title",
                 cn(
@@ -860,6 +883,7 @@ export function ShelfCard({
 
             {/* Location */}
             <p
+              style={getElStyle("location")}
               className={editableElClass(
                 "location",
                 cn(
@@ -879,7 +903,7 @@ export function ShelfCard({
           {/* Price & Specs */}
           <div className="pt-2 border-t border-slate-100 space-y-1">
             <div
-              style={textStyle}
+              style={getElStyle("price", textStyle)}
               className={editableElClass(
                 "price",
                 cn(
@@ -900,6 +924,7 @@ export function ShelfCard({
               isCompactMobile ? "text-[10px]" : "text-[11px]"
             )}>
               <div
+                style={getElStyle("specs")}
                 className={editableElClass("specs", "flex items-center gap-1.5 truncate rounded px-1")}
                 onClick={handleSelect("specs", onEditBhk)}
                 title={isEditable ? "Click to edit BHK & area" : undefined}
@@ -929,7 +954,7 @@ export function ShelfCard({
                     "cta",
                     "w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center transition-all"
                   )}
-                  style={{ backgroundColor: `${effectiveAccent}25`, color: effectiveAccent }}
+                  style={getElStyle("cta", { backgroundColor: `${effectiveAccent}25`, color: effectiveAccent })}
                   title={isEditable ? "Click to choose accent color / button" : undefined}
                   onClick={handleSelect("cta", onEditCtaText)}
                 >
@@ -982,7 +1007,7 @@ export function ShelfCard({
                 "badge",
                 "px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 transition-all"
               )}
-              style={accentBgStyle}
+              style={getElStyle("badge", accentBgStyle)}
               title={isEditable ? "Click to edit badge text & color" : undefined}
               onClick={handleSelect("badge", onEditBadge)}
             >
@@ -1012,7 +1037,7 @@ export function ShelfCard({
 
         {/* Lower White Specifications Card */}
         <div
-          style={containerStyle}
+          style={innerContentStyle}
           className={cn(
             "bg-white flex flex-col justify-between flex-1 transition-all",
             isCompactMobile ? "p-3 space-y-2" : "p-3.5 space-y-2.5",
@@ -1029,7 +1054,7 @@ export function ShelfCard({
         >
           <div className="space-y-1">
             <div
-              style={textStyle}
+              style={getElStyle("price", textStyle)}
               className={editableElClass(
                 "price",
                 cn(
@@ -1045,7 +1070,7 @@ export function ShelfCard({
               {renderEditIndicator("price")}
             </div>
             <h3
-              style={textStyle}
+              style={getElStyle("title", textStyle)}
               className={editableElClass(
                 "title",
                 cn(
@@ -1062,6 +1087,7 @@ export function ShelfCard({
               {renderEditIndicator("title")}
             </h3>
             <p
+              style={getElStyle("location")}
               className={editableElClass(
                 "location",
                 cn(
@@ -1081,9 +1107,10 @@ export function ShelfCard({
           <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-xs">
             <div 
               onClick={handleSelect("specs", onEditBhk)}
+              style={getElStyle("specs")}
               className={editableElClass(
                 "specs",
-                cn("rounded-xl bg-slate-50 border border-slate-200/80 cursor-pointer", isCompactMobile ? "p-1.5" : "p-2 sm:p-2.5")
+                cn("rounded-xl bg-slate-50 border border-slate-200/80 cursor-pointer transition-all", isCompactMobile ? "p-1.5" : "p-2 sm:p-2.5")
               )}
             >
               <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 block">Config</span>
@@ -1094,9 +1121,10 @@ export function ShelfCard({
             </div>
             <div 
               onClick={handleSelect("specs", onEditArea)}
+              style={getElStyle("specs")}
               className={editableElClass(
                 "specs",
-                cn("rounded-xl bg-slate-50 border border-slate-200/80 cursor-pointer", isCompactMobile ? "p-1.5" : "p-2 sm:p-2.5")
+                cn("rounded-xl bg-slate-50 border border-slate-200/80 cursor-pointer transition-all", isCompactMobile ? "p-1.5" : "p-2 sm:p-2.5")
               )}
             >
               <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 block">Area</span>
@@ -1108,8 +1136,9 @@ export function ShelfCard({
 
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
             <span 
-              onClick={handleSelect("specs", onEditStatus)}
-              className={editableElClass("specs", "text-[11px] text-slate-700 font-semibold flex items-center gap-1 rounded px-1")}
+              onClick={handleSelect("badge", onEditStatus)}
+              style={getElStyle("badge")}
+              className={editableElClass("badge", "text-[11px] text-slate-700 font-semibold flex items-center gap-1 rounded px-1")}
             >
               <Calendar className="w-3.5 h-3.5" style={accentTextStyle} />
               {data.isReadyToMove ? "Ready to Move" : "Possession Soon"}
@@ -1118,6 +1147,7 @@ export function ShelfCard({
             {data.isRera ? (
               <span 
                 onClick={handleSelect("badge", onEditBadge)}
+                style={getElStyle("badge")}
                 className={editableElClass("badge", "text-[11px] text-emerald-600 font-extrabold flex items-center gap-1 rounded px-1")}
               >
                 <CheckCircle2 className="w-3.5 h-3.5" /> RERA Approved
@@ -1125,8 +1155,8 @@ export function ShelfCard({
             ) : (
               <span 
                 onClick={handleSelect("badge", onEditBadge)}
+                style={getElStyle("badge", accentTextStyle)}
                 className={editableElClass("badge", "text-[11px] font-extrabold flex items-center gap-1 rounded px-1")}
-                style={accentTextStyle}
               >
                 <Sparkles className="w-3.5 h-3.5" /> Premium
               </span>
@@ -1244,7 +1274,7 @@ export function ShelfCard({
 
         {/* Right / Bottom Luxury Information Strip */}
         <div
-          style={containerStyle}
+          style={innerContentStyle}
           className={cn(
             "md:w-[40%] p-5 sm:p-6 bg-white flex flex-col justify-between space-y-4 min-w-[260px] transition-all",
             isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
@@ -1263,7 +1293,7 @@ export function ShelfCard({
                 "developer",
                 "w-12 h-12 rounded-2xl bg-white font-heading font-black text-lg flex items-center justify-center border shadow-sm shrink-0 transition-all p-1.5 overflow-hidden"
               )}
-              style={{ borderColor: `${effectiveAccent}60`, color: effectiveAccent }}
+              style={getElStyle("developer", { borderColor: `${effectiveAccent}60`, color: effectiveAccent })}
               title={isEditable ? "Click to edit developer & logo" : undefined}
               onClick={handleSelect("developer", onEditDeveloper)}
             >
@@ -1279,7 +1309,7 @@ export function ShelfCard({
             </div>
             <div className="min-w-0 flex-1">
               <h3
-                style={textStyle}
+                style={getElStyle("title", textStyle)}
                 className={editableElClass(
                   "title",
                   "font-black text-lg text-slate-900 line-clamp-1 group-hover:text-amber-500 transition-colors rounded px-1"
@@ -1309,11 +1339,12 @@ export function ShelfCard({
             onClick={handleSelect("price", onEditPrice)}
             title={isEditable ? "Click to edit price" : undefined}
           >
-            <div style={textStyle} className="text-2xl sm:text-3xl font-black tracking-tight text-slate-950">
+            <div style={getElStyle("price", textStyle)} className="text-2xl sm:text-3xl font-black tracking-tight text-slate-950">
               {data.priceStr}
               {renderEditIndicator("price")}
             </div>
             <p 
+              style={getElStyle("location")}
               onClick={handleSelect("location", onEditLocation)}
               className={editableElClass("location", "text-xs text-slate-500 flex items-center gap-1 font-medium truncate rounded px-1")}
             >
@@ -1327,6 +1358,7 @@ export function ShelfCard({
           <div className="grid grid-cols-3 gap-2 py-1">
             {/* Box 1: Configuration / BHK */}
             <div
+              style={getElStyle("specs")}
               className={editableElClass(
                 "specs",
                 "flex flex-col items-start justify-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 transition-all shadow-xs min-w-0 cursor-pointer"
@@ -1346,6 +1378,7 @@ export function ShelfCard({
 
             {/* Box 2: Super Area */}
             <div
+              style={getElStyle("specs")}
               className={editableElClass(
                 "specs",
                 "flex flex-col items-start justify-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 transition-all shadow-xs min-w-0 cursor-pointer"
@@ -1364,6 +1397,7 @@ export function ShelfCard({
 
             {/* Box 3: Status / Possession */}
             <div
+              style={getElStyle("specs")}
               className={editableElClass(
                 "specs",
                 "flex flex-col items-start justify-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 transition-all shadow-xs min-w-0 cursor-pointer"
@@ -1392,7 +1426,7 @@ export function ShelfCard({
                 "cta",
                 "px-4 py-2 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 hover:brightness-105 active:scale-95"
               )}
-              style={accentBgStyle}
+              style={getElStyle("cta", accentBgStyle)}
               title={isEditable ? "Click to edit CTA button text & color" : undefined}
               onClick={handleSelect("cta", onEditCtaText)}
             >
@@ -1464,7 +1498,7 @@ export function ShelfCard({
 
         {/* Right: Spec Panel */}
         <div
-          style={containerStyle}
+          style={innerContentStyle}
           className={cn(
             "md:w-[50%] p-5 sm:p-6 bg-white flex flex-col justify-between space-y-4 transition-all",
             isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
@@ -1484,7 +1518,7 @@ export function ShelfCard({
                   "subtitle",
                   "text-[11px] font-bold uppercase tracking-wider rounded px-1"
                 )}
-                style={accentTextStyle}
+                style={getElStyle("subtitle", accentTextStyle)}
                 title={isEditable ? "Click to edit tagline & text color" : undefined}
                 onClick={handleSelect("subtitle", onEditTagline)}
               >
@@ -1503,7 +1537,7 @@ export function ShelfCard({
             </div>
 
             <h3
-              style={textStyle}
+              style={getElStyle("title", textStyle)}
               className={editableElClass(
                 "title",
                 "font-heading font-black text-xl text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors rounded px-1"
@@ -1516,6 +1550,7 @@ export function ShelfCard({
               {renderEditIndicator("title")}
             </h3>
             <p
+              style={getElStyle("location")}
               className={editableElClass("location", "text-xs text-slate-500 flex items-center gap-1 rounded px-1")}
               onClick={handleSelect("location", onEditLocation)}
               title={isEditable ? "Click to edit location" : undefined}
@@ -1528,7 +1563,7 @@ export function ShelfCard({
 
           <div className="space-y-1">
             <div
-              style={textStyle}
+              style={getElStyle("price", textStyle)}
               className={editableElClass("price", "text-2xl font-black tracking-tight text-slate-950 rounded px-1")}
               onClick={handleSelect("price", onEditPrice)}
               title={isEditable ? "Click to edit price" : undefined}
@@ -1537,6 +1572,7 @@ export function ShelfCard({
               {renderEditIndicator("price")}
             </div>
             <div
+              style={getElStyle("specs")}
               className={editableElClass("specs", "flex items-center gap-2 text-xs font-semibold text-slate-600 rounded px-1")}
               onClick={handleSelect("specs", onEditBhk)}
               title={isEditable ? "Click to edit specs & BHK" : undefined}
@@ -1560,6 +1596,7 @@ export function ShelfCard({
             </div>
             <div className="flex items-center justify-between">
               <span 
+                style={getElStyle("developer")}
                 onClick={handleSelect("developer", onEditDeveloper)}
                 className={editableElClass("developer", "text-[11px] text-slate-500 font-semibold rounded px-1")}
               >
@@ -1622,7 +1659,7 @@ export function ShelfCard({
                 "badge",
                 "px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wide shadow-md transition-all"
               )}
-              style={accentBgStyle}
+              style={getElStyle("badge", accentBgStyle)}
               title={isEditable ? "Click to edit badge text & color" : undefined}
               onClick={handleSelect("badge", onEditBadge)}
             >
@@ -1643,7 +1680,7 @@ export function ShelfCard({
 
         {/* Floating White Overlay Panel overlapping the photo */}
         <div
-          style={containerStyle}
+          style={innerContentStyle}
           className={cn(
             "relative -mt-10 sm:-mt-12 mx-3 sm:mx-4 mb-3 p-4 sm:p-5 rounded-2xl bg-white shadow-xl border border-slate-200 z-10 space-y-3 transition-all",
             isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
@@ -1662,7 +1699,7 @@ export function ShelfCard({
               "developer",
               "absolute -top-8 left-4 sm:left-5 w-16 h-16 sm:w-18 sm:h-18 rounded-full border-2 shadow-xl bg-white p-2 flex items-center justify-center overflow-hidden transition-all z-20"
             )}
-            style={{ borderColor: effectiveAccent, color: effectiveAccent }}
+            style={getElStyle("developer", { borderColor: effectiveAccent, color: effectiveAccent })}
             title={isEditable ? "Click to edit developer & logo" : undefined}
             onClick={handleSelect("developer", onEditDeveloper)}
           >
@@ -1681,7 +1718,7 @@ export function ShelfCard({
 
           <div className="pt-6 sm:pt-7 space-y-1">
             <h3
-              style={textStyle}
+              style={getElStyle("title", textStyle)}
               className={editableElClass(
                 "title",
                 "font-heading font-black text-lg sm:text-xl text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors rounded px-1"
@@ -1694,6 +1731,7 @@ export function ShelfCard({
               {renderEditIndicator("title")}
             </h3>
             <p
+              style={getElStyle("location")}
               className={editableElClass("location", "text-xs text-slate-500 font-medium rounded px-1")}
               onClick={handleSelect("location", onEditLocation)}
               title={isEditable ? "Click to edit location" : undefined}
@@ -1706,7 +1744,7 @@ export function ShelfCard({
 
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
             <div
-              style={textStyle}
+              style={getElStyle("price", textStyle)}
               className={editableElClass("price", "text-lg sm:text-xl font-black tracking-tight text-slate-950 rounded px-1")}
               onClick={handleSelect("price", onEditPrice)}
               title={isEditable ? "Click to edit price" : undefined}
@@ -1719,7 +1757,7 @@ export function ShelfCard({
                 "cta",
                 "w-7 h-7 rounded-full bg-slate-100 text-slate-900 transition-all flex items-center justify-center"
               )}
-              style={{ backgroundColor: `${effectiveAccent}25`, color: effectiveAccent }}
+              style={getElStyle("cta", { backgroundColor: `${effectiveAccent}25`, color: effectiveAccent })}
               title={isEditable ? "Click to edit CTA button & color" : undefined}
               onClick={handleSelect("cta", onEditCtaText)}
             >
@@ -1767,7 +1805,7 @@ export function ShelfCard({
                 "badge",
                 "px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-md transition-all"
               )}
-              style={accentBgStyle}
+              style={getElStyle("badge", accentBgStyle)}
               title={isEditable ? "Click to edit badge text & color" : undefined}
               onClick={handleSelect("badge", onEditBadge)}
             >
@@ -1792,7 +1830,7 @@ export function ShelfCard({
 
         {/* Villa Details & Amenities */}
         <div
-          style={containerStyle}
+          style={innerContentStyle}
           className={cn(
             "p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-3 bg-white transition-all",
             isEditable && "hover:outline-dashed hover:outline-1 hover:outline-amber-400/40 cursor-pointer"
@@ -1808,7 +1846,7 @@ export function ShelfCard({
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <h3
-                style={textStyle}
+                style={getElStyle("title", textStyle)}
                 className={editableElClass(
                   "title",
                   "font-heading font-black text-base sm:text-lg text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors rounded px-1"
@@ -1821,7 +1859,7 @@ export function ShelfCard({
                 {renderEditIndicator("title")}
               </h3>
               <span
-                style={textStyle}
+                style={getElStyle("price", textStyle)}
                 className={editableElClass("price", "text-base sm:text-lg font-black shrink-0 ml-2 text-slate-950 rounded px-1")}
                 onClick={handleSelect("price", onEditPrice)}
                 title={isEditable ? "Click to edit price" : undefined}
@@ -1831,11 +1869,12 @@ export function ShelfCard({
               </span>
             </div>
             <p
+              style={getElStyle("location")}
               className={editableElClass("location", "text-xs text-slate-500 flex items-center gap-1 rounded px-1")}
               onClick={handleSelect("location", onEditLocation)}
               title={isEditable ? "Click to edit location" : undefined}
             >
-              <MapPin className="w-3 h-3 shrink-0" style={accentTextStyle} />
+              <MapPin className="w-3.5 h-3.5 shrink-0" style={accentTextStyle} />
               <span>{data.locationStr}</span>
               {renderEditIndicator("location")}
             </p>
@@ -1856,7 +1895,7 @@ export function ShelfCard({
 
           <div className="flex items-center justify-between text-xs pt-1">
             <span
-              style={textStyle}
+              style={getElStyle("specs", textStyle)}
               className={editableElClass("specs", "text-slate-600 font-semibold rounded px-1")}
               onClick={handleSelect("specs", onEditBhk)}
               title={isEditable ? "Click to edit specs" : undefined}
@@ -1866,7 +1905,7 @@ export function ShelfCard({
             </span>
 
             <span
-              style={accentTextStyle}
+              style={getElStyle("cta", accentTextStyle)}
               className={editableElClass("cta", "font-black flex items-center gap-1 group-hover:translate-x-0.5 transition-transform p-1 rounded-lg")}
               title={isEditable ? "Click to edit CTA button & color" : undefined}
               onClick={handleSelect("cta", onEditCtaText)}
@@ -1918,7 +1957,7 @@ export function ShelfCard({
                 "badge",
                 "px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 shadow-md transition-all"
               )}
-              style={accentBgStyle}
+              style={getElStyle("badge", accentBgStyle)}
               title={isEditable ? "Click to edit badge text & color" : undefined}
               onClick={handleSelect("badge", onEditBadge)}
             >
@@ -1946,7 +1985,7 @@ export function ShelfCard({
 
         {/* Content & Progress Bar */}
         <div
-          style={containerStyle}
+          style={innerContentStyle}
           className={cn(
             "flex flex-col justify-between flex-1 bg-white transition-all",
             isCompactMobile ? "p-3 space-y-2.5" : "p-3.5 space-y-3",
@@ -1963,7 +2002,7 @@ export function ShelfCard({
         >
           <div className="space-y-1">
             <h3
-              style={textStyle}
+              style={getElStyle("title", textStyle)}
               className={editableElClass(
                 "title",
                 cn(
@@ -1980,6 +2019,7 @@ export function ShelfCard({
               {renderEditIndicator("title")}
             </h3>
             <p
+              style={getElStyle("location")}
               className={editableElClass(
                 "location",
                 cn(
@@ -1990,7 +2030,7 @@ export function ShelfCard({
               onClick={handleSelect("location", onEditLocation)}
               title={isEditable ? "Click to edit location" : undefined}
             >
-              <MapPin className="w-3 h-3 shrink-0" style={accentTextStyle} />
+              <MapPin className="w-3.5 h-3.5 shrink-0" style={accentTextStyle} />
               <span>{data.locationStr}</span>
               {renderEditIndicator("location")}
             </p>
@@ -1998,7 +2038,7 @@ export function ShelfCard({
 
           <div className="flex items-center justify-between">
             <div
-              style={textStyle}
+              style={getElStyle("price", textStyle)}
               className={editableElClass(
                 "price",
                 cn(
@@ -2014,7 +2054,7 @@ export function ShelfCard({
               {renderEditIndicator("price")}
             </div>
             <div
-              style={textStyle}
+              style={getElStyle("specs", textStyle)}
               className={editableElClass(
                 "specs",
                 cn(
@@ -2033,6 +2073,7 @@ export function ShelfCard({
           {/* Construction Progress Bar (Admin Configurable per Project) */}
           <div 
             onClick={handleSelect("progress")}
+            style={getElStyle("progress")}
             className={editableElClass(
               "progress",
               "pt-2 sm:pt-3 border-t border-slate-100 space-y-1.5 p-1.5 rounded-xl cursor-pointer"
@@ -2059,7 +2100,6 @@ export function ShelfCard({
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
   // 8. LUXURY EDITORIAL (Style 08: 520–680px wide, 300–400px high)
   // ──────────────────────────────────────────────────────────────────────────
   return (
@@ -2076,7 +2116,7 @@ export function ShelfCard({
     >
       {/* Left Editorial Information Panel */}
       <div
-        style={containerStyle}
+        style={innerContentStyle}
         className={cn(
           "md:w-[45%] p-5 sm:p-6 flex flex-col justify-between space-y-4 bg-white transition-all",
           editableElClass("container", "")
@@ -2088,7 +2128,7 @@ export function ShelfCard({
               "badge",
               "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider inline-block shadow-xs transition-all"
             )}
-            style={accentBgStyle}
+            style={getElStyle("badge", accentBgStyle)}
             title={isEditable ? "Click to edit badge text & color" : undefined}
             onClick={handleSelect("badge", onEditBadge)}
           >
@@ -2096,7 +2136,7 @@ export function ShelfCard({
             {renderEditIndicator("badge")}
           </span>
           <h3
-            style={textStyle}
+            style={getElStyle("title", textStyle)}
             className={editableElClass(
               "title",
               "font-serif text-xl sm:text-2xl font-black text-slate-900 leading-tight transition-all rounded p-1"
@@ -2108,6 +2148,7 @@ export function ShelfCard({
             {renderEditIndicator("title")}
           </h3>
           <p
+            style={getElStyle("subtitle")}
             className={editableElClass(
               "subtitle",
               "text-xs text-slate-600 font-medium transition-all rounded px-1"
@@ -2122,6 +2163,7 @@ export function ShelfCard({
 
         <div className="space-y-1">
           <p
+            style={getElStyle("location")}
             className={editableElClass(
               "location",
               "text-xs text-slate-500 flex items-center gap-1 font-medium rounded px-1"
@@ -2134,7 +2176,7 @@ export function ShelfCard({
             {renderEditIndicator("location")}
           </p>
           <div
-            style={textStyle}
+            style={getElStyle("price", textStyle)}
             className={editableElClass(
               "price",
               "text-2xl font-black tracking-tight text-slate-950 rounded px-1"
@@ -2153,7 +2195,7 @@ export function ShelfCard({
               "cta",
               "w-full sm:w-auto px-4 py-2 rounded-xl font-black text-xs inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs"
             )}
-            style={accentBgStyle}
+            style={getElStyle("cta", accentBgStyle)}
             title={isEditable ? "Click to edit button & accent color" : undefined}
             onClick={handleSelect("cta", onEditAccentColor)}
           >

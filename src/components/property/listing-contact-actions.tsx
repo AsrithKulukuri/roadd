@@ -5,12 +5,19 @@ import type { ContactAction } from "@/lib/listing-actions";
 import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/property/whatsapp-share-button";
 import { toast } from "sonner";
+import { startGlobalProgress } from "@/lib/progress-bar";
+
 export async function performListingAction(listingType: "project" | "property", listingId: string, action: ContactAction) {
   if (!await requireActionSession(action)) return null;
-  const response = await fetch("/api/listing-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ listingType, listingId, action, consent: true }) });
-  const data = await response.json();
-  if (!response.ok || !data.success) throw new Error(data.error || "Unable to complete this action. Please retry.");
-  return data;
+  const finishProgress = startGlobalProgress({ isAsync: true });
+  try {
+    const response = await fetch("/api/listing-actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ listingType, listingId, action, consent: true }) });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.error || "Unable to complete this action. Please retry.");
+    return data;
+  } finally {
+    finishProgress();
+  }
 }
 export function ListingContactActions({ listingType, listingId }: { listingType: "project" | "property"; listingId: string }) {
   const [phone, setPhone] = useState("");

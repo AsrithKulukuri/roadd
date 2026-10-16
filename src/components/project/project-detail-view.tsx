@@ -33,6 +33,7 @@ import {
 } from "@/lib/project-activity-tracker";
 import { ScheduleVisitModal } from "@/components/project/schedule-visit-modal";
 import { formatAvailableBhk } from "@/lib/utils";
+import { startGlobalProgress, finishGlobalProgress } from "@/lib/progress-bar";
 
 // ─── Lazy map (SSR unsafe) ─────────────────────────────────────────────────────
 const ProjectMapView = dynamic(
@@ -171,13 +172,29 @@ export function ProjectDetailView({
     }, 2000);
   };
   const [floorPlanLightbox, updateFloorPlanLightbox] = useState<{ url: string; label: string } | null>(null);
+  const [loadingPlanUrl, setLoadingPlanUrl] = useState<string | null>(null);
+
   async function requestInformation() {
     if (!project) return false;
     try { return Boolean(await performListingAction("project", project.id, "information_request")); }
     catch (error) { toast.error(error instanceof Error ? error.message : "Please retry."); return false; }
   }
   async function setFloorPlanLightbox(value: { url: string; label: string } | null) {
-    if (!value || await requestInformation()) updateFloorPlanLightbox(value);
+    if (!value) {
+      updateFloorPlanLightbox(null);
+      return;
+    }
+    setLoadingPlanUrl(value.url);
+    const finishProgress = startGlobalProgress({ isAsync: true });
+    try {
+      const authorized = await requestInformation();
+      if (authorized) {
+        updateFloorPlanLightbox(value);
+      }
+    } finally {
+      setLoadingPlanUrl(null);
+      finishProgress();
+    }
   }
   const [activeMedia, setActiveMedia] = useState<Record<string, 'image' | 'video'>>({});
   const [playingVideos, setPlayingVideos] = useState<Record<string, boolean>>({});
@@ -1483,10 +1500,17 @@ export function ProjectDetailView({
                               alt={`${project.name} Master Plan`}
                               className="max-w-[95%] max-h-[95%] object-contain group-hover/media:scale-105 transition-transform duration-500"
                             />
-                            <div className="absolute bottom-2.5 left-2.5 bg-slate-950/85 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg border border-white/15 flex items-center gap-1.5 shadow-md">
-                              <Eye className="w-3.5 h-3.5 text-amber-400" />
-                              <span>Tap to Zoom</span>
-                            </div>
+                            {loadingPlanUrl === project.masterPlanUrl ? (
+                              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center gap-2 text-white text-xs font-bold z-10">
+                                <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
+                                <span>Opening Plan...</span>
+                              </div>
+                            ) : (
+                              <div className="absolute bottom-2.5 left-2.5 bg-slate-950/85 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg border border-white/15 flex items-center gap-1.5 shadow-md">
+                                <Eye className="w-3.5 h-3.5 text-amber-400" />
+                                <span>Tap to Zoom</span>
+                              </div>
+                            )}
                           </div>
 
                           {/* Micro-specs */}
@@ -1520,11 +1544,21 @@ export function ProjectDetailView({
                         {/* Card Action Button */}
                         <button
                           type="button"
+                          disabled={loadingPlanUrl !== null}
                           onClick={() => setFloorPlanLightbox({ url: project.masterPlanUrl!, label: `${project.name} — Master Plan` })}
-                          className="mt-2 w-full flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all py-2.5 rounded-xl text-xs font-bold cursor-pointer active:scale-98 shadow-sm"
+                          className="mt-2 w-full flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all py-2.5 rounded-xl text-xs font-bold cursor-pointer active:scale-98 shadow-sm disabled:opacity-80"
                         >
-                          <Eye className="w-3.5 h-3.5 text-amber-500" />
-                          <span>View Full Master Plan</span>
+                          {loadingPlanUrl === project.masterPlanUrl ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+                              <span>Opening Master Plan...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-3.5 h-3.5 text-amber-500" />
+                              <span>View Full Master Plan</span>
+                            </>
+                          )}
                         </button>
                       </div>
                     )}
@@ -1596,12 +1630,19 @@ export function ProjectDetailView({
                                 </div>
                               )}
 
-                              {/* Floating Zoom Badge */}
+                              {/* Floating Zoom Badge / Loading State */}
                               {cfg.floorPlanUrl && (
-                                <div className="absolute bottom-2.5 left-2.5 bg-slate-950/80 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg border border-white/15 flex items-center gap-1.5 shadow-md">
-                                  <Eye className="w-3.5 h-3.5 text-amber-400" />
-                                  <span>Tap to Zoom</span>
-                                </div>
+                                loadingPlanUrl === cfg.floorPlanUrl ? (
+                                  <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center gap-2 text-white text-xs font-bold z-10">
+                                    <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
+                                    <span>Opening Plan...</span>
+                                  </div>
+                                ) : (
+                                  <div className="absolute bottom-2.5 left-2.5 bg-slate-950/80 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg border border-white/15 flex items-center gap-1.5 shadow-md">
+                                    <Eye className="w-3.5 h-3.5 text-amber-400" />
+                                    <span>Tap to Zoom</span>
+                                  </div>
+                                )
                               )}
 
                               {/* Floating Video Tour Pill */}
@@ -1641,11 +1682,21 @@ export function ProjectDetailView({
                           {cfg.floorPlanUrl && (
                             <button
                               type="button"
+                              disabled={loadingPlanUrl !== null}
                               onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: `${cfg.label} (${areaMin} ${unit})` })}
-                              className="mt-2 w-full flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all py-2.5 rounded-xl text-xs font-bold cursor-pointer active:scale-98 shadow-sm"
+                              className="mt-2 w-full flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all py-2.5 rounded-xl text-xs font-bold cursor-pointer active:scale-98 shadow-sm disabled:opacity-80"
                             >
-                              <Eye className="w-3.5 h-3.5 text-amber-500" />
-                              <span>View Full Floor Plan</span>
+                              {loadingPlanUrl === cfg.floorPlanUrl ? (
+                                <>
+                                  <Loader2 className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+                                  <span>Opening Floor Plan...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="w-3.5 h-3.5 text-amber-500" />
+                                  <span>View Full Floor Plan</span>
+                                </>
+                              )}
                             </button>
                           )}
                         </div>

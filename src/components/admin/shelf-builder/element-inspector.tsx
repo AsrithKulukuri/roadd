@@ -179,7 +179,14 @@ export function ElementInspector({
   };
 
   const applyPreset = (preset: BorderPreset) => {
-    updateBorder(preset.config);
+    const nextBorder: BorderConfig = { ...preset.config };
+    if (isContainer) {
+      onChangeCardBorder(nextBorder);
+    } else {
+      onChangeElement(selectedElementId, {
+        border: nextBorder,
+      });
+    }
     showToast(`Applied preset "${preset.name}"`);
   };
 

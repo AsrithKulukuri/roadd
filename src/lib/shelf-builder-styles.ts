@@ -63,18 +63,26 @@ export function borderConfigToStyles(border?: BorderConfig, isHover?: boolean): 
   }
 
   // Outline
-  if (border.outlineEnabled && border.outlineWidth) {
+  if (border.enabled && border.outlineEnabled && border.outlineWidth) {
     styles.outline = `${border.outlineWidth}px solid ${border.outlineColor || "rgba(245, 166, 35, 0.4)"}`;
     if (typeof border.outlineOffset === "number") {
       styles.outlineOffset = `${border.outlineOffset}px`;
     }
+  } else {
+    styles.outline = "none";
   }
 
   // Shadow
-  const shadowType = isHover && border.hoverShadow ? border.hoverShadow : border.shadow;
-  const shadowValue = getShadowValue(shadowType);
-  if (shadowValue) {
-    styles.boxShadow = shadowValue;
+  if (border.enabled) {
+    const shadowType = isHover && border.hoverShadow ? border.hoverShadow : border.shadow;
+    const shadowValue = getShadowValue(shadowType);
+    if (shadowValue) {
+      styles.boxShadow = shadowValue;
+    } else {
+      styles.boxShadow = "none";
+    }
+  } else {
+    styles.boxShadow = "none";
   }
 
   return styles;

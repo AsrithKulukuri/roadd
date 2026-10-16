@@ -70,33 +70,125 @@ export function SmartPageLoader() {
     };
   }, [mounted, isPropertiesLoading, isProjectsLoading, properties.length, projects.length]);
 
-  // 2. Route Change Top Progress Bar (Instant, Non-Blocking Feedback)
+  // 2. Real-Time Top Progress Bar (Zero-Latency Feedback for ANY Button Click, Navigation & Async Action)
+  const trickleIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const finishTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startProgressAnimation = (isAsync = false, duration = 450) => {
+    if (finishTimeoutRef.current) clearTimeout(finishTimeoutRef.current);
+    if (trickleIntervalRef.current) clearInterval(trickleIntervalRef.current);
+
+    setIsNavigating(true);
+    setProgress((prev) => (prev > 0 && prev < 90 ? prev : 22));
+
+    // Trickle progress smoothly
+    trickleIntervalRef.current = setInterval(() => {
+      setProgress((cur) => {
+        if (cur < 45) return cur + Math.random() * 8 + 4;
+        if (cur < 75) return cur + Math.random() * 5 + 2;
+        if (cur < 92) return cur + Math.random() * 1.5 + 0.5;
+        return cur; // Hold around 92% until done
+      });
+    }, 90);
+
+    // If not waiting on a long async promise, schedule auto-completion
+    if (!isAsync) {
+      finishTimeoutRef.current = setTimeout(() => {
+        completeProgressAnimation();
+      }, duration);
+    }
+  };
+
+  const completeProgressAnimation = () => {
+    if (trickleIntervalRef.current) clearInterval(trickleIntervalRef.current);
+    if (finishTimeoutRef.current) clearTimeout(finishTimeoutRef.current);
+
+    setProgress(100);
+
+    finishTimeoutRef.current = setTimeout(() => {
+      setIsNavigating(false);
+      setProgress(0);
+    }, 220);
+  };
+
+  // Global Button Click Listener & Custom Events
+  useEffect(() => {
+    if (!mounted) return;
+
+    // Attach global click progress listener (for ALL buttons, links, interactive triggers)
+    const cleanupClick = (function initGlobalClick() {
+      const handleClick = (e: MouseEvent) => {
+        const target = e.target as HTMLElement | null;
+        if (!target) return;
+
+        const interactive = target.closest<HTMLElement>(
+          "button, [role='button'], a, input[type='button'], input[type='submit'], summary, [data-interactive='true']"
+        );
+
+        if (!interactive) return;
+
+        // Skip disabled or ignored elements
+        if (
+          interactive.hasAttribute("disabled") ||
+          interactive.getAttribute("aria-disabled") === "true" ||
+          interactive.getAttribute("data-no-progress") === "true"
+        ) {
+          return;
+        }
+
+        const href = interactive.getAttribute("href");
+        if (href === "#") return;
+
+        // Immediately start progress bar for tactile responsiveness
+        startProgressAnimation(false, 480);
+      };
+
+      document.addEventListener("click", handleClick, { capture: true, passive: true });
+      return () => document.removeEventListener("click", handleClick, { capture: true });
+    })();
+
+    // Custom events listeners
+    const handleStartEvent = (e: Event) => {
+      const custom = e as CustomEvent<{ isAsync?: boolean; duration?: number }>;
+      const isAsync = custom.detail?.isAsync ?? false;
+      const duration = custom.detail?.duration ?? 480;
+      startProgressAnimation(isAsync, duration);
+    };
+
+    const handleDoneEvent = () => {
+      completeProgressAnimation();
+    };
+
+    const handleUpdateEvent = (e: Event) => {
+      const custom = e as CustomEvent<{ percent: number }>;
+      if (typeof custom.detail?.percent === "number") {
+        setIsNavigating(true);
+        setProgress(Math.min(100, Math.max(0, custom.detail.percent)));
+      }
+    };
+
+    window.addEventListener("road:progress:start", handleStartEvent);
+    window.addEventListener("road:progress:done", handleDoneEvent);
+    window.addEventListener("road:progress:update", handleUpdateEvent);
+
+    return () => {
+      cleanupClick();
+      window.removeEventListener("road:progress:start", handleStartEvent);
+      window.removeEventListener("road:progress:done", handleDoneEvent);
+      window.removeEventListener("road:progress:update", handleUpdateEvent);
+      if (trickleIntervalRef.current) clearInterval(trickleIntervalRef.current);
+      if (finishTimeoutRef.current) clearTimeout(finishTimeoutRef.current);
+    };
+  }, [mounted]);
+
+  // Route Change Handler
   useEffect(() => {
     if (!mounted) return;
 
     const currentPath = pathname + (searchParams?.toString() || "");
     if (currentPath !== prevPathRef.current) {
       prevPathRef.current = currentPath;
-
-      // Start slim top progress bar immediately
-      setIsNavigating(true);
-      setProgress(25);
-
-      const p1 = setTimeout(() => setProgress(65), 70);
-      const p2 = setTimeout(() => setProgress(90), 150);
-      const p3 = setTimeout(() => {
-        setProgress(100);
-        setTimeout(() => {
-          setIsNavigating(false);
-          setProgress(0);
-        }, 180);
-      }, 260);
-
-      return () => {
-        clearTimeout(p1);
-        clearTimeout(p2);
-        clearTimeout(p3);
-      };
+      startProgressAnimation(false, 350);
     }
   }, [pathname, searchParams, mounted]);
 
@@ -104,26 +196,32 @@ export function SmartPageLoader() {
 
   return (
     <>
-      {/* ── Top Slim Glowing Progress Bar (Instant feedback on all navigations) ── */}
+      {/* ── Top Slim Glowing Progress Bar (Instant feedback on all navigations and button clicks) ── */}
       <AnimatePresence>
         {isNavigating && (
           <motion.div
             key="top-progress-bar"
             role="progressbar"
-            aria-label="Navigation progress"
-            aria-valuenow={progress}
+            aria-label="Action progress"
+            aria-valuenow={Math.round(progress)}
             aria-valuemin={0}
             aria-valuemax={100}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed top-0 left-0 right-0 z-[999999] pointer-events-none h-[3px] bg-slate-900/20"
+            className="fixed top-0 left-0 right-0 z-[9999999] pointer-events-none h-[3.5px] bg-slate-900/10 dark:bg-black/20"
           >
             <motion.div
-              className="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 shadow-[0_0_12px_#f59e0b]"
-              style={{ width: `${progress}%`, transition: "width 0.18s cubic-bezier(0.4, 0, 0.2, 1)" }}
-            />
+              className="relative h-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 shadow-[0_0_14px_rgba(245,158,11,0.9)]"
+              style={{
+                width: `${Math.min(100, progress)}%`,
+                transition: "width 0.15s cubic-bezier(0.2, 0.8, 0.2, 1)",
+              }}
+            >
+              {/* Glowing flare at the progress bar head */}
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-16 h-3 bg-white/60 blur-[3px] rounded-full pointer-events-none" />
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

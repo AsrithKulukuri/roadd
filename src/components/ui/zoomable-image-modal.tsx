@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import { X, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, ArrowLeft, LayoutTemplate, RefreshCw, AlertCircle } from "lucide-react";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 
 interface ZoomableImageModalProps {
@@ -23,6 +23,10 @@ export function ZoomableImageModal({
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  const [imageProgress, setImageProgress] = useState(15);
+  const [hasImageError, setHasImageError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -43,6 +47,49 @@ export function ZoomableImageModal({
     resetZoom();
   }, [initialIndex, isOpen]);
 
+  // Real-time progress simulation while downloading high-res image
+  const currentItem = images[currentIndex];
+  const currentUrl = typeof currentItem === "string" ? currentItem : currentItem?.url || "";
+  const currentLabel = typeof currentItem === "string" ? title : currentItem?.label || currentItem?.alt || title;
+
+  useEffect(() => {
+    if (!isOpen || !currentUrl) return;
+
+    setIsImageLoading(true);
+    setHasImageError(false);
+    setImageProgress(18);
+
+    // If image is already cached by browser
+    if (imageRef.current && imageRef.current.complete && imageRef.current.naturalWidth > 0) {
+      setImageProgress(100);
+      setIsImageLoading(false);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setImageProgress((prev) => {
+        if (prev < 45) return prev + Math.floor(Math.random() * 8) + 6;
+        if (prev < 78) return prev + Math.floor(Math.random() * 6) + 3;
+        if (prev < 94) return prev + Math.floor(Math.random() * 2) + 1;
+        return prev;
+      });
+    }, 110);
+
+    return () => clearInterval(interval);
+  }, [isOpen, currentUrl, currentIndex, reloadKey]);
+
+  const handleImageLoad = () => {
+    setImageProgress(100);
+    setTimeout(() => {
+      setIsImageLoading(false);
+    }, 120);
+  };
+
+  const handleImageError = () => {
+    setIsImageLoading(false);
+    setHasImageError(true);
+  };
+
   // Lock body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -55,7 +102,6 @@ export function ZoomableImageModal({
     };
   }, [isOpen]);
 
-
   const handleZoomIn = () => {
     setScale((prev) => Math.min(prev + 0.5, 4));
   };
@@ -67,10 +113,6 @@ export function ZoomableImageModal({
       return next;
     });
   };
-
-  const currentItem = images[currentIndex];
-  const currentUrl = typeof currentItem === "string" ? currentItem : currentItem?.url || "";
-  const currentLabel = typeof currentItem === "string" ? title : currentItem?.label || currentItem?.alt || title;
 
   const handlePrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -263,6 +305,16 @@ export function ZoomableImageModal({
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Real-Time Loading Bar on Modal Header */}
+        {isImageLoading && (
+          <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-white/10 overflow-hidden pointer-events-none">
+            <div
+              className="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 shadow-[0_0_12px_#f59e0b] transition-all duration-150 ease-out"
+              style={{ width: `${Math.min(100, imageProgress)}%` }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Main Image Canvas */}
@@ -296,6 +348,61 @@ export function ZoomableImageModal({
           </>
         )}
 
+        {/* Real-Time Central Loading Progress Box */}
+        {isImageLoading && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none p-4">
+            <div className="bg-slate-950/90 border border-white/15 rounded-3xl p-6 sm:p-7 flex flex-col items-center gap-4 max-w-sm w-full shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
+              <div className="relative flex items-center justify-center">
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shadow-inner">
+                  <LayoutTemplate className="w-7 h-7 text-amber-400 animate-pulse" />
+                </div>
+                <div className="absolute -inset-1 rounded-2xl border-2 border-dashed border-amber-400/40 animate-spin [animation-duration:3.5s]" />
+              </div>
+
+              <div className="flex flex-col items-center text-center gap-1">
+                <div className="text-white font-bold text-sm sm:text-base flex items-center gap-2">
+                  <span>Loading Full Plan</span>
+                  <span className="text-amber-400 font-mono text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 shadow-xs">
+                    {Math.round(imageProgress)}%
+                  </span>
+                </div>
+                <p className="text-slate-400 text-xs">
+                  Downloading high-resolution blueprint layout...
+                </p>
+              </div>
+
+              {/* Progress Bar Track */}
+              <div className="w-full h-2 bg-slate-800/90 rounded-full overflow-hidden p-0.5 border border-white/10 shadow-inner">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 rounded-full shadow-[0_0_12px_#f59e0b] transition-all duration-150 ease-out"
+                  style={{ width: `${Math.min(100, imageProgress)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Fallback */}
+        {hasImageError && !isImageLoading && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/70 p-4">
+            <div className="bg-slate-900 border border-red-500/30 rounded-2xl p-6 flex flex-col items-center gap-3 text-center max-w-sm">
+              <AlertCircle className="w-8 h-8 text-red-400" />
+              <p className="text-sm font-semibold text-white">Could not load image</p>
+              <button
+                onClick={() => {
+                  setReloadKey((k) => k + 1);
+                  setIsImageLoading(true);
+                  setHasImageError(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold cursor-pointer transition-all active:scale-95"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Retry</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Zoomable Image Element */}
         <div
           style={{
@@ -307,15 +414,20 @@ export function ZoomableImageModal({
         >
           <img
             ref={imageRef}
+            key={`${currentUrl}-${reloadKey}`}
             src={resolveMediaUrl(currentUrl)}
             alt={currentLabel || "Zoomable view"}
-            className="max-h-[75vh] sm:max-h-[82vh] max-w-[95vw] object-contain rounded-lg shadow-2xl drop-shadow-2xl"
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            className={`max-h-[75vh] sm:max-h-[82vh] max-w-[95vw] object-contain rounded-lg shadow-2xl drop-shadow-2xl transition-all duration-300 ${
+              isImageLoading ? "opacity-0 scale-95" : "opacity-100 scale-100"
+            }`}
             draggable={false}
           />
         </div>
 
         {/* Floating Hint Overlay on mobile */}
-        {scale === 1 && (
+        {scale === 1 && !isImageLoading && (
           <div className="absolute bottom-20 sm:bottom-24 pointer-events-none px-3.5 py-1.5 rounded-full bg-slate-950/80 backdrop-blur-md text-white/80 text-[11px] font-semibold border border-white/10 shadow-lg animate-fade-in">
             <span>Pinch or double tap to zoom in</span>
           </div>

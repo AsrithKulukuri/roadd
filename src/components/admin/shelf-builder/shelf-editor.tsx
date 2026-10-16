@@ -2328,7 +2328,18 @@ export function ShelfEditor({
             elementOrder={currentShelf.elementOrder || ["image", "badge", "price", "title", "specs", "location", "developer", "progress", "cta"]}
             onChangeElementOrder={(newOrder) => updateShelf({ elementOrder: newOrder })}
             cardBorder={currentShelf.cardBorder}
-            onChangeCardBorder={(newBorder) => updateShelf({ cardBorder: newBorder })}
+            onChangeCardBorder={(newBorder) => {
+              const updatedItems = (currentShelf.items || []).map((it) => {
+                if (it.cardBorder || (selectedItemId && it.id === selectedItemId)) {
+                  return { ...it, cardBorder: newBorder };
+                }
+                return it;
+              });
+              updateShelf({
+                cardBorder: newBorder,
+                items: updatedItems.length > 0 ? updatedItems : currentShelf.items,
+              });
+            }}
             onApplyBorderToAllCards={handleApplyBorderToAllCards}
             activeItem={activeItem}
             previewItems={previewItems}
