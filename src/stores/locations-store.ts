@@ -235,18 +235,24 @@ export const useLocationsStore = create<LocationsState>()(
             baseCities = current.length > 0 ? current : INITIAL_CITIES;
           }
 
-          // 2. Fetch properties & projects to get live listing counts & dynamic sublocations
-          const [propsRes, projsRes] = await Promise.all([
-            supabase.from("properties").select("location"),
-            supabase.from("projects").select("name, location"),
-          ]);
+          // 2. Fetch properties & projects via secure server API to get live listing counts & dynamic sublocations
+          let propsData: any[] = [];
+          let projsData: any[] = [];
+          try {
+            const countsRes = await fetch("/api/locations/counts", { cache: "no-store" });
+            if (countsRes.ok) {
+              const countsJson = await countsRes.json();
+              propsData = Array.isArray(countsJson.properties) ? countsJson.properties : [];
+              projsData = Array.isArray(countsJson.projects) ? countsJson.projects : [];
+            }
+          } catch (countsErr) {
+            console.warn("[LocationsStore] Failed to fetch listing counts from /api/locations/counts:", countsErr);
+          }
 
           // Collect known project names to ensure project names are NEVER treated as sublocations
           const projectNames = new Set<string>();
-          if (projsRes.data) {
-            for (const item of projsRes.data) {
-              if (item.name) projectNames.add(item.name.toLowerCase().trim());
-            }
+          for (const item of projsData) {
+            if (item.name) projectNames.add(item.name.toLowerCase().trim());
           }
 
           const isProjectName = (lName: string) => {
@@ -277,17 +283,13 @@ export const useLocationsStore = create<LocationsState>()(
             else cityLocalitiesCounts[cKey][lKey].projCount += 1;
           };
 
-          if (propsRes.data) {
-            for (const item of propsRes.data) {
-              const loc = (item.location || {}) as { city?: string; locality?: string };
-              if (loc.city) recordCount(loc.city, loc.locality || loc.city, "prop");
-            }
+          for (const item of propsData) {
+            const loc = (item.location || {}) as { city?: string; locality?: string };
+            if (loc.city) recordCount(loc.city, loc.locality || loc.city, "prop");
           }
-          if (projsRes.data) {
-            for (const item of projsRes.data) {
-              const loc = (item.location || {}) as { city?: string; locality?: string };
-              if (loc.city) recordCount(loc.city, loc.locality || loc.city, "proj");
-            }
+          for (const item of projsData) {
+            const loc = (item.location || {}) as { city?: string; locality?: string };
+            if (loc.city) recordCount(loc.city, loc.locality || loc.city, "proj");
           }
 
           // 3. For each city in baseCities, update its sublocations with live counts

@@ -1,4 +1,4 @@
-import { S3Client } from "@aws-sdk/client-s3";
+import { S3Client, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 
 const getS3Client = () => {
   const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "ap-south-2";
@@ -36,3 +36,71 @@ export const getBucketName = (): string => {
 export const getRegion = (): string => {
   return process.env.AWS_REGION || "ap-south-2";
 };
+
+export function extractS3Key(urlOrKey: string): string {
+  if (!urlOrKey) return "";
+
+  if (urlOrKey.startsWith("/api/media/")) {
+    return urlOrKey.replace(/^\/api\/media\//, "");
+  }
+
+  if (urlOrKey.includes(".amazonaws.com/")) {
+    const parts = urlOrKey.split(".amazonaws.com/");
+    return decodeURIComponent(parts[1] || urlOrKey);
+  }
+
+  return urlOrKey;
+}
+
+const ALLOWED_DELETE_PREFIXES = [
+  "properties/",
+  "projects/",
+  "banners/",
+  "categories/",
+  "brochures/",
+  "avatars/",
+  "videos/",
+  "watermarked/",
+];
+
+/**
+ * Direct server-side deletion of objects from AWS S3 using AWS SDK.
+ */
+export async function deleteS3Objects(urlsOrKeys: string[]): Promise<boolean> {
+  if (!urlsOrKeys || !Array.isArray(urlsOrKeys) || urlsOrKeys.length === 0) {
+    return true;
+  }
+
+  const validKeys = urlsOrKeys
+    .map(extractS3Key)
+    .map((k) => k.replace(/^\/+/, ""))
+    .filter((k) => {
+      if (!k || k.startsWith("blob:") || k.startsWith("data:")) return false;
+      return ALLOWED_DELETE_PREFIXES.some((prefix) => k.startsWith(prefix));
+    });
+
+  if (validKeys.length === 0) {
+    return true;
+  }
+
+  try {
+    const client = getClient();
+    const command = new DeleteObjectsCommand({
+      Bucket: getBucketName(),
+      Delete: {
+        Objects: validKeys.map((key) => ({ Key: key })),
+        Quiet: false,
+      },
+    });
+
+    const response = await client.send(command);
+    if (response.Errors && response.Errors.length > 0) {
+      console.warn("[S3 Direct Delete Warning] Some objects could not be deleted:", response.Errors);
+    }
+    return true;
+  } catch (error) {
+    console.error("[S3 Direct Delete Error]:", error);
+    return false;
+  }
+}
+

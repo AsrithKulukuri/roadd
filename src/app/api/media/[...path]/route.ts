@@ -33,7 +33,9 @@ export async function GET(
         ...(rangeHeader ? { Range: rangeHeader } : {}),
       });
 
-      const response = await getClient().send(command);
+      const response = await getClient().send(command, {
+        abortSignal: request.signal,
+      });
 
       if (response.Body) {
         const ext = (key.split(".").pop() || "").toLowerCase();
@@ -42,6 +44,7 @@ export async function GET(
           if (["jpg", "jpeg"].includes(ext)) contentType = "image/jpeg";
           else if (ext === "png") contentType = "image/png";
           else if (ext === "webp") contentType = "image/webp";
+          else if (ext === "avif") contentType = "image/avif";
           else if (ext === "pdf") contentType = "application/pdf";
           else if (["mp4", "mov"].includes(ext)) contentType = "video/mp4";
           else if (ext === "webm") contentType = "video/webm";
@@ -49,11 +52,25 @@ export async function GET(
         }
 
         const isVideoOrAudio = contentType.startsWith("video/") || contentType.startsWith("audio/") || ext === "pdf";
-
-        // If it's a streaming response (like video with Range request or web stream)
         const responseBody = response.Body as any;
 
-        // Convert S3 body stream to web ReadableStream
+        // For static images, read full bytes and return atomic response with Content-Length.
+        // This avoids chunked transfer encoding and prevents "The destination stream closed early" on fast scroll/nav.
+        if (!isVideoOrAudio && !rangeHeader) {
+          const bytes = await responseBody.transformToByteArray();
+          return new NextResponse(Buffer.from(bytes), {
+            status: 200,
+            headers: {
+              "Content-Type": contentType,
+              "Content-Length": String(bytes.length),
+              "Accept-Ranges": "bytes",
+              "Cache-Control": "public, max-age=31536000, immutable",
+              ...(response.ETag ? { ETag: response.ETag } : {}),
+            },
+          });
+        }
+
+        // Convert S3 body stream to web ReadableStream for video, audio, pdf, or range requests
         let stream: ReadableStream;
         if (typeof responseBody.transformToWebStream === "function") {
           stream = responseBody.transformToWebStream();
@@ -69,12 +86,13 @@ export async function GET(
               "Accept-Ranges": "bytes",
               ...(response.ContentRange ? { "Content-Range": response.ContentRange } : {}),
               "Cache-Control": "public, max-age=31536000, immutable",
+              ...(response.ETag ? { ETag: response.ETag } : {}),
             },
           });
         }
 
         const status = rangeHeader && response.ContentRange ? 206 : 200;
-        const filename = key.split('/').pop() || 'document.pdf';
+        const filename = key.split("/").pop() || "document.pdf";
 
         return new NextResponse(stream, {
           status,
@@ -90,6 +108,9 @@ export async function GET(
         });
       }
     } catch (s3Error: any) {
+      if (s3Error?.name === "AbortError" || request.signal.aborted) {
+        return new NextResponse(null, { status: 499 });
+      }
       console.warn("[Media Proxy Warning]:", s3Error?.message || s3Error);
     }
 

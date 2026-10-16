@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { deleteFromS3 } from "@/lib/aws/storage-utils";
+import { deleteS3Objects } from "@/lib/aws/s3";
 import { requireAdmin } from "@/lib/server-auth-guard";
 
 export async function POST(request: Request) {
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
           project.images?.forEach((img: any) => { if (img?.url) urlsToDelete.push(img.url); });
         });
         if (urlsToDelete.length > 0) {
-          deleteFromS3(urlsToDelete).catch(() => {});
+          deleteS3Objects(urlsToDelete).catch((err) => console.warn("S3 delete warning for projects:", err));
         }
       }
 
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
         project.images?.forEach((img: any) => { if (img?.url) urlsToDelete.push(img.url); });
       });
       if (urlsToDelete.length > 0) {
-        deleteFromS3(urlsToDelete).catch(() => {});
+        deleteS3Objects(urlsToDelete).catch((err) => console.warn("S3 delete warning for projects:", err));
       }
     }
 

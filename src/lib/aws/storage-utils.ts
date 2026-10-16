@@ -355,7 +355,14 @@ export async function deleteFromS3(urlsOrKeys: string[]): Promise<boolean> {
   if (cleanKeys.length === 0) return true;
 
   try {
-    const res = await fetch("/api/storage/delete", {
+    const baseUrl =
+      typeof window !== "undefined"
+        ? ""
+        : (process.env.NEXTAUTH_URL ||
+           process.env.NEXT_PUBLIC_SITE_URL ||
+           `http://localhost:${process.env.PORT || 3700}`);
+
+    const res = await fetch(`${baseUrl}/api/storage/delete`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ keys: cleanKeys }),

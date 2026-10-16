@@ -1,17 +1,6 @@
 import { NextResponse } from "next/server";
-import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
-import { getClient, getBucketName } from "@/lib/aws/s3";
+import { deleteS3Objects } from "@/lib/aws/s3";
 import { requireAdmin } from "@/lib/server-auth-guard";
-
-const ALLOWED_PREFIXES = [
-  "properties/",
-  "projects/",
-  "banners/",
-  "categories/",
-  "brochures/",
-  "avatars/",
-  "videos/",
-];
 
 export async function POST(request: Request) {
   try {
@@ -31,29 +20,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Filter and sanitize keys - only allow keys starting with known folder prefixes
-    const validKeys = keys.filter((k: string) => {
-      if (typeof k !== "string" || !k.trim()) return false;
-      return ALLOWED_PREFIXES.some((prefix) => k.startsWith(prefix));
-    });
-
-    if (validKeys.length === 0) {
-      return NextResponse.json({ success: true, deleted: [] });
-    }
-
-    const command = new DeleteObjectsCommand({
-      Bucket: getBucketName(),
-      Delete: {
-        Objects: validKeys.map((key: string) => ({ Key: key })),
-        Quiet: false,
-      },
-    });
-
-    const response = await getClient().send(command);
+    const success = await deleteS3Objects(keys);
 
     return NextResponse.json({
-      success: true,
-      deleted: response.Deleted?.map((d) => d.Key) || [],
+      success,
+      deleted: keys,
     });
   } catch (error: any) {
     console.error("[S3 Delete API Error]:", error);
@@ -63,3 +34,4 @@ export async function POST(request: Request) {
     );
   }
 }
+
