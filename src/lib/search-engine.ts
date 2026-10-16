@@ -833,6 +833,25 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
   return true;
 }
 
+const LOCALITY_CLUSTER_ALIASES: Record<string, string[]> = {
+  patamata: ["gurunanak", "gurunanak nagar", "srinivasanagar", "srinivasa nagar", "auto nagar", "autonagar"],
+  srinivasanagar: ["patamata", "gurunanak", "gurunanak nagar", "srinivasa nagar"],
+  "srinivasa nagar": ["patamata", "gurunanak", "gurunanak nagar", "srinivasanagar"],
+  "gurunanak nagar": ["patamata", "srinivasanagar"],
+  gurunanak: ["patamata", "gurunanak nagar"],
+  edupugallu: ["poranki", "penamaluru", "kankipadu"],
+  poranki: ["edupugallu", "penamaluru", "tadigadapa"],
+  tadigadapa: ["kanuru", "padmaja nagar", "poranki"],
+};
+
+export function matchesLocalityAlias(filterTarget: string, itemLocality: string, itemAddress: string): boolean {
+  const normTarget = filterTarget.toLowerCase().trim();
+  const aliases = LOCALITY_CLUSTER_ALIASES[normTarget];
+  if (!aliases || aliases.length === 0) return false;
+  const combined = `${itemLocality} ${itemAddress}`.toLowerCase();
+  return aliases.some((a) => combined.includes(a));
+}
+
 /**
  * Complete Multi-Attribute Filter Engine for Properties
  */
@@ -861,7 +880,12 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
     const matchesSub = (rawSublocations as string[]).some((sub: string) => {
       const target = sub.toLowerCase().trim();
       if (!target) return false;
-      return propLocality.includes(target) || propAddress.includes(target) || propLandmark.includes(target);
+      return (
+        propLocality.includes(target) ||
+        propAddress.includes(target) ||
+        propLandmark.includes(target) ||
+        matchesLocalityAlias(target, propLocality, propAddress)
+      );
     });
     if (!matchesSub) return false;
   }
@@ -1162,15 +1186,21 @@ export function evaluateProjectFilters(
     if (!matchesCity) return false;
   }
 
-  if (filters.localities && Array.isArray(filters.localities) && filters.localities.length > 0) {
-    const matchesLoc = filters.localities.some((l: string) => {
+  const rawSublocations = ("sublocations" in filters ? (filters as Record<string, unknown>).sublocations : undefined) || filters.localities;
+  if (rawSublocations && Array.isArray(rawSublocations) && rawSublocations.length > 0) {
+    const matchesLoc = (rawSublocations as string[]).some((l: string) => {
       const target = l.toLowerCase().trim();
       if (!target) return false;
       const projLocality = String(project.location?.locality || "").toLowerCase();
       const projCity = String(project.location?.city || "").toLowerCase();
       const projAddress = String(project.location?.address || "").toLowerCase();
       const projLandmark = String((project.location as any)?.landmark || "").toLowerCase();
-      return projLocality.includes(target) || projCity.includes(target) || projAddress.includes(target) || projLandmark.includes(target);
+      return (
+        projLocality.includes(target) ||
+        projAddress.includes(target) ||
+        projLandmark.includes(target) ||
+        matchesLocalityAlias(target, projLocality, projAddress)
+      );
     });
     if (!matchesLoc) return false;
   }
