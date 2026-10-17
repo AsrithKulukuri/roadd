@@ -1376,10 +1376,37 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                                   </>
                                 )}
                               </div>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {projectType !== "venture" && <Field label="Undivided Share (UDS sq.yds)">
-                                  <Input type="number" value={config.uds || ""} onChange={e => updateConfigField(config.id, "uds", Number(e.target.value))} placeholder="e.g. 40" className={ic()} />
-                                </Field>}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                {projectType !== "venture" && (
+                                  <Field label="Undivided Share (UDS sq.yds)">
+                                    <Input type="number" value={config.uds || ""} onChange={e => updateConfigField(config.id, "uds", Number(e.target.value))} placeholder="e.g. 40" className={ic()} />
+                                  </Field>
+                                )}
+                                <Field label="Facing">
+                                  <div className="relative">
+                                    <Input
+                                      list={`facing-options-${config.id}`}
+                                      value={Array.isArray(config.facing) ? config.facing.join(", ") : (config.facing || "")}
+                                      onChange={e => updateConfigField(config.id, "facing", e.target.value)}
+                                      placeholder="e.g. East or West"
+                                      className={ic()}
+                                    />
+                                    <datalist id={`facing-options-${config.id}`}>
+                                      <option value="East" />
+                                      <option value="West" />
+                                      <option value="North" />
+                                      <option value="South" />
+                                      <option value="North-East" />
+                                      <option value="North-West" />
+                                      <option value="South-East" />
+                                      <option value="South-West" />
+                                      <option value="East, West" />
+                                      <option value="North, East" />
+                                      <option value="North, South" />
+                                      <option value="All Facings" />
+                                    </datalist>
+                                  </div>
+                                </Field>
                                 <Field label="Possession Date">
                                   <Input value={config.possessionDate || ""} onChange={e => updateConfigField(config.id, "possessionDate", e.target.value)} placeholder="e.g., Apr, 2026" className={ic()} />
                                 </Field>

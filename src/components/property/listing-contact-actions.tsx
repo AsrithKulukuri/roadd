@@ -19,7 +19,15 @@ export async function performListingAction(listingType: "project" | "property", 
     finishProgress();
   }
 }
-export function ListingContactActions({ listingType, listingId }: { listingType: "project" | "property"; listingId: string }) {
+export function ListingContactActions({
+  listingType,
+  listingId,
+  showRevealNumber = false,
+}: {
+  listingType: "project" | "property";
+  listingId: string;
+  showRevealNumber?: boolean;
+}) {
   const [phone, setPhone] = useState("");
   const [callbackMessage, setCallbackMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -59,12 +67,17 @@ export function ListingContactActions({ listingType, listingId }: { listingType:
   }
   return <div className="space-y-3">
     <div className="flex flex-wrap gap-2">
-      {phone ? <a className="inline-flex items-center rounded-xl border px-4 py-2 font-semibold" href={"tel:+" + phone}>+{phone}</a> :
-        <Button disabled={busy} variant="outline" onClick={() => act("reveal_phone")}>Reveal number</Button>}
+      {showRevealNumber && (
+        phone ? <a className="inline-flex items-center rounded-xl border px-4 py-2 font-semibold" href={"tel:+" + phone}>+{phone}</a> :
+        <Button disabled={busy} variant="outline" onClick={() => act("reveal_phone")}>Reveal number</Button>
+      )}
       <Button disabled={busy} onClick={() => act("whatsapp_click")}><WhatsAppIcon />WhatsApp {listingType === "project" ? "Builder" : "Agent"}</Button>
       <Button disabled={busy} variant="outline" onClick={() => act("callback_request")}>Request callback</Button>
     </div>
     {callbackMessage && <p role="status" className="rounded-xl border p-3 text-sm">{callbackMessage}</p>}
-    <p className="text-xs text-muted-foreground">By revealing a number, opening WhatsApp, requesting a callback, scheduling a visit or requesting listing information and brochures, you share your name, verified phone and email (if provided) with this listing’s builder/agent and ROAD admin for follow-up.</p>
+    <p className="text-xs text-muted-foreground">
+      {showRevealNumber ? "By revealing a number, opening WhatsApp, " : "By opening WhatsApp, "}
+      requesting a callback, scheduling a visit or requesting listing information and brochures, you share your name, verified phone and email (if provided) with this listing’s builder/agent and ROAD admin for follow-up.
+    </p>
   </div>;
 }

@@ -586,7 +586,7 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
   const builderObj = "builder" in project ? (project as { builder?: { name?: string } }).builder : undefined;
   const builderText = `${project.builderName || ""} ${builderObj?.name || ""}`.toLowerCase();
   const projectTypeText = `${project.projectType || ""}`.toLowerCase();
-  const configsText = (project.configurations || []).map(c => `${c.label || ""} ${c.bedrooms ? c.bedrooms + "bhk " + c.bedrooms + "bk " + c.bedrooms + " bed" : ""} ${c.facing?.join(" ") || ""}`).join(" ").toLowerCase();
+  const configsText = (project.configurations || []).map(c => `${c.label || ""} ${c.bedrooms ? c.bedrooms + "bhk " + c.bedrooms + "bk " + c.bedrooms + " bed" : ""} ${Array.isArray(c.facing) ? c.facing.join(" ") : (c.facing || "")}`).join(" ").toLowerCase();
   const tagsText = `${(project.highlights || []).join(" ")} ${(project.facilities || []).map((f: any) => typeof f === 'string' ? f : (f?.name || f?.label || "")).join(" ")}`.toLowerCase();
   const titleAndDesc = `${project.name || ""} ${project.tagline || ""} ${project.description || ""}`.toLowerCase();
   const refText = `${project.refId || ""} ${(project.location as any)?.refId || ""}`.toLowerCase();

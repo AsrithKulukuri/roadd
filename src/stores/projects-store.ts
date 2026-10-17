@@ -205,6 +205,28 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
   const rawMasterPlan = (typeof p.masterPlanUrl === 'string' ? p.masterPlanUrl : (typeof p.master_plan_url === 'string' ? p.master_plan_url : masterPlanFromImages));
   const masterPlanUrl = rawMasterPlan && !rawMasterPlan.startsWith('blob:') ? rawMasterPlan : undefined;
 
+  // Filter out master plan & floor plan items from photo gallery images
+  const cleanImages = Array.isArray(p.images)
+    ? (p.images as unknown[]).filter((img: unknown) => {
+        if (!img) return false;
+        if (typeof img === "object") {
+          const obj = img as Record<string, unknown>;
+          if (obj.isMasterPlan || obj.isFloorPlan) return false;
+          const cat = String(obj.category || "").toLowerCase();
+          if (cat.includes("master-plan") || cat.includes("masterplan") || cat.includes("floor-plan") || cat.includes("floorplan")) return false;
+          const alt = String(obj.alt || obj.label || obj.title || "").toLowerCase();
+          if (/master[\s_-]*plan|floor[\s_-]*plan/.test(alt)) return false;
+        }
+        const url = typeof img === "string" ? img : (img as Record<string, unknown>)?.url;
+        if (typeof url === "string") {
+          if (masterPlanUrl && url === masterPlanUrl) return false;
+          const lower = url.toLowerCase();
+          if (lower.includes("master-plan") || lower.includes("masterplan") || lower.includes("floor-plan") || lower.includes("floorplan")) return false;
+        }
+        return true;
+      })
+    : [];
+
   const rawLocation = (p.location && typeof p.location === 'object' ? p.location as Record<string, unknown> : {}) as Record<string, unknown>;
   const isSoldOut = Boolean(
     p.isSoldOut ?? 
@@ -296,6 +318,7 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
     coverImage,
     videoUrl,
     masterPlanUrl,
+    images: cleanImages as Project["images"],
     isSoldOut,
     isRoadExclusive,
     highlights: cleanHighlights,

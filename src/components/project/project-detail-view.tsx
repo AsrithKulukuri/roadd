@@ -1,7 +1,7 @@
 "use client";
 import { ListingContactActions, performListingAction } from "@/components/property/listing-contact-actions";
 
-import { use, useEffect, useState, useRef } from "react";
+import { use, useEffect, useState, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
@@ -385,6 +385,39 @@ export function ProjectDetailView({
     return () => observer.disconnect();
   }, [project?.id]);
 
+  // Photo Gallery images: EXCLUDE master plan and floor plans (they have dedicated section below)
+  const galleryAll = useMemo(() => {
+    if (!project) return [];
+    const rawImages = project.images || [];
+    return rawImages.filter((img) => {
+      if (!img) return false;
+      if (typeof img === "object") {
+        if (img.isMasterPlan || (img as any).isFloorPlan) return false;
+        const cat = String(img.category || "").toLowerCase();
+        if (cat.includes("master-plan") || cat.includes("masterplan") || cat.includes("floor-plan") || cat.includes("floorplan")) {
+          return false;
+        }
+        const alt = String(img.alt || (img as any).label || (img as any).title || "").toLowerCase();
+        if (/master[\s_-]*plan|floor[\s_-]*plan/.test(alt)) {
+          return false;
+        }
+      }
+      const url = typeof img === "string" ? img : img.url;
+      if (!url) return false;
+      if (project.masterPlanUrl && (url === project.masterPlanUrl || resolveMediaUrl(url) === resolveMediaUrl(project.masterPlanUrl))) {
+        return false;
+      }
+      if (project.configurations?.some(c => c.floorPlanUrl && (url === c.floorPlanUrl || resolveMediaUrl(url) === resolveMediaUrl(c.floorPlanUrl)))) {
+        return false;
+      }
+      const lowerUrl = url.toLowerCase();
+      if (lowerUrl.includes("master-plan") || lowerUrl.includes("masterplan") || lowerUrl.includes("floor-plan") || lowerUrl.includes("floorplan")) {
+        return false;
+      }
+      return true;
+    });
+  }, [project]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen pt-28 pb-16 flex flex-col items-center justify-center gap-4 bg-bg-primary">
@@ -407,9 +440,11 @@ export function ProjectDetailView({
   const TypeIcon = TYPE_ICONS[project.projectType];
   const priceRange = getPriceRange(project.configurations);
 
-  // Gallery images including all
-  const galleryAll = project.images || [];
-  const heroImage = project.coverImage || galleryAll[0]?.url;
+  const isCoverPlan = project.coverImage && (
+    (project.masterPlanUrl && (project.coverImage === project.masterPlanUrl || resolveMediaUrl(project.coverImage) === resolveMediaUrl(project.masterPlanUrl))) ||
+    project.configurations?.some(c => c.floorPlanUrl && (project.coverImage === c.floorPlanUrl || resolveMediaUrl(project.coverImage) === resolveMediaUrl(c.floorPlanUrl)))
+  );
+  const heroImage = (!isCoverPlan && project.coverImage) || galleryAll[0]?.url || project.coverImage;
   const sideImages = galleryAll.filter((i) => i.url !== heroImage);
 
   // WhatsApp URL & Phone (TODO: production hardening query stripping)
@@ -1568,6 +1603,13 @@ export function ProjectDetailView({
                       const areaMax = cfg.superBuiltUpAreaMax ?? cfg.builtUpAreaMax ?? cfg.plotSizeMax;
                       const hasAreaRange = areaMax && areaMax !== areaMin;
                       const unit = project.projectType === "venture" ? "sq.yds" : "sq.ft";
+                      const rawFacing = Array.isArray(cfg.facing) ? cfg.facing.join(", ") : (cfg.facing || "");
+                      const cleanFacing = rawFacing.trim();
+                      const facingText = cleanFacing 
+                        ? (/facing/i.test(cleanFacing) ? cleanFacing : `${cleanFacing} Facing`) 
+                        : "";
+                      const labelWithFacing = facingText ? `${cfg.label} | ${facingText}` : cfg.label;
+                      const floorPlanModalTitle = `${cfg.label}${facingText ? ` (${facingText})` : ""} (${areaMin} ${unit})`;
 
                       return (
                         <div 
@@ -1577,9 +1619,12 @@ export function ProjectDetailView({
                           {/* Card Top: Configuration Header & Price */}
                           <div>
                             <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-border-default/60">
-                              <div>
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                                  {cfg.label}
+                              <div className="min-w-0 flex-1 pr-1.5 sm:pr-2">
+                                <span 
+                                  title={labelWithFacing}
+                                  className="inline-flex items-center whitespace-nowrap max-w-full px-2.5 py-0.5 rounded-full text-[10px] xs:text-[11px] sm:text-xs font-extrabold bg-amber-500/10 text-amber-800 dark:text-amber-400 border border-amber-500/25 truncate leading-tight tracking-tight"
+                                >
+                                  <span className="truncate">{labelWithFacing}</span>
                                 </span>
                                 <div className="text-xl font-black text-text-primary mt-1">
                                   {areaMin} {hasAreaRange ? `– ${areaMax}` : ""} <span className="text-sm font-semibold text-text-tertiary">{unit}</span>
@@ -1611,7 +1656,7 @@ export function ProjectDetailView({
                               className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-50 dark:bg-bg-primary border border-border-default/80 my-3 flex items-center justify-center cursor-pointer group/media shadow-inner"
                               onClick={() => {
                                 if (cfg.floorPlanUrl) {
-                                  setFloorPlanLightbox({ url: cfg.floorPlanUrl, label: `${cfg.label} (${areaMin} ${unit})` });
+                                  setFloorPlanLightbox({ url: cfg.floorPlanUrl, label: floorPlanModalTitle });
                                 } else if (cfg.videoUrl) {
                                   openVideo(cfg.videoUrl);
                                 }
@@ -1683,7 +1728,7 @@ export function ProjectDetailView({
                             <button
                               type="button"
                               disabled={loadingPlanUrl !== null}
-                              onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: `${cfg.label} (${areaMin} ${unit})` })}
+                              onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: floorPlanModalTitle })}
                               className="mt-2 w-full flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all py-2.5 rounded-xl text-xs font-bold cursor-pointer active:scale-98 shadow-sm disabled:opacity-80"
                             >
                               {loadingPlanUrl === cfg.floorPlanUrl ? (

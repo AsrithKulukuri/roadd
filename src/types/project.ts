@@ -35,8 +35,8 @@ export interface ProjectConfig {
   plotSizeMin?: number;
   /** sq.yds – max plot size (Venture) */
   plotSizeMax?: number;
-  /** Facing options available for this config (e.g. ["East", "West"]) */
-  facing?: string[];
+  /** Facing options available for this config (e.g. ["East", "West"] or "East") */
+  facing?: string[] | string;
   /** Rupees – minimum price for this config */
   priceMin: number;
   /** Rupees – maximum price for this config */
@@ -80,8 +80,11 @@ export interface ProjectImage {
   url: string;
   alt: string;
   /** Category for filtering gallery tabs */
-  category: "aerial" | "exterior" | "interior" | "amenity" | "floor-plan" | "outdoor";
+  category: "aerial" | "exterior" | "interior" | "amenity" | "floor-plan" | "master-plan" | "outdoor";
   isPrimary?: boolean;
+  isMasterPlan?: boolean;
+  isFloorPlan?: boolean;
+  [key: string]: unknown;
 }
 
 // The main Project entity

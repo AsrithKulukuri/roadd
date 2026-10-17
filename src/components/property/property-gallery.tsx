@@ -48,28 +48,47 @@ export function PropertyGallery({
   const isShort = isYoutubeShort(videoUrl);
   const hasVideo = Boolean(videoUrl && videoUrl.trim());
 
-  if (!images || images.length === 0) return null;
+  // Filter out any floor plans or layout maps from the photo gallery
+  const galleryImages = (images || []).filter((img) => {
+    if (!img) return false;
+    if (typeof img === "object") {
+      if ((img as any).isMasterPlan || (img as any).isFloorPlan) return false;
+      const cat = String((img as any).category || "").toLowerCase();
+      if (cat.includes("master-plan") || cat.includes("masterplan") || cat.includes("floor-plan") || cat.includes("floorplan") || cat.includes("layout")) return false;
+      const alt = String((img as any).alt || (img as any).label || (img as any).title || "").toLowerCase();
+      if (/master[\s_-]*plan|floor[\s_-]*plan|layout[\s_-]*map/.test(alt)) return false;
+    }
+    const url = typeof img === "string" ? img : (img as any).url;
+    if (!url) return false;
+    const lower = url.toLowerCase();
+    if (lower.includes("floor-plan") || lower.includes("floorplan") || lower.includes("master-plan") || lower.includes("masterplan") || lower.includes("layout-map")) return false;
+    return true;
+  });
 
-  const handleNext = () => setCurrentIndex((prev) => (prev + 1) % images.length);
-  const handlePrev = () => setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  const activeImages = galleryImages.length > 0 ? galleryImages : images;
+
+  if (!activeImages || activeImages.length === 0) return null;
+
+  const handleNext = () => setCurrentIndex((prev) => (prev + 1) % activeImages.length);
+  const handlePrev = () => setCurrentIndex((prev) => (prev - 1 + activeImages.length) % activeImages.length);
 
   // Main hero cover image
   const heroImageSrc = resolveMediaUrl(
-    typeof images[0] === "string" ? images[0] : (images[0] as any).url || images[0]
+    typeof activeImages[0] === "string" ? activeImages[0] : (activeImages[0] as any).url || activeImages[0]
   );
 
   // Video card thumbnail
   const videoCoverSrc = videoThumbnail 
     ? resolveMediaUrl(videoThumbnail) 
-    : (images[1] ? resolveMediaUrl(typeof images[1] === "string" ? images[1] : (images[1] as any).url || images[1]) : heroImageSrc);
+    : (activeImages[1] ? resolveMediaUrl(typeof activeImages[1] === "string" ? activeImages[1] : (activeImages[1] as any).url || activeImages[1]) : heroImageSrc);
 
   // Secondary/Outdoors card image
-  const secondaryImageSrc = images[hasVideo ? 1 : 1] 
-    ? resolveMediaUrl(typeof images[hasVideo ? 1 : 1] === "string" ? images[hasVideo ? 1 : 1] : (images[hasVideo ? 1 : 1] as any).url || images[hasVideo ? 1 : 1])
-    : (images[2] ? resolveMediaUrl(typeof images[2] === "string" ? images[2] : (images[2] as any).url || images[2]) : heroImageSrc);
+  const secondaryImageSrc = activeImages[hasVideo ? 1 : 1] 
+    ? resolveMediaUrl(typeof activeImages[hasVideo ? 1 : 1] === "string" ? activeImages[hasVideo ? 1 : 1] : (activeImages[hasVideo ? 1 : 1] as any).url || activeImages[hasVideo ? 1 : 1])
+    : (activeImages[2] ? resolveMediaUrl(typeof activeImages[2] === "string" ? activeImages[2] : (activeImages[2] as any).url || activeImages[2]) : heroImageSrc);
 
-  const totalMediaCount = images.length + (hasVideo ? 1 : 0);
-  const outdoorsCount = Math.max(1, Math.floor(images.length * 0.4));
+  const totalMediaCount = activeImages.length + (hasVideo ? 1 : 0);
+  const outdoorsCount = Math.max(1, Math.floor(activeImages.length * 0.4));
 
   return (
     <>
@@ -164,7 +183,7 @@ export function PropertyGallery({
             {/* Bottom Right: Count */}
             <div className="absolute bottom-3 right-3.5 flex items-center gap-1.5 font-bold text-xs sm:text-sm text-white drop-shadow-md z-10 pointer-events-none bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/15">
               <Layers className="w-3.5 h-3.5 text-white" />
-              <span>{Math.max(1, images.length - (hasVideo ? 1 : 2))}</span>
+              <span>{Math.max(1, activeImages.length - (hasVideo ? 1 : 2))}</span>
             </div>
           </div>
 
@@ -175,7 +194,7 @@ export function PropertyGallery({
       <ZoomableImageModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        images={images.map(img => ({
+        images={activeImages.map(img => ({
           url: typeof img === "string" ? img : img.url,
           label: typeof img === "string" ? title : img.alt || title,
         }))}

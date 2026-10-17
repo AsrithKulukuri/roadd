@@ -15,7 +15,7 @@ import {
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart, ChevronLeft, ChevronRight, Plus, Share2, Home, Building2, Landmark, Trees, Briefcase, Maximize2 } from "lucide-react";
+import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart, ChevronLeft, ChevronRight, Plus, Share2, Home, Building2, Landmark, Trees, Briefcase, Maximize2, Diamond } from "lucide-react";
 import L from "leaflet";
 import Link from "next/link";
 import { PropertyCard } from "@/components/property/property-card";
@@ -70,6 +70,43 @@ const quickLocalityCoords = [
   { name: "Brodipet", lat: 16.3050, lng: 80.4350 },
   { name: "Pattabhipuram", lat: 16.3100, lng: 80.4280 },
 ];
+
+export interface SelectedLocationCircle {
+  name: string;
+  type: "city" | "sublocation";
+  center: [number, number];
+  radius: number; // in meters
+}
+
+export const KNOWN_CITIES: Record<string, { name: string; center: [number, number]; radius: number }> = {
+  "vijayawada": { name: "Vijayawada", center: [16.5062, 80.6480], radius: 9500 }, // Covers Benz Circle, Auto Nagar, Poranki, Kanuru, Ramavarappadu, Enikepadu, Tadepalli
+  "guntur": { name: "Guntur", center: [16.3067, 80.4365], radius: 8500 },
+  "amaravati": { name: "Amaravati", center: [16.5131, 80.5165], radius: 10000 },
+  "visakhapatnam": { name: "Visakhapatnam", center: [17.6868, 83.2185], radius: 14000 },
+  "hyderabad": { name: "Hyderabad", center: [17.3850, 78.4867], radius: 16000 },
+};
+
+export const KNOWN_SUBLOCATIONS: Record<string, { name: string; city: string; center: [number, number]; radius: number }> = {
+  "benz circle": { name: "Benz Circle", city: "Vijayawada", center: [16.5062, 80.6480], radius: 1800 },
+  "auto nagar": { name: "Auto Nagar", city: "Vijayawada", center: [16.4950, 80.6650], radius: 2200 },
+  "patamata": { name: "Patamata", city: "Vijayawada", center: [16.4988, 80.6625], radius: 1800 },
+  "poranki": { name: "Poranki", city: "Vijayawada", center: [16.4833, 80.7000], radius: 2400 },
+  "kanuru": { name: "Kanuru", city: "Vijayawada", center: [16.4950, 80.6800], radius: 2200 },
+  "edupugallu": { name: "Edupugallu", city: "Vijayawada", center: [16.4641, 80.7549], radius: 2400 },
+  "penamaluru": { name: "Penamaluru", city: "Vijayawada", center: [16.4710, 80.7180], radius: 2200 },
+  "gannavaram": { name: "Gannavaram", city: "Vijayawada", center: [16.5360, 80.8030], radius: 3200 },
+  "tadepalli": { name: "Tadepalli", city: "Vijayawada", center: [16.4830, 80.6050], radius: 2500 },
+  "mangalagiri": { name: "Mangalagiri", city: "Guntur", center: [16.4300, 80.5600], radius: 3000 },
+  "gorantla": { name: "Gorantla", city: "Guntur", center: [16.3200, 80.4500], radius: 2200 },
+  "brodipet": { name: "Brodipet", city: "Guntur", center: [16.3050, 80.4350], radius: 1800 },
+  "pattabhipuram": { name: "Pattabhipuram", city: "Guntur", center: [16.3100, 80.4280], radius: 1800 },
+  "amaravati road": { name: "Amaravati Road", city: "Guntur", center: [16.5131, 80.5165], radius: 2800 },
+  "ramavarappadu": { name: "Ramavarappadu", city: "Vijayawada", center: [16.5260, 80.6730], radius: 2000 },
+  "enikepadu": { name: "Enikepadu", city: "Vijayawada", center: [16.5190, 80.7050], radius: 2200 },
+  "gollapudi": { name: "Gollapudi", city: "Vijayawada", center: [16.5450, 80.5900], radius: 2500 },
+  "bhavanipuram": { name: "Bhavanipuram", city: "Vijayawada", center: [16.5240, 80.6020], radius: 2200 },
+  "gunadala": { name: "Gunadala", city: "Vijayawada", center: [16.5200, 80.6650], radius: 2000 },
+};
 
 interface LocalityBoundary {
   name: string;
@@ -945,23 +982,32 @@ function AutoFitBoundsController({ items }: { items: SharedMapItem[] }) {
     if (key === lastFitKeyRef.current) return;
     lastFitKeyRef.current = key;
 
-    try {
-      const bounds = L.latLngBounds(coords);
-      if (bounds.isValid()) {
-        if (coords.length === 1) {
-          map.setView(coords[0], 13, { animate: true });
-        } else {
-          // Smoothly move out to show all properties with comfortable padding
-          map.fitBounds(bounds, {
-            padding: [60, 60],
-            maxZoom: 13,
-            animate: true,
-          });
+    const timer = setTimeout(() => {
+      try {
+        map.invalidateSize();
+        const bounds = L.latLngBounds(coords);
+        if (bounds.isValid()) {
+          if (coords.length === 1) {
+            map.setView(coords[0], 12, { animate: true });
+          } else {
+            const isDesktop = typeof window !== "undefined" && window.innerWidth >= 768;
+            // Pad bounds generously by 28% so all pins & labels sit clearly inside the open canvas
+            const paddedBounds = bounds.pad(0.28);
+            // Smoothly move out to show all properties with comfortable padding for top bar, bottom capsule, and right controls
+            map.fitBounds(paddedBounds, {
+              paddingTopLeft: isDesktop ? [40, 110] : [45, 125],
+              paddingBottomRight: isDesktop ? [70, 70] : [75, 95],
+              maxZoom: 11.5,
+              animate: true,
+            });
+          }
         }
+      } catch (err) {
+        console.warn("Failed to auto-fit map bounds:", err);
       }
-    } catch (err) {
-      console.warn("Failed to auto-fit map bounds:", err);
-    }
+    }, 120);
+
+    return () => clearTimeout(timer);
   }, [map, items]);
 
   return null;
@@ -1004,11 +1050,13 @@ function MapViewportListener({
 function MapViewportListenerDebounced({
   mapProperties,
   displayedProperties,
+  lensBounds,
   onVisibleItemsChange,
   onVisibleAreaChange,
 }: {
   mapProperties: SharedMapItem[];
   displayedProperties?: SharedMapItem[];
+  lensBounds?: L.LatLngBounds | null;
   onVisibleItemsChange?: (visibleIds: string[]) => void;
   onVisibleAreaChange?: (visibleIds: string[]) => void;
 }) {
@@ -1025,10 +1073,10 @@ function MapViewportListenerDebounced({
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       if (!map) return;
-      const bounds = map.getBounds();
+      const bounds = lensBounds || map.getBounds();
 
       // 1. Calculate items in the visible area before subtype filter for real area counts
-      const areaSource = displayedProperties || mapProperties;
+      const areaSource = mapProperties;
       const areaVisibleIds = areaSource
         .filter((p) => {
           const coords = resolvePropertyMapCoords(p);
@@ -1039,14 +1087,8 @@ function MapViewportListenerDebounced({
 
       onVisibleAreaChange?.(areaVisibleIds);
 
-      // 2. Currently active filtered items in viewport
-      const visibleIds = mapProperties
-        .filter((p) => {
-          const coords = resolvePropertyMapCoords(p);
-          const latLng = L.latLng(coords.lat, coords.lng);
-          return bounds.contains(latLng);
-        })
-        .map((p) => p.id);
+      // 2. Currently active filtered items in viewport / lens frame
+      const visibleIds = areaVisibleIds;
 
       if (onVisibleItemsChange) {
         const nextKey = visibleIds.join(",");
@@ -1056,7 +1098,7 @@ function MapViewportListenerDebounced({
         }
       }
     }, 100);
-  }, [map, mapProperties, displayedProperties, onVisibleItemsChange, onVisibleAreaChange]);
+  }, [map, mapProperties, displayedProperties, lensBounds, onVisibleItemsChange, onVisibleAreaChange]);
 
   // Initial trigger
   useEffect(() => {
@@ -1487,6 +1529,18 @@ const BUDGET_PRESETS = [
 
   // Draw Polygon Area Search State
   const [isDrawing, setIsDrawing] = useState(false);
+  // Google Lens / Circle to Search Framing State (Matches Video 2)
+  const [isLensSearchActive, setIsLensSearchActive] = useState(false);
+  const [lensBounds, setLensBounds] = useState<L.LatLngBounds | null>(null);
+  const [lensDrag, setLensDrag] = useState<{
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+    isDragging: boolean;
+    activeCorner: "tl" | "tr" | "bl" | "br" | null;
+  } | null>(null);
+  const lensOverlayRef = useRef<HTMLDivElement>(null);
   const [drawShapeType, setDrawShapeType] = useState<"freehand" | "circle" | "box">("freehand");
   const [drawPolygonPoints, setDrawPolygonPoints] = useState<L.LatLng[]>([]);
   const [internalUserLoc, setInternalUserLoc] = useState<{lat: number, lng: number} | null>(null);
@@ -1714,48 +1768,19 @@ const BUDGET_PRESETS = [
   // Track item IDs visible in current map viewport for real selected area counts
   const [visibleAreaIds, setVisibleAreaIds] = useState<string[] | null>(null);
 
-  // Active Locality Highlight Boundary (Dynamic for ANY searched or selected location!)
-  const activeLocalityBoundary = useMemo(() => {
-    const term = selectedMapLocalities[selectedMapLocalities.length - 1] || selectedMapCities[selectedMapCities.length - 1] || mapSearchInput;
-    if (!term || !term.trim()) return null;
-    return getDynamicLocalityBoundary(term, mapProperties);
-  }, [selectedMapLocalities, selectedMapCities, mapSearchInput, mapProperties]);
 
-  const lastAppliedBoundary = useRef<string | null>(null);
-  // Re-rendering listing data must not restart the camera for the same bounds.
-  useEffect(() => {
-    if (!mapRef.current) return;
-    if (!activeLocalityBoundary) lastAppliedBoundary.current = null;
-    if (activeLocalityBoundary) {
-      try {
-        const validBounds = activeLocalityBoundary.bounds.filter(
-          (b) => b && Array.isArray(b) && b.length >= 2 && !isNaN(b[0]) && !isNaN(b[1]) && isFinite(b[0]) && isFinite(b[1])
-        ) as L.LatLngExpression[];
-        
-        if (validBounds.length > 0) {
-          const bounds = L.latLngBounds(validBounds);
-          if (bounds.isValid()) {
-            const boundaryKey = bounds.toBBoxString();
-            if (lastAppliedBoundary.current === boundaryKey) return;
-            const size = mapRef.current.getSize();
-            if (size.x > 100 && size.y > 100) {
-              mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: false });
-              lastAppliedBoundary.current = boundaryKey;
-            } else if (size.x > 0 && size.y > 0) {
-              mapRef.current.fitBounds(bounds, { padding: [0, 0], maxZoom: 15, animate: false });
-              lastAppliedBoundary.current = boundaryKey;
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Invalid map bounds:", e, activeLocalityBoundary.bounds);
-      }
-    }
-  }, [activeLocalityBoundary]);
 
   const displayedProperties = useMemo(() => {
     let source = filteredItems && Array.isArray(filteredItems) ? filteredItems : mapProperties;
     if (!propertiesEnabled) source = source.filter(item => "_isProject" in item && item._isProject);
+
+    // Google Lens / Circle to Search Box Filter (Matches Video 2)
+    if (lensBounds) {
+      source = source.filter((p: any) => {
+        const coords = resolvePropertyMapCoords(p);
+        return lensBounds.contains(L.latLng(coords.lat, coords.lng));
+      });
+    }
 
     // Polygon Area Draw Filter
     if (drawPolygonPoints.length >= 3) {
@@ -1845,7 +1870,7 @@ const BUDGET_PRESETS = [
     }
 
     return source.filter((p) => checkPropertyMatchesQuery(p, mapSearchInput));
-  }, [mapProperties, filteredItems, drawPolygonPoints, selectedMapCities, selectedMapLocalities, selectedBudgetKeys, mapPriceRange, parsedBudget, mapSearchInput, propertiesEnabled]);
+  }, [mapProperties, filteredItems, lensBounds, drawPolygonPoints, selectedMapCities, selectedMapLocalities, selectedBudgetKeys, mapPriceRange, parsedBudget, mapSearchInput, propertiesEnabled]);
 
   // Only locations selected on Home page (isHeroPill === true)
   const homeCities = useMemo(() => {
@@ -1894,6 +1919,12 @@ const BUDGET_PRESETS = [
   // but MUST NOT be pruned by visibleAreaIds (Leaflet manages viewport rendering natively).
   const mapMarkerItems = useMemo(() => {
     let list = displayedProperties;
+    if (lensBounds) {
+      list = list.filter((p: any) => {
+        const coords = resolvePropertyMapCoords(p);
+        return lensBounds.contains(L.latLng(coords.lat, coords.lng));
+      });
+    }
     if (listingTypeFilter === "properties") list = list.filter((p: any) => !p._isProject);
     else if (listingTypeFilter === "projects") list = list.filter((p: any) => Boolean(p._isProject));
 
@@ -1901,7 +1932,7 @@ const BUDGET_PRESETS = [
       list = list.filter((p) => selectedSubtypes.some((key) => itemMatchesSubtype(p, key)));
     }
     return list;
-  }, [displayedProperties, listingTypeFilter, selectedSubtypes]);
+  }, [displayedProperties, lensBounds, listingTypeFilter, selectedSubtypes]);
 
   // Entity type filter & subtype filter applied on top of displayedProperties
   // Real-time viewport boundary filter: Show listings in viewport, or all if none currently in center view
@@ -2128,11 +2159,18 @@ const BUDGET_PRESETS = [
     }
     if (coords.length === 0) return;
     if (coords.length === 1) {
-      mapRef.current.setView(coords[0], 13, { animate });
+      mapRef.current.setView(coords[0], 12, { animate });
     } else {
       const bounds = L.latLngBounds(coords);
       if (bounds.isValid()) {
-        mapRef.current.fitBounds(bounds, { padding: [60, 60], maxZoom: 13, animate });
+        const isDesktop = typeof window !== "undefined" && window.innerWidth >= 768;
+        const paddedBounds = bounds.pad(0.28);
+        mapRef.current.fitBounds(paddedBounds, {
+          paddingTopLeft: isDesktop ? [40, 110] : [45, 125],
+          paddingBottomRight: isDesktop ? [70, 70] : [75, 95],
+          maxZoom: 11.5,
+          animate,
+        });
       }
     }
   }, [mapMarkerItems, mapProperties, defaultAllItems]);
@@ -2192,14 +2230,64 @@ const BUDGET_PRESETS = [
 
   const handleDrawEnd = () => {
     setIsDrawing(false);
-    if (drawPolygonPoints.length >= 3 && onVisibleItemsChange) {
-      const filtered = displayedProperties.filter((p: any) => {
-        const coords = resolvePropertyMapCoords(p);
-        return isPointInPolygon({ lat: coords.lat, lng: coords.lng }, drawPolygonPoints);
-      });
-      onVisibleItemsChange(filtered.map((p: any) => p.id));
+    if (drawPolygonPoints.length >= 3) {
+      const first = drawPolygonPoints[0];
+      const last = drawPolygonPoints[drawPolygonPoints.length - 1];
+      const dist = Math.hypot(first.lat - last.lat, first.lng - last.lng);
+      if (dist > 0.0001) {
+        setDrawPolygonPoints((prev) => [...prev, first]);
+      }
+      if (onVisibleItemsChange) {
+        const filtered = displayedProperties.filter((p: any) => {
+          const coords = resolvePropertyMapCoords(p);
+          return isPointInPolygon({ lat: coords.lat, lng: coords.lng }, drawPolygonPoints);
+        });
+        onVisibleItemsChange(filtered.map((p: any) => p.id));
+      }
     }
   };
+
+  // Google Lens Search Handlers
+  const handleClearLens = () => {
+    setLensBounds(null);
+    setLensDrag(null);
+    if (mapRef.current) {
+      const bounds = mapRef.current.getBounds();
+      const visible = mapProperties.filter((p: any) => {
+        if (listingTypeFilter === "properties" && p._isProject) return false;
+        if (listingTypeFilter === "projects" && !p._isProject) return false;
+        const coords = resolvePropertyMapCoords(p);
+        return bounds.contains(L.latLng(coords.lat, coords.lng));
+      });
+      const ids = visible.map((p: any) => p.id);
+      setVisibleAreaIds(ids);
+      if (onVisibleItemsChange) {
+        onVisibleItemsChange(ids);
+      }
+    }
+  };
+
+  const handleCloseLens = () => {
+    handleClearLens();
+    setIsLensSearchActive(false);
+  };
+
+  // Disable Leaflet map dragging when Lens search mode is active
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (isLensSearchActive) {
+      map.dragging.disable();
+      if (map.touchZoom) map.touchZoom.disable();
+      if (map.doubleClickZoom) map.doubleClickZoom.disable();
+      if (map.scrollWheelZoom) map.scrollWheelZoom.disable();
+    } else {
+      map.dragging.enable();
+      if (map.touchZoom) map.touchZoom.enable();
+      if (map.doubleClickZoom) map.doubleClickZoom.enable();
+      if (map.scrollWheelZoom) map.scrollWheelZoom.enable();
+    }
+  }, [isLensSearchActive]);
 
   const handleClearDraw = () => {
     setDrawPolygonPoints([]);
@@ -2673,69 +2761,7 @@ const BUDGET_PRESETS = [
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                handleGetLocation();
-                setShowMapExplorer(false);
-              }}
-              disabled={isLocating}
-              className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-extrabold text-sm rounded-2xl shadow-lg hover:shadow-amber-500/25 flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer disabled:opacity-75"
-            >
-              <Navigation className={`w-4 h-4 stroke-[2.5] ${isLocating ? "animate-spin" : ""}`} />
-              <span>{isLocating ? "Detecting GPS..." : "Find My Location"}</span>
-            </button>
 
-            {/* DRAW SEARCH AREA TOOL PANEL */}
-            <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 space-y-2 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-                  <Pencil className="w-4 h-4 text-amber-600" /> Draw Search Area
-                </span>
-                {drawPolygonPoints.length > 0 && (
-                  <button
-                    onClick={handleClearDraw}
-                    className="text-[11px] text-red-600 hover:text-red-700 flex items-center gap-1 font-bold cursor-pointer"
-                  >
-                    <Trash2 className="w-3 h-3" /> Clear
-                  </button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsDrawing(!isDrawing);
-                    setShowMapExplorer(false);
-                  }}
-                  className={`py-2 px-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    isDrawing
-                      ? "bg-amber-500 text-slate-950 shadow-md animate-pulse"
-                      : "bg-white text-slate-800 hover:bg-slate-100 border border-slate-200 shadow-xs"
-                  }`}
-                >
-                  <Pencil className="w-3.5 h-3.5 text-amber-600" />
-                  <span>{isDrawing ? "Click Map..." : "Start Drawing"}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleClearDraw}
-                  disabled={drawPolygonPoints.length === 0}
-                  className="py-2 px-2.5 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 disabled:opacity-40 cursor-pointer shadow-xs"
-                >
-                  Reset Draw
-                </button>
-              </div>
-
-              {drawPolygonPoints.length > 0 && (
-                <div className="text-[11px] text-slate-700 bg-white p-2 rounded-xl border border-amber-500/40 flex items-center justify-between shadow-xs">
-                  <span>📍 {drawPolygonPoints.length} points placed</span>
-                  <span className="font-extrabold text-amber-600">{displayedProperties.length} homes</span>
-                </div>
-              )}
-            </div>
 
             {/* SHOW LANDMARKS TOGGLE */}
             <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 space-y-2 shadow-xs">
@@ -3033,7 +3059,7 @@ const BUDGET_PRESETS = [
         >
           
           {/* Open Map Explorer Button (When Closed) - top-left on mobile, bottom-left on desktop */}
-          {!showMapExplorer && (
+          {!showMapExplorer && !isLensSearchActive && (
             <button
               onClick={() => {
                 setShowMapExplorer(true);
@@ -3048,7 +3074,7 @@ const BUDGET_PRESETS = [
           
           {/* TOP: Entity Type Pills (All / Properties / Projects) - Only show when properties are unhidden */}
           {propertiesEnabled && (
-            <div className={cn("absolute top-3 left-1/2 -translate-x-1/2 z-[550] items-center gap-1 sm:gap-1.5 pointer-events-auto md:hidden", showMapExplorer ? "hidden" : "flex")}>
+            <div className={cn("absolute top-3 left-1/2 -translate-x-1/2 z-[550] items-center gap-1 sm:gap-1.5 pointer-events-auto md:hidden", showMapExplorer || isLensSearchActive ? "hidden" : "flex")}>
               {(["all", "properties", "projects"] as const).map((lt) => (
                 <button
                   key={lt}
@@ -3070,13 +3096,14 @@ const BUDGET_PRESETS = [
           <div className={cn("absolute top-14 md:top-3 right-3 z-[550] flex-col items-center gap-2.5 pointer-events-auto", showMapExplorer ? "hidden md:flex" : "flex")}>
 
             {/* 1. MAP STYLE BUTTON — opens layer panel */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowLayerPanel(!showLayerPanel)}
-                title="Map Style"
-                className="relative w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl overflow-hidden shadow-xl border-2 border-white dark:border-slate-800 flex flex-col justify-end p-1 transition-all hover:scale-105 active:scale-95 cursor-pointer group shrink-0"
-              >
+            {!isLensSearchActive && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowLayerPanel(!showLayerPanel)}
+                  title="Map Style"
+                  className="relative w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl overflow-hidden shadow-xl border-2 border-white dark:border-slate-800 flex flex-col justify-end p-1 transition-all hover:scale-105 active:scale-95 cursor-pointer group shrink-0"
+                >
                 <img
                   src={
                     mapLayerType === "hybrid"
@@ -3154,37 +3181,43 @@ const BUDGET_PRESETS = [
                 </div>
               )}
             </div>
+            )}
 
-            {/* 2. DRAW BOUNDARY */}
+            {/* 2. GOOGLE LENS / CIRCLE TO SEARCH BUTTON */}
             <button
               type="button"
               onClick={() => {
-                if (drawPolygonPoints.length > 0) {
-                  handleClearDraw();
-                } else if (isDrawing) {
-                  setIsDrawing(false);
-                  setDrawPolygonPoints([]);
+                if (lensBounds || lensDrag) {
+                  handleClearLens();
+                } else if (isLensSearchActive) {
+                  handleCloseLens();
                 } else {
-                  setIsDrawing(true);
+                  setIsLensSearchActive(true);
                   setShowLayerPanel(false);
                 }
               }}
-              title={drawPolygonPoints.length > 0 ? "Clear Drawn Area" : isDrawing ? "Cancel Drawing" : "Draw Custom Area"}
+              title={lensBounds ? "Clear Drawn Frame" : isLensSearchActive ? "Cancel Drawing" : "Draw Area to Search"}
               className={cn(
                 "w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 cursor-pointer border shrink-0",
-                drawPolygonPoints.length > 0
-                  ? "bg-slate-950 text-white border-red-500 hover:bg-slate-900"
-                  : isDrawing
-                  ? "bg-[#f1a010] text-slate-950 border-amber-600 font-black animate-pulse"
-                  : "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+                lensBounds
+                  ? "bg-slate-950 text-white border-blue-400 hover:bg-slate-900"
+                  : isLensSearchActive
+                  ? "bg-gradient-to-tr from-blue-600 to-indigo-600 text-white border-blue-300 font-black animate-pulse shadow-blue-500/40"
+                  : "bg-slate-950 text-white border-blue-500/50 hover:border-blue-400 group"
               )}
             >
-              {drawPolygonPoints.length > 0 ? (
-                <><X className="w-5 h-5 text-red-400" /><span className="text-[10px] font-extrabold leading-none text-red-400">Clear</span></>
-              ) : isDrawing ? (
-                <><X className="w-5 h-5 text-slate-950" /><span className="text-[10px] font-extrabold leading-none">Cancel</span></>
+              {lensBounds ? (
+                <><X className="w-5 h-5 text-blue-400" /><span className="text-[9px] font-black leading-none text-blue-400">Clear</span></>
+              ) : isLensSearchActive ? (
+                <><X className="w-5 h-5 text-white" /><span className="text-[9px] font-black leading-none">Cancel</span></>
               ) : (
-                <><Pencil className="w-5 h-5 text-slate-900 dark:text-white" /><span className="text-[10px] font-extrabold leading-none">Draw</span></>
+                <>
+                  <div className="relative flex items-center justify-center">
+                    <Pencil className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-blue-400 animate-ping" />
+                  </div>
+                  <span className="text-[9px] font-black leading-none bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Draw</span>
+                </>
               )}
             </button>
           </div>
@@ -3210,47 +3243,423 @@ const BUDGET_PRESETS = [
                 <Search className="w-3.5 h-3.5" /> Search this area
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => setSearchAsMove(!searchAsMove)}
-              className={cn(
-                "px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-extrabold flex items-center gap-2 transition-all shadow-xl border active:scale-95 cursor-pointer backdrop-blur-md",
-                searchAsMove
-                  ? "bg-slate-950/95 text-white border-[#f1a010]/80"
-                  : "bg-white/95 text-slate-900 border-slate-300 dark:bg-slate-900/95 dark:text-white"
-              )}
-            >
-              <div className={cn("w-2 h-2 rounded-full", searchAsMove ? "bg-[#f1a010] animate-pulse" : "bg-slate-400")} />
-              <span>Search as I move</span>
-            </button>
+            
           </div>
 
-          {/* REALTOR.COM AUTHENTIC FLOATING COUNT BADGE (TOP-LEFT) */}
+          {/* GOOGLE CIRCLE TO SEARCH: Active Prompt & Completed Banner */}
+          {isDrawing && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[550] bg-slate-950/95 text-white border border-cyan-400/60 backdrop-blur-xl px-4 sm:px-5 py-2.5 rounded-full shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span className="text-xs font-bold text-slate-100">
+                Circle anywhere on the map to search
+              </span>
+              <button
+                type="button"
+                onClick={() => { setIsDrawing(false); setDrawPolygonPoints([]); }}
+                className="ml-1 p-1 rounded-full text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           {drawPolygonPoints.length >= 3 && !isDrawing && (
-            <div className="absolute top-4 left-4 z-[550] bg-slate-950/95 text-white border border-slate-800 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
-              <div>
-                <div className="font-extrabold text-xs text-white">
-                  Showing {displayedPropertiesFiltered.length} of {mapProperties.length} listings (Properties & Projects)
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[550] bg-slate-950/95 text-white border border-cyan-400/50 backdrop-blur-xl px-4 sm:px-5 py-2 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in zoom-in-95 duration-200 max-w-[92vw]">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shrink-0 shadow-md">
+                <Sparkles className="w-3.5 h-3.5 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-extrabold text-xs text-white flex items-center gap-1.5 flex-wrap">
+                  <span>Circle Search:</span>
+                  <span className="text-cyan-300 font-black">
+                    {displayedPropertiesFiltered.length} of {mapProperties.length} listings
+                  </span>
                 </div>
-                <div className="text-[10px] text-slate-400 font-medium">
-                  Filtered by custom drawn boundary
+                <div className="text-[10px] text-slate-400 font-medium truncate">
+                  Filtered inside your circled boundary
                 </div>
               </div>
               <button
+                type="button"
                 onClick={handleClearDraw}
-                className="ml-1 p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
-                title="Clear Drawn Area"
+                className="ml-1 px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 hover:text-white transition-colors flex items-center gap-1 border border-slate-700 shrink-0 cursor-pointer"
+                title="Clear Circle"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3 h-3 text-cyan-400" />
+                <span>Clear</span>
               </button>
+            </div>
+          )}
+
+          {/* ========================================================================
+             GOOGLE LENS / CIRCLE TO SEARCH SPOTLIGHT OVERLAY (Matches Video 2)
+             ======================================================================== */}
+          {isLensSearchActive && (
+            <div
+              ref={lensOverlayRef}
+              onMouseDown={(e) => {
+                if (!lensOverlayRef.current) return;
+                const rect = lensOverlayRef.current.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                setLensDrag({
+                  startX: x,
+                  startY: y,
+                  currentX: x,
+                  currentY: y,
+                  isDragging: true,
+                  activeCorner: null,
+                });
+              }}
+              onMouseMove={(e) => {
+                if (!lensDrag || !lensDrag.isDragging || !lensOverlayRef.current) return;
+                const rect = lensOverlayRef.current.getBoundingClientRect();
+                const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+                const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+
+                if (lensDrag.activeCorner) {
+                  let { startX, startY, currentX, currentY } = lensDrag;
+                  if (lensDrag.activeCorner === "tl") { startX = x; startY = y; }
+                  else if (lensDrag.activeCorner === "tr") { currentX = x; startY = y; }
+                  else if (lensDrag.activeCorner === "bl") { startX = x; currentY = y; }
+                  else if (lensDrag.activeCorner === "br") { currentX = x; currentY = y; }
+                  setLensDrag((prev) => prev ? { ...prev, startX, startY, currentX, currentY } : null);
+                } else {
+                  setLensDrag((prev) => prev ? { ...prev, currentX: x, currentY: y } : null);
+                }
+              }}
+              onMouseUp={() => {
+                if (!lensDrag || !mapRef.current || !lensOverlayRef.current) return;
+                const minX = Math.min(lensDrag.startX, lensDrag.currentX);
+                const maxX = Math.max(lensDrag.startX, lensDrag.currentX);
+                const minY = Math.min(lensDrag.startY, lensDrag.currentY);
+                const maxY = Math.max(lensDrag.startY, lensDrag.currentY);
+
+                if (maxX - minX > 25 && maxY - minY > 25) {
+                  const nw = mapRef.current.containerPointToLatLng(L.point(minX, minY));
+                  const se = mapRef.current.containerPointToLatLng(L.point(maxX, maxY));
+                  const bounds = L.latLngBounds(nw, se);
+                  setLensBounds(bounds);
+                  setLensDrag({
+                    startX: minX,
+                    startY: minY,
+                    currentX: maxX,
+                    currentY: maxY,
+                    activeCorner: null,
+                    isDragging: false,
+                  });
+                  const allItems = filteredItems && Array.isArray(filteredItems) ? filteredItems : mapProperties;
+                  const inside = allItems.filter((p: any) => {
+                    const coords = resolvePropertyMapCoords(p);
+                    return bounds.contains(L.latLng(coords.lat, coords.lng));
+                  });
+                  const insideIds = inside.map((p: any) => p.id);
+                  setVisibleAreaIds(insideIds);
+                  if (onVisibleItemsChange) {
+                    onVisibleItemsChange(insideIds);
+                  }
+                } else if (!lensBounds) {
+                  setLensDrag(null);
+                }
+              }}
+              onTouchStart={(e) => {
+                if (!lensOverlayRef.current || e.touches.length === 0) return;
+                const rect = lensOverlayRef.current.getBoundingClientRect();
+                const x = e.touches[0].clientX - rect.left;
+                const y = e.touches[0].clientY - rect.top;
+                setLensDrag({
+                  startX: x,
+                  startY: y,
+                  currentX: x,
+                  currentY: y,
+                  isDragging: true,
+                  activeCorner: null,
+                });
+              }}
+              onTouchMove={(e) => {
+                if (!lensDrag || !lensDrag.isDragging || !lensOverlayRef.current || e.touches.length === 0) return;
+                if (e.cancelable) e.preventDefault();
+                const rect = lensOverlayRef.current.getBoundingClientRect();
+                const x = Math.max(0, Math.min(rect.width, e.touches[0].clientX - rect.left));
+                const y = Math.max(0, Math.min(rect.height, e.touches[0].clientY - rect.top));
+
+                if (lensDrag.activeCorner) {
+                  let { startX, startY, currentX, currentY } = lensDrag;
+                  if (lensDrag.activeCorner === "tl") { startX = x; startY = y; }
+                  else if (lensDrag.activeCorner === "tr") { currentX = x; startY = y; }
+                  else if (lensDrag.activeCorner === "bl") { startX = x; currentY = y; }
+                  else if (lensDrag.activeCorner === "br") { currentX = x; currentY = y; }
+                  setLensDrag((prev) => prev ? { ...prev, startX, startY, currentX, currentY } : null);
+                } else {
+                  setLensDrag((prev) => prev ? { ...prev, currentX: x, currentY: y } : null);
+                }
+              }}
+              onTouchEnd={() => {
+                if (!lensDrag || !mapRef.current || !lensOverlayRef.current) return;
+                const minX = Math.min(lensDrag.startX, lensDrag.currentX);
+                const maxX = Math.max(lensDrag.startX, lensDrag.currentX);
+                const minY = Math.min(lensDrag.startY, lensDrag.currentY);
+                const maxY = Math.max(lensDrag.startY, lensDrag.currentY);
+
+                if (maxX - minX > 25 && maxY - minY > 25) {
+                  const nw = mapRef.current.containerPointToLatLng(L.point(minX, minY));
+                  const se = mapRef.current.containerPointToLatLng(L.point(maxX, maxY));
+                  const bounds = L.latLngBounds(nw, se);
+                  setLensBounds(bounds);
+                  setLensDrag({
+                    startX: minX,
+                    startY: minY,
+                    currentX: maxX,
+                    currentY: maxY,
+                    activeCorner: null,
+                    isDragging: false,
+                  });
+                  const allItems = filteredItems && Array.isArray(filteredItems) ? filteredItems : mapProperties;
+                  const inside = allItems.filter((p: any) => {
+                    const coords = resolvePropertyMapCoords(p);
+                    return bounds.contains(L.latLng(coords.lat, coords.lng));
+                  });
+                  const insideIds = inside.map((p: any) => p.id);
+                  setVisibleAreaIds(insideIds);
+                  if (onVisibleItemsChange) {
+                    onVisibleItemsChange(insideIds);
+                  }
+                } else if (!lensBounds) {
+                  setLensDrag(null);
+                }
+              }}
+              className="absolute inset-0 z-[650] select-none touch-none cursor-crosshair overflow-hidden"
+            >
+              {/* SVG Scrim with Spotlight Cutout */}
+              {(() => {
+                let boxLeft = 0;
+                let boxTop = 0;
+                let boxWidth = 0;
+                let boxHeight = 0;
+
+                if (lensDrag && (lensDrag.isDragging || !lensBounds)) {
+                  boxLeft = Math.min(lensDrag.startX, lensDrag.currentX);
+                  boxTop = Math.min(lensDrag.startY, lensDrag.currentY);
+                  boxWidth = Math.max(lensDrag.startX, lensDrag.currentX) - boxLeft;
+                  boxHeight = Math.max(lensDrag.startY, lensDrag.currentY) - boxTop;
+                } else if (lensBounds && mapRef.current) {
+                  try {
+                    const nw = mapRef.current.latLngToContainerPoint(lensBounds.getNorthWest());
+                    const se = mapRef.current.latLngToContainerPoint(lensBounds.getSouthEast());
+                    boxLeft = Math.min(nw.x, se.x);
+                    boxTop = Math.min(nw.y, se.y);
+                    boxWidth = Math.max(20, Math.abs(se.x - nw.x));
+                    boxHeight = Math.max(20, Math.abs(se.y - nw.y));
+                  } catch (e) {
+                    if (lensDrag) {
+                      boxLeft = Math.min(lensDrag.startX, lensDrag.currentX);
+                      boxTop = Math.min(lensDrag.startY, lensDrag.currentY);
+                      boxWidth = Math.max(lensDrag.startX, lensDrag.currentX) - boxLeft;
+                      boxHeight = Math.max(lensDrag.startY, lensDrag.currentY) - boxTop;
+                    }
+                  }
+                } else if (lensDrag) {
+                  boxLeft = Math.min(lensDrag.startX, lensDrag.currentX);
+                  boxTop = Math.min(lensDrag.startY, lensDrag.currentY);
+                  boxWidth = Math.max(lensDrag.startX, lensDrag.currentX) - boxLeft;
+                  boxHeight = Math.max(lensDrag.startY, lensDrag.currentY) - boxTop;
+                }
+
+                const hasValidBox = boxWidth > 15 && boxHeight > 15;
+
+                return (
+                  <>
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                      <defs>
+                        <mask id="google-lens-spotlight-mask">
+                          <rect width="100%" height="100%" fill="white" />
+                          {hasValidBox && (
+                            <rect
+                              x={boxLeft}
+                              y={boxTop}
+                              width={boxWidth}
+                              height={boxHeight}
+                              rx="16"
+                              ry="16"
+                              fill="black"
+                            />
+                          )}
+                        </mask>
+                      </defs>
+                      <rect
+                        width="100%"
+                        height="100%"
+                        fill="rgba(15, 23, 42, 0.48)"
+                        mask="url(#google-lens-spotlight-mask)"
+                      />
+                    </svg>
+
+                    {/* Spotlight Framing Box (Matches Google Lens in Video 2) */}
+                    {hasValidBox && (
+                      <div
+                        className="absolute rounded-2xl pointer-events-none transition-all"
+                        style={{
+                          left: `${boxLeft}px`,
+                          top: `${boxTop}px`,
+                          width: `${boxWidth}px`,
+                          height: `${boxHeight}px`,
+                          border: "2.5px solid #ffffff",
+                          boxShadow: "0 0 24px rgba(255, 255, 255, 0.75), inset 0 0 16px rgba(255, 255, 255, 0.2)",
+                        }}
+                      >
+                        {/* Corner Bracket: Top-Left ⌜ */}
+                        <div className="absolute -top-[3px] -left-[3px] w-6 h-6 border-t-[4px] border-l-[4px] border-white rounded-tl-xl drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+
+                        {/* Corner Bracket: Top-Right ⌝ */}
+                        <div className="absolute -top-[3px] -right-[3px] w-6 h-6 border-t-[4px] border-r-[4px] border-white rounded-tr-xl drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+
+                        {/* Corner Bracket: Bottom-Left ⌞ */}
+                        <div className="absolute -bottom-[3px] -left-[3px] w-6 h-6 border-b-[4px] border-l-[4px] border-white rounded-bl-xl drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+
+                        {/* Corner Bracket: Bottom-Right ⌟ */}
+                        <div className="absolute -bottom-[3px] -right-[3px] w-6 h-6 border-b-[4px] border-r-[4px] border-white rounded-br-xl drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+
+                        {/* Draw Badge on Corner */}
+                        <div className="absolute -top-3.5 -left-3.5 w-7 h-7 rounded-full bg-white text-blue-600 shadow-xl flex items-center justify-center border border-slate-200 pointer-events-none">
+                          <Pencil className="w-3.5 h-3.5 text-blue-600" />
+                        </div>
+
+                        {/* Interactive Corner Resize Handles */}
+                        {(!lensDrag || !lensDrag.isDragging) && (
+                          <>
+                            <div
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                setLensDrag({
+                                  startX: boxLeft,
+                                  startY: boxTop,
+                                  currentX: boxLeft + boxWidth,
+                                  currentY: boxTop + boxHeight,
+                                  isDragging: true,
+                                  activeCorner: "tl",
+                                });
+                              }}
+                              className="absolute -top-3.5 -left-3.5 w-8 h-8 cursor-nwse-resize pointer-events-auto z-10"
+                              title="Drag to resize top-left"
+                            />
+                            <div
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                setLensDrag({
+                                  startX: boxLeft,
+                                  startY: boxTop,
+                                  currentX: boxLeft + boxWidth,
+                                  currentY: boxTop + boxHeight,
+                                  isDragging: true,
+                                  activeCorner: "tr",
+                                });
+                              }}
+                              className="absolute -top-3.5 -right-3.5 w-8 h-8 cursor-nesw-resize pointer-events-auto z-10"
+                              title="Drag to resize top-right"
+                            />
+                            <div
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                setLensDrag({
+                                  startX: boxLeft,
+                                  startY: boxTop,
+                                  currentX: boxLeft + boxWidth,
+                                  currentY: boxTop + boxHeight,
+                                  isDragging: true,
+                                  activeCorner: "bl",
+                                });
+                              }}
+                              className="absolute -bottom-3.5 -left-3.5 w-8 h-8 cursor-nesw-resize pointer-events-auto z-10"
+                              title="Drag to resize bottom-left"
+                            />
+                            <div
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                setLensDrag({
+                                  startX: boxLeft,
+                                  startY: boxTop,
+                                  currentX: boxLeft + boxWidth,
+                                  currentY: boxTop + boxHeight,
+                                  isDragging: true,
+                                  activeCorner: "br",
+                                });
+                              }}
+                              className="absolute -bottom-3.5 -right-3.5 w-8 h-8 cursor-nwse-resize pointer-events-auto z-10"
+                              title="Drag to resize bottom-right"
+                            />
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* Top Prompt Header (Clean & Compact on Mobile) */}
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[660] bg-slate-950/95 text-white border border-slate-700/80 backdrop-blur-xl px-4 py-1.5 sm:py-2 rounded-full shadow-2xl flex items-center gap-2 max-w-[92vw] animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-auto">
+                <div className="w-2 h-2 rounded-full bg-blue-400 animate-ping shrink-0" />
+                <span className="text-[11px] sm:text-xs font-black flex items-center gap-1.5 whitespace-nowrap truncate">
+                  <Pencil className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span>{lensBounds ? "Framed Area Selected" : "Drag to frame or draw map area"}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCloseLens}
+                  className="ml-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                  title="Close Search"
+                >
+                  <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                </button>
+              </div>
+
+              {/* Bottom Results Pill (Desktop only; on mobile we keep the clean 'Properties Found' button) */}
+              {lensBounds && !showPropertiesTray && (
+                <div className="hidden md:flex absolute bottom-4 left-6 max-w-sm z-[660] bg-slate-950/95 text-white border border-slate-700/80 backdrop-blur-xl p-3.5 sm:p-4 rounded-2xl shadow-2xl flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-auto">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-black text-white">
+                          Search: {displayedPropertiesFiltered.length} {displayedPropertiesFiltered.length === 1 ? "Listing" : "Listings"} Found
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          Inside framed spotlight area
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1.5 border-t border-slate-800">
+                    <button
+                      type="button"
+                      onClick={handleClearLens}
+                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Clear Frame</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPropertiesTray(true);
+                      }}
+                      className="flex-1 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-extrabold text-white flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer"
+                    >
+                      <span>View Listings</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* FLOATING BOTTOM FOUND PROPERTIES TRAY — mobile view style tray on map */}
           {displayedPropertiesFiltered.length > 0 && !isDrawing && (
             <div className={cn(
-              "absolute bottom-3 left-2 right-2 sm:left-4 sm:right-4 z-[550] pointer-events-auto flex-col items-center gap-2",
+              "absolute bottom-3 left-2 right-2 sm:left-4 sm:right-4 z-[670] pointer-events-auto flex flex-col items-center gap-2",
               showMapExplorer ? "hidden" : "flex md:hidden"
             )}>
               {/* TRAY TOGGLE CAPSULE BUTTON */}
@@ -3269,9 +3678,11 @@ const BUDGET_PRESETS = [
                     : (displayedPropertiesFiltered.length === 1 ? "Property" : "Properties");
                   return <span>{displayedPropertiesFiltered.length} {entityLabel} Found</span>;
                 })()}
-                {drawPolygonPoints.length >= 3 && (
-                  <span className="bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded text-[10px] font-black">In Drawn Area</span>
-                )}
+                {lensBounds ? (
+                  <span className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-2 py-0.5 rounded-full text-[10px] font-black shadow-xs flex items-center gap-1"><Sparkles className="w-2.5 h-2.5" /> Framed</span>
+                ) : drawPolygonPoints.length >= 3 ? (
+                  <span className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-2 py-0.5 rounded-full text-[10px] font-black shadow-xs flex items-center gap-1"><Sparkles className="w-2.5 h-2.5" /> Circled Area</span>
+                ) : null}
                 {!showPropertiesTray && (
                   <span className="animate-pulse text-amber-400 border-l border-slate-700 pl-2 ml-1 whitespace-nowrap">Tap to open</span>
                 )}
@@ -3537,6 +3948,7 @@ const BUDGET_PRESETS = [
             <MapViewportListenerDebounced
               mapProperties={displayedProperties}
               displayedProperties={displayedProperties}
+              lensBounds={lensBounds}
               onVisibleItemsChange={onVisibleItemsChange}
               onVisibleAreaChange={setVisibleAreaIds}
             />
@@ -3602,43 +4014,64 @@ const BUDGET_PRESETS = [
               })}
 
 
-            {/* Render Searched Locality Highlight Boundary (Auto Nagar, Benz Circle, Poranki, etc.) */}
-            {activeLocalityBoundary && (
-              <Polygon
-                positions={activeLocalityBoundary.bounds}
-                pathOptions={{
-                  color: "#3B82F6",
-                  fillColor: "#3B82F6",
-                  fillOpacity: 0.18,
-                  weight: 3,
-                  dashArray: "8, 8",
-                }}
-              />
-            )}
 
-            {/* Active Sketching Polyline (Follows Finger Smoothly without closing wedge) */}
+
+            {/* Active Circle Sketching Polyline (Google Circle to Search Glowing Trail) */}
             {isDrawing && drawPolygonPoints.length > 0 && (
-              <Polyline
-                positions={drawPolygonPoints}
-                pathOptions={{
-                  color: "#EF4444",
-                  weight: 3.5,
-                  opacity: 0.95,
-                }}
-              />
+              <>
+                <Polyline
+                  positions={drawPolygonPoints}
+                  pathOptions={{
+                    color: "#38bdf8",
+                    weight: 8,
+                    opacity: 0.45,
+                    lineCap: "round",
+                    lineJoin: "round",
+                  }}
+                />
+                <Polyline
+                  positions={drawPolygonPoints}
+                  pathOptions={{
+                    color: "#00E5FF",
+                    weight: 3.5,
+                    opacity: 1,
+                    lineCap: "round",
+                    lineJoin: "round",
+                  }}
+                />
+              </>
             )}
 
-            {/* Render Completed Drawn Custom Polygon Boundary */}
+            {/* Render Completed Google Circle to Search Luminous Boundary */}
             {!isDrawing && drawPolygonPoints.length >= 3 && (
-              <Polygon
-                positions={drawPolygonPoints}
-                pathOptions={{
-                  color: "#EF4444",
-                  fillColor: "#EF4444",
-                  fillOpacity: 0.15,
-                  weight: 3.5,
-                }}
-              />
+              <>
+                <Polygon
+                  positions={drawPolygonPoints}
+                  pathOptions={{
+                    color: "#38bdf8",
+                    weight: 7,
+                    opacity: 0.4,
+                    fillColor: "#00E5FF",
+                    fillOpacity: 0.14,
+                    lineCap: "round",
+                    lineJoin: "round",
+                    className: "google-circle-outer",
+                  }}
+                />
+                <Polygon
+                  positions={drawPolygonPoints}
+                  pathOptions={{
+                    color: "#00E5FF",
+                    weight: 3,
+                    opacity: 0.95,
+                    fillColor: "transparent",
+                    fillOpacity: 0,
+                    lineCap: "round",
+                    lineJoin: "round",
+                    className: "google-circle-polygon",
+                  }}
+                />
+              </>
             )}
 
             {/* Realtor.com Style Price Pill Markers */}
@@ -3663,7 +4096,6 @@ const BUDGET_PRESETS = [
                   eventHandlers={{
                     click: () => {
                       setSelectedPropertyId(property.id);
-                      setShowPropertiesTray(true);
                       if (mapRef.current) {
                         mapRef.current.setView([coords.lat, coords.lng], 17, { animate: true, duration: 1.2 });
                       }
@@ -3676,139 +4108,290 @@ const BUDGET_PRESETS = [
                     },
                   }}
                 >
-                  <Popup className="property-map-popup-realtor">
+                  <Popup className="property-map-popup-realtor" offset={[0, -14]} closeButton={false}>
                     {(() => {
-                      const isProj = (property as any)._isProject;
-                      const linkUrl = isProj ? `/projects/${property.slug || property.id}` : `/properties/${property.slug || property.id}`;
+                      const isProj = Boolean((property as any)._isProject);
+                      const linkUrl = isProj
+                        ? `/projects/${property.slug || property.id}`
+                        : `/properties/${property.slug || property.id}`;
                       const orig = (property as any)._originalProjectData;
-                      const configs = (property as any).configurations || orig?.configurations;
-                      const configLabels = Array.isArray(configs) && configs.length > 0
-                        ? Array.from(new Set(configs.map((c: any) => c.label || (c.bedrooms ? `${c.bedrooms} BHK` : null)).filter(Boolean)))
+                      const configs: any[] = Array.isArray((property as any).configurations) && (property as any).configurations.length > 0
+                        ? (property as any).configurations
+                        : Array.isArray(orig?.configurations)
+                        ? orig.configurations
                         : [];
-                      const isApartment = property.propertyType === "apartment" || (property as any).subtype === "flat" || (property as any).subtype === "apartment";
-                      
+                      const isPlots = ((property.propertyType || orig?.projectType || (property as any).subtype || "") + "").toLowerCase() === "venture";
+                      const isVilla = ((property.propertyType || orig?.projectType || (property as any).subtype || "") + "").toLowerCase() === "villa";
+
+                      // 1. BHK Configuration (Exact match with SearchProjectCard & formatAvailableBhk)
+                      let bhkDisplay = "";
+                      if (configs.length > 0) {
+                        const configLabels = configs.map((c: any) => c.label).filter(Boolean);
+                        const formattedBhk = formatAvailableBhk(configLabels);
+                        if (formattedBhk) {
+                          bhkDisplay = formattedBhk;
+                        } else {
+                          const bedVals = configs
+                            .map((c: any) => c.bedrooms)
+                            .filter((b: any): b is number => typeof b === "number" && b > 0);
+                          if (bedVals.length > 0) {
+                            const minBed = Math.min(...bedVals);
+                            const maxBed = Math.max(...bedVals);
+                            bhkDisplay = minBed === maxBed ? `${minBed} BHK` : `${minBed} - ${maxBed} BHK`;
+                          }
+                        }
+                      }
+                      if (!bhkDisplay && property.bedrooms) {
+                        bhkDisplay = `${property.bedrooms} BHK`;
+                      }
+                      if (!bhkDisplay) {
+                        bhkDisplay = isPlots ? "Plots" : isVilla ? "Villa" : (property.propertyType || "Apartment");
+                      }
+
+                      // 2. Property Type
+                      const rawType = (property.propertyType || orig?.projectType || (property as any).subtype || "").toLowerCase();
+                      let typeDisplay = "Apartment";
+                      if (rawType.includes("villa") || rawType.includes("house") || rawType.includes("independent")) {
+                        typeDisplay = "House/Villa";
+                      } else if (rawType.includes("apartment") || rawType.includes("flat")) {
+                        typeDisplay = "Apartment";
+                      } else if (rawType.includes("plot") || rawType.includes("land") || isPlots) {
+                        typeDisplay = "Plot / Layout";
+                      } else if (rawType.includes("commercial") || rawType.includes("office") || rawType.includes("shop")) {
+                        typeDisplay = "Commercial";
+                      } else if (rawType.includes("penthouse")) {
+                        typeDisplay = "Penthouse";
+                      } else if (isProj) {
+                        typeDisplay = isVilla ? "Villa" : "Apartment";
+                      }
+
+                      // 3. Super Built-Up / Area (Exact match with SearchProjectCard)
+                      let areaDisplay = "";
+                      const areaUnit = isPlots ? "sq.yd" : "sq.ft";
+                      if (isProj) {
+                        const allAreas = configs
+                          .flatMap((c: any) => isPlots 
+                            ? [c.plotSizeMin, c.plotSizeMax] 
+                            : [c.superBuiltUpAreaMin, c.superBuiltUpAreaMax, c.builtUpAreaMin, c.builtUpAreaMax, c.plinthAreaMin, c.plinthAreaMax, c.area]
+                          )
+                          .filter((a: any): a is number => typeof a === "number" && a > 0);
+
+                        if (allAreas.length > 0) {
+                          const minArea = Math.min(...allAreas);
+                          const maxArea = Math.max(...allAreas);
+                          areaDisplay = minArea === maxArea
+                            ? `${minArea.toLocaleString("en-IN")} ${areaUnit}`
+                            : `${minArea.toLocaleString("en-IN")} - ${maxArea.toLocaleString("en-IN")} ${areaUnit}`;
+                        } else if ((property as any).totalArea || orig?.totalArea) {
+                          areaDisplay = String((property as any).totalArea || orig?.totalArea).replace(/[`'"]/g, "").trim();
+                        }
+                      }
+
+                      if (!areaDisplay && property.area) {
+                        areaDisplay = `${Number(property.area).toLocaleString("en-IN")} sq.ft`;
+                      }
+                      if (!areaDisplay && (property as any).plotArea) {
+                        areaDisplay = `${Number((property as any).plotArea).toLocaleString("en-IN")} sq.yd`;
+                      }
+                      if (!areaDisplay && (property as any).builtUpArea) {
+                        areaDisplay = `${Number((property as any).builtUpArea).toLocaleString("en-IN")} sq.ft`;
+                      }
+                      if (!areaDisplay) {
+                        areaDisplay = "Area on request";
+                      }
+
+                      // 4. Possession (Exact match with SearchProjectCard & project.possessionDate)
+                      let possessionDisplay = "";
+                      const rawPossession = 
+                        orig?.possessionDate ||
+                        (property as any).possessionDate ||
+                        configs.find((c: any) => c.possessionDate)?.possessionDate ||
+                        (orig?.location as any)?.possessionDate ||
+                        (property.location as any)?.possessionDate;
+
+                      if (rawPossession && typeof rawPossession === "string" && rawPossession.trim()) {
+                        possessionDisplay = rawPossession.trim();
+                      } else {
+                        const cStatus = (orig?.constructionStatus || (property as any).constructionStatus || (property as any).possessionStatus || "").toLowerCase();
+                        if (cStatus.includes("ready") || (property as any).isReadyToMove) {
+                          possessionDisplay = isPlots ? "Ready to build" : "Ready to Move";
+                        } else if (cStatus.includes("construction") || cStatus.includes("under")) {
+                          possessionDisplay = "Under construction";
+                        } else if (cStatus.includes("launch")) {
+                          possessionDisplay = "New launch";
+                        } else {
+                          possessionDisplay = "On request";
+                        }
+                      }
+
+                      // 5. Price (Exact match with SearchProjectCard price range)
+                      let priceDisplay = "";
+                      if (isProj) {
+                        const allPrices = configs
+                          .flatMap((c: any) => [c.priceMin, c.priceMax])
+                          .filter((p: any): p is number => typeof p === "number" && p > 0);
+
+                        if (allPrices.length > 0) {
+                          const minPrice = Math.min(...allPrices);
+                          const maxPrice = Math.max(...allPrices);
+                          if (minPrice === maxPrice) {
+                            priceDisplay = formatPriceCompact(minPrice);
+                          } else {
+                            priceDisplay = `${formatPriceCompact(minPrice)} – ${formatPriceCompact(maxPrice)}`;
+                          }
+                        }
+                      }
+
+                      if (!priceDisplay) {
+                        const pMin = (property as any).priceMin;
+                        const pMax = (property as any).priceMax;
+                        if (pMin && pMax && pMin !== pMax) {
+                          priceDisplay = `${formatPriceCompact(pMin)} – ${formatPriceCompact(pMax)}`;
+                        } else if (property.price && property.price > 0) {
+                          priceDisplay = formatPriceCompact(property.price);
+                        } else {
+                          priceDisplay = "Price on request";
+                        }
+                      }
+
+                      // 6. Locality
+                      const locality = property.location?.locality || orig?.location?.locality || (property as any).locality || "";
+                      const city = property.location?.city || orig?.location?.city || (property as any).city || "";
+                      const locationDisplay = [locality, city].filter(Boolean).join(", ") || "Vijayawada, AP";
+
+                      const handleCardClick = (e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (isProj) {
+                          openProject(property, e);
+                        } else {
+                          router.push(linkUrl);
+                        }
+                      };
+
                       return (
-                        <div className="relative w-[260px] h-[190px] rounded-2xl overflow-hidden shadow-2xl group cursor-pointer bg-slate-900">
+                        <div className="relative w-full max-w-[310px] bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-200/90 font-sans select-none text-slate-900">
+                          {/* Top Image Container */}
                           <div
-                            onClick={(e) => {
-                              if (isProj) {
-                                openProject(property, e);
-                              } else {
-                                router.push(linkUrl);
-                              }
-                            }}
-                            className="absolute inset-0 z-0 cursor-pointer"
+                            onClick={handleCardClick}
+                            className="relative w-full h-[165px] bg-slate-100 cursor-pointer overflow-hidden group/img"
                           >
                             <img
                               src={coverImg}
-                              alt={property.title}
-                              className="w-full h-full object-cover"
+                              alt={property.title || "Property"}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                          </div>
 
-                          {/* Custom Close Button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              const btn = (e.target as HTMLElement).closest('.leaflet-popup')?.querySelector('.leaflet-popup-close-button') as HTMLElement;
-                              if (btn) btn.click();
-                            }}
-                            className="absolute top-2 right-2 w-7 h-7 bg-black/40 hover:bg-black/70 backdrop-blur-md rounded-full flex items-center justify-center text-white z-20 transition-all shadow-md"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-
-                          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 z-10">
+                            {/* Top Right Close Button */}
                             <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
-                                shareItem({ item: property, type: (property as any)._isProject ? "project" : "property" });
+                                if (mapRef.current) {
+                                  mapRef.current.closePopup();
+                                }
+                                const closeBtn = (e.target as HTMLElement).closest('.leaflet-popup')?.querySelector('.leaflet-popup-close-button') as HTMLElement;
+                                if (closeBtn) closeBtn.click();
                               }}
-                              title="Share property"
-                              className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform text-slate-900 hover:text-amber-500 cursor-pointer"
+                              className="absolute top-2.5 right-2.5 w-7 h-7 bg-white/70 hover:bg-white text-slate-700 hover:text-slate-950 backdrop-blur-md rounded-full flex items-center justify-center transition-all shadow-sm z-20 cursor-pointer"
+                              title="Close card"
                             >
-                              <Share2 className="w-4 h-4" />
+                              <X className="w-4 h-4 stroke-[2.5]" />
                             </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                toggleFavorite(property.id);
-                              }}
-                              title={isFavorite(property.id) ? "Remove from saved" : "Save property"}
-                              className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer"
-                            >
-                              <Heart className={cn("w-5 h-5 transition-colors", isFavorite(property.id) ? "fill-amber-500 text-amber-500" : "text-slate-900")} />
-                            </button>
-                          </div>
 
-                          <div
-                            onClick={(e) => {
-                              if (isProj) {
-                                openProject(property, e);
-                              } else {
-                                router.push(linkUrl);
-                              }
-                            }}
-                            className="absolute bottom-3 left-3 right-24 text-white z-0 flex flex-col items-start cursor-pointer"
-                          >
-                            <div className="text-[28px] font-black drop-shadow-md leading-none mb-1 text-white tracking-tight">
-                              {formatPriceCompact(property.price)}
+                            {/* Bottom Right Badge: Diamond Premium */}
+                            <div className="absolute bottom-2.5 right-2.5 px-3 py-1 bg-white/95 text-slate-900 rounded-xl flex items-center gap-1.5 shadow-md backdrop-blur-sm z-10 select-none pointer-events-none">
+                              <Diamond className="w-3.5 h-3.5 text-slate-900 fill-slate-900 shrink-0" />
+                              <span className="text-xs font-bold tracking-tight">Premium</span>
                             </div>
-                            
-                            {isProj ? (
-                              <>
-                                <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center gap-1.5 flex-wrap">
-                                  {configLabels.length > 0 ? (
-                                    <span className="text-white font-extrabold drop-shadow-sm">{formatAvailableBhk(configLabels)}</span>
-                                  ) : null}
-                                  <span className="truncate">{property.title}</span>
-                                </div>
-                                <div className="text-xs font-semibold drop-shadow-md text-white/80 truncate w-full flex items-center mt-0.5">
-                                  <span>By {(property as any).builderName || "Builder"}</span>
-                                  {property.location?.locality && <span> • {property.location.locality}</span>}
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <div className="text-sm font-bold drop-shadow-md text-white/95 truncate w-full flex items-center gap-1.5 flex-wrap">
-                                  {property.bedrooms ? (
-                                    <span>{property.bedrooms} BHK</span>
-                                  ) : configLabels.length > 0 ? (
-                                    <span className="text-white font-extrabold drop-shadow-sm">{formatAvailableBhk(configLabels)}</span>
-                                  ) : null}
-                                  {property.bathrooms ? <span>• {property.bathrooms} ba</span> : null}
-                                  {property.area ? <span>• {property.area.toLocaleString()} sqft</span> : null}
-                                  {!property.bedrooms && !property.area && <span>{property.title}</span>}
-                                </div>
-                                <div className="text-xs font-semibold drop-shadow-md text-white/85 truncate w-full flex items-center mt-0.5">
-                                  {isApartment || property.bedrooms ? (
-                                    <span>
-                                      {property.location?.locality ? `${property.location.locality}${property.location?.city ? `, ${property.location.city}` : ""}` : property.title}
-                                    </span>
-                                  ) : (property as any).plotArea ? (
-                                    <span>
-                                      {Number((property as any).plotArea) > 10000
-                                        ? `${(Number((property as any).plotArea) / 43560).toFixed(2)} acres lot`
-                                        : `${Math.round(Number((property as any).plotArea) / 9)} sq.yd plot`}
-                                      {property.location?.locality ? ` • ${property.location.locality}` : ""}
-                                    </span>
-                                  ) : (
-                                    <span>{property.location?.locality ? `${property.location.locality}${property.location?.city ? `, ${property.location.city}` : ""}` : property.title}</span>
-                                  )}
-                                </div>
-                              </>
-                            )}
+                          </div>
 
-                            {activeUserLocation && (
-                              <div className="text-xs font-bold text-white mt-1 flex items-center gap-1 bg-black/60 px-2 py-0.5 rounded backdrop-blur-sm shadow-xs">
-                                <Navigation className="w-3 h-3 text-white" />
-                                {getDistanceFromLatLonInKm(activeUserLocation.lat, activeUserLocation.lng, coords.lat, coords.lng).toFixed(1)} km away from you
+                          {/* Body Information */}
+                          <div className="p-3.5 sm:p-4 bg-white flex flex-col">
+                            {/* Title & Share Icon Row */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div
+                                onClick={handleCardClick}
+                                className="min-w-0 flex-1 cursor-pointer group/title"
+                              >
+                                <h3 className="font-heading text-base font-bold text-[#1d4ed8] group-hover/title:underline truncate leading-snug">
+                                  {property.title || (property as any).name || "Property"}
+                                </h3>
+                                <p className="text-xs sm:text-[13px] text-slate-500 font-medium truncate mt-0.5">
+                                  {locationDisplay}
+                                </p>
                               </div>
-                            )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  shareItem({ item: property, type: isProj ? "project" : "property" });
+                                }}
+                                title="Share property"
+                                className="p-1 text-slate-400 hover:text-blue-600 transition-colors shrink-0 cursor-pointer"
+                              >
+                                <Share2 className="w-4 h-4 stroke-[1.8]" />
+                              </button>
+                            </div>
+
+                            {/* Dashed Separator */}
+                            <div className="border-b border-dashed border-slate-200 my-2.5" />
+
+                            {/* 2x2 Specifications Grid */}
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                              {/* 1. BHK */}
+                              <div>
+                                <span className="text-[11px] font-semibold text-slate-400 block tracking-wide">
+                                  BHK
+                                </span>
+                                <span className="text-sm font-bold text-slate-900 block mt-0.5 truncate">
+                                  {bhkDisplay}
+                                </span>
+                              </div>
+
+                              {/* 2. Property Type */}
+                              <div>
+                                <span className="text-[11px] font-semibold text-slate-400 block tracking-wide">
+                                  Property Type
+                                </span>
+                                <span className="text-sm font-bold text-slate-900 block mt-0.5 truncate">
+                                  {typeDisplay}
+                                </span>
+                              </div>
+
+                              {/* 3. Super Built-Up / Area */}
+                              <div>
+                                <span className="text-[11px] font-semibold text-slate-400 block tracking-wide">
+                                  {isPlots ? "Plot Area" : "Super Built-Up"}
+                                </span>
+                                <span className="text-sm font-bold text-slate-900 block mt-0.5 truncate">
+                                  {areaDisplay}
+                                </span>
+                              </div>
+
+                              {/* 4. Possession */}
+                              <div>
+                                <span className="text-[11px] font-semibold text-slate-400 block tracking-wide">
+                                  Possession
+                                </span>
+                                <span className="text-sm font-bold text-slate-900 block mt-0.5 truncate">
+                                  {possessionDisplay}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Dashed Separator */}
+                            <div className="border-b border-dashed border-slate-200 my-2.5" />
+
+                            {/* Price */}
+                            <div
+                              onClick={handleCardClick}
+                              className="text-base sm:text-lg font-black text-slate-900 tracking-tight cursor-pointer hover:text-blue-700 transition-colors"
+                            >
+                              {priceDisplay}
+                            </div>
                           </div>
                         </div>
                       );

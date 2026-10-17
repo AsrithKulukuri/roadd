@@ -2366,7 +2366,7 @@ export function ShelfEditor({
                 onClick={() => setShowPublishModal(false)}
                 className="p-1 rounded-full text-slate-400 hover:text-white cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" />   
               </button>
             </div>
 

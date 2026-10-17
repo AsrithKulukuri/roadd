@@ -729,7 +729,7 @@ input[type="submit"] {
 
 .property-map-popup-realtor .leaflet-popup-content-wrapper {
   padding: 0 !important;
-  border-radius: 16px !important;
+  border-radius: 18px !important;
   overflow: hidden !important;
   background: transparent !important;
   box-shadow: none !important;
@@ -739,7 +739,8 @@ input[type="submit"] {
 }
 .property-map-popup-realtor .leaflet-popup-content {
   margin: 0 !important;
-  width: 260px !important;
+  width: 310px !important;
+  max-width: calc(100vw - 32px) !important;
   line-height: normal !important;
 }
 .property-map-popup-realtor .leaflet-popup-tip-container {
@@ -826,3 +827,26 @@ svg.lucide {
   stroke: currentColor;
   stroke-width: 2.25;
 }
+
+/* ========================================================================
+   Google Circle to Search Map Animation & Glow
+   ======================================================================== */
+@keyframes googleCirclePulse {
+  0%, 100% {
+    stroke-opacity: 0.95;
+    filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.75));
+  }
+  50% {
+    stroke-opacity: 0.7;
+    filter: drop-shadow(0 0 14px rgba(0, 229, 255, 0.95));
+  }
+}
+
+.google-circle-polygon {
+  animation: googleCirclePulse 2.4s infinite ease-in-out;
+}
+
+.google-circle-outer {
+  filter: blur(1.5px);
+}
+
