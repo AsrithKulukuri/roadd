@@ -15,7 +15,7 @@ import {
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart, ChevronLeft, ChevronRight, Plus, Share2, Home, Building2, Landmark, Trees, Briefcase, Maximize2, Diamond } from "lucide-react";
+import { MapPin, Navigation, ArrowRight, Compass, Sparkles, Layers, Layers3, ChevronDown, ChevronUp, Route, Car, Pencil, Trash2, Check, Search, X, SlidersHorizontal, Star, School, Hospital, Zap, Calculator, MessageSquare, Calendar, ShieldCheck, Flame, Timer, Heart, ChevronLeft, ChevronRight, Plus, Share2, Home, Building2, Landmark, Trees, Briefcase, Maximize2, Diamond, CircleDot } from "lucide-react";
 import L from "leaflet";
 import Link from "next/link";
 import { PropertyCard } from "@/components/property/property-card";
@@ -43,6 +43,14 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
+}
+
+export function formatCircleRadius(meters: number): string {
+  if (meters >= 1000) {
+    const km = meters / 1000;
+    return km >= 10 ? `${Math.round(km)} km` : `${km.toFixed(1)} km`;
+  }
+  return `${Math.round(meters)} m`;
 }
 
 // Safe setup for default marker icons in Leaflet with Next.js
@@ -283,6 +291,8 @@ function isPointInPolygon(point: { lat: number; lng: number }, polygon: L.LatLng
   return inside;
 }
 
+export type DrawShapeType = "freehand";
+
 function getLandmarkIcon(type: string, name: string) {
   if (typeof window === "undefined" || !L || !L.divIcon) return undefined;
   
@@ -490,7 +500,7 @@ function MapInvalidator() {
   return null;
 }
 
-function FreehandDrawListener({
+function MapDrawingController({
   isDrawing,
   onDrawStart,
   onDrawMove,
@@ -503,6 +513,15 @@ function FreehandDrawListener({
 }) {
   const map = useMap();
   const isMouseDownRef = useRef(false);
+  const onDrawStartRef = useRef(onDrawStart);
+  const onDrawMoveRef = useRef(onDrawMove);
+  const onDrawEndRef = useRef(onDrawEnd);
+
+  useEffect(() => {
+    onDrawStartRef.current = onDrawStart;
+    onDrawMoveRef.current = onDrawMove;
+    onDrawEndRef.current = onDrawEnd;
+  });
 
   useEffect(() => {
     if (!map) return;
@@ -515,12 +534,16 @@ function FreehandDrawListener({
       if (map.touchZoom) map.touchZoom.disable();
       if (map.doubleClickZoom) map.doubleClickZoom.disable();
       if (map.scrollWheelZoom) map.scrollWheelZoom.disable();
+      if (map.boxZoom) map.boxZoom.disable();
+      container.classList.add("pencil-drawing-active");
       container.style.cursor = "crosshair";
     } else {
       map.dragging.enable();
       if (map.touchZoom) map.touchZoom.enable();
       if (map.doubleClickZoom) map.doubleClickZoom.enable();
       if (map.scrollWheelZoom) map.scrollWheelZoom.enable();
+      if (map.boxZoom) map.boxZoom.enable();
+      container.classList.remove("pencil-drawing-active");
       container.style.cursor = "";
       return;
     }
@@ -546,54 +569,57 @@ function FreehandDrawListener({
 
     const handleStart = (e: MouseEvent | TouchEvent) => {
       if (!isDrawing) return;
+      if ("button" in e && (e as MouseEvent).button !== 0) return;
+      e.stopPropagation();
+      if (e.cancelable) e.preventDefault();
       isMouseDownRef.current = true;
       const latlng = getLatLngFromEvent(e);
       if (latlng) {
-        onDrawStart(latlng);
+        onDrawStartRef.current(latlng);
       }
     };
 
     const handleMove = (e: MouseEvent | TouchEvent) => {
       if (!isDrawing || !isMouseDownRef.current) return;
-      if (e.cancelable) {
-        e.preventDefault(); // Prevent page scroll on touchscreens while sketching
-      }
+      if (e.cancelable) e.preventDefault();
       const latlng = getLatLngFromEvent(e);
       if (latlng) {
-        onDrawMove(latlng);
+        onDrawMoveRef.current(latlng);
       }
     };
 
     const handleEnd = () => {
       if (!isDrawing || !isMouseDownRef.current) return;
       isMouseDownRef.current = false;
-      onDrawEnd();
+      onDrawEndRef.current();
     };
 
-    container.addEventListener("mousedown", handleStart);
-    container.addEventListener("mousemove", handleMove);
+    container.addEventListener("mousedown", handleStart, { capture: true });
+    window.addEventListener("mousemove", handleMove, { passive: false });
     window.addEventListener("mouseup", handleEnd);
 
-    container.addEventListener("touchstart", handleStart, { passive: false });
-    container.addEventListener("touchmove", handleMove, { passive: false });
+    container.addEventListener("touchstart", handleStart, { passive: false, capture: true });
+    window.addEventListener("touchmove", handleMove, { passive: false });
     window.addEventListener("touchend", handleEnd);
 
     return () => {
-      container.removeEventListener("mousedown", handleStart);
-      container.removeEventListener("mousemove", handleMove);
+      container.removeEventListener("mousedown", handleStart, { capture: true } as any);
+      window.removeEventListener("mousemove", handleMove);
       window.removeEventListener("mouseup", handleEnd);
 
-      container.removeEventListener("touchstart", handleStart);
-      container.removeEventListener("touchmove", handleMove);
+      container.removeEventListener("touchstart", handleStart, { capture: true } as any);
+      window.removeEventListener("touchmove", handleMove);
       window.removeEventListener("touchend", handleEnd);
 
       map.dragging.enable();
       if (map.touchZoom) map.touchZoom.enable();
       if (map.doubleClickZoom) map.doubleClickZoom.enable();
       if (map.scrollWheelZoom) map.scrollWheelZoom.enable();
+      if (map.boxZoom) map.boxZoom.enable();
+      container.classList.remove("pencil-drawing-active");
       container.style.cursor = "";
     };
-  }, [isDrawing, map, onDrawStart, onDrawMove, onDrawEnd]);
+  }, [map, isDrawing]);
 
   return null;
 }
@@ -960,12 +986,20 @@ function SidebarCardSkeleton() {
 }
 
 // Automatically moves out and fits all properties/projects into the visible viewport
-function AutoFitBoundsController({ items }: { items: SharedMapItem[] }) {
+function AutoFitBoundsController({
+  items,
+  isDrawing,
+  hasActiveShape,
+}: {
+  items: SharedMapItem[];
+  isDrawing?: boolean;
+  hasActiveShape?: boolean;
+}) {
   const map = useMap();
   const lastFitKeyRef = useRef<string>("");
 
   useEffect(() => {
-    if (!map || !items || items.length === 0) return;
+    if (!map || !items || items.length === 0 || isDrawing || hasActiveShape) return;
 
     const coords: [number, number][] = [];
     for (const item of items) {
@@ -1008,7 +1042,7 @@ function AutoFitBoundsController({ items }: { items: SharedMapItem[] }) {
     }, 120);
 
     return () => clearTimeout(timer);
-  }, [map, items]);
+  }, [map, items, isDrawing, hasActiveShape]);
 
   return null;
 }
@@ -1046,17 +1080,22 @@ function MapViewportListener({
   return null;
 }
 
+
 // Debounced version of the viewport listener with change detection
 function MapViewportListenerDebounced({
   mapProperties,
   displayedProperties,
   lensBounds,
+  drawnCircle,
+  drawPolygonPoints,
   onVisibleItemsChange,
   onVisibleAreaChange,
 }: {
   mapProperties: SharedMapItem[];
   displayedProperties?: SharedMapItem[];
   lensBounds?: L.LatLngBounds | null;
+  drawnCircle?: { center: { lat: number; lng: number }; radiusMeters: number } | null;
+  drawPolygonPoints?: L.LatLng[];
   onVisibleItemsChange?: (visibleIds: string[]) => void;
   onVisibleAreaChange?: (visibleIds: string[]) => void;
 }) {
@@ -1073,17 +1112,38 @@ function MapViewportListenerDebounced({
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       if (!map) return;
-      const bounds = lensBounds || map.getBounds();
 
       // 1. Calculate items in the visible area before subtype filter for real area counts
       const areaSource = mapProperties;
-      const areaVisibleIds = areaSource
-        .filter((p) => {
-          const coords = resolvePropertyMapCoords(p);
-          const latLng = L.latLng(coords.lat, coords.lng);
-          return bounds.contains(latLng);
-        })
-        .map((p) => p.id);
+      let areaVisibleIds: string[] = [];
+
+      const hasShape = drawPolygonPoints && drawPolygonPoints.length >= 3;
+
+      if (drawPolygonPoints && hasShape) {
+        areaVisibleIds = areaSource
+          .filter((p) => {
+            const coords = resolvePropertyMapCoords(p);
+            return isPointInPolygon({ lat: coords.lat, lng: coords.lng }, drawPolygonPoints);
+          })
+          .map((p) => p.id);
+      } else if (drawnCircle) {
+        const centerLatLng = L.latLng(drawnCircle.center.lat, drawnCircle.center.lng);
+        areaVisibleIds = areaSource
+          .filter((p) => {
+            const coords = resolvePropertyMapCoords(p);
+            return centerLatLng.distanceTo(L.latLng(coords.lat, coords.lng)) <= drawnCircle.radiusMeters;
+          })
+          .map((p) => p.id);
+      } else {
+        const bounds = lensBounds || map.getBounds();
+        areaVisibleIds = areaSource
+          .filter((p) => {
+            const coords = resolvePropertyMapCoords(p);
+            const latLng = L.latLng(coords.lat, coords.lng);
+            return bounds.contains(latLng);
+          })
+          .map((p) => p.id);
+      }
 
       onVisibleAreaChange?.(areaVisibleIds);
 
@@ -1098,7 +1158,7 @@ function MapViewportListenerDebounced({
         }
       }
     }, 100);
-  }, [map, mapProperties, displayedProperties, lensBounds, onVisibleItemsChange, onVisibleAreaChange]);
+  }, [map, mapProperties, displayedProperties, lensBounds, drawnCircle, drawPolygonPoints, onVisibleItemsChange, onVisibleAreaChange]);
 
   // Initial trigger
   useEffect(() => {
@@ -1119,6 +1179,8 @@ export default function PropertyMap({
   counts,
   activeFilters,
   onFiltersChange,
+  triggerDraw,
+  onTriggerDrawHandled,
 }: PropertyMapProps = {}) {
   const { propertiesEnabled } = useSiteFeatures();
   const router = useRouter();
@@ -1529,9 +1591,23 @@ const BUDGET_PRESETS = [
 
   // Draw Polygon Area Search State
   const [isDrawing, setIsDrawing] = useState(false);
-  // Google Lens / Circle to Search Framing State (Matches Video 2)
+  // Perfect Circle Drawing Search State
   const [isLensSearchActive, setIsLensSearchActive] = useState(false);
   const [lensBounds, setLensBounds] = useState<L.LatLngBounds | null>(null);
+  const [drawnCircle, setDrawnCircle] = useState<{
+    center: { lat: number; lng: number };
+    radiusMeters: number;
+  } | null>(null);
+  const [circleDrag, setCircleDrag] = useState<{
+    centerX: number;
+    centerY: number;
+    currentX: number;
+    currentY: number;
+    isDragging: boolean;
+    mode: "draw" | "resize" | "move";
+    lastPointerX?: number;
+    lastPointerY?: number;
+  } | null>(null);
   const [lensDrag, setLensDrag] = useState<{
     startX: number;
     startY: number;
@@ -1541,8 +1617,11 @@ const BUDGET_PRESETS = [
     activeCorner: "tl" | "tr" | "bl" | "br" | null;
   } | null>(null);
   const lensOverlayRef = useRef<HTMLDivElement>(null);
-  const [drawShapeType, setDrawShapeType] = useState<"freehand" | "circle" | "box">("freehand");
   const [drawPolygonPoints, setDrawPolygonPoints] = useState<L.LatLng[]>([]);
+  const drawPointsRef = useRef<L.LatLng[]>([]);
+
+  const hasActiveDrawnShape = drawPolygonPoints.length >= 3;
+
   const [internalUserLoc, setInternalUserLoc] = useState<{lat: number, lng: number} | null>(null);
   
   const activeUserLocation = externalUserLocation || internalUserLoc;
@@ -1774,16 +1853,22 @@ const BUDGET_PRESETS = [
     let source = filteredItems && Array.isArray(filteredItems) ? filteredItems : mapProperties;
     if (!propertiesEnabled) source = source.filter(item => "_isProject" in item && item._isProject);
 
-    // Google Lens / Circle to Search Box Filter (Matches Video 2)
-    if (lensBounds) {
+    // Perfect Circle Search Filter
+    if (drawnCircle) {
+      const centerLatLng = L.latLng(drawnCircle.center.lat, drawnCircle.center.lng);
+      source = source.filter((p: any) => {
+        const coords = resolvePropertyMapCoords(p);
+        return centerLatLng.distanceTo(L.latLng(coords.lat, coords.lng)) <= drawnCircle.radiusMeters;
+      });
+    } else if (lensBounds) {
       source = source.filter((p: any) => {
         const coords = resolvePropertyMapCoords(p);
         return lensBounds.contains(L.latLng(coords.lat, coords.lng));
       });
     }
 
-    // Polygon Area Draw Filter
-    if (drawPolygonPoints.length >= 3) {
+    // Freehand Custom Boundary Draw Filter
+    if (hasActiveDrawnShape) {
       source = source.filter((p) => {
         const coords = resolvePropertyMapCoords(p);
         return isPointInPolygon(
@@ -1870,7 +1955,7 @@ const BUDGET_PRESETS = [
     }
 
     return source.filter((p) => checkPropertyMatchesQuery(p, mapSearchInput));
-  }, [mapProperties, filteredItems, lensBounds, drawPolygonPoints, selectedMapCities, selectedMapLocalities, selectedBudgetKeys, mapPriceRange, parsedBudget, mapSearchInput, propertiesEnabled]);
+  }, [mapProperties, filteredItems, lensBounds, drawnCircle, drawPolygonPoints, hasActiveDrawnShape, selectedMapCities, selectedMapLocalities, selectedBudgetKeys, mapPriceRange, parsedBudget, mapSearchInput, propertiesEnabled]);
 
   // Only locations selected on Home page (isHeroPill === true)
   const homeCities = useMemo(() => {
@@ -1919,7 +2004,13 @@ const BUDGET_PRESETS = [
   // but MUST NOT be pruned by visibleAreaIds (Leaflet manages viewport rendering natively).
   const mapMarkerItems = useMemo(() => {
     let list = displayedProperties;
-    if (lensBounds) {
+    if (drawnCircle) {
+      const centerLatLng = L.latLng(drawnCircle.center.lat, drawnCircle.center.lng);
+      list = list.filter((p: any) => {
+        const coords = resolvePropertyMapCoords(p);
+        return centerLatLng.distanceTo(L.latLng(coords.lat, coords.lng)) <= drawnCircle.radiusMeters;
+      });
+    } else if (lensBounds) {
       list = list.filter((p: any) => {
         const coords = resolvePropertyMapCoords(p);
         return lensBounds.contains(L.latLng(coords.lat, coords.lng));
@@ -1932,7 +2023,7 @@ const BUDGET_PRESETS = [
       list = list.filter((p) => selectedSubtypes.some((key) => itemMatchesSubtype(p, key)));
     }
     return list;
-  }, [displayedProperties, lensBounds, listingTypeFilter, selectedSubtypes]);
+  }, [displayedProperties, lensBounds, drawnCircle, listingTypeFilter, selectedSubtypes]);
 
   // Entity type filter & subtype filter applied on top of displayedProperties
   // Real-time viewport boundary filter: Show listings in viewport, or all if none currently in center view
@@ -2183,72 +2274,187 @@ const BUDGET_PRESETS = [
     }
   };
 
-  const handleDrawStart = (point: L.LatLng) => {
-    setDrawPolygonPoints([point]);
-  };
+  const handleStartDraw = useCallback(() => {
+    setIsLensSearchActive(false);
+    setDrawnCircle(null);
+    setCircleDrag(null);
+    setLensBounds(null);
+    setLensDrag(null);
+    setShowLayerPanel(false);
 
-  const handleDrawMove = (point: L.LatLng) => {
-    setDrawPolygonPoints((prev) => {
-      if (prev.length === 0) return [point];
+    setDrawPolygonPoints([]);
+    drawPointsRef.current = [];
+    setIsDrawing(true);
 
-      if (drawShapeType === "freehand") {
-        const last = prev[prev.length - 1];
-        const distSq = (last.lat - point.lat) ** 2 + (last.lng - point.lng) ** 2;
-        if (distSq > 0.00000000001) {
-          return [...prev, point];
-        }
-        return prev;
-      }
-
-      if (drawShapeType === "box") {
-        const start = prev[0];
-        return [
-          start,
-          new L.LatLng(start.lat, point.lng),
-          point,
-          new L.LatLng(point.lat, start.lng),
-        ];
-      }
-
-      if (drawShapeType === "circle") {
-        const start = prev[0];
-        const radiusDeg = Math.sqrt((start.lat - point.lat) ** 2 + (start.lng - point.lng) ** 2);
-        const points: L.LatLng[] = [];
-        const numPoints = 32;
-        for (let i = 0; i < numPoints; i++) {
-          const angle = (i * 2 * Math.PI) / numPoints;
-          const lat = start.lat + radiusDeg * Math.sin(angle);
-          const lng = start.lng + radiusDeg * Math.cos(angle);
-          points.push(new L.LatLng(lat, lng));
-        }
-        return points;
-      }
-
-      return prev;
+    toast.info("Freehand active: Click and drag anywhere to sketch a shape around projects.", {
+      icon: "✏️",
+      duration: 3000,
     });
-  };
+  }, []);
 
-  const handleDrawEnd = () => {
-    setIsDrawing(false);
-    if (drawPolygonPoints.length >= 3) {
-      const first = drawPolygonPoints[0];
-      const last = drawPolygonPoints[drawPolygonPoints.length - 1];
-      const dist = Math.hypot(first.lat - last.lat, first.lng - last.lng);
-      if (dist > 0.0001) {
-        setDrawPolygonPoints((prev) => [...prev, first]);
-      }
-      if (onVisibleItemsChange) {
-        const filtered = displayedProperties.filter((p: any) => {
-          const coords = resolvePropertyMapCoords(p);
-          return isPointInPolygon({ lat: coords.lat, lng: coords.lng }, drawPolygonPoints);
-        });
-        onVisibleItemsChange(filtered.map((p: any) => p.id));
-      }
+  useEffect(() => {
+    if (triggerDraw) {
+      handleStartDraw();
+      onTriggerDrawHandled?.();
     }
-  };
+  }, [triggerDraw, onTriggerDrawHandled, handleStartDraw]);
 
-  // Google Lens Search Handlers
-  const handleClearLens = () => {
+  const handleDrawStart = useCallback((point: L.LatLng) => {
+    drawPointsRef.current = [point];
+    setDrawPolygonPoints([point]);
+  }, []);
+
+  const handleDrawMove = useCallback((point: L.LatLng) => {
+    const prev = drawPointsRef.current;
+    if (prev.length === 0) {
+      drawPointsRef.current = [point];
+      setDrawPolygonPoints([point]);
+      return;
+    }
+
+    const last = prev[prev.length - 1];
+    const distSq = (last.lat - point.lat) ** 2 + (last.lng - point.lng) ** 2;
+    if (distSq > 0.00000000001) {
+      const next = [...prev, point];
+      drawPointsRef.current = next;
+      setDrawPolygonPoints(next);
+    }
+  }, []);
+
+  const handleDrawEnd = useCallback(() => {
+    setIsDrawing(false);
+    const pts = drawPointsRef.current;
+    if (pts.length < 3) {
+      setDrawPolygonPoints([]);
+      drawPointsRef.current = [];
+      toast.info("Click and drag to sketch a shape around projects.", { icon: "✏️", duration: 2500 });
+      return;
+    }
+
+    const first = pts[0];
+    const last = pts[pts.length - 1];
+    const dist = Math.hypot(first.lat - last.lat, first.lng - last.lng);
+    const closedPoints = dist > 0.0001 ? [...pts, first] : [...pts];
+    drawPointsRef.current = closedPoints;
+    setDrawPolygonPoints(closedPoints);
+
+    const source = filteredItems && Array.isArray(filteredItems) ? filteredItems : mapProperties;
+    const matching = source.filter((p: any) => {
+      const coords = resolvePropertyMapCoords(p);
+      return isPointInPolygon({ lat: coords.lat, lng: coords.lng }, closedPoints);
+    });
+
+    const matchingProjects = matching.filter((p: any) => Boolean(p._isProject));
+    const matchingProperties = matching.filter((p: any) => !p._isProject);
+
+    if (onVisibleItemsChange) {
+      onVisibleItemsChange(matching.map((p: any) => p.id));
+    }
+
+    if (matchingProjects.length > 0) {
+      toast.success(
+        `Found ${matchingProjects.length} project${matchingProjects.length === 1 ? "" : "s"}${
+          matchingProperties.length > 0 ? ` & ${matchingProperties.length} properties` : ""
+        } in your shape!`,
+        { icon: "✏️", duration: 3500 }
+      );
+    } else if (matching.length > 0) {
+      toast.success(`Found ${matching.length} listing${matching.length === 1 ? "" : "s"} in your shape.`, {
+        icon: "✏️",
+        duration: 3500,
+      });
+    } else {
+      toast.warning("No projects found inside this shape. Try sketching a wider area around nearby roads or localities.", {
+        icon: "✏️",
+        duration: 4000,
+      });
+    }
+  }, [filteredItems, mapProperties, onVisibleItemsChange]);
+
+  const handleClearDraw = useCallback(() => {
+    setDrawPolygonPoints([]);
+    drawPointsRef.current = [];
+    setIsDrawing(false);
+    if (mapRef.current && onVisibleItemsChange) {
+      const bounds = mapRef.current.getBounds();
+      const visible = mapProperties.filter((p: any) => {
+        if (listingTypeFilter === "properties" && p._isProject) return false;
+        if (listingTypeFilter === "projects" && !p._isProject) return false;
+        const coords = resolvePropertyMapCoords(p);
+        return bounds.contains(L.latLng(coords.lat, coords.lng));
+      });
+      onVisibleItemsChange(visible.map((p: any) => p.id));
+    }
+    toast.info("Shape cleared. Showing all listings.", { icon: "🧹" });
+  }, [mapProperties, listingTypeFilter, onVisibleItemsChange]);
+
+  const handleVertexDrag = useCallback((index: number, newPos: L.LatLng) => {
+    setDrawPolygonPoints((prev) => {
+      if (!prev || prev.length === 0) return prev;
+      const next = [...prev];
+      next[index] = newPos;
+      if (index === 0 && next.length > 2 && next[next.length - 1].equals(prev[0])) {
+        next[next.length - 1] = newPos;
+      }
+      drawPointsRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const handleVertexDragEnd = useCallback(() => {
+    const pts = drawPointsRef.current;
+    if (!pts || pts.length < 3) return;
+    const source = filteredItems && Array.isArray(filteredItems) ? filteredItems : mapProperties;
+    const matching = source.filter((p: any) => {
+      const coords = resolvePropertyMapCoords(p);
+      return isPointInPolygon({ lat: coords.lat, lng: coords.lng }, pts);
+    });
+    if (onVisibleItemsChange) {
+      onVisibleItemsChange(matching.map((p: any) => p.id));
+    }
+  }, [filteredItems, mapProperties, onVisibleItemsChange]);
+
+  const handleZoomToShape = useCallback(() => {
+    if (!mapRef.current || drawPolygonPoints.length < 2) return;
+    const lats = drawPolygonPoints.map((p) => p.lat);
+    const lngs = drawPolygonPoints.map((p) => p.lng);
+    const bounds = L.latLngBounds(
+      [Math.min(...lats), Math.min(...lngs)],
+      [Math.max(...lats), Math.max(...lngs)]
+    );
+    mapRef.current.fitBounds(bounds.pad(0.18), { animate: true, duration: 1.2 });
+  }, [drawPolygonPoints]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (isDrawing) {
+          setIsDrawing(false);
+          setDrawPolygonPoints([]);
+          drawPointsRef.current = [];
+        } else if (hasActiveDrawnShape) {
+          handleClearDraw();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isDrawing, hasActiveDrawnShape, handleClearDraw]);
+
+  const matchingProjectsInShape = useMemo(() => {
+    if (!hasActiveDrawnShape) return 0;
+    return displayedPropertiesFiltered.filter((p: any) => Boolean(p._isProject)).length;
+  }, [hasActiveDrawnShape, displayedPropertiesFiltered]);
+
+  const matchingPropertiesInShape = useMemo(() => {
+    if (!hasActiveDrawnShape) return 0;
+    return displayedPropertiesFiltered.filter((p: any) => !p._isProject).length;
+  }, [hasActiveDrawnShape, displayedPropertiesFiltered]);
+
+  // Google Circle Search Handlers
+  const handleClearCircle = () => {
+    setDrawnCircle(null);
+    setCircleDrag(null);
     setLensBounds(null);
     setLensDrag(null);
     if (mapRef.current) {
@@ -2267,9 +2473,27 @@ const BUDGET_PRESETS = [
     }
   };
 
-  const handleCloseLens = () => {
-    handleClearLens();
+  const handleCloseCircle = () => {
+    handleClearCircle();
     setIsLensSearchActive(false);
+  };
+
+  const handleClearLens = handleClearCircle;
+  const handleCloseLens = handleCloseCircle;
+
+  const updateFilteredForCircle = (centerLatLng: L.LatLng, radiusMeters: number) => {
+    const allItems = filteredItems && Array.isArray(filteredItems) ? filteredItems : mapProperties;
+    const inside = allItems.filter((p: any) => {
+      if (listingTypeFilter === "properties" && p._isProject) return false;
+      if (listingTypeFilter === "projects" && !p._isProject) return false;
+      const coords = resolvePropertyMapCoords(p);
+      return centerLatLng.distanceTo(L.latLng(coords.lat, coords.lng)) <= radiusMeters;
+    });
+    const insideIds = inside.map((p: any) => p.id);
+    setVisibleAreaIds(insideIds);
+    if (onVisibleItemsChange) {
+      onVisibleItemsChange(insideIds);
+    }
   };
 
   // Disable Leaflet map dragging when Lens search mode is active
@@ -2288,21 +2512,6 @@ const BUDGET_PRESETS = [
       if (map.scrollWheelZoom) map.scrollWheelZoom.enable();
     }
   }, [isLensSearchActive]);
-
-  const handleClearDraw = () => {
-    setDrawPolygonPoints([]);
-    setIsDrawing(false);
-    if (mapRef.current && onVisibleItemsChange) {
-      const bounds = mapRef.current.getBounds();
-      const visible = mapProperties.filter((p: any) => {
-        if (listingTypeFilter === "properties" && p._isProject) return false;
-        if (listingTypeFilter === "projects" && !p._isProject) return false;
-        const coords = resolvePropertyMapCoords(p);
-        return bounds.contains(L.latLng(coords.lat, coords.lng));
-      });
-      onVisibleItemsChange(visible.map((p: any) => p.id));
-    }
-  };
 
   // AP Registration & Stamp Duty Calculations
   const stampDutyAmt = calcPropertyPrice * 0.05;
@@ -3183,40 +3392,95 @@ const BUDGET_PRESETS = [
             </div>
             )}
 
-            {/* 2. GOOGLE LENS / CIRCLE TO SEARCH BUTTON */}
+            {/* 2. PENCIL / FREEHAND DRAW BUTTON */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  if (hasActiveDrawnShape) {
+                    handleClearDraw();
+                  } else if (isDrawing) {
+                    setIsDrawing(false);
+                    setDrawPolygonPoints([]);
+                    drawPointsRef.current = [];
+                  } else {
+                    handleStartDraw();
+                  }
+                }}
+                title={
+                  hasActiveDrawnShape
+                    ? "Clear Drawn Shape"
+                    : isDrawing
+                    ? "Cancel Shape Drawing"
+                    : "Draw Boundary to Search"
+                }
+                className={cn(
+                  "w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 cursor-pointer border shrink-0 relative overflow-hidden",
+                  hasActiveDrawnShape
+                    ? "bg-slate-950 text-white border-amber-400 hover:bg-slate-900 shadow-amber-500/20"
+                    : isDrawing
+                    ? "bg-gradient-to-tr from-amber-500 to-orange-600 text-slate-950 border-amber-300 font-black animate-pulse shadow-amber-500/50 ring-2 ring-amber-400/50"
+                    : "bg-slate-950/95 backdrop-blur-md text-white border-amber-500/60 hover:border-amber-400 hover:shadow-amber-500/20 group"
+                )}
+              >
+                {hasActiveDrawnShape ? (
+                  <>
+                    <X className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform" />
+                    <span className="text-[9px] font-black leading-none text-amber-400">Clear</span>
+                  </>
+                ) : isDrawing ? (
+                  <>
+                    <X className="w-5 h-5 text-slate-950" />
+                    <span className="text-[9px] font-black leading-none text-slate-950">Cancel</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="relative flex items-center justify-center">
+                      <Pencil className="w-5 h-5 text-amber-400 group-hover:scale-110 group-hover:rotate-12 transition-transform" />
+                      <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                    </div>
+                    <span className="text-[9px] font-black leading-none bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">
+                      Draw
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* 3. RADIUS / CIRCLE LENS BUTTON */}
             <button
               type="button"
               onClick={() => {
-                if (lensBounds || lensDrag) {
-                  handleClearLens();
+                if (drawnCircle || circleDrag || lensBounds || lensDrag) {
+                  handleClearCircle();
                 } else if (isLensSearchActive) {
-                  handleCloseLens();
+                  handleCloseCircle();
                 } else {
+                  handleClearDraw();
                   setIsLensSearchActive(true);
                   setShowLayerPanel(false);
                 }
               }}
-              title={lensBounds ? "Clear Drawn Frame" : isLensSearchActive ? "Cancel Drawing" : "Draw Area to Search"}
+              title={drawnCircle || lensBounds ? "Clear Drawn Circle" : isLensSearchActive ? "Cancel Drawing" : "Radius Circle Search on Map"}
               className={cn(
                 "w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 active:scale-95 cursor-pointer border shrink-0",
-                lensBounds
+                drawnCircle || lensBounds
                   ? "bg-slate-950 text-white border-blue-400 hover:bg-slate-900"
                   : isLensSearchActive
                   ? "bg-gradient-to-tr from-blue-600 to-indigo-600 text-white border-blue-300 font-black animate-pulse shadow-blue-500/40"
                   : "bg-slate-950 text-white border-blue-500/50 hover:border-blue-400 group"
               )}
             >
-              {lensBounds ? (
+              {drawnCircle || lensBounds ? (
                 <><X className="w-5 h-5 text-blue-400" /><span className="text-[9px] font-black leading-none text-blue-400">Clear</span></>
               ) : isLensSearchActive ? (
                 <><X className="w-5 h-5 text-white" /><span className="text-[9px] font-black leading-none">Cancel</span></>
               ) : (
                 <>
                   <div className="relative flex items-center justify-center">
-                    <Pencil className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
-                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-blue-400 animate-ping" />
+                    <CircleDot className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
                   </div>
-                  <span className="text-[9px] font-black leading-none bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Draw</span>
+                  <span className="text-[9px] font-black leading-none text-slate-300 group-hover:text-white">Radius</span>
                 </>
               )}
             </button>
@@ -3246,121 +3510,191 @@ const BUDGET_PRESETS = [
             
           </div>
 
-          {/* GOOGLE CIRCLE TO SEARCH: Active Prompt & Completed Banner */}
+          {/* PENCIL / FREEHAND DRAW SEARCH: Active Prompt Bar */}
           {isDrawing && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[550] bg-slate-950/95 text-white border border-cyan-400/60 backdrop-blur-xl px-4 sm:px-5 py-2.5 rounded-full shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs font-bold text-slate-100">
-                Circle anywhere on the map to search
-              </span>
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[560] bg-slate-950/95 text-white border border-amber-400/80 backdrop-blur-xl px-4 sm:px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200 max-w-[96vw]">
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping shrink-0" />
+              <div className="flex items-center gap-2 min-w-0">
+                <Pencil className="w-4 h-4 text-amber-400 animate-bounce shrink-0" />
+                <span className="text-xs sm:text-sm font-extrabold text-white truncate">
+                  Click and drag anywhere to draw a shape
+                </span>
+              </div>
               <button
                 type="button"
-                onClick={() => { setIsDrawing(false); setDrawPolygonPoints([]); }}
-                className="ml-1 p-1 rounded-full text-slate-400 hover:text-white transition-colors cursor-pointer"
+                onClick={() => {
+                  setIsDrawing(false);
+                  setDrawPolygonPoints([]);
+                  drawPointsRef.current = [];
+                }}
+                className="ml-1 p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                title="Cancel Drawing (Esc)"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           )}
 
-          {drawPolygonPoints.length >= 3 && !isDrawing && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[550] bg-slate-950/95 text-white border border-cyan-400/50 backdrop-blur-xl px-4 sm:px-5 py-2 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in zoom-in-95 duration-200 max-w-[92vw]">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shrink-0 shadow-md">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
+          {/* SHAPE DRAW SEARCH: Completed Shape Results Banner */}
+          {hasActiveDrawnShape && !isDrawing && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[560] bg-slate-950/95 text-white border border-amber-400/60 backdrop-blur-xl px-4 sm:px-6 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 sm:gap-4 animate-in fade-in zoom-in-95 duration-200 max-w-[94vw]">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-md font-black bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950">
+                <Pencil className="w-4 h-4 text-slate-950" />
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="font-extrabold text-xs text-white flex items-center gap-1.5 flex-wrap">
-                  <span>Circle Search:</span>
-                  <span className="text-cyan-300 font-black">
-                    {displayedPropertiesFiltered.length} of {mapProperties.length} listings
+
+              <div className="min-w-0">
+                <div className="font-black text-xs sm:text-sm text-white flex items-center gap-1.5 flex-wrap">
+                  <span>Boundary Search:</span>
+                  <span className="text-amber-400 font-extrabold">
+                    {matchingProjectsInShape} project{matchingProjectsInShape === 1 ? "" : "s"}
+                    {matchingPropertiesInShape > 0 ? ` & ${matchingPropertiesInShape} properties` : ""}
                   </span>
+                  <span>in area</span>
                 </div>
-                <div className="text-[10px] text-slate-400 font-medium truncate">
-                  Filtered inside your circled boundary
+                <div className="text-[10px] sm:text-[11px] text-slate-400 font-medium truncate flex items-center gap-2">
+                  <span>Filtered inside your custom boundary</span>
+                  <span className="hidden sm:inline text-amber-400/80">• Drag handles to adjust</span>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleClearDraw}
-                className="ml-1 px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 hover:text-white transition-colors flex items-center gap-1 border border-slate-700 shrink-0 cursor-pointer"
-                title="Clear Circle"
-              >
-                <X className="w-3 h-3 text-cyan-400" />
-                <span>Clear</span>
-              </button>
+
+              <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                {/* Redraw Button */}
+                <button
+                  type="button"
+                  onClick={() => handleStartDraw()}
+                  className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 border border-amber-500/30 cursor-pointer"
+                  title="Draw another shape"
+                >
+                  <Pencil className="w-3 h-3" />
+                  <span className="hidden sm:inline">Redraw</span>
+                </button>
+
+                {/* Zoom to Shape Button */}
+                <button
+                  type="button"
+                  onClick={handleZoomToShape}
+                  className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 hover:text-white transition-colors flex items-center gap-1 border border-slate-700 cursor-pointer hidden md:flex"
+                  title="Zoom into drawn shape"
+                >
+                  <Maximize2 className="w-3 h-3 text-cyan-400" />
+                  <span>Fit View</span>
+                </button>
+
+                {/* Quick Toggle to Projects Only if not already */}
+                {listingTypeFilter !== "projects" && matchingProjectsInShape > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setListingTypeFilter("projects");
+                      onEntityTypeFilterChange?.("projects");
+                    }}
+                    className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                    title="Show only projects inside shape"
+                  >
+                    <Building2 className="w-3 h-3" />
+                    <span>Projects Only</span>
+                  </button>
+                )}
+
+                {/* Clear Shape Button */}
+                <button
+                  type="button"
+                  onClick={handleClearDraw}
+                  className="p-1.5 rounded-xl bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors flex items-center justify-center border border-slate-700 cursor-pointer"
+                  title="Clear shape filter (Esc)"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )}
+
 
           {/* ========================================================================
-             GOOGLE LENS / CIRCLE TO SEARCH SPOTLIGHT OVERLAY (Matches Video 2)
+             PERFECT CIRCLE SPOTLIGHT OVERLAY & DRAWING ENGINE
              ======================================================================== */}
           {isLensSearchActive && (
             <div
               ref={lensOverlayRef}
               onMouseDown={(e) => {
-                if (!lensOverlayRef.current) return;
+                if (e.button !== 0 || !lensOverlayRef.current) return;
                 const rect = lensOverlayRef.current.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
-                setLensDrag({
-                  startX: x,
-                  startY: y,
+                setCircleDrag({
+                  centerX: x,
+                  centerY: y,
                   currentX: x,
                   currentY: y,
                   isDragging: true,
-                  activeCorner: null,
+                  mode: "draw",
+                  lastPointerX: x,
+                  lastPointerY: y,
                 });
               }}
               onMouseMove={(e) => {
-                if (!lensDrag || !lensDrag.isDragging || !lensOverlayRef.current) return;
+                if (!circleDrag || !circleDrag.isDragging || !lensOverlayRef.current) return;
                 const rect = lensOverlayRef.current.getBoundingClientRect();
                 const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
                 const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
 
-                if (lensDrag.activeCorner) {
-                  let { startX, startY, currentX, currentY } = lensDrag;
-                  if (lensDrag.activeCorner === "tl") { startX = x; startY = y; }
-                  else if (lensDrag.activeCorner === "tr") { currentX = x; startY = y; }
-                  else if (lensDrag.activeCorner === "bl") { startX = x; currentY = y; }
-                  else if (lensDrag.activeCorner === "br") { currentX = x; currentY = y; }
-                  setLensDrag((prev) => prev ? { ...prev, startX, startY, currentX, currentY } : null);
+                if (circleDrag.mode === "resize") {
+                  setCircleDrag((prev) => prev ? { ...prev, currentX: x, currentY: y } : null);
+                } else if (circleDrag.mode === "move") {
+                  const lastX = circleDrag.lastPointerX ?? x;
+                  const lastY = circleDrag.lastPointerY ?? y;
+                  const deltaX = x - lastX;
+                  const deltaY = y - lastY;
+                  setCircleDrag((prev) => prev ? {
+                    ...prev,
+                    centerX: prev.centerX + deltaX,
+                    centerY: prev.centerY + deltaY,
+                    currentX: prev.currentX + deltaX,
+                    currentY: prev.currentY + deltaY,
+                    lastPointerX: x,
+                    lastPointerY: y,
+                  } : null);
                 } else {
-                  setLensDrag((prev) => prev ? { ...prev, currentX: x, currentY: y } : null);
+                  setCircleDrag((prev) => prev ? { ...prev, currentX: x, currentY: y } : null);
                 }
               }}
               onMouseUp={() => {
-                if (!lensDrag || !mapRef.current || !lensOverlayRef.current) return;
-                const minX = Math.min(lensDrag.startX, lensDrag.currentX);
-                const maxX = Math.max(lensDrag.startX, lensDrag.currentX);
-                const minY = Math.min(lensDrag.startY, lensDrag.currentY);
-                const maxY = Math.max(lensDrag.startY, lensDrag.currentY);
+                if (!circleDrag || !mapRef.current || !lensOverlayRef.current) return;
+                const { centerX, centerY, currentX, currentY, mode } = circleDrag;
+                const radiusPx = Math.hypot(currentX - centerX, currentY - centerY);
 
-                if (maxX - minX > 25 && maxY - minY > 25) {
-                  const nw = mapRef.current.containerPointToLatLng(L.point(minX, minY));
-                  const se = mapRef.current.containerPointToLatLng(L.point(maxX, maxY));
-                  const bounds = L.latLngBounds(nw, se);
-                  setLensBounds(bounds);
-                  setLensDrag({
-                    startX: minX,
-                    startY: minY,
-                    currentX: maxX,
-                    currentY: maxY,
-                    activeCorner: null,
-                    isDragging: false,
-                  });
-                  const allItems = filteredItems && Array.isArray(filteredItems) ? filteredItems : mapProperties;
-                  const inside = allItems.filter((p: any) => {
-                    const coords = resolvePropertyMapCoords(p);
-                    return bounds.contains(L.latLng(coords.lat, coords.lng));
-                  });
-                  const insideIds = inside.map((p: any) => p.id);
-                  setVisibleAreaIds(insideIds);
-                  if (onVisibleItemsChange) {
-                    onVisibleItemsChange(insideIds);
+                if (mode === "move") {
+                  if (drawnCircle) {
+                    const newCenterLatLng = mapRef.current.containerPointToLatLng(L.point(centerX, centerY));
+                    setDrawnCircle({
+                      center: { lat: newCenterLatLng.lat, lng: newCenterLatLng.lng },
+                      radiusMeters: drawnCircle.radiusMeters,
+                    });
+                    const bounds = newCenterLatLng.toBounds(drawnCircle.radiusMeters);
+                    setLensBounds(bounds);
+                    updateFilteredForCircle(newCenterLatLng, drawnCircle.radiusMeters);
                   }
-                } else if (!lensBounds) {
-                  setLensDrag(null);
+                  setCircleDrag(null);
+                  return;
+                }
+
+                if (radiusPx >= 15) {
+                  const centerLatLng = mapRef.current.containerPointToLatLng(L.point(centerX, centerY));
+                  const edgeLatLng = mapRef.current.containerPointToLatLng(L.point(currentX, currentY));
+                  const radiusMeters = Math.max(80, Math.round(centerLatLng.distanceTo(edgeLatLng)));
+                  const bounds = centerLatLng.toBounds(radiusMeters);
+
+                  setDrawnCircle({
+                    center: { lat: centerLatLng.lat, lng: centerLatLng.lng },
+                    radiusMeters,
+                  });
+                  setLensBounds(bounds);
+                  setCircleDrag(null);
+                  updateFilteredForCircle(centerLatLng, radiusMeters);
+                } else if (!drawnCircle) {
+                  setCircleDrag(null);
+                } else {
+                  setCircleDrag(null);
                 }
               }}
               onTouchStart={(e) => {
@@ -3368,120 +3702,134 @@ const BUDGET_PRESETS = [
                 const rect = lensOverlayRef.current.getBoundingClientRect();
                 const x = e.touches[0].clientX - rect.left;
                 const y = e.touches[0].clientY - rect.top;
-                setLensDrag({
-                  startX: x,
-                  startY: y,
+                setCircleDrag({
+                  centerX: x,
+                  centerY: y,
                   currentX: x,
                   currentY: y,
                   isDragging: true,
-                  activeCorner: null,
+                  mode: "draw",
+                  lastPointerX: x,
+                  lastPointerY: y,
                 });
               }}
               onTouchMove={(e) => {
-                if (!lensDrag || !lensDrag.isDragging || !lensOverlayRef.current || e.touches.length === 0) return;
+                if (!circleDrag || !circleDrag.isDragging || !lensOverlayRef.current || e.touches.length === 0) return;
                 if (e.cancelable) e.preventDefault();
                 const rect = lensOverlayRef.current.getBoundingClientRect();
                 const x = Math.max(0, Math.min(rect.width, e.touches[0].clientX - rect.left));
                 const y = Math.max(0, Math.min(rect.height, e.touches[0].clientY - rect.top));
 
-                if (lensDrag.activeCorner) {
-                  let { startX, startY, currentX, currentY } = lensDrag;
-                  if (lensDrag.activeCorner === "tl") { startX = x; startY = y; }
-                  else if (lensDrag.activeCorner === "tr") { currentX = x; startY = y; }
-                  else if (lensDrag.activeCorner === "bl") { startX = x; currentY = y; }
-                  else if (lensDrag.activeCorner === "br") { currentX = x; currentY = y; }
-                  setLensDrag((prev) => prev ? { ...prev, startX, startY, currentX, currentY } : null);
+                if (circleDrag.mode === "resize") {
+                  setCircleDrag((prev) => prev ? { ...prev, currentX: x, currentY: y } : null);
+                } else if (circleDrag.mode === "move") {
+                  const lastX = circleDrag.lastPointerX ?? x;
+                  const lastY = circleDrag.lastPointerY ?? y;
+                  const deltaX = x - lastX;
+                  const deltaY = y - lastY;
+                  setCircleDrag((prev) => prev ? {
+                    ...prev,
+                    centerX: prev.centerX + deltaX,
+                    centerY: prev.centerY + deltaY,
+                    currentX: prev.currentX + deltaX,
+                    currentY: prev.currentY + deltaY,
+                    lastPointerX: x,
+                    lastPointerY: y,
+                  } : null);
                 } else {
-                  setLensDrag((prev) => prev ? { ...prev, currentX: x, currentY: y } : null);
+                  setCircleDrag((prev) => prev ? { ...prev, currentX: x, currentY: y } : null);
                 }
               }}
               onTouchEnd={() => {
-                if (!lensDrag || !mapRef.current || !lensOverlayRef.current) return;
-                const minX = Math.min(lensDrag.startX, lensDrag.currentX);
-                const maxX = Math.max(lensDrag.startX, lensDrag.currentX);
-                const minY = Math.min(lensDrag.startY, lensDrag.currentY);
-                const maxY = Math.max(lensDrag.startY, lensDrag.currentY);
+                if (!circleDrag || !mapRef.current || !lensOverlayRef.current) return;
+                const { centerX, centerY, currentX, currentY, mode } = circleDrag;
+                const radiusPx = Math.hypot(currentX - centerX, currentY - centerY);
 
-                if (maxX - minX > 25 && maxY - minY > 25) {
-                  const nw = mapRef.current.containerPointToLatLng(L.point(minX, minY));
-                  const se = mapRef.current.containerPointToLatLng(L.point(maxX, maxY));
-                  const bounds = L.latLngBounds(nw, se);
-                  setLensBounds(bounds);
-                  setLensDrag({
-                    startX: minX,
-                    startY: minY,
-                    currentX: maxX,
-                    currentY: maxY,
-                    activeCorner: null,
-                    isDragging: false,
-                  });
-                  const allItems = filteredItems && Array.isArray(filteredItems) ? filteredItems : mapProperties;
-                  const inside = allItems.filter((p: any) => {
-                    const coords = resolvePropertyMapCoords(p);
-                    return bounds.contains(L.latLng(coords.lat, coords.lng));
-                  });
-                  const insideIds = inside.map((p: any) => p.id);
-                  setVisibleAreaIds(insideIds);
-                  if (onVisibleItemsChange) {
-                    onVisibleItemsChange(insideIds);
+                if (mode === "move") {
+                  if (drawnCircle) {
+                    const newCenterLatLng = mapRef.current.containerPointToLatLng(L.point(centerX, centerY));
+                    setDrawnCircle({
+                      center: { lat: newCenterLatLng.lat, lng: newCenterLatLng.lng },
+                      radiusMeters: drawnCircle.radiusMeters,
+                    });
+                    const bounds = newCenterLatLng.toBounds(drawnCircle.radiusMeters);
+                    setLensBounds(bounds);
+                    updateFilteredForCircle(newCenterLatLng, drawnCircle.radiusMeters);
                   }
-                } else if (!lensBounds) {
-                  setLensDrag(null);
+                  setCircleDrag(null);
+                  return;
+                }
+
+                if (radiusPx >= 15) {
+                  const centerLatLng = mapRef.current.containerPointToLatLng(L.point(centerX, centerY));
+                  const edgeLatLng = mapRef.current.containerPointToLatLng(L.point(currentX, currentY));
+                  const radiusMeters = Math.max(80, Math.round(centerLatLng.distanceTo(edgeLatLng)));
+                  const bounds = centerLatLng.toBounds(radiusMeters);
+
+                  setDrawnCircle({
+                    center: { lat: centerLatLng.lat, lng: centerLatLng.lng },
+                    radiusMeters,
+                  });
+                  setLensBounds(bounds);
+                  setCircleDrag(null);
+                  updateFilteredForCircle(centerLatLng, radiusMeters);
+                } else if (!drawnCircle) {
+                  setCircleDrag(null);
+                } else {
+                  setCircleDrag(null);
                 }
               }}
               className="absolute inset-0 z-[650] select-none touch-none cursor-crosshair overflow-hidden"
             >
-              {/* SVG Scrim with Spotlight Cutout */}
               {(() => {
-                let boxLeft = 0;
-                let boxTop = 0;
-                let boxWidth = 0;
-                let boxHeight = 0;
+                let circleCenterX = 0;
+                let circleCenterY = 0;
+                let circleRadiusPx = 0;
+                let circleRadiusMeters = 0;
 
-                if (lensDrag && (lensDrag.isDragging || !lensBounds)) {
-                  boxLeft = Math.min(lensDrag.startX, lensDrag.currentX);
-                  boxTop = Math.min(lensDrag.startY, lensDrag.currentY);
-                  boxWidth = Math.max(lensDrag.startX, lensDrag.currentX) - boxLeft;
-                  boxHeight = Math.max(lensDrag.startY, lensDrag.currentY) - boxTop;
-                } else if (lensBounds && mapRef.current) {
+                if (circleDrag && circleDrag.isDragging) {
+                  circleCenterX = circleDrag.centerX;
+                  circleCenterY = circleDrag.centerY;
+                  circleRadiusPx = Math.max(12, Math.hypot(circleDrag.currentX - circleDrag.centerX, circleDrag.currentY - circleDrag.centerY));
+                  if (mapRef.current) {
+                    try {
+                      const cLatLng = mapRef.current.containerPointToLatLng(L.point(circleCenterX, circleCenterY));
+                      const eLatLng = mapRef.current.containerPointToLatLng(L.point(circleDrag.currentX, circleDrag.currentY));
+                      circleRadiusMeters = Math.max(50, Math.round(cLatLng.distanceTo(eLatLng)));
+                    } catch {}
+                  }
+                } else if (drawnCircle && mapRef.current) {
                   try {
-                    const nw = mapRef.current.latLngToContainerPoint(lensBounds.getNorthWest());
-                    const se = mapRef.current.latLngToContainerPoint(lensBounds.getSouthEast());
-                    boxLeft = Math.min(nw.x, se.x);
-                    boxTop = Math.min(nw.y, se.y);
-                    boxWidth = Math.max(20, Math.abs(se.x - nw.x));
-                    boxHeight = Math.max(20, Math.abs(se.y - nw.y));
+                    const centerPt = mapRef.current.latLngToContainerPoint(L.latLng(drawnCircle.center.lat, drawnCircle.center.lng));
+                    circleCenterX = centerPt.x;
+                    circleCenterY = centerPt.y;
+                    const latOffset = (drawnCircle.radiusMeters / 6378137) * (180 / Math.PI);
+                    const edgePt = mapRef.current.latLngToContainerPoint(L.latLng(drawnCircle.center.lat + latOffset, drawnCircle.center.lng));
+                    circleRadiusPx = Math.max(14, Math.abs(edgePt.y - centerPt.y));
+                    circleRadiusMeters = drawnCircle.radiusMeters;
                   } catch (e) {
-                    if (lensDrag) {
-                      boxLeft = Math.min(lensDrag.startX, lensDrag.currentX);
-                      boxTop = Math.min(lensDrag.startY, lensDrag.currentY);
-                      boxWidth = Math.max(lensDrag.startX, lensDrag.currentX) - boxLeft;
-                      boxHeight = Math.max(lensDrag.startY, lensDrag.currentY) - boxTop;
+                    if (circleDrag) {
+                      circleCenterX = circleDrag.centerX;
+                      circleCenterY = circleDrag.centerY;
+                      circleRadiusPx = Math.max(12, Math.hypot(circleDrag.currentX - circleDrag.centerX, circleDrag.currentY - circleDrag.centerY));
                     }
                   }
-                } else if (lensDrag) {
-                  boxLeft = Math.min(lensDrag.startX, lensDrag.currentX);
-                  boxTop = Math.min(lensDrag.startY, lensDrag.currentY);
-                  boxWidth = Math.max(lensDrag.startX, lensDrag.currentX) - boxLeft;
-                  boxHeight = Math.max(lensDrag.startY, lensDrag.currentY) - boxTop;
                 }
 
-                const hasValidBox = boxWidth > 15 && boxHeight > 15;
+                const hasValidCircle = circleRadiusPx >= 14 && (Boolean(circleDrag && circleDrag.isDragging) || Boolean(drawnCircle));
 
                 return (
                   <>
+                    {/* SVG Scrim with Perfect Circle Spotlight Cutout */}
                     <svg className="absolute inset-0 w-full h-full pointer-events-none">
                       <defs>
-                        <mask id="google-lens-spotlight-mask">
+                        <mask id="perfect-circle-spotlight-mask">
                           <rect width="100%" height="100%" fill="white" />
-                          {hasValidBox && (
-                            <rect
-                              x={boxLeft}
-                              y={boxTop}
-                              width={boxWidth}
-                              height={boxHeight}
-                              rx="16"
-                              ry="16"
+                          {hasValidCircle && (
+                            <circle
+                              cx={circleCenterX}
+                              cy={circleCenterY}
+                              r={circleRadiusPx}
                               fill="black"
                             />
                           )}
@@ -3491,106 +3839,159 @@ const BUDGET_PRESETS = [
                         width="100%"
                         height="100%"
                         fill="rgba(15, 23, 42, 0.48)"
-                        mask="url(#google-lens-spotlight-mask)"
+                        mask="url(#perfect-circle-spotlight-mask)"
                       />
+
+                      {/* Luminous Glowing Rings for the Circle */}
+                      {hasValidCircle && (
+                        <g>
+                          {/* Outer soft ambient cyan glow */}
+                          <circle
+                            cx={circleCenterX}
+                            cy={circleCenterY}
+                            r={circleRadiusPx}
+                            fill="none"
+                            stroke="#38bdf8"
+                            strokeWidth="10"
+                            strokeOpacity="0.32"
+                            style={{ filter: "drop-shadow(0 0 12px rgba(56, 189, 248, 0.8))" }}
+                          />
+                          {/* Crisp white outer border */}
+                          <circle
+                            cx={circleCenterX}
+                            cy={circleCenterY}
+                            r={circleRadiusPx}
+                            fill="rgba(56, 189, 248, 0.05)"
+                            stroke="#ffffff"
+                            strokeWidth="2.5"
+                          />
+                          {/* Inner dashed high-precision ring */}
+                          <circle
+                            cx={circleCenterX}
+                            cy={circleCenterY}
+                            r={Math.max(1, circleRadiusPx - 3)}
+                            fill="none"
+                            stroke="#00e5ff"
+                            strokeWidth="1.2"
+                            strokeDasharray="4 6"
+                            strokeOpacity="0.85"
+                          />
+                        </g>
+                      )}
                     </svg>
 
-                    {/* Spotlight Framing Box (Matches Google Lens in Video 2) */}
-                    {hasValidBox && (
-                      <div
-                        className="absolute rounded-2xl pointer-events-none transition-all"
-                        style={{
-                          left: `${boxLeft}px`,
-                          top: `${boxTop}px`,
-                          width: `${boxWidth}px`,
-                          height: `${boxHeight}px`,
-                          border: "2.5px solid #ffffff",
-                          boxShadow: "0 0 24px rgba(255, 255, 255, 0.75), inset 0 0 16px rgba(255, 255, 255, 0.2)",
-                        }}
-                      >
-                        {/* Corner Bracket: Top-Left ⌜ */}
-                        <div className="absolute -top-[3px] -left-[3px] w-6 h-6 border-t-[4px] border-l-[4px] border-white rounded-tl-xl drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
-
-                        {/* Corner Bracket: Top-Right ⌝ */}
-                        <div className="absolute -top-[3px] -right-[3px] w-6 h-6 border-t-[4px] border-r-[4px] border-white rounded-tr-xl drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
-
-                        {/* Corner Bracket: Bottom-Left ⌞ */}
-                        <div className="absolute -bottom-[3px] -left-[3px] w-6 h-6 border-b-[4px] border-l-[4px] border-white rounded-bl-xl drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
-
-                        {/* Corner Bracket: Bottom-Right ⌟ */}
-                        <div className="absolute -bottom-[3px] -right-[3px] w-6 h-6 border-b-[4px] border-r-[4px] border-white rounded-br-xl drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
-
-                        {/* Draw Badge on Corner */}
-                        <div className="absolute -top-3.5 -left-3.5 w-7 h-7 rounded-full bg-white text-blue-600 shadow-xl flex items-center justify-center border border-slate-200 pointer-events-none">
-                          <Pencil className="w-3.5 h-3.5 text-blue-600" />
+                    {/* Interactive Elements on Circle */}
+                    {hasValidCircle && (
+                      <>
+                        {/* Center Pinpoint & Move Handle */}
+                        <div
+                          style={{
+                            left: `${circleCenterX}px`,
+                            top: `${circleCenterY}px`,
+                            transform: "translate(-50%, -50%)",
+                          }}
+                          className="absolute z-20 pointer-events-auto cursor-grab active:cursor-grabbing group/center"
+                          title="Click and drag to move circle"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            setCircleDrag({
+                              centerX: circleCenterX,
+                              centerY: circleCenterY,
+                              currentX: circleCenterX + circleRadiusPx,
+                              currentY: circleCenterY,
+                              isDragging: true,
+                              mode: "move",
+                              lastPointerX: circleCenterX,
+                              lastPointerY: circleCenterY,
+                            });
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            if (e.touches.length === 0) return;
+                            const rect = lensOverlayRef.current?.getBoundingClientRect();
+                            const x = e.touches[0].clientX - (rect?.left || 0);
+                            const y = e.touches[0].clientY - (rect?.top || 0);
+                            setCircleDrag({
+                              centerX: circleCenterX,
+                              centerY: circleCenterY,
+                              currentX: circleCenterX + circleRadiusPx,
+                              currentY: circleCenterY,
+                              isDragging: true,
+                              mode: "move",
+                              lastPointerX: x,
+                              lastPointerY: y,
+                            });
+                          }}
+                        >
+                          <div className="relative flex items-center justify-center">
+                            <span className="w-8 h-8 rounded-full bg-blue-500/25 animate-ping absolute" />
+                            <div className="w-6 h-6 rounded-full bg-slate-950 border-2 border-white shadow-2xl flex items-center justify-center hover:scale-110 transition-transform">
+                              <div className="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_8px_#38bdf8]" />
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Interactive Corner Resize Handles */}
-                        {(!lensDrag || !lensDrag.isDragging) && (
-                          <>
-                            <div
-                              onMouseDown={(e) => {
-                                e.stopPropagation();
-                                setLensDrag({
-                                  startX: boxLeft,
-                                  startY: boxTop,
-                                  currentX: boxLeft + boxWidth,
-                                  currentY: boxTop + boxHeight,
-                                  isDragging: true,
-                                  activeCorner: "tl",
-                                });
-                              }}
-                              className="absolute -top-3.5 -left-3.5 w-8 h-8 cursor-nwse-resize pointer-events-auto z-10"
-                              title="Drag to resize top-left"
-                            />
-                            <div
-                              onMouseDown={(e) => {
-                                e.stopPropagation();
-                                setLensDrag({
-                                  startX: boxLeft,
-                                  startY: boxTop,
-                                  currentX: boxLeft + boxWidth,
-                                  currentY: boxTop + boxHeight,
-                                  isDragging: true,
-                                  activeCorner: "tr",
-                                });
-                              }}
-                              className="absolute -top-3.5 -right-3.5 w-8 h-8 cursor-nesw-resize pointer-events-auto z-10"
-                              title="Drag to resize top-right"
-                            />
-                            <div
-                              onMouseDown={(e) => {
-                                e.stopPropagation();
-                                setLensDrag({
-                                  startX: boxLeft,
-                                  startY: boxTop,
-                                  currentX: boxLeft + boxWidth,
-                                  currentY: boxTop + boxHeight,
-                                  isDragging: true,
-                                  activeCorner: "bl",
-                                });
-                              }}
-                              className="absolute -bottom-3.5 -left-3.5 w-8 h-8 cursor-nesw-resize pointer-events-auto z-10"
-                              title="Drag to resize bottom-left"
-                            />
-                            <div
-                              onMouseDown={(e) => {
-                                e.stopPropagation();
-                                setLensDrag({
-                                  startX: boxLeft,
-                                  startY: boxTop,
-                                  currentX: boxLeft + boxWidth,
-                                  currentY: boxTop + boxHeight,
-                                  isDragging: true,
-                                  activeCorner: "br",
-                                });
-                              }}
-                              className="absolute -bottom-3.5 -right-3.5 w-8 h-8 cursor-nwse-resize pointer-events-auto z-10"
-                              title="Drag to resize bottom-right"
-                            />
-                          </>
+                        {/* Perimeter Resize Handle (at 3 o'clock) */}
+                        {(!circleDrag || !circleDrag.isDragging) && (
+                          <div
+                            style={{
+                              left: `${circleCenterX + circleRadiusPx}px`,
+                              top: `${circleCenterY}px`,
+                              transform: "translate(-50%, -50%)",
+                            }}
+                            className="absolute z-20 pointer-events-auto cursor-ew-resize hover:scale-110 active:scale-95 transition-transform"
+                            title="Drag to resize radius"
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              setCircleDrag({
+                                centerX: circleCenterX,
+                                centerY: circleCenterY,
+                                currentX: circleCenterX + circleRadiusPx,
+                                currentY: circleCenterY,
+                                isDragging: true,
+                                mode: "resize",
+                              });
+                            }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              if (e.touches.length === 0) return;
+                              setCircleDrag({
+                                centerX: circleCenterX,
+                                centerY: circleCenterY,
+                                currentX: circleCenterX + circleRadiusPx,
+                                currentY: circleCenterY,
+                                isDragging: true,
+                                mode: "resize",
+                              });
+                            }}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-white text-blue-600 border-2 border-blue-500 shadow-2xl flex items-center justify-center font-bold">
+                              <Maximize2 className="w-3.5 h-3.5 rotate-45 text-blue-600" />
+                            </div>
+                            <div className="absolute left-10 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md bg-slate-950/90 text-white text-[10px] font-bold whitespace-nowrap shadow-md pointer-events-none hidden sm:block">
+                              Resize radius
+                            </div>
+                          </div>
                         )}
-                      </div>
+
+                        {/* Floating Radius & Count Pill on top of Circle */}
+                        <div
+                          style={{
+                            left: `${circleCenterX}px`,
+                            top: `${Math.max(16, circleCenterY - circleRadiusPx - 14)}px`,
+                            transform: "translate(-50%, -100%)",
+                          }}
+                          className="absolute pointer-events-none z-20 px-3.5 py-1.5 rounded-full bg-slate-950/95 text-white border border-blue-400/80 shadow-2xl backdrop-blur-xl flex items-center gap-2 whitespace-nowrap animate-in fade-in zoom-in-95 duration-150"
+                        >
+                          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                          <span className="text-xs font-black text-white">
+                            {formatCircleRadius(circleRadiusMeters)} Radius
+                          </span>
+                          <span className="text-[11px] font-semibold text-slate-300">
+                            • {displayedPropertiesFiltered.length} {displayedPropertiesFiltered.length === 1 ? "Listing" : "Listings"} Found
+                          </span>
+                        </div>
+                      </>
                     )}
                   </>
                 );
@@ -3600,12 +4001,12 @@ const BUDGET_PRESETS = [
               <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[660] bg-slate-950/95 text-white border border-slate-700/80 backdrop-blur-xl px-4 py-1.5 sm:py-2 rounded-full shadow-2xl flex items-center gap-2 max-w-[92vw] animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-auto">
                 <div className="w-2 h-2 rounded-full bg-blue-400 animate-ping shrink-0" />
                 <span className="text-[11px] sm:text-xs font-black flex items-center gap-1.5 whitespace-nowrap truncate">
-                  <Pencil className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  <span>{lensBounds ? "Framed Area Selected" : "Drag to frame or draw map area"}</span>
+                  <CircleDot className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span>{drawnCircle ? `Circle Selected • ${formatCircleRadius(drawnCircle.radiusMeters)} radius` : (circleDrag?.isDragging ? "Expanding circle..." : "Drag anywhere on map to draw a perfect circle")}</span>
                 </span>
                 <button
                   type="button"
-                  onClick={handleCloseLens}
+                  onClick={handleCloseCircle}
                   className="ml-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
                   title="Close Search"
                 >
@@ -3614,7 +4015,7 @@ const BUDGET_PRESETS = [
               </div>
 
               {/* Bottom Results Pill (Desktop only; on mobile we keep the clean 'Properties Found' button) */}
-              {lensBounds && !showPropertiesTray && (
+              {drawnCircle && !showPropertiesTray && (
                 <div className="hidden md:flex absolute bottom-4 left-6 max-w-sm z-[660] bg-slate-950/95 text-white border border-slate-700/80 backdrop-blur-xl p-3.5 sm:p-4 rounded-2xl shadow-2xl flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-auto">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -3626,7 +4027,7 @@ const BUDGET_PRESETS = [
                           Search: {displayedPropertiesFiltered.length} {displayedPropertiesFiltered.length === 1 ? "Listing" : "Listings"} Found
                         </div>
                         <div className="text-[10px] text-slate-400">
-                          Inside framed spotlight area
+                          Inside {formatCircleRadius(drawnCircle.radiusMeters)} circle radius
                         </div>
                       </div>
                     </div>
@@ -3634,11 +4035,11 @@ const BUDGET_PRESETS = [
                   <div className="flex items-center gap-2 pt-1.5 border-t border-slate-800">
                     <button
                       type="button"
-                      onClick={handleClearLens}
+                      onClick={handleClearCircle}
                       className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
-                      <span>Clear Frame</span>
+                      <span>Clear Circle</span>
                     </button>
                     <button
                       type="button"
@@ -3678,7 +4079,9 @@ const BUDGET_PRESETS = [
                     : (displayedPropertiesFiltered.length === 1 ? "Property" : "Properties");
                   return <span>{displayedPropertiesFiltered.length} {entityLabel} Found</span>;
                 })()}
-                {lensBounds ? (
+                {drawnCircle ? (
+                  <span className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-2 py-0.5 rounded-full text-[10px] font-black shadow-xs flex items-center gap-1"><Sparkles className="w-2.5 h-2.5" /> Circle ({formatCircleRadius(drawnCircle.radiusMeters)})</span>
+                ) : lensBounds ? (
                   <span className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-2 py-0.5 rounded-full text-[10px] font-black shadow-xs flex items-center gap-1"><Sparkles className="w-2.5 h-2.5" /> Framed</span>
                 ) : drawPolygonPoints.length >= 3 ? (
                   <span className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-2 py-0.5 rounded-full text-[10px] font-black shadow-xs flex items-center gap-1"><Sparkles className="w-2.5 h-2.5" /> Circled Area</span>
@@ -3935,9 +4338,13 @@ const BUDGET_PRESETS = [
             <MapInvalidator />
 
             {/* Automatically moves out to fit and show all properties by default */}
-            <AutoFitBoundsController items={mapMarkerItems} />
+            <AutoFitBoundsController
+              items={mapMarkerItems}
+              isDrawing={isDrawing}
+              hasActiveShape={hasActiveDrawnShape}
+            />
 
-            <FreehandDrawListener
+            <MapDrawingController
               isDrawing={isDrawing}
               onDrawStart={handleDrawStart}
               onDrawMove={handleDrawMove}
@@ -3949,9 +4356,38 @@ const BUDGET_PRESETS = [
               mapProperties={displayedProperties}
               displayedProperties={displayedProperties}
               lensBounds={lensBounds}
+              drawnCircle={drawnCircle}
+              drawPolygonPoints={drawPolygonPoints}
               onVisibleItemsChange={onVisibleItemsChange}
               onVisibleAreaChange={setVisibleAreaIds}
             />
+
+            {/* Render Geographic Circle on Map Layer */}
+            {drawnCircle && (
+              <>
+                <Circle
+                  center={[drawnCircle.center.lat, drawnCircle.center.lng]}
+                  radius={drawnCircle.radiusMeters}
+                  pathOptions={{
+                    color: "#38bdf8",
+                    weight: 6,
+                    opacity: 0.35,
+                    fillColor: "#0284c7",
+                    fillOpacity: 0.08,
+                  }}
+                />
+                <Circle
+                  center={[drawnCircle.center.lat, drawnCircle.center.lng]}
+                  radius={drawnCircle.radiusMeters}
+                  pathOptions={{
+                    color: "#ffffff",
+                    weight: 2.5,
+                    opacity: 0.95,
+                    fillColor: "transparent",
+                  }}
+                />
+              </>
+            )}
 
 
             <GoogleMapLayer type={mapLayerType === "streets" ? "roadmap" : mapLayerType === "terrain" ? "terrain" : "hybrid"} />
@@ -4016,14 +4452,14 @@ const BUDGET_PRESETS = [
 
 
 
-            {/* Active Circle Sketching Polyline (Google Circle to Search Glowing Trail) */}
+            {/* Active Drawing Polyline (Freehand trail while dragging) */}
             {isDrawing && drawPolygonPoints.length > 0 && (
               <>
                 <Polyline
                   positions={drawPolygonPoints}
                   pathOptions={{
-                    color: "#38bdf8",
-                    weight: 8,
+                    color: "#f59e0b",
+                    weight: 9,
                     opacity: 0.45,
                     lineCap: "round",
                     lineJoin: "round",
@@ -4032,7 +4468,7 @@ const BUDGET_PRESETS = [
                 <Polyline
                   positions={drawPolygonPoints}
                   pathOptions={{
-                    color: "#00E5FF",
+                    color: "#f1a010",
                     weight: 3.5,
                     opacity: 1,
                     lineCap: "round",
@@ -4042,37 +4478,76 @@ const BUDGET_PRESETS = [
               </>
             )}
 
-            {/* Render Completed Google Circle to Search Luminous Boundary */}
+            {/* Render Completed Freehand Boundary Shape */}
             {!isDrawing && drawPolygonPoints.length >= 3 && (
               <>
                 <Polygon
                   positions={drawPolygonPoints}
                   pathOptions={{
-                    color: "#38bdf8",
+                    color: "#f59e0b",
                     weight: 7,
                     opacity: 0.4,
-                    fillColor: "#00E5FF",
-                    fillOpacity: 0.14,
+                    fillColor: "#fbbf24",
+                    fillOpacity: 0.16,
                     lineCap: "round",
                     lineJoin: "round",
-                    className: "google-circle-outer",
+                    className: "pencil-shape-outer",
                   }}
                 />
                 <Polygon
                   positions={drawPolygonPoints}
                   pathOptions={{
-                    color: "#00E5FF",
+                    color: "#f1a010",
                     weight: 3,
                     opacity: 0.95,
+                    dashArray: "6, 6",
                     fillColor: "transparent",
                     fillOpacity: 0,
                     lineCap: "round",
                     lineJoin: "round",
-                    className: "google-circle-polygon",
+                    className: "pencil-shape-polygon",
                   }}
                 />
               </>
             )}
+
+            {/* Draggable Corner Handles for Completed Freehand Shape */}
+            {!isDrawing && hasActiveDrawnShape && (
+              <>
+                {(drawPolygonPoints.length > 16
+                  ? drawPolygonPoints.filter((_, idx) => idx % Math.ceil(drawPolygonPoints.length / 10) === 0)
+                  : drawPolygonPoints.slice(
+                      0,
+                      drawPolygonPoints.length > 3 && drawPolygonPoints[0].equals(drawPolygonPoints[drawPolygonPoints.length - 1])
+                        ? drawPolygonPoints.length - 1
+                        : drawPolygonPoints.length
+                    )
+                ).map((pt, i) => {
+                  const actualIndex = drawPolygonPoints.indexOf(pt);
+                  return (
+                    <Marker
+                      key={`vertex-handle-${i}-${pt.lat.toFixed(5)}-${pt.lng.toFixed(5)}`}
+                      position={pt}
+                      draggable={true}
+                      icon={L.divIcon({
+                        className: "vertex-handle-div",
+                        html: `<div style="width:14px;height:14px;border-radius:50%;background:#ffffff;border:2.5px solid #f59e0b;box-shadow:0 0 8px rgba(245,158,11,0.7), 0 2px 4px rgba(0,0,0,0.4);cursor:grab;transition:transform 0.15s ease;" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'"></div>`,
+                        iconSize: [14, 14],
+                        iconAnchor: [7, 7],
+                      })}
+                      eventHandlers={{
+                        drag: (e) => {
+                          const newPos = (e.target as L.Marker).getLatLng();
+                          handleVertexDrag(actualIndex >= 0 ? actualIndex : i, newPos);
+                        },
+                        dragend: handleVertexDragEnd,
+                      }}
+                    />
+                  );
+                })}
+              </>
+            )}
+
 
             {/* Realtor.com Style Price Pill Markers */}
             {mapMarkerItems.map((property) => {

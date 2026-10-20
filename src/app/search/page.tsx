@@ -119,6 +119,7 @@ function UnifiedSearchPage() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [visibleMapIds, setVisibleMapIds] = useState<string[] | null>(null);
+  const [triggerDrawOnMap, setTriggerDrawOnMap] = useState(false);
   const listPaneRef = useRef<HTMLDivElement>(null);
 
   const handleVisibleItemsChange = useCallback((ids: string[]) => {
@@ -1100,6 +1101,8 @@ function UnifiedSearchPage() {
                   properties: propCount,
                   projects: projCount,
                 }}
+                triggerDraw={triggerDrawOnMap}
+                onTriggerDrawHandled={() => setTriggerDrawOnMap(false)}
               />
             </div>
           )}

@@ -417,6 +417,7 @@ export function RealtorSearchHeader({
                 </>
               )}
             </button>
+
           </div>
 
           {/* ROW 2: FILTERS */}

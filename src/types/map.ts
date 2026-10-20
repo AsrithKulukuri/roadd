@@ -51,5 +51,7 @@ export interface PropertyMapProps {
   };
   activeFilters?: FilterState;
   onFiltersChange?: (filters: FilterState | ((prev: FilterState) => FilterState)) => void;
+  triggerDraw?: boolean;
+  onTriggerDrawHandled?: () => void;
 }
 

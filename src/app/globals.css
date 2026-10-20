@@ -850,3 +850,35 @@ svg.lucide {
   filter: blur(1.5px);
 }
 
+/* ========================================================================
+   Pencil Draw to Search Map Animation & Glow
+   ======================================================================== */
+@keyframes pencilGlowPulse {
+  0%, 100% {
+    stroke-opacity: 0.95;
+    filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.85));
+  }
+  50% {
+    stroke-opacity: 0.75;
+    filter: drop-shadow(0 0 18px rgba(251, 191, 36, 0.95));
+  }
+}
+
+.pencil-shape-polygon {
+  animation: pencilGlowPulse 2.4s infinite ease-in-out;
+}
+
+.pencil-shape-outer {
+  filter: blur(1.5px);
+}
+
+.pencil-drawing-active {
+  cursor: crosshair !important;
+  user-select: none !important;
+  touch-action: none !important;
+}
+
+.pencil-drawing-active * {
+  cursor: crosshair !important;
+}
+

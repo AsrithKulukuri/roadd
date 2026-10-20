@@ -36,6 +36,8 @@ interface MapWrapperProps {
   };
   activeFilters?: FilterState;
   onFiltersChange?: (filters: FilterState | ((prev: FilterState) => FilterState)) => void;
+  triggerDraw?: boolean;
+  onTriggerDrawHandled?: () => void;
 }
 
 export function MapWrapper({
@@ -47,6 +49,8 @@ export function MapWrapper({
   counts,
   activeFilters,
   onFiltersChange,
+  triggerDraw,
+  onTriggerDrawHandled,
 }: MapWrapperProps) {
   return (
     <div className="w-full h-full min-h-[400px] relative flex-1 overscroll-contain touch-none">
@@ -59,6 +63,8 @@ export function MapWrapper({
         counts={counts}
         activeFilters={activeFilters}
         onFiltersChange={onFiltersChange}
+        triggerDraw={triggerDraw}
+        onTriggerDrawHandled={onTriggerDrawHandled}
       />
     </div>
   );
