@@ -118,6 +118,7 @@ export function ShelfEditor({
 
   // Preview & Workspace Controls
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [mobileWorkspaceTab, setMobileWorkspaceTab] = useState<"settings" | "preview" | "inspector">("preview");
   const [itemTypeView, setItemTypeView] = useState<"all" | "property" | "project">("all");
   const [leftTab, setLeftTab] = useState<"settings" | "carousel" | "style" | "images" | "content">("settings");
   const [carouselDeviceTab, setCarouselDeviceTab] = useState<"desktop" | "mobile">("desktop");
@@ -335,28 +336,28 @@ export function ShelfEditor({
   ];
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-950 text-slate-100 overflow-hidden font-sans select-none">
+    <div className="fixed inset-0 z-50 flex flex-col w-full h-[100dvh] bg-slate-950 text-slate-100 overflow-hidden font-sans select-none">
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* TOP WORKSPACE NAVIGATION & CONTROLS */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <header className="h-14 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-30">
-        <div className="flex items-center gap-3">
+      <header className="h-14 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md px-3 sm:px-4 flex items-center justify-between shrink-0 z-30">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button
             type="button"
             onClick={onBack}
-            className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold"
+            className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold touch-manipulation shrink-0"
           >
             <ChevronLeft className="w-4 h-4" />
-            <span>Overview</span>
+            <span className="hidden sm:inline">Overview</span>
           </button>
-          <div className="h-4 w-px bg-slate-800" />
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold text-sm text-white truncate max-w-[200px] sm:max-w-[300px]">
+          <div className="h-4 w-px bg-slate-800 shrink-0" />
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <span className="font-extrabold text-xs sm:text-sm text-white truncate max-w-[110px] xs:max-w-[160px] sm:max-w-[240px] md:max-w-[300px]">
               {currentShelf.name || "Untitled Shelf"}
             </span>
             <span
               className={cn(
-                "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider",
+                "px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider shrink-0",
                 currentShelf.status === "published"
                   ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                   : currentShelf.status === "draft"
@@ -370,8 +371,31 @@ export function ShelfEditor({
         </div>
 
         {/* Center: Device Switcher & Undo/Redo */}
-        <div className="hidden md:flex items-center gap-4">
-          <div className="flex items-center bg-slate-950 rounded-xl p-1 border border-slate-800">
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Undo/Redo buttons (visible on mobile and desktop) */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleUndo}
+              disabled={historyIndex === 0}
+              title="Undo change"
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-300 cursor-pointer touch-manipulation active:scale-95"
+            >
+              <Undo2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleRedo}
+              disabled={historyIndex >= history.length - 1}
+              title="Redo change"
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-300 cursor-pointer touch-manipulation active:scale-95"
+            >
+              <Redo2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+          </div>
+
+          {/* Desktop/Tablet/Mobile Canvas Size Switcher */}
+          <div className="hidden md:flex items-center bg-slate-950 rounded-xl p-1 border border-slate-800 ml-2">
             <button
               type="button"
               onClick={() => {
@@ -412,47 +436,27 @@ export function ShelfEditor({
               <Smartphone className="w-4 h-4" />
             </button>
           </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={handleUndo}
-              disabled={historyIndex === 0}
-              title="Undo change"
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-300 cursor-pointer"
-            >
-              <Undo2 className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={handleRedo}
-              disabled={historyIndex >= history.length - 1}
-              title="Redo change"
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-300 cursor-pointer"
-            >
-              <Redo2 className="w-4 h-4" />
-            </button>
-          </div>
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="px-3.5 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="px-2.5 sm:px-3.5 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer disabled:opacity-50 touch-manipulation active:scale-95"
           >
-            <Save className="w-3.5 h-3.5 text-amber-400" />
-            <span>{isSaving ? "Saving..." : "Save Draft"}</span>
+            <Save className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="hidden xs:inline">{isSaving ? "Saving..." : "Save Draft"}</span>
+            <span className="xs:hidden">{isSaving ? "..." : "Save"}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setShowPublishModal(true)}
-            className="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-amber-500/20 active:scale-95 transition-all"
+            className="px-3 sm:px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1 cursor-pointer shadow-md shadow-amber-500/20 active:scale-95 transition-all touch-manipulation"
           >
-            <Send className="w-3.5 h-3.5" />
+            <Send className="w-3.5 h-3.5 shrink-0" />
             <span>Publish</span>
           </button>
         </div>
@@ -472,20 +476,74 @@ export function ShelfEditor({
       )}
 
       {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* MOBILE WORKSPACE TAB SELECTOR (Phone & Tablet < lg) */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <div className="lg:hidden flex items-center bg-slate-900 border-b border-slate-800 p-1.5 gap-1 shrink-0 z-20">
+        <button
+          type="button"
+          onClick={() => setMobileWorkspaceTab("settings")}
+          className={cn(
+            "flex-1 py-1.5 px-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer touch-manipulation",
+            mobileWorkspaceTab === "settings"
+              ? "bg-amber-500 text-slate-950 shadow-md"
+              : "text-slate-400 hover:text-white bg-slate-950/60"
+          )}
+        >
+          <Settings className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">Controls</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileWorkspaceTab("preview")}
+          className={cn(
+            "flex-1 py-1.5 px-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer relative touch-manipulation",
+            mobileWorkspaceTab === "preview"
+              ? "bg-amber-500 text-slate-950 shadow-md"
+              : "text-slate-400 hover:text-white bg-slate-950/60"
+          )}
+        >
+          <Eye className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">Live Canvas</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5 shrink-0" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileWorkspaceTab("inspector")}
+          className={cn(
+            "flex-1 py-1.5 px-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer touch-manipulation",
+            mobileWorkspaceTab === "inspector"
+              ? "bg-amber-500 text-slate-950 shadow-md"
+              : "text-slate-400 hover:text-white bg-slate-950/60"
+          )}
+        >
+          <Sliders className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">Inspector</span>
+        </button>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
       {/* THREE-PANEL VISUAL WORKSPACE */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* ───────────────────────────────────────────────────────────────── */}
         {/* LEFT PANEL: Shelf Settings & Content Controls */}
         {/* ───────────────────────────────────────────────────────────────── */}
-        <aside className="w-80 md:w-96 border-r border-slate-800 bg-slate-900 flex flex-col shrink-0 overflow-hidden">
+        <aside
+          className={cn(
+            "border-r border-slate-800 bg-slate-900 flex-col overflow-hidden shrink-0",
+            mobileWorkspaceTab === "settings" ? "flex w-full flex-1" : "hidden",
+            "lg:flex lg:w-80 xl:w-96"
+          )}
+        >
           {/* Tabs */}
-          <div className="flex border-b border-slate-800 bg-slate-950 text-xs font-bold">
+          <div className="flex border-b border-slate-800 bg-slate-950 text-xs font-bold overflow-x-auto no-scrollbar shrink-0">
             <button
               type="button"
               onClick={() => setLeftTab("settings")}
               className={cn(
-                "flex-1 py-2.5 text-center transition-colors border-b-2",
+                "flex-1 min-w-[70px] py-2.5 px-2 text-center transition-colors border-b-2 touch-manipulation",
                 leftTab === "settings"
                   ? "border-amber-500 text-amber-400 bg-amber-500/5"
                   : "border-transparent text-slate-400 hover:text-white"
@@ -497,20 +555,20 @@ export function ShelfEditor({
               type="button"
               onClick={() => setLeftTab("carousel")}
               className={cn(
-                "flex-1 py-2.5 text-center transition-colors border-b-2 flex items-center justify-center gap-1",
+                "flex-1 min-w-[80px] py-2.5 px-2 text-center transition-colors border-b-2 flex items-center justify-center gap-1 touch-manipulation",
                 leftTab === "carousel"
                   ? "border-amber-500 text-amber-400 bg-amber-500/5"
                   : "border-transparent text-slate-400 hover:text-white"
               )}
             >
-              <Repeat className="w-3.5 h-3.5" />
+              <Repeat className="w-3.5 h-3.5 shrink-0" />
               <span>Carousel</span>
             </button>
             <button
               type="button"
               onClick={() => setLeftTab("style")}
               className={cn(
-                "flex-1 py-2.5 text-center transition-colors border-b-2",
+                "flex-1 min-w-[80px] py-2.5 px-2 text-center transition-colors border-b-2 touch-manipulation",
                 leftTab === "style"
                   ? "border-amber-500 text-amber-400 bg-amber-500/5"
                   : "border-transparent text-slate-400 hover:text-white"
@@ -522,7 +580,7 @@ export function ShelfEditor({
               type="button"
               onClick={() => setLeftTab("images")}
               className={cn(
-                "flex-1 py-2.5 text-center transition-colors border-b-2",
+                "flex-1 min-w-[65px] py-2.5 px-2 text-center transition-colors border-b-2 touch-manipulation",
                 leftTab === "images"
                   ? "border-amber-500 text-amber-400 bg-amber-500/5"
                   : "border-transparent text-slate-400 hover:text-white"
@@ -534,7 +592,7 @@ export function ShelfEditor({
               type="button"
               onClick={() => setLeftTab("content")}
               className={cn(
-                "flex-1 py-2.5 text-center transition-colors border-b-2",
+                "flex-1 min-w-[90px] py-2.5 px-2 text-center transition-colors border-b-2 touch-manipulation",
                 leftTab === "content"
                   ? "border-amber-500 text-amber-400 bg-amber-500/5"
                   : "border-transparent text-slate-400 hover:text-white"
@@ -1976,17 +2034,23 @@ export function ShelfEditor({
         {/* ───────────────────────────────────────────────────────────────── */}
         {/* CENTER PANEL: Interactive Canvas & Live Preview */}
         {/* ───────────────────────────────────────────────────────────────── */}
-        <main className="flex-1 bg-slate-900/40 flex flex-col items-center overflow-y-auto p-4 sm:p-6 relative">
+        <main
+          className={cn(
+            "bg-slate-900/40 flex-col items-center overflow-y-auto p-3 sm:p-6 relative",
+            mobileWorkspaceTab === "preview" ? "flex w-full flex-1" : "hidden",
+            "lg:flex lg:flex-1"
+          )}
+        >
           {/* Canvas Sub-toolbar */}
-          <div className="w-full max-w-5xl mb-4 flex items-center justify-between text-xs text-slate-400">
+          <div className="w-full max-w-5xl mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
             <div className="flex items-center gap-2">
-              <span className="font-bold">Preview Target:</span>
+              <span className="font-bold">Preview:</span>
               <div className="flex rounded-lg bg-slate-900 border border-slate-800 p-0.5">
                 <button
                   type="button"
                   onClick={() => setItemTypeView("all")}
                   className={cn(
-                    "px-2.5 py-1 rounded font-bold cursor-pointer transition-colors",
+                    "px-2 sm:px-2.5 py-1 rounded font-bold cursor-pointer transition-colors touch-manipulation",
                     itemTypeView === "all" ? "bg-amber-500 text-slate-950" : "hover:text-white"
                   )}
                 >
@@ -1996,7 +2060,7 @@ export function ShelfEditor({
                   type="button"
                   onClick={() => setItemTypeView("property")}
                   className={cn(
-                    "px-2.5 py-1 rounded font-bold cursor-pointer transition-colors",
+                    "px-2 sm:px-2.5 py-1 rounded font-bold cursor-pointer transition-colors touch-manipulation",
                     itemTypeView === "property" ? "bg-amber-500 text-slate-950" : "hover:text-white"
                   )}
                 >
@@ -2006,7 +2070,7 @@ export function ShelfEditor({
                   type="button"
                   onClick={() => setItemTypeView("project")}
                   className={cn(
-                    "px-2.5 py-1 rounded font-bold cursor-pointer transition-colors",
+                    "px-2 sm:px-2.5 py-1 rounded font-bold cursor-pointer transition-colors touch-manipulation",
                     itemTypeView === "project" ? "bg-amber-500 text-slate-950" : "hover:text-white"
                   )}
                 >
@@ -2101,12 +2165,12 @@ export function ShelfEditor({
               /* Device Mockup Shell */
               <div
                 className={cn(
-                  "transition-all duration-300 mx-auto",
+                  "transition-all duration-300 mx-auto w-full",
                   deviceMode === "mobile"
-                    ? "w-[375px] border-4 border-slate-800 rounded-3xl p-3 bg-slate-950 shadow-2xl min-h-[660px]"
+                    ? "max-w-[375px] border-2 sm:border-4 border-slate-800 rounded-2xl sm:rounded-3xl p-2 sm:p-3 bg-slate-950 shadow-2xl min-h-[500px]"
                     : deviceMode === "tablet"
-                    ? "w-[768px] border-4 border-slate-800 rounded-3xl p-4 bg-slate-950 shadow-2xl min-h-[700px]"
-                    : "w-full max-w-6xl"
+                    ? "max-w-[768px] border-2 sm:border-4 border-slate-800 rounded-2xl sm:rounded-3xl p-3 sm:p-4 bg-slate-950 shadow-2xl min-h-[600px]"
+                    : "max-w-6xl"
                 )}
               >
                 {/* Shelf Section Container with Dynamic Border & Background */}
@@ -2303,12 +2367,49 @@ export function ShelfEditor({
               </div>
             );
           })()}
+
+          {/* Mobile Quick Inspector Jumper (Phone & Tablet < lg) */}
+          <div className="lg:hidden sticky bottom-2 z-30 mt-4 px-3 py-2 rounded-xl bg-slate-900/95 backdrop-blur-md border border-slate-800 shadow-xl flex items-center justify-between gap-2 max-w-md w-full">
+            <div className="flex items-center gap-1.5 text-xs truncate">
+              <span className="text-slate-400">Target:</span>
+              <span className="font-bold text-amber-400 truncate max-w-[120px]">
+                {activeItem?.customHeadline || (activeItem ? ("title" in activeItem ? activeItem.title : activeItem.name) : "Card")}
+              </span>
+              <span className="text-slate-500 font-mono text-[10px]">({selectedElementId})</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMobileWorkspaceTab("inspector")}
+              className="px-2.5 py-1.5 rounded-lg bg-amber-500 text-slate-950 text-xs font-black flex items-center gap-1 shrink-0 cursor-pointer touch-manipulation active:scale-95 shadow-sm"
+            >
+              <span>Inspector</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </main>
 
         {/* ───────────────────────────────────────────────────────────────── */}
         {/* RIGHT PANEL: Element Inspector (Typography, Borders, Outlines) */}
         {/* ───────────────────────────────────────────────────────────────── */}
-        <aside className="w-80 md:w-96 border-l border-slate-800 bg-slate-900 flex flex-col shrink-0 overflow-hidden">
+        <aside
+          className={cn(
+            "border-l border-slate-800 bg-slate-900 flex-col overflow-hidden shrink-0",
+            mobileWorkspaceTab === "inspector" ? "flex w-full flex-1" : "hidden",
+            "lg:flex lg:w-80 xl:w-96"
+          )}
+        >
+          {/* Mobile Switch Back to Live Canvas Bar */}
+          <div className="lg:hidden p-2.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0">
+            <span className="text-[11px] font-bold text-slate-400">Styling & Border Inspector</span>
+            <button
+              type="button"
+              onClick={() => setMobileWorkspaceTab("preview")}
+              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-bold flex items-center gap-1 cursor-pointer touch-manipulation active:scale-95"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>View Canvas</span>
+            </button>
+          </div>
           <ElementInspector
             selectedElementId={selectedElementId}
             onSelectElement={(id) => setSelectedElementId(id)}

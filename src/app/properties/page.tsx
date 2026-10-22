@@ -152,6 +152,9 @@ function PropertiesPage() {
       saleType = saleTypeRaw.split(",");
     }
 
+    const roadExclusive = searchParams.get("roadExclusive") === "true" || searchParams.get("exclusive") === "true";
+    const reraApproved = searchParams.get("reraApproved") === "true" || searchParams.get("rera") === "true" || searchParams.get("reraRegisteredProperties") === "true";
+
     return {
       ...initialFilterState,
       query: loc,
@@ -159,6 +162,9 @@ function PropertiesPage() {
       propertyType,
       saleType,
       budget,
+      roadExclusive,
+      reraApproved,
+      reraRegisteredProperties: reraApproved,
     };
   };
 
@@ -295,8 +301,14 @@ function PropertiesPage() {
 
       // 9. Vastu, RERA & Exclusive Badges
       if (filters.vastuCompliant && !property.vastuCompliant) return false;
-      if (filters.reraApproved && !property.reraId) return false;
-      if (filters.roadExclusive && !property.isRoadExclusive) return false;
+      if (Boolean(filters.reraApproved || filters.reraRegisteredProperties)) {
+        const hasRera = Boolean(property.reraApproved || property.rera_approved || property.reraId || property.rera_id);
+        if (!hasRera) return false;
+      }
+      if (Boolean(filters.roadExclusive)) {
+        const isExclusive = Boolean(property.isRoadExclusive || property.is_road_exclusive || property.attributes?.isRoadExclusive);
+        if (!isExclusive) return false;
+      }
 
       // 10. Posted Since Date Filter
       if (filters.postedSince && filters.postedSince !== "any" && filters.postedSince !== "") {

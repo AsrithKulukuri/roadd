@@ -101,4 +101,23 @@ test.describe("Ref ID Generation and Sequential Incrementation", () => {
 
     expect(getNextProjectRefId(projects)).toBe("REF0004");
   });
+
+  test("getNextProjectRefId: ignores random timestamp-derived ref IDs (e.g. REF17923) and continues valid sequence", () => {
+    const projects = [
+      { id: "proj-1", location: { refId: "REF0001" } },
+      { id: "proj-2", location: { refId: "REF0002" } },
+      { id: "proj-3", location: { refId: "REF0003" } },
+      // Corrupted project with timestamp refId
+      { id: "proj-1792301483293", location: { refId: "REF17923" } },
+    ] as unknown as Project[];
+
+    expect(getNextProjectRefId(projects)).toBe("REF0004");
+  });
+
+  test("extractRefNumber: rejects timestamp-derived values like REF17923", () => {
+    expect(extractRefNumber("REF17923")).toBeNull();
+    expect(extractRefNumber("REF18001")).toBeNull();
+    expect(extractRefNumber("ref17918v")).toBeNull();
+  });
 });
+

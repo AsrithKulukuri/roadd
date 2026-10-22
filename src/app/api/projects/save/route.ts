@@ -25,7 +25,8 @@ const PHYSICAL_PROJECT_COLUMNS = new Set([
   "brochureUrl", "highlights", "facilities", "isFeatured",
   "isPublished", "viewCount", "createdAt", "updatedAt",
   "crdaApproved", "totalTowers", "constructionUpdates", "displayCategory",
-  "masterPlanUrl", "master_plan_url", "isRoadExclusive", "locationHighlights", "location_highlights"
+  "masterPlanUrl", "master_plan_url", "isRoadExclusive", "locationHighlights", "location_highlights",
+  "refId", "locationUrl"
 ]);
 
 export async function POST(request: NextRequest) {
@@ -39,9 +40,29 @@ export async function POST(request: NextRequest) {
 
   try {
     const rawPayload = { ...body.payload };
-    const location = (rawPayload.location && typeof rawPayload.location === "object")
-      ? { ...(rawPayload.location as Record<string, unknown>) }
+
+    if (body.mode === "update" && !body.id && !body.slug) {
+      return NextResponse.json({ success: false, error: "Project identifier required" }, { status: 400 });
+    }
+
+    // When updating, load existing project record to safely preserve location fields (coordinates, refId, locationUrl, etc.)
+    let existingProject: Record<string, unknown> | null = null;
+    if (body.mode === "update") {
+      let query = supabaseAdmin.from("projects").select("*");
+      query = body.id ? query.eq("id", body.id) : query.eq("slug", body.slug!);
+      const { data } = await query.maybeSingle();
+      existingProject = (data as Record<string, unknown>) || null;
+    }
+
+    const hasIncomingLocation = rawPayload.location !== undefined && typeof rawPayload.location === "object" && rawPayload.location !== null;
+    const existingLocation = (existingProject?.location && typeof existingProject.location === "object")
+      ? { ...(existingProject.location as Record<string, unknown>) }
       : {};
+
+    const location: Record<string, unknown> = {
+      ...existingLocation,
+      ...(hasIncomingLocation ? (rawPayload.location as Record<string, unknown>) : {}),
+    };
 
     const review = location?.crdaReview as CrdaReview | undefined;
     const evidence = (location?.crdaEvidence || rawPayload) as Record<string, unknown>;
@@ -62,19 +83,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Configuration dimensions need positive width × depth and units, e.g. 30 × 60 ft." }, { status: 400 });
     }
 
-    // Always mirror refId into location JSONB for fail-safe persistence across database schemas
-    if (rawPayload.refId !== undefined) {
-      const cleanRef = typeof rawPayload.refId === "string" ? rawPayload.refId.trim().toUpperCase() : undefined;
-      if (cleanRef) location.refId = cleanRef;
-    }
+    // Always mirror refId across top-level and location JSONB for fail-safe persistence
+    const incomingRef = typeof rawPayload.refId === "string" && rawPayload.refId.trim()
+      ? rawPayload.refId.trim().toUpperCase()
+      : (typeof location.refId === "string" && (location.refId as string).trim()
+        ? (location.refId as string).trim().toUpperCase()
+        : (typeof existingProject?.refId === "string" && (existingProject.refId as string).trim()
+          ? (existingProject.refId as string).trim().toUpperCase()
+          : (typeof existingLocation.refId === "string" && (existingLocation.refId as string).trim()
+            ? (existingLocation.refId as string).trim().toUpperCase()
+            : undefined)));
 
-    if (body.mode === "create" && !location.refId) {
+    if (incomingRef) {
+      location.refId = incomingRef;
+      rawPayload.refId = incomingRef;
+    } else if (body.mode === "create") {
       const { data: existingProjects } = await supabaseAdmin
         .from("projects")
         .select("id, location, createdAt, updatedAt");
       const nextRef = getNextProjectRefId(existingProjects || []);
       location.refId = nextRef;
       rawPayload.refId = nextRef;
+    }
+
+    // Always mirror locationUrl / mapUrl across top-level and location JSONB for fail-safe persistence
+    const incomingLocationUrl =
+      (typeof rawPayload.locationUrl === "string" && rawPayload.locationUrl.trim() ? rawPayload.locationUrl.trim() : undefined) ||
+      (typeof location.locationUrl === "string" && (location.locationUrl as string).trim() ? (location.locationUrl as string).trim() : undefined) ||
+      (typeof location.mapUrl === "string" && (location.mapUrl as string).trim() ? (location.mapUrl as string).trim() : undefined) ||
+      (typeof location.googleMapsUrl === "string" && (location.googleMapsUrl as string).trim() ? (location.googleMapsUrl as string).trim() : undefined) ||
+      (typeof existingProject?.locationUrl === "string" && (existingProject.locationUrl as string).trim() ? (existingProject.locationUrl as string).trim() : undefined) ||
+      (typeof existingLocation.locationUrl === "string" && (existingLocation.locationUrl as string).trim() ? (existingLocation.locationUrl as string).trim() : undefined) ||
+      (typeof existingLocation.mapUrl === "string" && (existingLocation.mapUrl as string).trim() ? (existingLocation.mapUrl as string).trim() : undefined) ||
+      (typeof existingLocation.googleMapsUrl === "string" && (existingLocation.googleMapsUrl as string).trim() ? (existingLocation.googleMapsUrl as string).trim() : undefined);
+
+    if (incomingLocationUrl) {
+      location.locationUrl = incomingLocationUrl;
+      location.mapUrl = incomingLocationUrl;
+      location.googleMapsUrl = incomingLocationUrl;
+      rawPayload.locationUrl = incomingLocationUrl;
     }
 
     // Always mirror possessionDate into location JSONB for fail-safe persistence
@@ -89,9 +136,11 @@ export async function POST(request: NextRequest) {
       if (cleanArea) location.totalArea = cleanArea;
     }
 
-    // Always mirror isRoadExclusive into location JSONB for fail-safe persistence
+    // Always mirror isRoadExclusive between top-level column and location JSONB for fail-safe persistence
     if (rawPayload.isRoadExclusive !== undefined) {
       location.isRoadExclusive = Boolean(rawPayload.isRoadExclusive);
+    } else if (location.isRoadExclusive !== undefined) {
+      rawPayload.isRoadExclusive = Boolean(location.isRoadExclusive);
     }
 
     // Always mirror isSoldOut into location JSONB
@@ -120,10 +169,22 @@ export async function POST(request: NextRequest) {
         : [];
     }
 
-    rawPayload.location = location;
-
-    if (body.mode === "update" && !body.id && !body.slug) {
-      return NextResponse.json({ success: false, error: "Project identifier required" }, { status: 400 });
+    // Only assign location back to rawPayload if it's a create, if location was explicitly passed,
+    // or if a field that affects location was provided
+    if (
+      body.mode === "create" ||
+      hasIncomingLocation ||
+      rawPayload.refId !== undefined ||
+      rawPayload.locationUrl !== undefined ||
+      rawPayload.locationHighlights !== undefined ||
+      rawPayload.builderDescription !== undefined ||
+      rawPayload.possessionDate !== undefined ||
+      rawPayload.totalArea !== undefined ||
+      rawPayload.isSoldOut !== undefined
+    ) {
+      rawPayload.location = location;
+    } else {
+      delete rawPayload.location;
     }
 
     // Filter payload strictly to valid physical columns for Supabase PostgreSQL

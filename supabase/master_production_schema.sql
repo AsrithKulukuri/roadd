@@ -382,8 +382,9 @@ CREATE TRIGGER tr_snapshot_homepage_layout
   BEFORE UPDATE ON public.homepage_layouts
   FOR EACH ROW EXECUTE FUNCTION public.snapshot_homepage_layout_revision();
 
--- Active shelf items view
-CREATE OR REPLACE VIEW public.homepage_active_shelf_items AS
+-- Active shelf items view (security_invoker ensures RLS of querying user is enforced)
+CREATE OR REPLACE VIEW public.homepage_active_shelf_items
+WITH (security_invoker = true) AS
 SELECT
   l.id AS layout_id,
   section->>'id' AS shelf_id,

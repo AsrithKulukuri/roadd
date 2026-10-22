@@ -20,20 +20,24 @@ export function getRefId(item: Property | Project | { id?: string; slug?: string
     return rawRef.startsWith("REF") ? rawRef : `REF${rawRef}`;
   }
 
-  // Fallback: Generate clean deterministic ref ID from ID string if refId is not explicitly set
-  const digits = (item.id || item.slug || "").replace(/\D/g, "");
-  if (digits && digits.length >= 2) {
-    return `REF${digits.slice(0, 4)}`;
+  // Fallback: Generate clean deterministic ref ID if refId is not explicitly set.
+  // Guard against extracting timestamps from entity IDs like "proj-1791887791922" or UUIDs.
+  const rawId = String(item.id || item.slug || "");
+  if (!/^(proj|prop|usr)-/i.test(rawId) && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(rawId)) {
+    const digits = rawId.replace(/\D/g, "");
+    if (digits && digits.length >= 2 && digits.length <= 4) {
+      return `REF${digits.padStart(4, "0")}`;
+    }
   }
 
-  // Fallback using simple char-code hash
+  // Deterministic fallback using stable hash
   const label = "title" in item && item.title ? item.title : "name" in item && item.name ? item.name : "";
   const str = String(item.id || item.slug || label || "000");
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = (hash * 31 + str.charCodeAt(i)) % 900;
   }
-  return `REF${100 + Math.abs(hash)}`;
+  return `REF${String(100 + Math.abs(hash)).padStart(4, "0")}`;
 }
 
 /**
@@ -191,6 +195,8 @@ export function extractRefNumber(rawRef: unknown): { num: number; padLength: num
   // Ignore raw entity IDs like "proj-1791887791922" or UUIDs
   if (/^(proj|prop|usr)-/i.test(trimmed)) return null;
   if (/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(trimmed)) return null;
+  // Ignore timestamp-derived values (e.g. REF17923 generated from Date.now() timestamp prefixes)
+  if (/^#?REF[\s-_]*1[6-9]\d{3,}/i.test(trimmed)) return null;
 
   // Match prefix (REF, ref, #, REF-) followed by digits, or find the primary digit sequence
   const match = trimmed.match(/^(?:#?REF[\s-_]*)?(\d+)/i) || trimmed.match(/(\d+)/);
@@ -200,11 +206,11 @@ export function extractRefNumber(rawRef: unknown): { num: number; padLength: num
   if (!digitStr || !/^\d+$/.test(digitStr)) return null;
 
   const num = parseInt(digitStr, 10);
-  if (isNaN(num) || num > 999999) return null;
+  if (isNaN(num) || num <= 0 || num > 9999) return null;
 
   return {
     num,
-    padLength: digitStr.length,
+    padLength: Math.max(digitStr.length, 4),
     digitStr,
   };
 }

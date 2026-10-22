@@ -110,7 +110,8 @@ WITH CHECK (
 );
 
 -- 9. Helper View: Unnest active shelf items to quickly detect deleted/orphaned properties
-CREATE OR REPLACE VIEW public.homepage_active_shelf_items AS
+CREATE OR REPLACE VIEW public.homepage_active_shelf_items
+WITH (security_invoker = true) AS
 SELECT
   l.id AS layout_id,
   section->>'id' AS shelf_id,

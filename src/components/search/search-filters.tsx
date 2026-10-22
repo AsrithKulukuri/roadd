@@ -419,8 +419,10 @@ export function SearchFiltersModal({
   useEffect(() => {
     if (isOpen) {
       setLocalFilters(filters);
+      fetchProjects();
+      if (propertiesEnabled) fetchProperties();
     }
-  }, [isOpen, filters]);
+  }, [isOpen, filters, fetchProjects, fetchProperties, propertiesEnabled]);
 
   useEffect(() => {
     if (isOpen) {
@@ -1001,12 +1003,12 @@ export function SearchFiltersModal({
               />
               <ToggleSwitch
                 label={propertiesEnabled ? "RERA Registered Properties" : "RERA Registered Projects"}
-                checked={localFilters.reraRegisteredProperties}
-                onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val })}
+                checked={Boolean(localFilters.reraRegisteredProperties || localFilters.reraApproved)}
+                onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val, reraApproved: val })}
               />
               <ToggleSwitch
                 label={propertiesEnabled ? "ROAD Exclusive Properties" : "ROAD Exclusive Projects"}
-                checked={localFilters.roadExclusive}
+                checked={Boolean(localFilters.roadExclusive)}
                 onChange={(val) => setLocalFilters({ ...localFilters, roadExclusive: val })}
               />
             </div>
@@ -1275,13 +1277,13 @@ export function SearchFiltersModal({
                 <div className="divide-y divide-slate-100 pt-3 border-t border-slate-100">
                   <ToggleSwitch
                     label={propertiesEnabled ? "ROAD Exclusive Properties" : "ROAD Exclusive Projects"}
-                    checked={localFilters.roadExclusive}
+                    checked={Boolean(localFilters.roadExclusive)}
                     onChange={(val) => setLocalFilters({ ...localFilters, roadExclusive: val })}
                   />
                   <ToggleSwitch
                     label={propertiesEnabled ? "RERA Registered Properties" : "RERA Registered Projects"}
-                    checked={localFilters.reraRegisteredProperties}
-                    onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val })}
+                    checked={Boolean(localFilters.reraRegisteredProperties || localFilters.reraApproved)}
+                    onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val, reraApproved: val })}
                   />
                 </div>
               </div>
@@ -1634,12 +1636,12 @@ export function SearchFiltersModal({
                 <div className="divide-y divide-slate-100">
                   <ToggleSwitch
                     label={propertiesEnabled ? "RERA Registered Properties" : "RERA Registered Projects"}
-                    checked={localFilters.reraRegisteredProperties}
-                    onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val })}
+                    checked={Boolean(localFilters.reraRegisteredProperties || localFilters.reraApproved)}
+                    onChange={(val) => setLocalFilters({ ...localFilters, reraRegisteredProperties: val, reraApproved: val })}
                   />
                   <ToggleSwitch
                     label={propertiesEnabled ? "ROAD Exclusive Properties" : "ROAD Exclusive Projects"}
-                    checked={localFilters.roadExclusive}
+                    checked={Boolean(localFilters.roadExclusive)}
                     onChange={(val) => setLocalFilters({ ...localFilters, roadExclusive: val })}
                   />
                 </div>

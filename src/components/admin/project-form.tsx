@@ -162,7 +162,14 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
 
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [showMap, setShowMap] = useState(false);
-  const [googleMapsUrl, setGoogleMapsUrl] = useState("");
+  const initialLocationUrl =
+    initialData?.locationUrl ||
+    (initialData?.location as any)?.locationUrl ||
+    (initialData?.location as any)?.mapUrl ||
+    (initialData?.location as any)?.googleMapsUrl ||
+    (initialData as any)?.mapUrl ||
+    "";
+  const [googleMapsUrl, setGoogleMapsUrl] = useState(initialLocationUrl);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Field change handlers clearing errors
@@ -235,6 +242,15 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       const incomingProjectsCount = initialData.builderProjectsCount || (initialData.location as any)?.builderProjectsCount;
       if (incomingProjectsCount && typeof incomingProjectsCount === "string" && incomingProjectsCount.trim()) {
         setBuilderProjectsCount(incomingProjectsCount.trim());
+      }
+      const incomingLocationUrl =
+        initialData.locationUrl ||
+        (initialData.location as any)?.locationUrl ||
+        (initialData.location as any)?.mapUrl ||
+        (initialData.location as any)?.googleMapsUrl ||
+        (initialData as any)?.mapUrl;
+      if (incomingLocationUrl && typeof incomingLocationUrl === "string" && incomingLocationUrl.trim()) {
+        setGoogleMapsUrl(incomingLocationUrl.trim());
       }
     }
   }, [initialData]);
@@ -611,11 +627,13 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     setSubmitting(true);
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const finalRefId = (refId.trim().toUpperCase() || getNextProjectRefId(projects));
+    const cleanLocationUrl = googleMapsUrl.trim() || undefined;
 
     const project: Project = {
       id: initialData?.id ?? `proj-${Date.now()}`,
       slug: initialData?.slug ?? slug,
       refId: finalRefId || undefined,
+      locationUrl: cleanLocationUrl,
       name: name.trim(),
       tagline: tagline.trim() || undefined,
       description: description.trim() || undefined,
@@ -628,8 +646,12 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
       builderExperience: builderExperience.trim() || undefined,
       builderProjectsCount: builderProjectsCount.trim() || undefined,
       location: {
+        ...(initialData?.location || {}),
         address: address.trim(), locality: locality.trim(), city: city.trim(), state: locState.trim(), pincode: pincode.trim() || undefined, latitude: lat, longitude: lng,
         refId: finalRefId || undefined,
+        locationUrl: cleanLocationUrl,
+        mapUrl: cleanLocationUrl,
+        googleMapsUrl: cleanLocationUrl,
         totalArea: totalArea.trim() || undefined,
         possessionDate: possessionDate.trim() || undefined,
         builderDescription: builderDescription.trim() || undefined,

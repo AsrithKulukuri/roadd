@@ -16,7 +16,8 @@ const VALID_PROJECT_COLUMNS = new Set([
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
   'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory',
-  'masterPlanUrl', 'isRoadExclusive', 'locationHighlights'
+  'masterPlanUrl', 'isRoadExclusive', 'locationHighlights',
+  'refId', 'locationUrl'
 ]);
 
 // Public projection columns excluding private builder contact numbers
@@ -29,7 +30,8 @@ const PUBLIC_PROJECT_SELECT = [
   'brochureUrl', 'highlights', 'facilities', 'isFeatured',
   'isPublished', 'viewCount', 'createdAt', 'updatedAt',
   'crdaApproved', 'totalTowers', 'constructionUpdates', 'displayCategory',
-  'masterPlanUrl', 'isRoadExclusive', 'locationHighlights'
+  'masterPlanUrl', 'isRoadExclusive', 'locationHighlights',
+  'refId', 'locationUrl'
 ].join(',');
 
 export function toSupabaseProject(proj: Partial<Project>): Record<string, unknown> {
@@ -116,22 +118,50 @@ export function toSupabaseProject(proj: Partial<Project>): Record<string, unknow
     }
   }
 
-  // Persist isRoadExclusive safely across Supabase JSONB fields
+  // Persist isRoadExclusive safely across Supabase column and location JSONB
   if (p.isRoadExclusive !== undefined) {
     const isRoadExclusiveVal = Boolean(p.isRoadExclusive);
+    p.isRoadExclusive = isRoadExclusiveVal;
     if (p.location && typeof p.location === 'object') {
       p.location = { ...(p.location as Record<string, unknown>), isRoadExclusive: isRoadExclusiveVal };
     }
+  } else if (p.location && typeof p.location === 'object' && (p.location as Record<string, unknown>).isRoadExclusive !== undefined) {
+    p.isRoadExclusive = Boolean((p.location as Record<string, unknown>).isRoadExclusive);
   }
 
-  // Persist refId safely across Supabase JSONB fields (location)
-  if (p.refId !== undefined) {
-    const cleanRef = typeof p.refId === 'string' ? p.refId.trim().toUpperCase() : undefined;
+  // Persist refId safely across Supabase column and location JSONB
+  if (p.refId !== undefined || (p.location && typeof p.location === 'object' && (p.location as Record<string, unknown>).refId !== undefined)) {
+    const rawRef = p.refId || (p.location && typeof p.location === 'object' ? (p.location as Record<string, unknown>).refId : undefined);
+    const cleanRef = typeof rawRef === 'string' && rawRef.trim() ? rawRef.trim().toUpperCase() : undefined;
     if (cleanRef) {
       p.refId = cleanRef;
       if (p.location && typeof p.location === 'object') {
         p.location = { ...(p.location as Record<string, unknown>), refId: cleanRef };
       }
+    }
+  }
+
+  // Persist locationUrl / mapUrl safely across Supabase column and location JSONB
+  const rawLocUrl = typeof p.locationUrl === 'string' && p.locationUrl.trim()
+    ? p.locationUrl.trim()
+    : (p.location && typeof p.location === 'object'
+      ? (typeof (p.location as any).locationUrl === 'string' && (p.location as any).locationUrl.trim()
+        ? (p.location as any).locationUrl.trim()
+        : (typeof (p.location as any).mapUrl === 'string' && (p.location as any).mapUrl.trim()
+          ? (p.location as any).mapUrl.trim()
+          : (typeof (p.location as any).googleMapsUrl === 'string' && (p.location as any).googleMapsUrl.trim()
+            ? (p.location as any).googleMapsUrl.trim()
+            : undefined)))
+      : undefined);
+  if (rawLocUrl) {
+    p.locationUrl = rawLocUrl;
+    if (p.location && typeof p.location === 'object') {
+      p.location = {
+        ...(p.location as Record<string, unknown>),
+        locationUrl: rawLocUrl,
+        mapUrl: rawLocUrl,
+        googleMapsUrl: rawLocUrl,
+      };
     }
   }
 
@@ -235,9 +265,9 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
     (Array.isArray(p.highlights) && p.highlights.includes("__SOLD_OUT__"))
   );
   const isRoadExclusive = Boolean(
-    p.isRoadExclusive ??
-    p.is_road_exclusive ??
-    rawLocation?.isRoadExclusive ??
+    p.isRoadExclusive ||
+    p.is_road_exclusive ||
+    rawLocation?.isRoadExclusive ||
     false
   );
 
@@ -257,8 +287,18 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
   const explicitRef = (directRef && directRef.trim()) || (rawLocationRef && rawLocationRef.trim()) || undefined;
   const refId = explicitRef 
     ? (explicitRef.toUpperCase().startsWith("REF") ? explicitRef.toUpperCase() : `REF${explicitRef.toUpperCase()}`)
-    : (rawId ? `REF${(rawId.replace(/\D/g, "") || "100").padStart(3, "0").slice(0, 5)}` : undefined);
+    : undefined;
   const builderObj = p.builder as { name?: string; logoUrl?: string | null } | undefined;
+
+  const rawLocationUrl = typeof p.locationUrl === 'string' && p.locationUrl.trim()
+    ? p.locationUrl.trim()
+    : (typeof rawLocation?.locationUrl === 'string' && (rawLocation.locationUrl as string).trim()
+      ? (rawLocation.locationUrl as string).trim()
+      : (typeof rawLocation?.mapUrl === 'string' && (rawLocation.mapUrl as string).trim()
+        ? (rawLocation.mapUrl as string).trim()
+        : (typeof rawLocation?.googleMapsUrl === 'string' && (rawLocation.googleMapsUrl as string).trim()
+          ? (rawLocation.googleMapsUrl as string).trim()
+          : undefined)));
 
   const rawPossession = typeof p.possessionDate === 'string' 
     ? p.possessionDate 
@@ -297,6 +337,8 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
 
   const safeLocation: Project["location"] = {
     ...rawLocation,
+    ...(refId ? { refId } : {}),
+    ...(rawLocationUrl ? { locationUrl: rawLocationUrl, mapUrl: rawLocationUrl, googleMapsUrl: rawLocationUrl } : {}),
     address: typeof rawLocation.address === "string" && rawLocation.address.trim() ? rawLocation.address.trim() : (typeof p.name === "string" ? `${p.name}, Vijayawada` : "Vijayawada"),
     locality: typeof rawLocation.locality === "string" && rawLocation.locality.trim() ? rawLocation.locality.trim() : "Vijayawada",
     city: typeof rawLocation.city === "string" && rawLocation.city.trim() ? rawLocation.city.trim() : "Vijayawada",
@@ -309,6 +351,7 @@ export function fromSupabaseProject(p: Record<string, unknown>): Project {
   return {
     ...(cleanObj as unknown as Project),
     location: safeLocation,
+    locationUrl: rawLocationUrl,
     crdaLpNumber: (p.crdaLpNumber as string | undefined) || (evidence.crdaLpNumber as string | undefined),
     surveyNumber: (p.surveyNumber as string | undefined) || (evidence.surveyNumber as string | undefined),
     crdaDocumentUrl: (p.crdaDocumentUrl as string | undefined) || (evidence.crdaDocumentUrl as string | undefined),
@@ -619,7 +662,7 @@ export const useProjectsStore = create<ProjectsState>()(
         }));
 
         try {
-          await saveProjectMutation(id, { location: updatedLocation });
+          await saveProjectMutation(id, { refId: cleanRef, location: updatedLocation });
           return true;
         } catch (error: unknown) {
           set((state) => ({
@@ -713,6 +756,7 @@ export const useProjectsStore = create<ProjectsState>()(
           };
 
           await saveProjectMutation(id, {
+            isRoadExclusive: nextValue,
             location: updatedLocation,
           });
           return true;

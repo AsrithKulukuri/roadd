@@ -86,7 +86,7 @@ export function fromSupabaseProperty(p: Record<string, unknown>): Property {
   return {
     ...(p as unknown as Property),
     refId,
-    isRoadExclusive: Boolean((p.isRoadExclusive as boolean | undefined) ?? (attr.isRoadExclusive as boolean | undefined) ?? false),
+    isRoadExclusive: Boolean((p.isRoadExclusive as boolean | undefined) || (attr.isRoadExclusive as boolean | undefined) || false),
     saleType: (p.saleType as "new" | "resale" | undefined) || (attr.saleType as "new" | "resale" | undefined) || "new",
     pricePerSqft: (p.pricePerSqft as number | undefined) ?? (p.pricePerSqFt as number | undefined) ?? 0,
     area: (p.area as number | undefined) ?? (p.areaSqFt as number | undefined) ?? 0,
@@ -414,7 +414,7 @@ export const usePropertiesStore = create<PropertiesState>()(
             ...((property.attributes as Record<string, unknown>) || {}),
             isRoadExclusive: nextValue,
           };
-          await savePropertyToServer("update", { attributes: updatedAttributes }, id);
+          await savePropertyToServer("update", { isRoadExclusive: nextValue, attributes: updatedAttributes }, id);
           return true;
         } catch (error: unknown) {
           set((state) => ({

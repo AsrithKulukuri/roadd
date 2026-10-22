@@ -288,7 +288,7 @@ export default function HomepageShelvesAdminPage() {
 
   // Otherwise, render the Shelf Manager Overview
   return (
-    <div className="min-h-screen bg-slate-950 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-950 py-4 sm:py-8 px-3 sm:px-6 lg:px-8">
       <ShelfManagerOverview
         shelves={shelves}
         onEditShelf={(id) => setEditingShelfId(id)}

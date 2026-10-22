@@ -1064,15 +1064,15 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
   }
 
   // 12. Furnishing
-  if (filters.furnished && Array.isArray(filters.furnished) && filters.furnished.length > 0 && property.furnishing) {
-    const furn = property.furnishing.toLowerCase();
-    if (!filters.furnished.some((f: string) => furn.includes(f.toLowerCase()))) return false;
+  if (filters.furnished && Array.isArray(filters.furnished) && filters.furnished.length > 0) {
+    const furn = (property.furnishing || "").toLowerCase();
+    if (!furn || !filters.furnished.some((f: string) => furn.includes(f.toLowerCase()))) return false;
   }
 
   // 13. Facing & Vastu
-  if (filters.facing && Array.isArray(filters.facing) && filters.facing.length > 0 && property.facing) {
-    const propFacing = property.facing.toLowerCase();
-    if (!filters.facing.some((f: string) => propFacing.includes(f.toLowerCase()))) return false;
+  if (filters.facing && Array.isArray(filters.facing) && filters.facing.length > 0) {
+    const propFacing = (property.facing || "").toLowerCase();
+    if (!propFacing || !filters.facing.some((f: string) => propFacing.includes(f.toLowerCase()))) return false;
   }
   if (filters.vastuCompliant && !property.vastuCompliant) return false;
   if (filters.gatedCommunity && !hasGatedEvidenceProperty(property)) return false;
@@ -1089,14 +1089,22 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
   }
 
   // 16. Verified & RERA Badges
+  const reraRegProps = "reraRegisteredProperties" in filters ? (filters as Record<string, unknown>).reraRegisteredProperties : undefined;
+  const requirePropertyRera = Boolean(filters.reraApproved || reraRegProps);
+  const hasPropertyRera = Boolean(
+    (property as unknown as Record<string, unknown>).reraApproved ||
+    (property as unknown as Record<string, unknown>).rera_approved ||
+    property.reraId ||
+    (property as unknown as Record<string, unknown>).rera_id
+  );
+  if (requirePropertyRera && !hasPropertyRera) return false;
+
   if (filters.verifiedBadges && Array.isArray(filters.verifiedBadges) && filters.verifiedBadges.length > 0) {
-    if (filters.verifiedBadges.includes("rera") && !property.reraId) return false;
+    if (filters.verifiedBadges.includes("rera") && !hasPropertyRera) return false;
     if (filters.verifiedBadges.includes("video_verified") && !property.videoUrl) return false;
     if (filters.verifiedBadges.includes("zero_brokerage") && (property.ownerType || property.postedBy) !== "owner" && (property.ownerType || property.postedBy) !== "builder") return false;
     if (filters.verifiedBadges.includes("owner_verified") && !property.isOwnerVerified) return false;
   }
-  const reraRegProps = "reraRegisteredProperties" in filters ? (filters as Record<string, unknown>).reraRegisteredProperties : undefined;
-  if ((filters.reraApproved || reraRegProps) && !property.reraId) return false;
 
   // 17. Media (Photos / Video / Floorplan)
   if (filters.mediaTypes && Array.isArray(filters.mediaTypes) && filters.mediaTypes.length > 0) {
@@ -1150,8 +1158,15 @@ export function evaluatePropertyFilters(property: Property, filters: Partial<Fil
   }
 
   // 21. ROAD Exclusive Filter
-  if (filters.roadExclusive && !property.isRoadExclusive) {
-    return false;
+  if (Boolean(filters.roadExclusive)) {
+    const isExclusive = Boolean(
+      property.isRoadExclusive ||
+      (property as unknown as Record<string, unknown>).is_road_exclusive ||
+      (property.attributes as Record<string, unknown>)?.isRoadExclusive
+    );
+    if (!isExclusive) {
+      return false;
+    }
   }
 
   return true;
@@ -1302,15 +1317,19 @@ export function evaluateProjectFilters(
   }
 
   // 10. RERA Approved & Badges
-  if (filters.reraApproved && !project.reraApproved && !project.reraId) {
-    return false;
-  }
   const reraRegProps = "reraRegisteredProperties" in filters ? (filters as Record<string, unknown>).reraRegisteredProperties : undefined;
-  if (reraRegProps && !project.reraApproved && !project.reraId) {
+  const requireProjectRera = Boolean(filters.reraApproved || reraRegProps);
+  const hasProjectRera = Boolean(
+    project.reraApproved ||
+    (project as unknown as Record<string, unknown>).rera_approved ||
+    project.reraId ||
+    (project as unknown as Record<string, unknown>).rera_id
+  );
+  if (requireProjectRera && !hasProjectRera) {
     return false;
   }
   if (filters.verifiedBadges && Array.isArray(filters.verifiedBadges) && filters.verifiedBadges.length > 0) {
-    if (filters.verifiedBadges.includes("rera") && !project.reraApproved && !project.reraId) return false;
+    if (filters.verifiedBadges.includes("rera") && !hasProjectRera) return false;
     if (filters.verifiedBadges.includes("video_verified") && !project.videoUrl) return false;
     if (filters.verifiedBadges.includes("zero_brokerage") && !project.noBrokerage) return false;
   }
@@ -1323,23 +1342,25 @@ export function evaluateProjectFilters(
   // 12. Facing
   if (filters.facing && Array.isArray(filters.facing) && filters.facing.length > 0) {
     const configFacings = (project.configurations || []).flatMap((c) => c.facing || []).map((f) => f.toLowerCase());
-    if (configFacings.length > 0) {
-      const hasFacing = filters.facing.some((req: string) => configFacings.some((cf) => cf.includes(req.toLowerCase())));
-      if (!hasFacing) return false;
-    }
+    const projectFacing = (project as unknown as Record<string, unknown>).facing ? [String((project as unknown as Record<string, unknown>).facing).toLowerCase()] : [];
+    const allFacings = [...configFacings, ...projectFacing];
+    const hasFacing = allFacings.length > 0 && filters.facing.some((req: string) => allFacings.some((cf) => cf.includes(req.toLowerCase())));
+    if (!hasFacing) return false;
   }
 
   // 13. Amenities / Facilities
   if (filters.amenities && Array.isArray(filters.amenities) && filters.amenities.length > 0) {
-    const projFacilities = (project.facilities || []).map((f: unknown) =>
+    const projFacilities = [
+      ...(project.facilities || []),
+      ...((project as unknown as Record<string, unknown>).amenities as unknown[] || []),
+      ...(project.highlights || [])
+    ].map((f: unknown) =>
       typeof f === "string" ? f.toLowerCase() : (((f as Record<string, unknown>)?.name as string) || ((f as Record<string, unknown>)?.label as string) || "").toLowerCase()
     );
-    if (projFacilities.length > 0) {
-      const hasReqFacility = filters.amenities.some((req: string) =>
-        projFacilities.some((pf: string) => pf.includes(req.toLowerCase()))
-      );
-      if (!hasReqFacility) return false;
-    }
+    const hasReqFacility = filters.amenities.some((req: string) =>
+      projFacilities.some((pf: string) => pf.includes(req.toLowerCase()))
+    );
+    if (!hasReqFacility) return false;
   }
 
   // 14. Media Types (Photos / Video / Brochure / Floor Plan)
@@ -1383,8 +1404,26 @@ export function evaluateProjectFilters(
   }
 
   // 17. ROAD Exclusive Filter
-  if (filters.roadExclusive && !project.isRoadExclusive) {
-    return false;
+  if (Boolean(filters.roadExclusive)) {
+    const isExclusive = Boolean(
+      project.isRoadExclusive ||
+      (project as unknown as Record<string, unknown>).is_road_exclusive ||
+      (project.location as Record<string, unknown>)?.isRoadExclusive
+    );
+    if (!isExclusive) {
+      return false;
+    }
+  }
+
+  // 18. Vastu Compliant Filter
+  if (filters.vastuCompliant) {
+    const isVastu = Boolean(
+      (project as unknown as Record<string, unknown>).vastuCompliant ||
+      (project.highlights && project.highlights.some(h => /va?astu/i.test(h))) ||
+      (project.facilities && project.facilities.some(f => /va?astu/i.test(typeof f === "string" ? f : String((f as Record<string, unknown>)?.name || "")))) ||
+      /va?astu\s*compliant/i.test(project.description || "")
+    );
+    if (!isVastu) return false;
   }
 
   return true;

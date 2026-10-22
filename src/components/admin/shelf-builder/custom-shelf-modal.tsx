@@ -121,22 +121,22 @@ export function CustomShelfModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col text-slate-100 max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col text-slate-100 max-h-[92dvh] sm:max-h-[90vh]">
         {/* Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
           <div>
-            <h2 className="text-lg font-black text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-400" /> Create Custom Shelf
+            <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" /> Create Custom Shelf
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
               Step {step} of 5: {step === 1 ? "Shelf Identity" : step === 2 ? "Content Sourcing" : step === 3 ? "Card Style" : step === 4 ? "Layout Type" : "Summary & Finish"}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-full text-slate-400 hover:text-white cursor-pointer"
+            className="p-1.5 rounded-full text-slate-400 hover:text-white cursor-pointer touch-manipulation"
           >
             <X className="w-5 h-5" />
           </button>
@@ -218,7 +218,7 @@ export function CustomShelfModal({
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
                   How should listings be selected?
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {[
                     { id: "hybrid", label: "Hybrid (Recommended)", desc: "Pinned items first, plus auto-matched properties" },
                     { id: "automatic", label: "Automatic Filters", desc: "Dynamically matches by city, price, BHK & status" },
@@ -229,7 +229,7 @@ export function CustomShelfModal({
                       type="button"
                       onClick={() => setContentSource(src.id as ContentSourceType)}
                       className={cn(
-                        "p-3 rounded-xl border text-left transition-all cursor-pointer",
+                        "p-3 rounded-xl border text-left transition-all cursor-pointer touch-manipulation",
                         contentSource === src.id
                           ? "border-amber-500 bg-amber-500/10 text-white ring-1 ring-amber-400"
                           : "border-slate-800 bg-slate-950 text-slate-400 hover:text-white"
@@ -255,12 +255,12 @@ export function CustomShelfModal({
                       value={filterCity}
                       onChange={(e) => setFilterCity(e.target.value)}
                       placeholder="e.g. Amaravati, Vijayawada, Guntur"
-                      className="w-full py-1.5 px-3 rounded-xl border border-slate-700 bg-slate-800 text-white"
+                      className="w-full py-2 px-3 rounded-xl border border-slate-700 bg-slate-800 text-white"
                     />
                   </div>
 
-                  <div className="flex items-center gap-4 pt-1">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                  <div className="flex items-center gap-4 pt-1 flex-wrap">
+                    <label className="flex items-center gap-2 cursor-pointer touch-manipulation">
                       <input
                         type="checkbox"
                         checked={filterReadyToMove}
@@ -269,7 +269,7 @@ export function CustomShelfModal({
                       />
                       <span>Ready to Move Only</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="flex items-center gap-2 cursor-pointer touch-manipulation">
                       <input
                         type="checkbox"
                         checked={filterRera}
@@ -290,14 +290,14 @@ export function CustomShelfModal({
               <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1">
                 Select Starting Card Composition
               </label>
-              <div className="grid grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 sm:max-h-72 overflow-y-auto pr-1">
                 {CARD_STYLES.map((cs) => (
                   <button
                     key={cs.id}
                     type="button"
                     onClick={() => setCardStyle(cs.id)}
                     className={cn(
-                      "p-3 rounded-xl border text-left transition-all cursor-pointer",
+                      "p-3 rounded-xl border text-left transition-all cursor-pointer touch-manipulation",
                       cardStyle === cs.id
                         ? "border-amber-500 bg-amber-500/10 text-white ring-1 ring-amber-400"
                         : "border-slate-800 bg-slate-950 text-slate-400 hover:text-white"
@@ -318,12 +318,12 @@ export function CustomShelfModal({
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
                   Shelf Layout Presentation
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setLayoutType("carousel")}
                     className={cn(
-                      "p-4 rounded-2xl border text-left transition-all cursor-pointer",
+                      "p-3.5 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer touch-manipulation",
                       layoutType === "carousel"
                         ? "border-amber-500 bg-amber-500/10 text-white ring-1 ring-amber-400"
                         : "border-slate-800 bg-slate-950 text-slate-400 hover:text-white"
@@ -339,7 +339,7 @@ export function CustomShelfModal({
                     type="button"
                     onClick={() => setLayoutType("grid")}
                     className={cn(
-                      "p-4 rounded-2xl border text-left transition-all cursor-pointer",
+                      "p-3.5 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer touch-manipulation",
                       layoutType === "grid"
                         ? "border-amber-500 bg-amber-500/10 text-white ring-1 ring-amber-400"
                         : "border-slate-800 bg-slate-950 text-slate-400 hover:text-white"
@@ -387,11 +387,11 @@ export function CustomShelfModal({
         </div>
 
         {/* Footer Navigation */}
-        <div className="p-5 border-t border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div className="p-4 sm:p-5 border-t border-slate-800 flex items-center justify-between bg-slate-950/60">
           <button
             type="button"
             onClick={() => (step > 1 ? setStep((step - 1) as any) : onClose())}
-            className="px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:bg-slate-700"
+            className="px-4 py-2 sm:py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer hover:bg-slate-700 touch-manipulation active:scale-95"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>{step === 1 ? "Cancel" : "Back"}</span>
@@ -402,7 +402,7 @@ export function CustomShelfModal({
               type="button"
               disabled={step === 1 && (!name.trim() || !title.trim())}
               onClick={() => setStep((step + 1) as any)}
-              className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2 sm:py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 touch-manipulation active:scale-95"
             >
               <span>Continue</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -411,7 +411,7 @@ export function CustomShelfModal({
             <button
               type="button"
               onClick={handleCreate}
-              className="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+              className="px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md touch-manipulation active:scale-95"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>Create Shelf & Open Builder</span>

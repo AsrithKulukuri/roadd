@@ -33,12 +33,14 @@ export async function POST(request: Request) {
   try {
     const cleanPayload = { ...payload };
 
-    // Always mirror isRoadExclusive into attributes JSONB for fail-safe persistence
+    // Always mirror isRoadExclusive between top-level column and attributes JSONB for fail-safe persistence
     if (cleanPayload.isRoadExclusive !== undefined) {
       const attr = (cleanPayload.attributes && typeof cleanPayload.attributes === "object")
         ? { ...(cleanPayload.attributes as Record<string, unknown>), isRoadExclusive: Boolean(cleanPayload.isRoadExclusive) }
         : { isRoadExclusive: Boolean(cleanPayload.isRoadExclusive) };
       cleanPayload.attributes = attr;
+    } else if (cleanPayload.attributes && typeof cleanPayload.attributes === "object" && (cleanPayload.attributes as Record<string, unknown>).isRoadExclusive !== undefined) {
+      cleanPayload.isRoadExclusive = Boolean((cleanPayload.attributes as Record<string, unknown>).isRoadExclusive);
     }
 
     // Always mirror refId into attributes JSONB for fail-safe persistence

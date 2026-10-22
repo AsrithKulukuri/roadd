@@ -1763,13 +1763,38 @@ export function ProjectDetailView({
               <ScrollReveal id="location" className="scroll-mt-32">
                 <div className="bg-white dark:bg-bg-card border border-border-default rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <h2 className="text-xl font-bold text-text-primary">Location & Map</h2>
-                    {userDistanceKm !== null && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/15 text-slate-950 dark:text-amber-400 border border-amber-500/30 shadow-2xs">
-                        <Navigation className="w-3.5 h-3.5 text-[#faad13] fill-[#faad13]/20" />
-                        Just located {formatDistanceText(userDistanceKm)} from you
-                      </span>
-                    )}
+                    <h2 className="text-xl font-bold text-text-primary">Location &amp; Map</h2>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {userDistanceKm !== null && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/15 text-slate-950 dark:text-amber-400 border border-amber-500/30 shadow-2xs">
+                          <Navigation className="w-3.5 h-3.5 text-[#faad13] fill-[#faad13]/20" />
+                          Just located {formatDistanceText(userDistanceKm)} from you
+                        </span>
+                      )}
+                      {(project.locationUrl ||
+                        project.location?.locationUrl ||
+                        project.location?.mapUrl ||
+                        project.location?.googleMapsUrl ||
+                        (project.location?.latitude && project.location?.longitude
+                          ? `https://www.google.com/maps/search/?api=1&query=${project.location.latitude},${project.location.longitude}`
+                          : undefined)) && (
+                        <a
+                          href={
+                            project.locationUrl ||
+                            project.location?.locationUrl ||
+                            project.location?.mapUrl ||
+                            project.location?.googleMapsUrl ||
+                            `https://www.google.com/maps/search/?api=1&query=${project.location?.latitude},${project.location?.longitude}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Open in Google Maps
+                        </a>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 text-text-secondary text-sm flex-wrap">
                     <MapPin className="w-4 h-4 text-amber-primary shrink-0" />

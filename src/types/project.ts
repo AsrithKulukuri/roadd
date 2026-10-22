@@ -97,6 +97,7 @@ export interface Project {
   description?: string;
 
   projectType: ProjectType;
+  locationUrl?: string;
 
   // Builder info
   builderName: string;
@@ -118,6 +119,9 @@ export interface Project {
     latitude: number;
     longitude: number;
     refId?: string;
+    locationUrl?: string;
+    mapUrl?: string;
+    googleMapsUrl?: string;
     [key: string]: unknown;
   };
 

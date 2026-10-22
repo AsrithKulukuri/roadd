@@ -286,8 +286,58 @@ function UnifiedSearchPage() {
       possessionStatus = statusParam.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
     }
 
-    // Parse reraApproved
-    const reraParam = searchParams.get("reraApproved") === "true" || searchParams.get("rera") === "true";
+    // Parse reraApproved & reraRegisteredProperties
+    const reraParam = searchParams.get("reraApproved") === "true" || searchParams.get("rera") === "true" || searchParams.get("reraRegisteredProperties") === "true";
+
+    // Parse roadExclusive
+    const roadExclusive = searchParams.get("roadExclusive") === "true" || searchParams.get("exclusive") === "true";
+
+    // Parse vastuCompliant
+    const vastuCompliant = searchParams.get("vastuCompliant") === "true" || searchParams.get("vastu") === "true";
+
+    // Parse facing
+    const facingParam = searchParams.get("facing");
+    const facing = facingParam ? facingParam.split(",").map(f => f.trim().toLowerCase()).filter(Boolean) : [];
+
+    // Parse amenities
+    const amenitiesParam = searchParams.get("amenities");
+    const amenities = amenitiesParam ? amenitiesParam.split(",").map(a => a.trim().toLowerCase()).filter(Boolean) : [];
+
+    // Parse coveredArea
+    const areaStr = searchParams.get("coveredArea") || searchParams.get("area");
+    let coveredArea: [number, number] = [0, 10000];
+    if (areaStr) {
+      const parts = areaStr.split(",");
+      if (parts.length === 2) {
+        const minA = parseInt(parts[0], 10);
+        const maxA = parseInt(parts[1], 10);
+        if (!isNaN(minA) && !isNaN(maxA)) coveredArea = [minA, maxA];
+      }
+    }
+
+    // Parse bathrooms
+    const bathroomsParam = searchParams.get("bathrooms");
+    const bathrooms = bathroomsParam ? bathroomsParam.split(",").map(b => b.trim()).filter(Boolean) : [];
+
+    // Parse furnished
+    const furnishedParam = searchParams.get("furnished");
+    const furnished = furnishedParam ? furnishedParam.split(",").map(f => f.trim().toLowerCase()).filter(Boolean) : [];
+
+    // Parse postedBy
+    const postedByParam = searchParams.get("postedBy");
+    const postedBy = postedByParam ? postedByParam.split(",").map(p => p.trim().toLowerCase()).filter(Boolean) : [];
+
+    // Parse mediaTypes
+    const mediaParam = searchParams.get("mediaTypes") || searchParams.get("media");
+    const mediaTypes = mediaParam ? mediaParam.split(",").map(m => m.trim().toLowerCase()).filter(Boolean) : [];
+
+    // Parse verifiedBadges
+    const badgesParam = searchParams.get("verifiedBadges") || searchParams.get("badges");
+    const verifiedBadges = badgesParam ? badgesParam.split(",").map(b => b.trim().toLowerCase()).filter(Boolean) : [];
+
+    // Parse waterSource
+    const waterParam = searchParams.get("waterSource");
+    const waterSource = waterParam ? waterParam.split(",").map(w => w.trim()).filter(Boolean) : [];
 
     // Parse saleType (new vs resale)
     const saleTypeStr = searchParams.get("saleType");
@@ -322,6 +372,18 @@ function UnifiedSearchPage() {
       possessionStatus,
       gatedCommunity,
       reraApproved: reraParam,
+      reraRegisteredProperties: reraParam,
+      roadExclusive,
+      vastuCompliant,
+      facing,
+      amenities,
+      coveredArea,
+      bathrooms,
+      furnished,
+      postedBy,
+      mediaTypes,
+      verifiedBadges,
+      waterSource,
       displayCategory: categoryParam,
       sortBy: sortParam,
       postedSince,
@@ -375,7 +437,7 @@ function UnifiedSearchPage() {
     const parsedIntent = filters.query ? parseSearchIntent(filters.query) : null;
 
     return projects.filter((project) => {
-      if (!project.isPublished) return false;
+      if (project.isPublished === false) return false;
       // 2. Complete Multi-Attribute Evaluation
       if (!evaluateProjectFilters(project, filters, undefined, parsedIntent || undefined)) {
         return false;
@@ -573,21 +635,119 @@ function UnifiedSearchPage() {
     }
 
     // 9. RERA
-    if (newFilters.reraApproved) {
+    if (newFilters.reraApproved || newFilters.reraRegisteredProperties) {
       newParams.set("reraApproved", "true");
+      newParams.set("reraRegisteredProperties", "true");
     } else {
       newParams.delete("reraApproved");
+      newParams.delete("reraRegisteredProperties");
       newParams.delete("rera");
     }
 
-    // 10. Gated Community
+    // 10. ROAD Exclusive
+    if (newFilters.roadExclusive) {
+      newParams.set("roadExclusive", "true");
+    } else {
+      newParams.delete("roadExclusive");
+      newParams.delete("exclusive");
+    }
+
+    // 11. Gated Community
     if (newFilters.gatedCommunity) {
       newParams.set("gatedCommunity", "true");
     } else {
       newParams.delete("gatedCommunity");
     }
 
-    // 11. Sort
+    // 12. Vastu Compliant
+    if (newFilters.vastuCompliant) {
+      newParams.set("vastuCompliant", "true");
+    } else {
+      newParams.delete("vastuCompliant");
+      newParams.delete("vastu");
+    }
+
+    // 13. Facing
+    if (newFilters.facing && newFilters.facing.length > 0) {
+      newParams.set("facing", newFilters.facing.join(","));
+    } else {
+      newParams.delete("facing");
+    }
+
+    // 14. Amenities
+    if (newFilters.amenities && newFilters.amenities.length > 0) {
+      newParams.set("amenities", newFilters.amenities.join(","));
+    } else {
+      newParams.delete("amenities");
+    }
+
+    // 15. Covered Area
+    if (newFilters.coveredArea && (newFilters.coveredArea[0] > 0 || newFilters.coveredArea[1] < 10000)) {
+      newParams.set("coveredArea", `${newFilters.coveredArea[0]},${newFilters.coveredArea[1]}`);
+    } else {
+      newParams.delete("coveredArea");
+      newParams.delete("area");
+    }
+
+    // 16. Bathrooms
+    if (newFilters.bathrooms && newFilters.bathrooms.length > 0) {
+      newParams.set("bathrooms", newFilters.bathrooms.join(","));
+    } else {
+      newParams.delete("bathrooms");
+    }
+
+    // 17. Furnished
+    if (newFilters.furnished && newFilters.furnished.length > 0) {
+      newParams.set("furnished", newFilters.furnished.join(","));
+    } else {
+      newParams.delete("furnished");
+    }
+
+    // 18. Posted By
+    if (newFilters.postedBy && newFilters.postedBy.length > 0) {
+      newParams.set("postedBy", newFilters.postedBy.join(","));
+    } else {
+      newParams.delete("postedBy");
+    }
+
+    // 19. Sale Type
+    if (newFilters.saleType && newFilters.saleType.length > 0) {
+      newParams.set("saleType", newFilters.saleType.join(","));
+    } else {
+      newParams.delete("saleType");
+    }
+
+    // 20. Posted Since
+    if (newFilters.postedSince && newFilters.postedSince !== "any") {
+      newParams.set("postedSince", newFilters.postedSince);
+    } else {
+      newParams.delete("postedSince");
+    }
+
+    // 21. Media Types
+    if (newFilters.mediaTypes && newFilters.mediaTypes.length > 0) {
+      newParams.set("mediaTypes", newFilters.mediaTypes.join(","));
+    } else {
+      newParams.delete("mediaTypes");
+      newParams.delete("media");
+    }
+
+    // 22. Verified Badges
+    if (newFilters.verifiedBadges && newFilters.verifiedBadges.length > 0) {
+      newParams.set("verifiedBadges", newFilters.verifiedBadges.join(","));
+    } else {
+      newParams.delete("verifiedBadges");
+      newParams.delete("badges");
+    }
+
+    // 23. Water Source
+    if (newFilters.waterSource && newFilters.waterSource.length > 0) {
+      newParams.set("waterSource", newFilters.waterSource.join(","));
+    } else {
+      newParams.delete("waterSource");
+    }
+
+    // 24. Sort
     if (newFilters.sortBy && newFilters.sortBy !== "relevance" && newFilters.sortBy !== "relevant") {
       newParams.set("sort", newFilters.sortBy);
     } else {
