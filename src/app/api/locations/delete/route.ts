@@ -54,6 +54,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, deletedSub: subName || subId });
     }
 
+    if (type === "clear_sublocations" && cityName) {
+      const { error: clearError } = await supabaseAdmin
+        .from("trending_locations")
+        .delete()
+        .ilike("city", cityName)
+        .neq("locality", cityName);
+
+      if (clearError) {
+        console.warn("[Clear Sublocations Warning]:", clearError);
+      }
+
+      return NextResponse.json({ success: true, clearedCity: cityName });
+    }
+
     return NextResponse.json({ error: "Invalid delete request parameters" }, { status: 400 });
   } catch (error: any) {
     console.error("[Delete Location Server Error]:", error);

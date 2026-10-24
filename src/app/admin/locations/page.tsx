@@ -38,6 +38,7 @@ export default function AdminLocationsPage() {
     addSublocation,
     updateSublocation,
     deleteSublocation,
+    clearSublocations,
     toggleHeroPill,
     resetToDefaults,
     defaultLocation,
@@ -469,6 +470,23 @@ export default function AdminLocationsPage() {
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
+
+                  {city.sublocations.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to delete all ${city.sublocations.length} sublocalities from "${city.name}"?`)) {
+                          clearSublocations(city.id);
+                        }
+                      }}
+                      className="text-red-500 hover:text-red-600 hover:bg-red-500/10 border-red-500/30 font-bold text-xs gap-1.5 h-9"
+                      title="Delete all sublocalities"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Clear All ({city.sublocations.length})
+                    </Button>
+                  )}
 
                   <Button
                     size="sm"

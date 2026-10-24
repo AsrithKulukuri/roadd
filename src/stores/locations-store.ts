@@ -29,9 +29,7 @@ export const INITIAL_CITIES: LocationCity[] = [
     icon: "MapPin",
     isHeroPill: true,
     order: 1,
-    sublocations: [
-      { id: "sub-vja-10", name: "Edupugallu", tagline: "Edupugallu, Vijayawada", count: "1 Home" },
-    ],
+    sublocations: [],
   },
 ];
 
@@ -66,6 +64,7 @@ interface LocationsState {
   addSublocation: (cityId: string, sublocation: Omit<SubLocation, "id">) => Promise<void>;
   updateSublocation: (cityId: string, subId: string, sublocation: Partial<SubLocation>) => Promise<void>;
   deleteSublocation: (cityId: string, subId: string) => Promise<void>;
+  clearSublocations: (cityId: string) => Promise<void>;
   
   toggleHeroPill: (cityId: string) => void;
   resetToDefaults: () => void;
@@ -150,25 +149,16 @@ export const useLocationsStore = create<LocationsState>()(
           : cleanCity;
 
         const existingSubIndex = target.sublocations.findIndex(s => s.name.toLowerCase() === subNameToAdd.toLowerCase());
-        const newSubs = [...target.sublocations];
         if (existingSubIndex >= 0) {
+          const newSubs = [...target.sublocations];
           newSubs[existingSubIndex] = {
             ...newSubs[existingSubIndex],
             count: "1+ Listings",
           };
-        } else {
-          newSubs.unshift({
-            id: `sub-auto-${Date.now()}-${subNameToAdd.toLowerCase().replace(/\s+/g, '-')}`,
-            name: subNameToAdd,
-            count: "1 Home",
-            tagline: `${subNameToAdd}, ${target.name}`,
-          });
+          const updatedCities = [...currentCities];
+          updatedCities[existingCityIndex] = { ...target, sublocations: newSubs };
+          set({ cities: updatedCities });
         }
-        const updatedCities = [...currentCities];
-        updatedCities[existingCityIndex] = { ...target, sublocations: newSubs };
-
-        set({ cities: updatedCities });
-        void saveCitiesToServer(updatedCities);
       },
 
       fetchDefaultLocation: async () => {
@@ -315,68 +305,11 @@ export const useLocationsStore = create<LocationsState>()(
               return { ...sub, count: countStr };
             });
 
-            // If a property or project was added in this city with a new locality, auto-append it (only if not a project name)
-            Object.entries(cityCounts).forEach(([subLower, counts]) => {
-              if (isProjectName(subLower)) return;
-              const exists = updatedSubs.some((s) => s.name.toLowerCase() === subLower);
-              if (!exists && (counts.propCount > 0 || counts.projCount > 0)) {
-                const parts: string[] = [];
-                if (counts.propCount > 0) parts.push(`${counts.propCount} Home${counts.propCount > 1 ? "s" : ""}`);
-                if (counts.projCount > 0) parts.push(`${counts.projCount} Project${counts.projCount > 1 ? "s" : ""}`);
-                const formattedName = subLower.charAt(0).toUpperCase() + subLower.slice(1);
-                updatedSubs.push({
-                  id: `sub-auto-${Date.now()}-${subLower.replace(/\s+/g, "-")}`,
-                  name: formattedName,
-                  tagline: `${formattedName}, ${city.name}`,
-                  count: parts.join(" • "),
-                });
-              }
-            });
-
             return {
               ...city,
               sublocations: updatedSubs,
             };
           });
-
-          // 4. Attach any outlying localities to the default/primary city as sublocations
-          const primaryCityIndex = updatedCities.findIndex(
-            (c) => c.name.toLowerCase() === (get().defaultLocation?.city || "vijayawada").toLowerCase()
-          );
-          const targetIndex = primaryCityIndex >= 0 ? primaryCityIndex : 0;
-
-          if (updatedCities[targetIndex]) {
-            const targetCity = updatedCities[targetIndex];
-            const currentSubs = [...targetCity.sublocations];
-
-            Object.entries(cityLocalitiesCounts).forEach(([cityNameLower, localities]) => {
-              const isKnownCity = updatedCities.some((c) => c.name.toLowerCase() === cityNameLower);
-              if (!isKnownCity) {
-                // This listing had city entered as a locality or surrounding town (e.g., Gudavalli, Edupugallu)
-                Object.entries(localities).forEach(([locLower, counts]) => {
-                  if (isProjectName(locLower)) return;
-                  const exists = currentSubs.some((s) => s.name.toLowerCase() === locLower || s.name.toLowerCase() === cityNameLower);
-                  if (!exists && (counts.propCount > 0 || counts.projCount > 0)) {
-                    const parts: string[] = [];
-                    if (counts.propCount > 0) parts.push(`${counts.propCount} Home${counts.propCount > 1 ? "s" : ""}`);
-                    if (counts.projCount > 0) parts.push(`${counts.projCount} Project${counts.projCount > 1 ? "s" : ""}`);
-                    const displayName = locLower.charAt(0).toUpperCase() + locLower.slice(1);
-                    currentSubs.push({
-                      id: `sub-auto-${Date.now()}-${locLower.replace(/\s+/g, "-")}`,
-                      name: displayName,
-                      tagline: `${displayName}, ${targetCity.name}`,
-                      count: parts.join(" • "),
-                    });
-                  }
-                });
-              }
-            });
-
-            updatedCities[targetIndex] = {
-              ...targetCity,
-              sublocations: currentSubs,
-            };
-          }
 
           set({ cities: updatedCities, isLoading: false });
         } catch (err) {
@@ -586,6 +519,40 @@ export const useLocationsStore = create<LocationsState>()(
         }
 
         toast.success("Sublocation removed!");
+      },
+
+      clearSublocations: async (cityId) => {
+        const targetCity = get().cities.find((c) => c.id === cityId);
+        const updatedCities = get().cities.map((c) => {
+          if (c.id === cityId) {
+            return {
+              ...c,
+              sublocations: [],
+            };
+          }
+          return c;
+        });
+
+        set({ cities: updatedCities });
+        void saveCitiesToServer(updatedCities);
+
+        if (targetCity) {
+          try {
+            await fetch("/api/locations/delete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                type: "clear_sublocations",
+                cityId,
+                cityName: targetCity.name,
+              }),
+            });
+          } catch (err) {
+            console.error("Failed to clear sublocations on server:", err);
+          }
+        }
+
+        toast.success(`Cleared all sublocalities for ${targetCity?.name || "location"}!`);
       },
 
       toggleHeroPill: (cityId) => {
