@@ -156,35 +156,25 @@ async function readTextWithLimit(response: Response): Promise<string> {
  * Extracts coordinates from an HTML response body (fallback).
  */
 function extractCoordsFromHtml(html: string): { latitude: number; longitude: number } | null {
-  // 1. !3dLAT!4dLNG
-  const lat3d = html.match(/(?:!|%21)3d(-?\d+(?:\.\d+)?)/);
-  const lng4d = html.match(/(?:!|%21)4d(-?\d+(?:\.\d+)?)/);
-  if (lat3d && lng4d) {
-    const lat = parseFloat(lat3d[1]);
-    const lng = parseFloat(lng4d[1]);
+  // 1. Contiguous Protobuf coordinates: !3dLAT!4dLNG
+  const match3d4d = html.match(/(?:!|%21)3d(-?\d+(?:\.\d+)?)(?:!|%21)4d(-?\d+(?:\.\d+)?)/);
+  if (match3d4d) {
+    const lat = parseFloat(match3d4d[1]);
+    const lng = parseFloat(match3d4d[2]);
     if (isValidCoordinateRange(lat, lng)) return { latitude: lat, longitude: lng };
   }
 
-  // 2. Static map meta tag center=LAT,LNG
-  const staticMapMatch = html.match(
-    /staticmap\?center=(-?\d+(?:\.\d+)?)(?:%2C|,)(-?\d+(?:\.\d+)?)/i
-  );
-  if (staticMapMatch) {
-    const lat = parseFloat(staticMapMatch[1]);
-    const lng = parseFloat(staticMapMatch[2]);
+  // 2. Google JSON state array with coordinates: [null,null,LAT,LNG]
+  const jsonCoords = html.match(/\[null,null,(-?\d+\.\d+),(-?\d+\.\d+)\]/);
+  if (jsonCoords) {
+    const lat = parseFloat(jsonCoords[1]);
+    const lng = parseFloat(jsonCoords[2]);
     if (isValidCoordinateRange(lat, lng)) return { latitude: lat, longitude: lng };
   }
 
-  // 3. og:image or twitter:image with @LAT,LNG or ll=LAT,LNG
-  const imageMatch = html.match(
-    /property="og:image"\s+content="[^"]*?(?:@|center=|ll=)(-?\d+(?:\.\d+)?)(?:%2C|,)(-?\d+(?:\.\d+)?)/i
-  );
-  if (imageMatch) {
-    const lat = parseFloat(imageMatch[1]);
-    const lng = parseFloat(imageMatch[2]);
-    if (isValidCoordinateRange(lat, lng)) return { latitude: lat, longitude: lng };
-  }
-
+  // NOTE: NEVER match staticmap?center or og:image with center= because Google Maps sets those to the
+  // client's current IP geolocation when JavaScript is disabled, which causes false extraction of the user's
+  // current location rather than the actual place in the link!
   return null;
 }
 
@@ -448,6 +438,113 @@ async function geocodeSearch(query: string): Promise<{
   return null;
 }
 
+async function geocodePlaceAddress(rawAddress: string): Promise<{
+  latitude: number;
+  longitude: number;
+  city: string;
+  locality: string;
+  candidateSublocations: SublocationCandidate[];
+  state: string;
+  pincode: string;
+  address: string;
+} | null> {
+  const clean = rawAddress.replace(/\+/g, " ").trim();
+  if (!clean) return null;
+
+  // Split into components by comma
+  const parts = clean
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  // Progressive search:
+  // 1. Try full address
+  // 2. If not found, drop leading parts (builder / project title)
+  const candidates: string[] = [clean];
+  for (let i = 1; i < parts.length; i++) {
+    const sub = parts.slice(i).join(", ");
+    if (sub.length >= 4) candidates.push(sub);
+  }
+
+  // Extract explicit pincode if present (e.g. 521151)
+  const pincodeMatch = clean.match(/\b([1-9]\d{5})\b/);
+  const explicitPincode = pincodeMatch ? pincodeMatch[1] : "";
+
+  // Check for known AP cities in address
+  const knownCities = [
+    "Vijayawada",
+    "Guntur",
+    "Amaravati",
+    "Visakhapatnam",
+    "Mangalagiri",
+    "Tadepalli",
+    "Tenali",
+    "Hyderabad",
+    "Bengaluru",
+  ];
+  const matchedCity = knownCities.find((c) => clean.toLowerCase().includes(c.toLowerCase())) || "";
+
+  // If a known city is present, construct explicit "part, city, Andhra Pradesh" queries
+  if (matchedCity) {
+    for (const part of parts) {
+      const pLower = part.toLowerCase();
+      if (
+        pLower !== matchedCity.toLowerCase() &&
+        !pLower.includes("andhra") &&
+        !pLower.includes("pradesh") &&
+        !pLower.includes("realty") &&
+        !pLower.includes("builders") &&
+        !pLower.includes("developers") &&
+        !/^\d+$/.test(pLower)
+      ) {
+        candidates.push(`${part}, ${matchedCity}, Andhra Pradesh`);
+      }
+    }
+  }
+
+  const uniqueCandidates = Array.from(new Set(candidates));
+
+  for (const candidate of uniqueCandidates) {
+    const geo = await geocodeSearch(candidate);
+    if (geo && isValidCoordinateRange(geo.latitude, geo.longitude)) {
+      // Do reverse geocoding to get full candidate sublocations for these coordinates
+      const rev = await reverseGeocode(geo.latitude, geo.longitude);
+
+      // Determine the best locality:
+      // If one of the address parts matches a candidate sublocation or is before the city in parts
+      let bestLocality = rev?.locality || geo.locality || "";
+      if (matchedCity) {
+        const cityIndex = parts.findIndex((p) => p.toLowerCase().includes(matchedCity.toLowerCase()));
+        if (cityIndex > 0) {
+          const prevPart = parts[cityIndex - 1];
+          if (
+            prevPart &&
+            !prevPart.toLowerCase().includes("realty") &&
+            !prevPart.toLowerCase().includes("builder") &&
+            !prevPart.toLowerCase().includes("road") &&
+            !prevPart.toLowerCase().includes("rd")
+          ) {
+            bestLocality = prevPart;
+          }
+        }
+      }
+
+      return {
+        latitude: geo.latitude,
+        longitude: geo.longitude,
+        city: matchedCity || rev?.city || geo.city,
+        locality: bestLocality,
+        candidateSublocations: rev?.candidateSublocations || [],
+        state: rev?.state || geo.state || "Andhra Pradesh",
+        pincode: explicitPincode || rev?.pincode || geo.pincode,
+        address: clean,
+      };
+    }
+  }
+
+  return null;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
@@ -650,54 +747,24 @@ export async function GET(request: Request) {
 
     // 5. Fallback: If place address was extracted but no coordinates found in link, geocode place address
     if (placeAddress) {
-      try {
-        const nomRes = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-            placeAddress
-          )}&format=json&addressdetails=1`,
+      const geoResult = await geocodePlaceAddress(placeAddress);
+      if (geoResult) {
+        return NextResponse.json(
           {
-            signal: AbortSignal.timeout(4000),
-            headers: {
-              "User-Agent": "ROADFacingApp/1.0 (care@roadfacing.com)",
-              "Accept-Language": "en",
-            },
-          }
+            success: true,
+            latitude: geoResult.latitude,
+            longitude: geoResult.longitude,
+            city: geoResult.city || "",
+            locality: geoResult.locality || "",
+            candidateSublocations: geoResult.candidateSublocations || [],
+            state: geoResult.state || "Andhra Pradesh",
+            pincode: geoResult.pincode || "",
+            address: geoResult.address || placeAddress,
+            resolvedUrl: finalUrl,
+          },
+          { headers: CORS_HEADERS }
         );
-        if (nomRes.ok) {
-          const items = await nomRes.json();
-          if (items && items[0]) {
-            const lat = parseFloat(items[0].lat);
-            const lng = parseFloat(items[0].lon);
-            if (isValidCoordinateRange(lat, lng)) {
-              const addr = items[0].address || {};
-              const city =
-                addr.city || addr.town || addr.village || addr.county || addr.suburb || "";
-              const locality =
-                addr.suburb ||
-                addr.neighbourhood ||
-                addr.residential ||
-                addr.quarter ||
-                city ||
-                "";
-              return NextResponse.json(
-                {
-                  success: true,
-                  latitude: lat,
-                  longitude: lng,
-                  city,
-                  locality,
-                  candidateSublocations: extractCandidateSublocations(addr, city),
-                  state: addr.state || "",
-                  pincode: addr.postcode || "",
-                  address: items[0].display_name || placeAddress,
-                  resolvedUrl: finalUrl,
-                },
-                { headers: CORS_HEADERS }
-              );
-            }
-          }
-        }
-      } catch {}
+      }
     }
 
     return NextResponse.json(
