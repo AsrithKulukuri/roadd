@@ -573,7 +573,11 @@ export const useLocationsStore = create<LocationsState>()(
       name: "road_master_locations_store",
       partialize: (state) => ({
         userSelectedCity: state.userSelectedCity,
-        userSelectedLocalities: state.userSelectedLocalities,
+      }),
+      merge: (persistedState: any, currentState) => ({
+        ...currentState,
+        ...(typeof persistedState === "object" && persistedState !== null ? persistedState : {}),
+        userSelectedLocalities: [],
       }),
     }
   )

@@ -84,8 +84,8 @@ export function MobileLocationPicker() {
   };
 
   const applySelection = () => {
-    // 1. Flow globally into store so the entire website immediately inherits it
-    setUserSelectedLocation(cityName, selectedLocalities);
+    // 1. Flow active city into store
+    setUserSelectedLocation(cityName, []);
 
     // 2. Direct to search / update URL
     const next = new URLSearchParams(pathname === "/search" ? params.toString() : "");

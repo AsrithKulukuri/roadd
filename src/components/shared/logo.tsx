@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useLocationsStore } from "@/stores/locations-store";
 
 interface LogoProps {
   className?: string;
@@ -83,7 +84,15 @@ export function Logo({
 
   if (href) {
     return (
-      <Link href={href} className="focus-visible:outline-none flex items-center">
+      <Link
+        href={href}
+        onClick={() => {
+          if (href === "/") {
+            useLocationsStore.getState().clearUserSelectedLocalities();
+          }
+        }}
+        className="focus-visible:outline-none flex items-center"
+      >
         {content}
       </Link>
     );

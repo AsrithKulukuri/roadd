@@ -230,7 +230,7 @@ export function Navbar() {
     }
     if (customLocality) {
       params.set("locality", customLocality);
-      setUserSelectedLocation(targetCity, [customLocality]);
+      setUserSelectedLocation(targetCity, []);
     } else if (navSearchQuery.trim()) {
       params.set("q", navSearchQuery.trim());
     } else if (targetCity) {

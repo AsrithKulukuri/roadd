@@ -186,6 +186,33 @@ export function HeroSection() {
     setMounted(true);
   }, []);
 
+  // Auto-reset all hero applied filters and sublocations on mount, route return, and browser back/forward (popstate/pageshow)
+  useEffect(() => {
+    const resetAllFilters = () => {
+      // 1. Reset global store sublocalities so matchingCount and search params are clean
+      useLocationsStore.getState().clearUserSelectedLocalities();
+
+      // 2. Reset hero local filter and search states
+      setHeroBudget([1000000, 500000000]);
+      setSearchQuery("");
+      setOpenLocationTab(null);
+      setShowBuyMenu(false);
+      setActiveBuySub(null);
+      setSublocationSearch("");
+      setIsFocused(false);
+    };
+
+    resetAllFilters();
+
+    window.addEventListener("popstate", resetAllFilters);
+    window.addEventListener("pageshow", resetAllFilters);
+
+    return () => {
+      window.removeEventListener("popstate", resetAllFilters);
+      window.removeEventListener("pageshow", resetAllFilters);
+    };
+  }, [pathname]);
+
   // Prefetch search route for instant transitions
   useEffect(() => {
     try {
@@ -1293,9 +1320,7 @@ export function HeroSection() {
               >
                 <SolidMapPin className="w-4 h-4 text-amber-500 shrink-0" />
                 <span className="font-extrabold text-slate-950 whitespace-nowrap">
-                  {userSelectedLocalities && userSelectedLocalities.length > 0
-                    ? `${userSelectedCity || activeLocationCity?.name} • ${userSelectedLocalities[0]}`
-                    : (userSelectedCity || activeLocationCity?.name || "Vijayawada")}
+                  {userSelectedCity || activeLocationCity?.name || "Vijayawada"}
                 </span>
                 <ChevronDown
                   strokeWidth={2.5}
@@ -1434,7 +1459,7 @@ export function HeroSection() {
                               onClick={() => {
                                 setOpenLocationTab(null);
                                 setSublocationSearch("");
-                                setUserSelectedLocation(activeLocationCity.name, [sub.name]);
+                                setUserSelectedCity(activeLocationCity.name);
                                 router.push(
                                   `/search?${getSearchTypeParams(activeTab)}&city=${encodeURIComponent(
                                     activeLocationCity.name

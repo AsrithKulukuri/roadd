@@ -760,7 +760,7 @@ function UnifiedSearchPage() {
 
   const handleFilterChange = (newFilters: FilterState) => {
     if (newFilters.cities && newFilters.cities.length > 0) {
-      useLocationsStore.getState().setUserSelectedLocation(newFilters.cities[0], newFilters.localities || []);
+      useLocationsStore.getState().setUserSelectedCity(newFilters.cities[0]);
     }
     syncFiltersToUrl(newFilters, undefined, { removeModalParams: false });
   };
