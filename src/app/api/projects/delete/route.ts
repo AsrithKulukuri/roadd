@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { deleteS3Objects } from "@/lib/aws/s3";
 import { requireAdmin } from "@/lib/server-auth-guard";
+import { bumpTagVersion, invalidateCache } from "@/lib/redis";
 
 export async function POST(request: Request) {
   try {
@@ -36,6 +37,13 @@ export async function POST(request: Request) {
         }
       }
 
+      await Promise.allSettled([
+        bumpTagVersion("projects"),
+        bumpTagVersion("locations"),
+        invalidateCache("listings:project*"),
+        invalidateCache("locations:counts"),
+      ]);
+
       return NextResponse.json({ success: true, message: "All projects deleted from database" });
     }
 
@@ -67,6 +75,13 @@ export async function POST(request: Request) {
         deleteS3Objects(urlsToDelete).catch((err) => console.warn("S3 delete warning for projects:", err));
       }
     }
+
+    await Promise.allSettled([
+      bumpTagVersion("projects"),
+      bumpTagVersion("locations"),
+      invalidateCache("listings:project*"),
+      invalidateCache("locations:counts"),
+    ]);
 
     return NextResponse.json({ success: true, deletedIds: targetIds });
   } catch (error: any) {

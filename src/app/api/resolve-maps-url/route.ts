@@ -213,6 +213,58 @@ function extractPlaceNameFromUrl(urlStr: string): string {
   return "";
 }
 
+export interface SublocationCandidate {
+  name: string;
+  type: string;
+  confidence: "high" | "medium" | "low";
+}
+
+function extractCandidateSublocations(addr: any, city: string): SublocationCandidate[] {
+  const candidates: SublocationCandidate[] = [];
+  const seen = new Set<string>();
+
+  const normalize = (val: string) => val.trim().toLowerCase();
+  const cityNorm = normalize(city || "");
+
+  const addCandidate = (name: any, type: string, confidence: "high" | "medium" | "low") => {
+    if (!name || typeof name !== "string") return;
+    const clean = name.trim();
+    if (!clean || clean.length < 2) return;
+    const lower = clean.toLowerCase();
+
+    // Ignore if it's the city name itself or generic administrative labels
+    if (lower === cityNorm) return;
+    if (
+      lower.includes("district") ||
+      lower.includes("mandal") ||
+      lower.includes("andhra pradesh") ||
+      lower.includes("telangana") ||
+      lower === "india"
+    ) {
+      return;
+    }
+    if (/^\d+$/.test(lower)) return; // Ignore zipcodes
+
+    if (!seen.has(lower)) {
+      seen.add(lower);
+      candidates.push({ name: clean, type, confidence });
+    }
+  };
+
+  // 1. High confidence: Suburb, neighbourhood, commercial zone, village
+  addCandidate(addr.suburb, "suburb", "high");
+  addCandidate(addr.neighbourhood, "neighbourhood", "high");
+  addCandidate(addr.commercial, "commercial", "high");
+  addCandidate(addr.village, "village", "high");
+  addCandidate(addr.hamlet, "hamlet", "high");
+  addCandidate(addr.quarter, "quarter", "medium");
+  addCandidate(addr.residential, "residential", "medium");
+  addCandidate(addr.subdistrict, "subdistrict", "low");
+  addCandidate(addr.road, "road", "low");
+
+  return candidates;
+}
+
 /**
  * Reverse geocodes coordinates to address details using OpenStreetMap Nominatim.
  */
@@ -222,6 +274,7 @@ async function reverseGeocode(
 ): Promise<{
   city: string;
   locality: string;
+  candidateSublocations: SublocationCandidate[];
   state: string;
   pincode: string;
   address: string;
@@ -253,9 +306,12 @@ async function reverseGeocode(
         city ||
         "";
 
+      const candidateSublocations = extractCandidateSublocations(addr, city);
+
       return {
         city,
         locality,
+        candidateSublocations,
         state: addr.state || "",
         pincode: addr.postcode || "",
         address: data.display_name || "",
@@ -280,9 +336,30 @@ async function reverseGeocode(
         const formatted = [props.name, props.street, props.locality || props.city, props.state, props.postcode]
           .filter(Boolean)
           .join(", ");
+
+        const candidateSublocations: SublocationCandidate[] = [];
+        const seen = new Set<string>();
+        const addProp = (name: any, type: string, confidence: "high" | "medium" | "low") => {
+          if (!name || typeof name !== "string") return;
+          const clean = name.trim();
+          if (!clean || clean.length < 2) return;
+          const lower = clean.toLowerCase();
+          if (lower === city.toLowerCase()) return;
+          if (!seen.has(lower)) {
+            seen.add(lower);
+            candidateSublocations.push({ name: clean, type, confidence });
+          }
+        };
+
+        addProp(props.suburb, "suburb", "high");
+        addProp(props.locality, "locality", "high");
+        addProp(props.name, "place", "medium");
+        addProp(props.street, "street", "low");
+
         return {
           city,
           locality,
+          candidateSublocations,
           state: props.state || "",
           pincode: props.postcode || "",
           address: formatted || "",
@@ -318,6 +395,7 @@ export async function GET(request: Request) {
         longitude: directMatch.longitude,
         city: geo?.city || "",
         locality: geo?.locality || "",
+        candidateSublocations: geo?.candidateSublocations || [],
         state: geo?.state || "",
         pincode: geo?.pincode || "",
         address: geo?.address || "",
@@ -434,6 +512,7 @@ export async function GET(request: Request) {
           longitude: coords.longitude,
           city: geo?.city || "",
           locality: geo?.locality || "",
+          candidateSublocations: geo?.candidateSublocations || [],
           state: geo?.state || "Andhra Pradesh",
           pincode: geo?.pincode || "",
           address: geo?.address || placeAddress,
@@ -481,6 +560,7 @@ export async function GET(request: Request) {
                   longitude: lng,
                   city,
                   locality,
+                  candidateSublocations: extractCandidateSublocations(addr, city),
                   state: addr.state || "",
                   pincode: addr.postcode || "",
                   address: items[0].display_name || placeAddress,

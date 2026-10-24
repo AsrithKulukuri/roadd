@@ -39,6 +39,7 @@ import { useLocationsStore } from "@/stores/locations-store";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import { findItemByRefId, getRefId } from "@/lib/ref-id";
 import { matchesPropertySearch, matchesProjectSearch } from "@/lib/search-engine";
+import { isCrdaVerified } from "@/lib/listing-quality";
 import { toast } from "sonner";
 import { ModernBudgetDropdown } from "@/components/ui/modern-budget-dropdown";
 import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
@@ -76,11 +77,12 @@ const HERO_BUDGET_MAX_OPTS = [
   { label: "₹ 10 Cr", value: 100000000 },
 ];
 
-// Search Tabs: Buy, Projects, Pre Launches and Map View
+// Search Tabs: Buy (conditional), Apartments, Villas, CRDA Ventures, and Map View
 const tabs = [
   { id: "buy", label: "Buy" },
-  { id: "projects", label: "Projects" },
-  { id: "new-launch", label: "Pre Launches" },
+  { id: "apartments", label: "Apartments" },
+  { id: "villas", label: "Villas" },
+  { id: "crda-ventures", label: "CRDA Ventures" },
   { id: "map", label: "Map View" },
 ];
 
@@ -151,13 +153,21 @@ export function HeroSection() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { openProject } = useProjectOpenGuard();
-  const [selectedTab, setActiveTab] = useState("buy");
-  const activeTab = !propertiesEnabled && selectedTab === "buy" ? "projects" : selectedTab;
+  const [selectedTab, setActiveTab] = useState("apartments");
+  const activeTab = !propertiesEnabled && selectedTab === "buy" ? "apartments" : (selectedTab === "projects" ? "apartments" : selectedTab);
   const [locationTab, setLocationTab] = useState<"trending" | "vijayawada" | "guntur" | "popular" | "nearyou">("trending");
   const [showBuyMenu, setShowBuyMenu] = useState(false);
   const [activeBuySub, setActiveBuySub] = useState<string | null>(null);
-  const [showProjectsMenu, setShowProjectsMenu] = useState(false);
   const [openLocationTab, setOpenLocationTab] = useState<string | null>(null);
+
+  const getSearchTypeParams = (tab: string) => {
+    if (tab === "apartments") return "type=projects&propertyType=apartment";
+    if (tab === "villas") return "type=projects&propertyType=villa";
+    if (tab === "crda-ventures" || tab === "venture") return "type=projects&projectType=venture";
+    if (tab === "new-launch") return "type=projects&status=new-launch";
+    if (tab === "map" || tab === "nearme") return `type=${propertiesEnabled ? "buy" : "projects"}&view=map`;
+    return `type=${propertiesEnabled ? "buy" : "projects"}`;
+  };
   const [sublocationSearch, setSublocationSearch] = useState("");
   const [isLocalityFocused, setIsLocalityFocused] = useState(false);
   const [showBudgetDropdown, setShowBudgetDropdown] = useState(false);
@@ -236,8 +246,24 @@ export function HeroSection() {
     if (searchPhrasesConfigured || Array.isArray(searchTypewriterPhrasesDesktop)) {
       return searchTypewriterPhrasesDesktop || [];
     }
+    if (activeTab === "villas") {
+      return [
+        "3 BHK Luxury Villas in Poranki",
+        "Gated Community Villas in Mangalagiri",
+        "Duplex Villas in Kanuru",
+        "4 BHK Villas in Tadepalli",
+      ];
+    }
+    if (activeTab === "crda-ventures") {
+      return [
+        "CRDA Approved Plots in Amaravati Road",
+        "CRDA Ventures in Mangalagiri",
+        "Residential Plots in Kanuru",
+        "CRDA Layouts in Poranki",
+      ];
+    }
     return DEFAULT_DESKTOP_SEARCH_PHRASES;
-  }, [isMobileScreen, searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile, searchPhrasesConfigured]);
+  }, [isMobileScreen, searchTypewriterPhrasesDesktop, searchTypewriterPhrasesMobile, searchPhrasesConfigured, activeTab]);
 
   useEffect(() => {
     setTypedText("");
@@ -318,6 +344,32 @@ export function HeroSection() {
     return pills.length > 0 ? pills : cities.slice(0, 3);
   }, [cities]);
 
+  // Active location city selected by user or defaulted
+  const activeLocationCity = useMemo(() => {
+    if (openLocationTab) {
+      const found = heroCities.find((c) => c.id === openLocationTab);
+      if (found) return found;
+    }
+    if (userSelectedCity) {
+      const found = heroCities.find((c) => c.name.toLowerCase().trim() === userSelectedCity.toLowerCase().trim());
+      if (found) return found;
+      const fromAll = cities.find((c) => c.name.toLowerCase().trim() === userSelectedCity.toLowerCase().trim());
+      if (fromAll) return fromAll;
+    }
+    return heroCities[0] || cities[0];
+  }, [openLocationTab, userSelectedCity, heroCities, cities]);
+
+  const filteredSublocations = useMemo(() => {
+    if (!activeLocationCity || !activeLocationCity.sublocations) return [];
+    const q = sublocationSearch.trim().toLowerCase();
+    if (!q) return activeLocationCity.sublocations;
+    return activeLocationCity.sublocations.filter(
+      (sub) =>
+        sub.name.toLowerCase().includes(q) ||
+        (sub.tagline && sub.tagline.toLowerCase().includes(q))
+    );
+  }, [activeLocationCity, sublocationSearch]);
+
   useEffect(() => {
     if (banners.length <= 1) return;
     const interval = setInterval(() => {
@@ -341,6 +393,7 @@ export function HeroSection() {
     if (isNavigating) return;
 
     setIsNavigating(true);
+    setTimeout(() => setIsNavigating(false), 2000);
 
     if (activeTab === "sell") {
       router.push("/list-with-us");
@@ -367,8 +420,15 @@ export function HeroSection() {
     }
 
     const params = new URLSearchParams();
-    if (activeTab === "projects") {
+    if (activeTab === "apartments") {
       params.set("type", "projects");
+      params.set("propertyType", "apartment");
+    } else if (activeTab === "villas") {
+      params.set("type", "projects");
+      params.set("propertyType", "villa");
+    } else if (activeTab === "crda-ventures" || activeTab === "venture") {
+      params.set("type", "projects");
+      params.set("projectType", "venture");
     } else if (activeTab === "new-launch") {
       params.set("type", "projects");
       params.set("status", "new-launch");
@@ -399,6 +459,42 @@ export function HeroSection() {
     router.push(`/search?${params.toString()}`);
   };
 
+  const handleTabClick = (tabId: string) => {
+    if (tabId === "buy") {
+      setShowBuyMenu((prev) => !prev);
+      setOpenLocationTab(null);
+      setIsFocused(false);
+      return;
+    }
+
+    setShowBuyMenu(false);
+    setActiveTab(tabId);
+
+    if (tabId === "map" || tabId === "nearme") {
+      router.push("/search?view=map");
+      return;
+    }
+
+    const params = new URLSearchParams();
+    params.set("type", "projects");
+
+    if (tabId === "apartments") {
+      params.set("propertyType", "apartment");
+    } else if (tabId === "villas") {
+      params.set("propertyType", "villa");
+    } else if (tabId === "crda-ventures" || tabId === "venture") {
+      params.set("projectType", "venture");
+    }
+
+    if (searchQuery.trim()) {
+      params.set("location", searchQuery.trim());
+    } else if (userSelectedCity) {
+      params.set("city", userSelectedCity);
+    }
+
+    router.push(`/search?${params.toString()}`);
+  };
+
   // Live Auto-Suggestions for Hero Search Bar
   const liveHeroSuggestions = useMemo(() => {
     const q = searchQuery.trim();
@@ -408,10 +504,25 @@ export function HeroSection() {
 
     const matchingProjects = projects
       .filter((proj) => matchesProjectSearch(proj, q))
+      .filter((proj) => {
+        const pt = (proj.projectType || "").toLowerCase();
+        if (activeTab === "apartments") return pt.includes("apartment");
+        if (activeTab === "villas") return pt.includes("villa") || pt.includes("house");
+        if (activeTab === "crda-ventures") return pt === "venture";
+        if (activeTab === "new-launch") return proj.constructionStatus === "new-launch";
+        return true;
+      })
       .slice(0, 3);
 
     const matchingProps = properties
       .filter((prop) => matchesPropertySearch(prop, q))
+      .filter((prop) => {
+        if (!propertiesEnabled) return false;
+        if (activeTab === "apartments") return prop.propertyType === "apartment";
+        if (activeTab === "villas") return prop.propertyType === "villa" || prop.propertyType === "independent-house";
+        if (activeTab === "crda-ventures") return prop.propertyType === "residential-land";
+        return true;
+      })
       .slice(0, 3);
 
     return {
@@ -420,7 +531,7 @@ export function HeroSection() {
       properties: matchingProps,
       hasResults: Boolean(directRefMatch) || matchingProjects.length > 0 || matchingProps.length > 0
     };
-  }, [searchQuery, projects, properties]);
+  }, [searchQuery, projects, properties, activeTab, propertiesEnabled]);
 
   const matchingCount = useMemo(() => {
     let count = 0;
@@ -457,17 +568,29 @@ export function HeroSection() {
       return false;
     };
 
-    // Count matching properties
-    count += properties.filter((p) => {
-      if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
-      if (!isLocationMatch(p.location)) return false;
-      return p.price >= heroBudget[0] && (isAnyMax || p.price <= heroBudget[1]);
-    }).length;
+    // Count matching properties (only if propertiesEnabled and activeTab matches)
+    if (propertiesEnabled && (activeTab === "buy" || activeTab === "apartments" || activeTab === "villas" || activeTab === "crda-ventures")) {
+      count += properties.filter((p) => {
+        if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
+        if (!isLocationMatch(p.location)) return false;
+        if (activeTab === "apartments" && p.propertyType !== "apartment") return false;
+        if (activeTab === "villas" && p.propertyType !== "villa" && p.propertyType !== "independent-house") return false;
+        if (activeTab === "crda-ventures" && p.propertyType !== "residential-land") return false;
+        return p.price >= heroBudget[0] && (isAnyMax || p.price <= heroBudget[1]);
+      }).length;
+    }
 
     // Count matching projects
     count += projects.filter((p) => {
       if (p.isSoldOut || p.isPublished === false) return false;
       if (!isLocationMatch(p.location)) return false;
+
+      const pType = (p.projectType || "").toLowerCase();
+      if (activeTab === "apartments" && !pType.includes("apartment")) return false;
+      if (activeTab === "villas" && !pType.includes("villa") && !pType.includes("house")) return false;
+      if (activeTab === "crda-ventures" && !(pType === "venture" && (p.crdaApproved || isCrdaVerified(p)))) return false;
+      if (activeTab === "new-launch" && p.constructionStatus !== "new-launch") return false;
+
       if (!p.configurations || p.configurations.length === 0) return true;
       return p.configurations.some((cfg) => {
         const pMin = cfg.priceMin || 0;
@@ -477,7 +600,7 @@ export function HeroSection() {
     }).length;
 
     return count;
-  }, [properties, projects, heroBudget, userSelectedCity, userSelectedLocalities, cities]);
+  }, [properties, projects, heroBudget, userSelectedCity, userSelectedLocalities, cities, activeTab, propertiesEnabled]);
 
   /** true whenever the user has moved either slider handle away from the full range */
   const budgetActive = heroBudget[0] > 1000000 || heroBudget[1] < 500000000;
@@ -517,7 +640,7 @@ export function HeroSection() {
 
     for (const cat of homeCategories) {
       const types = CATEGORY_TYPE_MAP[cat.id];
-      const propCount = activeTab === "projects" ? 0 : properties.filter((p) => {
+      const propCount = (!propertiesEnabled || activeTab !== "buy") ? 0 : properties.filter((p) => {
         if (p.status === "sold" || p.status === "archived" || p.status === "hidden") return false;
         const inBudget = p.price >= heroBudget[0] && (isAnyMax || p.price <= heroBudget[1]);
         if (!inBudget) return false;
@@ -607,6 +730,24 @@ export function HeroSection() {
         {/* Full-Width Dynamic Banner on Mobile */}
         {banners.length > 0 && (
           <div className="relative z-10 w-full mb-3 shadow-md h-[240px] overflow-hidden">
+            {/* Mobile Top-Right Location Pill */}
+            <button
+              type="button"
+              onClick={() => {
+                if (openLocationTab) {
+                  setOpenLocationTab(null);
+                  setSublocationSearch("");
+                } else {
+                  setOpenLocationTab(activeLocationCity?.id || "default");
+                  setSublocationSearch("");
+                }
+              }}
+              className="absolute top-3 right-3 z-30 h-8 px-3 rounded-full bg-white/95 backdrop-blur-md border border-white/60 shadow-md text-slate-950 font-bold text-xs flex items-center gap-1.5 active:scale-95 cursor-pointer pointer-events-auto"
+            >
+              <SolidMapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>{userSelectedCity || activeLocationCity?.name || "Vijayawada"}</span>
+              <ChevronDown className="w-3 h-3 text-slate-500" />
+            </button>
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentBanner?.id || 'banner-fallback-mobile'}
@@ -682,51 +823,25 @@ export function HeroSection() {
         {/* Mobile Search & Filter Section (Kept exactly like before) */}
         <div className="w-full px-4 relative z-30 flex flex-col items-center text-center">
           {/* Mobile backdrop to close menu when tapping outside */}
-          {(showBuyMenu || showProjectsMenu) && (
+          {showBuyMenu && (
             <div
               className="fixed inset-0 z-[80] bg-transparent"
               onClick={() => {
                 setShowBuyMenu(false);
-                setShowProjectsMenu(false);
                 setActiveBuySub(null);
               }}
             />
           )}
 
           {/* Mobile Tabs with Dark Text & Dark/Amber Underline */}
-          <div className="flex items-center justify-center gap-2 mb-3 px-1 max-w-full relative z-[100] overflow-visible">
+          <div className="flex items-center justify-start sm:justify-center gap-1.5 xs:gap-2 mb-3 px-1 max-w-full relative z-[100] overflow-x-auto no-scrollbar py-0.5">
             {tabs.filter(tab => propertiesEnabled || tab.id !== "buy").map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <div key={`m-tab-${tab.id}`} className="relative group shrink-0">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (tab.id === "buy") {
-                        setShowBuyMenu((prev) => !prev);
-                        setShowProjectsMenu(false);
-                        setOpenLocationTab(null);
-                        setIsFocused(false);
-                      } else if (tab.id === "projects") {
-                        setShowProjectsMenu((prev) => !prev);
-                        setShowBuyMenu(false);
-                        setOpenLocationTab(null);
-                        setIsFocused(false);
-                      } else {
-                        setShowBuyMenu(false);
-                        setShowProjectsMenu(false);
-                      }
-                      setActiveTab(tab.id);
-                      if (tab.id === "new-launch") {
-                        router.push("/search?type=projects&status=new-launch");
-                      }
-                      if (tab.id === "pre-approval") {
-                        router.push("/mortgage-calculator");
-                      }
-                      if (tab.id === "map" || tab.id === "nearme") {
-                        router.push("/search?view=map");
-                      }
-                    }}
+                    onClick={() => handleTabClick(tab.id)}
                     className={cn(
                       "relative py-1 text-xs xs:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap px-1.5",
                       isActive
@@ -737,9 +852,6 @@ export function HeroSection() {
                     <span>{tab.label}</span>
                     {tab.id === "buy" && (
                       <ChevronDown strokeWidth={2.5} className={cn("w-3.5 h-3.5 text-amber-500 transition-transform duration-200", showBuyMenu && "rotate-180")} />
-                    )}
-                    {tab.id === "projects" && (
-                      <ChevronDown strokeWidth={2.5} className={cn("w-3.5 h-3.5 text-amber-500 transition-transform duration-200", showProjectsMenu && "rotate-180")} />
                     )}
                     {isActive && (
                       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500 rounded-full shadow-xs" />
@@ -827,22 +939,6 @@ export function HeroSection() {
                           )}
                         </div>
                         <Link href="/search?type=buy&propertyType=agricultural-land" onClick={() => { setShowBuyMenu(false); setActiveBuySub(null); }} className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors">Agriculture</Link>
-                      </div>
-                    </div>
-                  )}
-
-                  {tab.id === "projects" && (
-                    <div
-                      className={cn(
-                        "absolute top-full left-0 pt-2 w-48 transition-all duration-200 z-[100]",
-                        showProjectsMenu ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
-                      )}
-                    >
-                      <div className="bg-white text-slate-950 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden py-2 text-left">
-                        <Link href="/search?type=projects&propertyType=apartment" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">Apartments</Link>
-                        <Link href="/search?type=projects&propertyType=villa" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">Villas</Link>
-                        <Link href="/search?type=projects&projectType=venture" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">CRDA Ventures</Link>
-                        <Link href="/search?type=projects" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 border-t border-slate-100 mt-1 pt-3">View All Projects →</Link>
                       </div>
                     </div>
                   )}
@@ -1171,25 +1267,228 @@ export function HeroSection() {
         </AnimatePresence>
         </div>
 
+        {/* ── Top-Right Floating Location Pill on Desktop Banner (Laptop & Desktop Responsive) ── */}
+        <div className="absolute top-[76px] sm:top-[78px] md:top-[80px] lg:top-[82px] right-3 sm:right-5 md:right-8 lg:right-10 xl:right-14 z-50 pointer-events-auto">
+          <div className="relative">
+              {/* Location Pill Button */}
+              <button
+                type="button"
+                id="hero-location-pill-btn"
+                onClick={() => {
+                  if (openLocationTab) {
+                    setOpenLocationTab(null);
+                    setSublocationSearch("");
+                  } else {
+                    setOpenLocationTab(activeLocationCity?.id || "default");
+                    setSublocationSearch("");
+                  }
+                }}
+                className={cn(
+                  "h-[40px] px-4 rounded-full text-xs sm:text-[13px] font-bold flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-lg backdrop-blur-md border",
+                  openLocationTab
+                    ? "bg-white border-amber-500 text-slate-950 shadow-xl ring-2 ring-amber-500/30"
+                    : "bg-white/95 hover:bg-white border-white/60 text-slate-950 hover:shadow-xl hover:scale-102 active:scale-95"
+                )}
+                aria-label="Select City or Locality"
+              >
+                <SolidMapPin className="w-4 h-4 text-amber-500 shrink-0" />
+                <span className="font-extrabold text-slate-950 whitespace-nowrap">
+                  {userSelectedLocalities && userSelectedLocalities.length > 0
+                    ? `${userSelectedCity || activeLocationCity?.name} • ${userSelectedLocalities[0]}`
+                    : (userSelectedCity || activeLocationCity?.name || "Vijayawada")}
+                </span>
+                <ChevronDown
+                  strokeWidth={2.5}
+                  className={cn(
+                    "w-3.5 h-3.5 text-slate-500 transition-transform duration-200 shrink-0",
+                    openLocationTab && "rotate-180 text-amber-500"
+                  )}
+                />
+              </button>
+
+              {/* ── Dropdown Anchored to Right Side of Pill ── */}
+              <AnimatePresence>
+                {openLocationTab && activeLocationCity && (
+                  <>
+                    {/* Click-outside dismissal backdrop */}
+                    <div
+                      className="fixed inset-0 z-[95]"
+                      onClick={() => {
+                        setOpenLocationTab(null);
+                        setSublocationSearch("");
+                      }}
+                    />
+
+                    <motion.div
+                      key={`pill-loc-dropdown-${activeLocationCity.id}`}
+                      initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -6 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                      className="absolute top-full right-0 mt-2.5 w-[340px] sm:w-[380px] max-w-[92vw] bg-white border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden z-[100] max-h-[440px] flex flex-col text-left pointer-events-auto"
+                    >
+                      {/* Multiple Cities Tab Switcher (if > 1 city) */}
+                      {heroCities.length > 1 && (
+                        <div className="flex items-center gap-1.5 p-2 bg-slate-50 border-b border-slate-100">
+                          {heroCities.map((c) => {
+                            const isCur = (userSelectedCity || "").toLowerCase().trim() === c.name.toLowerCase().trim() || (!userSelectedCity && c.id === activeLocationCity.id);
+                            return (
+                              <button
+                                key={`city-pill-${c.id}`}
+                                type="button"
+                                onClick={() => {
+                                  setUserSelectedCity(c.name);
+                                  setOpenLocationTab(c.id);
+                                  setSublocationSearch("");
+                                }}
+                                className={cn(
+                                  "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer",
+                                  isCur
+                                    ? "bg-amber-500 text-slate-950 shadow-xs"
+                                    : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+                                )}
+                              >
+                                <SolidMapPin className={cn("w-3.5 h-3.5", isCur ? "text-slate-950" : "text-amber-500")} />
+                                <span>{c.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Header with Title and Close Button */}
+                      <div className="px-4 py-2.5 border-b border-amber-500/20 text-[11px] uppercase font-black tracking-wider text-slate-950 flex items-center justify-between gap-3 sticky top-0 bg-white z-10 shrink-0">
+                        <span className="whitespace-nowrap flex items-center gap-1.5 text-slate-950 font-black">
+                          <MapPin className="w-3.5 h-3.5 text-amber-500" />
+                          {activeLocationCity.name} Localities
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-500 font-bold text-[10px] whitespace-nowrap lowercase">
+                            {filteredSublocations.length} areas
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenLocationTab(null);
+                              setSublocationSearch("");
+                            }}
+                            className="w-6 h-6 rounded-full bg-slate-100 hover:bg-amber-500/15 border border-slate-200 text-slate-700 hover:text-amber-600 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-90"
+                            aria-label="Close"
+                          >
+                            <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Search Bar inside Dropdown */}
+                      <div className="p-2 border-b border-amber-500/20 bg-slate-50/80 shrink-0">
+                        <div className="relative flex items-center bg-white border border-amber-500/40 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 rounded-xl px-2.5 py-1.5 transition-colors">
+                          <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-500 shrink-0 mr-2" />
+                          <input
+                            type="text"
+                            value={sublocationSearch}
+                            onChange={(e) => setSublocationSearch(e.target.value)}
+                            placeholder={`Search ${activeLocationCity.name} localities...`}
+                            style={{ outline: "none", boxShadow: "none", border: "none" }}
+                            className="w-full bg-transparent text-xs text-slate-950 placeholder-slate-400 font-semibold outline-none border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none p-0"
+                            autoFocus
+                          />
+                          {sublocationSearch && (
+                            <button
+                              type="button"
+                              onClick={() => setSublocationSearch("")}
+                              className="p-0.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors shrink-0 cursor-pointer ml-1"
+                              aria-label="Clear sublocation search"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Localities List */}
+                      <div className="overflow-y-auto min-h-0 divide-y divide-slate-100 flex-1 py-1 bg-white overscroll-contain scrollbar-thin scrollbar-thumb-slate-300 hover:scrollbar-thumb-amber-500">
+                        {/* Option to select All of City */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenLocationTab(null);
+                            setSublocationSearch("");
+                            setUserSelectedCity(activeLocationCity.name);
+                            setUserSelectedLocation(activeLocationCity.name, []);
+                            router.push(`/search?${getSearchTypeParams(activeTab)}&city=${encodeURIComponent(activeLocationCity.name)}`);
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-amber-500/10 cursor-pointer flex items-center justify-between transition-colors group border-none bg-amber-50/40"
+                        >
+                          <span className="font-extrabold text-xs text-amber-700 group-hover:text-amber-800">
+                            Entire {activeLocationCity.name} (All Localities)
+                          </span>
+                          <ChevronRight className="w-3.5 h-3.5 text-amber-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+                        </button>
+
+                        {filteredSublocations.length > 0 ? (
+                          filteredSublocations.map((sub) => (
+                            <button
+                              key={`pill-sub-${sub.id}`}
+                              type="button"
+                              onClick={() => {
+                                setOpenLocationTab(null);
+                                setSublocationSearch("");
+                                setUserSelectedLocation(activeLocationCity.name, [sub.name]);
+                                router.push(
+                                  `/search?${getSearchTypeParams(activeTab)}&city=${encodeURIComponent(
+                                    activeLocationCity.name
+                                  )}&locality=${encodeURIComponent(sub.name)}`
+                                );
+                              }}
+                              className="w-full text-left px-4 py-2.5 hover:bg-amber-500/10 cursor-pointer flex items-center justify-between transition-colors group border-none bg-transparent"
+                            >
+                              <div className="flex flex-col min-w-0 pr-2">
+                                <span className="font-bold text-xs text-slate-950 group-hover:text-amber-600 transition-colors truncate">
+                                  {sub.name}
+                                </span>
+                                {sub.tagline && (
+                                  <span className="text-[10px] text-slate-500 block mt-0.5 truncate">
+                                    {sub.tagline}
+                                  </span>
+                                )}
+                              </div>
+                              <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-amber-500 transition-colors shrink-0" />
+                            </button>
+                          ))
+                        ) : (
+                          <div className="py-6 px-4 text-center">
+                            <p className="text-xs text-slate-500 font-medium mb-2.5">
+                              No localities found for &ldquo;{sublocationSearch}&rdquo;
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
         {/* Upper/Center Hero Content: The Search Widget */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-40 w-full flex flex-col items-center text-center pt-20 sm:pt-24 md:pt-28 lg:pt-32">
           {/* Ambient Aurora Mesh Glow behind search bar */}
           <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[350px] sm:w-[750px] h-[200px] bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-yellow-500/20 blur-[80px] rounded-full pointer-events-none -z-10" />
 
           {/* Backdrop to close menu when clicking outside */}
-          {(showBuyMenu || showProjectsMenu) && (
+          {showBuyMenu && (
             <div
               className="fixed inset-0 z-[80] bg-transparent"
               onClick={() => {
                 setShowBuyMenu(false);
-                setShowProjectsMenu(false);
                 setActiveBuySub(null);
               }}
             />
           )}
 
           {/* Realtor.com Search Options Bar (Tabs over Dark Hero Banner) */}
-          <div className="flex items-center justify-center gap-3 sm:gap-8 mb-3.5 sm:mb-4.5 px-1 max-w-full relative z-[100] overflow-visible">
+          <div className="flex items-center justify-center gap-3 sm:gap-6 md:gap-8 mb-3.5 sm:mb-4.5 px-1 max-w-full relative z-[100] overflow-visible">
             {tabs.filter(tab => propertiesEnabled || tab.id !== "buy").map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -1201,57 +1500,24 @@ export function HeroSection() {
                       setShowBuyMenu(true);
                       setOpenLocationTab(null);
                     }
-                    if (tab.id === "projects") {
-                      setShowProjectsMenu(true);
-                      setOpenLocationTab(null);
-                    }
                   }}
                   onMouseLeave={() => {
                     if (tab.id === "buy") setShowBuyMenu(false);
-                    if (tab.id === "projects") setShowProjectsMenu(false);
                   }}
                 >
                   <button
                     type="button"
-                    onClick={() => {
-                      if (tab.id === "buy") {
-                        setShowBuyMenu((prev) => !prev);
-                        setShowProjectsMenu(false);
-                        setOpenLocationTab(null);
-                        setIsFocused(false);
-                      } else if (tab.id === "projects") {
-                        setShowProjectsMenu((prev) => !prev);
-                        setShowBuyMenu(false);
-                        setOpenLocationTab(null);
-                        setIsFocused(false);
-                      } else {
-                        setShowBuyMenu(false);
-                        setShowProjectsMenu(false);
-                      }
-                      setActiveTab(tab.id);
-                      if (tab.id === "new-launch") {
-                        router.push("/search?type=projects&status=new-launch");
-                      }
-                      if (tab.id === "pre-approval") {
-                        router.push("/mortgage-calculator");
-                      }
-                      if (tab.id === "map" || tab.id === "nearme") {
-                        router.push("/search?view=map");
-                      }
-                    }}
+                    onClick={() => handleTabClick(tab.id)}
                     className={cn(
-                      "relative py-1.5 text-[13px] xs:text-sm sm:text-lg font-extrabold transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 whitespace-nowrap px-1.5 sm:px-2",
+                      "relative py-1.5 text-[13px] xs:text-sm sm:text-base md:text-lg font-extrabold transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 whitespace-nowrap px-1.5 sm:px-2.5",
                       isActive
-                        ? "text-white"
+                        ? "text-white font-black"
                         : "text-white/80 hover:text-white"
                     )}
                   >
                     {tab.label}
                     {tab.id === "buy" && (
                       <ChevronDown strokeWidth={2.5} className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 transition-transform duration-200", showBuyMenu && "rotate-180")} />
-                    )}
-                    {tab.id === "projects" && (
-                      <ChevronDown strokeWidth={2.5} className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 transition-transform duration-200", showProjectsMenu && "rotate-180")} />
                     )}
                     {isActive && (
                       <motion.div
@@ -1452,28 +1718,6 @@ export function HeroSection() {
                           className="block px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600 transition-colors"
                         >
                           Agriculture
-                        </Link>
-                      </div>
-                    </div>
-                  )}
-
-                  {tab.id === "projects" && (
-                    <div className={cn(
-                      "absolute top-full left-0 sm:left-1/2 sm:-translate-x-1/2 pt-2 w-48 sm:w-52 transition-all duration-200 z-[100]",
-                      showProjectsMenu ? "opacity-100 visible pointer-events-auto" : "opacity-0 invisible pointer-events-none"
-                    )}>
-                      <div className="bg-white text-slate-950 border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden py-2 text-left">
-                        <Link href="/search?type=projects&propertyType=apartment" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
-                          Apartments
-                        </Link>
-                        <Link href="/search?type=projects&propertyType=villa" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
-                          Villas
-                        </Link>
-                        <Link href="/search?type=projects&projectType=venture" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-slate-800 hover:bg-amber-500/10 hover:text-amber-600">
-                          CRDA Ventures
-                        </Link>
-                        <Link href="/search?type=projects" onClick={() => setShowProjectsMenu(false)} className="block px-4 py-2 text-sm font-bold text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 border-t border-slate-100 mt-1 pt-3">
-                          View All Projects →
                         </Link>
                       </div>
                     </div>
@@ -1690,217 +1934,11 @@ export function HeroSection() {
             )}
           </form>
 
-          {/* Dynamic Location Pills (Row of 3 Dark Rounded Pills) */}
-          <div className="w-full max-w-[760px] mx-auto mt-2.5 sm:mt-3 text-left relative z-40">
-            <div
-              className={cn(
-                "grid gap-2 sm:gap-3 w-full pb-1 mb-1 sm:mb-1.5",
-                heroCities.length === 1 ? "grid-cols-1" :
-                  heroCities.length === 2 ? "grid-cols-2" :
-                    heroCities.length === 3 ? "grid-cols-3" :
-                      "grid-cols-2 sm:grid-cols-4"
-              )}
-            >
-              {heroCities.map((city) => {
-                const isOpen = openLocationTab === city.id;
-                const isSelectedCity = (userSelectedCity || "").toLowerCase().trim() === city.name.toLowerCase().trim();
-                const hasSublocations = city.sublocations && city.sublocations.length > 0;
-
-                return (
-                  <button
-                    key={city.id}
-                    type="button"
-                    onClick={() => {
-                      setUserSelectedCity(city.name);
-                      setShowBuyMenu(false);
-                      setShowProjectsMenu(false);
-                      if (hasSublocations) {
-                        setOpenLocationTab(isOpen ? null : city.id);
-                        setSublocationSearch("");
-                      } else {
-                        router.push(`/search?type=${activeTab}&city=${encodeURIComponent(city.name)}`);
-                      }
-                    }}
-                    className={cn(
-                      "h-[36px] sm:h-[40px] px-2.5 sm:px-4 rounded-full text-xs sm:text-[13px] flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-sm border w-full text-center whitespace-nowrap",
-                      isOpen || isSelectedCity
-                        ? "bg-white border-amber-500 text-slate-950 font-black shadow-md ring-2 ring-amber-500/25"
-                        : "bg-white/95 hover:bg-white border-slate-200/90 hover:border-amber-400 text-slate-950 font-bold hover:shadow-md shadow-[0_2px_12px_rgba(0,0,0,0.08)]"
-                    )}
-                  >
-                    <SolidMapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#faad13] shrink-0" />
-                    <span className="whitespace-nowrap tracking-tight text-slate-950 font-bold">{city.name}</span>
-                    {hasSublocations && (
-                      <ChevronDown strokeWidth={2.5} className={cn("w-3 h-3 text-[#faad13] transition-transform shrink-0", isOpen && "rotate-180")} />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* ── DESKTOP Centered Sublocations Dropdown ── */}
-            <div className="hidden sm:block">
-              <AnimatePresence>
-                {(() => {
-                  const activeCity = heroCities.find((c) => c.id === openLocationTab);
-                  if (!activeCity || !activeCity.sublocations || activeCity.sublocations.length === 0) return null;
-
-                  const filteredSublocations = activeCity.sublocations.filter((sub) => {
-                    const q = sublocationSearch.trim().toLowerCase();
-                    if (!q) return true;
-                    return (
-                      sub.name.toLowerCase().includes(q) ||
-                      (sub.tagline && sub.tagline.toLowerCase().includes(q))
-                    );
-                  });
-
-                  return (
-                    <>
-                      {/* Click-outside dismissal backdrop (Desktop only) */}
-                      <div
-                        className="fixed inset-0 z-[95]"
-                        onClick={() => {
-                          setOpenLocationTab(null);
-                          setSublocationSearch("");
-                        }}
-                      />
-
-                      <motion.div
-                        key={activeCity.id}
-                        initial={{ opacity: 0, scale: 0.96, y: -4 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.96, y: -4 }}
-                        transition={{ duration: 0.18, ease: "easeOut" }}
-                        className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[390px] max-w-[92vw] bg-white border-2 border-amber-500 rounded-2xl shadow-2xl overflow-hidden z-[100] max-h-[360px] flex flex-col pointer-events-auto"
-                      >
-                        {/* Header */}
-                        <div className="px-4 py-2.5 border-b border-amber-500/20 text-[11px] uppercase font-black tracking-wider text-slate-950 flex items-center justify-between gap-3 sticky top-0 bg-white z-10 shrink-0">
-                          <span className="whitespace-nowrap flex items-center gap-1.5 text-slate-950 font-black">
-                            <MapPin className="w-3.5 h-3.5 text-amber-500" />
-                            {activeCity.name} Localities
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-500 font-bold text-[10px] whitespace-nowrap lowercase">
-                              {filteredSublocations.length === activeCity.sublocations.length
-                                ? `${activeCity.sublocations.length} areas`
-                                : `${filteredSublocations.length} of ${activeCity.sublocations.length}`}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenLocationTab(null);
-                                setSublocationSearch("");
-                              }}
-                              className="w-6 h-6 rounded-full bg-slate-100 hover:bg-amber-500/15 border border-slate-200 text-slate-700 hover:text-amber-600 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-90 shadow-2xs"
-                              aria-label="Close"
-                            >
-                              <X className="w-3.5 h-3.5 stroke-[2.5]" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Search Bar */}
-                        <div className="p-2 border-b border-amber-500/20 bg-slate-50/80 shrink-0">
-                          <div className="relative flex items-center bg-white border border-amber-500/40 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20 rounded-xl px-2.5 py-1.5 transition-colors">
-                            <Search strokeWidth={2.5} className="w-3.5 h-3.5 text-amber-500 shrink-0 mr-2" />
-                            <input
-                              type="text"
-                              value={sublocationSearch}
-                              onChange={(e) => setSublocationSearch(e.target.value)}
-                              placeholder={`Search ${activeCity.name} localities...`}
-                              style={{ outline: "none", boxShadow: "none", border: "none" }}
-                              className="w-full bg-transparent text-xs text-slate-950 placeholder-slate-400 font-semibold outline-none border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none p-0"
-                              autoFocus
-                            />
-                            {sublocationSearch && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSublocationSearch("");
-                                }}
-                                className="p-0.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors shrink-0 cursor-pointer ml-1"
-                                aria-label="Clear sublocation search"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Localities List */}
-                        <div className="overflow-y-auto min-h-0 divide-y divide-slate-100 flex-1 py-1 bg-white overscroll-contain scrollbar-thin scrollbar-thumb-slate-300 hover:scrollbar-thumb-amber-500">
-                          {filteredSublocations.length > 0 ? (
-                            filteredSublocations.map((sub) => (
-                              <button
-                                key={sub.id}
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenLocationTab(null);
-                                  setSublocationSearch("");
-                                  setUserSelectedLocation(activeCity.name, [sub.name]);
-                                  router.push(
-                                    `/search?type=${activeTab}&city=${encodeURIComponent(
-                                      activeCity.name
-                                    )}&locality=${encodeURIComponent(sub.name)}`
-                                  );
-                                }}
-                                className="w-full text-left px-4 py-2.5 hover:bg-amber-500/10 cursor-pointer flex items-center justify-between transition-colors group border-none bg-transparent"
-                              >
-                                <div className="flex flex-col min-w-0 pr-2">
-                                  <span className="font-bold text-xs text-slate-950 group-hover:text-amber-600 transition-colors truncate">
-                                    {sub.name}
-                                  </span>
-                                  {sub.tagline && (
-                                    <span className="text-[10px] text-slate-500 block mt-0.5 truncate">
-                                      {sub.tagline}
-                                    </span>
-                                  )}
-                                </div>
-                                <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-amber-500 transition-colors shrink-0" />
-                              </button>
-                            ))
-                          ) : (
-                            <div className="py-6 px-4 text-center">
-                              <p className="text-xs text-slate-500 font-medium mb-2.5">
-                                No localities found for &ldquo;{sublocationSearch}&rdquo;
-                              </p>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const term = sublocationSearch;
-                                  setOpenLocationTab(null);
-                                  setSublocationSearch("");
-                                  router.push(
-                                    `/search?type=${activeTab}&location=${encodeURIComponent(
-                                      activeCity.name
-                                    )}&locality=${encodeURIComponent(term)}`
-                                  );
-                                }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 text-[11px] font-bold transition-colors cursor-pointer"
-                              >
-                                <Search className="w-3 h-3 text-slate-950" />
-                                <span>Search &ldquo;{sublocationSearch}&rdquo; in {activeCity.name}</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    </>
-                  );
-                })()}
-              </AnimatePresence>
-            </div>
-          </div>
-
           {/* ── MOBILE Portal-based Luxury Localities Bottom Sheet ── */}
           {mounted && typeof document !== "undefined" && createPortal(
             <AnimatePresence>
-              {(() => {
-                const activeCity = heroCities.find((c) => c.id === openLocationTab);
+              {Boolean(openLocationTab) && (() => {
+                const activeCity = heroCities.find((c) => c.id === openLocationTab) || activeLocationCity;
                 if (!activeCity || !activeCity.sublocations || activeCity.sublocations.length === 0) return null;
 
                 const filteredSublocations = activeCity.sublocations.filter((sub) => {
@@ -1913,7 +1951,7 @@ export function HeroSection() {
                 });
 
                 return (
-                  <div data-location-portal="true" className="sm:hidden fixed inset-0 z-[99999]">
+                  <div key="mobile-loc-portal" data-location-portal="true" className="sm:hidden fixed inset-0 z-[99999]">
                     {/* Solid Dim Backdrop */}
                     <motion.div
                       initial={{ opacity: 0 }}
@@ -2027,7 +2065,7 @@ export function HeroSection() {
                                 setOpenLocationTab(null);
                                 setSublocationSearch("");
                                 router.push(
-                                  `/search?type=${activeTab}&location=${encodeURIComponent(
+                                  `/search?${getSearchTypeParams(activeTab)}&location=${encodeURIComponent(
                                     activeCity.name
                                   )}&locality=${encodeURIComponent(sub.name)}`
                                 );
@@ -2060,7 +2098,7 @@ export function HeroSection() {
                                 setSublocationSearch("");
                                 setIsLocalityFocused(false);
                                 router.push(
-                                  `/search?type=${activeTab}&location=${encodeURIComponent(
+                                  `/search?${getSearchTypeParams(activeTab)}&location=${encodeURIComponent(
                                     activeCity.name
                                   )}&locality=${encodeURIComponent(term)}`
                                 );

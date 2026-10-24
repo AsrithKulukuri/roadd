@@ -29,7 +29,7 @@ test("property switch updates the dashboard, public layout and survives reload",
   await visitor.goto("/");
   await expect(visitor.getByRole("heading", { name: "Browse projects" })).toBeVisible();
   await expect(visitor.locator('a[href^="/properties"]')).toHaveCount(0);
-  await expect(visitor.getByRole("button", { name: "Projects", exact: true }).first()).toBeVisible();
+  await expect(visitor.getByRole("button", { name: "Apartments", exact: true }).first()).toBeVisible();
   const overflow = await visitor.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(overflow).toBe(false);
   await visitor.screenshot({ path: `test-results/projects-only-${test.info().project.name}.png`, fullPage: true });
@@ -68,7 +68,7 @@ test("hiding properties preserves the original hero, navigation and project sear
   await expect(page.getByRole("heading", { name: "Browse projects" })).toBeVisible();
   const hero = page.locator(isMobile ? "#hero-banner-mobile" : "#hero-banner-desktop");
   await expect(hero).toBeVisible();
-  await expect(hero.getByRole("button", { name: "Projects", exact: true })).toBeVisible();
+  await expect(hero.getByRole("button", { name: "Apartments", exact: true })).toBeVisible();
   await expect(hero.getByRole("button", { name: "Buy", exact: true })).toHaveCount(0);
   await expect(page.locator('a[href="/list-with-us"]')).toHaveCount(0);
   await expect(page.locator('a[href^="/properties/"]')).toHaveCount(0);

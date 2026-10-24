@@ -1237,14 +1237,16 @@ export function evaluateProjectFilters(
   if (rawPropType.length > 0) {
     const matchesType = rawPropType.some((t: string) => {
       const tt = t.toLowerCase();
-      if (tt === "venture") return pType === "venture" && isCrdaVerified(project);
+      if (tt === "venture" || tt === "crda-ventures" || tt === "crda" || tt === "crda-venture") {
+        return pType === "venture" && (Boolean(project.crdaApproved) || isCrdaVerified(project));
+      }
       if (tt === pType) return true;
       if (tt === "apartment" && pType.includes("apartment")) return true;
       if (tt === "villa" && (pType.includes("villa") || pType.includes("independent-house"))) return true;
       if ((tt === "independent-house" || tt === "house" || tt === "houses") && (pType.includes("house") || (project.name || "").toLowerCase().includes("house"))) return true;
       if (["venture", "crda-ventures", "crda-venture", "crda", "residential-land", "plot", "venture-plot", "land"].includes(tt)) {
         if (tt === "crda-ventures" || tt === "crda" || tt === "crda-venture") {
-          return pType === "venture" && isCrdaVerified(project);
+          return pType === "venture" && (Boolean(project.crdaApproved) || isCrdaVerified(project));
         }
         return pType === "venture" || pType === "plot" || pType === "land";
       }

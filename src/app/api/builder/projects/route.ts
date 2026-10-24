@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { projectAccess, PortalError, portalError, recordPortalActivity } from "@/lib/builder-access";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { z } from "zod";
+import { bumpTagVersion, invalidateCache } from "@/lib/redis";
 
 const content = z.object({
   description: z.string().max(20000).optional(),
@@ -18,6 +19,13 @@ export async function PATCH(request: Request) {
     const { data, error } = await supabaseAdmin.from("projects").update({ ...validation.data, updatedAt: new Date().toISOString() }).eq("id", project.id).select("*").single();
     if (error) throw error;
     if (builder) await recordPortalActivity(builder, "edit_project", project.id);
+
+    // Invalidate project cache in Redis
+    await Promise.allSettled([
+      bumpTagVersion("projects"),
+      invalidateCache("listings:project*"),
+    ]);
+
     return NextResponse.json({ success: true, project: data });
   } catch (error) { return portalError(error); }
 }

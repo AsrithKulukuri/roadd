@@ -14,6 +14,7 @@ import {
   type HomeCardSize,
 } from "@/types/home-section";
 import { CANONICAL_EIGHT_SHELVES } from "@/lib/shelf-builder-defaults";
+import { fetchWithCache, invalidateCache, bumpTagVersion } from "@/lib/redis";
 
 const VALID_CARD_STYLES = new Set<string>(HOME_CARD_STYLES.map((s) => s.id));
 
@@ -329,34 +330,52 @@ export async function GET(request: NextRequest) {
   const targetId = isDraftRequest ? "draft" : "default";
 
   try {
-    const { data, error } = await supabaseAdmin
-      .from("homepage_layouts")
-      .select("sections, updated_at")
-      .eq("id", targetId)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    let sections = validateSections(data?.sections);
-
-    // Fallback: If requesting draft but draft is empty, read default
-    if (isDraftRequest && (!sections || sections.length === 0)) {
-      const { data: defaultData } = await supabaseAdmin
+    const fetchLayout = async () => {
+      const { data, error } = await supabaseAdmin
         .from("homepage_layouts")
         .select("sections, updated_at")
-        .eq("id", "default")
+        .eq("id", targetId)
         .maybeSingle();
-      sections = validateSections(defaultData?.sections);
+
+      if (error) throw error;
+
+      let sections = validateSections(data?.sections);
+
+      // Fallback: If requesting draft but draft is empty, read default
+      if (isDraftRequest && (!sections || sections.length === 0)) {
+        const { data: defaultData } = await supabaseAdmin
+          .from("homepage_layouts")
+          .select("sections, updated_at")
+          .eq("id", "default")
+          .maybeSingle();
+        sections = validateSections(defaultData?.sections);
+      }
+
+      // Default Fallback: If DB has not been configured yet, return canonical 8 shelves
+      const finalSections = sections && sections.length > 0 ? sections : CANONICAL_EIGHT_SHELVES;
+
+      return {
+        sections: finalSections,
+        configured: Boolean(sections && sections.length > 0),
+        isDraft: isDraftRequest,
+        updatedAt: data?.updated_at ?? null,
+      };
+    };
+
+    if (isDraftRequest) {
+      const result = await fetchLayout();
+      return NextResponse.json(result);
     }
 
-    // Default Fallback: If DB has not been configured yet, return canonical 8 shelves
-    const finalSections = sections && sections.length > 0 ? sections : CANONICAL_EIGHT_SHELVES;
-
-    return NextResponse.json({
-      sections: finalSections,
-      configured: Boolean(sections && sections.length > 0),
-      isDraft: isDraftRequest,
-      updatedAt: data?.updated_at ?? null,
+    const cachedResult = await fetchWithCache(
+      "home:sections:default",
+      fetchLayout,
+      { ttlSeconds: 300, tag: "home_sections", enableJitter: true }
+    );
+    return NextResponse.json(cachedResult, {
+      headers: {
+        "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+      },
     });
   } catch (error) {
     console.warn("Homepage layout fetch fallback to canonical defaults:", error);
@@ -383,6 +402,8 @@ export async function PUT(request: NextRequest) {
         { id: "default", sections: defaultSections, updated_at: new Date().toISOString() },
         { id: "draft", sections: defaultSections, updated_at: new Date().toISOString() },
       ]);
+      await bumpTagVersion("home_sections").catch(() => {});
+      await invalidateCache("home:sections:*").catch(() => {});
       return NextResponse.json({ success: true, action: "restore_defaults", sections: defaultSections });
     }
 
@@ -441,6 +462,10 @@ export async function PUT(request: NextRequest) {
     } catch {
       // Non-fatal if revision table hasn't been migrated
     }
+
+    // Invalidate Redis cache for live layout in O(1)
+    await bumpTagVersion("home_sections").catch(() => {});
+    await invalidateCache("home:sections:*").catch(() => {});
 
     return NextResponse.json({ success: true, action: "publish", sections: publishedSections });
   } catch (error) {

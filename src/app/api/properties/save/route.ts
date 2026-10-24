@@ -5,6 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { validatePropertySpecifications } from "@/lib/property-specifications";
 import type { Property } from "@/types/property";
 import { syncLocationToTrending } from "@/lib/location-sync";
+import { bumpTagVersion, invalidateCache } from "@/lib/redis";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -100,6 +101,14 @@ export async function POST(request: Request) {
     if (city) {
       void syncLocationToTrending(city, locality);
     }
+
+    // Invalidate Redis properties and location counts caches
+    await Promise.allSettled([
+      bumpTagVersion("properties"),
+      bumpTagVersion("locations"),
+      invalidateCache("listings:property*"),
+      invalidateCache("locations:counts"),
+    ]);
 
     return NextResponse.json({ success: true, property: data });
   } catch (error: unknown) {

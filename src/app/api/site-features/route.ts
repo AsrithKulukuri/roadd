@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readSiteFeatures } from "@/lib/site-features";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/server-auth-guard";
+import { bumpTagVersion } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,11 @@ export async function PUT(request: Request) {
       updated_at: new Date().toISOString(),
     });
     if (error) throw error;
+
+    // Instantly invalidate site_features and properties cache in Redis
+    await bumpTagVersion("site_features").catch(() => {});
+    await bumpTagVersion("properties").catch(() => {});
+
     return NextResponse.json({ propertiesEnabled: body.propertiesEnabled });
   } catch {
     return NextResponse.json({ error: "Could not save. Please try again." }, { status: 500 });

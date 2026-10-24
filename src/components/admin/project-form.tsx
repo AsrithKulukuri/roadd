@@ -27,6 +27,11 @@ import type {
 import { uploadToS3 } from "@/lib/aws/storage-utils";
 import { VideoMediaManager } from "@/components/admin/video-media-manager";
 import { AdminFileUpload } from "@/components/admin/admin-file-upload";
+import { useLocationsStore } from "@/stores/locations-store";
+import {
+  SublocationResolverModal,
+  LocationResolutionData,
+} from "@/components/admin/sublocation-resolver-modal";
 
 // ─── Lazy map import (SSR unsafe) ────────────────────────────────────────────
 const CoordinatePickerMap = dynamic(
@@ -184,6 +189,69 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
   const handleLocalityChange = (val: string) => {
     setLocality(val);
     if (errors.locality) setErrors(prev => ({ ...prev, locality: "" }));
+  };
+
+  const { cities, fetchLocations } = useLocationsStore();
+  const [resolverData, setResolverData] = useState<LocationResolutionData | null>(null);
+  const [showSublocationModal, setShowSublocationModal] = useState(false);
+
+  useEffect(() => {
+    fetchLocations?.();
+  }, [fetchLocations]);
+
+  const handleProcessResolvedLocation = (data: any) => {
+    if (!data?.success || !data?.latitude || !data?.longitude) return;
+
+    setLat(data.latitude);
+    setLng(data.longitude);
+    if (data.city) setCity(data.city);
+    if (data.state) setLocState(data.state);
+    if (data.pincode) setPincode(data.pincode);
+    if (data.address) setAddress(data.address);
+
+    const resolvedCity = data.city || city || "Vijayawada";
+    const candidates: Array<{ name: string; type?: string; confidence?: "high" | "medium" | "low" }> =
+      Array.isArray(data.candidateSublocations) ? [...data.candidateSublocations] : [];
+
+    if (data.locality && !candidates.some((c) => c.name.toLowerCase() === data.locality.toLowerCase())) {
+      candidates.unshift({ name: data.locality, type: "primary", confidence: "high" });
+    }
+
+    const cityObj =
+      cities.find((c) => c.name.toLowerCase().trim() === resolvedCity.toLowerCase().trim()) ||
+      cities[0];
+    const masterSubs = cityObj?.sublocations || [];
+
+    const matched = candidates.filter((c) =>
+      masterSubs.some((s) => s.name.toLowerCase().trim() === c.name.toLowerCase().trim())
+    );
+
+    const resData: LocationResolutionData = {
+      city: resolvedCity,
+      detectedLocality: data.locality || "",
+      candidateSublocations: candidates,
+      address: data.address || "",
+      latitude: data.latitude,
+      longitude: data.longitude,
+      resolvedUrl: data.resolvedUrl,
+    };
+    setResolverData(resData);
+
+    // If more than 1 candidate OR if the detected locality is not yet in the master list:
+    if (candidates.length > 1 || (candidates.length === 1 && matched.length === 0)) {
+      setShowSublocationModal(true);
+      if (data.locality) setLocality(data.locality);
+      toast.info(
+        `📍 Google Maps returned ${candidates.length} area candidate${candidates.length > 1 ? "s" : ""}. Please confirm the sublocation.`,
+        { duration: 4000 }
+      );
+    } else if (matched.length === 1) {
+      setLocality(matched[0].name);
+      toast.success(`📍 Auto-matched master sublocation: ${matched[0].name}`);
+    } else {
+      if (data.locality) setLocality(data.locality);
+      toast.success(`📍 Fetched location details!`);
+    }
   };
 
   // ── Step 1 ──
@@ -1494,6 +1562,16 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                     <AlertCircle className="w-3.5 h-3.5" /> {errors.locality}
                   </p>
                 )}
+                {resolverData && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSublocationModal(true)}
+                    className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-bold underline cursor-pointer mt-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Review Detected Sublocations ({resolverData.candidateSublocations.length})</span>
+                  </button>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -1559,14 +1637,7 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                       const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(trimmed)}`);
                       const data = await res.json();
                       if (data.success && data.latitude && data.longitude) {
-                        setLat(data.latitude);
-                        setLng(data.longitude);
-                        if (data.city) setCity(data.city);
-                        if (data.locality) setLocality(data.locality);
-                        if (data.state) setLocState(data.state);
-                        if (data.pincode) setPincode(data.pincode);
-                        if (data.address) setAddress(data.address);
-                        toast.success(`📍 Fetched location!`);
+                        handleProcessResolvedLocation(data);
                       }
                     } catch (err) {}
                   }}
@@ -1585,14 +1656,8 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                       const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(trimmed)}`);
                       const data = await res.json();
                       if (data.success && data.latitude && data.longitude) {
-                        setLat(data.latitude);
-                        setLng(data.longitude);
-                        if (data.city) setCity(data.city);
-                        if (data.locality) setLocality(data.locality);
-                        if (data.state) setLocState(data.state);
-                        if (data.pincode) setPincode(data.pincode);
-                        if (data.address) setAddress(data.address);
-                        toast.success(`📍 Fetched location!`, { id: "fetch-maps" });
+                        handleProcessResolvedLocation(data);
+                        toast.dismiss("fetch-maps");
                       } else {
                         toast.error(data.error || "Could not extract location from link", { id: "fetch-maps" });
                       }
@@ -2069,6 +2134,17 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
           
         </div>
       </div>
+
+      <SublocationResolverModal
+        isOpen={showSublocationModal}
+        onClose={() => setShowSublocationModal(false)}
+        data={resolverData}
+        onSelectLocality={(chosenLocality, chosenCity) => {
+          setLocality(chosenLocality);
+          if (chosenCity) setCity(chosenCity);
+          if (errors.locality) setErrors((prev) => ({ ...prev, locality: "" }));
+        }}
+      />
     </div>
   );
 }

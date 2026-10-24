@@ -5,8 +5,17 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { fromSupabaseProperty } from "@/stores/properties-store";
 import { matchesPropertySearch, parseSearchIntent, matchesStructuredLocation, evaluatePropertyFilters } from "@/lib/search-engine";
 import type { Property } from "@/types/property";
+import { fetchWithCache, normalizeQueryKey } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
+
+const SEARCH_ALLOWED_KEYS = [
+  "q", "query", "location", "type", "listingtype", "city", "cities",
+  "locality", "localities", "propertytype", "type_alias", "gatedcommunity",
+  "bhk", "minprice", "maxprice", "budget", "minarea", "maxarea",
+  "coveredarea", "possession", "possessionstatus", "status", "verified",
+  "reraapproved", "rera", "page", "limit"
+];
 
 function normalizePropertyTypes(rawTypes: string[]): string[] {
   const normalized = new Set<string>();
@@ -39,9 +48,13 @@ export async function GET(req: NextRequest) {
   try {
     if (!(await readSiteFeatures()).propertiesEnabled) return NextResponse.json({ success: true, total: 0, page: 1, limit: 20, totalPages: 0, properties: [], filterCounts: {}, mapMarkers: [] }, { headers: { "Cache-Control": "no-store" } });
     const { searchParams } = new URL(req.url);
+    const cacheKey = normalizeQueryKey("properties:search", searchParams, SEARCH_ALLOWED_KEYS);
 
-    // 1. Text Query
-    const query = (searchParams.get("q") || searchParams.get("query") || searchParams.get("location") || "").trim();
+    const result = await fetchWithCache(
+      cacheKey,
+      async () => {
+        // 1. Text Query
+        const query = (searchParams.get("q") || searchParams.get("query") || searchParams.get("location") || "").trim();
 
     // 2. Listing Type (buy / sale / rent / pg / commercial)
     const rawType = (searchParams.get("type") || searchParams.get("listingType") || "all").toLowerCase().trim();
@@ -262,15 +275,24 @@ export async function GET(req: NextRequest) {
         slug: p.slug,
       }));
 
-    return NextResponse.json({
-      success: true,
-      total: totalMatches,
-      page,
-      limit,
-      totalPages: Math.ceil(totalMatches / limit),
-      properties: publicListing(paginatedProperties),
-      filterCounts: counts,
-      mapMarkers,
+        return {
+          success: true,
+          total: totalMatches,
+          page,
+          limit,
+          totalPages: Math.ceil(totalMatches / limit),
+          properties: publicListing(paginatedProperties),
+          filterCounts: counts,
+          mapMarkers,
+        };
+      },
+      { ttlSeconds: 120, tag: "properties", enableJitter: true }
+    );
+
+    return NextResponse.json(result, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=180",
+      },
     });
   } catch (err: any) {
     console.error("[Search API] Unexpected error:", err);

@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/server-auth-guard";
 import { stampCrdaReview, validMeasurements, hasCompleteCrdaEvidence, type CrdaReview } from "@/lib/listing-quality";
 import { syncLocationToTrending } from "@/lib/location-sync";
 import { getNextProjectRefId } from "@/lib/ref-id";
+import { invalidateCache, bumpTagVersion } from "@/lib/redis";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -244,6 +245,14 @@ export async function POST(request: NextRequest) {
     if (city) {
       void syncLocationToTrending(city, locality);
     }
+
+    // Invalidate Redis listings and location counts caches via atomic tag bump
+    await Promise.allSettled([
+      bumpTagVersion("projects"),
+      bumpTagVersion("locations"),
+      invalidateCache("listings:project*"),
+      invalidateCache("locations:counts"),
+    ]);
 
     return NextResponse.json({ success: true, project: saveResult.data });
   } catch (error: unknown) {

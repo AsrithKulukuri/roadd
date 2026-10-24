@@ -25,6 +25,11 @@ import { parseGoogleMapsUrl } from "@/lib/utils";
 import { uploadToS3 } from "@/lib/aws/storage-utils";
 import { VideoMediaManager } from "@/components/admin/video-media-manager";
 import { AdminFileUpload } from "@/components/admin/admin-file-upload";
+import { useLocationsStore } from "@/stores/locations-store";
+import {
+  SublocationResolverModal,
+  LocationResolutionData,
+} from "@/components/admin/sublocation-resolver-modal";
 
 const CoordinatePickerMap = dynamic(
   () => import("@/components/admin/coordinate-picker-map"),
@@ -55,6 +60,70 @@ export default function EditPropertyPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
+  const { cities, fetchLocations } = useLocationsStore();
+  const [resolverData, setResolverData] = useState<LocationResolutionData | null>(null);
+  const [showSublocationModal, setShowSublocationModal] = useState(false);
+
+  useEffect(() => {
+    fetchLocations?.();
+  }, [fetchLocations]);
+
+  const handleProcessResolvedLocation = (data: any) => {
+    if (!data?.success || !data?.latitude || !data?.longitude) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      ...(data.city && { city: data.city }),
+      ...(data.state && { state: data.state }),
+      ...(data.pincode && { pincode: data.pincode }),
+      ...(data.address && { address: data.address }),
+    }));
+
+    const resolvedCity = data.city || formData.city || "Vijayawada";
+    const candidates: Array<{ name: string; type?: string; confidence?: "high" | "medium" | "low" }> =
+      Array.isArray(data.candidateSublocations) ? [...data.candidateSublocations] : [];
+
+    if (data.locality && !candidates.some((c) => c.name.toLowerCase() === data.locality.toLowerCase())) {
+      candidates.unshift({ name: data.locality, type: "primary", confidence: "high" });
+    }
+
+    const cityObj =
+      cities.find((c) => c.name.toLowerCase().trim() === resolvedCity.toLowerCase().trim()) ||
+      cities[0];
+    const masterSubs = cityObj?.sublocations || [];
+
+    const matched = candidates.filter((c) =>
+      masterSubs.some((s) => s.name.toLowerCase().trim() === c.name.toLowerCase().trim())
+    );
+
+    const resData: LocationResolutionData = {
+      city: resolvedCity,
+      detectedLocality: data.locality || "",
+      candidateSublocations: candidates,
+      address: data.address || "",
+      latitude: data.latitude,
+      longitude: data.longitude,
+      resolvedUrl: data.resolvedUrl,
+    };
+    setResolverData(resData);
+
+    if (candidates.length > 1 || (candidates.length === 1 && matched.length === 0)) {
+      setShowSublocationModal(true);
+      if (data.locality) setFormData((prev) => ({ ...prev, locality: data.locality }));
+      toast.info(
+        `📍 Google Maps returned ${candidates.length} area candidate${candidates.length > 1 ? "s" : ""}. Please confirm the sublocation.`,
+        { duration: 4000 }
+      );
+    } else if (matched.length === 1) {
+      setFormData((prev) => ({ ...prev, locality: matched[0].name }));
+      toast.success(`📍 Auto-matched master sublocation: ${matched[0].name}`);
+    } else {
+      if (data.locality) setFormData((prev) => ({ ...prev, locality: data.locality }));
+      toast.success(`📍 Fetched location details!`);
+    }
+  };
 
   const [formData, setFormData] = useState({
     refId: "",
@@ -690,17 +759,7 @@ export default function EditPropertyPage() {
                       const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(trimmed)}`);
                       const data = await res.json();
                       if (data.success && data.latitude && data.longitude) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          latitude: data.latitude,
-                          longitude: data.longitude,
-                          ...(data.city && { city: data.city }),
-                          ...(data.locality && { locality: data.locality }),
-                          ...(data.state && { state: data.state }),
-                          ...(data.pincode && { pincode: data.pincode }),
-                          ...(data.address && { address: data.address }),
-                        }));
-                        toast.success(`📍 Fetched location for ${data.locality || data.city || 'Property'} (${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)})!`);
+                        handleProcessResolvedLocation(data);
                       }
                     } catch (err) {}
                   }}
@@ -719,17 +778,8 @@ export default function EditPropertyPage() {
                       const res = await fetch(`/api/resolve-maps-url?url=${encodeURIComponent(trimmed)}`);
                       const data = await res.json();
                       if (data.success && data.latitude && data.longitude) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          latitude: data.latitude,
-                          longitude: data.longitude,
-                          ...(data.city && { city: data.city }),
-                          ...(data.locality && { locality: data.locality }),
-                          ...(data.state && { state: data.state }),
-                          ...(data.pincode && { pincode: data.pincode }),
-                          ...(data.address && { address: data.address }),
-                        }));
-                        toast.success(`📍 Fetched location for ${data.locality || data.city || 'Property'} (${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)})!`, { id: "fetch-maps-edit" });
+                        handleProcessResolvedLocation(data);
+                        toast.dismiss("fetch-maps-edit");
                       } else {
                         toast.error(data.error || "Could not extract location from link", { id: "fetch-maps-edit" });
                       }
@@ -893,6 +943,18 @@ export default function EditPropertyPage() {
         </div>
       </div>
 
+      <SublocationResolverModal
+        isOpen={showSublocationModal}
+        onClose={() => setShowSublocationModal(false)}
+        data={resolverData}
+        onSelectLocality={(chosenLocality, chosenCity) => {
+          setFormData((prev) => ({
+            ...prev,
+            locality: chosenLocality,
+            ...(chosenCity && { city: chosenCity }),
+          }));
+        }}
+      />
     </div>
   );
 }

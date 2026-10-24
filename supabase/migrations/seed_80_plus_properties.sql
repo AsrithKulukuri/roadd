@@ -31,7 +31,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Srinivasa Rao Varma', '+91 98480 12345', 'srinivas.varma@roadfacing.in', 'owner', true,
   275, 21, 6,
-  '2026-08-21T02:30:05.445Z', '2026-08-23T02:30:05.446Z', '2026-08-21T02:30:05.446Z',
+  '2026-10-22T05:22:45.149Z', '2026-10-24T05:22:45.150Z', '2026-10-22T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -46,7 +46,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Koteswara Rao Chowdary', '+91 98491 54321', 'kotesh.chowdary@roadfacing.in', 'agent', true,
   310, 24, 7,
-  '2026-08-19T02:30:05.446Z', '2026-08-23T02:30:05.446Z', '2026-08-19T02:30:05.446Z',
+  '2026-10-20T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-10-20T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -61,7 +61,7 @@ INSERT INTO public.properties (
   true, false, true, false, true,
   'admin-001', 'Lakshmi Narayana Reddy', '+91 94402 98765', 'narayana.reddy@roadfacing.in', 'builder', true,
   345, 27, 8,
-  '2026-08-17T02:30:05.446Z', '2026-08-23T02:30:05.446Z', '2026-08-17T02:30:05.446Z',
+  '2026-10-18T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-10-18T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'recommended', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -76,7 +76,7 @@ INSERT INTO public.properties (
   true, true, false, true, true,
   'admin-001', 'Venkat Ramana Murthy', '+91 98855 67890', 'venkat.murthy@roadfacing.in', 'agent', true,
   380, 30, 9,
-  '2026-08-15T02:30:05.446Z', '2026-08-23T02:30:05.446Z', '2026-08-15T02:30:05.446Z',
+  '2026-10-16T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-10-16T05:22:45.150Z',
   true, true, true,
   'residential', 'pent-house', 'featured', '{"saleType":"resale","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -91,7 +91,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Prasad Babu Naidu', '+91 99890 11223', 'prasad.naidu@roadfacing.in', 'owner', true,
   415, 33, 10,
-  '2026-08-13T02:30:05.446Z', '2026-08-23T02:30:05.446Z', '2026-08-13T02:30:05.446Z',
+  '2026-10-14T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-10-14T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -106,7 +106,7 @@ INSERT INTO public.properties (
   true, false, true, false, true,
   'admin-001', 'Radha Krishna Guptha', '+91 94900 33445', 'radhakrishna@roadfacing.in', 'agent', true,
   450, 36, 11,
-  '2026-08-11T02:30:05.446Z', '2026-08-23T02:30:05.446Z', '2026-08-11T02:30:05.446Z',
+  '2026-10-12T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-10-12T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'recommended', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -121,7 +121,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Suresh Kumar Raju', '+91 98661 55667', 'suresh.raju@roadfacing.in', 'builder', true,
   485, 39, 5,
-  '2026-08-09T02:30:05.446Z', '2026-08-23T02:30:05.446Z', '2026-08-09T02:30:05.446Z',
+  '2026-10-10T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-10-10T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -136,7 +136,7 @@ INSERT INTO public.properties (
   true, true, false, false, true,
   'admin-001', 'Srinivasa Rao Varma', '+91 98480 12345', 'srinivas.varma@roadfacing.in', 'owner', true,
   520, 42, 6,
-  '2026-08-07T02:30:05.446Z', '2026-08-23T02:30:05.446Z', '2026-08-07T02:30:05.446Z',
+  '2026-10-08T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-10-08T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'featured', '{"saleType":"resale","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -151,7 +151,7 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Koteswara Rao Chowdary', '+91 98491 54321', 'kotesh.chowdary@roadfacing.in', 'agent', true,
   555, 45, 7,
-  '2026-08-05T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-08-05T02:30:05.447Z',
+  '2026-10-06T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-10-06T05:22:45.150Z',
   true, true, true,
   'residential', 'duplex-flat', 'recommended', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -166,7 +166,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Lakshmi Narayana Reddy', '+91 94402 98765', 'narayana.reddy@roadfacing.in', 'builder', true,
   590, 48, 8,
-  '2026-08-03T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-08-03T02:30:05.447Z',
+  '2026-10-04T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-10-04T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -181,7 +181,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Venkat Ramana Murthy', '+91 98855 67890', 'venkat.murthy@roadfacing.in', 'agent', true,
   625, 51, 9,
-  '2026-08-01T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-08-01T02:30:05.447Z',
+  '2026-10-02T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-10-02T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'budget_friendly', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -196,7 +196,7 @@ INSERT INTO public.properties (
   true, true, true, false, true,
   'admin-001', 'Prasad Babu Naidu', '+91 99890 11223', 'prasad.naidu@roadfacing.in', 'owner', true,
   660, 54, 10,
-  '2026-07-30T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-30T02:30:05.447Z',
+  '2026-09-30T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-09-30T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'featured', '{"saleType":"resale","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -211,7 +211,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Radha Krishna Guptha', '+91 94900 33445', 'radhakrishna@roadfacing.in', 'agent', true,
   695, 57, 11,
-  '2026-07-28T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-28T02:30:05.447Z',
+  '2026-09-28T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-09-28T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -226,7 +226,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Suresh Kumar Raju', '+91 98661 55667', 'suresh.raju@roadfacing.in', 'builder', true,
   730, 60, 5,
-  '2026-07-26T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-26T02:30:05.447Z',
+  '2026-09-26T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-09-26T05:22:45.150Z',
   true, true, true,
   'residential', 'pent-house', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -241,7 +241,7 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Srinivasa Rao Varma', '+91 98480 12345', 'srinivas.varma@roadfacing.in', 'owner', true,
   765, 63, 6,
-  '2026-07-24T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-24T02:30:05.447Z',
+  '2026-09-24T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-09-24T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'recommended', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -256,7 +256,7 @@ INSERT INTO public.properties (
   true, true, false, false, true,
   'admin-001', 'Koteswara Rao Chowdary', '+91 98491 54321', 'kotesh.chowdary@roadfacing.in', 'agent', true,
   800, 66, 7,
-  '2026-07-22T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-22T02:30:05.447Z',
+  '2026-09-22T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-09-22T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'featured', '{"saleType":"resale","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -271,7 +271,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Lakshmi Narayana Reddy', '+91 94402 98765', 'narayana.reddy@roadfacing.in', 'builder', true,
   835, 69, 8,
-  '2026-07-20T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-20T02:30:05.447Z',
+  '2026-09-20T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-09-20T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -286,7 +286,7 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Venkat Ramana Murthy', '+91 98855 67890', 'venkat.murthy@roadfacing.in', 'agent', true,
   870, 72, 9,
-  '2026-07-18T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-18T02:30:05.447Z',
+  '2026-09-18T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-09-18T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'recommended', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -301,7 +301,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Prasad Babu Naidu', '+91 99890 11223', 'prasad.naidu@roadfacing.in', 'owner', true,
   905, 75, 10,
-  '2026-07-16T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-16T02:30:05.447Z',
+  '2026-09-16T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-09-16T05:22:45.150Z',
   true, true, true,
   'residential', 'duplex-flat', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -316,7 +316,7 @@ INSERT INTO public.properties (
   true, true, false, true, true,
   'admin-001', 'Radha Krishna Guptha', '+91 94900 33445', 'radhakrishna@roadfacing.in', 'agent', true,
   940, 78, 11,
-  '2026-07-14T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-14T02:30:05.447Z',
+  '2026-09-14T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-09-14T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'featured', '{"saleType":"resale","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -331,7 +331,7 @@ INSERT INTO public.properties (
   true, false, true, false, true,
   'admin-001', 'Suresh Kumar Raju', '+91 98661 55667', 'suresh.raju@roadfacing.in', 'builder', true,
   975, 81, 5,
-  '2026-07-12T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-12T02:30:05.447Z',
+  '2026-09-12T05:22:45.150Z', '2026-10-24T05:22:45.150Z', '2026-09-12T05:22:45.150Z',
   true, true, true,
   'residential', 'flat', 'recommended', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -346,7 +346,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Srinivasa Rao Varma', '+91 98480 12345', 'srinivas.varma@roadfacing.in', 'owner', true,
   1010, 84, 6,
-  '2026-07-10T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-10T02:30:05.447Z',
+  '2026-09-10T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-10T05:22:45.151Z',
   true, true, true,
   'residential', 'flat', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -361,7 +361,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Koteswara Rao Chowdary', '+91 98491 54321', 'kotesh.chowdary@roadfacing.in', 'agent', true,
   1045, 87, 7,
-  '2026-07-08T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-08T02:30:05.447Z',
+  '2026-09-08T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-08T05:22:45.151Z',
   true, true, true,
   'residential', 'flat', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -376,7 +376,7 @@ INSERT INTO public.properties (
   true, true, true, true, true,
   'admin-001', 'Lakshmi Narayana Reddy', '+91 94402 98765', 'narayana.reddy@roadfacing.in', 'builder', true,
   1080, 90, 8,
-  '2026-07-06T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-06T02:30:05.447Z',
+  '2026-09-06T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-06T05:22:45.151Z',
   true, true, true,
   'residential', 'pent-house', 'featured', '{"saleType":"resale","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -391,7 +391,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Venkat Ramana Murthy', '+91 98855 67890', 'venkat.murthy@roadfacing.in', 'agent', true,
   1115, 93, 9,
-  '2026-07-04T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-04T02:30:05.447Z',
+  '2026-09-04T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-04T05:22:45.151Z',
   true, true, true,
   'residential', 'flat', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -406,7 +406,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Prasad Babu Naidu', '+91 99890 11223', 'prasad.naidu@roadfacing.in', 'owner', true,
   1150, 96, 10,
-  '2026-07-02T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-07-02T02:30:05.447Z',
+  '2026-09-02T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-02T05:22:45.151Z',
   true, true, true,
   'residential', 'flat', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -421,7 +421,7 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Radha Krishna Guptha', '+91 94900 33445', 'radhakrishna@roadfacing.in', 'agent', true,
   1185, 99, 11,
-  '2026-06-30T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-06-30T02:30:05.447Z',
+  '2026-08-31T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-08-31T05:22:45.151Z',
   true, true, true,
   'residential', 'flat', 'recommended', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -436,7 +436,7 @@ INSERT INTO public.properties (
   true, true, false, true, true,
   'admin-001', 'Suresh Kumar Raju', '+91 98661 55667', 'suresh.raju@roadfacing.in', 'builder', true,
   1220, 102, 5,
-  '2026-06-28T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-06-28T02:30:05.447Z',
+  '2026-08-29T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-08-29T05:22:45.151Z',
   true, true, true,
   'residential', 'flat', 'featured', '{"saleType":"resale","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -451,7 +451,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Srinivasa Rao Varma', '+91 98480 12345', 'srinivas.varma@roadfacing.in', 'owner', true,
   1255, 105, 6,
-  '2026-06-26T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-06-26T02:30:05.447Z',
+  '2026-08-27T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-08-27T05:22:45.151Z',
   true, true, true,
   'residential', 'duplex-flat', 'none', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -466,7 +466,7 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Koteswara Rao Chowdary', '+91 98491 54321', 'kotesh.chowdary@roadfacing.in', 'agent', true,
   1290, 108, 7,
-  '2026-06-24T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-06-24T02:30:05.447Z',
+  '2026-08-25T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-08-25T05:22:45.151Z',
   true, true, true,
   'residential', 'flat', 'recommended', '{"saleType":"new","nearbySchools":["Delhi Public School","Nalanda Vidyaniketan","Sri Chaitanya"],"nearbyHospitals":["Ramesh Hospitals","Ayush Hospital","Manipal Hospital"],"waterSupply":"Municipal + Borewell"}'::jsonb
 ),
@@ -481,7 +481,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Venkat Ramana Murthy', '+91 98855 67890', 'venkat.murthy@roadfacing.in', 'builder', true,
   455, 36, 13,
-  '2026-08-20T02:30:05.447Z', '2026-08-23T02:30:05.447Z', '2026-08-20T02:30:05.447Z',
+  '2026-10-21T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-10-21T05:22:45.151Z',
   true, true, true,
   'residential', 'villa', 'none', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -496,7 +496,7 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Prasad Babu Naidu', '+91 99890 11223', 'prasad.naidu@roadfacing.in', 'builder', true,
   500, 40, 14,
-  '2026-08-17T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-17T02:30:05.448Z',
+  '2026-10-18T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-10-18T05:22:45.151Z',
   true, true, true,
   'residential', 'house', 'recommended', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -511,7 +511,7 @@ INSERT INTO public.properties (
   true, true, false, true, true,
   'admin-001', 'Radha Krishna Guptha', '+91 94900 33445', 'radhakrishna@roadfacing.in', 'builder', true,
   545, 44, 15,
-  '2026-08-14T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-14T02:30:05.448Z',
+  '2026-10-15T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-10-15T05:22:45.151Z',
   true, true, true,
   'residential', 'villa', 'featured', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -526,7 +526,7 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Suresh Kumar Raju', '+91 98661 55667', 'suresh.raju@roadfacing.in', 'builder', true,
   590, 48, 16,
-  '2026-08-11T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-11T02:30:05.448Z',
+  '2026-10-12T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-10-12T05:22:45.151Z',
   true, true, true,
   'residential', 'house', 'recommended', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -541,7 +541,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Srinivasa Rao Varma', '+91 98480 12345', 'srinivas.varma@roadfacing.in', 'builder', true,
   635, 52, 12,
-  '2026-08-08T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-08T02:30:05.448Z',
+  '2026-10-09T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-10-09T05:22:45.151Z',
   true, true, true,
   'residential', 'villa', 'none', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -556,7 +556,7 @@ INSERT INTO public.properties (
   true, true, true, true, true,
   'admin-001', 'Koteswara Rao Chowdary', '+91 98491 54321', 'kotesh.chowdary@roadfacing.in', 'builder', true,
   680, 56, 13,
-  '2026-08-05T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-05T02:30:05.448Z',
+  '2026-10-06T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-10-06T05:22:45.151Z',
   true, true, true,
   'residential', 'villa', 'featured', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -571,7 +571,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Lakshmi Narayana Reddy', '+91 94402 98765', 'narayana.reddy@roadfacing.in', 'builder', true,
   725, 60, 14,
-  '2026-08-02T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-02T02:30:05.448Z',
+  '2026-10-03T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-10-03T05:22:45.151Z',
   true, true, true,
   'residential', 'villa', 'none', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -586,7 +586,7 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Venkat Ramana Murthy', '+91 98855 67890', 'venkat.murthy@roadfacing.in', 'builder', true,
   770, 64, 15,
-  '2026-07-30T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-30T02:30:05.448Z',
+  '2026-09-30T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-30T05:22:45.151Z',
   true, true, true,
   'residential', 'house', 'recommended', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -601,7 +601,7 @@ INSERT INTO public.properties (
   true, true, false, true, true,
   'admin-001', 'Prasad Babu Naidu', '+91 99890 11223', 'prasad.naidu@roadfacing.in', 'builder', true,
   815, 68, 16,
-  '2026-07-27T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-27T02:30:05.448Z',
+  '2026-09-27T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-27T05:22:45.151Z',
   true, true, true,
   'residential', 'villa', 'featured', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -616,7 +616,7 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Radha Krishna Guptha', '+91 94900 33445', 'radhakrishna@roadfacing.in', 'builder', true,
   860, 72, 12,
-  '2026-07-24T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-24T02:30:05.448Z',
+  '2026-09-24T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-24T05:22:45.151Z',
   true, true, true,
   'residential', 'house', 'recommended', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -631,7 +631,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Suresh Kumar Raju', '+91 98661 55667', 'suresh.raju@roadfacing.in', 'builder', true,
   905, 76, 13,
-  '2026-07-21T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-21T02:30:05.448Z',
+  '2026-09-21T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-21T05:22:45.151Z',
   true, true, true,
   'residential', 'villa', 'none', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -646,7 +646,7 @@ INSERT INTO public.properties (
   true, true, true, true, true,
   'admin-001', 'Srinivasa Rao Varma', '+91 98480 12345', 'srinivas.varma@roadfacing.in', 'builder', true,
   950, 80, 14,
-  '2026-07-18T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-18T02:30:05.448Z',
+  '2026-09-18T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-18T05:22:45.151Z',
   true, true, true,
   'residential', 'villa', 'featured', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -661,7 +661,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Koteswara Rao Chowdary', '+91 98491 54321', 'kotesh.chowdary@roadfacing.in', 'builder', true,
   995, 84, 15,
-  '2026-07-15T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-15T02:30:05.448Z',
+  '2026-09-15T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-15T05:22:45.151Z',
   true, true, true,
   'residential', 'villa', 'none', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -676,7 +676,7 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Lakshmi Narayana Reddy', '+91 94402 98765', 'narayana.reddy@roadfacing.in', 'builder', true,
   1040, 88, 16,
-  '2026-07-12T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-12T02:30:05.448Z',
+  '2026-09-12T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-12T05:22:45.151Z',
   true, true, true,
   'residential', 'house', 'recommended', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -691,7 +691,7 @@ INSERT INTO public.properties (
   true, true, false, true, true,
   'admin-001', 'Venkat Ramana Murthy', '+91 98855 67890', 'venkat.murthy@roadfacing.in', 'builder', true,
   1085, 92, 12,
-  '2026-07-09T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-09T02:30:05.448Z',
+  '2026-09-09T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-09T05:22:45.151Z',
   true, true, true,
   'residential', 'villa', 'featured', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -706,7 +706,7 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Prasad Babu Naidu', '+91 99890 11223', 'prasad.naidu@roadfacing.in', 'builder', true,
   1130, 96, 13,
-  '2026-07-06T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-06T02:30:05.448Z',
+  '2026-09-06T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-06T05:22:45.151Z',
   true, true, true,
   'residential', 'house', 'recommended', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -721,7 +721,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Radha Krishna Guptha', '+91 94900 33445', 'radhakrishna@roadfacing.in', 'builder', true,
   1175, 100, 14,
-  '2026-07-03T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-03T02:30:05.448Z',
+  '2026-09-03T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-03T05:22:45.151Z',
   true, true, true,
   'residential', 'villa', 'none', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -736,7 +736,7 @@ INSERT INTO public.properties (
   true, true, true, true, true,
   'admin-001', 'Suresh Kumar Raju', '+91 98661 55667', 'suresh.raju@roadfacing.in', 'builder', true,
   1220, 104, 15,
-  '2026-06-30T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-06-30T02:30:05.448Z',
+  '2026-08-31T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-08-31T05:22:45.151Z',
   true, true, true,
   'residential', 'villa', 'featured', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -751,7 +751,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Srinivasa Rao Varma', '+91 98480 12345', 'srinivas.varma@roadfacing.in', 'builder', true,
   1265, 108, 16,
-  '2026-06-27T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-06-27T02:30:05.448Z',
+  '2026-08-28T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-08-28T05:22:45.151Z',
   true, true, true,
   'residential', 'villa', 'none', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -766,7 +766,7 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Koteswara Rao Chowdary', '+91 98491 54321', 'kotesh.chowdary@roadfacing.in', 'builder', true,
   1310, 112, 12,
-  '2026-06-24T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-06-24T02:30:05.448Z',
+  '2026-08-25T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-08-25T05:22:45.151Z',
   true, true, true,
   'residential', 'house', 'recommended', '{"saleType":"new","nearbySchools":["KCP Siddhartha School","Bhashyam Blooms","Oakridge International"],"nearbyHospitals":["AIIMS Mangalagiri","Time Hospital","Capital Hospitals"],"waterSupply":"24x7 Dedicated Municipal + Borewell"}'::jsonb
 ),
@@ -781,7 +781,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Prasad Babu Naidu', '+91 99890 11223', 'prasad.naidu@roadfacing.in', 'agent', true,
   338, 27, 10,
-  '2026-08-19T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-19T02:30:05.448Z',
+  '2026-10-20T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-10-20T05:22:45.151Z',
   true, true, true,
   'residential', 'venture-plot', 'budget_friendly', '{"saleType":"new"}'::jsonb
 ),
@@ -796,7 +796,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Radha Krishna Guptha', '+91 94900 33445', 'radhakrishna@roadfacing.in', 'agent', true,
   366, 30, 11,
-  '2026-08-15T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-15T02:30:05.448Z',
+  '2026-10-16T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-10-16T05:22:45.151Z',
   true, true, true,
   'residential', 'venture-plot', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -811,9 +811,9 @@ INSERT INTO public.properties (
   true, false, true, false, true,
   'admin-001', 'Suresh Kumar Raju', '+91 98661 55667', 'suresh.raju@roadfacing.in', 'agent', true,
   394, 33, 12,
-  '2026-08-11T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-11T02:30:05.448Z',
+  '2026-10-12T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-10-12T05:22:45.151Z',
   true, true, true,
-  'residential', 'venture-plot', 'none', '{"saleType":"new"}'::jsonb
+  'residential', 'venture-plot', 'none', '{"saleType":"resale"}'::jsonb
 ),
 (
   'prop-plt-054', '247sqyds-commercial-lands-mangalagiri-vijayawada-54', 'REF154', '247 Sq.Yds Commercial Highway in Mangalagiri, Vijayawada', 'Prime 247 Sq.Yds commercial lands situated in a high-growth corridor of Mangalagiri, Vijayawada. Featuring 40ft/60ft wide black top roads, underground drainage, central water supply system, compound wall with grand entrance arch, avenue plantation, and 100% clear titles. Immediate bank loan facility available from all leading nationalized banks. Guaranteed high appreciation potential in Amaravati capital growth zone.',
@@ -826,7 +826,7 @@ INSERT INTO public.properties (
   true, true, false, true, true,
   'admin-001', 'Srinivasa Rao Varma', '+91 98480 12345', 'srinivas.varma@roadfacing.in', 'agent', true,
   422, 36, 9,
-  '2026-08-07T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-07T02:30:05.448Z',
+  '2026-10-08T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-10-08T05:22:45.151Z',
   true, true, true,
   'commercial', 'venture-plot', 'featured', '{"saleType":"new"}'::jsonb
 ),
@@ -841,7 +841,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Koteswara Rao Chowdary', '+91 98491 54321', 'kotesh.chowdary@roadfacing.in', 'agent', true,
   450, 39, 10,
-  '2026-08-03T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-03T02:30:05.448Z',
+  '2026-10-04T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-10-04T05:22:45.151Z',
   true, true, true,
   'residential', 'venture-plot', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -856,9 +856,9 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Lakshmi Narayana Reddy', '+91 94402 98765', 'narayana.reddy@roadfacing.in', 'agent', true,
   478, 42, 11,
-  '2026-07-30T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-30T02:30:05.448Z',
+  '2026-09-30T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-30T05:22:45.151Z',
   true, true, true,
-  'residential', 'venture-plot', 'none', '{"saleType":"new"}'::jsonb
+  'residential', 'venture-plot', 'none', '{"saleType":"resale"}'::jsonb
 ),
 (
   'prop-plt-057', '307sqyds-residential-land-nidamanuru-vijayawada-57', 'REF157', '307 Sq.Yds CRDA Approved Residential Plot in Nidamanuru, Vijayawada', 'Prime 307 Sq.Yds residential land situated in a high-growth corridor of Nidamanuru, Vijayawada. Featuring 40ft/60ft wide black top roads, underground drainage, central water supply system, compound wall with grand entrance arch, avenue plantation, and 100% clear titles. Immediate bank loan facility available from all leading nationalized banks. Guaranteed high appreciation potential in Amaravati capital growth zone.',
@@ -871,7 +871,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Venkat Ramana Murthy', '+91 98855 67890', 'venkat.murthy@roadfacing.in', 'agent', true,
   506, 45, 12,
-  '2026-07-26T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-26T02:30:05.448Z',
+  '2026-09-26T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-26T05:22:45.151Z',
   true, true, true,
   'residential', 'venture-plot', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -886,7 +886,7 @@ INSERT INTO public.properties (
   true, true, false, true, true,
   'admin-001', 'Prasad Babu Naidu', '+91 99890 11223', 'prasad.naidu@roadfacing.in', 'agent', true,
   534, 48, 9,
-  '2026-07-22T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-22T02:30:05.448Z',
+  '2026-09-22T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-22T05:22:45.151Z',
   true, true, true,
   'agricultural', 'land', 'featured', '{"saleType":"new"}'::jsonb
 ),
@@ -901,9 +901,9 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Radha Krishna Guptha', '+91 94900 33445', 'radhakrishna@roadfacing.in', 'agent', true,
   562, 51, 10,
-  '2026-07-18T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-18T02:30:05.448Z',
+  '2026-09-18T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-18T05:22:45.151Z',
   true, true, true,
-  'residential', 'venture-plot', 'none', '{"saleType":"new"}'::jsonb
+  'residential', 'venture-plot', 'none', '{"saleType":"resale"}'::jsonb
 ),
 (
   'prop-plt-060', '367sqyds-residential-land-koritapadu-guntur-60', 'REF160', '367 Sq.Yds CRDA Approved Residential Plot in Koritapadu, Guntur', 'Prime 367 Sq.Yds residential land situated in a high-growth corridor of Koritapadu, Guntur. Featuring 40ft/60ft wide black top roads, underground drainage, central water supply system, compound wall with grand entrance arch, avenue plantation, and 100% clear titles. Immediate bank loan facility available from all leading nationalized banks. Guaranteed high appreciation potential in Amaravati capital growth zone.',
@@ -916,7 +916,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Suresh Kumar Raju', '+91 98661 55667', 'suresh.raju@roadfacing.in', 'agent', true,
   590, 54, 11,
-  '2026-07-14T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-14T02:30:05.448Z',
+  '2026-09-14T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-14T05:22:45.151Z',
   true, true, true,
   'residential', 'venture-plot', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -931,7 +931,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Srinivasa Rao Varma', '+91 98480 12345', 'srinivas.varma@roadfacing.in', 'agent', true,
   618, 57, 12,
-  '2026-07-10T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-10T02:30:05.448Z',
+  '2026-09-10T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-10T05:22:45.151Z',
   true, true, true,
   'residential', 'venture-plot', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -946,9 +946,9 @@ INSERT INTO public.properties (
   true, true, true, true, true,
   'admin-001', 'Koteswara Rao Chowdary', '+91 98491 54321', 'kotesh.chowdary@roadfacing.in', 'agent', true,
   646, 60, 9,
-  '2026-07-06T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-06T02:30:05.448Z',
+  '2026-09-06T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-06T05:22:45.151Z',
   true, true, true,
-  'commercial', 'venture-plot', 'featured', '{"saleType":"new"}'::jsonb
+  'commercial', 'venture-plot', 'featured', '{"saleType":"resale"}'::jsonb
 ),
 (
   'prop-plt-063', '427sqyds-residential-land-lakshmipuram-guntur-63', 'REF163', '427 Sq.Yds CRDA Approved Residential Plot in Lakshmipuram, Guntur', 'Prime 427 Sq.Yds residential land situated in a high-growth corridor of Lakshmipuram, Guntur. Featuring 40ft/60ft wide black top roads, underground drainage, central water supply system, compound wall with grand entrance arch, avenue plantation, and 100% clear titles. Immediate bank loan facility available from all leading nationalized banks. Guaranteed high appreciation potential in Amaravati capital growth zone.',
@@ -961,7 +961,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Lakshmi Narayana Reddy', '+91 94402 98765', 'narayana.reddy@roadfacing.in', 'agent', true,
   674, 63, 10,
-  '2026-07-02T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-02T02:30:05.448Z',
+  '2026-09-02T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-09-02T05:22:45.151Z',
   true, true, true,
   'residential', 'venture-plot', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -976,7 +976,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Venkat Ramana Murthy', '+91 98855 67890', 'venkat.murthy@roadfacing.in', 'agent', true,
   702, 66, 11,
-  '2026-06-28T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-06-28T02:30:05.448Z',
+  '2026-08-29T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-08-29T05:22:45.151Z',
   true, true, true,
   'residential', 'venture-plot', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -991,9 +991,9 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Prasad Babu Naidu', '+91 99890 11223', 'prasad.naidu@roadfacing.in', 'agent', true,
   730, 69, 12,
-  '2026-06-24T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-06-24T02:30:05.448Z',
+  '2026-08-25T05:22:45.151Z', '2026-10-24T05:22:45.151Z', '2026-08-25T05:22:45.151Z',
   true, true, true,
-  'residential', 'venture-plot', 'none', '{"saleType":"new"}'::jsonb
+  'residential', 'venture-plot', 'none', '{"saleType":"resale"}'::jsonb
 ),
 (
   'prop-com-066', '4700sqft-buildings-moghalrajpuram-vijayawada-66', 'REF166', '4700 Sq.Ft Independent Commercial Building in Moghalrajpuram, Vijayawada', 'State-of-the-art commercial property with high footfall in the commercial center of Moghalrajpuram, Vijayawada. Boasting glass facade, dedicated basement car parking, high-speed passenger & service lifts, 100% DG backup, central air conditioning provision, and fire safety systems. Ideal for corporate offices, IT firms, diagnostic centers, retail showrooms, or banks looking for high-yield rental return.',
@@ -1006,7 +1006,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Radha Krishna Guptha', '+91 94900 33445', 'radhakrishna@roadfacing.in', 'builder', true,
   410, 31, 15,
-  '2026-08-18T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-18T02:30:05.448Z',
+  '2026-10-19T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-19T05:22:45.152Z',
   true, false, true,
   'commercial', 'building', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -1021,7 +1021,7 @@ INSERT INTO public.properties (
   true, false, true, false, true,
   'admin-001', 'Suresh Kumar Raju', '+91 98661 55667', 'suresh.raju@roadfacing.in', 'builder', true,
   440, 33, 16,
-  '2026-08-13T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-13T02:30:05.448Z',
+  '2026-10-14T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-14T05:22:45.152Z',
   true, false, true,
   'commercial', 'godown', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -1036,7 +1036,7 @@ INSERT INTO public.properties (
   true, true, false, false, true,
   'admin-001', 'Srinivasa Rao Varma', '+91 98480 12345', 'srinivas.varma@roadfacing.in', 'builder', true,
   470, 35, 17,
-  '2026-08-08T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-08T02:30:05.448Z',
+  '2026-10-09T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-09T05:22:45.152Z',
   true, false, true,
   'commercial', 'shop', 'featured', '{"saleType":"new"}'::jsonb
 ),
@@ -1051,7 +1051,7 @@ INSERT INTO public.properties (
   true, false, true, false, true,
   'admin-001', 'Koteswara Rao Chowdary', '+91 98491 54321', 'kotesh.chowdary@roadfacing.in', 'builder', true,
   500, 37, 18,
-  '2026-08-03T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-03T02:30:05.448Z',
+  '2026-10-04T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-04T05:22:45.152Z',
   true, false, true,
   'commercial', 'godown', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -1066,7 +1066,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Lakshmi Narayana Reddy', '+91 94402 98765', 'narayana.reddy@roadfacing.in', 'builder', true,
   530, 39, 19,
-  '2026-07-29T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-29T02:30:05.448Z',
+  '2026-09-29T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-09-29T05:22:45.152Z',
   true, false, true,
   'commercial', 'building', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -1081,7 +1081,7 @@ INSERT INTO public.properties (
   true, true, true, false, true,
   'admin-001', 'Venkat Ramana Murthy', '+91 98855 67890', 'venkat.murthy@roadfacing.in', 'builder', true,
   560, 41, 14,
-  '2026-07-24T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-24T02:30:05.448Z',
+  '2026-09-24T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-09-24T05:22:45.152Z',
   true, false, true,
   'commercial', 'shop', 'featured', '{"saleType":"new"}'::jsonb
 ),
@@ -1096,7 +1096,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Prasad Babu Naidu', '+91 99890 11223', 'prasad.naidu@roadfacing.in', 'builder', true,
   590, 43, 15,
-  '2026-07-19T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-19T02:30:05.448Z',
+  '2026-09-19T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-09-19T05:22:45.152Z',
   true, false, true,
   'commercial', 'building', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -1111,7 +1111,7 @@ INSERT INTO public.properties (
   true, false, true, false, true,
   'admin-001', 'Radha Krishna Guptha', '+91 94900 33445', 'radhakrishna@roadfacing.in', 'builder', true,
   620, 45, 16,
-  '2026-07-14T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-14T02:30:05.448Z',
+  '2026-09-14T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-09-14T05:22:45.152Z',
   true, false, true,
   'commercial', 'godown', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -1126,7 +1126,7 @@ INSERT INTO public.properties (
   true, true, false, false, true,
   'admin-001', 'Suresh Kumar Raju', '+91 98661 55667', 'suresh.raju@roadfacing.in', 'builder', true,
   650, 47, 17,
-  '2026-07-09T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-09T02:30:05.448Z',
+  '2026-09-09T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-09-09T05:22:45.152Z',
   true, false, true,
   'commercial', 'shop', 'featured', '{"saleType":"new"}'::jsonb
 ),
@@ -1141,7 +1141,7 @@ INSERT INTO public.properties (
   true, false, true, true, true,
   'admin-001', 'Srinivasa Rao Varma', '+91 98480 12345', 'srinivas.varma@roadfacing.in', 'builder', true,
   680, 49, 18,
-  '2026-07-04T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-07-04T02:30:05.448Z',
+  '2026-09-04T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-09-04T05:22:45.152Z',
   true, false, true,
   'commercial', 'godown', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -1156,7 +1156,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Koteswara Rao Chowdary', '+91 98491 54321', 'kotesh.chowdary@roadfacing.in', 'builder', true,
   710, 51, 19,
-  '2026-06-29T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-06-29T02:30:05.448Z',
+  '2026-08-30T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-08-30T05:22:45.152Z',
   true, false, true,
   'commercial', 'building', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -1171,7 +1171,7 @@ INSERT INTO public.properties (
   true, true, true, false, true,
   'admin-001', 'Lakshmi Narayana Reddy', '+91 94402 98765', 'narayana.reddy@roadfacing.in', 'builder', true,
   740, 53, 14,
-  '2026-06-24T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-06-24T02:30:05.448Z',
+  '2026-08-25T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-08-25T05:22:45.152Z',
   true, false, true,
   'commercial', 'shop', 'featured', '{"saleType":"new"}'::jsonb
 ),
@@ -1186,7 +1186,7 @@ INSERT INTO public.properties (
   true, false, false, true, true,
   'admin-001', 'Venkat Ramana Murthy', '+91 98855 67890', 'venkat.murthy@roadfacing.in', 'builder', true,
   770, 55, 15,
-  '2026-06-19T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-06-19T02:30:05.448Z',
+  '2026-08-20T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-08-20T05:22:45.152Z',
   true, false, true,
   'commercial', 'building', 'none', '{"saleType":"new"}'::jsonb
 ),
@@ -1201,7 +1201,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Lakshmi Narayana Reddy', '+91 94402 98765', 'narayana.reddy@roadfacing.in', 'owner', true,
   310, 16, 9,
-  '2026-08-21T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-21T02:30:05.448Z',
+  '2026-10-22T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-22T05:22:45.152Z',
   true, true, true,
   'residential', 'flat', 'none', '{"securityDeposit":51000,"maintenanceCharge":2000,"waterSupply":"24x7 Water Supply"}'::jsonb
 ),
@@ -1216,7 +1216,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Venkat Ramana Murthy', '+91 98855 67890', 'venkat.murthy@roadfacing.in', 'owner', true,
   330, 17, 10,
-  '2026-08-19T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-19T02:30:05.448Z',
+  '2026-10-20T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-20T05:22:45.152Z',
   true, true, true,
   'residential', 'flat', 'none', '{"securityDeposit":54000,"maintenanceCharge":2000,"waterSupply":"24x7 Water Supply"}'::jsonb
 ),
@@ -1231,7 +1231,7 @@ INSERT INTO public.properties (
   true, true, false, false, true,
   'admin-001', 'Prasad Babu Naidu', '+91 99890 11223', 'prasad.naidu@roadfacing.in', 'owner', true,
   350, 18, 8,
-  '2026-08-17T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-17T02:30:05.448Z',
+  '2026-10-18T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-18T05:22:45.152Z',
   true, true, true,
   'residential', 'flat', 'none', '{"securityDeposit":97500,"maintenanceCharge":2000,"waterSupply":"24x7 Water Supply"}'::jsonb
 ),
@@ -1246,7 +1246,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Radha Krishna Guptha', '+91 94900 33445', 'radhakrishna@roadfacing.in', 'owner', true,
   370, 19, 9,
-  '2026-08-15T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-15T02:30:05.448Z',
+  '2026-10-16T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-16T05:22:45.152Z',
   true, false, true,
   'residential', 'flat', 'none', '{"securityDeposit":31500,"maintenanceCharge":2000,"waterSupply":"24x7 Water Supply"}'::jsonb
 ),
@@ -1261,7 +1261,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Suresh Kumar Raju', '+91 98661 55667', 'suresh.raju@roadfacing.in', 'owner', true,
   390, 20, 10,
-  '2026-08-13T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-13T02:30:05.448Z',
+  '2026-10-14T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-14T05:22:45.152Z',
   true, true, true,
   'residential', 'flat', 'none', '{"securityDeposit":63000,"maintenanceCharge":2000,"waterSupply":"24x7 Water Supply"}'::jsonb
 ),
@@ -1276,7 +1276,7 @@ INSERT INTO public.properties (
   true, true, false, false, true,
   'admin-001', 'Srinivasa Rao Varma', '+91 98480 12345', 'srinivas.varma@roadfacing.in', 'owner', true,
   410, 21, 8,
-  '2026-08-11T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-11T02:30:05.448Z',
+  '2026-10-12T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-12T05:22:45.152Z',
   true, true, true,
   'residential', 'flat', 'none', '{"securityDeposit":111000,"maintenanceCharge":2000,"waterSupply":"24x7 Water Supply"}'::jsonb
 ),
@@ -1291,7 +1291,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Koteswara Rao Chowdary', '+91 98491 54321', 'kotesh.chowdary@roadfacing.in', 'owner', true,
   430, 22, 9,
-  '2026-08-09T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-09T02:30:05.448Z',
+  '2026-10-10T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-10T05:22:45.152Z',
   true, true, true,
   'residential', 'flat', 'none', '{"securityDeposit":69000,"maintenanceCharge":2000,"waterSupply":"24x7 Water Supply"}'::jsonb
 ),
@@ -1306,7 +1306,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Lakshmi Narayana Reddy', '+91 94402 98765', 'narayana.reddy@roadfacing.in', 'owner', true,
   450, 23, 10,
-  '2026-08-07T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-07T02:30:05.448Z',
+  '2026-10-08T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-08T05:22:45.152Z',
   true, false, true,
   'residential', 'flat', 'none', '{"securityDeposit":37500,"maintenanceCharge":2000,"waterSupply":"24x7 Water Supply"}'::jsonb
 ),
@@ -1321,7 +1321,7 @@ INSERT INTO public.properties (
   true, true, false, false, true,
   'admin-001', 'Venkat Ramana Murthy', '+91 98855 67890', 'venkat.murthy@roadfacing.in', 'owner', true,
   470, 24, 8,
-  '2026-08-05T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-05T02:30:05.448Z',
+  '2026-10-06T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-06T05:22:45.152Z',
   true, true, true,
   'residential', 'flat', 'none', '{"securityDeposit":124500,"maintenanceCharge":2000,"waterSupply":"24x7 Water Supply"}'::jsonb
 ),
@@ -1336,7 +1336,7 @@ INSERT INTO public.properties (
   true, false, false, false, true,
   'admin-001', 'Prasad Babu Naidu', '+91 99890 11223', 'prasad.naidu@roadfacing.in', 'owner', true,
   490, 25, 9,
-  '2026-08-03T02:30:05.448Z', '2026-08-23T02:30:05.448Z', '2026-08-03T02:30:05.448Z',
+  '2026-10-04T05:22:45.152Z', '2026-10-24T05:22:45.152Z', '2026-10-04T05:22:45.152Z',
   true, true, true,
   'residential', 'flat', 'none', '{"securityDeposit":78000,"maintenanceCharge":2000,"waterSupply":"24x7 Water Supply"}'::jsonb
 )
@@ -1375,7 +1375,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Tower A & B (River View)","status":"under-construction","possessionDate":"Dec 2026","totalUnits":160},{"id":"ph-2","name":"Tower C (Clubhouse Wing)","status":"new-launch","possessionDate":"June 2027","totalUnits":80}]'::jsonb, '[{"id":"cfg-1","label":"2 BHK Luxury","bedrooms":2,"builtUpAreaMin":1220,"builtUpAreaMax":1280,"priceMin":5800000,"priceMax":6100000,"pricePerUnit":4750,"floorPlanUrl":"https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800&q=80","possessionDate":"Dec 2026"},{"id":"cfg-2","label":"3 BHK Royal","bedrooms":3,"builtUpAreaMin":1680,"builtUpAreaMax":1750,"priceMin":8000000,"priceMax":8400000,"pricePerUnit":4800,"floorPlanUrl":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80","possessionDate":"Dec 2026"},{"id":"cfg-3","label":"4 BHK Sky Suite","bedrooms":4,"builtUpAreaMin":2450,"builtUpAreaMax":2500,"priceMin":12500000,"priceMax":13000000,"pricePerUnit":5100,"floorPlanUrl":"https://images.unsplash.com/photo-1600566753086-00f18efc204b?w=800&q=80","possessionDate":"June 2027"}]'::jsonb, '[{"id":"img-proj-1-0","url":"https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80","alt":"Meridian Skyline Towers - High Rise Residential Complex Exterior","category":"exterior","isPrimary":true},{"id":"img-proj-1-1","url":"https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80","alt":"Meridian Skyline Towers - Spacious Designer Living Hall","category":"interior","isPrimary":false},{"id":"img-proj-1-2","url":"https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80","alt":"Meridian Skyline Towers - Master Bedroom with Balcony View","category":"amenity","isPrimary":false},{"id":"img-proj-1-3","url":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80","alt":"Meridian Skyline Towers - Contemporary Modular Kitchen","category":"aerial","isPrimary":false},{"id":"img-proj-1-4","url":"https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1200&q=80","alt":"Meridian Skyline Towers - Modern Bathroom with Glass Partition","category":"aerial","isPrimary":false},{"id":"img-proj-1-5","url":"https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80","alt":"Meridian Skyline Towers - Balcony Sitout with Scenic Landscape","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/meridian-skyline-towers-vijayawada-sample-brochure.pdf', '["Bandar Road Highway Facing","35,000 Sq.Ft Grand Clubhouse","Infinity Rooftop Pool","100% Vastu Compliant Design"]'::jsonb, '["Olympic Size Swimming Pool","Badminton Courts","Creche & Day Care","EV Charging Bays","Yoga Meditation Deck"]'::jsonb,
   true, true, 650,
-  '2026-08-23T02:30:05.449Z', '2026-08-23T02:30:05.449Z', 'featured'
+  '2026-10-24T05:22:45.152Z', '2026-10-24T05:22:45.152Z', 'featured'
 ),
 (
   'proj-gun-002', 'amaravati-serene-county-villas-guntur', 'Amaravati Serene County Villas', 'Ultra-Luxury Gated Community Triplex Villas', 'Amaravati Serene County Villas is a marquee villa development by Amaravati Prime Infra, strategically positioned in Gorantla, Guntur, Andhra Pradesh. Spanning 12 Acres, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1385,7 +1385,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Phase 1 - Royal Villas","status":"ready-to-move","possessionDate":"Ready to Move","totalUnits":44},{"id":"ph-2","name":"Phase 2 - Imperial Villas","status":"under-construction","possessionDate":"March 2027","totalUnits":44}]'::jsonb, '[{"id":"cfg-1","label":"3 BHK East Facing Villa","bedrooms":3,"builtUpAreaMin":2800,"builtUpAreaMax":2900,"plotSizeMin":200,"plotSizeMax":200,"priceMin":18500000,"priceMax":19500000,"pricePerUnit":6600,"floorPlanUrl":"https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80","possessionDate":"Ready to Move"},{"id":"cfg-2","label":"4 BHK Grand Triplex Villa","bedrooms":4,"builtUpAreaMin":3650,"builtUpAreaMax":3800,"plotSizeMin":267,"plotSizeMax":267,"priceMin":26500000,"priceMax":28000000,"pricePerUnit":7200,"floorPlanUrl":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80","possessionDate":"March 2027"}]'::jsonb, '[{"id":"img-proj-2-0","url":"https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&q=80","alt":"Amaravati Serene County Villas - Contemporary Luxury Villa Exterior","category":"exterior","isPrimary":true},{"id":"img-proj-2-1","url":"https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80","alt":"Amaravati Serene County Villas - Double Height Grand Living Room","category":"interior","isPrimary":false},{"id":"img-proj-2-2","url":"https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80","alt":"Amaravati Serene County Villas - Private Landscaped Lawn & Garden","category":"amenity","isPrimary":false},{"id":"img-proj-2-3","url":"https://images.unsplash.com/photo-1600566753086-00f18f6b0a56?w=1200&q=80","alt":"Amaravati Serene County Villas - Villa Master Suite with Walk-in Closet","category":"aerial","isPrimary":false},{"id":"img-proj-2-4","url":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80","alt":"Amaravati Serene County Villas - Gourmet Kitchen with Pantry","category":"aerial","isPrimary":false},{"id":"img-proj-2-5","url":"https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80","alt":"Amaravati Serene County Villas - Private Swimming Pool & Deck","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/amaravati-serene-county-villas-guntur-sample-brochure.pdf', '["Inner Ring Road Gorantla Hub","Private Plunge Pool Provision","Double Height Formal Living","Solar Powered Township"]'::jsonb, '["Clubhouse with Banquet Hall","Tennis Court","Children Play Park","24/7 Security with Intercom"]'::jsonb,
   true, true, 710,
-  '2026-08-18T02:30:05.449Z', '2026-08-23T02:30:05.449Z', 'featured'
+  '2026-10-19T05:22:45.152Z', '2026-10-24T05:22:45.152Z', 'featured'
 ),
 (
   'proj-vij-003', 'capital-crest-horizon-city-vijayawada', 'Capital Crest Horizon City', 'CRDA Approved Plotted Township Near AIIMS', 'Capital Crest Horizon City is a marquee venture development by Haritha Green Spaces & County, strategically positioned in Mangalagiri, Vijayawada, Andhra Pradesh. Spanning 25 Acres, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1395,7 +1395,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Sector A & B","status":"ready-to-move","possessionDate":"Immediate Registration","totalUnits":180}]'::jsonb, '[{"id":"cfg-1","label":"Residential Plot (167 Sq.Yds)","plotSizeMin":167,"plotSizeMax":167,"priceMin":3800000,"priceMax":4000000,"pricePerUnit":23000,"possessionDate":"Immediate"},{"id":"cfg-2","label":"Corner Plot (220 Sq.Yds)","plotSizeMin":220,"plotSizeMax":220,"priceMin":5200000,"priceMax":5500000,"pricePerUnit":24000,"possessionDate":"Immediate"},{"id":"cfg-3","label":"Commercial Facing Plot (300 Sq.Yds)","plotSizeMin":300,"plotSizeMax":300,"priceMin":8500000,"priceMax":9000000,"pricePerUnit":29000,"possessionDate":"Immediate"}]'::jsonb, '[{"id":"img-proj-3-0","url":"https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&q=80","alt":"Capital Crest Horizon City - CRDA Approved Plotted Layout Aerial View","category":"exterior","isPrimary":true},{"id":"img-proj-3-1","url":"https://images.unsplash.com/photo-1628624747186-a941c476b7ef?w=1200&q=80","alt":"Capital Crest Horizon City - Clear Boundary Demarcation & BT Roads","category":"interior","isPrimary":false},{"id":"img-proj-3-2","url":"https://images.unsplash.com/photo-1595880500386-4b33823b29cd?w=1200&q=80","alt":"Capital Crest Horizon City - Underground Drainage and Street Lighting","category":"amenity","isPrimary":false},{"id":"img-proj-3-3","url":"https://images.unsplash.com/photo-1500076656116-558758c991c1?w=1200&q=80","alt":"Capital Crest Horizon City - Lush Green Avenue Plantation","category":"aerial","isPrimary":false},{"id":"img-proj-3-4","url":"https://images.unsplash.com/photo-1524813686514-a57563d77965?w=1200&q=80","alt":"Capital Crest Horizon City - Main Grand Entrance Arch & Security","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/capital-crest-horizon-city-vijayawada-sample-brochure.pdf', '["5 Mins from AIIMS Mangalagiri","60ft & 40ft Wide BT Roads","Underground Power & Drainage","High Appreciation Zone"]'::jsonb, '["Avenue Plantation","Grand Entrance Gateway","Compound Wall Protection","Children Theme Park"]'::jsonb,
   true, true, 770,
-  '2026-08-13T02:30:05.449Z', '2026-08-23T02:30:05.449Z', 'featured'
+  '2026-10-14T05:22:45.152Z', '2026-10-24T05:22:45.152Z', 'featured'
 ),
 (
   'proj-vij-004', 'benz-circle-royal-grandeur-vijayawada', 'Benz Circle Royal Grandeur', 'Ultra-Luxury Living in the Heart of Vijayawada', 'Benz Circle Royal Grandeur is a marquee apartment development by Capital Crest Developers, strategically positioned in Benz Circle, Vijayawada, Andhra Pradesh. Spanning 2 Acres, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1405,7 +1405,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Main Tower","status":"ready-to-move","possessionDate":"Immediate","totalUnits":65}]'::jsonb, '[{"id":"cfg-1","label":"3 BHK Elite","bedrooms":3,"builtUpAreaMin":1850,"builtUpAreaMax":1950,"priceMin":14500000,"priceMax":15500000,"pricePerUnit":7800,"possessionDate":"Immediate"},{"id":"cfg-2","label":"4 BHK Duplex Penthouse","bedrooms":4,"builtUpAreaMin":3100,"builtUpAreaMax":3250,"priceMin":26000000,"priceMax":27500000,"pricePerUnit":8400,"possessionDate":"Immediate"}]'::jsonb, '[{"id":"img-proj-4-0","url":"https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80","alt":"Benz Circle Royal Grandeur - High Rise Residential Complex Exterior","category":"exterior","isPrimary":true},{"id":"img-proj-4-1","url":"https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80","alt":"Benz Circle Royal Grandeur - Spacious Designer Living Hall","category":"interior","isPrimary":false},{"id":"img-proj-4-2","url":"https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80","alt":"Benz Circle Royal Grandeur - Master Bedroom with Balcony View","category":"amenity","isPrimary":false},{"id":"img-proj-4-3","url":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80","alt":"Benz Circle Royal Grandeur - Contemporary Modular Kitchen","category":"aerial","isPrimary":false},{"id":"img-proj-4-4","url":"https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1200&q=80","alt":"Benz Circle Royal Grandeur - Modern Bathroom with Glass Partition","category":"aerial","isPrimary":false},{"id":"img-proj-4-5","url":"https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80","alt":"Benz Circle Royal Grandeur - Balcony Sitout with Scenic Landscape","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/benz-circle-royal-grandeur-vijayawada-sample-brochure.pdf', '["Prime Benz Circle Locality","Walk to Malls & Restaurants","High Speed Mitsubishi Elevators","Double Basement Parking"]'::jsonb, '["Rooftop Infinity Swimming Pool","Fully Equipped Gym","Terrace Party Lounge","EV Charging Slots"]'::jsonb,
   true, true, 830,
-  '2026-08-08T02:30:05.449Z', '2026-08-23T02:30:05.449Z', 'featured'
+  '2026-10-09T05:22:45.152Z', '2026-10-24T05:22:45.152Z', 'featured'
 ),
 (
   'proj-gun-005', 'amaravati-highway-greens-guntur', 'Amaravati Highway Greens', 'Integrated Residential Township on Express Corridor', 'Amaravati Highway Greens is a marquee apartment development by Nagarjuna Landmark Estates, strategically positioned in Amaravati Road, Guntur, Andhra Pradesh. Spanning 8 Acres, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1415,7 +1415,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Tower 1 & 2","status":"under-construction","possessionDate":"Oct 2026","totalUnits":160},{"id":"ph-2","name":"Tower 3 & 4","status":"new-launch","possessionDate":"Dec 2027","totalUnits":160}]'::jsonb, '[{"id":"cfg-1","label":"2 BHK Comfort","bedrooms":2,"builtUpAreaMin":1150,"builtUpAreaMax":1200,"priceMin":4800000,"priceMax":5100000,"pricePerUnit":4200,"possessionDate":"Oct 2026"},{"id":"cfg-2","label":"3 BHK Premium","bedrooms":3,"builtUpAreaMin":1580,"builtUpAreaMax":1650,"priceMin":6800000,"priceMax":7200000,"pricePerUnit":4300,"possessionDate":"Oct 2026"}]'::jsonb, '[{"id":"img-proj-5-0","url":"https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80","alt":"Amaravati Highway Greens - High Rise Residential Complex Exterior","category":"exterior","isPrimary":true},{"id":"img-proj-5-1","url":"https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80","alt":"Amaravati Highway Greens - Spacious Designer Living Hall","category":"interior","isPrimary":false},{"id":"img-proj-5-2","url":"https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80","alt":"Amaravati Highway Greens - Master Bedroom with Balcony View","category":"amenity","isPrimary":false},{"id":"img-proj-5-3","url":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80","alt":"Amaravati Highway Greens - Contemporary Modular Kitchen","category":"aerial","isPrimary":false},{"id":"img-proj-5-4","url":"https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1200&q=80","alt":"Amaravati Highway Greens - Modern Bathroom with Glass Partition","category":"aerial","isPrimary":false},{"id":"img-proj-5-5","url":"https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80","alt":"Amaravati Highway Greens - Balcony Sitout with Scenic Landscape","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/amaravati-highway-greens-guntur-sample-brochure.pdf', '["Direct Amaravati Expressway Access","Over 70% Open Green Space","RERA & CRDA Approved","School Bus Pick & Drop Point"]'::jsonb, '["Clubhouse & Banquet Hall","Cricket Practice Net","Skating Rink for Kids","24/7 Security with Boom Barriers"]'::jsonb,
   true, true, 890,
-  '2026-08-03T02:30:05.449Z', '2026-08-23T02:30:05.449Z', 'featured'
+  '2026-10-04T05:22:45.152Z', '2026-10-24T05:22:45.152Z', 'featured'
 ),
 (
   'proj-vij-006', 'krishna-riverfront-haven-villas-vijayawada', 'Krishna Riverfront Haven Villas', 'Bespoke River-Facing Gated Community Villas', 'Krishna Riverfront Haven Villas is a marquee villa development by Meridian Habitat Developers, strategically positioned in Tadepalli, Vijayawada, Andhra Pradesh. Spanning 8 Acres, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1425,7 +1425,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Phase 1","status":"under-construction","possessionDate":"Dec 2026","totalUnits":52}]'::jsonb, '[{"id":"cfg-1","label":"4 BHK Waterfront Villa","bedrooms":4,"builtUpAreaMin":3800,"builtUpAreaMax":4100,"priceMin":32000000,"priceMax":35000000,"pricePerUnit":8500,"possessionDate":"Dec 2026"}]'::jsonb, '[{"id":"img-proj-6-0","url":"https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&q=80","alt":"Krishna Riverfront Haven Villas - Contemporary Luxury Villa Exterior","category":"exterior","isPrimary":true},{"id":"img-proj-6-1","url":"https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80","alt":"Krishna Riverfront Haven Villas - Double Height Grand Living Room","category":"interior","isPrimary":false},{"id":"img-proj-6-2","url":"https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80","alt":"Krishna Riverfront Haven Villas - Private Landscaped Lawn & Garden","category":"amenity","isPrimary":false},{"id":"img-proj-6-3","url":"https://images.unsplash.com/photo-1600566753086-00f18f6b0a56?w=1200&q=80","alt":"Krishna Riverfront Haven Villas - Villa Master Suite with Walk-in Closet","category":"aerial","isPrimary":false},{"id":"img-proj-6-4","url":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80","alt":"Krishna Riverfront Haven Villas - Gourmet Kitchen with Pantry","category":"aerial","isPrimary":false},{"id":"img-proj-6-5","url":"https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80","alt":"Krishna Riverfront Haven Villas - Private Swimming Pool & Deck","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/krishna-riverfront-haven-villas-vijayawada-sample-brochure.pdf', '["Prakasam Barrage & River Views","Private Lift Inside Villa","Italian Marble Flooring","Private Lawn with Jacuzzi"]'::jsonb, '["Riverfront Promenade Walk","Clubhouse with Spa","Fine Dining Cafe","Concierge Service"]'::jsonb,
   true, true, 950,
-  '2026-07-29T02:30:05.449Z', '2026-08-23T02:30:05.449Z', 'featured'
+  '2026-09-29T05:22:45.153Z', '2026-10-24T05:22:45.153Z', 'featured'
 ),
 (
   'proj-gun-007', 'nagarjuna-imperial-brodipet-guntur', 'Nagarjuna Imperial Brodipet', 'Premium Boutique Flats in Guntur Central', 'Nagarjuna Imperial Brodipet is a marquee apartment development by Nagarjuna Landmark Estates, strategically positioned in Brodipet, Guntur, Andhra Pradesh. Spanning 1.2 Acres, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1435,7 +1435,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Main Block","status":"ready-to-move","possessionDate":"Immediate","totalUnits":40}]'::jsonb, '[{"id":"cfg-1","label":"3 BHK Super Luxury","bedrooms":3,"builtUpAreaMin":1800,"builtUpAreaMax":1880,"priceMin":11000000,"priceMax":11800000,"pricePerUnit":6200,"possessionDate":"Immediate"}]'::jsonb, '[{"id":"img-proj-7-0","url":"https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80","alt":"Nagarjuna Imperial Brodipet - High Rise Residential Complex Exterior","category":"exterior","isPrimary":true},{"id":"img-proj-7-1","url":"https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80","alt":"Nagarjuna Imperial Brodipet - Spacious Designer Living Hall","category":"interior","isPrimary":false},{"id":"img-proj-7-2","url":"https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80","alt":"Nagarjuna Imperial Brodipet - Master Bedroom with Balcony View","category":"amenity","isPrimary":false},{"id":"img-proj-7-3","url":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80","alt":"Nagarjuna Imperial Brodipet - Contemporary Modular Kitchen","category":"aerial","isPrimary":false},{"id":"img-proj-7-4","url":"https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1200&q=80","alt":"Nagarjuna Imperial Brodipet - Modern Bathroom with Glass Partition","category":"aerial","isPrimary":false},{"id":"img-proj-7-5","url":"https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80","alt":"Nagarjuna Imperial Brodipet - Balcony Sitout with Scenic Landscape","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/nagarjuna-imperial-brodipet-guntur-sample-brochure.pdf', '["Brodipet 4th Line Location","Only 2 Flats Per Floor","100% Teak Wood Finishes","2 Car Parks Per Unit"]'::jsonb, '["Gymnasium","Rooftop Gazebo","Intercom Security","24 Hours Power Backup"]'::jsonb,
   false, true, 1010,
-  '2026-07-24T02:30:05.449Z', '2026-08-23T02:30:05.449Z', 'recommended'
+  '2026-09-24T05:22:45.153Z', '2026-10-24T05:22:45.153Z', 'recommended'
 ),
 (
   'proj-vij-008', 'kanuru-green-palms-residency-vijayawada', 'Kanuru Green Palms Residency', 'Serene Family Living Close to Education Hub', 'Kanuru Green Palms Residency is a marquee apartment development by Haritha Green Spaces & County, strategically positioned in Kanuru, Vijayawada, Andhra Pradesh. Spanning 3 Acres, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1445,7 +1445,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Block A & B","status":"under-construction","possessionDate":"March 2027","totalUnits":140}]'::jsonb, '[{"id":"cfg-1","label":"2 BHK","bedrooms":2,"builtUpAreaMin":1180,"builtUpAreaMax":1220,"priceMin":5200000,"priceMax":5500000,"pricePerUnit":4400,"possessionDate":"March 2027"},{"id":"cfg-2","label":"3 BHK","bedrooms":3,"builtUpAreaMin":1550,"builtUpAreaMax":1620,"priceMin":7000000,"priceMax":7400000,"pricePerUnit":4500,"possessionDate":"March 2027"}]'::jsonb, '[{"id":"img-proj-8-0","url":"https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80","alt":"Kanuru Green Palms Residency - High Rise Residential Complex Exterior","category":"exterior","isPrimary":true},{"id":"img-proj-8-1","url":"https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80","alt":"Kanuru Green Palms Residency - Spacious Designer Living Hall","category":"interior","isPrimary":false},{"id":"img-proj-8-2","url":"https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80","alt":"Kanuru Green Palms Residency - Master Bedroom with Balcony View","category":"amenity","isPrimary":false},{"id":"img-proj-8-3","url":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80","alt":"Kanuru Green Palms Residency - Contemporary Modular Kitchen","category":"aerial","isPrimary":false},{"id":"img-proj-8-4","url":"https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1200&q=80","alt":"Kanuru Green Palms Residency - Modern Bathroom with Glass Partition","category":"aerial","isPrimary":false},{"id":"img-proj-8-5","url":"https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80","alt":"Kanuru Green Palms Residency - Balcony Sitout with Scenic Landscape","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/kanuru-green-palms-residency-vijayawada-sample-brochure.pdf', '["Near VR Siddhartha College","Peaceful Residential Setting","CRDA & RERA Approved","Bank Loan Available"]'::jsonb, '["Swimming Pool","Children Play Zone","Community Hall","Gym"]'::jsonb,
   false, true, 1070,
-  '2026-07-19T02:30:05.449Z', '2026-08-23T02:30:05.449Z', 'none'
+  '2026-09-19T05:22:45.153Z', '2026-10-24T05:22:45.153Z', 'none'
 ),
 (
   'proj-gun-009', 'lakshmipuram-heights-guntur', 'Lakshmipuram Heights', 'Modern Urban Residences in Prime Guntur', 'Lakshmipuram Heights is a marquee apartment development by Amaravati Prime Infra, strategically positioned in Lakshmipuram, Guntur, Andhra Pradesh. Spanning 1.5 Acres, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1455,7 +1455,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Tower 1","status":"ready-to-move","possessionDate":"Immediate","totalUnits":50}]'::jsonb, '[{"id":"cfg-1","label":"2 BHK","bedrooms":2,"builtUpAreaMin":1200,"builtUpAreaMax":1250,"priceMin":6800000,"priceMax":7200000,"pricePerUnit":5700,"possessionDate":"Immediate"},{"id":"cfg-2","label":"3 BHK","bedrooms":3,"builtUpAreaMin":1750,"builtUpAreaMax":1800,"priceMin":9800000,"priceMax":10500000,"pricePerUnit":5800,"possessionDate":"Immediate"}]'::jsonb, '[{"id":"img-proj-9-0","url":"https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80","alt":"Lakshmipuram Heights - High Rise Residential Complex Exterior","category":"exterior","isPrimary":true},{"id":"img-proj-9-1","url":"https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80","alt":"Lakshmipuram Heights - Spacious Designer Living Hall","category":"interior","isPrimary":false},{"id":"img-proj-9-2","url":"https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80","alt":"Lakshmipuram Heights - Master Bedroom with Balcony View","category":"amenity","isPrimary":false},{"id":"img-proj-9-3","url":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80","alt":"Lakshmipuram Heights - Contemporary Modular Kitchen","category":"aerial","isPrimary":false},{"id":"img-proj-9-4","url":"https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1200&q=80","alt":"Lakshmipuram Heights - Modern Bathroom with Glass Partition","category":"aerial","isPrimary":false},{"id":"img-proj-9-5","url":"https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80","alt":"Lakshmipuram Heights - Balcony Sitout with Scenic Landscape","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/lakshmipuram-heights-guntur-sample-brochure.pdf', '["Walk to St. Joseph Hospital","Vitrified Flooring","Generator Backup","24/7 Security"]'::jsonb, '["Multipurpose Hall","Gym","Covered Parking","Elevators"]'::jsonb,
   false, true, 1130,
-  '2026-07-14T02:30:05.449Z', '2026-08-23T02:30:05.449Z', 'recommended'
+  '2026-09-14T05:22:45.153Z', '2026-10-24T05:22:45.153Z', 'recommended'
 ),
 (
   'proj-vij-010', 'enikepadu-capital-corridor-venture-vijayawada', 'Enikepadu Capital Corridor Venture', 'RERA Approved Highway Facing Layout', 'Enikepadu Capital Corridor Venture is a marquee venture development by Capital Crest Developers, strategically positioned in Enikepadu, Vijayawada, Andhra Pradesh. Spanning 15 Acres, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1465,7 +1465,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Phase 1","status":"ready-to-move","possessionDate":"Immediate","totalUnits":120}]'::jsonb, '[{"id":"cfg-1","label":"Plot (180 Sq.Yds)","plotSizeMin":180,"plotSizeMax":180,"priceMin":4500000,"priceMax":4800000,"pricePerUnit":25000,"possessionDate":"Immediate"},{"id":"cfg-2","label":"Plot (250 Sq.Yds)","plotSizeMin":250,"plotSizeMax":250,"priceMin":6500000,"priceMax":7000000,"pricePerUnit":26000,"possessionDate":"Immediate"}]'::jsonb, '[{"id":"img-proj-10-0","url":"https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&q=80","alt":"Enikepadu Capital Corridor Venture - CRDA Approved Plotted Layout Aerial View","category":"exterior","isPrimary":true},{"id":"img-proj-10-1","url":"https://images.unsplash.com/photo-1628624747186-a941c476b7ef?w=1200&q=80","alt":"Enikepadu Capital Corridor Venture - Clear Boundary Demarcation & BT Roads","category":"interior","isPrimary":false},{"id":"img-proj-10-2","url":"https://images.unsplash.com/photo-1595880500386-4b33823b29cd?w=1200&q=80","alt":"Enikepadu Capital Corridor Venture - Underground Drainage and Street Lighting","category":"amenity","isPrimary":false},{"id":"img-proj-10-3","url":"https://images.unsplash.com/photo-1500076656116-558758c991c1?w=1200&q=80","alt":"Enikepadu Capital Corridor Venture - Lush Green Avenue Plantation","category":"aerial","isPrimary":false},{"id":"img-proj-10-4","url":"https://images.unsplash.com/photo-1524813686514-a57563d77965?w=1200&q=80","alt":"Enikepadu Capital Corridor Venture - Main Grand Entrance Arch & Security","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/enikepadu-capital-corridor-venture-vijayawada-sample-brochure.pdf', '["NH16 Highway Connectivity","100% Clear Title","Underground Drainage","Avenue Plantation"]'::jsonb, '["Gated Entrance Arch","Street Lights","Water Pipeline","Parks"]'::jsonb,
   false, true, 1190,
-  '2026-07-09T02:30:05.449Z', '2026-08-23T02:30:05.449Z', 'none'
+  '2026-09-09T05:22:45.153Z', '2026-10-24T05:22:45.153Z', 'none'
 ),
 (
   'proj-gun-011', 'pattabhipuram-grandeur-apartments-guntur', 'Pattabhipuram Grandeur Apartments', 'Spacious Residential Flats in Established Locality', 'Pattabhipuram Grandeur Apartments is a marquee apartment development by Nagarjuna Landmark Estates, strategically positioned in Pattabhipuram, Guntur, Andhra Pradesh. Spanning 1.8 Acres, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1475,7 +1475,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Main Tower","status":"new-launch","possessionDate":"Dec 2027","totalUnits":60}]'::jsonb, '[{"id":"cfg-1","label":"3 BHK","bedrooms":3,"builtUpAreaMin":1620,"builtUpAreaMax":1680,"priceMin":7800000,"priceMax":8200000,"pricePerUnit":4800,"possessionDate":"Dec 2027"}]'::jsonb, '[{"id":"img-proj-11-0","url":"https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80","alt":"Pattabhipuram Grandeur Apartments - High Rise Residential Complex Exterior","category":"exterior","isPrimary":true},{"id":"img-proj-11-1","url":"https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80","alt":"Pattabhipuram Grandeur Apartments - Spacious Designer Living Hall","category":"interior","isPrimary":false},{"id":"img-proj-11-2","url":"https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80","alt":"Pattabhipuram Grandeur Apartments - Master Bedroom with Balcony View","category":"amenity","isPrimary":false},{"id":"img-proj-11-3","url":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80","alt":"Pattabhipuram Grandeur Apartments - Contemporary Modular Kitchen","category":"aerial","isPrimary":false},{"id":"img-proj-11-4","url":"https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1200&q=80","alt":"Pattabhipuram Grandeur Apartments - Modern Bathroom with Glass Partition","category":"aerial","isPrimary":false},{"id":"img-proj-11-5","url":"https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80","alt":"Pattabhipuram Grandeur Apartments - Balcony Sitout with Scenic Landscape","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/pattabhipuram-grandeur-apartments-guntur-sample-brochure.pdf', '["Pattabhipuram Main Road Link","Vastu Designed","Modern Elevators","Rainwater Harvesting"]'::jsonb, '["Party Hall","Fitness Center","Solar Backup for Common Areas"]'::jsonb,
   false, true, 1250,
-  '2026-07-04T02:30:05.449Z', '2026-08-23T02:30:05.449Z', 'recommended'
+  '2026-09-04T05:22:45.153Z', '2026-10-24T05:22:45.153Z', 'recommended'
 ),
 (
   'proj-vij-012', 'penamaluru-royal-orchids-villas-vijayawada', 'Penamaluru Royal Orchids Villas', 'Serene Gated Community Villas Surrounded by Greenery', 'Penamaluru Royal Orchids Villas is a marquee villa development by Haritha Green Spaces & County, strategically positioned in Penamaluru, Vijayawada, Andhra Pradesh. Spanning 6 Acres, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1485,7 +1485,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Orchid Enclave","status":"under-construction","possessionDate":"May 2027","totalUnits":45}]'::jsonb, '[{"id":"cfg-1","label":"3 BHK Duplex Villa","bedrooms":3,"builtUpAreaMin":2600,"builtUpAreaMax":2750,"priceMin":16500000,"priceMax":17500000,"pricePerUnit":6300,"possessionDate":"May 2027"}]'::jsonb, '[{"id":"img-proj-12-0","url":"https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&q=80","alt":"Penamaluru Royal Orchids Villas - Contemporary Luxury Villa Exterior","category":"exterior","isPrimary":true},{"id":"img-proj-12-1","url":"https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80","alt":"Penamaluru Royal Orchids Villas - Double Height Grand Living Room","category":"interior","isPrimary":false},{"id":"img-proj-12-2","url":"https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80","alt":"Penamaluru Royal Orchids Villas - Private Landscaped Lawn & Garden","category":"amenity","isPrimary":false},{"id":"img-proj-12-3","url":"https://images.unsplash.com/photo-1600566753086-00f18f6b0a56?w=1200&q=80","alt":"Penamaluru Royal Orchids Villas - Villa Master Suite with Walk-in Closet","category":"aerial","isPrimary":false},{"id":"img-proj-12-4","url":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80","alt":"Penamaluru Royal Orchids Villas - Gourmet Kitchen with Pantry","category":"aerial","isPrimary":false},{"id":"img-proj-12-5","url":"https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80","alt":"Penamaluru Royal Orchids Villas - Private Swimming Pool & Deck","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/penamaluru-royal-orchids-villas-vijayawada-sample-brochure.pdf', '["Bandar Road Corridor","Private Backyard Garden","Solar Water Heating","Clubhouse Access"]'::jsonb, '["Swimming Pool","Gym","Badminton Court","Security Guard Post"]'::jsonb,
   false, true, 1310,
-  '2026-06-29T02:30:05.449Z', '2026-08-23T02:30:05.449Z', 'none'
+  '2026-08-30T05:22:45.153Z', '2026-10-24T05:22:45.153Z', 'none'
 ),
 (
   'proj-gun-013', 'koritapadu-pride-towers-guntur', 'Koritapadu Pride Towers', 'Central Living with High Standard Finishes', 'Koritapadu Pride Towers is a marquee apartment development by Amaravati Prime Infra, strategically positioned in Koritapadu, Guntur, Andhra Pradesh. Spanning 1 Acre, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1495,7 +1495,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Pride Block","status":"ready-to-move","possessionDate":"Immediate","totalUnits":36}]'::jsonb, '[{"id":"cfg-1","label":"3 BHK","bedrooms":3,"builtUpAreaMin":1700,"builtUpAreaMax":1750,"priceMin":8800000,"priceMax":9200000,"pricePerUnit":5200,"possessionDate":"Immediate"}]'::jsonb, '[{"id":"img-proj-13-0","url":"https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80","alt":"Koritapadu Pride Towers - High Rise Residential Complex Exterior","category":"exterior","isPrimary":true},{"id":"img-proj-13-1","url":"https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80","alt":"Koritapadu Pride Towers - Spacious Designer Living Hall","category":"interior","isPrimary":false},{"id":"img-proj-13-2","url":"https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80","alt":"Koritapadu Pride Towers - Master Bedroom with Balcony View","category":"amenity","isPrimary":false},{"id":"img-proj-13-3","url":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80","alt":"Koritapadu Pride Towers - Contemporary Modular Kitchen","category":"aerial","isPrimary":false},{"id":"img-proj-13-4","url":"https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1200&q=80","alt":"Koritapadu Pride Towers - Modern Bathroom with Glass Partition","category":"aerial","isPrimary":false},{"id":"img-proj-13-5","url":"https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80","alt":"Koritapadu Pride Towers - Balcony Sitout with Scenic Landscape","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/koritapadu-pride-towers-guntur-sample-brochure.pdf', '["Koritapadu High School Route","Granite Flooring","Concealed Wiring","100% Vastu"]'::jsonb, '["Elevator","Intercom","DG Backup"]'::jsonb,
   false, true, 1370,
-  '2026-06-24T02:30:05.449Z', '2026-08-23T02:30:05.449Z', 'recommended'
+  '2026-08-25T05:22:45.153Z', '2026-10-24T05:22:45.153Z', 'recommended'
 ),
 (
   'proj-vij-014', 'patamata-horizon-heights-vijayawada', 'Patamata Horizon Heights', 'Lifestyle Residences Near Autonagar Gate', 'Patamata Horizon Heights is a marquee apartment development by Meridian Habitat Developers, strategically positioned in Patamata, Vijayawada, Andhra Pradesh. Spanning 2.5 Acres, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1505,7 +1505,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Block A","status":"under-construction","possessionDate":"Feb 2027","totalUnits":95}]'::jsonb, '[{"id":"cfg-1","label":"2 BHK","bedrooms":2,"builtUpAreaMin":1240,"builtUpAreaMax":1280,"priceMin":6500000,"priceMax":6800000,"pricePerUnit":5300,"possessionDate":"Feb 2027"},{"id":"cfg-2","label":"3 BHK","bedrooms":3,"builtUpAreaMin":1680,"builtUpAreaMax":1740,"priceMin":9200000,"priceMax":9600000,"pricePerUnit":5500,"possessionDate":"Feb 2027"}]'::jsonb, '[{"id":"img-proj-14-0","url":"https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80","alt":"Patamata Horizon Heights - High Rise Residential Complex Exterior","category":"exterior","isPrimary":true},{"id":"img-proj-14-1","url":"https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80","alt":"Patamata Horizon Heights - Spacious Designer Living Hall","category":"interior","isPrimary":false},{"id":"img-proj-14-2","url":"https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80","alt":"Patamata Horizon Heights - Master Bedroom with Balcony View","category":"amenity","isPrimary":false},{"id":"img-proj-14-3","url":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80","alt":"Patamata Horizon Heights - Contemporary Modular Kitchen","category":"aerial","isPrimary":false},{"id":"img-proj-14-4","url":"https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1200&q=80","alt":"Patamata Horizon Heights - Modern Bathroom with Glass Partition","category":"aerial","isPrimary":false},{"id":"img-proj-14-5","url":"https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80","alt":"Patamata Horizon Heights - Balcony Sitout with Scenic Landscape","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/patamata-horizon-heights-vijayawada-sample-brochure.pdf', '["Near High School Road","Children Play Zone","Covered Car Parking","24 Hours Water"]'::jsonb, '["Clubhouse","Gym","Elevators","Power Backup"]'::jsonb,
   false, true, 1430,
-  '2026-06-19T02:30:05.449Z', '2026-08-23T02:30:05.450Z', 'none'
+  '2026-08-20T05:22:45.153Z', '2026-10-24T05:22:45.153Z', 'none'
 ),
 (
   'proj-gun-015', 'inner-ring-road-golden-palms-layout-guntur', 'Inner Ring Road Golden Palms Layout', 'Prime Plotted Development on Guntur Ring Corridor', 'Inner Ring Road Golden Palms Layout is a marquee venture development by Capital Crest Developers, strategically positioned in Inner Ring Road, Guntur, Andhra Pradesh. Spanning 14 Acres, this landmark project combines contemporary architecture, 100% Vastu compliance, expansive open spaces, and world-class lifestyle amenities. Designed to provide unmatched luxury, superior connectivity, and stellar capital appreciation in the Amaravati capital region.',
@@ -1515,7 +1515,7 @@ INSERT INTO public.projects (
   '[{"id":"ph-1","name":"Phase 1","status":"ready-to-move","possessionDate":"Immediate","totalUnits":110}]'::jsonb, '[{"id":"cfg-1","label":"Plot (167 Sq.Yds)","plotSizeMin":167,"plotSizeMax":167,"priceMin":4200000,"priceMax":4500000,"pricePerUnit":25000,"possessionDate":"Immediate"},{"id":"cfg-2","label":"Plot (220 Sq.Yds)","plotSizeMin":220,"plotSizeMax":220,"priceMin":5800000,"priceMax":6200000,"pricePerUnit":26000,"possessionDate":"Immediate"}]'::jsonb, '[{"id":"img-proj-15-0","url":"https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&q=80","alt":"Inner Ring Road Golden Palms Layout - CRDA Approved Plotted Layout Aerial View","category":"exterior","isPrimary":true},{"id":"img-proj-15-1","url":"https://images.unsplash.com/photo-1628624747186-a941c476b7ef?w=1200&q=80","alt":"Inner Ring Road Golden Palms Layout - Clear Boundary Demarcation & BT Roads","category":"interior","isPrimary":false},{"id":"img-proj-15-2","url":"https://images.unsplash.com/photo-1595880500386-4b33823b29cd?w=1200&q=80","alt":"Inner Ring Road Golden Palms Layout - Underground Drainage and Street Lighting","category":"amenity","isPrimary":false},{"id":"img-proj-15-3","url":"https://images.unsplash.com/photo-1500076656116-558758c991c1?w=1200&q=80","alt":"Inner Ring Road Golden Palms Layout - Lush Green Avenue Plantation","category":"aerial","isPrimary":false},{"id":"img-proj-15-4","url":"https://images.unsplash.com/photo-1524813686514-a57563d77965?w=1200&q=80","alt":"Inner Ring Road Golden Palms Layout - Main Grand Entrance Arch & Security","category":"aerial","isPrimary":false}]'::jsonb, 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&q=80',
   'https://www.youtube.com/watch?v=LXb3EKWsInQ', 'https://roadfacing.in/brochures/inner-ring-road-golden-palms-layout-guntur-sample-brochure.pdf', '["Direct Inner Ring Road Access","100% CRDA Approved","Underground Sewerage","Avenue Greenery"]'::jsonb, '["Security Gate","Park Area","Street Lighting","Compound Wall"]'::jsonb,
   false, true, 1490,
-  '2026-06-14T02:30:05.450Z', '2026-08-23T02:30:05.450Z', 'recommended'
+  '2026-08-15T05:22:45.153Z', '2026-10-24T05:22:45.153Z', 'recommended'
 )
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
