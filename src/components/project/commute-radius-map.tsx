@@ -198,37 +198,34 @@ export default function CommuteRadiusMap({
       return;
     }
 
-    // 2. Fallback to OpenStreetMap Geocoding API for any locality / shop
+    // 2. Fallback to server-side Geocoding API for any locality / shop
     setLoading(true);
     try {
       const fullQuery = `${query}, ${city}, Andhra Pradesh, India`;
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}`
-      );
-      const data = await res.json();
-
-      if (data && data.length > 0) {
-        const destLat = parseFloat(data[0].lat);
-        const destLng = parseFloat(data[0].lon);
-        const displayName = data[0].display_name.split(",")[0] || query;
-        computeCommute(destLat, destLng, displayName);
-      } else {
-        // Broad search
-        const broadRes = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ", Andhra Pradesh")}`
-        );
-        const broadData = await broadRes.json();
-        if (broadData && broadData.length > 0) {
-          const destLat = parseFloat(broadData[0].lat);
-          const destLng = parseFloat(broadData[0].lon);
-          const displayName = broadData[0].display_name.split(",")[0] || query;
-          computeCommute(destLat, destLng, displayName);
-        } else {
-          alert(`Could not locate "${query}". Please select from nearby landmarks or search a nearby junction.`);
+      const res = await fetch(`/api/resolve-maps-url?q=${encodeURIComponent(fullQuery)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && data.latitude && data.longitude) {
+          const displayName = (data.address || query).split(",")[0] || query;
+          computeCommute(data.latitude, data.longitude, displayName);
+          return;
         }
       }
-    } catch (err) {
-      console.error("Geocoding lookup failed", err);
+
+      // Broad search
+      const broadRes = await fetch(`/api/resolve-maps-url?q=${encodeURIComponent(query + ", Andhra Pradesh")}`);
+      if (broadRes.ok) {
+        const broadData = await broadRes.json();
+        if (broadData && broadData.success && broadData.latitude && broadData.longitude) {
+          const displayName = (broadData.address || query).split(",")[0] || query;
+          computeCommute(broadData.latitude, broadData.longitude, displayName);
+          return;
+        }
+      }
+
+      alert(`Could not locate "${query}". Please select from nearby landmarks or search a nearby junction.`);
+    } catch {
+      alert(`Could not locate "${query}". Please select from nearby landmarks.`);
     } finally {
       setLoading(false);
     }

@@ -371,13 +371,139 @@ async function reverseGeocode(
   return null;
 }
 
+async function geocodeSearch(query: string): Promise<{
+  latitude: number;
+  longitude: number;
+  city: string;
+  locality: string;
+  state: string;
+  pincode: string;
+  address: string;
+} | null> {
+  const clean = (query || "").trim();
+  if (!clean) return null;
+
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(clean)}&format=json&addressdetails=1&limit=1`,
+      {
+        signal: AbortSignal.timeout(4000),
+        headers: {
+          "User-Agent": "ROADFacingApp/1.0 (care@roadfacing.com)",
+          "Accept-Language": "en",
+        },
+      }
+    );
+    if (res.ok) {
+      const items = await res.json();
+      if (items && items[0]) {
+        const lat = parseFloat(items[0].lat);
+        const lng = parseFloat(items[0].lon);
+        if (isValidCoordinateRange(lat, lng)) {
+          const addr = items[0].address || {};
+          const city = addr.city || addr.town || addr.village || addr.county || addr.suburb || "";
+          const locality = addr.suburb || addr.neighbourhood || addr.residential || addr.quarter || addr.town || addr.village || city;
+          return {
+            latitude: lat,
+            longitude: lng,
+            city,
+            locality,
+            state: addr.state || "",
+            pincode: addr.postcode || "",
+            address: items[0].display_name || clean,
+          };
+        }
+      }
+    }
+  } catch {}
+
+  // Fallback to Photon
+  try {
+    const photonRes = await fetch(
+      `https://photon.komoot.io/api/?q=${encodeURIComponent(clean)}&limit=1`,
+      { signal: AbortSignal.timeout(3000) }
+    );
+    if (photonRes.ok) {
+      const pData = await photonRes.json();
+      if (pData.features && pData.features[0]) {
+        const coords = pData.features[0].geometry?.coordinates;
+        if (coords && coords.length >= 2) {
+          const lng = coords[0];
+          const lat = coords[1];
+          const props = pData.features[0].properties || {};
+          return {
+            latitude: lat,
+            longitude: lng,
+            city: props.city || props.county || "",
+            locality: props.locality || props.name || props.suburb || "",
+            state: props.state || "",
+            pincode: props.postcode || "",
+            address: props.name || clean,
+          };
+        }
+      }
+    }
+  } catch {}
+
+  return null;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+
+  // 1. Direct reverse geocoding via lat and lng
+  const latParam = searchParams.get("lat");
+  const lngParam = searchParams.get("lng") || searchParams.get("lon");
+  if (latParam && lngParam) {
+    const lat = parseFloat(latParam);
+    const lng = parseFloat(lngParam);
+    if (!isNaN(lat) && !isNaN(lng) && isValidCoordinateRange(lat, lng)) {
+      const geo = await reverseGeocode(lat, lng);
+      return NextResponse.json(
+        {
+          success: true,
+          latitude: lat,
+          longitude: lng,
+          city: geo?.city || "",
+          locality: geo?.locality || "",
+          candidateSublocations: geo?.candidateSublocations || [],
+          state: geo?.state || "",
+          pincode: geo?.pincode || "",
+          address: geo?.address || "",
+        },
+        { headers: CORS_HEADERS }
+      );
+    }
+    return NextResponse.json(
+      { error: "Invalid coordinate range" },
+      { status: 400, headers: CORS_HEADERS }
+    );
+  }
+
+  // 2. Direct forward geocoding via query (q)
+  const queryParam = searchParams.get("q") || searchParams.get("query");
+  if (queryParam) {
+    const result = await geocodeSearch(queryParam);
+    if (result) {
+      return NextResponse.json(
+        {
+          success: true,
+          ...result,
+        },
+        { headers: CORS_HEADERS }
+      );
+    }
+    return NextResponse.json(
+      { error: "Could not geocode location" },
+      { status: 404, headers: CORS_HEADERS }
+    );
+  }
+
   const targetUrl = searchParams.get("url");
 
   if (!targetUrl || typeof targetUrl !== "string") {
     return NextResponse.json(
-      { error: "Missing url parameter" },
+      { error: "Missing url, lat/lng, or q parameter" },
       { status: 400, headers: CORS_HEADERS }
     );
   }

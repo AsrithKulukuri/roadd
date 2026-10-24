@@ -25,28 +25,25 @@ interface CoordinatePickerMapProps {
 
 const reverseGeocode = async (lat: number, lng: number): Promise<LocationDetails | null> => {
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`, {
+    const res = await fetch(`/api/resolve-maps-url?lat=${lat}&lng=${lng}`, {
+      signal: AbortSignal.timeout(6000),
       headers: {
-        'Accept-Language': 'en'
-      }
+        Accept: "application/json",
+      },
     });
     if (!res.ok) return null;
     const data = await res.json();
-    
-    const addr = data.address || {};
-    const cityVal = addr.city || addr.town || addr.village || addr.county || addr.suburb || "";
-    const localityVal = addr.suburb || addr.neighbourhood || addr.residential || addr.quarter || addr.town || addr.village || cityVal || "";
-    const fullAddress = data.name ? `${data.name}, ${data.display_name}` : (data.display_name || "");
+    if (!data || !data.success) return null;
 
     return {
-      address: fullAddress,
-      city: cityVal,
-      state: addr.state || "",
-      pincode: addr.postcode || "",
-      locality: localityVal
+      address: data.address || "",
+      city: data.city || "",
+      state: data.state || "",
+      pincode: data.pincode || "",
+      locality: data.locality || data.city || "",
     };
-  } catch (error) {
-    console.error("Reverse geocoding failed", error);
+  } catch {
+    // Gracefully ignore geocode network interruptions without throwing unhandled Console TypeErrors
     return null;
   }
 };
