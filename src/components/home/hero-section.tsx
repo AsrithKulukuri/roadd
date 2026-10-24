@@ -757,24 +757,6 @@ export function HeroSection() {
         {/* Full-Width Dynamic Banner on Mobile */}
         {banners.length > 0 && (
           <div className="relative z-10 w-full mb-3 shadow-md h-[240px] overflow-hidden">
-            {/* Mobile Top-Right Location Pill */}
-            <button
-              type="button"
-              onClick={() => {
-                if (openLocationTab) {
-                  setOpenLocationTab(null);
-                  setSublocationSearch("");
-                } else {
-                  setOpenLocationTab(activeLocationCity?.id || "default");
-                  setSublocationSearch("");
-                }
-              }}
-              className="absolute top-3 right-3 z-30 h-8 px-3 rounded-full bg-white/95 backdrop-blur-md border border-white/60 shadow-md text-slate-950 font-bold text-xs flex items-center gap-1.5 active:scale-95 cursor-pointer pointer-events-auto"
-            >
-              <SolidMapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span>{userSelectedCity || activeLocationCity?.name || "Vijayawada"}</span>
-              <ChevronDown className="w-3 h-3 text-slate-500" />
-            </button>
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentBanner?.id || 'banner-fallback-mobile'}

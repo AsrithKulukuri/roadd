@@ -3,12 +3,17 @@
 import { useState, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Check, ChevronDown, MapPin } from "lucide-react";
+import { SolidMapPin } from "@/components/ui/solid-icons";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useLocationsStore } from "@/stores/locations-store";
 import { useSiteFeatures } from "@/components/providers/site-features-provider";
 import { cn } from "@/lib/utils";
 
-export function MobileLocationPicker() {
+interface MobileLocationPickerProps {
+  isTransparent?: boolean;
+}
+
+export function MobileLocationPicker({ isTransparent = false }: MobileLocationPickerProps) {
   const {
     cities,
     defaultLocation,
@@ -113,11 +118,16 @@ export function MobileLocationPicker() {
           <button
             type="button"
             aria-label={`Choose location: ${label}`}
-            className="flex min-h-11 max-w-[155px] cursor-pointer items-center gap-1.5 px-1 text-xs font-semibold text-white hover:text-amber-300 transition-colors focus-visible:outline-2 focus-visible:outline-amber-400"
+            className={cn(
+              "h-8 px-3 rounded-full flex items-center gap-1.5 active:scale-95 cursor-pointer max-w-[160px] transition-all",
+              isTransparent
+                ? "bg-white/95 backdrop-blur-md border border-white/60 shadow-md text-slate-950 font-bold text-xs"
+                : "bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 shadow-xs text-white font-semibold text-xs hover:border-amber-500/50"
+            )}
           >
-            <MapPin size={15} className="shrink-0 text-amber-400" />
+            <SolidMapPin className={cn("w-3.5 h-3.5 shrink-0", isTransparent ? "text-amber-500" : "text-amber-400")} />
             <span className="truncate">{label}</span>
-            <ChevronDown size={13} className="shrink-0 opacity-80" />
+            <ChevronDown className={cn("w-3 h-3 shrink-0", isTransparent ? "text-slate-500" : "text-slate-400 opacity-80")} />
           </button>
         </DialogTrigger>
         <DialogContent className="flex max-h-[85dvh] w-[calc(100%-2rem)] flex-col gap-3.5 rounded-2xl p-5">
@@ -180,7 +190,6 @@ export function MobileLocationPicker() {
                 </div>
                 <span>All of {cityName}</span>
               </div>
-              <span className="text-[11px] font-bold text-amber-700 shrink-0">Whole City</span>
             </button>
 
             {/* List of Sublocations with multi-select toggles */}
@@ -213,11 +222,6 @@ export function MobileLocationPicker() {
                     </div>
                     <span className="truncate">{item.name}</span>
                   </div>
-                  {item.count && (
-                    <span className="text-[11px] font-normal text-slate-500 shrink-0">
-                      {item.count}
-                    </span>
-                  )}
                 </button>
               );
             })}

@@ -567,9 +567,7 @@ export function Navbar() {
               </div>
             )}
 
-            {(pathname !== "/" || isPastBanner) && (
-              <MobileLocationPicker />
-            )}
+            <MobileLocationPicker isTransparent={isTransparent} />
 
             {/* Center: Interactive Search Bar on Scroll PAST BANNER OR Navigation Links */}
             <div ref={navDropdownRef} className="flex-1 min-w-0 max-w-5xl mx-2 sm:mx-4 hidden lg:flex items-center justify-center">
