@@ -160,11 +160,11 @@ export function RealtorFilterBar({
   const getLocationLabel = () => {
     const cityCount = filters.cities?.length || 0;
     const locCount = filters.localities?.length || 0;
-    const total = cityCount + locCount;
-    if (total === 0) return "Location";
-    if (cityCount === 1 && locCount === 0) return filters.cities[0];
-    if (locCount === 1 && cityCount === 0) return filters.localities[0];
-    return `Location (${total})`;
+    if (cityCount === 0 && locCount === 0) return "Location";
+    if (locCount === 1) return filters.localities[0];
+    if (locCount > 1) return `${filters.localities[0]} +${locCount - 1}`;
+    if (cityCount === 1) return filters.cities[0];
+    return `Location (${cityCount})`;
   };
 
   // Indian Price presets (INR) — Concise, clean brackets
@@ -806,7 +806,10 @@ export function RealtorFilterBar({
                       onClick={() => setOpenDropdown(null)}
                       className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-full shadow-xs cursor-pointer"
                     >
-                      Apply ({(filters.cities?.length || 0) + (filters.localities?.length || 0)})
+                      Apply{(() => {
+                        const count = (filters.localities?.length || 0) > 0 ? filters.localities.length : (filters.cities?.length || 0);
+                        return count > 0 ? ` (${count})` : "";
+                      })()}
                     </button>
                   </div>
                 </div>

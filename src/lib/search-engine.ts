@@ -834,14 +834,18 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
 }
 
 const LOCALITY_CLUSTER_ALIASES: Record<string, string[]> = {
-  patamata: ["gurunanak", "gurunanak nagar", "srinivasanagar", "srinivasa nagar", "auto nagar", "autonagar"],
-  srinivasanagar: ["patamata", "gurunanak", "gurunanak nagar", "srinivasa nagar"],
-  "srinivasa nagar": ["patamata", "gurunanak", "gurunanak nagar", "srinivasanagar"],
-  "gurunanak nagar": ["patamata", "srinivasanagar"],
-  gurunanak: ["patamata", "gurunanak nagar"],
-  edupugallu: ["poranki", "penamaluru", "kankipadu"],
-  poranki: ["edupugallu", "penamaluru", "tadigadapa"],
-  tadigadapa: ["kanuru", "padmaja nagar", "poranki"],
+  patamata: ["patamatallanka", "patamata lanka"],
+  srinivasanagar: ["srinivasa nagar"],
+  "srinivasa nagar": ["srinivasanagar"],
+  "gurunanak nagar": ["guru nanak nagar", "gurunanak"],
+  gurunanak: ["guru nanak", "gurunanak nagar"],
+  autonagar: ["auto nagar"],
+  "auto nagar": ["autonagar"],
+  edupugallu: ["idupugallu", "yedupugallu", "eedupugallu"],
+  penamaluru: ["penamalur"],
+  poranki: ["poramki"],
+  kanuru: ["kanur"],
+  tadigadapa: ["tadigadapu"],
 };
 
 export function matchesLocalityAlias(filterTarget: string, itemLocality: string, itemAddress: string): boolean {

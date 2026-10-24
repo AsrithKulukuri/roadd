@@ -360,6 +360,26 @@ test.describe("Search accuracy regressions", () => {
     expect(matchesProjectSearch({ ...project, location: { city: "Vijayawada", locality: "Patamata" } } as Project, "3 bhk in benz circle")).toBe(true);
     expect(matchesProjectSearch(project, "3bhk in guntur")).toBe(false);
   });
+  test("locality filter strictly matches target locality and excludes neighboring localities", () => {
+    const edupugalluProject = {
+      name: "Avenue Serene",
+      projectType: "apartment",
+      location: { city: "Vijayawada", locality: "Edupugallu", address: "Rajiv Bhargav Colony, Edupugallu" },
+    } as Project;
+    const penamaluruProject = {
+      name: "Dwaraka Heights",
+      projectType: "apartment",
+      location: { city: "Vijayawada", locality: "Penamaluru", address: "MDR018, B R NAGAR, Penamaluru" },
+    } as Project;
+
+    const filters = { cities: ["Vijayawada"], localities: ["Edupugallu"], propertyType: ["apartment"] };
+    expect(evaluateProjectFilters(edupugalluProject, filters)).toBe(true);
+    expect(evaluateProjectFilters(penamaluruProject, filters)).toBe(false);
+
+    const penamaluruFilters = { cities: ["Vijayawada"], localities: ["Penamaluru"], propertyType: ["apartment"] };
+    expect(evaluateProjectFilters(edupugalluProject, penamaluruFilters)).toBe(false);
+    expect(evaluateProjectFilters(penamaluruProject, penamaluruFilters)).toBe(true);
+  });
   test("property minimum budgets are enforced", () => {
     const property = { title: "Home", price: 5000000, propertyType: "apartment", bedrooms: 3, location: {}, amenities: [], features: [] } as unknown as Property;
     expect(matchesPropertySearch(property, "above 80 lakh")).toBe(false);
