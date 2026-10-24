@@ -23,16 +23,21 @@ interface CoordinatePickerMapProps {
   onPositionChange: (lat: number, lng: number, details?: LocationDetails) => void;
 }
 
-const reverseGeocode = async (lat: number, lng: number): Promise<LocationDetails | null> => {
+const reverseGeocode = async (
+  lat: number,
+  lng: number,
+  signal?: AbortSignal
+): Promise<LocationDetails | null> => {
   try {
     const res = await fetch(`/api/resolve-maps-url?lat=${lat}&lng=${lng}`, {
-      signal: AbortSignal.timeout(6000),
+      signal,
       headers: {
         Accept: "application/json",
       },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
+    }).catch(() => null);
+
+    if (!res || !res.ok) return null;
+    const data = await res.json().catch(() => null);
     if (!data || !data.success) return null;
 
     return {
@@ -43,7 +48,6 @@ const reverseGeocode = async (lat: number, lng: number): Promise<LocationDetails
       locality: data.locality || data.city || "",
     };
   } catch {
-    // Gracefully ignore geocode network interruptions without throwing unhandled Console TypeErrors
     return null;
   }
 };
@@ -63,11 +67,11 @@ function LocationMarker({
   setPosition 
 }: { 
   position: L.LatLng | null;
-  setPosition: (pos: L.LatLng) => void;
+  setPosition: (pos: L.LatLng, fromUser?: boolean) => void;
 }) {
   const map = useMapEvents({
     click(e) {
-      setPosition(e.latlng);
+      setPosition(e.latlng, true);
     },
   });
 
@@ -81,7 +85,7 @@ function LocationMarker({
         dragend() {
           const marker = markerRef.current;
           if (marker != null) {
-            setPosition(marker.getLatLng());
+            setPosition(marker.getLatLng(), true);
           }
         },
       }}
@@ -97,11 +101,19 @@ export default function CoordinatePickerMap({
   const [position, setPosition] = useState<L.LatLng | null>(
     initialPosition ? new L.LatLng(initialPosition[0], initialPosition[1]) : null
   );
+  const isUserActionRef = useRef<boolean>(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Sync internal position state when initialPosition prop changes
+  const handleSetPosition = (pos: L.LatLng, fromUser: boolean = false) => {
+    isUserActionRef.current = fromUser;
+    setPosition(pos);
+  };
+
+  // Sync internal position state when initialPosition prop changes (e.g. from parent form)
   useEffect(() => {
     if (initialPosition && initialPosition[0] && initialPosition[1]) {
       if (!position || Math.abs(position.lat - initialPosition[0]) > 0.0001 || Math.abs(position.lng - initialPosition[1]) > 0.0001) {
+        isUserActionRef.current = false;
         setPosition(new L.LatLng(initialPosition[0], initialPosition[1]));
       }
     }
@@ -112,15 +124,26 @@ export default function CoordinatePickerMap({
       // Provide coordinates immediately
       onPositionChange(position.lat, position.lng);
       
-      // Fetch reverse geocoding after a small debounce to avoid spamming the API while dragging
-      const timeoutId = setTimeout(async () => {
-        const details = await reverseGeocode(position.lat, position.lng);
-        if (details) {
-          onPositionChange(position.lat, position.lng, details);
+      // Only reverse-geocode if user clicked or dragged on the map
+      if (isUserActionRef.current) {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
         }
-      }, 300);
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
 
-      return () => clearTimeout(timeoutId);
+        const timeoutId = setTimeout(async () => {
+          const details = await reverseGeocode(position.lat, position.lng, controller.signal);
+          if (details && !controller.signal.aborted) {
+            onPositionChange(position.lat, position.lng, details);
+          }
+        }, 350);
+
+        return () => {
+          clearTimeout(timeoutId);
+          controller.abort();
+        };
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [position]);
@@ -135,7 +158,7 @@ export default function CoordinatePickerMap({
       >
         <GoogleMapLayer />
         <MapViewController center={initialPosition} />
-        <LocationMarker position={position} setPosition={setPosition} />
+        <LocationMarker position={position} setPosition={handleSetPosition} />
       </MapContainer>
     </div>
   );
