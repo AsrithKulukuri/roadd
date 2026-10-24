@@ -92,10 +92,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#020617" },
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-  ],
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -167,7 +164,8 @@ export default async function RootLayout({
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={cn("font-sans antialiased", inter.variable)}
+      data-theme="light"
+      className={cn("light font-sans antialiased", inter.variable)}
     >
       <head>
         <script
@@ -178,6 +176,7 @@ export default async function RootLayout({
       <body suppressHydrationWarning className={cn("min-h-screen bg-bg-primary font-sans text-text-primary antialiased", inter.className)}>
         <ThemeProvider
           attribute="class"
+          forcedTheme="light"
           defaultTheme="light"
           enableSystem={false}
           disableTransitionOnChange

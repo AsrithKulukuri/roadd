@@ -1,7 +1,7 @@
 "use client";
 
 import { ThemeProvider as NextThemesProvider } from "next-themes";
-import type { ComponentProps } from "react";
+import { useEffect, type ComponentProps } from "react";
 
 // Suppress known dev-only false positive warnings:
 // 1. React 19 script tag warning from next-themes
@@ -28,5 +28,25 @@ export function ThemeProvider({
   children,
   ...props
 }: ComponentProps<typeof NextThemesProvider>) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.add("light");
+      document.documentElement.setAttribute("data-theme", "light");
+      try {
+        localStorage.setItem("theme", "light");
+      } catch {}
+    }
+  }, []);
+
+  return (
+    <NextThemesProvider
+      {...props}
+      forcedTheme="light"
+      enableSystem={false}
+      defaultTheme="light"
+    >
+      {children}
+    </NextThemesProvider>
+  );
 }
