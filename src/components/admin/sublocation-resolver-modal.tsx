@@ -330,22 +330,42 @@ export function SublocationResolverModal({
             <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">
               Custom Locality / Landmark
             </h4>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <Input
                 type="text"
-                placeholder="Type custom locality or landmark..."
+                placeholder={`Type custom locality or landmark (e.g. Penamaluru)...`}
                 value={customLocality}
                 onChange={(e) => setCustomLocality(e.target.value)}
-                className="h-10 text-xs bg-slate-900 border-slate-800 text-white placeholder:text-slate-500 rounded-xl focus:border-amber-500"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && customLocality.trim()) {
+                    e.preventDefault();
+                    handleAddToMasterAndSelect(customLocality.trim());
+                  }
+                }}
+                className="h-10 text-xs bg-slate-900 border-slate-800 text-white placeholder:text-slate-500 rounded-xl focus:border-amber-500 flex-1"
               />
-              <Button
-                type="button"
-                disabled={!customLocality.trim()}
-                onClick={() => handleSelect(customLocality.trim())}
-                className="h-10 px-4 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shrink-0 rounded-xl cursor-pointer"
-              >
-                Apply Custom
-              </Button>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  type="button"
+                  disabled={!customLocality.trim() || isAdding}
+                  onClick={() => handleAddToMasterAndSelect(customLocality.trim())}
+                  className="h-10 px-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl cursor-pointer shadow-xs gap-1.5 transition-all"
+                  title={`Add to ${cityName} master list and select for this project`}
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Add to Master &amp; Apply</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={!customLocality.trim()}
+                  onClick={() => handleSelect(customLocality.trim())}
+                  className="h-10 px-3 text-slate-400 hover:text-white hover:bg-slate-800 text-xs rounded-xl cursor-pointer"
+                  title="Use only for this project without saving to master list"
+                >
+                  Use As-Is
+                </Button>
+              </div>
             </div>
           </div>
         </div>
