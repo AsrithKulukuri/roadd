@@ -68,7 +68,6 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
     fetchProjects();
   }, [fetchProperties, fetchProjects, ready, propertiesEnabled, isStandalonePortal, isDetailPage]);
 
-  if (!isStandalonePortal && !ready) return <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4" aria-live="polite"><p>{error || "Loading your experience…"}</p>{error && <button className="cursor-pointer underline" onClick={() => void refresh()}>Retry</button>}</main>;
 
   return (
     <>

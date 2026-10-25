@@ -34,41 +34,10 @@ export function SmartPageLoader() {
     setMounted(true);
   }, []);
 
-  // 1. Initial Page / Cold Load Handling with Smart Delay
-  useEffect(() => {
-    if (!mounted) return;
-
-    // Check if initial data has arrived or document is ready
-    const isDocReady = typeof document !== "undefined" && document.readyState === "complete";
-    const hasData = (!isPropertiesLoading && !isProjectsLoading) || (properties.length > 0 || projects.length > 0);
-
-    if (!isDocReady || !hasData) {
-      // Delay before showing full-screen overlay (prevents flash on fast loads)
-      overlayTimerRef.current = setTimeout(() => {
-        setShowFullOverlay(true);
-        overlayShownTimeRef.current = Date.now();
-      }, OVERLAY_TRIGGER_DELAY_MS);
-    } else {
-      if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current);
-      // If overlay was already shown, enforce minimum duration to prevent abrupt disappearance
-      const elapsed = Date.now() - overlayShownTimeRef.current;
-      const remaining = Math.max(0, MIN_OVERLAY_DISPLAY_MS - elapsed);
-      const timer = setTimeout(() => {
-        setShowFullOverlay(false);
-      }, remaining);
-      return () => clearTimeout(timer);
-    }
-
-    // Safety fallback: always dismiss overlay after MAX_FALLBACK_TIMEOUT_MS
-    const fallback = setTimeout(() => {
-      setShowFullOverlay(false);
-    }, MAX_FALLBACK_TIMEOUT_MS);
-
-    return () => {
-      if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current);
-      clearTimeout(fallback);
-    };
-  }, [mounted, isPropertiesLoading, isProjectsLoading, properties.length, projects.length]);
+  // 1. Initial Page / Cold Load Handling
+  // In Next.js App Router, pages are already server-side rendered with skeletons and pre-rendered HTML.
+  // Triggering a full-screen blocking overlay after hydration causes layout instability (CLS 0.635)
+  // and flashes over already-visible server HTML. Smooth top-progress feedback handles all navigations.
 
   // 2. Real-Time Top Progress Bar (Zero-Latency Feedback for ANY Button Click, Navigation & Async Action)
   const trickleIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -213,10 +182,11 @@ export function SmartPageLoader() {
             className="fixed top-0 left-0 right-0 z-[9999999] pointer-events-none h-[3.5px] bg-slate-900/10 dark:bg-black/20"
           >
             <motion.div
-              className="relative h-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 shadow-[0_0_14px_rgba(245,158,11,0.9)]"
+              className="relative h-full w-full origin-left bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 shadow-[0_0_14px_rgba(245,158,11,0.9)]"
               style={{
-                width: `${Math.min(100, progress)}%`,
-                transition: "width 0.15s cubic-bezier(0.2, 0.8, 0.2, 1)",
+                transform: `scaleX(${Math.min(1, progress / 100)})`,
+                transition: "transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1)",
+                willChange: "transform",
               }}
             >
               {/* Glowing flare at the progress bar head */}

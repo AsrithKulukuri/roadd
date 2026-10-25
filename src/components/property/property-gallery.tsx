@@ -100,10 +100,13 @@ export function PropertyGallery({
           className="md:col-span-2 relative h-full w-full rounded-2xl overflow-hidden cursor-pointer group shadow-sm bg-slate-950"
           onClick={() => { setCurrentIndex(0); setIsOpen(true); }}
         >
-          <img
+          <Image
             src={heroImageSrc}
             alt={title}
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, 66vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
           />
           {/* Bottom gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:from-black/70 transition-colors" />
@@ -142,10 +145,12 @@ export function PropertyGallery({
               }
             }}
           >
-            <img
+            <Image
               src={videoCoverSrc}
               alt={`${title} Videos`}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out opacity-90 group-hover:opacity-100"
+              fill
+              sizes="(max-width: 768px) 100vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out opacity-90 group-hover:opacity-100"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent group-hover:from-black/70 transition-colors" />
 
@@ -173,10 +178,12 @@ export function PropertyGallery({
               setIsOpen(true);
             }}
           >
-            <img
+            <Image
               src={secondaryImageSrc}
               alt={`${title} Gallery`}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+              fill
+              sizes="(max-width: 768px) 100vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent group-hover:from-black/70 transition-colors" />
 

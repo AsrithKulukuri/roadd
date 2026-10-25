@@ -2,16 +2,14 @@
  * ROAD Enterprise-Grade Resilient Redis Caching Layer
  * 
  * Supports:
- * 1. Upstash Redis (REST) via UPSTASH_REDIS_REST_URL & UPSTASH_REDIS_REST_TOKEN (Preferred for Vercel Serverless)
- * 2. Standard Redis / Redis Cloud / Self-Hosted via REDIS_URL or REDIS_HOST, REDIS_PORT, REDIS_PASSWORD (IORedis)
- * 3. Bounded In-Memory LRU Cache Fallback with TTL enforcement
- * 4. Single-Flight Request Coalescing (Prevents database stampedes on cache misses)
- * 5. Tag & Versioned Cache Invalidation (O(1) zero-blocking invalidation)
- * 6. Non-blocking cursor-based SCAN / UNLINK for explicit prefix pruning
- * 7. TTL Jitter to prevent synchronized cache avalanches
+ * 1. Standard Direct TCP Redis / Docker / Self-Hosted via REDIS_URL or REDIS_HOST, REDIS_PORT, REDIS_PASSWORD (IORedis)
+ * 2. Bounded In-Memory LRU Cache Fallback with TTL enforcement
+ * 3. Single-Flight Request Coalescing (Prevents database stampedes on cache misses)
+ * 4. Tag & Versioned Cache Invalidation (O(1) zero-blocking invalidation)
+ * 5. Non-blocking cursor-based SCAN / UNLINK for explicit prefix pruning
+ * 6. TTL Jitter to prevent synchronized cache avalanches
  */
 
-import { Redis as UpstashRedis } from "@upstash/redis";
 import IORedis from "ioredis";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,7 +35,7 @@ interface MemoryCacheItem<T> {
 }
 
 export interface RedisTelemetry {
-  provider: "upstash" | "ioredis" | "memory";
+  provider: "ioredis" | "memory";
   status: "connected" | "fallback" | "unconfigured";
   hits: number;
   misses: number;
@@ -52,9 +50,8 @@ export interface RedisTelemetry {
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface GlobalRedisState {
-  upstash: UpstashRedis | null;
   ioredis: IORedis | null;
-  activeProvider: "upstash" | "ioredis" | "memory";
+  activeProvider: "ioredis" | "memory";
   connectionStatus: "connected" | "fallback" | "unconfigured";
   initialized: boolean;
   memoryStore: Map<string, MemoryCacheItem<unknown>>;
@@ -69,7 +66,6 @@ const g = globalThis as unknown as { __roadRedisState?: GlobalRedisState };
 
 if (!g.__roadRedisState) {
   g.__roadRedisState = {
-    upstash: null,
     ioredis: null,
     activeProvider: "memory",
     connectionStatus: "unconfigured",
@@ -94,27 +90,8 @@ function initializeClients(): void {
   if (state.initialized) return;
   state.initialized = true;
 
-  // 1. Try Upstash REST Redis
-  const upstashUrl = process.env.UPSTASH_REDIS_REST_URL;
-  const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (upstashUrl && upstashToken) {
-    try {
-      state.upstash = new UpstashRedis({
-        url: upstashUrl.trim(),
-        token: upstashToken.trim(),
-      });
-      state.activeProvider = "upstash";
-      state.connectionStatus = "connected";
-      console.log("⚡ [Redis] Configured with Upstash Redis (REST API).");
-      return;
-    } catch (err: any) {
-      state.lastError = err?.message || String(err);
-      console.warn("⚠️ [Redis] Upstash initialization failed, evaluating fallback:", state.lastError);
-    }
-  }
-
-  // 2. Try Standard TCP Redis (IORedis)
-  const redisUrl = process.env.REDIS_URL || process.env.REDIS_TLS_URL;
+  // Direct TCP Redis (IORedis)
+  const redisUrl = process.env.REDIS_URL || process.env.REDIS_TLS_URL || (process.env.NODE_ENV !== "production" ? "redis://127.0.0.1:6379" : undefined);
   const redisHost = process.env.REDIS_HOST;
   if (redisUrl || redisHost) {
     try {
@@ -152,6 +129,12 @@ function initializeClients(): void {
         console.log("⚡ [Redis] Connected to standard Redis instance via IORedis.");
       });
 
+      client.on("ready", () => {
+        state.activeProvider = "ioredis";
+        state.connectionStatus = "connected";
+        state.lastError = null;
+      });
+
       // Non-blocking background connect
       client.connect().catch((err: any) => {
         state.lastError = err?.message || String(err);
@@ -167,9 +150,14 @@ function initializeClients(): void {
     }
   }
 
-  // 3. Fallback to Local In-Memory Cache
+  // Fallback to Local In-Memory Cache
   state.activeProvider = "memory";
   state.connectionStatus = "unconfigured";
+}
+
+// Eagerly initiate connection on server-side
+if (typeof window === "undefined") {
+  initializeClients();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -247,25 +235,7 @@ export async function getTagVersion(tag: CacheTag): Promise<number> {
   initializeClients();
   const versionKey = `tag_version:${tag}`;
 
-  // 1. Try Upstash REST Redis
-  if (state.upstash) {
-    try {
-      const v = await state.upstash.get<number>(versionKey);
-      if (typeof v === "number" && v > 0) {
-        state.tagVersions.set(tag, v);
-        return v;
-      }
-      // If key doesn't exist yet in Redis, initialize to 1
-      await state.upstash.set(versionKey, 1);
-      state.tagVersions.set(tag, 1);
-      return 1;
-    } catch (err: any) {
-      state.lastError = err?.message || String(err);
-      // Fall through to memory fallback
-    }
-  }
-
-  // 2. Try IORedis
+  // 1. Try Direct IORedis
   if (state.ioredis && state.ioredis.status === "ready") {
     try {
       const v = await state.ioredis.get(versionKey);
@@ -285,7 +255,7 @@ export async function getTagVersion(tag: CacheTag): Promise<number> {
     }
   }
 
-  // 3. Fallback to Local In-Memory version
+  // 2. Fallback to Local In-Memory version
   const localVer = state.tagVersions.get(tag);
   if (localVer !== undefined && localVer > 0) return localVer;
 
@@ -304,21 +274,7 @@ export async function bumpTagVersion(tag: CacheTag): Promise<number> {
   // Always purge local memory entries tagged with this tag
   deleteFromMemory(`t:${tag}:*`);
 
-  // 1. Try Upstash REST Redis
-  if (state.upstash) {
-    try {
-      const bumped = await state.upstash.incr(versionKey);
-      const num = Number(bumped);
-      state.tagVersions.set(tag, num);
-      return num;
-    } catch (err: any) {
-      state.lastError = err?.message || String(err);
-      console.warn(`⚠️ [Redis] Upstash bumpTagVersion(${tag}) failed:`, state.lastError);
-      // Fall through to memory fallback
-    }
-  }
-
-  // 2. Try IORedis
+  // 1. Try Direct IORedis
   if (state.ioredis && state.ioredis.status === "ready") {
     try {
       const bumped = await state.ioredis.incr(versionKey);
@@ -331,7 +287,7 @@ export async function bumpTagVersion(tag: CacheTag): Promise<number> {
     }
   }
 
-  // 3. Memory fallback
+  // 2. Memory fallback
   const currentLocal = state.tagVersions.get(tag) || 1;
   const newVer = currentLocal + 1;
   state.tagVersions.set(tag, newVer);
@@ -348,22 +304,7 @@ export async function bumpTagVersion(tag: CacheTag): Promise<number> {
 export async function getCache<T>(key: string): Promise<T | null> {
   initializeClients();
 
-  // 1. Try Upstash
-  if (state.upstash) {
-    try {
-      const data = await state.upstash.get<T>(key);
-      if (data !== null && data !== undefined) {
-        state.hits++;
-        return data;
-      }
-      state.misses++;
-      return null;
-    } catch (err: any) {
-      state.lastError = err?.message || String(err);
-    }
-  }
-
-  // 2. Try IORedis
+  // 1. Try Direct IORedis
   if (state.ioredis && state.ioredis.status === "ready") {
     try {
       const raw = await state.ioredis.get(key);
@@ -378,7 +319,7 @@ export async function getCache<T>(key: string): Promise<T | null> {
     }
   }
 
-  // 3. Fallback to In-Memory Cache
+  // 2. Fallback to In-Memory Cache
   const mem = getFromMemory<T>(key);
   if (mem !== null) {
     state.hits++;
@@ -405,18 +346,7 @@ export async function setCache<T>(
   // Write to memory cache immediately for zero-latency local fast path
   setToMemory(key, value, effectiveTtl);
 
-  // 1. Upstash
-  if (state.upstash) {
-    try {
-      await state.upstash.set(key, value, { ex: effectiveTtl });
-      return;
-    } catch (err: any) {
-      state.lastError = err?.message || String(err);
-      console.warn(`⚠️ [Redis Set Error for ${key}]:`, state.lastError);
-    }
-  }
-
-  // 2. IORedis
+  // Direct IORedis
   if (state.ioredis && state.ioredis.status === "ready") {
     try {
       await state.ioredis.set(key, JSON.stringify(value), "EX", effectiveTtl);
@@ -439,32 +369,7 @@ export async function invalidateCache(patternOrPrefix: string): Promise<void> {
 
   const isPattern = patternOrPrefix.includes("*");
 
-  // 1. Upstash
-  if (state.upstash) {
-    try {
-      if (isPattern) {
-        // Use scan with safe iteration limits to avoid hanging
-        let cursor = 0;
-        let iterations = 0;
-        do {
-          const res = await state.upstash.scan(cursor, { match: patternOrPrefix, count: 100 });
-          cursor = Number(res[0]);
-          const keys = res[1];
-          if (keys && keys.length > 0) {
-            await state.upstash.del(...keys);
-          }
-          iterations++;
-        } while (cursor !== 0 && iterations < 10);
-      } else {
-        await state.upstash.del(patternOrPrefix);
-      }
-    } catch (err: any) {
-      state.lastError = err?.message || String(err);
-      console.warn(`⚠️ [Redis Invalidation Error for ${patternOrPrefix}]:`, state.lastError);
-    }
-  }
-
-  // 2. IORedis (Safe Non-blocking SCAN + UNLINK)
+  // Direct IORedis (Safe Non-blocking SCAN + UNLINK)
   if (state.ioredis && state.ioredis.status === "ready") {
     try {
       if (isPattern) {

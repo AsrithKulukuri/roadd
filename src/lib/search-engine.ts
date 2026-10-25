@@ -302,7 +302,7 @@ export function parseSearchIntent(query: string): ParsedSearchIntent {
   }
 
   // 6. AP Regional Land & Area Units (Gajalu / Gajam, Cents, Ankanam)
-  let detectedMinAreaSqYds: number | undefined = undefined;
+  const detectedMinAreaSqYds: number | undefined = undefined;
   let detectedMaxAreaSqYds: number | undefined = undefined;
 
   const gajaluMatch = norm.match(/(?:under|below|upto|within|<=|<)?\s*(\d+(?:\.\d+)?)\s*(?:gajalu|gajam|sq\s*yds?|sq\s*yards?)\b/i);

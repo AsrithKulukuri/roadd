@@ -3,14 +3,14 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const ts = require('typescript');
 function load(file, mocks) {
-  const module = { exports: {} };
+  const mod = { exports: {} };
   const output = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
   new Function('require', 'module', 'exports', output)((name) => {
     if (name in mocks) return mocks[name];
     if (name.startsWith('@/')) throw new Error('Unexpected dependency: ' + name);
     return require(name);
-  }, module, module.exports);
-  return module.exports;
+  }, mod, mod.exports);
+  return mod.exports;
 }
 function fixture(dbError = null) {
   const inserts = [], calls = [];

@@ -19,11 +19,15 @@ import { toast } from "sonner";
 
 function PropertiesPageSkeleton() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-20 pb-16">
+    <div className="min-h-screen bg-slate-50/50 pt-16 pb-16">
+      {/* Header Placeholder matching RealtorSearchHeader height */}
+      <div className="w-full bg-white border-b border-slate-200 h-[72px] shadow-xs animate-pulse" />
+      {/* Carousels Placeholder matching LocationCarousels height */}
+      <div className="w-full bg-slate-50/80 border-b border-slate-200/60 h-[56px] animate-pulse" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        <div className="h-10 w-64 bg-slate-200/80 dark:bg-slate-800 rounded-xl animate-pulse" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {[...Array(8)].map((_, i) => (
+        <div className="h-9 w-72 bg-slate-200/80 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {[...Array(6)].map((_, i) => (
             <SkeletonCard key={`prop-skel-${i}`} />
           ))}
         </div>
@@ -400,9 +404,7 @@ function PropertiesPage() {
     });
   };
 
-  if (!mounted || (isLoading && properties.length === 0)) {
-    return <PropertiesPageSkeleton />;
-  }
+
 
   if (error && properties.length === 0) {
     return (
@@ -537,6 +539,12 @@ function PropertiesPage() {
                 onFiltersChange={setFilters}
               />
             </div>
+          </div>
+        ) : (!mounted || (isLoading && properties.length === 0)) ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 pb-12">
+            {[...Array(6)].map((_, i) => (
+              <SkeletonCard key={`prop-skel-${i}`} />
+            ))}
           </div>
         ) : filteredProperties.length > 0 ? (
           /* Realtor.com 3-Column Responsive Grid Layout on Desktop - 4 Rows Initial with Load More */

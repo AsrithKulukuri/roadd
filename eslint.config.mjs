@@ -15,16 +15,17 @@ const eslintConfig = defineConfig([
     "test-results/**",
     ".eslint-report.json",
     "rename-script.js",
-    "scripts/**/*.js",
+    "scripts/**",
+    "tmp/**",
     "next-env.d.ts",
   ]),
   {
+    plugins: nextVitals[0].plugins,
     rules: {
       // Legacy typing debt remains visible, but no longer hides behavioral lint failures.
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-require-imports": "warn",
       "react-hooks/set-state-in-effect": "warn",
-      "react/no-unescaped-entities": "warn",
     },
   },
 ]);

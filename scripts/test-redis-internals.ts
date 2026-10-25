@@ -108,7 +108,7 @@ async function runInternalTests() {
   // 4. Memory Fallback & Telemetry
   console.log("--- 4. TELEMETRY & FALLBACK CAPABILITIES ---");
   const telemetry = getRedisTelemetry();
-  assert(telemetry.provider === "memory" || telemetry.provider === "upstash" || telemetry.provider === "ioredis", `Valid active provider: ${telemetry.provider}`);
+  assert(telemetry.provider === "memory" || telemetry.provider === "ioredis", `Valid active provider: ${telemetry.provider}`);
   assert(typeof telemetry.hits === "number", `Hits is a number: ${telemetry.hits}`);
   assert(typeof telemetry.misses === "number", `Misses is a number: ${telemetry.misses}`);
   assert(typeof telemetry.hitRatio === "string", `Hit ratio is formatted: ${telemetry.hitRatio}`);
@@ -133,6 +133,8 @@ async function runInternalTests() {
 
   if (failedTests > 0) {
     process.exit(1);
+  } else {
+    process.exit(0);
   }
 }
 

@@ -95,7 +95,7 @@ export function HomeCategories() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/home-sections", { cache: "no-store" })
+    fetch("/api/home-sections")
       .then((response) => response.json())
       .then((data) => {
         if (!cancelled && data.configured && Array.isArray(data.sections)) {

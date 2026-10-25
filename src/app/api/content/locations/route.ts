@@ -1,32 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/server-auth-guard";
+import { fetchWithCache, bumpTagVersion } from "@/lib/redis";
 
 export async function GET() {
   try {
-    const { data, error } = await supabaseAdmin
-      .from("homepage_layouts")
-      .select("sections, updated_at")
-      .eq("id", "admin_locations")
-      .maybeSingle();
+    const payload = await fetchWithCache(
+      "content:locations:master",
+      async () => {
+        const { data, error } = await supabaseAdmin
+          .from("homepage_layouts")
+          .select("sections, updated_at")
+          .eq("id", "admin_locations")
+          .maybeSingle();
 
-    if (error) {
-      console.warn("[Locations API] GET error:", error);
-    }
+        if (error) {
+          console.warn("[Locations API] GET error:", error);
+        }
 
-    if (data?.sections && Array.isArray(data.sections)) {
-      return NextResponse.json({
-        cities: data.sections,
-        configured: true,
-        updatedAt: data.updated_at,
-        source: "database",
-      });
-    }
+        if (data?.sections && Array.isArray(data.sections)) {
+          return {
+            cities: data.sections,
+            configured: true,
+            updatedAt: data.updated_at,
+            source: "database",
+          };
+        }
 
-    return NextResponse.json({
-      cities: null,
-      configured: false,
-      source: "fallback",
+        return {
+          cities: null,
+          configured: false,
+          source: "fallback",
+        };
+      },
+      { ttlSeconds: 600, tag: "locations" }
+    );
+
+    return NextResponse.json(payload, {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
     });
   } catch (error: any) {
     console.warn("[Locations API] unexpected GET error:", error);
@@ -59,6 +72,9 @@ export async function PUT(request: NextRequest) {
       console.error("[Locations API] Upsert error:", upsertError);
       return NextResponse.json({ error: upsertError.message }, { status: 500 });
     }
+
+    // Atomically invalidate Redis cache via versioned tag
+    await bumpTagVersion("locations");
 
     return NextResponse.json({
       success: true,

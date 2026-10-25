@@ -58,31 +58,45 @@ const FALLBACK_CATEGORIES: HomeCategory[] = [
   },
 ];
 
+import { fetchWithCache, bumpTagVersion } from "@/lib/redis";
+
 export async function GET() {
   try {
-    const { data, error } = await supabaseAdmin
-      .from("homepage_layouts")
-      .select("sections, updated_at")
-      .eq("id", "browse_categories")
-      .maybeSingle();
+    const payload = await fetchWithCache(
+      "content:categories:master",
+      async () => {
+        const { data, error } = await supabaseAdmin
+          .from("homepage_layouts")
+          .select("sections, updated_at")
+          .eq("id", "browse_categories")
+          .maybeSingle();
 
-    if (error) {
-      console.warn("[Categories API] GET error:", error);
-    }
+        if (error) {
+          console.warn("[Categories API] GET error:", error);
+        }
 
-    if (data?.sections && Array.isArray(data.sections) && data.sections.length > 0) {
-      return NextResponse.json({
-        categories: data.sections as HomeCategory[],
-        updatedAt: data.updated_at,
-        source: "database",
-      });
-    }
+        if (data?.sections && Array.isArray(data.sections) && data.sections.length > 0) {
+          return {
+            categories: data.sections as HomeCategory[],
+            updatedAt: data.updated_at,
+            source: "database",
+          };
+        }
 
-    // Default fallback if not yet initialized
-    return NextResponse.json({
-      categories: FALLBACK_CATEGORIES,
-      updatedAt: null,
-      source: "fallback",
+        // Default fallback if not yet initialized
+        return {
+          categories: FALLBACK_CATEGORIES,
+          updatedAt: null,
+          source: "fallback",
+        };
+      },
+      { ttlSeconds: 600, tag: "home_sections" }
+    );
+
+    return NextResponse.json(payload, {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
     });
   } catch (err: any) {
     console.error("[Categories API] GET exception:", err);
@@ -112,6 +126,9 @@ export async function PUT(request: NextRequest) {
       console.error("[Categories API] Upsert error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Invalidate Redis cache via versioned tag
+    await bumpTagVersion("home_sections");
 
     return NextResponse.json({ success: true, categories });
   } catch (err: any) {

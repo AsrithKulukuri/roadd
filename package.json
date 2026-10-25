@@ -11,7 +11,12 @@
     "test:e2e": "npm run build && playwright test",
     "test:e2e:ui": "npm run build && playwright test --ui",
     "test:quality": "npm run lint && npm run typecheck && npm audit && npm run test:e2e",
-    "seed:db": "tsx scripts/seed-complete-database.ts"
+    "seed:db": "tsx scripts/seed-complete-database.ts",
+    "redis:start": "powershell -ExecutionPolicy Bypass -File scripts/start-redis.ps1",
+    "redis:ping": "powershell -ExecutionPolicy Bypass -File scripts/ping-redis.ps1",
+    "redis:docker": "docker compose up -d redis",
+    "test:redis": "tsx scripts/test-redis-internals.ts",
+    "test:redis:live": "tsx scripts/test-direct-redis.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1106.0",
@@ -42,7 +47,6 @@
     "@supabase/supabase-js": "^2.110.7",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-table": "^8.21.3",
-    "@upstash/redis": "^1.39.0",
     "axios": "^1.18.1",
     "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
@@ -76,14 +80,17 @@
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
+    "@types/autocannon": "^7.12.7",
     "@types/ioredis": "^4.28.10",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autocannon": "^8.0.0",
     "eslint": "^9",
     "eslint-config-next": "^16.3.4",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

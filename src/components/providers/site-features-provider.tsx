@@ -5,7 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 interface SiteFeatures { propertiesEnabled: boolean; ready: boolean; error: string; refresh: () => Promise<void>; save: (enabled: boolean) => Promise<void>; }
 
 const SiteFeaturesContext = createContext<SiteFeatures>({
-  propertiesEnabled: false,
+  propertiesEnabled: true,
   ready: false,
   error: "",
   refresh: async () => {},
@@ -15,7 +15,7 @@ const SiteFeaturesContext = createContext<SiteFeatures>({
 export const useSiteFeatures = () => useContext(SiteFeaturesContext);
 
 export function SiteFeaturesProvider({ children, initialFeatures }: { children: React.ReactNode; initialFeatures?: { propertiesEnabled: boolean } | null }) {
-  const [propertiesEnabled, setEnabled] = useState(initialFeatures?.propertiesEnabled ?? false);
+  const [propertiesEnabled, setEnabled] = useState(initialFeatures?.propertiesEnabled ?? true);
   const [ready, setReady] = useState(!!initialFeatures);
   const [error, setError] = useState("");
   const revision = useRef(0);

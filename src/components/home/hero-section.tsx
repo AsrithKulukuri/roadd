@@ -1235,7 +1235,6 @@ export function HeroSection() {
                       alt={currentBanner?.title || 'Banner Mobile'}
                       fill
                       priority
-                      unoptimized
                       sizes="100vw"
                       className="object-cover object-[center_32%]"
                       onError={(e) => {
@@ -1254,7 +1253,6 @@ export function HeroSection() {
                       alt={currentBanner?.title || 'Banner Desktop'}
                       fill
                       priority
-                      unoptimized
                       sizes="100vw"
                       className="object-cover"
                       onError={(e) => {
