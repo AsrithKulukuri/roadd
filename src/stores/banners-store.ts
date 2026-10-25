@@ -94,27 +94,22 @@ export const useBannersStore = create<BannersStore>((set, get) => ({
         mobileImageUrl = imageUrl;
       }
 
-      // 3. Insert into Supabase
+      // 3. Save via authenticated server endpoint (guaranteed with supabaseAdmin)
       const fullPayload = {
         ...bannerData,
         image_url: imageUrl,
         mobile_image_url: mobileImageUrl,
       };
 
-      const { error: insertError } = await supabase.from("banners").insert(fullPayload);
+      const res = await fetch("/api/banners/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fullPayload),
+      });
 
-      if (insertError) {
-        // Fallback to base columns if new columns don't exist yet
-        console.warn("Retrying with base banner columns:", insertError.message);
-        const basePayload = {
-          title: bannerData.title,
-          link_url: bannerData.link_url,
-          image_url: imageUrl,
-          is_active: bannerData.is_active ?? true,
-          order_index: bannerData.order_index ?? 0,
-        };
-        const { error: retryError } = await supabase.from("banners").insert(basePayload);
-        if (retryError) throw retryError;
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to add banner");
       }
       
       await get().fetchBanners(true);
@@ -158,24 +153,21 @@ export const useBannersStore = create<BannersStore>((set, get) => ({
       }
 
       const updatePayload: any = {
+        id,
         ...updates,
       };
       if (imageUrl) updatePayload.image_url = imageUrl;
       if (mobileImageUrl !== undefined) updatePayload.mobile_image_url = mobileImageUrl;
 
-      const { error } = await supabase.from("banners").update(updatePayload).eq("id", id);
-      
-      if (error) {
-        // Fallback to base columns if update fails
-        console.warn("Retrying banner update with base fields:", error.message);
-        const { error: retryError } = await supabase.from("banners").update({
-          title: updates.title,
-          link_url: updates.link_url,
-          is_active: updates.is_active,
-          order_index: updates.order_index,
-          ...(imageUrl ? { image_url: imageUrl } : {}),
-        }).eq("id", id);
-        if (retryError) throw retryError;
+      const res = await fetch("/api/banners/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatePayload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to update banner");
       }
 
       await get().fetchBanners(true);
