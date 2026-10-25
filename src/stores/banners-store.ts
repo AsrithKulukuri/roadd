@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
-import { uploadToS3, deleteFromS3, resolveMediaUrl } from "@/lib/aws/storage-utils";
+import { uploadToS3, resolveMediaUrl } from "@/lib/aws/storage-utils";
 
 export interface Banner {
   id: string;
@@ -31,6 +31,17 @@ interface BannersStore {
     mobileFile?: File | null
   ) => Promise<boolean>;
   deleteBanner: (id: string, imageUrl: string, mobileImageUrl?: string | null) => Promise<boolean>;
+}
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (data?.session?.access_token) {
+      headers["Authorization"] = `Bearer ${data.session.access_token}`;
+    }
+  } catch {}
+  return headers;
 }
 
 export const useBannersStore = create<BannersStore>((set, get) => ({
@@ -101,9 +112,10 @@ export const useBannersStore = create<BannersStore>((set, get) => ({
         mobile_image_url: mobileImageUrl,
       };
 
+      const authHeaders = await getAuthHeaders();
       const res = await fetch("/api/banners/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders,
         body: JSON.stringify(fullPayload),
       });
 
@@ -152,16 +164,17 @@ export const useBannersStore = create<BannersStore>((set, get) => ({
         mobileImageUrl = mobUpload.fileUrl;
       }
 
-      const updatePayload: any = {
+      const updatePayload: Record<string, unknown> = {
         id,
         ...updates,
       };
       if (imageUrl) updatePayload.image_url = imageUrl;
       if (mobileImageUrl !== undefined) updatePayload.mobile_image_url = mobileImageUrl;
 
+      const authHeaders = await getAuthHeaders();
       const res = await fetch("/api/banners/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders,
         body: JSON.stringify(updatePayload),
       });
 
@@ -183,9 +196,10 @@ export const useBannersStore = create<BannersStore>((set, get) => ({
   deleteBanner: async (id, imageUrl, mobileImageUrl) => {
     set({ isLoading: true });
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch("/api/banners/delete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders,
         body: JSON.stringify({ id, imageUrl, mobileImageUrl }),
       });
 
