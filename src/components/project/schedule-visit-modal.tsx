@@ -35,6 +35,10 @@ interface ScheduleVisitModalProps {
       whatsapp?: string;
     };
   };
+  initialSlot?: {
+    date?: string;
+    timeSlot?: string;
+  };
 }
 
 const TIME_SLOTS = [
@@ -69,11 +73,29 @@ function getAvailableDates() {
   return dates;
 }
 
-export function ScheduleVisitModal({ isOpen, onClose, project }: ScheduleVisitModalProps) {
+export function ScheduleVisitModal({ isOpen, onClose, project, initialSlot }: ScheduleVisitModalProps) {
   const [mounted, setMounted] = useState(false);
   const dates = useMemo(() => getAvailableDates(), []);
-  const [selectedDate, setSelectedDate] = useState(dates[0]);
-  const [selectedSlot, setSelectedSlot] = useState(TIME_SLOTS[0]);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    if (initialSlot?.date) {
+      const match = dates.find(d => d.formatted === initialSlot.date || d.iso === initialSlot.date);
+      if (match) return match;
+    }
+    return dates[0];
+  });
+  const [selectedSlot, setSelectedSlot] = useState(() => initialSlot?.timeSlot || TIME_SLOTS[0]);
+
+  useEffect(() => {
+    if (isOpen && initialSlot) {
+      if (initialSlot.date) {
+        const match = dates.find(d => d.formatted === initialSlot.date || d.iso === initialSlot.date);
+        if (match) setSelectedDate(match);
+      }
+      if (initialSlot.timeSlot) {
+        setSelectedSlot(initialSlot.timeSlot);
+      }
+    }
+  }, [isOpen, initialSlot, dates]);
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");

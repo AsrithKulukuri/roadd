@@ -218,7 +218,7 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
     });
   }
 
-  const { openProject } = useProjectOpenGuard();
+  const { openProject, prewarmProject } = useProjectOpenGuard();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -236,6 +236,8 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
         <Link
           href={`/projects/${project.slug}`}
           onClick={handleCardClick}
+          onMouseEnter={() => prewarmProject(project)}
+          onPointerDown={() => prewarmProject(project)}
           className="block h-full group"
         >
           <div
@@ -308,6 +310,8 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
         onClick={(e) => {
           openProject(project, e);
         }}
+        onMouseEnter={() => prewarmProject(project)}
+        onPointerDown={() => prewarmProject(project)}
         className="w-[160px] h-[160px] sm:w-[220px] sm:h-[220px] rounded-2xl relative overflow-hidden group cursor-pointer border border-border-default shadow-sm shrink-0"
       >
         {project.coverImage ? (
@@ -339,7 +343,13 @@ export function ProjectCard({ project, index = 0, variant = "default" }: Project
   }
 
   return (
-    <Link href={`/projects/${project.slug}`} onClick={handleCardClick} className="group block h-full">
+    <Link
+      href={`/projects/${project.slug}`}
+      onClick={handleCardClick}
+      onMouseEnter={() => prewarmProject(project)}
+      onPointerDown={() => prewarmProject(project)}
+      className="group block h-full"
+    >
       <div className="relative h-full flex flex-col justify-between bg-white dark:bg-bg-card border border-border-default rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:border-amber-500/40 transition-[box-shadow,border-color] duration-200">
 
         {/* Image with 16/10 uniform aspect ratio */}

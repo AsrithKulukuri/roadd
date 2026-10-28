@@ -10,6 +10,7 @@ import { isCrdaVerified } from "@/lib/listing-quality";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { shareOnWhatsApp } from "@/lib/whatsapp/whatsapp-share";
 import { NotifyMeModal } from "@/components/shared/notify-me-modal";
+import { seedProjectCache, prewarmProjectMedia } from "@/lib/project-preload";
 import styles from "./search-project-card.module.css";
 
 function configDetails(config: ProjectConfig, plots: boolean) {
@@ -95,10 +96,18 @@ export function SearchProjectCard({ project }: { project: Project }) {
 
   const handleCardClick = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button, a")) return;
+    seedProjectCache(project);
     router.push(url);
   };
 
-  return <article className={cn(styles.card, "cursor-pointer select-none")} onClick={handleCardClick} data-testid="search-project-card" aria-label={project.name}>
+  return <article
+    className={cn(styles.card, "cursor-pointer select-none")}
+    onClick={handleCardClick}
+    onMouseEnter={() => prewarmProjectMedia(project)}
+    onPointerDown={() => seedProjectCache(project)}
+    data-testid="search-project-card"
+    aria-label={project.name}
+  >
     <div className={styles.media}>
       <Link href={url} className={styles.imageLink} aria-label={"View " + project.name}>
         {image ? <img src={image} alt={project.name} loading="lazy" className={styles.image} /> : <div className={styles.placeholder}><TypeIcon size={56} /><span>{kind} project</span></div>}

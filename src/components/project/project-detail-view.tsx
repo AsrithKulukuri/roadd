@@ -10,7 +10,7 @@ import { getYoutubeEmbedUrl, isYoutubeShort, cn } from "@/lib/utils";
 import { resolveMediaUrl } from "@/lib/aws/storage-utils";
 import {
   MapPin, CheckCircle2, Download, FileText, ExternalLink,
-  ChevronDown, ChevronUp, Star, ArrowLeft, Building2, Home, Landmark, Maximize2, Tag,
+  ChevronDown, ChevronUp, Star, ArrowLeft, Building, Building2, Home, Landmark, Maximize2, Tag,
   Eye, X, ChevronLeft, ChevronRight, Play, Map, Video, Calendar, Activity, LayoutTemplate, Film, Layers, Loader2, Copy, Share2, Lock, ShieldCheck, Navigation
 } from "lucide-react";
 import Link from "next/link";
@@ -32,6 +32,8 @@ import {
   trackShareDetailsWithBuilder,
 } from "@/lib/project-activity-tracker";
 import { ScheduleVisitModal } from "@/components/project/schedule-visit-modal";
+import { ProjectScheduleSection } from "@/components/project/project-schedule-section";
+import { getPreloadedProject, prewarmProjectMedia, prewarmProjectSession } from "@/lib/project-preload";
 import { formatAvailableBhk } from "@/lib/utils";
 import { startGlobalProgress, finishGlobalProgress } from "@/lib/progress-bar";
 
@@ -171,7 +173,7 @@ export function ProjectDetailView({
       setIsVideoLoading(false);
     }, 2000);
   };
-  const [floorPlanLightbox, updateFloorPlanLightbox] = useState<{ url: string; label: string } | null>(null);
+  const [floorPlanLightbox, updateFloorPlanLightbox] = useState<{ url: string; label: string; thumbnailUrl?: string } | null>(null);
   const [loadingPlanUrl, setLoadingPlanUrl] = useState<string | null>(null);
 
   async function requestInformation() {
@@ -179,7 +181,7 @@ export function ProjectDetailView({
     try { return Boolean(await performListingAction("project", project.id, "information_request")); }
     catch (error) { toast.error(error instanceof Error ? error.message : "Please retry."); return false; }
   }
-  async function setFloorPlanLightbox(value: { url: string; label: string } | null) {
+  async function setFloorPlanLightbox(value: { url: string; label: string; thumbnailUrl?: string } | null) {
     if (!value) {
       updateFloorPlanLightbox(null);
       return;
@@ -201,6 +203,7 @@ export function ProjectDetailView({
   const [builderContact, setBuilderContact] = useState<{ phone: string | null; whatsapp: string | null } | null>(null);
   const [builderContactError, setBuilderContactError] = useState<string | null>(null);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [selectedScheduleSlot, setSelectedScheduleSlot] = useState<{ date: string; timeSlot: string } | undefined>(undefined);
   const [isWhatsAppConnecting, setIsWhatsAppConnecting] = useState(false);
 
   const scrollConfigLeft = () => {
@@ -281,13 +284,21 @@ export function ProjectDetailView({
   const { scrollY } = useScroll();
   const yHero = useTransform(scrollY, [0, 800], [0, 200]);
 
+  const preloaded = useMemo(() => getPreloadedProject(slug), [slug]);
+  const project = initialProject || projects.find((p) => (p.slug === slug || p.id === slug) && p.isPublished !== false) || preloaded;
+
   useEffect(() => {
-    if (!initialProject && projects.length === 0) {
+    if (!initialProject && !preloaded && projects.length === 0) {
       fetchProjects();
     }
-  }, [fetchProjects, initialProject, projects.length]);
+  }, [fetchProjects, initialProject, preloaded, projects.length]);
 
-  const project = projects.find((p) => (p.slug === slug || p.id === slug) && p.isPublished !== false) || initialProject;
+  // Parallel pre-warming: pre-load cover/visible images and user action session immediately
+  useEffect(() => {
+    if (!project) return;
+    prewarmProjectMedia(project);
+    prewarmProjectSession();
+  }, [project]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -418,7 +429,7 @@ export function ProjectDetailView({
     });
   }, [project]);
 
-  if (isLoading) {
+  if (!project && (isLoading || !initialProject)) {
     return (
       <div className="min-h-screen pt-28 pb-16 flex flex-col items-center justify-center gap-4 bg-bg-primary">
         <div className="w-10 h-10 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
@@ -523,7 +534,7 @@ export function ProjectDetailView({
       <ZoomableImageModal
         isOpen={floorPlanLightbox !== null}
         onClose={() => setFloorPlanLightbox(null)}
-        images={floorPlanLightbox ? [{ url: floorPlanLightbox.url, label: floorPlanLightbox.label }] : []}
+        images={floorPlanLightbox ? [{ url: floorPlanLightbox.url, label: floorPlanLightbox.label, thumbnailUrl: floorPlanLightbox.thumbnailUrl }] : []}
         initialIndex={0}
         title={floorPlanLightbox?.label || `${project.name} Plan`}
       />
@@ -614,7 +625,7 @@ export function ProjectDetailView({
         </div>
       )}
 
-      <div className="min-h-screen bg-slate-50 dark:bg-bg-primary pt-16 pb-24 md:pb-0">
+      <div className="min-h-screen bg-bg-primary pt-16 pb-24 md:pb-0">
         {/* Breadcrumb & Back Button */}
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -641,7 +652,13 @@ export function ProjectDetailView({
             onClick={() => heroImage && setGalleryIdx(0)}
           >
             {heroImage ? (
-              <img src={heroImage} alt={project.name} className="w-full h-full object-cover" />
+              <img
+                src={resolveMediaUrl(heroImage)}
+                alt={project.name}
+                loading="eager"
+                fetchPriority="high"
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-amber-primary/20 to-amber-primary/5 flex items-center justify-center">
                 <TypeIcon className="w-16 h-16 text-amber-primary/30" />
@@ -696,7 +713,13 @@ export function ProjectDetailView({
               onClick={() => heroImage && setGalleryIdx(0)}
             >
               {heroImage ? (
-                <img src={heroImage} alt={project.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                <img
+                  src={resolveMediaUrl(heroImage)}
+                  alt={project.name}
+                  loading="eager"
+                  fetchPriority="high"
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-amber-primary/20 to-amber-primary/5 flex items-center justify-center">
                   <TypeIcon className="w-16 h-16 text-amber-primary/30" />
@@ -746,10 +769,10 @@ export function ProjectDetailView({
                 }}
               >
                 <img
-                  src={project.videoUrl 
-                    ? (project.videoThumbnail ? resolveMediaUrl(project.videoThumbnail) : (sideImages[0]?.url || heroImage || ""))
+                  src={resolveMediaUrl(project.videoUrl 
+                    ? (project.videoThumbnail ? project.videoThumbnail : (sideImages[0]?.url || heroImage || ""))
                     : (sideImages[0]?.url || heroImage || "")
-                  }
+                  )}
                   alt={`${project.name} Media`}
                   className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
@@ -782,7 +805,7 @@ export function ProjectDetailView({
               >
                 {((project.videoUrl ? sideImages[0] : sideImages[1]) || sideImages[0]) ? (
                   <img 
-                    src={(project.videoUrl ? sideImages[0] : sideImages[1])?.url || sideImages[0]?.url} 
+                    src={resolveMediaUrl((project.videoUrl ? sideImages[0] : sideImages[1])?.url || sideImages[0]?.url || "")} 
                     alt={`${project.name} Gallery`} 
                     className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
                   />
@@ -950,100 +973,171 @@ export function ProjectDetailView({
                   </div>
                 </div>
 
-                {/* Project Snapshot Specs Matrix (Client Specification: 4 boxes top, 3 boxes bottom, black text/borders, white boxes, logo colour icons) */}
-                <div className="pt-4 border-t border-slate-200 dark:border-slate-800/80">
-                  <div className="rounded-2xl border-2 border-black bg-white overflow-hidden divide-y-2 divide-black shadow-sm">
-                    {/* Row 1: 4 Boxes (Project Type | Total Area | Total Units | Available) - Uniform in Mobile and Desktop */}
-                    <div className="grid grid-cols-4 divide-x-2 divide-black text-center bg-white">
-                      {/* Box 1: Project Type */}
-                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
-                        <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
-                        <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
-                          Project Type
-                        </span>
-                        <span className="text-[10px] sm:text-sm font-black text-black capitalize mt-0.5 sm:mt-1 truncate w-full">
-                          {project.projectType === "apartment" ? "Apartment" : project.projectType === "villa" ? "Villa" : "CRDA Venture"}
-                        </span>
-                      </div>
+                {/* Project Snapshot Specs Matrix (Client Specification: 8 boxes if towers present [Project Type, Towers, Total Area, Total Units | Available, Status, Possession, Price Range], else 7 boxes [Project Type, Total Area, Total Units, Available | Status, Possession, Price Range]) */}
+                {(() => {
+                  const rawTowers = project.totalTowers ?? (project as any).towers ?? (project.location as any)?.totalTowers ?? (project.location as any)?.towers;
+                  const parsedTowersNum = typeof rawTowers === "number"
+                    ? rawTowers
+                    : (typeof rawTowers === "string" && rawTowers.trim() !== "" && !isNaN(Number(rawTowers.trim()))
+                        ? Number(rawTowers.trim())
+                        : null);
 
-                      {/* Box 2: Total Area */}
-                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
-                        <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
-                        <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
-                          Total Area
-                        </span>
-                        <span className="text-[10px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
-                          {project.totalArea || (project.location as any)?.totalArea || "On Request"}
-                        </span>
-                      </div>
+                  const hasTowers = parsedTowersNum !== null
+                    ? parsedTowersNum > 0
+                    : Boolean(rawTowers && String(rawTowers).trim() !== "" && String(rawTowers).trim() !== "0");
 
-                      {/* Box 3: Total Units */}
-                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
-                        <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
-                        <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
-                          Total Units
-                        </span>
-                        <span className="text-[10px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
-                          {project.totalUnits
-                            ? `${project.totalUnits} ${project.projectType === "villa" ? "Villas" : project.projectType === "venture" ? "Plots" : "Units"}`
-                            : project.projectType === "venture" ? "Plots" : "On Request"}
-                        </span>
-                      </div>
+                  const towersDisplay = hasTowers
+                    ? (parsedTowersNum !== null
+                        ? `${parsedTowersNum} ${parsedTowersNum === 1 ? "Tower" : "Towers"}`
+                        : /tower/i.test(String(rawTowers))
+                          ? String(rawTowers).trim()
+                          : `${String(rawTowers).trim()} Towers`)
+                    : "";
 
-                      {/* Box 4: Available */}
-                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
-                        <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
-                        <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
-                          Available
-                        </span>
-                        <span className="text-[10px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
-                          {(() => {
-                            const configs = project.configurations && project.configurations.length > 0
-                              ? formatAvailableBhk(project.configurations.map((c) => c.label))
-                              : "";
-                            return configs || (project.projectType === "venture" ? "Plots" : "3 BHK");
-                          })()}
-                        </span>
-                      </div>
+                  const boxProjectType = (
+                    <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                      <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                      <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
+                        Project Type
+                      </span>
+                      <span className="text-[10px] sm:text-sm font-black text-black capitalize mt-0.5 sm:mt-1 truncate w-full">
+                        {project.projectType === "apartment" ? "Apartment" : project.projectType === "villa" ? "Villa" : "CRDA Venture"}
+                      </span>
                     </div>
+                  );
 
-                    {/* Row 2: 3 Boxes (Status | Possession | Price Range) - Uniform in Mobile and Desktop */}
-                    <div className="grid grid-cols-3 divide-x-2 divide-black text-center bg-white">
-                      {/* Box 5: Status */}
-                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
-                        <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
-                        <span className="text-[8.5px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
-                          Status
-                        </span>
-                        <span className="text-[10px] sm:text-sm font-black text-black capitalize mt-0.5 sm:mt-1 truncate w-full">
-                          {STATUS_LABELS[project.constructionStatus] || "Under Construction"}
-                        </span>
-                      </div>
-
-                      {/* Box 6: Possession */}
-                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
-                        <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
-                        <span className="text-[8.5px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
-                          Possession
-                        </span>
-                        <span className="text-[10px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
-                          {project.possessionDate || project.configurations?.find(c => c.possessionDate)?.possessionDate || (project.constructionStatus === "ready-to-move" ? "Ready to Move" : "On Request")}
-                        </span>
-                      </div>
-
-                      {/* Box 7: Price Range */}
-                      <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
-                        <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
-                        <span className="text-[8.5px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
-                          Price Range
-                        </span>
-                        <span className="text-[10.5px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
-                          {getPriceRange(project.configurations)}
-                        </span>
-                      </div>
+                  const boxTowers = (
+                    <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                      <Building className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                      <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
+                        Towers
+                      </span>
+                      <span className="text-[10px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
+                        {towersDisplay}
+                      </span>
                     </div>
-                  </div>
-                </div>
+                  );
+
+                  const boxTotalArea = (
+                    <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                      <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                      <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
+                        Total Area
+                      </span>
+                      <span className="text-[10px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
+                        {project.totalArea || (project.location as any)?.totalArea || "On Request"}
+                      </span>
+                    </div>
+                  );
+
+                  const boxTotalUnits = (
+                    <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                      <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                      <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
+                        Total Units
+                      </span>
+                      <span className="text-[10px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
+                        {project.totalUnits
+                          ? `${project.totalUnits} ${project.projectType === "villa" ? "Villas" : project.projectType === "venture" ? "Plots" : "Units"}`
+                          : project.projectType === "venture" ? "Plots" : "On Request"}
+                      </span>
+                    </div>
+                  );
+
+                  const boxAvailable = (
+                    <div className="p-2 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                      <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                      <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
+                        Available
+                      </span>
+                      <span className="text-[10px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full">
+                        {(() => {
+                          const configs = project.configurations && project.configurations.length > 0
+                            ? formatAvailableBhk(project.configurations.map((c) => c.label))
+                            : "";
+                          return configs || (project.projectType === "venture" ? "Plots" : "3 BHK");
+                        })()}
+                      </span>
+                    </div>
+                  );
+
+                  const boxStatus = (
+                    <div className="p-1.5 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                      <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                      <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
+                        Status
+                      </span>
+                      <span className="text-[8.5px] xs:text-[9.5px] sm:text-sm font-black text-black capitalize mt-0.5 sm:mt-1 leading-tight line-clamp-2 w-full text-center">
+                        {STATUS_LABELS[project.constructionStatus] || "Under Construction"}
+                      </span>
+                    </div>
+                  );
+
+                  const boxPossession = (
+                    <div className="p-1.5 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                      <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
+                        Possession
+                      </span>
+                      <span className="text-[9.5px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 truncate w-full text-center">
+                        {project.possessionDate || project.configurations?.find(c => c.possessionDate)?.possessionDate || (project.constructionStatus === "ready-to-move" ? "Ready to Move" : "On Request")}
+                      </span>
+                    </div>
+                  );
+
+                  const boxPriceRange = (
+                    <div className="p-1.5 sm:p-4 flex flex-col items-center justify-center min-w-0 bg-white">
+                      <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-[#faad13] mb-1 shrink-0" />
+                      <span className="text-[8px] sm:text-xs font-bold text-black uppercase tracking-tight sm:tracking-wider leading-tight">
+                        Price Range
+                      </span>
+                      <span className="text-[8.5px] xs:text-[9.5px] sm:text-sm font-black text-black mt-0.5 sm:mt-1 leading-tight line-clamp-2 w-full text-center">
+                        {getPriceRange(project.configurations)}
+                      </span>
+                    </div>
+                  );
+
+                  return (
+                    <div className="pt-4 border-t border-slate-200 dark:border-slate-800/80">
+                      {hasTowers ? (
+                        <div className="rounded-2xl border-2 border-black bg-white overflow-hidden divide-y-2 divide-black shadow-sm">
+                          {/* Row 1: 4 Boxes (Project Type | Towers | Total Area | Total Units) */}
+                          <div className="grid grid-cols-4 divide-x-2 divide-black text-center bg-white">
+                            {boxProjectType}
+                            {boxTowers}
+                            {boxTotalArea}
+                            {boxTotalUnits}
+                          </div>
+
+                          {/* Row 2: 4 Boxes (Available | Status | Possession | Price Range) */}
+                          <div className="grid grid-cols-4 divide-x-2 divide-black text-center bg-white">
+                            {boxAvailable}
+                            {boxStatus}
+                            {boxPossession}
+                            {boxPriceRange}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl border-2 border-black bg-white overflow-hidden divide-y-2 divide-black shadow-sm">
+                          {/* Row 1: 4 Boxes (Project Type | Total Area | Total Units | Available) */}
+                          <div className="grid grid-cols-4 divide-x-2 divide-black text-center bg-white">
+                            {boxProjectType}
+                            {boxTotalArea}
+                            {boxTotalUnits}
+                            {boxAvailable}
+                          </div>
+
+                          {/* Row 2: 3 Boxes (Status | Possession | Price Range) */}
+                          <div className="grid grid-cols-3 divide-x-2 divide-black text-center bg-white">
+                            {boxStatus}
+                            {boxPossession}
+                            {boxPriceRange}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Available Configurations Section */}
                 {project.configurations && project.configurations.length > 0 ? (
@@ -1219,6 +1313,16 @@ export function ProjectDetailView({
                   </button>
                 )}
               </div>
+
+              {/* Site Visit Schedule & Availability (Mobile inline) */}
+              <ProjectScheduleSection
+                project={project}
+                onOpenScheduleModal={(slot) => {
+                  setSelectedScheduleSlot(slot);
+                  setIsScheduleModalOpen(true);
+                }}
+                className="sm:hidden"
+              />
 
               {/* Box 3: Overview / About This Project Section */}
               <ScrollReveal id="overview" className="scroll-mt-32">
@@ -1528,7 +1632,7 @@ export function ProjectDetailView({
                           {/* Middle Preview Box */}
                           <div
                             className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-50 dark:bg-bg-primary border border-border-default/80 my-3 flex items-center justify-center cursor-pointer group/media shadow-inner"
-                            onClick={() => setFloorPlanLightbox({ url: project.masterPlanUrl!, label: `${project.name} — Master Plan` })}
+                            onClick={() => setFloorPlanLightbox({ url: project.masterPlanUrl!, label: `${project.name} — Master Plan`, thumbnailUrl: project.masterPlanUrl! })}
                           >
                             <img
                               src={resolveMediaUrl(project.masterPlanUrl)}
@@ -1580,7 +1684,7 @@ export function ProjectDetailView({
                         <button
                           type="button"
                           disabled={loadingPlanUrl !== null}
-                          onClick={() => setFloorPlanLightbox({ url: project.masterPlanUrl!, label: `${project.name} — Master Plan` })}
+                          onClick={() => setFloorPlanLightbox({ url: project.masterPlanUrl!, label: `${project.name} — Master Plan`, thumbnailUrl: project.masterPlanUrl! })}
                           className="mt-2 w-full flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all py-2.5 rounded-xl text-xs font-bold cursor-pointer active:scale-98 shadow-sm disabled:opacity-80"
                         >
                           {loadingPlanUrl === project.masterPlanUrl ? (
@@ -1630,7 +1734,7 @@ export function ProjectDetailView({
                                   {areaMin} {hasAreaRange ? `– ${areaMax}` : ""} <span className="text-sm font-semibold text-text-tertiary">{unit}</span>
                                 </div>
                                 <div className="text-[11px] text-text-secondary font-medium mt-0.5">
-                                  {project.projectType !== "venture" && cfg.uds ? `UDS: ${cfg.uds} sq.yds • ` : ""}{project.projectType === "venture" ? "Plot Layout" : "Super Built-up Area"}
+                                  {project.projectType === "venture" ? "Plot Layout" : "Super Built-up Area"}{project.projectType !== "venture" && cfg.uds ? ` | UDS: ${cfg.uds} sq.yds` : ""}
                                   {project.projectType === "venture" && cfg.measurements && <span className="block">Dimensions: {cfg.measurements}</span>}
                                   {project.projectType === "venture" && cfg.roadWidth != null && <span className="block">Facing road: {cfg.roadWidth} ft</span>}
                                 </div>
@@ -1656,7 +1760,7 @@ export function ProjectDetailView({
                               className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-50 dark:bg-bg-primary border border-border-default/80 my-3 flex items-center justify-center cursor-pointer group/media shadow-inner"
                               onClick={() => {
                                 if (cfg.floorPlanUrl) {
-                                  setFloorPlanLightbox({ url: cfg.floorPlanUrl, label: floorPlanModalTitle });
+                                  setFloorPlanLightbox({ url: cfg.floorPlanUrl, label: floorPlanModalTitle, thumbnailUrl: cfg.floorPlanUrl });
                                 } else if (cfg.videoUrl) {
                                   openVideo(cfg.videoUrl);
                                 }
@@ -1728,7 +1832,7 @@ export function ProjectDetailView({
                             <button
                               type="button"
                               disabled={loadingPlanUrl !== null}
-                              onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: floorPlanModalTitle })}
+                              onClick={() => setFloorPlanLightbox({ url: cfg.floorPlanUrl!, label: floorPlanModalTitle, thumbnailUrl: cfg.floorPlanUrl! })}
                               className="mt-2 w-full flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-900 text-white border border-white/15 transition-all py-2.5 rounded-xl text-xs font-bold cursor-pointer active:scale-98 shadow-sm disabled:opacity-80"
                             >
                               {loadingPlanUrl === cfg.floorPlanUrl ? (
@@ -1941,6 +2045,16 @@ export function ProjectDetailView({
 
             {/* Right Sidebar */}
             <div className="space-y-5">
+              {/* Site Visit Schedule & Availability (Desktop sidebar) */}
+              <ProjectScheduleSection
+                project={project}
+                onOpenScheduleModal={(slot) => {
+                  setSelectedScheduleSlot(slot);
+                  setIsScheduleModalOpen(true);
+                }}
+                className="hidden sm:block"
+              />
+
               {/* Why consider */}
               {project.highlights.length > 0 && (
                 <div className="bg-white dark:bg-bg-card border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm">
@@ -2042,6 +2156,7 @@ export function ProjectDetailView({
       <ScheduleVisitModal
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
+        initialSlot={selectedScheduleSlot}
         project={{
           id: project.id,
           slug: project.slug,

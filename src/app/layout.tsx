@@ -165,15 +165,21 @@ export default async function RootLayout({
       data-scroll-behavior="smooth"
       suppressHydrationWarning
       data-theme="light"
-      className={cn("light font-sans antialiased", inter.variable)}
+      className={cn("light font-sans antialiased bg-bg-primary", inter.variable)}
     >
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebsite) }}
         />
       </head>
-      <body suppressHydrationWarning className={cn("min-h-screen bg-bg-primary font-sans text-text-primary antialiased", inter.className)}>
+      <body suppressHydrationWarning className={cn("min-h-screen bg-bg-primary font-sans text-text-primary antialiased", inter.className)} style={{ backgroundColor: "#FFFBF3" }}>
         <ThemeProvider
           attribute="class"
           forcedTheme="light"

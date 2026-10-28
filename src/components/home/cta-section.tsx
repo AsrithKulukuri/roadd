@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 export function CTASection() {
   const { propertiesEnabled } = useSiteFeatures();
   return (
-    <section className="py-20 sm:py-28 relative overflow-hidden bg-white dark:bg-bg-primary">
+    <section className="py-20 sm:py-28 relative overflow-hidden bg-bg-primary dark:bg-bg-primary">
       {/* Background Subtle Gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-500/5 to-transparent pointer-events-none" />
       

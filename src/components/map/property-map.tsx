@@ -1622,9 +1622,37 @@ const BUDGET_PRESETS = [
 
   const hasActiveDrawnShape = drawPolygonPoints.length >= 3;
 
-  const [internalUserLoc, setInternalUserLoc] = useState<{lat: number, lng: number} | null>(null);
+  const [internalUserLoc, setInternalUserLoc] = useState<{lat: number, lng: number} | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const cached = sessionStorage.getItem("user_coords");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (typeof parsed.latitude === "number" && typeof parsed.longitude === "number") {
+          return { lat: parsed.latitude, lng: parsed.longitude };
+        }
+      }
+    } catch {}
+    return null;
+  });
   
   const activeUserLocation = externalUserLocation || internalUserLoc;
+
+  // Auto-detect user geolocation when component mounts
+  useEffect(() => {
+    if (activeUserLocation || typeof window === "undefined" || !("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setInternalUserLoc(c);
+        try {
+          sessionStorage.setItem("user_coords", JSON.stringify({ latitude: c.lat, longitude: c.lng }));
+        } catch {}
+      },
+      () => {},
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
+  }, [activeUserLocation]);
 
   const [showPropertiesTray, setShowPropertiesTray] = useState(false);
   const trayScrollRef = useRef<HTMLDivElement>(null);
@@ -4734,6 +4762,18 @@ const BUDGET_PRESETS = [
                       const city = property.location?.city || orig?.location?.city || (property as any).city || "";
                       const locationDisplay = [locality, city].filter(Boolean).join(", ") || "Vijayawada, AP";
 
+                      // 7. Calculate Distance From Me
+                      let distanceFromMe = "";
+                      if (activeUserLocation && coords.lat && coords.lng) {
+                        distanceFromMe = calculateDistanceStr(
+                          L.latLng(activeUserLocation.lat, activeUserLocation.lng),
+                          coords.lat,
+                          coords.lng
+                        );
+                      } else if (position && coords.lat && coords.lng) {
+                        distanceFromMe = calculateDistanceStr(position, coords.lat, coords.lng);
+                      }
+
                       const handleCardClick = (e: React.MouseEvent) => {
                         e.stopPropagation();
                         e.preventDefault();
@@ -4745,11 +4785,11 @@ const BUDGET_PRESETS = [
                       };
 
                       return (
-                        <div className="relative w-full max-w-[310px] bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-200/90 font-sans select-none text-slate-900">
+                        <div className="relative w-full max-w-[240px] sm:max-w-[255px] bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-200/90 font-sans select-none text-slate-900">
                           {/* Top Image Container */}
                           <div
                             onClick={handleCardClick}
-                            className="relative w-full h-[165px] bg-slate-100 cursor-pointer overflow-hidden group/img"
+                            className="relative w-full h-[110px] sm:h-[120px] bg-slate-100 cursor-pointer overflow-hidden group/img"
                           >
                             <img
                               src={coverImg}
@@ -4769,31 +4809,31 @@ const BUDGET_PRESETS = [
                                 const closeBtn = (e.target as HTMLElement).closest('.leaflet-popup')?.querySelector('.leaflet-popup-close-button') as HTMLElement;
                                 if (closeBtn) closeBtn.click();
                               }}
-                              className="absolute top-2.5 right-2.5 w-7 h-7 bg-white/70 hover:bg-white text-slate-700 hover:text-slate-950 backdrop-blur-md rounded-full flex items-center justify-center transition-all shadow-sm z-20 cursor-pointer"
+                              className="absolute top-2 right-2 w-6 h-6 bg-white/80 hover:bg-white text-slate-700 hover:text-slate-950 backdrop-blur-md rounded-full flex items-center justify-center transition-all shadow-sm z-20 cursor-pointer active:scale-95"
                               title="Close card"
                             >
-                              <X className="w-4 h-4 stroke-[2.5]" />
+                              <X className="w-3.5 h-3.5 stroke-[2.5]" />
                             </button>
 
                             {/* Bottom Right Badge: Diamond Premium */}
-                            <div className="absolute bottom-2.5 right-2.5 px-3 py-1 bg-white/95 text-slate-900 rounded-xl flex items-center gap-1.5 shadow-md backdrop-blur-sm z-10 select-none pointer-events-none">
-                              <Diamond className="w-3.5 h-3.5 text-slate-900 fill-slate-900 shrink-0" />
-                              <span className="text-xs font-bold tracking-tight">Premium</span>
+                            <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-white/95 text-slate-900 rounded-lg flex items-center gap-1 shadow-sm backdrop-blur-sm z-10 select-none pointer-events-none">
+                              <Diamond className="w-2.5 h-2.5 text-slate-900 fill-slate-900 shrink-0" />
+                              <span className="text-[10px] font-bold tracking-tight">Premium</span>
                             </div>
                           </div>
 
                           {/* Body Information */}
-                          <div className="p-3.5 sm:p-4 bg-white flex flex-col">
+                          <div className="p-2.5 sm:p-3 bg-white flex flex-col">
                             {/* Title & Share Icon Row */}
-                            <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start justify-between gap-1.5">
                               <div
                                 onClick={handleCardClick}
                                 className="min-w-0 flex-1 cursor-pointer group/title"
                               >
-                                <h3 className="font-heading text-base font-bold text-[#1d4ed8] group-hover/title:underline truncate leading-snug">
+                                <h3 className="font-heading text-[13px] sm:text-sm font-bold text-[#1d4ed8] group-hover/title:underline truncate leading-snug">
                                   {property.title || (property as any).name || "Property"}
                                 </h3>
-                                <p className="text-xs sm:text-[13px] text-slate-500 font-medium truncate mt-0.5">
+                                <p className="text-[10.5px] sm:text-[11.5px] text-slate-500 font-medium truncate mt-0.5">
                                   {locationDisplay}
                                 </p>
                               </div>
@@ -4805,68 +4845,107 @@ const BUDGET_PRESETS = [
                                   shareItem({ item: property, type: isProj ? "project" : "property" });
                                 }}
                                 title="Share property"
-                                className="p-1 text-slate-400 hover:text-blue-600 transition-colors shrink-0 cursor-pointer"
+                                className="p-0.5 text-slate-400 hover:text-blue-600 transition-colors shrink-0 cursor-pointer"
                               >
-                                <Share2 className="w-4 h-4 stroke-[1.8]" />
+                                <Share2 className="w-3.5 h-3.5 stroke-[1.8]" />
                               </button>
                             </div>
 
                             {/* Dashed Separator */}
-                            <div className="border-b border-dashed border-slate-200 my-2.5" />
+                            <div className="border-b border-dashed border-slate-200 my-1.5 sm:my-2" />
 
                             {/* 2x2 Specifications Grid */}
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                            <div className="grid grid-cols-2 gap-x-2.5 gap-y-1.5 text-xs">
                               {/* 1. BHK */}
                               <div>
-                                <span className="text-[11px] font-semibold text-slate-400 block tracking-wide">
+                                <span className="text-[9.5px] sm:text-[10px] font-semibold text-slate-400 block tracking-tight uppercase">
                                   BHK
                                 </span>
-                                <span className="text-sm font-bold text-slate-900 block mt-0.5 truncate">
+                                <span className="text-xs sm:text-[12.5px] font-bold text-slate-900 block mt-0.2 truncate">
                                   {bhkDisplay}
                                 </span>
                               </div>
 
                               {/* 2. Property Type */}
                               <div>
-                                <span className="text-[11px] font-semibold text-slate-400 block tracking-wide">
+                                <span className="text-[9.5px] sm:text-[10px] font-semibold text-slate-400 block tracking-tight uppercase">
                                   Property Type
                                 </span>
-                                <span className="text-sm font-bold text-slate-900 block mt-0.5 truncate">
+                                <span className="text-xs sm:text-[12.5px] font-bold text-slate-900 block mt-0.2 truncate">
                                   {typeDisplay}
                                 </span>
                               </div>
 
                               {/* 3. Super Built-Up / Area */}
                               <div>
-                                <span className="text-[11px] font-semibold text-slate-400 block tracking-wide">
+                                <span className="text-[9.5px] sm:text-[10px] font-semibold text-slate-400 block tracking-tight uppercase">
                                   {isPlots ? "Plot Area" : "Super Built-Up"}
                                 </span>
-                                <span className="text-sm font-bold text-slate-900 block mt-0.5 truncate">
+                                <span className="text-xs sm:text-[12.5px] font-bold text-slate-900 block mt-0.2 truncate">
                                   {areaDisplay}
                                 </span>
                               </div>
 
                               {/* 4. Possession */}
                               <div>
-                                <span className="text-[11px] font-semibold text-slate-400 block tracking-wide">
+                                <span className="text-[9.5px] sm:text-[10px] font-semibold text-slate-400 block tracking-tight uppercase">
                                   Possession
                                 </span>
-                                <span className="text-sm font-bold text-slate-900 block mt-0.5 truncate">
+                                <span className="text-xs sm:text-[12.5px] font-bold text-slate-900 block mt-0.2 truncate">
                                   {possessionDisplay}
                                 </span>
                               </div>
                             </div>
 
                             {/* Dashed Separator */}
-                            <div className="border-b border-dashed border-slate-200 my-2.5" />
+                            <div className="border-b border-dashed border-slate-200 my-1.5 sm:my-2" />
 
-                            {/* Price */}
+                            {/* Price (Full width like before) */}
                             <div
                               onClick={handleCardClick}
                               className="text-base sm:text-lg font-black text-slate-900 tracking-tight cursor-pointer hover:text-blue-700 transition-colors"
                             >
                               {priceDisplay}
                             </div>
+
+                            {/* Distance From Me (Directly below price) */}
+                            {distanceFromMe ? (
+                              <div
+                                className="inline-flex items-center gap-1.5 mt-1.5 px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/90 shadow-2xs w-fit"
+                                title={`Approximately ${distanceFromMe} from your location`}
+                              >
+                                <Navigation className="w-2.5 h-2.5 fill-emerald-600 text-emerald-600 rotate-45 shrink-0" />
+                                <span>{distanceFromMe} from me</span>
+                              </div>
+                            ) : (
+                              <div className="mt-1.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    if (typeof window !== "undefined" && "geolocation" in navigator) {
+                                      navigator.geolocation.getCurrentPosition(
+                                        (pos) => {
+                                          const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                                          setInternalUserLoc(c);
+                                          try {
+                                            sessionStorage.setItem("user_coords", JSON.stringify({ latitude: c.lat, longitude: c.lng }));
+                                          } catch {}
+                                        },
+                                        (err) => console.warn(err.message),
+                                        { enableHighAccuracy: true, timeout: 8000 }
+                                      );
+                                    }
+                                  }}
+                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                                  title="Calculate distance from current GPS"
+                                >
+                                  <Navigation className="w-2.5 h-2.5 text-slate-500 rotate-45 shrink-0" />
+                                  <span>Find distance from me</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );

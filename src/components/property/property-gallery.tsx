@@ -204,6 +204,7 @@ export function PropertyGallery({
         images={activeImages.map(img => ({
           url: typeof img === "string" ? img : img.url,
           label: typeof img === "string" ? title : img.alt || title,
+          thumbnailUrl: typeof img === "object" ? (img as { thumbnailUrl?: string; previewUrl?: string }).thumbnailUrl || (img as { thumbnailUrl?: string; previewUrl?: string }).previewUrl : undefined,
         }))}
         initialIndex={currentIndex}
         title={title}

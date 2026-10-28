@@ -43,7 +43,7 @@ const features = [
 
 export function WhyChooseUs() {
   return (
-    <section className="py-20 sm:py-28 relative overflow-hidden bg-white dark:bg-slate-950 border-t border-slate-200/80 dark:border-slate-800/80">
+    <section className="py-20 sm:py-28 relative overflow-hidden bg-bg-primary dark:bg-slate-950 border-t border-slate-200/80 dark:border-slate-800/80">
       {/* Subtle Glows */}
       <div className="absolute top-0 right-1/4 -mt-32 w-96 h-96 bg-amber-500/5 dark:bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-1/4 -mb-32 w-96 h-96 bg-amber-500/5 dark:bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />

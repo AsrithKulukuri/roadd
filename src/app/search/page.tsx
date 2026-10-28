@@ -40,10 +40,10 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
 
 function SearchPageSkeleton() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-bg-primary dark:bg-slate-950">
       <h1 className="sr-only">Search properties and projects</h1>
       {/* Header Skeleton Bar */}
-      <div className="w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-3 px-4 sm:px-6">
+      <div className="w-full bg-bg-primary dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-3 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="h-10 w-full max-w-md bg-slate-100 dark:bg-slate-800 rounded-full animate-pulse" />
           <div className="h-9 w-28 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse hidden sm:block" />
