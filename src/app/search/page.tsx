@@ -779,6 +779,11 @@ function UnifiedSearchPage() {
         price: p.configurations?.[0]?.priceMin || 0,
         propertyType: p.projectType || "Project",
         listingType: "project",
+        name: p.name,
+        refId: p.refId || (p.location as any)?.refId || (p as any).ref_id,
+        projectType: p.projectType,
+        totalArea: p.totalArea || (p.location as any)?.totalArea,
+        totalUnits: p.totalUnits,
         status: "active",
         location: {
           address: p.location?.address || "",

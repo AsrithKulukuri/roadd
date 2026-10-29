@@ -28,6 +28,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { findPropertyByRefId, getPropertyRefId } from "@/lib/ref-id";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { shareItem } from "@/lib/share-utils";
+import { shareOnWhatsApp } from "@/lib/whatsapp/whatsapp-share";
 import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
 import { toast } from "sonner";
 import { LOCATION_ALIASES } from "@/lib/search-engine";
@@ -1226,8 +1227,13 @@ export default function PropertyMap({
         id: p.id,
         slug: p.slug,
         title: p.name,
+        name: p.name,
+        refId: p.refId || (p.location as any)?.refId || (p as any).ref_id,
         price: p.configurations?.[0]?.priceMin || 0,
         propertyType: p.projectType || "Project",
+        projectType: p.projectType,
+        totalArea: p.totalArea || (p.location as any)?.totalArea,
+        totalUnits: p.totalUnits,
         listingType: "project",
         status: "active",
         location: {
@@ -1237,6 +1243,7 @@ export default function PropertyMap({
           state: p.location.state || "",
           latitude: Number(p.location.latitude),
           longitude: Number(p.location.longitude),
+          refId: p.refId || (p.location as any)?.refId,
         },
         coverImage: p.coverImage,
         images: p.images?.map((img) => (typeof img === "string" ? img : img.url || "")) || [],
@@ -4842,7 +4849,8 @@ const BUDGET_PRESETS = [
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   e.preventDefault();
-                                  shareItem({ item: property, type: isProj ? "project" : "property" });
+                                  const fullItem = (isProj && orig) ? orig : property;
+                                  shareOnWhatsApp({ item: fullItem, type: isProj ? "project" : "property", source: "map" });
                                 }}
                                 title="Share property"
                                 className="p-0.5 text-slate-400 hover:text-blue-600 transition-colors shrink-0 cursor-pointer"

@@ -3,7 +3,7 @@
  * Handles WhatsApp link generation, rich message formatting, UTM tracking, and deep links.
  */
 
-import { formatINR, formatPriceCompact } from "../utils";
+import { formatINR, formatPriceCompact, formatAvailableBhk } from "../utils";
 import { getRefId } from "../ref-id";
 import type { Property } from "@/types/property";
 import type { Project } from "@/types/project";
@@ -70,22 +70,45 @@ export function formatWhatsAppPropertyMessage(item: any, type?: "property" | "pr
   const refId = getRefId(item);
   const title = (item.title || item.name || "Exclusive Listing").trim();
 
+  // Extract raw configs
+  const rawConfigs = item.configurations || item._originalProjectData?.configurations;
+  const configs: any[] = Array.isArray(rawConfigs) ? rawConfigs : [];
+
+  // Helper for single price formatting (handles Lakh / Cr without truncation)
+  const formatProjectPrice = (num: number): string => {
+    if (num >= 10000000) {
+      const cr = num / 10000000;
+      return `₹${cr % 1 === 0 ? cr.toFixed(0) : cr.toFixed(2).replace(/\.?0+$/, "")} Cr`;
+    }
+    if (num >= 100000) {
+      const lakh = num / 100000;
+      return `₹${lakh % 1 === 0 ? lakh.toFixed(0) : lakh.toFixed(2).replace(/\.?0+$/, "")} Lakh`;
+    }
+    return formatPriceCompact(num);
+  };
+
   // Price formatting
   let priceFormatted = "Price on Request";
-  if (typeof item.price === "number" && item.price > 0) {
+  if (configs.length > 0) {
+    const allPrices = configs.flatMap((c: any) => [c.priceMin, c.priceMax]).filter((p): p is number => typeof p === "number" && p > 0);
+    if (allPrices.length > 0) {
+      const min = Math.min(...allPrices);
+      const max = Math.max(...allPrices);
+      if (min === max) {
+        priceFormatted = formatProjectPrice(min);
+      } else {
+        priceFormatted = `${formatProjectPrice(min)} – ${formatProjectPrice(max)}`;
+      }
+    }
+  } else if (typeof item.price === "number" && item.price > 0) {
     priceFormatted =
       item.listingType === "rent" || item.listingType === "pg"
         ? `${formatINR(item.price)}/mo`
         : formatPriceCompact(item.price);
-  } else if (item.configurations && Array.isArray(item.configurations) && item.configurations.length > 0) {
-    const allPrices = item.configurations.flatMap((c: any) => [c.priceMin, c.priceMax]).filter(Boolean);
-    if (allPrices.length > 0) {
-      const min = Math.min(...allPrices);
-      const max = Math.max(...allPrices);
-      priceFormatted = min >= 10000000 
-        ? `₹${(min / 10000000).toFixed(2)} Cr${max && max !== min ? ` – ₹${(max / 10000000).toFixed(2)} Cr` : ""}`
-        : `₹${(min / 100000).toFixed(2)} Lakh`;
-    }
+  } else if ((item.priceMin || item.minPrice) && (item.priceMax || item.maxPrice)) {
+    const min = item.priceMin || item.minPrice;
+    const max = item.priceMax || item.maxPrice;
+    priceFormatted = min === max ? formatProjectPrice(min) : `${formatProjectPrice(min)} – ${formatProjectPrice(max)}`;
   }
 
   // Location
@@ -97,10 +120,69 @@ export function formatWhatsAppPropertyMessage(item: any, type?: "property" | "pr
   const bullets: string[] = [];
 
   if (isProject) {
-    const pType = item.projectType ? String(item.projectType).charAt(0).toUpperCase() + String(item.projectType).slice(1) : "Project";
+    const orig = item._originalProjectData;
+    const rawProjType = (item.projectType || orig?.projectType || item.propertyType || "Project").toLowerCase();
+    const isPlots = rawProjType.includes("venture") || rawProjType.includes("plot");
+    const isVilla = rawProjType.includes("villa");
+
+    let pType = "Project";
+    if (isPlots) pType = "Plot / Layout";
+    else if (isVilla) pType = "Villa";
+    else if (rawProjType.includes("apartment") || rawProjType.includes("flat")) pType = "Apartment";
+    else if (item.projectType) {
+      pType = String(item.projectType).charAt(0).toUpperCase() + String(item.projectType).slice(1);
+    }
     bullets.push(`• Type: ${pType}`);
-    if (item.totalArea) bullets.push(`• Total Area: ${item.totalArea}`);
-    if (item.totalUnits) bullets.push(`• Total Units: ${item.totalUnits}`);
+
+    // Configuration / BHK summary
+    if (configs.length > 0) {
+      const configLabels = configs.map((c: any) => c.label).filter(Boolean);
+      const formattedBhk = formatAvailableBhk(configLabels);
+      if (formattedBhk) {
+        bullets.push(`• Configuration: ${formattedBhk}`);
+      } else {
+        const bedVals = configs
+          .map((c: any) => c.bedrooms)
+          .filter((b: any): b is number => typeof b === "number" && b > 0);
+        if (bedVals.length > 0) {
+          const minBed = Math.min(...bedVals);
+          const maxBed = Math.max(...bedVals);
+          bullets.push(`• Configuration: ${minBed === maxBed ? `${minBed} BHK` : `${minBed} - ${maxBed} BHK`}`);
+        }
+      }
+    } else if (item.bedrooms) {
+      bullets.push(`• Configuration: ${item.bedrooms} BHK`);
+    }
+
+    // Sft / Area Range
+    const areaUnit = isPlots ? "sq.yd" : "sq.ft";
+    if (configs.length > 0) {
+      const allAreas = configs
+        .flatMap((c: any) => isPlots
+          ? [c.plotSizeMin, c.plotSizeMax]
+          : [c.superBuiltUpAreaMin, c.superBuiltUpAreaMax, c.builtUpAreaMin, c.builtUpAreaMax, c.plinthAreaMin, c.plinthAreaMax, c.area]
+        )
+        .filter((a: any): a is number => typeof a === "number" && a > 0);
+
+      if (allAreas.length > 0) {
+        const minArea = Math.min(...allAreas);
+        const maxArea = Math.max(...allAreas);
+        const areaStr = minArea === maxArea
+          ? `${minArea.toLocaleString("en-IN")} ${areaUnit}`
+          : `${minArea.toLocaleString("en-IN")} - ${maxArea.toLocaleString("en-IN")} ${areaUnit}`;
+        bullets.push(`• Built-up / Size: ${areaStr}`);
+      }
+    }
+
+    const totalAreaVal = item.totalArea || orig?.totalArea || (item.location as any)?.totalArea;
+    if (totalAreaVal) {
+      bullets.push(`• Total Area: ${String(totalAreaVal).replace(/[`'"]/g, "").trim()}`);
+    }
+
+    const totalUnitsVal = item.totalUnits || orig?.totalUnits;
+    if (totalUnitsVal) {
+      bullets.push(`• Total Units: ${totalUnitsVal}`);
+    }
   } else {
     const specs: string[] = [];
     if (item.bedrooms) specs.push(`${item.bedrooms} BHK`);
