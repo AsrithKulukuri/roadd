@@ -21,14 +21,29 @@ const PublicSiteUrlSchema = z
 /**
  * Returns the canonical public site URL for all external communications.
  * Strictly reads from PUBLIC_SITE_URL (or NEXT_PUBLIC_SITE_URL).
- * Fails via Zod schema validation if invalid, missing, or pointing to localhost in production.
+ * If in production and misconfigured to localhost, safely resolves to Vercel production domain.
  */
 export function getPublicSiteUrl(): string {
-  const rawUrl = (
+  let rawUrl = (
     process.env.PUBLIC_SITE_URL ||
     process.env.NEXT_PUBLIC_SITE_URL ||
     ""
   ).trim();
+
+  const isProduction =
+    process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
+
+  // If in production and environment variable contains localhost or is missing,
+  // resolve via Vercel system environment variables or canonical production domain
+  if (isProduction && (!rawUrl || rawUrl.includes("localhost") || rawUrl.includes("127.0.0.1"))) {
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+      rawUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+    } else if (process.env.VERCEL_URL) {
+      rawUrl = `https://${process.env.VERCEL_URL}`;
+    } else {
+      rawUrl = "https://roadd-three.vercel.app";
+    }
+  }
 
   const validated = PublicSiteUrlSchema.parse(rawUrl);
   return validated.replace(/\/$/, "");
