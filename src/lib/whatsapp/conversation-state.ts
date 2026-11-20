@@ -130,7 +130,7 @@ export async function updateConversationState(state: Partial<ConversationState> 
   };
 
   try {
-    await supabaseAdmin.from("whatsapp_conversation_state").upsert({
+    const { error: fullUpsertError } = await supabaseAdmin.from("whatsapp_conversation_state").upsert({
       phone: merged.phone,
       user_id: merged.userId || null,
       user_name: merged.userName || null,
@@ -150,10 +150,11 @@ export async function updateConversationState(state: Partial<ConversationState> 
       last_interaction_at: merged.lastInteractionAt,
       updated_at: new Date().toISOString(),
     });
-  } catch (err) {
-    // If table schema does not yet have newly added columns, fall back to core schema
-    try {
-      await supabaseAdmin.from("whatsapp_conversation_state").upsert({
+
+    if (fullUpsertError) {
+      console.warn("[CONVERSATION STATE FULL UPSERT WARN]", fullUpsertError.message);
+      // If table schema does not yet have newly added columns, fall back to core schema
+      const { error: fallbackError } = await supabaseAdmin.from("whatsapp_conversation_state").upsert({
         phone: merged.phone,
         user_id: merged.userId || null,
         user_name: merged.userName || null,
@@ -169,9 +170,12 @@ export async function updateConversationState(state: Partial<ConversationState> 
         last_interaction_at: merged.lastInteractionAt,
         updated_at: new Date().toISOString(),
       });
-    } catch (fallbackErr) {
-      console.warn("[CONVERSATION STATE SAVE ERROR]", fallbackErr);
+      if (fallbackError) {
+        console.warn("[CONVERSATION STATE FALLBACK WARN]", fallbackError.message);
+      }
     }
+  } catch (err) {
+    console.warn("[CONVERSATION STATE SAVE ERROR]", err);
   }
 }
 

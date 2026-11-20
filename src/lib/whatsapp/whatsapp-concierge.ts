@@ -572,6 +572,44 @@ async function createOrUpdateTicket(params: {
   }
 }
 
+async function safelyUpsertContact(phone: string, name?: string): Promise<void> {
+  try {
+    const { data: existing } = await supabaseAdmin
+      .from("whatsapp_contacts")
+      .select("id, name")
+      .eq("phone", phone)
+      .maybeSingle();
+
+    const now = new Date().toISOString();
+    if (existing) {
+      if (name && name !== "WhatsApp Member" && name !== existing.name) {
+        await supabaseAdmin
+          .from("whatsapp_contacts")
+          .update({
+            name,
+            updated_at: now,
+          })
+          .eq("id", existing.id);
+      }
+    } else {
+      await supabaseAdmin
+        .from("whatsapp_contacts")
+        .insert({
+          phone,
+          name: name || "WhatsApp Member",
+          source_type: "external",
+          consent_source: "whatsapp_inbound_concierge",
+          is_subscribed: true,
+          opted_in_at: now,
+          created_by: "system_concierge",
+          updated_at: now,
+        });
+    }
+  } catch (err) {
+    console.warn("[SAFE CONTACT UPSERT WARN]", err);
+  }
+}
+
 /**
  * Main Entry Point: Processes any inbound WhatsApp message for real estate intelligence & support.
  */
@@ -607,17 +645,7 @@ export async function processInboundWhatsAppMessage(
     const nameCandidate = text.replace(/^(?:my name is|i am|i'm|this is|call me)\s*/i, "").trim();
     if (nameCandidate && nameCandidate.length >= 2 && nameCandidate.length <= 30 && !/^(?:hi|hello|hey|help|agent|bot|ref\d+)/i.test(nameCandidate)) {
       effectiveUserName = nameCandidate;
-      try {
-        await supabaseAdmin
-          .from("whatsapp_contacts")
-          .upsert({
-            phone: cleanPhone,
-            name: effectiveUserName,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: "phone" });
-      } catch (err) {
-        console.warn("[NAME SAVE ERROR]", err);
-      }
+      await safelyUpsertContact(cleanPhone, effectiveUserName);
 
       const welcomeNamedMsg = `👋 *Nice to meet you, ${effectiveUserName}!* Welcome to ROADFACING Concierge 🏡\n\nI am your 24/7 personal real estate assistant. How can I help you find your dream property today?\n\n*Try asking:*\n• _"3 bhk in Poranki under 80 Lakhs"_\n• _"Flats in Vijayawada under 1 Crore"_\n• _"Avenue Serene project"_\n• _"REF0001"_`;
       await WhatsAppService.sendTextMessage(cleanPhone, welcomeNamedMsg, {
@@ -643,22 +671,7 @@ export async function processInboundWhatsAppMessage(
   }
 
   // Auto-record/update in whatsapp_contacts
-  try {
-    await supabaseAdmin
-      .from("whatsapp_contacts")
-      .upsert(
-        {
-          phone: cleanPhone,
-          name: effectiveUserName || "WhatsApp Member",
-          is_subscribed: true,
-          opted_in_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "phone", ignoreDuplicates: true }
-      );
-  } catch (contactErr) {
-    console.warn("[CONCIERGE CONTACT UPSERT ERROR]", contactErr);
-  }
+  await safelyUpsertContact(cleanPhone, effectiveUserName);
 
   const norm = text.toLowerCase().trim();
 
