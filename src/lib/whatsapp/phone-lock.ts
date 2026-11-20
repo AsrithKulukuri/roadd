@@ -174,7 +174,7 @@ export async function executeSerializedForPhone<T>(
   task: () => Promise<T>
 ): Promise<T> {
   return phoneSerializationQueue.enqueue(phone, async () => {
-    const lock = await acquireCrossInstancePhoneLock(phone, 60000, 10000);
+    const lock = await acquireCrossInstancePhoneLock(phone, 60000, 4000);
     try {
       return await task();
     } finally {

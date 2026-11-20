@@ -337,7 +337,7 @@ async function analyzeWithGemini(userText: string, conversationHistory: string, 
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const langInstruction =
       language === "te"
@@ -372,12 +372,17 @@ Respond ONLY with valid JSON:
   "chatResponse": string | null
 }`;
 
-    const result = await model.generateContent(prompt);
+    const geminiPromise = model.generateContent(prompt);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Gemini timeout")), 3500)
+    );
+
+    const result = (await Promise.race([geminiPromise, timeoutPromise])) as any;
     const raw = result.response.text().trim();
     const cleanJson = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
     return JSON.parse(cleanJson);
   } catch (err) {
-    console.warn("[GEMINI ANALYZE ERROR]", err);
+    console.warn("[GEMINI ANALYZE ERROR/TIMEOUT]", err);
     return null;
   }
 }
@@ -400,8 +405,14 @@ async function searchLiveListings(queryText: string, parsedIntent: ParsedSearchI
 
   try {
     const [{ data: dbProps }, { data: dbProjects }] = await Promise.all([
-      supabaseAdmin.from("properties").select("*").limit(200),
-      supabaseAdmin.from("projects").select("*").limit(200),
+      supabaseAdmin
+        .from("properties")
+        .select("id, slug, ref_id, title, description, price, price_numeric, location, city, locality, bedrooms, property_type, listing_type, hero_image, images, is_verified, status")
+        .limit(100),
+      supabaseAdmin
+        .from("projects")
+        .select("id, slug, ref_id, name, title, description, location, city, locality, min_price, max_price, configurations, construction_status, status, hero_image, images, rera_id, is_verified, approval_authority")
+        .limit(100),
     ]);
 
     const allProperties: any[] = dbProps && dbProps.length > 0 ? dbProps : mockProperties;
@@ -624,18 +635,21 @@ export async function processInboundWhatsAppMessage(
 
   const siteUrl = getPublicSiteUrl();
 
-  // 1. Log incoming user message
-  await logConversation({
-    phone: cleanPhone,
-    role: "user",
-    message: text,
-  });
+  // 1. Concurrently log incoming message, fetch conversation history, and identify user profile
+  const [
+    recentHistory,
+    registeredUser,
+  ] = await Promise.all([
+    getRecentConversationHistory(cleanPhone, 6),
+    getRegisteredUserByPhone(cleanPhone),
+    logConversation({
+      phone: cleanPhone,
+      role: "user",
+      message: text,
+    }),
+  ]);
 
-  // 2. Fetch conversation context (history, previous user & bot messages)
-  const { historyText, lastUserMessage, lastAssistantMessage } = await getRecentConversationHistory(cleanPhone, 6);
-
-  // 3. Identify user (registered member or guest)
-  const registeredUser = await getRegisteredUserByPhone(cleanPhone);
+  const { historyText, lastUserMessage, lastAssistantMessage } = recentHistory;
   const rawUserName = registeredUser?.name || "";
   const isGenericName = !rawUserName || ["user", "valued member", "member", "whatsapp member"].includes(rawUserName.toLowerCase().trim());
   let effectiveUserName = isGenericName ? "" : rawUserName.trim();
@@ -1248,8 +1262,21 @@ export async function processInboundWhatsAppMessage(
     }
   }
 
-  // 11. Multi-Turn Gemini Analysis for Open-Ended Real Estate Q&A
-  const geminiAnalysis = await analyzeWithGemini(text, historyText, effectiveUserName || "Member", detectedUserLang);
+  // 11. Search Database Listings with Strict Count Integrity
+  const searchEngineIntent = parseSearchIntent(text);
+  const hasStructuredCriteria =
+    searchEngineIntent.locationKeywords.length > 0 ||
+    searchEngineIntent.bhks.length > 0 ||
+    searchEngineIntent.propertyTypes.length > 0 ||
+    searchEngineIntent.minPrice !== undefined ||
+    searchEngineIntent.maxPrice !== undefined ||
+    searchEngineIntent.specificKeywords.length > 0;
+
+  // Only invoke Gemini for open-ended conversational questions, not structured listing searches
+  let geminiAnalysis: any = null;
+  if (!hasStructuredCriteria) {
+    geminiAnalysis = await analyzeWithGemini(text, historyText, effectiveUserName || "Member", detectedUserLang);
+  }
 
   if (geminiAnalysis?.category === "interactive_chat" && geminiAnalysis.chatResponse) {
     await WhatsAppService.sendTextMessage(cleanPhone, geminiAnalysis.chatResponse, {
@@ -1275,7 +1302,6 @@ export async function processInboundWhatsAppMessage(
   }
 
   // 12. Search Database Listings with Strict Count Integrity
-  const searchEngineIntent = parseSearchIntent(text);
   const { properties, projects } = await searchLiveListings(text, searchEngineIntent);
   const totalMatches = properties.length + projects.length;
 
