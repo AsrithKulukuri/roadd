@@ -1,9 +1,13 @@
 import { timingSafeEqual, createHmac } from "node:crypto";
+import { after } from "next/server";
 import { normalizeWhatsAppPhone } from "@/lib/whatsapp-audience";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { processInboundWhatsAppMessage } from "@/lib/whatsapp/whatsapp-concierge";
 import { WhatsAppService } from "@/lib/whatsapp-service";
 import { recordWhatsAppReceipt } from "@/lib/whatsapp/message-log";
+import { claimInboundMessage } from "@/lib/whatsapp/idempotency";
+import { executeSerializedForPhone } from "@/lib/whatsapp/phone-lock";
+import { checkPhoneRateLimit } from "@/lib/whatsapp/rate-limiter";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -166,20 +170,18 @@ export async function POST(request: Request) {
         if (Array.isArray(value.messages)) {
           for (const msg of value.messages) {
             const messageId = String(msg.id || "").trim();
-
-            // Deduplicate retried webhook deliveries
-            if (messageId) {
-              const lastSeen = processedMessageIds.get(messageId);
-              if (lastSeen && nowTs - lastSeen < 30000) {
-                console.log(`[META WEBHOOK DEDUP] Dropping duplicate delivery: ${messageId}`);
-                continue;
-              }
-              processedMessageIds.set(messageId, nowTs);
-            }
-
             const rawSender = String(msg.from || "");
             const phone = normalizeWhatsAppPhone(rawSender);
             if (!phone) continue;
+
+            // Persistent Deduplication (Supabase unique constraint + L1 cache)
+            if (messageId) {
+              const isFirstDelivery = await claimInboundMessage(messageId, phone);
+              if (!isFirstDelivery) {
+                console.log(`[META WEBHOOK DEDUP] Dropping duplicate delivery via persistent idempotency: ${messageId}`);
+                continue;
+              }
+            }
 
             // Extract message text according to message type
             let text = "";
@@ -310,12 +312,33 @@ export async function POST(request: Request) {
               console.error("[META WEBHOOK RESUME ERROR]", resumeErr);
             }
 
-            // C. Dispatch to ROAD AI Concierge
-            try {
-              await processInboundWhatsAppMessage(phone, text);
-            } catch (conciergeErr) {
-              console.error("[META WEBHOOK CONCIERGE ERROR]", conciergeErr);
-            }
+            // C. Dispatch to ROAD AI Concierge in Background via Next.js after() + Distributed Serial Lock
+            after(async () => {
+              // Rate limiting & spam protection
+              const rateLimitResult = await checkPhoneRateLimit(phone, text);
+              if (!rateLimitResult.allowed) {
+                if (rateLimitResult.responseMessage) {
+                  try {
+                    await WhatsAppService.sendTextMessage(phone, rateLimitResult.responseMessage, {
+                      requestId: `rate-limit-${Date.now()}`,
+                      allowFreeformOnly: true,
+                    });
+                  } catch (rateLimitSendErr) {
+                    console.warn("[META RATE LIMIT REPLY ERROR]", rateLimitSendErr);
+                  }
+                }
+                return;
+              }
+
+              // Distributed locking ensuring strict sequential FIFO ordering per phone
+              await executeSerializedForPhone(phone, async () => {
+                try {
+                  await processInboundWhatsAppMessage(phone, text);
+                } catch (conciergeErr) {
+                  console.error("[META WEBHOOK CONCIERGE ERROR]", conciergeErr);
+                }
+              });
+            });
           }
         }
       }

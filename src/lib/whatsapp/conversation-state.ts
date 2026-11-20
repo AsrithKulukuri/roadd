@@ -6,11 +6,22 @@ export interface ConversationState {
   userId?: string | null;
   userName?: string | null;
   currentIntent: string;
+  stage?: "discovery" | "exploring" | "shortlisting" | "site_visit" | "negotiation";
+  buyingRentingIntent?: "buy" | "rent" | "invest" | "sell";
+  preferredPropertyType?: string;
+  preferredLocation?: string;
+  preferredBhk?: number;
+  minBudget?: number;
+  maxBudget?: number;
   lastSearch: Partial<ParsedSearchIntent>;
+  lastDisplayedRefIds: string[];
+  lastViewedRefId?: string | null;
   selectedPropertyId?: string | null;
+  shortlistedRefIds: string[];
   agentMode: boolean;
   activeTicketId?: string | null;
   leadId?: string | null;
+  preferredLanguage?: "en" | "te" | "tenglish";
   lastInteractionAt: string;
 }
 
@@ -34,16 +45,32 @@ export async function getConversationState(phone: string, fallbackName?: string,
       .maybeSingle();
 
     if (data) {
+      const slots = (data.slots && typeof data.slots === "object") ? data.slots : {};
       const state: ConversationState = {
         phone: data.phone,
         userId: data.user_id || fallbackUserId || null,
         userName: data.user_name || fallbackName || "Valued Member",
         currentIntent: data.current_intent || "GREETING",
+        stage: data.stage || slots.stage || "discovery",
+        buyingRentingIntent: data.buying_renting_intent || slots.buyingRentingIntent || "buy",
+        preferredPropertyType: slots.preferredPropertyType || undefined,
+        preferredLocation: slots.preferredLocation || undefined,
+        preferredBhk: slots.preferredBhk || undefined,
+        minBudget: slots.minBudget || undefined,
+        maxBudget: slots.maxBudget || undefined,
         lastSearch: (data.last_search as Partial<ParsedSearchIntent>) || {},
-        selectedPropertyId: data.selected_property_id || null,
+        lastDisplayedRefIds: Array.isArray(data.last_displayed_ref_ids)
+          ? data.last_displayed_ref_ids
+          : (Array.isArray(slots.lastDisplayedRefIds) ? slots.lastDisplayedRefIds : []),
+        lastViewedRefId: data.last_viewed_ref_id || slots.lastViewedRefId || null,
+        selectedPropertyId: data.selected_property_id || data.last_viewed_ref_id || slots.lastViewedRefId || null,
+        shortlistedRefIds: Array.isArray(data.shortlisted_ref_ids)
+          ? data.shortlisted_ref_ids
+          : (Array.isArray(slots.shortlistedRefIds) ? slots.shortlistedRefIds : []),
         agentMode: Boolean(data.agent_mode),
         activeTicketId: data.active_ticket_id || null,
         leadId: data.lead_id || null,
+        preferredLanguage: data.preferred_language || slots.preferredLanguage || "en",
         lastInteractionAt: data.last_interaction_at || new Date().toISOString(),
       };
       stateCache.set(phone, state);
@@ -58,11 +85,17 @@ export async function getConversationState(phone: string, fallbackName?: string,
     userId: fallbackUserId || null,
     userName: fallbackName || "Valued Member",
     currentIntent: "GREETING",
+    stage: "discovery",
+    buyingRentingIntent: "buy",
     lastSearch: {},
+    lastDisplayedRefIds: [],
+    lastViewedRefId: null,
     selectedPropertyId: null,
+    shortlistedRefIds: [],
     agentMode: false,
     activeTicketId: null,
     leadId: null,
+    preferredLanguage: "en",
     lastInteractionAt: new Date().toISOString(),
   };
   stateCache.set(phone, newState);
@@ -82,6 +115,20 @@ export async function updateConversationState(state: Partial<ConversationState> 
 
   stateCache.set(state.phone, merged);
 
+  const slotsPayload = {
+    stage: merged.stage,
+    buyingRentingIntent: merged.buyingRentingIntent,
+    preferredPropertyType: merged.preferredPropertyType,
+    preferredLocation: merged.preferredLocation,
+    preferredBhk: merged.preferredBhk,
+    minBudget: merged.minBudget,
+    maxBudget: merged.maxBudget,
+    lastDisplayedRefIds: merged.lastDisplayedRefIds,
+    lastViewedRefId: merged.lastViewedRefId,
+    shortlistedRefIds: merged.shortlistedRefIds,
+    preferredLanguage: merged.preferredLanguage,
+  };
+
   try {
     await supabaseAdmin.from("whatsapp_conversation_state").upsert({
       phone: merged.phone,
@@ -89,15 +136,42 @@ export async function updateConversationState(state: Partial<ConversationState> 
       user_name: merged.userName || null,
       current_intent: merged.currentIntent,
       last_search: merged.lastSearch,
-      selected_property_id: merged.selectedPropertyId || null,
+      selected_property_id: merged.selectedPropertyId || merged.lastViewedRefId || null,
       agent_mode: merged.agentMode,
       active_ticket_id: merged.activeTicketId || null,
       lead_id: merged.leadId || null,
+      last_displayed_ref_ids: merged.lastDisplayedRefIds,
+      last_viewed_ref_id: merged.lastViewedRefId || null,
+      shortlisted_ref_ids: merged.shortlistedRefIds,
+      stage: merged.stage || "discovery",
+      buying_renting_intent: merged.buyingRentingIntent || "buy",
+      slots: slotsPayload,
+      preferred_language: merged.preferredLanguage || "en",
       last_interaction_at: merged.lastInteractionAt,
       updated_at: new Date().toISOString(),
     });
   } catch (err) {
-    console.warn("[CONVERSATION STATE SAVE ERROR]", err);
+    // If table schema does not yet have newly added columns, fall back to core schema
+    try {
+      await supabaseAdmin.from("whatsapp_conversation_state").upsert({
+        phone: merged.phone,
+        user_id: merged.userId || null,
+        user_name: merged.userName || null,
+        current_intent: merged.currentIntent,
+        last_search: {
+          ...merged.lastSearch,
+          _slots: slotsPayload,
+        },
+        selected_property_id: merged.lastViewedRefId || null,
+        agent_mode: merged.agentMode,
+        active_ticket_id: merged.activeTicketId || null,
+        lead_id: merged.leadId || null,
+        last_interaction_at: merged.lastInteractionAt,
+        updated_at: new Date().toISOString(),
+      });
+    } catch (fallbackErr) {
+      console.warn("[CONVERSATION STATE SAVE ERROR]", fallbackErr);
+    }
   }
 }
 

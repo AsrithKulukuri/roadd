@@ -22,4 +22,8 @@ export class WhatsAppService {
     return trackWhatsAppSend({ phone, provider: getWhatsAppProvider(), messageType: "template", message: options?.fallbackText || JSON.stringify(options?.components || []), templateName, requestId: options?.requestId, recipientType: options?.recipientType },
       () => MetaWhatsAppService.sendTemplateMessage(phone, templateName, { ...options, components: options?.components as MetaTemplateComponent[] | undefined }));
   }
+  static sendInteractiveButtons(phone: string, bodyText: string, buttons: Array<{ id: string; title: string }>, options?: WhatsAppSendOptions) {
+    return trackWhatsAppSend({ phone, provider: getWhatsAppProvider(), messageType: "interactive", message: bodyText, requestId: options?.requestId, recipientType: options?.recipientType },
+      () => MetaWhatsAppService.sendInteractiveButtons(phone, bodyText, buttons, options));
+  }
 }

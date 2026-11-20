@@ -23,6 +23,8 @@ import { toast } from "sonner";
 import { matchesPropertySearch, matchesProjectSearch, parseSearchIntent, evaluatePropertyFilters, evaluateProjectFilters, matchesStructuredLocation, matchingProjectConfigurations, searchRelevanceScore } from "@/lib/search-engine";
 import { useIsMounted } from "@/hooks/use-is-mounted";
 import { NotifyMeModal } from "@/components/shared/notify-me-modal";
+import { findItemByRefId } from "@/lib/ref-id";
+import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
 
 type SortByOption = "relevant" | "price-asc" | "price-desc" | "newest";
 
@@ -81,6 +83,8 @@ export default function UnifiedSearchPageWrapper() {
 
 function UnifiedSearchPage() {
   const { propertiesEnabled } = useSiteFeatures();
+  const { openProject } = useProjectOpenGuard();
+  const lastRedirectedQuery = useRef<string>("");
   const searchParams = useSearchParams();
   const router = useRouter();
   
@@ -394,6 +398,25 @@ function UnifiedSearchPage() {
   const filters = useMemo(() => propertiesEnabled ? storedFilters : projectSearchFilters(storedFilters), [propertiesEnabled, storedFilters]);
 
   const [visibleCount, setVisibleCount] = useState<number>(12);
+
+  // Auto-redirect directly to project/property if search query is a matching Reference ID
+  useEffect(() => {
+    const q = filters.query?.trim();
+    if (!q || lastRedirectedQuery.current === q) return;
+
+    if (projects.length > 0 || properties.length > 0) {
+      const match = findItemByRefId(q, properties, projects);
+      if (match) {
+        lastRedirectedQuery.current = q;
+        toast.success(`🎯 Direct match for ${match.refId} (${match.title})! Opening...`);
+        if (match.type === "project") {
+          openProject(match.item);
+        } else {
+          router.push(match.url);
+        }
+      }
+    }
+  }, [filters.query, projects, properties, openProject, router]);
   const searchParamsString = searchParams.toString();
 
   useEffect(() => {
@@ -759,6 +782,20 @@ function UnifiedSearchPage() {
   }, [searchParams, activeTab, router]);
 
   const handleFilterChange = (newFilters: FilterState) => {
+    const q = newFilters.query?.trim();
+    if (q) {
+      const match = findItemByRefId(q, properties, projects);
+      if (match) {
+        lastRedirectedQuery.current = q;
+        toast.success(`🎯 Direct match for ${match.refId} (${match.title})! Opening...`);
+        if (match.type === "project") {
+          openProject(match.item);
+        } else {
+          router.push(match.url);
+        }
+        return;
+      }
+    }
     if (newFilters.cities && newFilters.cities.length > 0) {
       useLocationsStore.getState().setUserSelectedCity(newFilters.cities[0]);
     }

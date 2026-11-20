@@ -51,12 +51,24 @@ export const getPropertyRefId = getRefId;
 export const getProjectRefId = getRefId;
 
 /**
- * Checks if search text resembles a Reference ID query (e.g. "ref123", "REF-123", "#ref123", "REF 123")
+ * Checks if search text resembles a Reference ID query (e.g. "ref123", "REF-123", "#ref123", "REF 123", "ref001")
  */
 export function isRefIdQuery(query: string): boolean {
   if (!query || !query.trim()) return false;
   const raw = query.trim().toUpperCase().replace(/^#/, "").replace(/[\s-_]/g, "");
   return /^REF\d+$/i.test(raw) || /^REF-[A-Z0-9]+$/i.test(raw);
+}
+
+/**
+ * Extracts a candidate Reference ID token from user input (e.g. "show ref001" -> "ref001")
+ */
+export function extractRefToken(query: string): string | null {
+  if (!query || !query.trim()) return null;
+  const trimmed = query.trim();
+  const tokenMatch = trimmed.match(/#?REF[\s-_]*\d{1,5}[A-Z]?\b/i) || trimmed.match(/\bREF-[A-Z0-9]+\b/i);
+  if (tokenMatch) return tokenMatch[0];
+  if (isRefIdQuery(trimmed)) return trimmed;
+  return null;
 }
 
 export interface RefMatchResult {
@@ -81,7 +93,7 @@ export function findItemByRefId(
   const raw = query.trim().toUpperCase().replace(/^#/, "").replace(/[\s-_]/g, "");
   if (!raw) return null;
 
-  // 1. Search Properties
+  // 1. Direct match on Properties
   for (const p of properties) {
     const ref = getRefId(p).toUpperCase().replace(/[\s-_]/g, "");
 
@@ -119,7 +131,7 @@ export function findItemByRefId(
     }
   }
 
-  // 2. Search Projects
+  // 2. Direct match on Projects
   for (const proj of projects) {
     const ref = getRefId(proj).toUpperCase().replace(/[\s-_]/g, "");
 
@@ -154,6 +166,42 @@ export function findItemByRefId(
     }
   }
 
+  // 3. Numeric ID matching (e.g. "ref001" / "ref1" matching "REF0001", "ref003" / "ref3" matching "REF0003")
+  const refCandidate = extractRefToken(query) || (isRefIdQuery(query) ? query : null);
+  const queryNumObj = refCandidate ? extractRefNumber(refCandidate) : (isRefIdQuery(raw) ? extractRefNumber(raw) : null);
+
+  if (queryNumObj && queryNumObj.num > 0) {
+    // Projects first (official ROAD projects like REF0001, REF0002, REF0003)
+    for (const proj of projects) {
+      const ref = getRefId(proj);
+      const projNumObj = extractRefNumber(ref);
+      if (projNumObj && projNumObj.num === queryNumObj.num) {
+        return {
+          type: "project",
+          item: proj,
+          url: `/projects/${proj.slug || proj.id}`,
+          refId: ref,
+          title: proj.name,
+        };
+      }
+    }
+
+    // Properties second
+    for (const p of properties) {
+      const ref = getRefId(p);
+      const propNumObj = extractRefNumber(ref);
+      if (propNumObj && propNumObj.num === queryNumObj.num) {
+        return {
+          type: "property",
+          item: p,
+          url: `/properties/${p.slug || p.id}`,
+          refId: ref,
+          title: p.title,
+        };
+      }
+    }
+  }
+
   return null;
 }
 
@@ -179,6 +227,19 @@ export function findPropertyByRefId<T extends { id: string; slug?: string; title
       return p;
     }
   }
+
+  const refCandidate = extractRefToken(query) || (isRefIdQuery(query) ? query : null);
+  const queryNumObj = refCandidate ? extractRefNumber(refCandidate) : (isRefIdQuery(raw) ? extractRefNumber(raw) : null);
+  if (queryNumObj && queryNumObj.num > 0) {
+    for (const p of properties) {
+      const ref = getRefId(p);
+      const propNumObj = extractRefNumber(ref);
+      if (propNumObj && propNumObj.num === queryNumObj.num) {
+        return p;
+      }
+    }
+  }
+
   return null;
 }
 

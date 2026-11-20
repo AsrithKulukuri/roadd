@@ -2,6 +2,7 @@ import type { Property } from "@/types/property";
 import type { Project, ProjectConfig } from "@/types/project";
 import { isCrdaVerified } from "@/lib/listing-quality";
 import type { FilterState } from "@/components/search/search-filters";
+import { extractRefNumber, extractRefToken, isRefIdQuery, getRefId } from "@/lib/ref-id";
 
 /** Older configurations can have a BHK label without the numeric bedrooms field. */
 function configurationBedrooms(config: ProjectConfig): number {
@@ -593,11 +594,22 @@ export function matchesProjectSearch(project: Project, query: string, parsedInte
   const possessionText = `${project.possessionDate || ""} ${(project.location as any)?.possessionDate || ""}`.toLowerCase();
   const areaText = `${project.totalArea || ""} ${(project.location as any)?.totalArea || ""}`.toLowerCase();
 
-  // Instant direct match if query matches project's Ref ID directly
-  const cleanRef = refText.replace(/[\s-_]/g, "");
-  const cleanNorm = norm.replace(/[\s-_]/g, "");
-  if (cleanNorm && [project.refId, project.location?.refId].some(ref => ref && String(ref).toLowerCase().replace(/[\s-_]/g, "") === cleanNorm)) {
-    return true;
+  // Instant direct match if query matches project's Ref ID directly or numerically (e.g. "ref001" -> "REF0001")
+  const projRef = getRefId(project) || project.refId || (project.location as any)?.refId;
+  if (projRef) {
+    const cleanRef = String(projRef).toLowerCase().replace(/[\s-_]/g, "");
+    const cleanNorm = norm.replace(/[\s-_]/g, "");
+    if (cleanNorm && (cleanNorm === cleanRef || cleanRef.replace("ref", "") === cleanNorm || `ref${cleanRef.replace("ref", "")}` === cleanNorm)) {
+      return true;
+    }
+    const token = extractRefToken(query) || (isRefIdQuery(cleanNorm) ? cleanNorm : null);
+    if (token) {
+      const qNum = extractRefNumber(token);
+      const pNum = extractRefNumber(cleanRef);
+      if (qNum && pNum && qNum.num === pNum.num) {
+        return true;
+      }
+    }
   }
 
   const fullCorpus = `${titleAndDesc} ${locationText} ${builderText} ${projectTypeText} ${configsText} ${tagsText} ${refText} ${possessionText} ${areaText}`;
@@ -721,6 +733,24 @@ export function matchesPropertySearch(property: Property, query: string, parsedI
   const titleAndDesc = `${property.title || ""} ${property.description || ""}`.toLowerCase();
 
   const fullCorpus = `${titleAndDesc} ${locationText} ${ownerText} ${propertyTypeText} ${bhkText} ${tagsText}`;
+
+  // Instant direct match if query matches property's Ref ID directly or numerically (e.g. "ref001" -> "REF0001")
+  const propRef = getRefId(property) || property.refId || (property.location as any)?.refId;
+  if (propRef) {
+    const cleanRef = String(propRef).toLowerCase().replace(/[\s-_]/g, "");
+    const cleanNorm = (intent?.normalizedQuery || query).toLowerCase().replace(/[\s-_]/g, "");
+    if (cleanNorm && (cleanNorm === cleanRef || cleanRef.replace("ref", "") === cleanNorm || `ref${cleanRef.replace("ref", "")}` === cleanNorm)) {
+      return true;
+    }
+    const token = extractRefToken(query) || (isRefIdQuery(cleanNorm) ? cleanNorm : null);
+    if (token) {
+      const qNum = extractRefNumber(token);
+      const pNum = extractRefNumber(cleanRef);
+      if (qNum && pNum && qNum.num === pNum.num) {
+        return true;
+      }
+    }
+  }
 
   // 1. Property Type intent constraint (e.g. searching "apartment" MUST NOT return plots or lands)
   if (intent.propertyTypes.length > 0) {

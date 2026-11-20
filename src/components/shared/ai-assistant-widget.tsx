@@ -3,22 +3,31 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X, Send, Bot, User, Loader2, MessageCircle } from "lucide-react";
+import { Sparkles, X, Send, Bot, User, Loader2, MessageCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { usePropertiesStore } from "@/stores/properties-store";
+import { useProjectsStore } from "@/stores/projects-store";
+import { findItemByRefId, isRefIdQuery } from "@/lib/ref-id";
+import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
 
 interface Message {
   id: string;
   role: "assistant" | "user";
   content: string;
+  actionUrl?: string;
+  actionLabel?: string;
 }
 
 export function AiAssistantWidget() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const properties = usePropertiesStore((s) => s.properties);
+  const projects = useProjectsStore((s) => s.projects);
+  const { openProject } = useProjectOpenGuard();
   const isMapView = (pathname === "/search" && searchParams?.get("view") === "map") || pathname === "/properties/map";
   const isDetailPage = 
     (pathname.startsWith("/properties/") && pathname !== "/properties" && pathname !== "/properties/map") ||
@@ -61,6 +70,13 @@ export function AiAssistantWidget() {
       document.documentElement.setAttribute("data-ai-assistant-open", "true");
       if (window.innerWidth < 640) {
         document.body.style.overflow = "hidden";
+      }
+      // Pre-warm projects and properties cache as soon as widget opens
+      if (useProjectsStore.getState().projects.length === 0) {
+        void useProjectsStore.getState().fetchProjects();
+      }
+      if (usePropertiesStore.getState().properties.length === 0) {
+        void usePropertiesStore.getState().fetchProperties();
       }
     } else {
       document.documentElement.removeAttribute("data-ai-assistant-open");
@@ -107,10 +123,87 @@ export function AiAssistantWidget() {
 
   const performSearch = async (userMsg: string) => {
     if (isLoading) return;
-    setMessages(prev => [...prev, { id: Date.now().toString(), role: "user", content: userMsg }]);
+    const trimmed = userMsg.trim();
+    if (!trimmed) return;
+
+    setMessages(prev => [...prev, { id: Date.now().toString(), role: "user", content: trimmed }]);
     setIsLoading(true);
 
     try {
+      // 1. Direct Reference ID Matching (e.g. "ref0001", "REF0003", "#ref0003", "show ref0001", "REF-0003")
+      const refTokenMatch = trimmed.match(/#?REF[\s-_]*\d{1,5}[A-Z]?\b/i) || trimmed.match(/\bREF-[A-Z0-9]+\b/i);
+      const extractedRef = refTokenMatch ? refTokenMatch[0] : (isRefIdQuery(trimmed) ? trimmed : null);
+      const isRefLike = Boolean(extractedRef || isRefIdQuery(trimmed));
+
+      if (isRefLike) {
+        let currentProjects = projects.length > 0 ? projects : useProjectsStore.getState().projects;
+        let currentProperties = properties.length > 0 ? properties : usePropertiesStore.getState().properties;
+
+        if (currentProjects.length === 0) {
+          try {
+            await useProjectsStore.getState().fetchProjects();
+            currentProjects = useProjectsStore.getState().projects;
+          } catch {}
+        }
+        if (currentProperties.length === 0) {
+          try {
+            await usePropertiesStore.getState().fetchProperties();
+            currentProperties = usePropertiesStore.getState().properties;
+          } catch {}
+        }
+
+        const queryToTest = extractedRef || trimmed;
+        let refMatch = findItemByRefId(queryToTest, currentProperties, currentProjects);
+        if (!refMatch && extractedRef && extractedRef !== trimmed) {
+          refMatch = findItemByRefId(trimmed, currentProperties, currentProjects);
+        }
+
+        if (refMatch) {
+          const targetTitle = refMatch.title || (refMatch.item as any)?.name || "Listing";
+          const targetRef = refMatch.refId;
+          const targetUrl = refMatch.url;
+
+          setMessages(prev => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: `🎯 Found **${targetRef}**: **${targetTitle}**! Redirecting you to complete details...`,
+              actionUrl: targetUrl,
+              actionLabel: `View ${targetRef} (${targetTitle})`,
+            },
+          ]);
+
+          toast.success(`🎯 Direct match for ${targetRef} (${targetTitle})! Opening...`);
+          setIsLoading(false);
+
+          setTimeout(() => {
+            setIsOpen(false);
+            if (refMatch.type === "project") {
+              openProject(refMatch.item as any);
+            } else {
+              router.push(targetUrl);
+            }
+          }, 800);
+          return;
+        }
+
+        const isDirectRefOnly = isRefIdQuery(trimmed) || /^(show|open|go to|view|find)?\s*#?REF[\s-_]*\d{1,5}[A-Z]?$/i.test(trimmed);
+        if (isDirectRefOnly) {
+          const queryLabel = (extractedRef || trimmed).toUpperCase().replace(/^#/, "");
+          setMessages(prev => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: `I couldn't find any property or project matching Reference ID **${queryLabel}**. Please verify the Ref ID (e.g. REF0001, REF0002, REF0003), or tell me what location, BHK, or budget you're looking for!`,
+            },
+          ]);
+          setIsLoading(false);
+          return;
+        }
+      }
+
       // Build a string representation of the conversation history for context
       const historyContext = messages
         .map(m => `${m.role.toUpperCase()}: ${m.content}`)
@@ -119,7 +212,7 @@ export function AiAssistantWidget() {
       const response = await fetch("/api/ai-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: userMsg, history: historyContext }),
+        body: JSON.stringify({ prompt: trimmed, history: historyContext }),
       });
 
       const data = await response.json();
@@ -136,6 +229,45 @@ export function AiAssistantWidget() {
         ]);
         toast.error(errorMsg);
         return;
+      }
+
+      // 2. If AI detected a refId in conversational text
+      if (data.refId) {
+        let currentProperties = properties;
+        let currentProjects = projects;
+        if (currentProjects.length === 0) currentProjects = useProjectsStore.getState().projects;
+        if (currentProperties.length === 0) currentProperties = usePropertiesStore.getState().properties;
+
+        const refMatch = findItemByRefId(data.refId, currentProperties, currentProjects);
+        if (refMatch) {
+          const targetTitle = refMatch.title || (refMatch.item as any)?.name || "Listing";
+          const targetRef = refMatch.refId;
+          const targetUrl = refMatch.url;
+
+          setMessages(prev => [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              role: "assistant",
+              content: data.messageToUser || `🎯 Found **${targetRef}**: **${targetTitle}**! Redirecting you now...`,
+              actionUrl: targetUrl,
+              actionLabel: `View ${targetRef} (${targetTitle})`,
+            },
+          ]);
+
+          toast.success(`🎯 Direct match for ${targetRef} (${targetTitle})! Opening...`);
+          setIsLoading(false);
+
+          setTimeout(() => {
+            setIsOpen(false);
+            if (refMatch.type === "project") {
+              openProject(refMatch.item as any);
+            } else {
+              router.push(targetUrl);
+            }
+          }, 800);
+          return;
+        }
       }
 
       // Add AI response message
@@ -330,7 +462,28 @@ export function AiAssistantWidget() {
                       ? 'bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-tl-xs shadow-2xs' 
                       : 'bg-slate-950 text-white font-medium rounded-tr-xs shadow-2xs'
                   }`}>
-                    {msg.content}
+                    <div>
+                      {msg.content.split(/(\*\*.*?\*\*)/g).map((part, i) =>
+                        part.startsWith("**") && part.endsWith("**") ? (
+                          <strong key={i} className="font-bold text-slate-950 dark:text-white">{part.slice(2, -2)}</strong>
+                        ) : (
+                          part
+                        )
+                      )}
+                    </div>
+                    {msg.actionUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsOpen(false);
+                          router.push(msg.actionUrl!);
+                        }}
+                        className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs transition-transform active:scale-95 cursor-pointer"
+                      >
+                        <span>{msg.actionLabel || "View Details"}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -345,6 +498,7 @@ export function AiAssistantWidget() {
                 >
                   <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 pl-0.5">Quick searches:</p>
                   {[
+                    "REF0003 (Dwaraka Heights)",
                     "Find me a 3 BHK in Benz Circle",
                     "Show me Villas under 2 Cr in Vijayawada",
                     "Apartments for rent in Patamata",

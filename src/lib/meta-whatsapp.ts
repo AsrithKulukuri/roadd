@@ -231,15 +231,15 @@ export class MetaWhatsAppService {
             (classified.statusCode >= 500 && classified.statusCode <= 599));
 
         if (isRetryable) {
-          const delayMs = 1000 * attempts;
+          const delayMs = 1000 * Math.pow(2, attempts - 1);
           console.warn(
-            `[META WHATSAPP ${meta.logPrefix}] Request failed with ${classified.statusCode}. Retrying in ${delayMs}ms (attempt ${attempts}/${maxAttempts})...`
+            `[META WHATSAPP ${meta.logPrefix}] Request failed with ${classified.statusCode}. Retrying with exponential backoff in ${delayMs}ms (attempt ${attempts}/${maxAttempts})...`
           );
           await new Promise((r) => setTimeout(r, delayMs));
           continue;
         }
 
-        console.error(`[META WHATSAPP ${meta.logPrefix}] Failed:`, classified.error);
+        console.error(`[META PERMANENT SEND FAILURE ${meta.logPrefix}] Code: ${classified.statusCode}, Category: ${classified.errorCategory}, Error: ${classified.error}`);
         return {
           success: false,
           error: classified.error,
@@ -675,5 +675,88 @@ export class MetaWhatsAppService {
       startTime,
       logPrefix: "TEMPLATE",
     });
+  }
+
+  /**
+   * Send Interactive Quick-Reply Buttons (up to 3 buttons) via Meta WhatsApp Cloud API.
+   * Falls back to text message if interactive buttons are rejected or unsupported.
+   */
+  static async sendInteractiveButtons(
+    phone: string,
+    bodyText: string,
+    buttons: Array<{ id: string; title: string }>,
+    options?: MetaSendOptions
+  ): Promise<WhatsAppExecutionResult> {
+    const startTime = Date.now();
+    const requestId = options?.requestId || `meta-interactive-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const cleanPhone = formatWhatsAppPhone(phone);
+
+    if (!cleanPhone || cleanPhone.length < 10) {
+      return {
+        success: false,
+        error: "Invalid recipient phone number",
+        errorCategory: "INVALID_PHONE",
+        durationMs: Date.now() - startTime,
+      };
+    }
+
+    const mode = getMetaWhatsAppMode("notification");
+
+    if (mode === "disabled") {
+      return {
+        success: false,
+        error: "Meta WhatsApp interactive messaging is disabled.",
+        errorCategory: "CONFIG_ERROR",
+        durationMs: Date.now() - startTime,
+      };
+    }
+
+    if (mode === "mock") {
+      console.log(`[META MOCK INTERACTIVE] Simulated buttons to ${maskPhone(cleanPhone)}: "${bodyText.slice(0, 40)}" [${buttons.map(b => b.title).join(", ")}]`);
+      return {
+        success: true,
+        message: "Meta WhatsApp interactive delivery simulated (QA mode)",
+        id: `mock-meta-interactive-${Date.now()}`,
+        simulated: true,
+        statusCode: 200,
+        durationMs: Date.now() - startTime,
+      };
+    }
+
+    const formattedButtons = buttons.slice(0, 3).map((btn) => ({
+      type: "reply",
+      reply: {
+        id: btn.id.slice(0, 256),
+        title: btn.title.slice(0, 20),
+      },
+    }));
+
+    const payload = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: cleanPhone,
+      type: "interactive",
+      interactive: {
+        type: "button",
+        body: {
+          text: bodyText.slice(0, 1024),
+        },
+        action: {
+          buttons: formattedButtons,
+        },
+      },
+    };
+
+    const res = await this.executeGraphApi(payload, {
+      requestId,
+      mode,
+      startTime,
+      logPrefix: "INTERACTIVE_BUTTONS",
+    });
+
+    if (res.success) return res;
+
+    // Fall back to direct freeform text if interactive buttons are rejected
+    return this.sendTextMessage(cleanPhone, bodyText, { ...options, allowFreeformOnly: true });
   }
 }

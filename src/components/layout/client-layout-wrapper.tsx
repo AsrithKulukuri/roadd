@@ -91,7 +91,7 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
             <ConditionalFooter />
           </Suspense>
           <Suspense fallback={null}>
-            {propertiesEnabled && <AiAssistantWidget />}
+            <AiAssistantWidget />
           </Suspense>
           <Suspense fallback={null}>
             <MobileBottomNav />

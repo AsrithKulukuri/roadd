@@ -47,9 +47,13 @@ const responseSchema: Schema = {
     messageToUser: {
       type: Type.STRING,
       description: "A friendly, conversational response to the user acknowledging their request (e.g. 'Sure! Looking for 3 BHK villas under ₹2 Cr in Jubilee Hills...'). Max 2 sentences.",
+    },
+    refId: {
+      type: Type.STRING,
+      description: "If the user query is or mentions a Reference ID (e.g. 'REF0001', 'REF0003', 'ref 0002', 'REF-0003'), extract the normalized Reference ID (e.g. 'REF0001', 'REF0003'). If none mentioned, return empty string.",
     }
   },
-  required: ["location", "propertyType", "budget", "bhk", "isSearch", "messageToUser"],
+  required: ["location", "propertyType", "budget", "bhk", "isSearch", "messageToUser", "refId"],
 };
 
 interface ClassifiedAiError {
@@ -178,9 +182,10 @@ Rules:
 2. If they mention a location like 'Gachibowli' or 'Banjara Hills', set location to that string.
 3. If they specify BHK (e.g. '3bhk', '3 bedroom'), set bhk accordingly ('1', '2', '3', '4', '5+', or 'any').
 4. If they give a budget constraint, extract numeric [min, max] in INR.
-5. If the user is just saying 'hello', 'who are you', or asking general questions, set isSearch to false and give a helpful messageToUser introducing yourself as the ROADFACING AI assistant.
-6. Provide a concise, warm messageToUser reflecting what you are searching for or responding to them.
-7. Consider previous conversation context when parsing intent: ${String(history).slice(0, 1000)}`;
+5. If the user mentions or asks for a Reference ID (e.g. 'REF0001', 'ref0003', 'ref 0002'), extract it into refId, set isSearch to true, and acknowledge it in messageToUser (e.g. 'Opening details for Reference ID REF0003...').
+6. If the user is just saying 'hello', 'who are you', or asking general questions, set isSearch to false and give a helpful messageToUser introducing yourself as the ROADFACING AI assistant.
+7. Provide a concise, warm messageToUser reflecting what you are searching for or responding to them.
+8. Consider previous conversation context when parsing intent: ${String(history).slice(0, 1000)}`;
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const fullPrompt = `${systemPrompt}\n\nUser Query: "${cleanPrompt}"`;
