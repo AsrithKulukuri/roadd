@@ -111,7 +111,7 @@ export async function lookupExactRefId(normalizedRef: string): Promise<{
   const num = digitsMatch ? parseInt(digitsMatch[0], 10) : null;
 
   try {
-    // 1. Exact query in projects table
+    // 1. Exact query in projects table (Only projects are visible on the platform)
     const { data: dbProjects } = await supabaseAdmin
       .from("projects")
       .select("*")
@@ -135,31 +135,6 @@ export async function lookupExactRefId(normalizedRef: string): Promise<{
           refId: actualRef,
         };
       }
-    }
-
-    // 2. Exact query in properties table
-    const { data: dbProps } = await supabaseAdmin
-      .from("properties")
-      .select("*")
-      .limit(100);
-
-    const allProps = dbProps && dbProps.length > 0 ? dbProps : mockProperties;
-    const propMatch = allProps.find((p) => {
-      const r = String(p.refId || p.ref_id || (p.location as any)?.refId || "").toUpperCase().replace(/[\s-_]/g, "");
-      if (r === cleanRef) return true;
-      if (num && extractRefNumber(r)?.num === num) return true;
-      if (String(p.id || "").toUpperCase() === cleanRef || String(p.slug || "").toUpperCase() === cleanRef) return true;
-      return false;
-    });
-
-    if (propMatch) {
-      const actualRef = propMatch.refId || cleanRef;
-      return {
-        type: "property",
-        item: propMatch,
-        canonicalUrl: getListingCanonicalUrl("property", propMatch.slug || propMatch.id),
-        refId: actualRef,
-      };
     }
   } catch (err) {
     console.error("[REF ID LOOKUP ERROR]", err);
@@ -404,33 +379,24 @@ async function searchLiveListings(queryText: string, parsedIntent: ParsedSearchI
   }
 
   try {
-    const [{ data: dbProps }, { data: dbProjects }] = await Promise.all([
-      supabaseAdmin
-        .from("properties")
-        .select("id, slug, ref_id, title, description, price, price_numeric, location, city, locality, bedrooms, property_type, listing_type, hero_image, images, is_verified, status")
-        .limit(100),
-      supabaseAdmin
-        .from("projects")
-        .select("id, slug, ref_id, name, title, description, location, city, locality, min_price, max_price, configurations, construction_status, status, hero_image, images, rera_id, is_verified, approval_authority")
-        .limit(100),
-    ]);
+    const { data: dbProjects } = await supabaseAdmin
+      .from("projects")
+      .select("id, slug, ref_id, name, title, description, location, city, locality, min_price, max_price, configurations, construction_status, status, hero_image, images, rera_id, is_verified, approval_authority")
+      .limit(100);
 
-    const allProperties: any[] = dbProps && dbProps.length > 0 ? dbProps : mockProperties;
     const allProjects: any[] = dbProjects && dbProjects.length > 0 ? dbProjects : [];
-
-    const matchedProperties = allProperties.filter((p) => matchesPropertySearch(p as Property, queryText, parsedIntent));
     const matchedProjects = allProjects.filter((p) => matchesProjectSearch(p as Project, queryText, parsedIntent));
 
-    if (matchedProperties.length > 0 || matchedProjects.length > 0) {
+    if (matchedProjects.length > 0) {
       return {
-        properties: matchedProperties,
+        properties: [],
         projects: matchedProjects,
         allProjects,
-        allProperties,
+        allProperties: [],
       };
     }
 
-    // Precise fallback: Only return items matching the exact location/BHK/budget criteria
+    // Precise fallback: Only return projects matching the exact location/BHK/budget criteria
     const fallbackProjects = allProjects.filter((p) => {
       const locText = formatLocation(p).toLowerCase();
       const nameText = `${p.name || ""} ${p.title || ""}`.toLowerCase();
@@ -455,26 +421,11 @@ async function searchLiveListings(queryText: string, parsedIntent: ParsedSearchI
       return true;
     });
 
-    const fallbackProps = allProperties.filter((p) => {
-      const locText = formatLocation(p).toLowerCase();
-      const titleText = (p.title || "").toLowerCase();
-
-      if (parsedIntent.locationKeywords.length > 0) {
-        const matchesLoc = parsedIntent.locationKeywords.some((loc) => locText.includes(loc) || titleText.includes(loc));
-        if (!matchesLoc) return false;
-      }
-      if (parsedIntent.bhks.length > 0) {
-        if (!p.bedrooms || !parsedIntent.bhks.includes(p.bedrooms)) return false;
-      }
-      if (parsedIntent.maxPrice && typeof p.price === "number" && p.price > parsedIntent.maxPrice) return false;
-      return true;
-    });
-
     return {
-      properties: fallbackProps,
+      properties: [],
       projects: fallbackProjects,
       allProjects,
-      allProperties,
+      allProperties: [],
     };
   } catch (err) {
     console.error("[CONCIERGE DB SEARCH ERROR]", err);
@@ -1305,18 +1256,17 @@ export async function processInboundWhatsAppMessage(
     };
   }
 
-  // 12. Search Database Listings with Strict Count Integrity
-  const { properties, projects } = await searchLiveListings(text, searchEngineIntent);
-  const totalMatches = properties.length + projects.length;
+  // 12. Search Database Listings with Strict Count Integrity (SHOW ONLY PROJECTS, PROPERTIES ARE HIDDEN)
+  const { projects } = await searchLiveListings(text, searchEngineIntent);
+  const totalMatches = projects.length;
 
   if (totalMatches > 0) {
-    const topProjects = projects.slice(0, 2);
-    const topProps = properties.slice(0, 2);
-    const renderedItems = [...topProjects, ...topProps];
+    const topProjects = projects.slice(0, 3);
+    const renderedItems = topProjects;
     const renderedCount = renderedItems.length;
 
     // Strict Count Integrity: "Found N" must strictly equal the number of items rendered
-    let responseText = repeatNoticePrefix + `🏡 *Found ${renderedCount} verified listing${renderedCount > 1 ? "s" : ""} matching your search:*\n\n`;
+    let responseText = repeatNoticePrefix + `🏡 *Found ${renderedCount} verified project listing${renderedCount > 1 ? "s" : ""} matching your search:*\n\n`;
 
     topProjects.forEach((proj: any, idx) => {
       const projName = str(proj.name) || str(proj.title) || "Featured Project";
@@ -1349,24 +1299,8 @@ export async function processInboundWhatsAppMessage(
       responseText += `🔗 *View Project:* ${getListingCanonicalUrl("project", projSlug)}\n\n`;
     });
 
-    topProps.forEach((p: any, idx) => {
-      const title = str(p.title) || `${p.bedrooms || 2} BHK Property`;
-      const price = typeof p.price === "number" ? formatPriceCompact(p.price) : "Contact for Price";
-      const loc = formatLocation(p);
-      const slug = str(p.slug) || str(p.id);
-      const propRef = p.refId || "";
-
-      responseText += `🏠 *${topProjects.length + idx + 1}. ${title}*\n`;
-      if (propRef) responseText += `🆔 *Ref ID:* ${propRef}\n`;
-      responseText += `💰 *Price:* ${price}\n`;
-      if (loc) responseText += `📍 *Location:* ${loc}\n`;
-      if (p.bedrooms) responseText += `🛏️ *Bedrooms:* ${p.bedrooms} BHK\n`;
-      if (p.area) responseText += `📐 *Area:* ${p.area} sq.ft\n`;
-      responseText += `🔗 *View Details:* ${getListingCanonicalUrl("property", slug)}\n\n`;
-    });
-
     if (totalMatches > renderedCount) {
-      responseText += `🔍 *View all ${totalMatches} matching verified properties on ROAD:*\n${siteUrl}/search?q=${encodeURIComponent(text)}\n\n`;
+      responseText += `🔍 *View all ${totalMatches} matching verified projects on ROAD:*\n${siteUrl}/search?q=${encodeURIComponent(text)}\n\n`;
     }
 
     if (!registeredUser) {
@@ -1378,8 +1312,6 @@ export async function processInboundWhatsAppMessage(
     let heroImage = "";
     if (topProjects.length > 0) {
       heroImage = extractHeroImage(topProjects[0]);
-    } else if (topProps.length > 0) {
-      heroImage = extractHeroImage(topProps[0]);
     }
 
     let imageSent = false;
