@@ -255,7 +255,7 @@ export async function POST(request: Request) {
               continue;
             }
 
-            // B. Opt-In / Resubscribe (YES, START, RESUME)
+            // B. Opt-In / Resubscribe (YES, START, RESUME) - only check DB if user sent explicit opt-in keyword
             const isExplicitResumeKeyword = [
               "YES",
               "START",
@@ -267,35 +267,33 @@ export async function POST(request: Request) {
               "OPTIN",
             ].includes(normalizedKeyword);
 
-            const isResumeKeyword = isExplicitResumeKeyword || ["HI", "HELLO"].includes(normalizedKeyword);
-
-            try {
-              const { data: existingContact } = await supabaseAdmin
-                .from("whatsapp_contacts")
-                .select("id, is_subscribed, opted_out_at, restriction_until")
-                .eq("phone", phone)
-                .maybeSingle();
-
-              const wasOptedOut =
-                existingContact &&
-                (!existingContact.is_subscribed ||
-                  existingContact.opted_out_at ||
-                  existingContact.restriction_until);
-
-              if (wasOptedOut && (isResumeKeyword || cleanText.length > 0)) {
-                await supabaseAdmin
+            if (isExplicitResumeKeyword) {
+              try {
+                const { data: existingContact } = await supabaseAdmin
                   .from("whatsapp_contacts")
-                  .update({
-                    is_subscribed: true,
-                    opted_out_at: null,
-                    restriction_until: null,
-                    opted_in_at: now,
-                    consent_source: "whatsapp_user_keyword_meta",
-                    updated_at: now,
-                  })
-                  .eq("phone", phone);
+                  .select("id, is_subscribed, opted_out_at, restriction_until")
+                  .eq("phone", phone)
+                  .maybeSingle();
 
-                if (isExplicitResumeKeyword) {
+                const wasOptedOut =
+                  existingContact &&
+                  (!existingContact.is_subscribed ||
+                    existingContact.opted_out_at ||
+                    existingContact.restriction_until);
+
+                if (wasOptedOut) {
+                  await supabaseAdmin
+                    .from("whatsapp_contacts")
+                    .update({
+                      is_subscribed: true,
+                      opted_out_at: null,
+                      restriction_until: null,
+                      opted_in_at: now,
+                      consent_source: "whatsapp_user_keyword_meta",
+                      updated_at: now,
+                    })
+                    .eq("phone", phone);
+
                   try {
                     await WhatsAppService.sendTextMessage(
                       phone,
@@ -307,9 +305,9 @@ export async function POST(request: Request) {
                   }
                   continue;
                 }
+              } catch (resumeErr) {
+                console.error("[META WEBHOOK RESUME ERROR]", resumeErr);
               }
-            } catch (resumeErr) {
-              console.error("[META WEBHOOK RESUME ERROR]", resumeErr);
             }
 
             // C. Dispatch to ROAD AI Concierge in Background via Next.js after() + Distributed Serial Lock

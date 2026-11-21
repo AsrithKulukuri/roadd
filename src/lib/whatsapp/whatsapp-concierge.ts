@@ -635,19 +635,32 @@ export async function processInboundWhatsAppMessage(
 
   const siteUrl = getPublicSiteUrl();
 
-  // 1. Concurrently log incoming message, fetch conversation history, and identify user profile
+  // 1. Fetch conversation history, profile, active support ticket, and state concurrently in 1 roundtrip
   const [
     recentHistory,
     registeredUser,
+    activeTicketRes,
+    convState,
   ] = await Promise.all([
     getRecentConversationHistory(cleanPhone, 6),
     getRegisteredUserByPhone(cleanPhone),
-    logConversation({
-      phone: cleanPhone,
-      role: "user",
-      message: text,
-    }),
+    supabaseAdmin
+      .from("whatsapp_support_tickets")
+      .select("id, status, assigned_to, assigned_name")
+      .eq("phone", cleanPhone)
+      .in("status", ["open", "in_progress"])
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    getConversationState(cleanPhone),
   ]);
+
+  // Non-blocking background logging
+  logConversation({
+    phone: cleanPhone,
+    role: "user",
+    message: text,
+  }).catch((err) => console.warn("[NON_BLOCKING_LOG_WARN]", err));
 
   const { historyText, lastUserMessage, lastAssistantMessage } = recentHistory;
   const rawUserName = registeredUser?.name || "";
@@ -659,7 +672,7 @@ export async function processInboundWhatsAppMessage(
     const nameCandidate = text.replace(/^(?:my name is|i am|i'm|this is|call me)\s*/i, "").trim();
     if (nameCandidate && nameCandidate.length >= 2 && nameCandidate.length <= 30 && !/^(?:hi|hello|hey|help|agent|bot|ref\d+)/i.test(nameCandidate)) {
       effectiveUserName = nameCandidate;
-      await safelyUpsertContact(cleanPhone, effectiveUserName);
+      safelyUpsertContact(cleanPhone, effectiveUserName).catch(() => {});
 
       const welcomeNamedMsg = `👋 *Nice to meet you, ${effectiveUserName}!* Welcome to ROADFACING Concierge 🏡\n\nI am your 24/7 personal real estate assistant. How can I help you find your dream property today?\n\n*Try asking:*\n• _"3 bhk in Poranki under 80 Lakhs"_\n• _"Flats in Vijayawada under 1 Crore"_\n• _"Avenue Serene project"_\n• _"REF0001"_`;
       await WhatsAppService.sendTextMessage(cleanPhone, welcomeNamedMsg, {
@@ -667,13 +680,13 @@ export async function processInboundWhatsAppMessage(
         allowFreeformOnly: true,
       });
 
-      await logConversation({
+      logConversation({
         phone: cleanPhone,
         userName: effectiveUserName,
         role: "assistant",
         message: welcomeNamedMsg,
         intent: "name_introduced",
-      });
+      }).catch(() => {});
 
       return {
         handled: true,
@@ -684,8 +697,8 @@ export async function processInboundWhatsAppMessage(
     }
   }
 
-  // Auto-record/update in whatsapp_contacts
-  await safelyUpsertContact(cleanPhone, effectiveUserName);
+  // Non-blocking background contact upsert
+  safelyUpsertContact(cleanPhone, effectiveUserName).catch(() => {});
 
   const norm = text.toLowerCase().trim();
 
@@ -737,14 +750,14 @@ export async function processInboundWhatsAppMessage(
       allowFreeformOnly: true,
     });
 
-    await logConversation({
+    logConversation({
       phone: cleanPhone,
       userId: registeredUser?.id,
       userName: callerName,
       role: "assistant",
       message: humanAck,
       intent: "human_agent_escalation",
-    });
+    }).catch(() => {});
 
     return {
       handled: true,
@@ -756,15 +769,7 @@ export async function processInboundWhatsAppMessage(
   }
 
   // 6. Check if an agent is currently in an active 1-on-1 chat session
-  const { data: activeTicket } = await supabaseAdmin
-    .from("whatsapp_support_tickets")
-    .select("id, status, assigned_to, assigned_name")
-    .eq("phone", cleanPhone)
-    .in("status", ["open", "in_progress"])
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
+  const activeTicket = activeTicketRes?.data;
   if (activeTicket && activeTicket.status === "in_progress") {
     await supabaseAdmin
       .from("whatsapp_support_tickets")
@@ -785,7 +790,6 @@ export async function processInboundWhatsAppMessage(
   // =========================================================================
   // 6a. SITE VISIT SCHEDULING (Date/Time Slot Selection & Booking Confirmation)
   // =========================================================================
-  const convState = await getConversationState(cleanPhone, effectiveUserName, registeredUser?.id);
   if (isSiteVisitIntent(text)) {
     const booking = await handleSiteVisitBooking({
       phone: cleanPhone,
