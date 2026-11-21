@@ -15,7 +15,9 @@ export function loadGoogleMaps(): Promise<void> {
   if (mapsWindow.google?.maps?.Map) return Promise.resolve();
   if (loading) return loading;
 
-  const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
+  const key =
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
   if (!key) return Promise.reject(new Error("Google Maps key is missing"));
 
   loading = new Promise<void>((resolve, reject) => {

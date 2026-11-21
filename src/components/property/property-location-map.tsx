@@ -1,50 +1,10 @@
 "use client";
 
-import { GoogleMapLayer } from "@/components/map/google-map-layer";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { MapContainer, Marker, Popup, useMap, Circle } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/hooks/use-auth-session";
-
-// Fix for default marker icons in Leaflet with Next.js
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
-});
-
-// Custom icons
-const userIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-const propertyIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-// Helper component to adjust zoom when user location is found
-function FitBounds({ userPos, propPos }: { userPos: L.LatLng, propPos: L.LatLng }) {
-  const map = useMap();
-  useEffect(() => {
-    const bounds = L.latLngBounds([userPos, propPos]);
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14, animate: false });
-  }, [map, userPos.lat, userPos.lng, propPos.lat, propPos.lng]);
-  return null;
-}
+import { GoogleMap, type GoogleMapMarker } from "@/components/map/google-map";
 
 interface PropertyLocationMapProps {
   latitude: number;
@@ -52,47 +12,88 @@ interface PropertyLocationMapProps {
   title: string;
 }
 
-export default function PropertyLocationMap({ latitude, longitude, title }: PropertyLocationMapProps) {
+function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+export default function PropertyLocationMap({
+  latitude,
+  longitude,
+  title,
+}: PropertyLocationMapProps) {
   const router = useRouter();
-  const { isLoggedIn, getLoginUrl } = useAuthSession();
-  const [userLocation, setUserLocation] = useState<L.LatLng | null>(null);
+  const { isLoggedIn } = useAuthSession();
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [distance, setDistance] = useState<string | null>(null);
-  
-  const propertyPos = useMemo(() => new L.LatLng(latitude, longitude), [latitude, longitude]);
+
+  const safeLat = typeof latitude === "number" && !isNaN(latitude) && latitude !== 0 ? latitude : 16.5062;
+  const safeLng = typeof longitude === "number" && !isNaN(longitude) && longitude !== 0 ? longitude : 80.648;
 
   useEffect(() => {
     if (typeof window === "undefined" || !navigator.geolocation) return;
 
-    // 1. Check cached coordinates in sessionStorage for instant calculation
+    // Check cached coordinates
     try {
       const cached = sessionStorage.getItem("user_coords");
       if (cached) {
         const { latitude: lat, longitude: lng } = JSON.parse(cached);
         if (typeof lat === "number" && typeof lng === "number") {
-          const userLatLng = new L.LatLng(lat, lng);
-          setUserLocation(userLatLng);
-          const distInMeters = userLatLng.distanceTo(propertyPos);
-          setDistance((distInMeters / 1000).toFixed(1));
+          setUserLocation({ lat, lng });
+          const distKm = calculateDistanceKm(lat, lng, safeLat, safeLng);
+          setDistance(distKm.toFixed(1));
         }
       }
     } catch {}
 
-    // 2. Automatically request current position
+    // Request geolocation
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
         try {
           sessionStorage.setItem("user_coords", JSON.stringify({ latitude: lat, longitude: lng }));
         } catch {}
-        const userLatLng = new L.LatLng(lat, lng);
-        setUserLocation(userLatLng);
-        const distInMeters = userLatLng.distanceTo(propertyPos);
-        setDistance((distInMeters / 1000).toFixed(1));
+        setUserLocation({ lat, lng });
+        const distKm = calculateDistanceKm(lat, lng, safeLat, safeLng);
+        setDistance(distKm.toFixed(1));
       },
       () => {},
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
     );
-  }, [latitude, longitude]);
+  }, [safeLat, safeLng]);
+
+  const markers: GoogleMapMarker[] = useMemo(() => {
+    const list: GoogleMapMarker[] = [
+      {
+        id: "property",
+        position: { lat: safeLat, lng: safeLng },
+        title: title || "Property Location",
+        color: "#F59E0B",
+        infoContent: `<div style="font-weight:600; font-size:12px; padding:4px;">Approximate Location: ${title}</div>`,
+      },
+    ];
+
+    if (userLocation) {
+      list.push({
+        id: "user",
+        position: userLocation,
+        title: "Your Location",
+        color: "#3B82F6",
+        infoContent: `<div style="font-weight:600; font-size:12px; padding:4px;">Your Location</div>`,
+      });
+    }
+
+    return list;
+  }, [safeLat, safeLng, title, userLocation]);
 
   return (
     <div className="w-full space-y-4">
@@ -105,85 +106,47 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
       )}
 
       <div className="relative h-[300px] md:h-[400px] w-full rounded-2xl overflow-hidden border border-border-default/50 z-0">
-        <MapContainer 
-          center={propertyPos} 
-          zoom={13} 
-          dragging={false}
-          scrollWheelZoom={false}
-          doubleClickZoom={false}
-          touchZoom={false}
-          boxZoom={false}
-          keyboard={false}
-          zoomControl={false}
-          style={{ height: "100%", width: "100%" }}
-        >
-          <GoogleMapLayer />
-          {/* Approximate circle rather than pinpoint for privacy */}
-          <Circle
-            center={propertyPos}
-            radius={500}
-            pathOptions={{ color: '#F59E0B', fillColor: '#F59E0B', fillOpacity: 0.2 }}
-          />
-          
-          {userLocation && (
-            <>
-              {/* Actual property marker */}
-              <Marker position={propertyPos} icon={propertyIcon}>
-                <Popup>
-                  <div className="p-1 font-semibold text-text-primary">
-                    Approximate Location
-                  </div>
-                </Popup>
-              </Marker>
-              {/* User marker */}
-              <Marker position={userLocation} icon={userIcon}>
-                <Popup>
-                  <div className="p-1">
-                    <div className="font-semibold text-text-primary">
-                      Your Location
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-              {/* This component will pan and zoom the map to fit both markers */}
-              <FitBounds userPos={userLocation} propPos={propertyPos} />
-            </>
-          )}
-        </MapContainer>
-
+        <GoogleMap
+          center={{ lat: safeLat, lng: safeLng }}
+          zoom={13}
+          markers={markers}
+          fitBoundsOnMarkers={Boolean(userLocation)}
+          className="w-full h-full"
+        />
       </div>
 
-        {/* Keep the privacy action below Google attribution. */}
-        <div className="relative p-4 bg-bg-card/80 backdrop-blur-md border-t border-border-default/50 z-[1000] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-sm font-medium text-text-primary text-center sm:text-left flex-1">
-            <span className="text-amber-primary mr-2">🔒</span>
-            Exact location is protected for privacy
-          </div>
-          {isLoggedIn ? (
-            <Button variant="amber" size="sm" className="w-full sm:w-auto shadow-amber-glow" asChild>
-              <a 
-                href={`https://wa.me/918466965567?text=${encodeURIComponent("Hi! I'm looking for this property: " + title + ". Could you share the exact location?")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Contact Agent for Details
-              </a>
-            </Button>
-          ) : (
-            <Button 
-              type="button"
-              variant="amber" 
-              size="sm" 
-              onClick={() => {
-                const redirectPath = typeof window !== "undefined" ? window.location.pathname : "";
-                router.push(`/login?redirect=${encodeURIComponent(redirectPath)}`);
-              }}
-              className="w-full sm:w-auto shadow-amber-glow"
+      <div className="relative p-4 bg-bg-card/80 backdrop-blur-md border-t border-border-default/50 z-[1000] flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="text-sm font-medium text-text-primary text-center sm:text-left flex-1">
+          <span className="text-amber-primary mr-2">🔒</span>
+          Exact location is protected for privacy
+        </div>
+        {isLoggedIn ? (
+          <Button variant="amber" size="sm" className="w-full sm:w-auto shadow-amber-glow" asChild>
+            <a
+              href={`https://wa.me/918466965567?text=${encodeURIComponent(
+                "Hi! I'm looking for this property: " + title + ". Could you share the exact location?"
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
             >
               Contact Agent for Details
-            </Button>
-          )}
-        </div>
+            </a>
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="amber"
+            size="sm"
+            onClick={() => {
+              const redirectPath = typeof window !== "undefined" ? window.location.pathname : "";
+              router.push(`/login?redirect=${encodeURIComponent(redirectPath)}`);
+            }}
+            className="w-full sm:w-auto shadow-amber-glow"
+          >
+            Contact Agent for Details
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

@@ -173,7 +173,7 @@ export default function CommuteRadiusMap({
     computeCommute(hub.lat, hub.lng, hub.name);
   };
 
-  // Search any custom locality or mall via local fuzzy list first, then OpenStreetMap Geocoder
+  // Search any custom locality or mall via local fuzzy list first, then Google Maps Geocoding API
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const query = searchQuery.trim();

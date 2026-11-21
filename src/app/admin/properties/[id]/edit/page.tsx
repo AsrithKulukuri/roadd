@@ -26,6 +26,7 @@ import { uploadToS3 } from "@/lib/aws/storage-utils";
 import { VideoMediaManager } from "@/components/admin/video-media-manager";
 import { AdminFileUpload } from "@/components/admin/admin-file-upload";
 import { useLocationsStore } from "@/stores/locations-store";
+import { isForbiddenAreaName } from "@/lib/maps/google-maps-service";
 import {
   SublocationResolverModal,
   LocationResolutionData,
@@ -68,6 +69,8 @@ export default function EditPropertyPage() {
     fetchLocations?.();
   }, [fetchLocations]);
 
+  const [precision, setPrecision] = useState<"pin" | "viewport" | "geocoded" | null>(null);
+
   const handleProcessResolvedLocation = (data: any) => {
     if (!data?.success || !data?.latitude || !data?.longitude) return;
 
@@ -80,48 +83,46 @@ export default function EditPropertyPage() {
       ...(data.pincode && { pincode: data.pincode }),
       ...(data.address && { address: data.address }),
     }));
+    if (data.precision) setPrecision(data.precision);
 
     const resolvedCity = data.city || formData.city || "Vijayawada";
-    const candidates: Array<{ name: string; type?: string; confidence?: "high" | "medium" | "low" }> =
-      Array.isArray(data.candidateSublocations) ? [...data.candidateSublocations] : [];
+    const subloc = data.sublocation;
+    
+    // STRICT REJECTION: Reject any candidate or locality matching city/district/state
+    const rawDetected = subloc?.detectedName || data.locality || "";
+    const cleanDetected = isForbiddenAreaName(rawDetected, resolvedCity, data.district, data.state)
+      ? ""
+      : rawDetected.trim();
 
-    if (data.locality && !candidates.some((c) => c.name.toLowerCase() === data.locality.toLowerCase())) {
-      candidates.unshift({ name: data.locality, type: "primary", confidence: "high" });
-    }
-
-    const cityObj =
-      cities.find((c) => c.name.toLowerCase().trim() === resolvedCity.toLowerCase().trim()) ||
-      cities[0];
-    const masterSubs = cityObj?.sublocations || [];
-
-    const matched = candidates.filter((c) =>
-      masterSubs.some((s) => s.name.toLowerCase().trim() === c.name.toLowerCase().trim())
-    );
+    const candidates = (subloc?.candidates || (Array.isArray(data.candidateSublocations) ? data.candidateSublocations : []))
+      .filter((c: any) => c?.name && !isForbiddenAreaName(c.name, resolvedCity, data.district, data.state));
 
     const resData: LocationResolutionData = {
       city: resolvedCity,
-      detectedLocality: data.locality || "",
+      detectedLocality: cleanDetected,
       candidateSublocations: candidates,
       address: data.address || "",
       latitude: data.latitude,
       longitude: data.longitude,
       resolvedUrl: data.resolvedUrl,
+      precision: data.precision || "pin",
     };
     setResolverData(resData);
 
-    if (candidates.length > 1 || (candidates.length === 1 && matched.length === 0)) {
-      setShowSublocationModal(true);
-      if (data.locality) setFormData((prev) => ({ ...prev, locality: data.locality }));
-      toast.info(
-        `📍 Google Maps returned ${candidates.length} area candidate${candidates.length > 1 ? "s" : ""}. Please confirm the sublocation.`,
-        { duration: 4000 }
-      );
-    } else if (matched.length === 1) {
-      setFormData((prev) => ({ ...prev, locality: matched[0].name }));
-      toast.success(`📍 Auto-matched master sublocation: ${matched[0].name}`);
+    if (subloc?.status === "matched" && subloc.match?.name && !isForbiddenAreaName(subloc.match.name, resolvedCity)) {
+      setFormData((prev) => ({ ...prev, locality: subloc.match.name }));
+      toast.success(`🎯 Auto-matched exact sublocation: ${subloc.match.name}`);
+    } else if (cleanDetected) {
+      setFormData((prev) => ({ ...prev, locality: cleanDetected }));
+      toast.info(`📍 Detected area "${cleanDetected}". Tap Edit to change if needed.`);
+    } else if (candidates.length > 0) {
+      const topCand = candidates[0].name;
+      setFormData((prev) => ({ ...prev, locality: topCand }));
+      toast.info(`📍 Detected area "${topCand}". Tap Edit to change if needed.`);
     } else {
-      if (data.locality) setFormData((prev) => ({ ...prev, locality: data.locality }));
-      toast.success(`📍 Fetched location details!`);
+      setFormData((prev) => ({ ...prev, locality: "" }));
+      setShowSublocationModal(true);
+      toast.info("📍 Location pinned! Please select an area name from nearby suggestions.");
     }
   };
 
@@ -347,7 +348,7 @@ export default function EditPropertyPage() {
       
       location: {
         address: formData.address,
-        locality: formData.locality || formData.city,
+        locality: formData.locality && !isForbiddenAreaName(formData.locality, formData.city) ? formData.locality : "",
         city: formData.city,
         state: formData.state,
         pincode: formData.pincode,

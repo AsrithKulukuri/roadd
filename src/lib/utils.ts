@@ -212,69 +212,16 @@ export function isValidCoordinateRange(lat: number, lng: number): boolean {
  * Extracts latitude and longitude from any Google Maps share URL, place URL, or raw coordinates.
  * Supports: @lat,lng, !3dlat!4dlng, ?q=lat,lng, ?ll=lat,lng, /place/lat,lng, or raw "16.5062, 80.6480".
  */
+import { parseGoogleMapsUrlSync } from "@/lib/maps/google-maps-parser";
+
 export function parseGoogleMapsUrl(url?: string): { latitude: number; longitude: number } | null {
   if (!url || typeof url !== "string") return null;
-  const trimmed = url.trim();
-  if (!trimmed) return null;
-
-  let text = trimmed;
-  try {
-    text = decodeURIComponent(trimmed);
-  } catch {
-    text = trimmed;
+  const parsed = parseGoogleMapsUrlSync(url);
+  if (parsed && parsed.lat != null && parsed.lng != null) {
+    if (isValidCoordinateRange(parsed.lat, parsed.lng)) {
+      return { latitude: parsed.lat, longitude: parsed.lng };
+    }
   }
-
-  // 1. Google Maps Place Embeds: !3dLAT!4dLNG (or !3d... !4d...)
-  const lat3d = text.match(/(?:!|%21)3d(-?\d+(?:\.\d+)?)/);
-  const lng4d = text.match(/(?:!|%21)4d(-?\d+(?:\.\d+)?)/);
-  if (lat3d && lng4d) {
-    const lat = parseFloat(lat3d[1]);
-    const lng = parseFloat(lng4d[1]);
-    if (isValidCoordinateRange(lat, lng)) return { latitude: lat, longitude: lng };
-  }
-
-  // 2. Pattern: @16.5062,80.6480
-  const atMatch = text.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
-  if (atMatch) {
-    const lat = parseFloat(atMatch[1]);
-    const lng = parseFloat(atMatch[2]);
-    if (isValidCoordinateRange(lat, lng)) return { latitude: lat, longitude: lng };
-  }
-
-  // 3. Pattern: ?q=LAT,LNG, ?ll=LAT,LNG, ?query=LAT,LNG, ?center=LAT,LNG, ?destination=LAT,LNG, ?daddr=LAT,LNG
-  const paramMatch = text.match(
-    /(?:[?&]|\b)(?:q|query|ll|center|sll|destination|daddr|saddr)=(-?\d+(?:\.\d+)?)(?:,|%2C|\s+)(-?\d+(?:\.\d+)?)/i
-  );
-  if (paramMatch) {
-    const lat = parseFloat(paramMatch[1]);
-    const lng = parseFloat(paramMatch[2]);
-    if (isValidCoordinateRange(lat, lng)) return { latitude: lat, longitude: lng };
-  }
-
-  // 4. Pattern: /place/LAT,LNG (e.g. /place/16.505579,80.666368)
-  const placeMatch = text.match(/\/place\/(-?\d+(?:\.\d+)?)(?:,|%2C|\s+)(-?\d+(?:\.\d+)?)/i);
-  if (placeMatch) {
-    const lat = parseFloat(placeMatch[1]);
-    const lng = parseFloat(placeMatch[2]);
-    if (isValidCoordinateRange(lat, lng)) return { latitude: lat, longitude: lng };
-  }
-
-  // 5. Pattern: /LAT,LNG path segment (e.g. /16.505579,80.666368)
-  const slashMatch = text.match(/\/(-?\d+(?:\.\d+)?)(?:,|%2C|\s+)(-?\d+(?:\.\d+)?)(?:\/|\?|$)/);
-  if (slashMatch) {
-    const lat = parseFloat(slashMatch[1]);
-    const lng = parseFloat(slashMatch[2]);
-    if (isValidCoordinateRange(lat, lng)) return { latitude: lat, longitude: lng };
-  }
-
-  // 6. Pattern: raw "16.5062, 80.6480"
-  const rawMatch = text.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
-  if (rawMatch) {
-    const lat = parseFloat(rawMatch[1]);
-    const lng = parseFloat(rawMatch[2]);
-    if (isValidCoordinateRange(lat, lng)) return { latitude: lat, longitude: lng };
-  }
-
   return null;
 }
 

@@ -15,7 +15,8 @@ import {
   Check, X, Upload, Link as LinkIcon,
   Image as ImageIcon, FileText, MapPin, Save,
   CheckCircle2, Loader2, Map, Info, Video, CheckSquare, Square,
-  Settings, AlertCircle, ChevronDown, Sparkles, Plus, Trash2, Calendar, ListChecks, LayoutTemplate, Eye
+  Settings, AlertCircle, ChevronDown, Sparkles, Plus, Trash2, Calendar, ListChecks, LayoutTemplate, Eye,
+  Pencil, RefreshCw
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ import { uploadToS3 } from "@/lib/aws/storage-utils";
 import { VideoMediaManager } from "@/components/admin/video-media-manager";
 import { AdminFileUpload } from "@/components/admin/admin-file-upload";
 import { useLocationsStore } from "@/stores/locations-store";
+import { isForbiddenAreaName } from "@/lib/maps/google-maps-service";
 import {
   SublocationResolverModal,
   LocationResolutionData,
@@ -186,14 +188,22 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     setBuilderName(val);
     if (errors.builderName) setErrors(prev => ({ ...prev, builderName: "" }));
   };
+  const [isDetectedLocality, setIsDetectedLocality] = useState(false);
+
   const handleLocalityChange = (val: string) => {
+    if (isForbiddenAreaName(val, city, "", locState)) {
+      setLocality("");
+      return;
+    }
     setLocality(val);
+    setIsDetectedLocality(false);
     if (errors.locality) setErrors(prev => ({ ...prev, locality: "" }));
   };
 
   const { cities, fetchLocations } = useLocationsStore();
   const [resolverData, setResolverData] = useState<LocationResolutionData | null>(null);
   const [showSublocationModal, setShowSublocationModal] = useState(false);
+  const [precision, setPrecision] = useState<"pin" | "viewport" | "geocoded" | null>(null);
 
   useEffect(() => {
     fetchLocations?.();
@@ -208,49 +218,53 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
     if (data.state) setLocState(data.state);
     if (data.pincode) setPincode(data.pincode);
     if (data.address) setAddress(data.address);
+    if (data.precision) setPrecision(data.precision);
 
     const resolvedCity = data.city || city || "Vijayawada";
-    const candidates: Array<{ name: string; type?: string; confidence?: "high" | "medium" | "low" }> =
-      Array.isArray(data.candidateSublocations) ? [...data.candidateSublocations] : [];
+    const subloc = data.sublocation;
+    
+    // STRICT REJECTION: Reject any candidate or locality matching city/district/state
+    const rawDetected = subloc?.detectedName || data.locality || "";
+    const cleanDetected = isForbiddenAreaName(rawDetected, resolvedCity, data.district, data.state)
+      ? ""
+      : rawDetected.trim();
 
-    if (data.locality && !candidates.some((c) => c.name.toLowerCase() === data.locality.toLowerCase())) {
-      candidates.unshift({ name: data.locality, type: "primary", confidence: "high" });
-    }
-
-    const cityObj =
-      cities.find((c) => c.name.toLowerCase().trim() === resolvedCity.toLowerCase().trim()) ||
-      cities[0];
-    const masterSubs = cityObj?.sublocations || [];
-
-    const matched = candidates.filter((c) =>
-      masterSubs.some((s) => s.name.toLowerCase().trim() === c.name.toLowerCase().trim())
-    );
+    const candidates = (subloc?.candidates || (Array.isArray(data.candidateSublocations) ? data.candidateSublocations : []))
+      .filter((c: any) => c?.name && !isForbiddenAreaName(c.name, resolvedCity, data.district, data.state));
 
     const resData: LocationResolutionData = {
       city: resolvedCity,
-      detectedLocality: data.locality || "",
+      detectedLocality: cleanDetected,
       candidateSublocations: candidates,
       address: data.address || "",
       latitude: data.latitude,
       longitude: data.longitude,
       resolvedUrl: data.resolvedUrl,
+      precision: data.precision || "pin",
     };
     setResolverData(resData);
 
-    // If more than 1 candidate OR if the detected locality is not yet in the master list:
-    if (candidates.length > 1 || (candidates.length === 1 && matched.length === 0)) {
-      setShowSublocationModal(true);
-      if (data.locality) setLocality(data.locality);
-      toast.info(
-        `📍 Google Maps returned ${candidates.length} area candidate${candidates.length > 1 ? "s" : ""}. Please confirm the sublocation.`,
-        { duration: 4000 }
-      );
-    } else if (matched.length === 1) {
-      setLocality(matched[0].name);
-      toast.success(`📍 Auto-matched master sublocation: ${matched[0].name}`);
+    // Rule 4: Put top-ranked area candidate into sublocation chip immediately, tagged "Detected - tap Edit to change".
+    // If it matches a master sublocation, use the master name.
+    // If no area is found, leave the chip empty with "Select area" and open the modal with nearby master areas (within 2 km of pin) as suggestions. Never show the city there.
+    if (subloc?.status === "matched" && subloc.match?.name && !isForbiddenAreaName(subloc.match.name, resolvedCity)) {
+      setLocality(subloc.match.name);
+      setIsDetectedLocality(false);
+      toast.success(`🎯 Auto-matched exact sublocation: ${subloc.match.name}`);
+    } else if (cleanDetected) {
+      setLocality(cleanDetected);
+      setIsDetectedLocality(true);
+      toast.info(`📍 Detected area "${cleanDetected}". Tap Edit to change if needed.`);
+    } else if (candidates.length > 0) {
+      const topCand = candidates[0].name;
+      setLocality(topCand);
+      setIsDetectedLocality(true);
+      toast.info(`📍 Detected area "${topCand}". Tap Edit to change if needed.`);
     } else {
-      if (data.locality) setLocality(data.locality);
-      toast.success(`📍 Fetched location details!`);
+      setLocality("");
+      setIsDetectedLocality(false);
+      setShowSublocationModal(true);
+      toast.info("📍 Location pinned! Please select an area name from nearby suggestions.");
     }
   };
 
@@ -1544,16 +1558,85 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
             {/* Explicit Location Inputs: Locality, Address, City, State, Pincode */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div id="field-locality" className="space-y-1">
-                <label className="text-sm font-medium text-text-primary flex items-center justify-between">
-                  <span>Locality / Area / Landmark <span className="text-red-500 font-bold">*</span></span>
-                  {errors.locality && <span className="text-xs text-red-500 font-bold">Required</span>}
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-text-primary flex items-center gap-1">
+                    <span>Locality / Sublocation <span className="text-red-500 font-bold">*</span></span>
+                    {errors.locality && <span className="text-xs text-red-500 font-bold">Required</span>}
+                  </label>
+                  {locality && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        toast.loading("Re-detecting sublocation from pin...", { id: "redetect" });
+                        try {
+                          const res = await fetch(`/api/resolve-maps-url?lat=${lat}&lng=${lng}`);
+                          const data = await res.json();
+                          if (data.success) {
+                            handleProcessResolvedLocation(data);
+                            toast.dismiss("redetect");
+                          } else {
+                            toast.error("Could not re-detect", { id: "redetect" });
+                          }
+                        } catch {
+                          toast.error("Failed to re-detect", { id: "redetect" });
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] text-amber-400 hover:text-amber-300 font-bold underline cursor-pointer"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Re-detect Area
+                    </button>
+                  )}
+                </div>
+
+                {/* Sublocation Interactive Chip */}
+                <div
+                  onClick={() => setShowSublocationModal(true)}
+                  className="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer hover:border-amber-500/40 transition-colors"
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
+                    <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span className="font-extrabold text-sm text-white truncate">
+                      {locality ? locality : <span className="text-amber-400/90 font-medium italic">Select area</span>}
+                    </span>
+                    {locality && isDetectedLocality && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-300 border-amber-500/30 shrink-0">
+                        Detected - tap Edit to change
+                      </span>
+                    )}
+                    {precision && (
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                          precision === "pin"
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                            : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                        }`}
+                      >
+                        {precision === "pin" ? "🎯 Exact pin" : "⚠️ Approximate - verify"}
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSublocationModal(true);
+                    }}
+                    className="h-8 px-3 text-xs font-bold text-amber-400 border-amber-500/30 hover:bg-amber-500/10 shrink-0 min-h-[36px]"
+                  >
+                    <Pencil className="w-3.5 h-3.5 mr-1" />
+                    {locality ? "Edit Area" : "Select Area"}
+                  </Button>
+                </div>
+
                 <Input
                   value={locality}
                   onChange={(e) => handleLocalityChange(e.target.value)}
                   placeholder="e.g. Benz Circle, Poranki, Kanuru, Tadepalli"
                   className={cn(
                     ic(),
+                    "hidden",
                     errors.locality && "border-2 border-red-500 ring-2 ring-red-500/30 bg-red-50 dark:bg-red-950/20"
                   )}
                 />
@@ -1561,16 +1644,6 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                   <p className="text-xs font-bold text-red-500 flex items-center gap-1 mt-1">
                     <AlertCircle className="w-3.5 h-3.5" /> {errors.locality}
                   </p>
-                )}
-                {resolverData && (
-                  <button
-                    type="button"
-                    onClick={() => setShowSublocationModal(true)}
-                    className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-bold underline cursor-pointer mt-1.5"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Review Detected Sublocations ({resolverData.candidateSublocations.length})</span>
-                  </button>
                 )}
               </div>
 
@@ -1677,13 +1750,24 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 type="button"
                 onClick={() => {
                   if ("geolocation" in navigator) {
-                    toast.loading("Fetching your location...", { id: "geo" });
+                    toast.loading("Fetching your current location...", { id: "geo" });
                     navigator.geolocation.getCurrentPosition(
-                      (position) => {
+                      async (position) => {
                         const { latitude, longitude } = position.coords;
                         setLat(latitude);
                         setLng(longitude);
-                        toast.success("Location updated!", { id: "geo" });
+                        try {
+                          const res = await fetch(`/api/resolve-maps-url?lat=${latitude}&lng=${longitude}`);
+                          const data = await res.json();
+                          if (data.success) {
+                            handleProcessResolvedLocation(data);
+                            toast.success("Location and address fetched from Google Maps!", { id: "geo" });
+                          } else {
+                            toast.success("Coordinates updated!", { id: "geo" });
+                          }
+                        } catch {
+                          toast.success("Coordinates updated!", { id: "geo" });
+                        }
                       },
                       (error) => {
                         toast.error("Failed to get location: " + error.message, { id: "geo" });
