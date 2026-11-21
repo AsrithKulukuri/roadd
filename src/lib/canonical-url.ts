@@ -21,7 +21,7 @@ const PublicSiteUrlSchema = z
 /**
  * Returns the canonical public site URL for all external communications.
  * Strictly reads from PUBLIC_SITE_URL (or NEXT_PUBLIC_SITE_URL).
- * If in production and misconfigured to localhost, safely resolves to Vercel production domain.
+ * Canonical production domain: https://www.roadfacing.com
  */
 export function getPublicSiteUrl(): string {
   let rawUrl = (
@@ -33,16 +33,15 @@ export function getPublicSiteUrl(): string {
   const isProduction =
     process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
 
-  // If in production and environment variable contains localhost or is missing,
-  // resolve via Vercel system environment variables or canonical production domain
-  if (isProduction && (!rawUrl || rawUrl.includes("localhost") || rawUrl.includes("127.0.0.1"))) {
-    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-      rawUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-    } else if (process.env.VERCEL_URL) {
-      rawUrl = `https://${process.env.VERCEL_URL}`;
-    } else {
-      rawUrl = "https://roadd-three.vercel.app";
-    }
+  // If in production and environment variable contains localhost, is missing, or contains vercel.app,
+  // resolve to the official canonical website domain https://www.roadfacing.com
+  if (isProduction && (!rawUrl || rawUrl.includes("localhost") || rawUrl.includes("127.0.0.1") || rawUrl.includes("vercel.app"))) {
+    rawUrl = "https://www.roadfacing.com";
+  }
+
+  // Safe fallback default if not configured in environment
+  if (!rawUrl) {
+    rawUrl = "https://www.roadfacing.com";
   }
 
   const validated = PublicSiteUrlSchema.parse(rawUrl);
