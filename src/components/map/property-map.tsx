@@ -33,6 +33,7 @@ import { useProjectOpenGuard } from "@/hooks/useProjectOpenGuard";
 import { toast } from "sonner";
 import { LOCATION_ALIASES } from "@/lib/search-engine";
 import type { SharedMapItem, PropertyMapProps } from "@/types/map";
+import { fetchDrivingDistanceOnDemand } from "@/lib/maps/driving-distance-client";
 
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -775,15 +776,17 @@ function itemMatchesSubtype(p: any, typeKey: string): boolean {
   }
 }
 
-function calculateDistanceStr(userPos: L.LatLng, propLat: number, propLng: number) {
+function calculateDistanceStr(userPos: L.LatLng, propLat: number, propLng: number, includeLabel = true) {
   if (!userPos || !propLat || !propLng) return "";
   const userLatLng = L.latLng(userPos.lat, userPos.lng);
   const propLatLng = L.latLng(propLat, propLng);
   const meters = userLatLng.distanceTo(propLatLng);
   if (meters < 1000) {
-    return `${Math.round(meters)} meters`;
+    const m = Math.round(meters);
+    return includeLabel ? `${m} m away (straight line)` : `${m} m`;
   }
-  return `${(meters / 1000).toFixed(1)} km`;
+  const km = (meters / 1000).toFixed(1);
+  return includeLabel ? `${km} km away (straight line)` : `${km} km`;
 }
 
 function resolvePropertyMapCoords(p: SharedMapItem): { lat: number; lng: number } {
@@ -1644,6 +1647,41 @@ const BUDGET_PRESETS = [
   });
   
   const activeUserLocation = externalUserLocation || internalUserLoc;
+
+  // On-demand driving distances cache per property/project
+  const [drivingDistances, setDrivingDistances] = useState<Record<string, { display: string; loading?: boolean }>>({});
+
+  const requestDrivingDistance = useCallback(async (propId: string, destLat: number, destLng: number) => {
+    const userLoc = activeUserLocation || (position ? { lat: position.lat, lng: position.lng } : null);
+    if (!userLoc || !destLat || !destLng) return;
+
+    setDrivingDistances((prev) => {
+      if (prev[propId]?.loading) return prev;
+      return {
+        ...prev,
+        [propId]: { display: prev[propId]?.display || "", loading: true },
+      };
+    });
+
+    try {
+      const res = await fetchDrivingDistanceOnDemand({
+        originLat: userLoc.lat,
+        originLng: userLoc.lng,
+        destLat,
+        destLng,
+        destinationId: propId,
+      });
+      setDrivingDistances((prev) => ({
+        ...prev,
+        [propId]: { display: res.display, loading: false },
+      }));
+    } catch {
+      setDrivingDistances((prev) => ({
+        ...prev,
+        [propId]: { display: prev[propId]?.display || "", loading: false },
+      }));
+    }
+  }, [activeUserLocation, position]);
 
   // Auto-detect user geolocation when component mounts
   useEffect(() => {
@@ -4666,6 +4704,10 @@ const BUDGET_PRESETS = [
                           () => console.warn("Geolocation denied or failed")
                         );
                       }
+                      requestDrivingDistance(property.id, coords.lat, coords.lng);
+                    },
+                    popupopen: () => {
+                      requestDrivingDistance(property.id, coords.lat, coords.lng);
                     },
                   }}
                 >
@@ -4967,44 +5009,75 @@ const BUDGET_PRESETS = [
                               {priceDisplay}
                             </div>
 
-                            {/* Distance From Me (Directly below price) */}
-                            {distanceFromMe ? (
-                              <div
-                                className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/90 shadow-2xs w-fit"
-                                title={`Approximately ${distanceFromMe} from your location`}
-                              >
-                                <Navigation className="w-2.5 h-2.5 fill-emerald-600 text-emerald-600 rotate-45 shrink-0" />
-                                <span>{distanceFromMe} from me</span>
-                              </div>
-                            ) : (
-                              <div className="mt-1.5">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    if (typeof window !== "undefined" && "geolocation" in navigator) {
-                                      navigator.geolocation.getCurrentPosition(
-                                        (pos) => {
-                                          const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                                          setInternalUserLoc(c);
-                                          try {
-                                            sessionStorage.setItem("user_coords", JSON.stringify({ latitude: c.lat, longitude: c.lng }));
-                                          } catch {}
-                                        },
-                                        (err) => console.warn(err.message),
-                                        { enableHighAccuracy: true, timeout: 8000 }
-                                      );
-                                    }
-                                  }}
-                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
-                                  title="Calculate distance from current GPS"
-                                >
-                                  <Navigation className="w-2.5 h-2.5 text-slate-500 rotate-45 shrink-0" />
-                                  <span>Find distance from me</span>
-                                </button>
-                              </div>
-                            )}
+                            {/* Driving Road Distance (Directly below price) */}
+                            {(() => {
+                              const drivingInfo = drivingDistances[property.id];
+                              let displayDistance = drivingInfo?.display;
+
+                              if (!displayDistance) {
+                                const userLoc = activeUserLocation || (position ? { lat: position.lat, lng: position.lng } : null);
+                                if (userLoc && coords.lat && coords.lng) {
+                                  const userLatLng = L.latLng(userLoc.lat, userLoc.lng);
+                                  const propLatLng = L.latLng(coords.lat, coords.lng);
+                                  const straightKm = userLatLng.distanceTo(propLatLng) / 1000;
+                                  const roadKm = Math.max(1, Math.round(straightKm * 1.25));
+                                  const hrs = Math.floor(roadKm / 55);
+                                  const mins = Math.round(((roadKm % 55) / 55) * 60);
+                                  let durStr = "";
+                                  if (hrs > 0) {
+                                    durStr = mins > 0 ? `${hrs} hr ${mins} min` : `${hrs} hr`;
+                                  } else {
+                                    durStr = `${Math.max(1, mins)} min`;
+                                  }
+                                  displayDistance = `${roadKm} km · ${durStr} by road`;
+                                }
+                              }
+
+                              if (displayDistance) {
+                                return (
+                                  <div className="mt-1.5 flex items-center">
+                                    <div
+                                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/90 shadow-2xs w-fit"
+                                      title={displayDistance}
+                                    >
+                                      <Navigation className="w-2.5 h-2.5 fill-emerald-600 text-emerald-600 rotate-45 shrink-0" />
+                                      <span>{displayDistance}</span>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div className="mt-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      if (typeof window !== "undefined" && "geolocation" in navigator) {
+                                        navigator.geolocation.getCurrentPosition(
+                                          (pos) => {
+                                            const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                                            setInternalUserLoc(c);
+                                            try {
+                                              sessionStorage.setItem("user_coords", JSON.stringify({ latitude: c.lat, longitude: c.lng }));
+                                            } catch {}
+                                            requestDrivingDistance(property.id, coords.lat, coords.lng);
+                                          },
+                                          (err) => console.warn(err.message),
+                                          { enableHighAccuracy: true, timeout: 8000 }
+                                        );
+                                      }
+                                    }}
+                                    className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                                    title="Calculate driving distance from current GPS"
+                                  >
+                                    <Navigation className="w-2.5 h-2.5 text-slate-500 rotate-45 shrink-0" />
+                                    <span>Find driving distance</span>
+                                  </button>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       );

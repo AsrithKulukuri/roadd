@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
+import { fetchDrivingDistanceOnDemand } from "@/lib/maps/driving-distance-client";
 
 interface PropertyHeaderLocationProps {
   address?: string;
@@ -26,14 +27,16 @@ function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
 }
 
 function formatDistanceText(km: number): string {
+  let dist = "";
   if (km < 1) {
     const meters = Math.round(km * 1000);
-    return `${meters} meters`;
+    dist = `${meters} m`;
+  } else if (km < 10) {
+    dist = `${km.toFixed(1)} km`;
+  } else {
+    dist = `${Math.round(km)} km`;
   }
-  if (km < 10) {
-    return `${km.toFixed(1)} kms`;
-  }
-  return `${Math.round(km)} kms`;
+  return `${dist} away (straight line)`;
 }
 
 export function PropertyHeaderLocation({
@@ -44,6 +47,7 @@ export function PropertyHeaderLocation({
   longitude,
 }: PropertyHeaderLocationProps) {
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
+  const [drivingDistance, setDrivingDistance] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !navigator.geolocation) return;
@@ -56,6 +60,14 @@ export function PropertyHeaderLocation({
         if (typeof parsed.latitude === "number" && typeof parsed.longitude === "number" && latitude && longitude) {
           const dist = calculateDistanceKm(parsed.latitude, parsed.longitude, latitude, longitude);
           setDistanceKm(dist);
+          fetchDrivingDistanceOnDemand({
+            originLat: parsed.latitude,
+            originLng: parsed.longitude,
+            destLat: latitude,
+            destLng: longitude,
+          }).then((res) => {
+            if (res?.display) setDrivingDistance(res.display);
+          }).catch(() => {});
         }
       }
     } catch {}
@@ -71,6 +83,14 @@ export function PropertyHeaderLocation({
         if (latitude && longitude) {
           const dist = calculateDistanceKm(lat, lng, latitude, longitude);
           setDistanceKm(dist);
+          fetchDrivingDistanceOnDemand({
+            originLat: lat,
+            originLng: lng,
+            destLat: latitude,
+            destLng: longitude,
+          }).then((res) => {
+            if (res?.display) setDrivingDistance(res.display);
+          }).catch(() => {});
         }
       },
       (err) => {
@@ -98,9 +118,9 @@ export function PropertyHeaderLocation({
       <MapPin className="w-4 h-4 text-[#faad13] shrink-0 group-hover:scale-110 transition-transform" />
       <span>
         {displayText}
-        {distanceKm !== null && (
+        {(drivingDistance || distanceKm !== null) && (
           <span className="font-bold text-slate-900 dark:text-amber-400 ml-1">
-            , just located {formatDistanceText(distanceKm)} from you
+            , {drivingDistance ? `${drivingDistance} from you` : `just located ${formatDistanceText(distanceKm!)} from you`}
           </span>
         )}
       </span>

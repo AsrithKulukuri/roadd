@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:unit": "tsx --test tests/unit/*.test.ts",
-    "test:maps": "tsx --test tests/unit/*maps*.test.ts tests/unit/*sublocation*.test.ts",
+    "test:maps": "tsx --test tests/unit/*maps*.test.ts tests/unit/*sublocation*.test.ts tests/unit/*distance*.test.ts",
     "test:concierge": "tsx --test tests/unit/*.test.ts",
     "test:evals": "tsx evals/eval-runner.ts",
     "test:e2e": "npm run build && playwright test",

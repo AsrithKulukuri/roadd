@@ -36,6 +36,7 @@ import { ProjectScheduleSection } from "@/components/project/project-schedule-se
 import { getPreloadedProject, prewarmProjectMedia, prewarmProjectSession } from "@/lib/project-preload";
 import { formatAvailableBhk } from "@/lib/utils";
 import { startGlobalProgress, finishGlobalProgress } from "@/lib/progress-bar";
+import { fetchDrivingDistanceOnDemand } from "@/lib/maps/driving-distance-client";
 
 // ─── Lazy map (SSR unsafe) ─────────────────────────────────────────────────────
 const ProjectMapView = dynamic(
@@ -79,14 +80,16 @@ function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
 }
 
 function formatDistanceText(km: number): string {
+  let dist = "";
   if (km < 1) {
     const meters = Math.round(km * 1000);
-    return `${meters} meters`;
+    dist = `${meters} m`;
+  } else if (km < 10) {
+    dist = `${km.toFixed(1)} km`;
+  } else {
+    dist = `${Math.round(km)} km`;
   }
-  if (km < 10) {
-    return `${km.toFixed(1)} kms`;
-  }
-  return `${Math.round(km)} kms`;
+  return `${dist} away (straight line)`;
 }
 
 function RollingStatusTab({ isSelected }: { isSelected?: boolean }) {
@@ -228,6 +231,7 @@ export function ProjectDetailView({
   const [canScrollConfigs, setCanScrollConfigs] = useState(false);
   const [isDraggingConfig, setIsDraggingConfig] = useState(false);
   const [userDistanceKm, setUserDistanceKm] = useState<number | null>(null);
+  const [drivingDistanceText, setDrivingDistanceText] = useState<string | null>(null);
 
   const updateConfigScroll = () => {
     const el = configSliderRef.current;
@@ -328,6 +332,15 @@ export function ProjectDetailView({
         if (typeof parsed.latitude === "number" && typeof parsed.longitude === "number") {
           const dist = calculateDistanceKm(parsed.latitude, parsed.longitude, projLat, projLng);
           setUserDistanceKm(dist);
+          fetchDrivingDistanceOnDemand({
+            originLat: parsed.latitude,
+            originLng: parsed.longitude,
+            destLat: projLat,
+            destLng: projLng,
+            destinationId: project?.slug || project?.id,
+          }).then((res) => {
+            if (res?.display) setDrivingDistanceText(res.display);
+          }).catch(() => {});
         }
       }
     } catch {}
@@ -343,6 +356,15 @@ export function ProjectDetailView({
           } catch {}
           const dist = calculateDistanceKm(lat, lng, projLat, projLng);
           setUserDistanceKm(dist);
+          fetchDrivingDistanceOnDemand({
+            originLat: lat,
+            originLng: lng,
+            destLat: projLat,
+            destLng: projLng,
+            destinationId: project?.slug || project?.id,
+          }).then((res) => {
+            if (res?.display) setDrivingDistanceText(res.display);
+          }).catch(() => {});
         },
         (err) => {
           console.warn("Geolocation prompt skipped or error:", err.message);
@@ -931,9 +953,9 @@ export function ProjectDetailView({
                         <MapPin className="w-3.5 h-3.5 text-[#faad13] shrink-0" />
                         <span>
                           {project.location?.locality || "Vijayawada"}, {project.location?.city || "Andhra Pradesh"}
-                          {userDistanceKm !== null && (
+                          {(drivingDistanceText || userDistanceKm !== null) && (
                             <span className="font-bold text-slate-900 dark:text-amber-400">
-                              , just located {formatDistanceText(userDistanceKm)} from you
+                              , {drivingDistanceText ? `${drivingDistanceText} from you` : `just located ${formatDistanceText(userDistanceKm!)} from you`}
                             </span>
                           )}
                         </span>
@@ -1869,10 +1891,10 @@ export function ProjectDetailView({
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <h2 className="text-xl font-bold text-text-primary">Location &amp; Map</h2>
                     <div className="flex items-center gap-2 flex-wrap">
-                      {userDistanceKm !== null && (
+                      {(drivingDistanceText || userDistanceKm !== null) && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/15 text-slate-950 dark:text-amber-400 border border-amber-500/30 shadow-2xs">
                           <Navigation className="w-3.5 h-3.5 text-[#faad13] fill-[#faad13]/20" />
-                          Just located {formatDistanceText(userDistanceKm)} from you
+                          {drivingDistanceText ? `${drivingDistanceText} from you` : `Just located ${formatDistanceText(userDistanceKm!)} from you`}
                         </span>
                       )}
                       {(project.locationUrl ||
@@ -1904,9 +1926,9 @@ export function ProjectDetailView({
                     <MapPin className="w-4 h-4 text-amber-primary shrink-0" />
                     <span>
                       {project.location?.address || [project.location?.locality, project.location?.city, project.location?.state].filter(Boolean).join(", ") || "Vijayawada, Andhra Pradesh"}
-                      {userDistanceKm !== null && (
+                      {(drivingDistanceText || userDistanceKm !== null) && (
                         <span className="font-bold text-slate-900 dark:text-amber-400 ml-1">
-                          , just located {formatDistanceText(userDistanceKm)} from you
+                          , {drivingDistanceText ? `${drivingDistanceText} from you` : `just located ${formatDistanceText(userDistanceKm!)} from you`}
                         </span>
                       )}
                     </span>
@@ -1921,7 +1943,7 @@ export function ProjectDetailView({
                       locality={project.location?.locality || "Vijayawada"}
                       city={project.location?.city || "Vijayawada"}
                       projectType={project.projectType}
-                      distanceText={userDistanceKm !== null ? `just located ${formatDistanceText(userDistanceKm)} from you` : undefined}
+                      distanceText={drivingDistanceText ? `${drivingDistanceText} from you` : (userDistanceKm !== null ? `just located ${formatDistanceText(userDistanceKm)} from you` : undefined)}
                     />
                   </div>
 

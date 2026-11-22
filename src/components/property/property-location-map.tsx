@@ -8,6 +8,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/hooks/use-auth-session";
+import { fetchDrivingDistanceOnDemand } from "@/lib/maps/driving-distance-client";
 
 // Fix for default marker icons in Leaflet with Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -57,6 +58,7 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
   const { isLoggedIn, getLoginUrl } = useAuthSession();
   const [userLocation, setUserLocation] = useState<L.LatLng | null>(null);
   const [distance, setDistance] = useState<string | null>(null);
+  const [drivingDistance, setDrivingDistance] = useState<string | null>(null);
   
   const propertyPos = useMemo(() => new L.LatLng(latitude, longitude), [latitude, longitude]);
 
@@ -73,6 +75,14 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
           setUserLocation(userLatLng);
           const distInMeters = userLatLng.distanceTo(propertyPos);
           setDistance((distInMeters / 1000).toFixed(1));
+          fetchDrivingDistanceOnDemand({
+            originLat: lat,
+            originLng: lng,
+            destLat: latitude,
+            destLng: longitude,
+          }).then((res) => {
+            if (res?.display) setDrivingDistance(res.display);
+          }).catch(() => {});
         }
       }
     } catch {}
@@ -88,18 +98,26 @@ export default function PropertyLocationMap({ latitude, longitude, title }: Prop
         setUserLocation(userLatLng);
         const distInMeters = userLatLng.distanceTo(propertyPos);
         setDistance((distInMeters / 1000).toFixed(1));
+        fetchDrivingDistanceOnDemand({
+          originLat: lat,
+          originLng: lng,
+          destLat: latitude,
+          destLng: longitude,
+        }).then((res) => {
+          if (res?.display) setDrivingDistance(res.display);
+        }).catch(() => {});
       },
       () => {},
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
     );
-  }, [latitude, longitude]);
+  }, [latitude, longitude, propertyPos]);
 
   return (
     <div className="w-full space-y-4">
-      {distance && (
+      {(drivingDistance || distance) && (
         <div className="flex items-center">
           <div className="inline-flex items-center text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-500/15 border border-amber-500/30 px-3.5 py-2 rounded-xl shadow-xs">
-            📍 {distance} km away from this property
+            📍 {drivingDistance ? `${drivingDistance} from this property` : `${distance} km away (straight line) from this property`}
           </div>
         </div>
       )}
