@@ -1,7 +1,14 @@
 "use client";
 
+import { GoogleMapLayer } from "@/components/map/google-map-layer";
 import { useEffect, useState, useRef } from "react";
-import { GoogleMap } from "@/components/map/google-map";
+import { MapContainer, Marker, useMapEvents } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Fix Leaflet's default icon path issues in Next.js
+import "leaflet-defaulticon-compatibility";
+import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 
 export interface LocationDetails {
   address: string;
@@ -9,13 +16,11 @@ export interface LocationDetails {
   state: string;
   pincode: string;
   locality?: string;
-  precision?: "pin" | "viewport" | "geocoded";
 }
 
 interface CoordinatePickerMapProps {
   initialPosition?: [number, number];
   onPositionChange: (lat: number, lng: number, details?: LocationDetails) => void;
-  className?: string;
 }
 
 const reverseGeocode = async (
@@ -36,67 +41,125 @@ const reverseGeocode = async (
     if (!data || !data.success) return null;
 
     return {
-      address: data.address || data.formattedAddress || "",
+      address: data.address || "",
       city: data.city || "",
       state: data.state || "",
       pincode: data.pincode || "",
-      locality: data.locality || data.sublocation?.match?.name || data.sublocation?.detectedName || data.city || "",
-      precision: data.precision || "pin",
+      locality: data.locality || data.city || "",
     };
   } catch {
     return null;
   }
 };
 
-export default function CoordinatePickerMap({
-  initialPosition = [16.5062, 80.648], // Benz Circle, Vijayawada
-  onPositionChange,
-  className = "w-full h-[320px] rounded-xl overflow-hidden",
+function MapViewController({ center }: { center: [number, number] }) {
+  const map = useMapEvents({});
+  useEffect(() => {
+    if (center && center[0] && center[1]) {
+      map.flyTo(center, 15, { animate: true, duration: 1.2 });
+    }
+  }, [center[0], center[1], map]);
+  return null;
+}
+
+function LocationMarker({ 
+  position, 
+  setPosition 
+}: { 
+  position: L.LatLng | null;
+  setPosition: (pos: L.LatLng, fromUser?: boolean) => void;
+}) {
+  const map = useMapEvents({
+    click(e) {
+      setPosition(e.latlng, true);
+    },
+  });
+
+  const markerRef = useRef<L.Marker>(null);
+
+  return position === null ? null : (
+    <Marker 
+      position={position}
+      draggable={true}
+      eventHandlers={{
+        dragend() {
+          const marker = markerRef.current;
+          if (marker != null) {
+            setPosition(marker.getLatLng(), true);
+          }
+        },
+      }}
+      ref={markerRef}
+    />
+  );
+}
+
+export default function CoordinatePickerMap({ 
+  initialPosition = [16.5062, 80.6480], // Vijayawada default
+  onPositionChange 
 }: CoordinatePickerMapProps) {
-  const [position, setPosition] = useState<[number, number]>(initialPosition);
+  const [position, setPosition] = useState<L.LatLng | null>(
+    initialPosition ? new L.LatLng(initialPosition[0], initialPosition[1]) : null
+  );
+  const isUserActionRef = useRef<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const handleSetPosition = (pos: L.LatLng, fromUser: boolean = false) => {
+    isUserActionRef.current = fromUser;
+    setPosition(pos);
+  };
+
+  // Sync internal position state when initialPosition prop changes (e.g. from parent form)
   useEffect(() => {
     if (initialPosition && initialPosition[0] && initialPosition[1]) {
-      setPosition(initialPosition);
+      if (!position || Math.abs(position.lat - initialPosition[0]) > 0.0001 || Math.abs(position.lng - initialPosition[1]) > 0.0001) {
+        isUserActionRef.current = false;
+        setPosition(new L.LatLng(initialPosition[0], initialPosition[1]));
+      }
     }
   }, [initialPosition[0], initialPosition[1]]);
 
-  const handlePositionUpdate = async (lat: number, lng: number) => {
-    setPosition([lat, lng]);
+  useEffect(() => {
+    if (position) {
+      // Provide coordinates immediately
+      onPositionChange(position.lat, position.lng);
+      
+      // Only reverse-geocode if user clicked or dragged on the map
+      if (isUserActionRef.current) {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
 
-    // Cancel any in-flight reverse geocode
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+        const timeoutId = setTimeout(async () => {
+          const details = await reverseGeocode(position.lat, position.lng, controller.signal);
+          if (details && !controller.signal.aborted) {
+            onPositionChange(position.lat, position.lng, details);
+          }
+        }, 350);
+
+        return () => {
+          clearTimeout(timeoutId);
+          controller.abort();
+        };
+      }
     }
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    // Immediately notify coordinates
-    onPositionChange(lat, lng);
-
-    // Fetch address details via Google Geocoding API
-    const details = await reverseGeocode(lat, lng, controller.signal);
-    if (details) {
-      onPositionChange(lat, lng, details);
-    }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [position]);
 
   return (
-    <div className={`relative ${className}`}>
-      <GoogleMap
-        center={{ lat: position[0], lng: position[1] }}
-        zoom={15}
-        primaryMarker={{
-          lat: position[0],
-          lng: position[1],
-          draggable: true,
-          title: "Drag to refine pin location",
-          color: "#F59E0B",
-        }}
-        onPositionChange={handlePositionUpdate}
-        className="w-full h-full"
-      />
+    <div className="w-full h-full rounded-xl overflow-hidden shadow-inner border border-border-default/50 z-0 relative z-[0]">
+      <MapContainer 
+        center={initialPosition} 
+        zoom={13} 
+        scrollWheelZoom={true} 
+        style={{ height: "100%", width: "100%", zIndex: 0 }}
+      >
+        <GoogleMapLayer />
+        <MapViewController center={initialPosition} />
+        <LocationMarker position={position} setPosition={handleSetPosition} />
+      </MapContainer>
     </div>
   );
 }

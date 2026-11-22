@@ -1,6 +1,48 @@
-"use client";
+import { GoogleMapLayer } from "@/components/map/google-map-layer";
+import { useEffect, useRef } from "react";
+import { MapContainer, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "leaflet-defaulticon-compatibility";
+import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 
-import { GoogleMap } from "@/components/map/google-map";
+// Custom amber-styled pin icon
+function buildIcon() {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 52" width="40" height="52">
+      <filter id="shadow"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/></filter>
+      <path d="M20 0C8.954 0 0 9.043 0 20.2 0 34.3 20 52 20 52S40 34.3 40 20.2C40 9.043 31.046 0 20 0Z"
+            fill="#F59E0B" filter="url(#shadow)"/>
+      <circle cx="20" cy="20" r="10" fill="white" opacity="0.95"/>
+      <circle cx="20" cy="20" r="6" fill="#F59E0B"/>
+    </svg>`;
+  return L.divIcon({ html: svg, className: "", iconSize: [40, 52], iconAnchor: [20, 52], popupAnchor: [0, -54] });
+}
+
+function FlyTo({ center }: { center: [number, number] }) {
+  const map = useMap();
+  const [latitude, longitude] = center;
+  useEffect(() => {
+    if (!map.getCenter().equals([latitude, longitude])) {
+      map.setView([latitude, longitude], 15, { animate: false });
+    }
+  }, [map, latitude, longitude]);
+  return null;
+}
+
+// Auto-opens the popup once mounted
+function AutoOpenMarker({ center, children }: { center: [number, number]; children: React.ReactNode }) {
+  const markerRef = useRef<L.Marker>(null);
+  useEffect(() => {
+    const t = setTimeout(() => markerRef.current?.openPopup(), 600);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <Marker position={center} icon={buildIcon()} ref={markerRef}>
+      {children}
+    </Marker>
+  );
+}
 
 interface ProjectMapViewProps {
   latitude: number;
@@ -21,52 +63,55 @@ export default function ProjectMapView({
   projectType,
   distanceText,
 }: ProjectMapViewProps) {
-  const safeLat =
-    typeof latitude === "number" && !isNaN(latitude) && latitude !== 0
-      ? latitude
-      : 16.5062;
-  const safeLng =
-    typeof longitude === "number" && !isNaN(longitude) && longitude !== 0
-      ? longitude
-      : 80.648;
+  const safeLat = typeof latitude === "number" && !isNaN(latitude) && latitude !== 0 ? latitude : 16.5062;
+  const safeLng = typeof longitude === "number" && !isNaN(longitude) && longitude !== 0 ? longitude : 80.6480;
+  const center: [number, number] = [safeLat, safeLng];
 
   const typeLabel =
-    projectType === "apartment"
-      ? "Apartment Project"
-      : projectType === "villa"
-      ? "Villa Project"
-      : "Venture / Layout";
-
-  const infoHtml = `
-    <div style="min-width: 180px; padding: 4px 6px; font-family: system-ui, sans-serif;">
-      <p style="font-weight: 800; font-size: 13px; margin: 0 0 2px; color: #0f172a;">${projectName}</p>
-      <p style="font-size: 11px; color: #64748b; margin: 0 0 4px;">
-        ${locality}, ${city}
-        ${distanceText ? `<span style="display:block; color:#b45309; font-weight:700; margin-top:2px;">📍 ${distanceText}</span>` : ""}
-      </p>
-      <span style="display:inline-block; background:#F59E0B22; color:#B45309; border-radius:9999px; padding:2px 8px; font-size:10px; font-weight:700;">
-        ${typeLabel}
-      </span>
-    </div>
-  `;
+    projectType === "apartment" ? "Apartment Project"
+    : projectType === "villa"   ? "Villa Project"
+    : "Venture / Layout";
 
   return (
     <div className="w-full h-full rounded-2xl overflow-hidden border border-border-default z-0 relative">
-      <GoogleMap
-        center={{ lat: safeLat, lng: safeLng }}
+      <MapContainer
+        center={center}
         zoom={15}
-        interactive={true}
-        markers={[
-          {
-            id: "project-pin",
-            position: { lat: safeLat, lng: safeLng },
-            title: projectName,
-            color: "#F59E0B",
-            infoContent: infoHtml,
-          },
-        ]}
-        className="w-full h-full min-h-[300px]"
-      />
+        dragging={false}
+        scrollWheelZoom={false}
+        doubleClickZoom={false}
+        touchZoom={false}
+        boxZoom={false}
+        keyboard={false}
+        zoomControl={false}
+        style={{ height: "100%", width: "100%", zIndex: 0 }}
+      >
+        <GoogleMapLayer />
+        <FlyTo center={center} />
+        <AutoOpenMarker center={center}>
+          <Popup closeButton={false} autoPan={false} offset={[0, -8]}>
+            <div style={{ minWidth: "180px", padding: "2px 4px" }}>
+              <p style={{ fontWeight: 800, fontSize: "13px", marginBottom: "2px", color: "#0f172a" }}>
+                {projectName}
+              </p>
+              <p style={{ fontSize: "11px", color: "#64748b", marginBottom: "2px" }}>
+                {locality}, {city}
+                {distanceText && (
+                  <span style={{ display: "block", color: "#b45309", fontWeight: 700, marginTop: "2px" }}>
+                    📍 {distanceText}
+                  </span>
+                )}
+              </p>
+              <span style={{
+                display: "inline-block", background: "#F59E0B22", color: "#B45309",
+                borderRadius: "9999px", padding: "1px 8px", fontSize: "10px", fontWeight: 700,
+              }}>
+                {typeLabel}
+              </span>
+            </div>
+          </Popup>
+        </AutoOpenMarker>
+      </MapContainer>
     </div>
   );
 }
