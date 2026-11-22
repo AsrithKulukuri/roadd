@@ -2562,7 +2562,58 @@ const BUDGET_PRESETS = [
       className="w-full h-full flex-1 flex flex-col touch-none relative min-h-0"
       style={{ touchAction: "none", height: mapHeight, minHeight: containerHeight ? 400 : "100%" }}
     >
-      {/* Styles for Leaflet map are in globals.css */}
+      {/* Styles for Leaflet map & popup card */}
+      <style>{`
+        .leaflet-popup.property-map-popup-realtor,
+        div.leaflet-popup.property-map-popup-realtor {
+          margin-bottom: 0 !important;
+        }
+        .leaflet-popup.property-map-popup-realtor .leaflet-popup-content-wrapper,
+        div.leaflet-popup.property-map-popup-realtor .leaflet-popup-content-wrapper {
+          padding: 0 !important;
+          margin: 0 !important;
+          border-radius: 20px !important;
+          overflow: hidden !important;
+          background: transparent !important;
+          background-color: transparent !important;
+          box-shadow: none !important;
+          border: none !important;
+        }
+        .leaflet-popup.property-map-popup-realtor .leaflet-popup-content,
+        div.leaflet-popup.property-map-popup-realtor .leaflet-popup-content {
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 285px !important;
+          max-width: calc(100vw - 32px) !important;
+          line-height: normal !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+        @media (max-width: 640px) {
+          .leaflet-popup.property-map-popup-realtor .leaflet-popup-content,
+          div.leaflet-popup.property-map-popup-realtor .leaflet-popup-content {
+            width: 275px !important;
+            max-width: calc(100vw - 28px) !important;
+          }
+        }
+        .leaflet-popup.property-map-popup-realtor .leaflet-popup-tip-container,
+        .leaflet-popup.property-map-popup-realtor .leaflet-popup-tip,
+        div.leaflet-popup.property-map-popup-realtor .leaflet-popup-tip-container,
+        div.leaflet-popup.property-map-popup-realtor .leaflet-popup-tip {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          height: 0 !important;
+          width: 0 !important;
+          border: none !important;
+          box-shadow: none !important;
+          background: transparent !important;
+        }
+        .leaflet-popup.property-map-popup-realtor .leaflet-popup-close-button,
+        div.leaflet-popup.property-map-popup-realtor .leaflet-popup-close-button {
+          display: none !important;
+        }
+      `}</style>
 
       {/* Main Container */}
       <div
@@ -4792,11 +4843,11 @@ const BUDGET_PRESETS = [
                       };
 
                       return (
-                        <div className="relative w-full max-w-[240px] sm:max-w-[255px] bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-200/90 font-sans select-none text-slate-900">
+                        <div className="relative w-[275px] sm:w-[285px] max-w-[calc(100vw-28px)] bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-200/90 font-sans select-none text-slate-900">
                           {/* Top Image Container */}
                           <div
                             onClick={handleCardClick}
-                            className="relative w-full h-[110px] sm:h-[120px] bg-slate-100 cursor-pointer overflow-hidden group/img"
+                            className="relative w-full h-[125px] sm:h-[135px] bg-slate-100 cursor-pointer overflow-hidden group/img"
                           >
                             <img
                               src={coverImg}
@@ -4816,31 +4867,31 @@ const BUDGET_PRESETS = [
                                 const closeBtn = (e.target as HTMLElement).closest('.leaflet-popup')?.querySelector('.leaflet-popup-close-button') as HTMLElement;
                                 if (closeBtn) closeBtn.click();
                               }}
-                              className="absolute top-2 right-2 w-6 h-6 bg-white/80 hover:bg-white text-slate-700 hover:text-slate-950 backdrop-blur-md rounded-full flex items-center justify-center transition-all shadow-sm z-20 cursor-pointer active:scale-95"
+                              className="absolute top-2.5 right-2.5 w-7 h-7 bg-white/80 hover:bg-white text-slate-700 hover:text-slate-950 backdrop-blur-md rounded-full flex items-center justify-center transition-all shadow-sm z-20 cursor-pointer active:scale-95"
                               title="Close card"
                             >
                               <X className="w-3.5 h-3.5 stroke-[2.5]" />
                             </button>
 
                             {/* Bottom Right Badge: Diamond Premium */}
-                            <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-white/95 text-slate-900 rounded-lg flex items-center gap-1 shadow-sm backdrop-blur-sm z-10 select-none pointer-events-none">
+                            <div className="absolute bottom-2.5 right-2.5 px-2.5 py-0.5 bg-white/95 text-slate-900 rounded-lg flex items-center gap-1 shadow-sm backdrop-blur-sm z-10 select-none pointer-events-none">
                               <Diamond className="w-2.5 h-2.5 text-slate-900 fill-slate-900 shrink-0" />
                               <span className="text-[10px] font-bold tracking-tight">Premium</span>
                             </div>
                           </div>
 
                           {/* Body Information */}
-                          <div className="p-2.5 sm:p-3 bg-white flex flex-col">
+                          <div className="p-3 sm:p-3.5 bg-white flex flex-col">
                             {/* Title & Share Icon Row */}
                             <div className="flex items-start justify-between gap-1.5">
                               <div
                                 onClick={handleCardClick}
                                 className="min-w-0 flex-1 cursor-pointer group/title"
                               >
-                                <h3 className="font-heading text-[13px] sm:text-sm font-bold text-[#1d4ed8] group-hover/title:underline truncate leading-snug">
+                                <h3 className="font-heading text-sm sm:text-[15px] font-bold text-[#1d4ed8] group-hover/title:underline truncate leading-snug">
                                   {property.title || (property as any).name || "Property"}
                                 </h3>
-                                <p className="text-[10.5px] sm:text-[11.5px] text-slate-500 font-medium truncate mt-0.5">
+                                <p className="text-[11px] sm:text-xs text-slate-500 font-medium truncate mt-0.5">
                                   {locationDisplay}
                                 </p>
                               </div>
@@ -4860,53 +4911,53 @@ const BUDGET_PRESETS = [
                             </div>
 
                             {/* Dashed Separator */}
-                            <div className="border-b border-dashed border-slate-200 my-1.5 sm:my-2" />
+                            <div className="border-b border-dashed border-slate-200 my-2" />
 
                             {/* 2x2 Specifications Grid */}
-                            <div className="grid grid-cols-2 gap-x-2.5 gap-y-1.5 text-xs">
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                               {/* 1. BHK */}
                               <div>
-                                <span className="text-[9.5px] sm:text-[10px] font-semibold text-slate-400 block tracking-tight uppercase">
+                                <span className="text-[10px] font-semibold text-slate-400 block tracking-tight uppercase">
                                   BHK
                                 </span>
-                                <span className="text-xs sm:text-[12.5px] font-bold text-slate-900 block mt-0.2 truncate">
+                                <span className="text-xs sm:text-[13px] font-bold text-slate-900 block mt-0.5 truncate">
                                   {bhkDisplay}
                                 </span>
                               </div>
 
                               {/* 2. Property Type */}
                               <div>
-                                <span className="text-[9.5px] sm:text-[10px] font-semibold text-slate-400 block tracking-tight uppercase">
+                                <span className="text-[10px] font-semibold text-slate-400 block tracking-tight uppercase">
                                   Property Type
                                 </span>
-                                <span className="text-xs sm:text-[12.5px] font-bold text-slate-900 block mt-0.2 truncate">
+                                <span className="text-xs sm:text-[13px] font-bold text-slate-900 block mt-0.5 truncate">
                                   {typeDisplay}
                                 </span>
                               </div>
 
                               {/* 3. Super Built-Up / Area */}
                               <div>
-                                <span className="text-[9.5px] sm:text-[10px] font-semibold text-slate-400 block tracking-tight uppercase">
+                                <span className="text-[10px] font-semibold text-slate-400 block tracking-tight uppercase">
                                   {isPlots ? "Plot Area" : "Super Built-Up"}
                                 </span>
-                                <span className="text-xs sm:text-[12.5px] font-bold text-slate-900 block mt-0.2 truncate">
+                                <span className="text-xs sm:text-[13px] font-bold text-slate-900 block mt-0.5 truncate">
                                   {areaDisplay}
                                 </span>
                               </div>
 
                               {/* 4. Possession */}
                               <div>
-                                <span className="text-[9.5px] sm:text-[10px] font-semibold text-slate-400 block tracking-tight uppercase">
+                                <span className="text-[10px] font-semibold text-slate-400 block tracking-tight uppercase">
                                   Possession
                                 </span>
-                                <span className="text-xs sm:text-[12.5px] font-bold text-slate-900 block mt-0.2 truncate">
+                                <span className="text-xs sm:text-[13px] font-bold text-slate-900 block mt-0.5 whitespace-nowrap">
                                   {possessionDisplay}
                                 </span>
                               </div>
                             </div>
 
                             {/* Dashed Separator */}
-                            <div className="border-b border-dashed border-slate-200 my-1.5 sm:my-2" />
+                            <div className="border-b border-dashed border-slate-200 my-2" />
 
                             {/* Price (Full width like before) */}
                             <div
@@ -4919,7 +4970,7 @@ const BUDGET_PRESETS = [
                             {/* Distance From Me (Directly below price) */}
                             {distanceFromMe ? (
                               <div
-                                className="inline-flex items-center gap-1.5 mt-1.5 px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/90 shadow-2xs w-fit"
+                                className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/90 shadow-2xs w-fit"
                                 title={`Approximately ${distanceFromMe} from your location`}
                               >
                                 <Navigation className="w-2.5 h-2.5 fill-emerald-600 text-emerald-600 rotate-45 shrink-0" />

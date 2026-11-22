@@ -728,31 +728,59 @@ input[type="submit"] {
   z-index: 9999 !important;
 }
 
+div.leaflet-popup.property-map-popup-realtor,
+.leaflet-popup.property-map-popup-realtor {
+  margin-bottom: 0 !important;
+}
+
+div.leaflet-popup.property-map-popup-realtor .leaflet-popup-content-wrapper,
 .property-map-popup-realtor .leaflet-popup-content-wrapper {
   padding: 0 !important;
-  border-radius: 18px !important;
+  margin: 0 !important;
+  border-radius: 20px !important;
   overflow: hidden !important;
   background: transparent !important;
+  background-color: transparent !important;
   box-shadow: none !important;
+  border: none !important;
 }
+
+div.leaflet-popup.property-map-popup-realtor .leaflet-popup-close-button,
 .property-map-popup-realtor .leaflet-popup-close-button {
   display: none !important;
 }
+
+div.leaflet-popup.property-map-popup-realtor .leaflet-popup-content,
 .property-map-popup-realtor .leaflet-popup-content {
   margin: 0 !important;
-  width: 255px !important;
+  padding: 0 !important;
+  width: 285px !important;
   max-width: calc(100vw - 32px) !important;
   line-height: normal !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 @media (max-width: 640px) {
+  div.leaflet-popup.property-map-popup-realtor .leaflet-popup-content,
   .property-map-popup-realtor .leaflet-popup-content {
-    width: 240px !important;
+    width: 275px !important;
     max-width: calc(100vw - 28px) !important;
   }
 }
-.property-map-popup-realtor .leaflet-popup-tip-container {
+
+div.leaflet-popup.property-map-popup-realtor .leaflet-popup-tip-container,
+.property-map-popup-realtor .leaflet-popup-tip-container,
+div.leaflet-popup.property-map-popup-realtor .leaflet-popup-tip,
+.property-map-popup-realtor .leaflet-popup-tip {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
 @media (max-width: 767px) {
