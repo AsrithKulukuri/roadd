@@ -5014,34 +5014,30 @@ const BUDGET_PRESETS = [
                               const drivingInfo = drivingDistances[property.id];
                               let displayDistance = drivingInfo?.display;
 
-                              if (!displayDistance || displayDistance.includes("straight line")) {
+                              if (!displayDistance || displayDistance.includes("straight line") || displayDistance.includes("driving distance")) {
                                 const userLoc = activeUserLocation || (position ? { lat: position.lat, lng: position.lng } : null);
                                 if (userLoc && coords.lat && coords.lng) {
                                   const userLatLng = L.latLng(userLoc.lat, userLoc.lng);
                                   const propLatLng = L.latLng(coords.lat, coords.lng);
                                   const straightKm = userLatLng.distanceTo(propLatLng) / 1000;
                                   const roadKm = Math.max(1, Math.round(straightKm * 1.25));
-                                  const hrs = Math.floor(roadKm / 55);
-                                  const mins = Math.round(((roadKm % 55) / 55) * 60);
-                                  let durStr = "";
-                                  if (hrs > 0) {
-                                    durStr = mins > 0 ? `${hrs} hr ${mins} min` : `${hrs} hr`;
-                                  } else {
-                                    durStr = `${Math.max(1, mins)} min`;
-                                  }
-                                  displayDistance = `${roadKm} km driving distance · ${durStr}`;
+                                  displayDistance = `${roadKm} kms from me`;
                                 }
                               }
 
                               if (displayDistance) {
+                                const cleanDistance = displayDistance.includes("from me")
+                                  ? displayDistance
+                                  : `${displayDistance.split(" ")[0]} kms from me`;
+
                                 return (
                                   <div className="mt-1.5 flex items-center">
                                     <div
                                       className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/90 shadow-2xs w-fit"
-                                      title={`Exact driving road distance: ${displayDistance}`}
+                                      title={cleanDistance}
                                     >
                                       <Navigation className="w-2.5 h-2.5 fill-emerald-600 text-emerald-600 rotate-45 shrink-0" />
-                                      <span>{displayDistance}</span>
+                                      <span>{cleanDistance}</span>
                                     </div>
                                   </div>
                                 );

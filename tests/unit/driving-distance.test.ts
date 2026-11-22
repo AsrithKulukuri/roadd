@@ -27,18 +27,18 @@ describe("Driving Distance & Straight-Line Service", () => {
     assert.strictEqual(longDistance, "315 km away (straight line)");
   });
 
-  it("formats driving road distance and duration exactly as specified", () => {
-    // 375.2 km and 6 hr 51 min (24660 seconds)
-    const formattedLong = formatDrivingDistance(375200, 24660);
-    assert.strictEqual(formattedLong, "375 km driving distance · 6 hr 51 min");
+  it("formats driving road distance exactly as specified: e.g. 375 kms from me", () => {
+    // 375.2 km
+    const formattedLong = formatDrivingDistance(375200);
+    assert.strictEqual(formattedLong, "375 kms from me");
 
-    // Local trip: 12 km and 25 min (1500 seconds)
-    const formattedLocal = formatDrivingDistance(12000, 1500);
-    assert.strictEqual(formattedLocal, "12 km driving distance · 25 min");
+    // Local trip: 12 km
+    const formattedLocal = formatDrivingDistance(12000);
+    assert.strictEqual(formattedLocal, "12 kms from me");
 
-    // Short trip under 1 hour: 4.5 km and 12 min (720 seconds)
-    const formattedShort = formatDrivingDistance(4500, 720);
-    assert.strictEqual(formattedShort, "4.5 km driving distance · 12 min");
+    // Short trip under 10 km: 4.5 km
+    const formattedShort = formatDrivingDistance(4500);
+    assert.strictEqual(formattedShort, "4.5 kms from me");
   });
 
   it("falls back to road driving engine when Google API key or route fails", async () => {
@@ -52,7 +52,7 @@ describe("Driving Distance & Straight-Line Service", () => {
     });
 
     assert.strictEqual(result.success, true);
-    assert.ok(result.display.includes("driving distance"), `Expected 'driving distance', got ${result.display}`);
+    assert.ok(result.display.includes("from me"), `Expected 'from me', got ${result.display}`);
     assert.strictEqual(result.isDrivingDistance, true);
     assert.ok(result.distanceKm > 200, `Expected distance > 200, got ${result.distanceKm}`);
   });
@@ -71,7 +71,7 @@ describe("Driving Distance & Straight-Line Service", () => {
       formattedDistance: "375 km",
       durationSeconds: 24660,
       formattedDuration: "6 hr 51 min",
-      display: "375 km driving distance · 6 hr 51 min",
+      display: "375 kms from me",
       source: "google_routes",
     }, 86400);
 
@@ -86,7 +86,7 @@ describe("Driving Distance & Straight-Line Service", () => {
     });
 
     assert.strictEqual(result.source, "cache");
-    assert.strictEqual(result.display, "375 km driving distance · 6 hr 51 min");
+    assert.strictEqual(result.display, "375 kms from me");
     assert.strictEqual(result.isDrivingDistance, true);
   });
 
@@ -111,6 +111,6 @@ describe("Driving Distance & Straight-Line Service", () => {
     });
 
     assert.strictEqual(result.success, true);
-    assert.ok(result.display.includes("driving distance"));
+    assert.ok(result.display.includes("from me"));
   });
 });

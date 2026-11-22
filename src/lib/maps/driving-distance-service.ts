@@ -61,31 +61,18 @@ export function formatStraightLineDistance(km: number): string {
 }
 
 /**
- * Format driving road distance and duration
- * e.g. "375 km driving distance · 6 hr 51 min" or "12 km driving distance · 25 min"
+ * Format driving road distance as requested:
+ * e.g. "374 kms from me" or "379 kms from me"
  */
-export function formatDrivingDistance(distanceMeters: number, durationSeconds: number): string {
+export function formatDrivingDistance(distanceMeters: number, _durationSeconds?: number): string {
   const km = distanceMeters / 1000;
-  let distStr = "";
   if (km < 1) {
-    distStr = `${Math.round(distanceMeters)} m`;
-  } else if (km < 10) {
-    distStr = `${km.toFixed(1)} km`;
-  } else {
-    distStr = `${Math.round(km)} km`;
+    return `${Math.round(distanceMeters)} m from me`;
   }
-
-  const hours = Math.floor(durationSeconds / 3600);
-  const minutes = Math.round((durationSeconds % 3600) / 60);
-
-  let durStr = "";
-  if (hours > 0) {
-    durStr = minutes > 0 ? `${hours} hr ${minutes} min` : `${hours} hr`;
-  } else {
-    durStr = `${Math.max(1, minutes)} min`;
+  if (km < 10) {
+    return `${km.toFixed(1)} kms from me`;
   }
-
-  return durStr ? `${distStr} driving distance · ${durStr}` : `${distStr} driving distance`;
+  return `${Math.round(km)} kms from me`;
 }
 
 /**
