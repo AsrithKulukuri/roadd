@@ -30,15 +30,15 @@ describe("Driving Distance & Straight-Line Service", () => {
   it("formats driving road distance and duration exactly as specified", () => {
     // 375.2 km and 6 hr 51 min (24660 seconds)
     const formattedLong = formatDrivingDistance(375200, 24660);
-    assert.strictEqual(formattedLong, "375 km · 6 hr 51 min by road");
+    assert.strictEqual(formattedLong, "375 km driving distance · 6 hr 51 min");
 
     // Local trip: 12 km and 25 min (1500 seconds)
     const formattedLocal = formatDrivingDistance(12000, 1500);
-    assert.strictEqual(formattedLocal, "12 km · 25 min by road");
+    assert.strictEqual(formattedLocal, "12 km driving distance · 25 min");
 
     // Short trip under 1 hour: 4.5 km and 12 min (720 seconds)
     const formattedShort = formatDrivingDistance(4500, 720);
-    assert.strictEqual(formattedShort, "4.5 km · 12 min by road");
+    assert.strictEqual(formattedShort, "4.5 km driving distance · 12 min");
   });
 
   it("falls back to road driving engine when Google API key or route fails", async () => {
@@ -52,7 +52,7 @@ describe("Driving Distance & Straight-Line Service", () => {
     });
 
     assert.strictEqual(result.success, true);
-    assert.ok(result.display.includes("by road"), `Expected 'by road', got ${result.display}`);
+    assert.ok(result.display.includes("driving distance"), `Expected 'driving distance', got ${result.display}`);
     assert.strictEqual(result.isDrivingDistance, true);
     assert.ok(result.distanceKm > 200, `Expected distance > 200, got ${result.distanceKm}`);
   });
@@ -71,7 +71,7 @@ describe("Driving Distance & Straight-Line Service", () => {
       formattedDistance: "375 km",
       durationSeconds: 24660,
       formattedDuration: "6 hr 51 min",
-      display: "375 km · 6 hr 51 min by road",
+      display: "375 km driving distance · 6 hr 51 min",
       source: "google_routes",
     }, 86400);
 
@@ -86,7 +86,7 @@ describe("Driving Distance & Straight-Line Service", () => {
     });
 
     assert.strictEqual(result.source, "cache");
-    assert.strictEqual(result.display, "375 km · 6 hr 51 min by road");
+    assert.strictEqual(result.display, "375 km driving distance · 6 hr 51 min");
     assert.strictEqual(result.isDrivingDistance, true);
   });
 
@@ -111,6 +111,6 @@ describe("Driving Distance & Straight-Line Service", () => {
     });
 
     assert.strictEqual(result.success, true);
-    assert.ok(result.display.includes("by road"));
+    assert.ok(result.display.includes("driving distance"));
   });
 });

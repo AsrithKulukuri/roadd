@@ -5014,7 +5014,7 @@ const BUDGET_PRESETS = [
                               const drivingInfo = drivingDistances[property.id];
                               let displayDistance = drivingInfo?.display;
 
-                              if (!displayDistance) {
+                              if (!displayDistance || displayDistance.includes("straight line")) {
                                 const userLoc = activeUserLocation || (position ? { lat: position.lat, lng: position.lng } : null);
                                 if (userLoc && coords.lat && coords.lng) {
                                   const userLatLng = L.latLng(userLoc.lat, userLoc.lng);
@@ -5029,7 +5029,7 @@ const BUDGET_PRESETS = [
                                   } else {
                                     durStr = `${Math.max(1, mins)} min`;
                                   }
-                                  displayDistance = `${roadKm} km · ${durStr} by road`;
+                                  displayDistance = `${roadKm} km driving distance · ${durStr}`;
                                 }
                               }
 
@@ -5038,7 +5038,7 @@ const BUDGET_PRESETS = [
                                   <div className="mt-1.5 flex items-center">
                                     <div
                                       className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/90 shadow-2xs w-fit"
-                                      title={displayDistance}
+                                      title={`Exact driving road distance: ${displayDistance}`}
                                     >
                                       <Navigation className="w-2.5 h-2.5 fill-emerald-600 text-emerald-600 rotate-45 shrink-0" />
                                       <span>{displayDistance}</span>

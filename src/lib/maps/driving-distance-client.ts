@@ -8,6 +8,23 @@ export interface ClientDrivingDistanceResult {
 
 const memoryCache = new Map<string, ClientDrivingDistanceResult>();
 
+// Proactively clear any legacy cached values containing "straight line"
+if (typeof window !== "undefined") {
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k && (k.startsWith("driving_") || k.includes("client"))) {
+        const val = sessionStorage.getItem(k);
+        if (val && val.includes("straight line")) {
+          keysToRemove.push(k);
+        }
+      }
+    }
+    keysToRemove.forEach((k) => sessionStorage.removeItem(k));
+  } catch {}
+}
+
 export async function fetchDrivingDistanceOnDemand(params: {
   originLat: number;
   originLng: number;
@@ -19,11 +36,13 @@ export async function fetchDrivingDistanceOnDemand(params: {
 
   const roundedOrigin = `${originLat.toFixed(3)},${originLng.toFixed(3)}`;
   const destKey = destinationId ? destinationId.trim() : `${destLat.toFixed(3)},${destLng.toFixed(3)}`;
-  const cacheKey = `driving_client_${roundedOrigin}_${destKey}`;
+  const cacheKey = `driving_v4_${roundedOrigin}_${destKey}`;
 
   // 1. Check memory cache
   const inMem = memoryCache.get(cacheKey);
-  if (inMem) return inMem;
+  if (inMem && inMem.display && !inMem.display.includes("straight line")) {
+    return inMem;
+  }
 
   // 2. Check sessionStorage
   if (typeof window !== "undefined") {
@@ -31,8 +50,12 @@ export async function fetchDrivingDistanceOnDemand(params: {
       const stored = sessionStorage.getItem(cacheKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        memoryCache.set(cacheKey, parsed);
-        return parsed;
+        if (parsed && parsed.display && !parsed.display.includes("straight line")) {
+          memoryCache.set(cacheKey, parsed);
+          return parsed;
+        } else {
+          sessionStorage.removeItem(cacheKey);
+        }
       }
     } catch {}
   }
@@ -55,9 +78,9 @@ export async function fetchDrivingDistanceOnDemand(params: {
 
     if (res.ok) {
       const data = await res.json();
-      if (data && data.display) {
+      if (data && data.display && !data.display.includes("straight line")) {
         const result: ClientDrivingDistanceResult = {
-          isDrivingDistance: Boolean(data.isDrivingDistance),
+          isDrivingDistance: true,
           distanceKm: data.distanceKm,
           durationSeconds: data.durationSeconds,
           display: data.display,
@@ -102,7 +125,7 @@ export async function fetchDrivingDistanceOnDemand(params: {
     durStr = `${Math.max(1, minutes)} min`;
   }
 
-  const display = `${roadKm} km · ${durStr} by road`;
+  const display = `${roadKm} km driving distance · ${durStr}`;
 
   const fallback: ClientDrivingDistanceResult = {
     isDrivingDistance: true,

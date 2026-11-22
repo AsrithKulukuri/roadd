@@ -62,7 +62,7 @@ export function formatStraightLineDistance(km: number): string {
 
 /**
  * Format driving road distance and duration
- * e.g. "375 km · 6 hr 51 min by road" or "12 km · 25 min by road"
+ * e.g. "375 km driving distance · 6 hr 51 min" or "12 km driving distance · 25 min"
  */
 export function formatDrivingDistance(distanceMeters: number, durationSeconds: number): string {
   const km = distanceMeters / 1000;
@@ -85,7 +85,7 @@ export function formatDrivingDistance(distanceMeters: number, durationSeconds: n
     durStr = `${Math.max(1, minutes)} min`;
   }
 
-  return `${distStr} · ${durStr} by road`;
+  return durStr ? `${distStr} driving distance · ${durStr}` : `${distStr} driving distance`;
 }
 
 /**
