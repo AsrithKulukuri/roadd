@@ -3,14 +3,13 @@
 import React, { useState, useMemo } from "react";
 import {
   MapPin,
-  CheckCircle2,
-  PlusCircle,
   Sparkles,
   Building2,
   Search,
   ChevronRight,
   BookmarkCheck,
   Compass,
+  PlusCircle,
 } from "lucide-react";
 import {
   Dialog,
@@ -145,6 +144,13 @@ export function SublocationResolverModal({
     return existingSublocations.filter((s) => s.name.toLowerCase().includes(q));
   }, [existingSublocations, searchTerm]);
 
+  // Check if typed search query is a new custom candidate
+  const isSearchMatchingExisting = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return true;
+    return existingSublocations.some((s) => s.name.toLowerCase() === q);
+  }, [existingSublocations, searchTerm]);
+
   // Action: Select existing locality directly
   const handleSelect = async (localityName: string, sublocationId?: string) => {
     const detected = validDetectedName;
@@ -213,85 +219,70 @@ export function SublocationResolverModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-slate-950 border-2 border-amber-500/40 text-white shadow-2xl rounded-2xl">
+      <DialogContent className="w-[95vw] sm:max-w-xl max-h-[90dvh] sm:max-h-[85vh] flex flex-col p-0 overflow-hidden bg-black border border-zinc-800 text-white shadow-2xl rounded-2xl">
         {/* Header */}
-        <DialogHeader className="p-5 pb-4 bg-slate-900 border-b border-slate-800 shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-amber-400 font-black text-xs uppercase tracking-wider">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>Smart Sublocation Matcher</span>
+        <DialogHeader className="p-4 sm:p-5 pb-3 sm:pb-4 bg-black border-b border-zinc-800/80 shrink-0 text-left pr-12">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-400">
+              <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
+              <span>Select Area in <span className="text-white font-extrabold">{cityName}</span></span>
             </div>
             {data.precision && (
-              <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                  data.precision === "pin"
-                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                    : "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                }`}
-              >
-                {data.precision === "pin" ? "🎯 Exact Pin" : "⚠️ Approximate Viewport"}
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-zinc-900 text-zinc-300 border-zinc-800 shrink-0">
+                {data.precision === "pin" ? "🎯 Exact Pin" : "⚠️ Approx"}
               </span>
             )}
           </div>
 
-          <DialogTitle className="text-lg sm:text-xl font-black text-white pt-1">
-            Select Area / Sublocation for {cityName}
+          <DialogTitle className="text-base sm:text-lg font-black text-white pt-1">
+            Choose Locality / Sublocation
           </DialogTitle>
 
-          <DialogDescription className="text-xs text-slate-300 leading-relaxed pt-0.5">
+          <DialogDescription className="text-xs text-zinc-400 leading-relaxed pt-0.5">
             {validDetectedName ? (
               <>
-                Google Maps detected area:{" "}
-                <span className="font-bold text-amber-400">&quot;{validDetectedName}&quot;</span>.
-                Tap to confirm, select a nearby master area, or type a custom name.
+                Detected area from link: <strong className="text-white">&quot;{validDetectedName}&quot;</strong>. Tap to confirm or pick an area below.
               </>
             ) : (
-              <span className="text-amber-400 font-medium">
-                Google could not find an area name for this pin. Please select an area from the nearby suggestions or search list below.
-              </span>
+              "Google could not detect an area name for this pin. Select a sublocation below or type a custom name."
             )}
           </DialogDescription>
 
           {data.address && (
-            <div className="mt-2 p-2 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] text-slate-300 flex items-start gap-2">
-              <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-              <span className="truncate flex-1 font-mono text-[11px]">{data.address}</span>
-              {data.latitude && data.longitude && (
-                <span className="shrink-0 text-amber-400 font-mono text-[10px] bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                  {data.latitude.toFixed(4)}, {data.longitude.toFixed(4)}
-                </span>
-              )}
+            <div className="mt-2 p-2 bg-zinc-900/80 rounded-xl border border-zinc-800/80 text-[11px] text-zinc-400 flex items-center gap-2">
+              <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span className="truncate flex-1 font-mono text-[11px] text-zinc-300">{data.address}</span>
             </div>
           )}
 
-          {/* Alias Remember Checkbox */}
+          {/* Alias Remember Option */}
           {validDetectedName && (
-            <label className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-800 text-xs text-slate-300 cursor-pointer select-none">
+            <label className="flex items-center gap-2 mt-2 pt-2 border-t border-zinc-900 text-xs text-zinc-400 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={rememberAlias}
                 onChange={(e) => setRememberAlias(e.target.checked)}
-                className="w-4 h-4 rounded text-amber-500 accent-amber-500 cursor-pointer"
+                className="w-4 h-4 rounded text-black accent-white cursor-pointer"
               />
-              <span className="flex items-center gap-1.5 text-slate-300">
-                <BookmarkCheck className="w-3.5 h-3.5 text-amber-400" />
-                Remember <strong className="text-white">&quot;{validDetectedName}&quot;</strong> as an alias for future auto-matches
+              <span className="flex items-center gap-1.5 text-zinc-300 text-[11px]">
+                <BookmarkCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                Remember <strong className="text-white">&quot;{validDetectedName}&quot;</strong> for future matches
               </span>
             </label>
           )}
         </DialogHeader>
 
         {/* Scrollable Content Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-5 divide-y divide-slate-800/60">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 divide-y divide-zinc-900">
           {/* SECTION 1: Detected Area Candidates (Tappable Chips at Top) */}
           {detectedCandidates.length > 0 && (
             <div>
-              <div className="flex items-center justify-between mb-2.5">
-                <h4 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span>Detected Area Candidates ({detectedCandidates.length})</span>
-                </h4>
-                <span className="text-[10px] text-slate-400">Tap to select immediately</span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <span>Detected Area ({detectedCandidates.length})</span>
+                </span>
+                <span className="text-[10px] text-zinc-500">Tap to select</span>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -300,11 +291,12 @@ export function SublocationResolverModal({
                     key={`cand-${cand.name}`}
                     type="button"
                     onClick={() => handleSelect(cand.name)}
-                    className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border-2 border-amber-500/50 hover:border-amber-400 text-white font-extrabold text-sm transition-all cursor-pointer active:scale-95 shadow-sm min-h-[44px]"
+                    className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-750 text-white font-bold text-xs sm:text-sm transition-all cursor-pointer active:scale-95 shadow-xs min-h-[44px]"
                   >
+                    <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                     <span>{cand.name}</span>
-                    <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">
-                      {cand.source === "address_parse" ? "Address segment" : cand.source === "nearby_place" ? "Nearby" : "Detected"}
+                    <span className="text-[10px] font-bold bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded">
+                      {cand.source === "address_parse" ? "From Address" : "Detected"}
                     </span>
                   </button>
                 ))}
@@ -314,32 +306,32 @@ export function SublocationResolverModal({
 
           {/* SECTION 2: Nearby Master Areas (Within 2 km of Pin) */}
           {nearbyMasterAreas.length > 0 && (
-            <div className={detectedCandidates.length > 0 ? "pt-5" : ""}>
-              <div className="flex items-center justify-between mb-2.5">
-                <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                  <Compass className="w-4 h-4 text-emerald-400" />
-                  <span>Nearby Master Areas (within 2 km of pin)</span>
-                </h4>
-                <span className="text-[10px] text-emerald-400 font-bold">Recommended Centroids</span>
+            <div className={detectedCandidates.length > 0 ? "pt-4" : ""}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                  <Compass className="w-4 h-4 text-amber-500" />
+                  <span>Nearby Master Areas (within 2 km)</span>
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {nearbyMasterAreas.map((area) => (
                   <button
                     key={`nearby-${area.name}`}
                     type="button"
                     onClick={() => handleSelect(area.name, area.subId)}
-                    className="p-3.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border-2 border-emerald-500/40 hover:border-emerald-400 text-left transition-all cursor-pointer group flex items-center justify-between shadow-xs min-h-[44px]"
+                    className="p-3 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800/80 text-left transition-all cursor-pointer group flex items-center justify-between min-h-[46px] active:scale-[0.99]"
                   >
-                    <div>
-                      <div className="font-extrabold text-sm text-white group-hover:text-emerald-300">
-                        {area.name}
+                    <div className="min-w-0 pr-2">
+                      <div className="font-bold text-sm text-white flex items-center gap-1.5 truncate">
+                        <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span className="truncate">{area.name}</span>
                       </div>
-                      <div className="text-[11px] text-emerald-400/90 font-semibold mt-0.5">
+                      <div className="text-[11px] text-zinc-400 mt-0.5">
                         📍 {(area.distanceMeters / 1000).toFixed(1)} km from pin
                       </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-emerald-400 group-hover:translate-x-0.5 transition-transform" />
+                    <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-amber-500 transition-colors shrink-0" />
                   </button>
                 ))}
               </div>
@@ -347,56 +339,87 @@ export function SublocationResolverModal({
           )}
 
           {/* SECTION 3: Search All Master Sublocations */}
-          <div className="pt-5 space-y-3">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-slate-400" />
-              <span>Search All {cityName} Sublocations</span>
-            </h4>
+          <div className="pt-4 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-amber-500" />
+                <span>Search All {cityName} Areas ({filteredExisting.length})</span>
+              </span>
+            </div>
 
             <div className="relative">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-amber-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <Input
                 type="text"
                 placeholder={`Search sublocations in ${cityName}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 h-11 text-xs bg-slate-900 border-slate-800 text-white placeholder:text-slate-500 focus:border-amber-500"
+                className="pl-9 h-11 text-sm bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-0 rounded-xl"
               />
             </div>
 
-            <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+            {/* Quick 1-Tap Add Action if Search Term Doesn't Match Master List */}
+            {searchTerm.trim().length > 1 && !isSearchMatchingExisting && (
+              <button
+                type="button"
+                onClick={() => handleAddToMasterAndSelect(searchTerm.trim())}
+                disabled={isAdding}
+                className="w-full p-3 rounded-xl bg-zinc-900 hover:bg-zinc-850 border border-dashed border-zinc-700 text-left transition-all cursor-pointer flex items-center justify-between text-sm text-white min-h-[48px] active:scale-[0.99]"
+              >
+                <div className="flex items-center gap-2 min-w-0 pr-2">
+                  <PlusCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span className="truncate text-xs sm:text-sm">
+                    Add new area: <strong className="text-white underline decoration-amber-500">&quot;{searchTerm.trim()}&quot;</strong>
+                  </span>
+                </div>
+                <span className="text-xs font-bold text-black bg-white hover:bg-zinc-200 px-3 py-1.5 rounded-lg shrink-0">
+                  {isAdding ? "Adding..." : "Add & Select"}
+                </span>
+              </button>
+            )}
+
+            <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1">
               {filteredExisting.map((sub) => (
                 <button
                   key={`all-${sub.name}`}
                   type="button"
                   onClick={() => handleSelect(sub.name, sub.id)}
-                  className="w-full p-2.5 rounded-lg bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 text-left transition-all cursor-pointer flex items-center justify-between text-xs text-slate-200 hover:text-white min-h-[44px]"
+                  className="w-full px-3.5 py-3 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 border border-zinc-800/80 text-left transition-all cursor-pointer flex items-center justify-between text-sm text-white min-h-[48px] group active:scale-[0.99]"
                 >
-                  <span className="font-semibold">{sub.name}</span>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                    <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span className="font-semibold text-white truncate">{sub.name}</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-amber-500 transition-colors shrink-0" />
                 </button>
               ))}
 
-              {filteredExisting.length === 0 && (
-                <p className="text-xs text-slate-500 py-3 text-center">
+              {filteredExisting.length === 0 && !searchTerm.trim() && (
+                <p className="text-xs text-zinc-500 py-3 text-center">
+                  No sublocations listed for {cityName}
+                </p>
+              )}
+
+              {filteredExisting.length === 0 && searchTerm.trim() && isSearchMatchingExisting && (
+                <p className="text-xs text-zinc-500 py-3 text-center">
                   No sublocations match &quot;{searchTerm}&quot;
                 </p>
               )}
             </div>
           </div>
 
-          {/* SECTION 4: Type Custom Sublocation Name */}
-          <div className="pt-5 space-y-2">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
-              Type Custom Area / Sublocation Name
-            </h4>
-            <div className="flex gap-2">
+          {/* SECTION 4: Type Custom Area Name (Mobile-Responsive Stack) */}
+          <div className="pt-3 space-y-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+              Or Type Custom Area Name
+            </span>
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 type="text"
                 placeholder="e.g. Srinivasa Nagar, KCP Colony, Bhagat Singh Nagar..."
                 value={customLocality}
                 onChange={(e) => setCustomLocality(e.target.value)}
-                className="h-11 text-xs bg-slate-900 border-slate-800 text-white placeholder:text-slate-500 focus:border-amber-500"
+                className="h-11 text-sm bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-0 rounded-xl flex-1"
               />
               <Button
                 type="button"
@@ -405,9 +428,9 @@ export function SublocationResolverModal({
                   if (clean) handleAddToMasterAndSelect(clean);
                 }}
                 disabled={!customLocality.trim() || isAdding}
-                className="h-11 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shrink-0 rounded-xl min-h-[44px]"
+                className="h-11 px-5 bg-white hover:bg-zinc-200 text-black font-bold text-sm shrink-0 rounded-xl min-h-[44px] w-full sm:w-auto"
               >
-                Create &amp; Select
+                {isAdding ? "Adding..." : "Create & Select"}
               </Button>
             </div>
           </div>

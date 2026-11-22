@@ -1581,9 +1581,9 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                           toast.error("Failed to re-detect", { id: "redetect" });
                         }
                       }}
-                      className="inline-flex items-center gap-1 text-[11px] text-amber-400 hover:text-amber-300 font-bold underline cursor-pointer"
+                      className="inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-white font-medium underline cursor-pointer transition-colors"
                     >
-                      <RefreshCw className="w-3 h-3" /> Re-detect Area
+                      <RefreshCw className="w-3 h-3 text-amber-500" /> Re-detect Area
                     </button>
                   )}
                 </div>
@@ -1591,41 +1591,40 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                 {/* Sublocation Interactive Chip */}
                 <div
                   onClick={() => setShowSublocationModal(true)}
-                  className="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800 cursor-pointer hover:border-amber-500/40 transition-colors"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-black border border-zinc-800 cursor-pointer hover:border-zinc-700 transition-colors"
                 >
-                  <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
-                    <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="font-extrabold text-sm text-white truncate">
-                      {locality ? locality : <span className="text-amber-400/90 font-medium italic">Select area</span>}
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                    <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span className="font-bold text-sm text-white truncate">
+                      {locality ? locality : <span className="text-zinc-400 font-medium italic">Select area</span>}
                     </span>
                     {locality && isDetectedLocality && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-300 border-amber-500/30 shrink-0">
-                        Detected - tap Edit to change
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-zinc-900 text-zinc-300 border-zinc-800 shrink-0">
+                        Detected - tap to change
                       </span>
                     )}
                     {precision && (
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
                           precision === "pin"
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                            : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                            ? "bg-zinc-900 text-zinc-300 border-zinc-800"
+                            : "bg-zinc-900 text-zinc-400 border-zinc-800"
                         }`}
                       >
-                        {precision === "pin" ? "🎯 Exact pin" : "⚠️ Approximate - verify"}
+                        {precision === "pin" ? "🎯 Pin" : "⚠️ Approx"}
                       </span>
                     )}
                   </div>
                   <Button
                     type="button"
                     size="sm"
-                    variant="outline"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowSublocationModal(true);
                     }}
-                    className="h-8 px-3 text-xs font-bold text-amber-400 border-amber-500/30 hover:bg-amber-500/10 shrink-0 min-h-[36px]"
+                    className="h-8 px-3 text-xs font-bold text-black bg-white hover:bg-zinc-200 border-none shrink-0 min-h-[36px] rounded-lg"
                   >
-                    <Pencil className="w-3.5 h-3.5 mr-1" />
+                    <Pencil className="w-3.5 h-3.5 mr-1 text-black" />
                     {locality ? "Edit Area" : "Select Area"}
                   </Button>
                 </div>
