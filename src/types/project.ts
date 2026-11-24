@@ -29,7 +29,7 @@ export interface ProjectConfig {
   plinthAreaMin?: number;
   /** sq.ft - max plinth area */
   plinthAreaMax?: number;
-  /** Undivided share (e.g. sq.yds) */
+  /** Undivided share (e.g. sq.yds) for apartments or Total Land (sq.yds) for villas */
   uds?: number;
   /** sq.yds – min plot size (Venture) */
   plotSizeMin?: number;

@@ -1756,7 +1756,7 @@ export function ProjectDetailView({
                                   {areaMin} {hasAreaRange ? `– ${areaMax}` : ""} <span className="text-sm font-semibold text-text-tertiary">{unit}</span>
                                 </div>
                                 <div className="text-[11px] text-text-secondary font-medium mt-0.5">
-                                  {project.projectType === "venture" ? "Plot Layout" : "Super Built-up Area"}{project.projectType !== "venture" && cfg.uds ? ` | UDS: ${cfg.uds} sq.yds` : ""}
+                                  {project.projectType === "venture" ? "Plot Layout" : project.projectType === "villa" ? "Built-up Area" : "Super Built-up Area"}{project.projectType !== "venture" && (cfg.uds || cfg.plotSizeMin) ? ` | ${project.projectType === "villa" ? "Total Land" : "UDS"}: ${cfg.uds || cfg.plotSizeMin} sq.yds` : ""}
                                   {project.projectType === "venture" && cfg.measurements && <span className="block">Dimensions: {cfg.measurements}</span>}
                                   {project.projectType === "venture" && cfg.roadWidth != null && <span className="block">Facing road: {cfg.roadWidth} ft</span>}
                                 </div>

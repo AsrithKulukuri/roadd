@@ -1482,8 +1482,25 @@ export function ProjectForm({ initialData, mode }: ProjectFormProps) {
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                 {projectType !== "venture" && (
-                                  <Field label="Undivided Share (UDS sq.yds)">
-                                    <Input type="number" value={config.uds || ""} onChange={e => updateConfigField(config.id, "uds", Number(e.target.value))} placeholder="e.g. 40" className={ic()} />
+                                  <Field label={projectType === "villa" ? "Total Land (sq.yds)" : "Undivided Share (UDS sq.yds)"}>
+                                    <Input
+                                      type="number"
+                                      value={config.uds ?? config.plotSizeMin ?? ""}
+                                      onChange={e => {
+                                        const val = e.target.value === "" ? undefined : Number(e.target.value);
+                                        setConfigs(prev => prev.map(c => {
+                                          if (c.id !== config.id) return c;
+                                          const updated: ProjectConfig = { ...c, uds: val };
+                                          if (projectType === "villa") {
+                                            updated.plotSizeMin = val;
+                                            updated.plotSizeMax = val;
+                                          }
+                                          return updated;
+                                        }));
+                                      }}
+                                      placeholder={projectType === "villa" ? "e.g. 150" : "e.g. 40"}
+                                      className={ic()}
+                                    />
                                   </Field>
                                 )}
                                 <Field label="Facing">
