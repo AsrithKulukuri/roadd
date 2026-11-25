@@ -24,7 +24,7 @@ async function getProject(slug: string): Promise<Project | null> {
       .from("projects")
       .select("*")
       .or(`slug.eq.${slug},id.eq.${slug}`)
-      .single();
+      .maybeSingle();
 
     if (!error && data && data.isPublished !== false) {
       const sanitized = fromSupabaseProject(data);
