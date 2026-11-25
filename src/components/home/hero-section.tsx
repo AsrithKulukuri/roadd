@@ -153,20 +153,20 @@ export function HeroSection() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { openProject } = useProjectOpenGuard();
-  const [selectedTab, setActiveTab] = useState("apartments");
-  const activeTab = !propertiesEnabled && selectedTab === "buy" ? "apartments" : (selectedTab === "projects" ? "apartments" : selectedTab);
+  const [selectedTab, setActiveTab] = useState<string | null>(null);
+  const activeTab = !propertiesEnabled && selectedTab === "buy" ? null : (selectedTab === "projects" ? null : selectedTab);
   const [locationTab, setLocationTab] = useState<"trending" | "vijayawada" | "guntur" | "popular" | "nearyou">("trending");
   const [showBuyMenu, setShowBuyMenu] = useState(false);
   const [activeBuySub, setActiveBuySub] = useState<string | null>(null);
   const [openLocationTab, setOpenLocationTab] = useState<string | null>(null);
 
-  const getSearchTypeParams = (tab: string) => {
+  const getSearchTypeParams = (tab?: string | null) => {
     if (tab === "apartments") return "type=projects&propertyType=apartment";
     if (tab === "villas") return "type=projects&propertyType=villa";
     if (tab === "crda-ventures" || tab === "venture") return "type=projects&projectType=venture";
     if (tab === "new-launch") return "type=projects&status=new-launch";
     if (tab === "map" || tab === "nearme") return `type=${propertiesEnabled ? "buy" : "projects"}&view=map`;
-    return `type=${propertiesEnabled ? "buy" : "projects"}`;
+    return "type=projects";
   };
   const [sublocationSearch, setSublocationSearch] = useState("");
   const [isLocalityFocused, setIsLocalityFocused] = useState(false);
@@ -192,7 +192,8 @@ export function HeroSection() {
       // 1. Reset global store sublocalities so matchingCount and search params are clean
       useLocationsStore.getState().clearUserSelectedLocalities();
 
-      // 2. Reset hero local filter and search states
+      // 2. Reset hero local filter and search states (default to all projects)
+      setActiveTab(null);
       setHeroBudget([1000000, 500000000]);
       setSearchQuery("");
       setOpenLocationTab(null);
@@ -495,21 +496,23 @@ export function HeroSection() {
     }
 
     setShowBuyMenu(false);
-    setActiveTab(tabId);
 
     if (tabId === "map" || tabId === "nearme") {
       router.push("/search?view=map");
       return;
     }
 
+    const nextTab = activeTab === tabId ? null : tabId;
+    setActiveTab(nextTab);
+
     const params = new URLSearchParams();
     params.set("type", "projects");
 
-    if (tabId === "apartments") {
+    if (nextTab === "apartments") {
       params.set("propertyType", "apartment");
-    } else if (tabId === "villas") {
+    } else if (nextTab === "villas") {
       params.set("propertyType", "villa");
-    } else if (tabId === "crda-ventures" || tabId === "venture") {
+    } else if (nextTab === "crda-ventures" || nextTab === "venture") {
       params.set("projectType", "venture");
     }
 
