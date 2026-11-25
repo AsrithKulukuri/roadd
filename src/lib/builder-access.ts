@@ -37,12 +37,32 @@ export async function portalAccess(request: Request, targetBuilderId?: string | 
   if (!auth.authorized || !auth.user) throw new PortalError("Please sign in.", 401);
   const admin = auth.role === "admin";
   if (admin && !targetBuilderId) return { admin, builder: null, user: auth.user };
+
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   let query = supabaseAdmin.from("builder_profiles").select("*");
-  if (admin) query = query.eq("id", targetBuilderId!);
-  else query = query.eq("user_id", auth.user.id);
+  if (admin) {
+    if (targetBuilderId && uuidRegex.test(targetBuilderId)) {
+      query = query.eq("id", targetBuilderId);
+    } else {
+      return { admin, builder: null, user: auth.user };
+    }
+  } else {
+    if (uuidRegex.test(auth.user.id)) {
+      query = query.eq("user_id", auth.user.id);
+    } else {
+      // If user has a non-UUID ID, query by phone if available to avoid 22P02
+      const cleanPhone = (auth.user.phone || auth.user.id.replace(/^wa_/, "")).replace(/\D/g, "");
+      const phone10 = cleanPhone.slice(-10);
+      if (phone10.length >= 10) {
+        query = query.or(`contact_phone.eq.+91${phone10},contact_phone.eq.91${phone10},contact_phone.eq.${phone10},whatsapp_number.eq.+91${phone10},whatsapp_number.eq.91${phone10},whatsapp_number.eq.${phone10}`);
+      } else {
+        return { admin: false, builder: null, user: auth.user };
+      }
+    }
+  }
   let { data: builder, error } = await query.maybeSingle();
   // Dedicated builder sessions contain a builder profile ID, never a client-supplied ID.
-  if (!admin && !builder && auth.role === "developer") {
+  if (!admin && !builder && auth.role === "developer" && uuidRegex.test(auth.user.id)) {
     const result = await supabaseAdmin.from("builder_profiles").select("*").eq("id", auth.user.id).maybeSingle();
     builder = result.data; error = result.error;
   }

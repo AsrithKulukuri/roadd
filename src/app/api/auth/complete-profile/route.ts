@@ -113,8 +113,29 @@ export async function POST(request: Request) {
     const userId = validUserId || authenticatedUser.id;
     const userRole = authenticatedUser.role === "admin" ? "admin" : (role || "buyer");
 
-    // 2. Upsert profile into public.profiles and user_profiles tables
-    // Note: profiles.email has a NOT NULL constraint, so empty emails use internal placeholder
+    // 2. Pre-validate email uniqueness if real email is provided (prevents PostgreSQL 23505)
+    if (email) {
+      const cleanEmailLower = email.toLowerCase().trim();
+      try {
+        const { data: existingEmailProfile } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .eq("email", cleanEmailLower)
+          .maybeSingle();
+
+        if (existingEmailProfile && existingEmailProfile.id !== userId) {
+          return NextResponse.json(
+            { success: false, error: "This email address is already registered to another account." },
+            { status: 409 }
+          );
+        }
+      } catch (checkErr) {
+        console.warn("[CompleteProfile] Email uniqueness check notice:", checkErr);
+      }
+    }
+
+    // 3. Upsert profile into public.profiles and user_profiles tables
+    // Empty emails use unique per-phone internal placeholder to avoid null/empty collisions
     const cleanEmail = email ? email.toLowerCase() : `${phone10}@road.internal`;
 
     try {

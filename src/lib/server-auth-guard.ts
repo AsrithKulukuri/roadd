@@ -253,51 +253,120 @@ export async function authenticateServerRequest(
     let phone = user.phone || String(user.user_metadata?.phone || "");
     let email = user.email || "";
     let profileFound = false;
+    let resolvedDbId: string | null = null;
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const isUserUuid = typeof user.id === "string" && uuidRegex.test(user.id);
 
     try {
-      const profileQuery = supabaseAdmin
-        .from("profiles")
-        .select("id, role, full_name, phone, email")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const { data: profile } = await profileQuery;
-
-      if (profile) {
-        profileFound = true;
-        role = profile.role === "admin" ? "admin" : profile.role || "buyer";
-        if (profile.full_name) name = profile.full_name;
-        if (profile.phone) phone = profile.phone;
-        if (profile.email && !profile.email.endsWith("@road.internal")) email = profile.email;
-      } else if (email) {
-        const { data: emailProfile } = await supabaseAdmin
+      if (isUserUuid) {
+        // Safe to query UUID columns directly
+        const profileQuery = supabaseAdmin
           .from("profiles")
           .select("id, role, full_name, phone, email")
-          .eq("email", email.toLowerCase())
+          .eq("id", user.id)
           .maybeSingle();
-        if (emailProfile) {
-          profileFound = true;
-          role = emailProfile.role === "admin" ? "admin" : emailProfile.role || "buyer";
-          if (emailProfile.full_name) name = emailProfile.full_name;
-        }
-      }
 
-      // Check user_profiles table as well if not found in profiles
-      if (!profileFound) {
-        const { data: upProfile } = await supabaseAdmin
-          .from("user_profiles")
-          .select("id, role, full_name, phone, email")
-          .or(`id.eq.${user.id}${email ? `,email.eq.${email.toLowerCase()}` : ""}`)
-          .maybeSingle();
-        if (upProfile) {
+        const { data: profile } = await profileQuery;
+
+        if (profile) {
           profileFound = true;
-          role = upProfile.role === "admin" ? "admin" : upProfile.role || "buyer";
-          if (upProfile.full_name) name = upProfile.full_name;
-          if (upProfile.phone) phone = upProfile.phone;
-          if (upProfile.email) email = upProfile.email;
+          resolvedDbId = profile.id;
+          role = profile.role === "admin" ? "admin" : profile.role || "buyer";
+          if (profile.full_name) name = profile.full_name;
+          if (profile.phone) phone = profile.phone;
+          if (profile.email && !profile.email.endsWith("@road.internal")) email = profile.email;
+        } else if (email) {
+          const { data: emailProfile } = await supabaseAdmin
+            .from("profiles")
+            .select("id, role, full_name, phone, email")
+            .eq("email", email.toLowerCase())
+            .maybeSingle();
+          if (emailProfile) {
+            profileFound = true;
+            resolvedDbId = emailProfile.id;
+            role = emailProfile.role === "admin" ? "admin" : emailProfile.role || "buyer";
+            if (emailProfile.full_name) name = emailProfile.full_name;
+          }
+        }
+
+        // Check user_profiles table as well if not found in profiles
+        if (!profileFound) {
+          const { data: upProfile } = await supabaseAdmin
+            .from("user_profiles")
+            .select("id, role, full_name, phone, email")
+            .or(`id.eq.${user.id}${email ? `,email.eq.${email.toLowerCase()}` : ""}`)
+            .maybeSingle();
+          if (upProfile) {
+            profileFound = true;
+            resolvedDbId = upProfile.id;
+            role = upProfile.role === "admin" ? "admin" : upProfile.role || "buyer";
+            if (upProfile.full_name) name = upProfile.full_name;
+            if (upProfile.phone) phone = upProfile.phone;
+            if (upProfile.email) email = upProfile.email;
+          }
+        }
+      } else {
+        // Non-UUID identifier (e.g. wa_91... or phone-based external ID).
+        // NEVER pass non-UUID into UUID column queries (prevents PostgreSQL 22P02).
+        const rawPhone = phone || (user.id.startsWith("wa_") ? user.id.replace(/^wa_/, "") : "");
+        const cleanDigits = rawPhone.replace(/\D/g, "");
+        const phone10 = cleanDigits.slice(-10);
+        const phoneVariants = Array.from(
+          new Set([cleanDigits, `+91${phone10}`, `91${phone10}`, phone10])
+        ).filter((p) => p.length >= 10);
+
+        if (phoneVariants.length > 0) {
+          const { data: profile } = await supabaseAdmin
+            .from("profiles")
+            .select("id, role, full_name, phone, email")
+            .or(phoneVariants.map((p) => `phone.eq.${p}`).join(","))
+            .maybeSingle();
+
+          if (profile) {
+            profileFound = true;
+            if (profile.id && uuidRegex.test(profile.id)) resolvedDbId = profile.id;
+            role = profile.role === "admin" ? "admin" : profile.role || "buyer";
+            if (profile.full_name) name = profile.full_name;
+            if (profile.phone) phone = profile.phone;
+            if (profile.email && !profile.email.endsWith("@road.internal")) email = profile.email;
+          } else {
+            // Check user_profiles by phone
+            const { data: upProfile } = await supabaseAdmin
+              .from("user_profiles")
+              .select("id, role, full_name, phone, email")
+              .or(phoneVariants.map((p) => `phone.eq.${p}`).join(","))
+              .maybeSingle();
+
+            if (upProfile) {
+              profileFound = true;
+              if (upProfile.id && uuidRegex.test(upProfile.id)) resolvedDbId = upProfile.id;
+              role = upProfile.role === "admin" ? "admin" : upProfile.role || "buyer";
+              if (upProfile.full_name) name = upProfile.full_name;
+              if (upProfile.phone) phone = upProfile.phone;
+              if (upProfile.email) email = upProfile.email;
+            }
+          }
+        }
+
+        // Secondary check by email if still not found
+        if (!profileFound && email) {
+          const { data: emailProfile } = await supabaseAdmin
+            .from("profiles")
+            .select("id, role, full_name, phone, email")
+            .eq("email", email.toLowerCase())
+            .maybeSingle();
+          if (emailProfile) {
+            profileFound = true;
+            if (emailProfile.id && uuidRegex.test(emailProfile.id)) resolvedDbId = emailProfile.id;
+            role = emailProfile.role === "admin" ? "admin" : emailProfile.role || "buyer";
+            if (emailProfile.full_name) name = emailProfile.full_name;
+          }
         }
       }
-    } catch {}
+    } catch (dbErr) {
+      console.warn("[ServerAuthGuard] Profile resolution notice:", dbErr);
+    }
 
     const isAdmin =
       (profileFound && role === "admin") ||
@@ -306,7 +375,7 @@ export async function authenticateServerRequest(
 
     const resolvedUser = {
       ...user,
-      id: user.id,
+      id: resolvedDbId && uuidRegex.test(resolvedDbId) ? resolvedDbId : user.id,
       name: name || user.name || "Interested Buyer",
       phone: phone || user.phone || "",
       email: email || user.email || "",

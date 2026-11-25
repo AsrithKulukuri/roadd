@@ -154,6 +154,12 @@ export async function POST(request: Request) {
 
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const resolvedUserIds = Array.from(userIds).filter((id) => uuidRegex.test(id));
+    const allUserIds = Array.from(
+      new Set([
+        ...Array.from(userIds),
+        ...phoneVariantsList.map((p) => `wa_${p.replace(/\D/g, "")}`),
+      ])
+    ).filter(Boolean);
 
     // 5. Delete from dependent / foreign key tables first
     if (resolvedUserIds.length > 0) {
@@ -165,9 +171,22 @@ export async function POST(request: Request) {
       } catch {}
     }
 
+    if (allUserIds.length > 0) {
+      try {
+        await supabaseAdmin.from("user_saved_listings").delete().in("user_id", allUserIds);
+      } catch {}
+      try {
+        await supabaseAdmin.from("listing_action_leads").delete().in("user_id", allUserIds);
+      } catch {}
+    }
+
     if (phoneVariantsList.length > 0) {
       try {
-        await supabaseAdmin.from("project_leads").delete().in("phone", phoneVariantsList);
+        // Fix 42703: project_leads column is viewer_phone, not phone
+        await supabaseAdmin.from("project_leads").delete().in("viewer_phone", phoneVariantsList);
+      } catch {}
+      try {
+        await supabaseAdmin.from("listing_action_leads").delete().in("buyer_phone", phoneVariantsList);
       } catch {}
       try {
         await supabaseAdmin.from("phone_otps").delete().in("phone", phoneVariantsList);
