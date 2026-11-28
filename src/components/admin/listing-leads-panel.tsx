@@ -1,14 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { ACTION_LABELS, type ContactAction } from "@/lib/listing-actions";
+import { buildXlsxBytes, formatPhoneForExcel, type ExcelCellValue } from "@/lib/excel-export";
 type Lead = { id: string; listing_name: string; action: ContactAction; buyer_name: string; buyer_phone: string; buyer_email: string; recipient_phone?: string | null; created_at: string; builder_notified: boolean; admin_notified: boolean };
-
-function escapeCsvCell(val: unknown): string {
-  if (val === null || val === undefined) return '""';
-  const raw = String(val);
-  const safe = /^[=+\-@\t\r]/.test(raw.trimStart()) ? "'" + raw : raw;
-  return '"' + safe.replace(/"/g, '""') + '"';
-}
 
 export function ListingLeadsPanel() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -16,7 +10,7 @@ export function ListingLeadsPanel() {
   const [busy, setBusy] = useState(true);
   function exportExcel() {
     if (!leads.length) return;
-    const headers = [
+    const headers: ExcelCellValue[] = [
       "S.No",
       "Date & Time (IST)",
       "Listing Name",
@@ -28,24 +22,26 @@ export function ListingLeadsPanel() {
       "Builder Notified",
       "Admin Notified",
     ];
-    const rows = leads.map((lead, idx) => [
+    const rows: ExcelCellValue[][] = leads.map((lead, idx) => [
       idx + 1,
       new Date(lead.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
       lead.listing_name || "-",
       ACTION_LABELS[lead.action] || lead.action,
       lead.buyer_name || "Interested Buyer",
-      lead.buyer_phone || "-",
+      formatPhoneForExcel(lead.buyer_phone),
       lead.buyer_email || "-",
-      lead.recipient_phone || "-",
+      formatPhoneForExcel(lead.recipient_phone),
       lead.builder_notified ? "Sent" : "Not sent",
       lead.admin_notified ? "Sent" : "Not sent",
     ]);
-    const csv = "\uFEFF" + [headers, ...rows].map(r => r.map(escapeCsvCell).join(",")).join("\r\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const xlsxBytes = buildXlsxBytes("Listing Leads", [headers, ...rows]);
+    const blob = new Blob([xlsxBytes.buffer as ArrayBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `ROAD_Listing_Leads_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("download", `ROAD_Listing_Leads_${new Date().toISOString().slice(0, 10)}.xlsx`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

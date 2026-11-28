@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
 import { authenticateServerRequest } from "@/lib/server-auth-guard";
 import { ACTION_LABELS, type ContactAction } from "@/lib/listing-actions";
+import { buildXlsxBytes, formatPhoneForExcel, type ExcelCellValue } from "@/lib/excel-export";
 
 export const dynamic = "force-dynamic";
 
@@ -11,13 +12,6 @@ function getSupabaseClient() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) return null;
   return createClient(url, serviceKey);
-}
-
-function escapeCsvField(value: unknown): string {
-  if (value === null || value === undefined) return '""';
-  const raw = String(value);
-  const formulaSafe = /^[=+\-@\t\r]/.test(raw.trimStart()) ? "'" + raw : raw;
-  return '"' + formulaSafe.replace(/"/g, '""') + '"';
 }
 
 export async function GET(req: NextRequest) {
@@ -144,8 +138,8 @@ export async function GET(req: NextRequest) {
     );
     const projectName = verifiedDbProject?.name || leadRows[0]?.project_name || projectSlug || "Project";
 
-    // CSV Header row
-    const headers = [
+    // Excel header row
+    const headers: ExcelCellValue[] = [
       "S.No",
       "Date & Time (IST)",
       "Buyer Name",
@@ -158,10 +152,7 @@ export async function GET(req: NextRequest) {
       "Lead Status",
     ];
 
-    const csvRows: string[] = [];
-    csvRows.push(headers.map(escapeCsvField).join(","));
-
-    leadRows.forEach((lead: any, index: number) => {
+    const rows: ExcelCellValue[][] = leadRows.map((lead: any, index: number) => {
       const dateObj = lead.created_at ? new Date(lead.created_at) : new Date();
       const istTime = dateObj.toLocaleString("en-IN", {
         timeZone: "Asia/Kolkata",
@@ -169,32 +160,29 @@ export async function GET(req: NextRequest) {
         timeStyle: "short",
       });
 
-      const row = [
+      return [
         index + 1,
         istTime,
         lead.viewer_name || "Interested Buyer",
-        lead.viewer_phone || "-",
+        formatPhoneForExcel(lead.viewer_phone),
         lead.viewer_email && lead.viewer_email !== "Not provided" ? lead.viewer_email : "-",
         lead.project_name || projectName,
         lead.project_ref_id || "-",
         lead.action_label || "Direct Inquiry",
-        lead.builder_phone || "-",
+        formatPhoneForExcel(lead.builder_phone),
         lead.delivery_status === "instant_sent" ? "Instant Alert Sent" : "Verified View",
       ];
-      csvRows.push(row.map(escapeCsvField).join(","));
     });
 
-    // Add UTF-8 BOM so Microsoft Excel opens it seamlessly
-    const csvContent = "\uFEFF" + csvRows.join("\r\n");
-
+    const xlsxBytes = buildXlsxBytes(projectName, [headers, ...rows]);
     const dateSlug = new Date().toISOString().slice(0, 10);
     const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9]/g, "_");
-    const filename = `ROAD_Leads_${sanitizedProjectName}_${dateSlug}.csv`;
+    const filename = `ROAD_Leads_${sanitizedProjectName}_${dateSlug}.xlsx`;
 
-    return new NextResponse(csvContent, {
+    return new NextResponse(Buffer.from(xlsxBytes), {
       status: 200,
       headers: {
-        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="${filename}"`,
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
       },
