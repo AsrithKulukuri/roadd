@@ -147,7 +147,7 @@ export function ProjectActivityModal({
     const downloadUrl = `/api/projects/activity/report?${params.toString()}`;
     const link = document.createElement("a");
     link.href = downloadUrl;
-    link.setAttribute("download", `ROAD_Activity_${project.name}.csv`);
+    link.setAttribute("download", `ROAD_Activity_${project.name}.xlsx`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

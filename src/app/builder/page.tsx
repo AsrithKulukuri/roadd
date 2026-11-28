@@ -1,5 +1,6 @@
 "use client";
 import { ListingLeadsPanel } from "@/components/admin/listing-leads-panel";
+import { buildXlsxBytes, formatPhoneForExcel, type ExcelCellValue } from "@/lib/excel-export";
 
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
@@ -200,55 +201,77 @@ export default function BuilderOverviewPage() {
     const builderName = currentBuilder?.companyName || "Builder";
     const dateStr = new Date().toISOString().split("T")[0];
 
-    const cell = (value: unknown) => {
-      let text = String(value ?? "");
-      if (/^[=+\-@\t\r]/.test(text.trimStart())) text = "'" + text;
-      return '"' + text.replace(/"/g, '""') + '"';
+    const rows: ExcelCellValue[][] = [];
+    const boldRows: number[] = [];
+    const addRow = (row: ExcelCellValue[], bold = false) => {
+      if (bold) boldRows.push(rows.length);
+      rows.push(row);
     };
-    // UTF-8 BOM for seamless Microsoft Excel compatibility
-    let csvContent = "\uFEFF";
 
     // 1. Executive Summary
-    csvContent += `ROADFACING - BUILDER PERFORMANCE REPORT\n`;
-    csvContent += `Company Name,${cell(builderName)}\n`;
-    csvContent += `RERA Number,${cell(currentBuilder?.reraNumber || "N/A")}\n`;
-    csvContent += `Developer Tier,${cell(currentBuilder?.tier || "Standard")}\n`;
-    csvContent += `Generated On,${new Date().toLocaleString()}\n\n`;
+    addRow(["ROADFACING - BUILDER PERFORMANCE REPORT"], true);
+    addRow(["Company Name", builderName]);
+    addRow(["RERA Number", currentBuilder?.reraNumber || "N/A"]);
+    addRow(["Developer Tier", currentBuilder?.tier || "Standard"]);
+    addRow(["Generated On", new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })]);
+    addRow([]);
 
     // 2. Project Inventory Table
-    csvContent += `PROJECT INVENTORY & PERFORMANCE\n`;
-    csvContent += `Project Name,Category / Type,Location,Verified Clicks / Views,Contacts / Tours Booked,RERA ID\n`;
+    addRow(["PROJECT INVENTORY & PERFORMANCE"], true);
+    addRow(["Project Name", "Category / Type", "Location", "Verified Clicks / Views", "Contacts / Tours Booked", "RERA ID"], true);
     assignedProjects.forEach((p) => {
       const tours = builderSchedules.filter((s) => s.projectId === p.id || s.projectSlug === p.slug).length;
       const locStr = typeof p.location === "string" ? p.location : p.location?.city || "AP";
-      csvContent += [p.name, p.projectType, locStr, p.viewCount || 0, tours, p.reraId || ""].map(cell).join(",") + "\n";
+      addRow([p.name, p.projectType, locStr, p.viewCount || 0, tours, p.reraId || "-"]);
     });
+    addRow([]);
 
     // 3. Contacts Shared & Tour Bookings Table
-    csvContent += `\nCUSTOMER CONTACTS SHARED & SITE VISITS\n`;
-    csvContent += `Customer Name,Phone Number,Email,Project,Visit Date,Time Slot,Status,Notes\n`;
+    addRow(["CUSTOMER CONTACTS SHARED & SITE VISITS"], true);
+    addRow(["Customer Name", "Phone Number", "Email", "Project", "Visit Date", "Time Slot", "Status", "Notes"], true);
     if (builderSchedules.length > 0) {
       builderSchedules.forEach((s) => {
-        csvContent += [s.customerName, s.customerPhone, s.customerEmail, s.projectName, s.visitDate, s.timeSlot, s.status, s.notes].map(cell).join(",") + "\n";
+        addRow([
+          s.customerName,
+          formatPhoneForExcel(s.customerPhone),
+          s.customerEmail || "-",
+          s.projectName,
+          s.visitDate,
+          s.timeSlot,
+          s.status,
+          s.notes || "-",
+        ]);
       });
     } else {
-      csvContent += `No site visit contacts shared yet for assigned ventures.,,,,,,\n`;
+      addRow(["No site visit contacts shared yet for assigned ventures."]);
     }
 
     // 4. Realtime Shared Buyer Contacts (WhatsApp Reveals & Inquiries)
     if (realtimeReport.sharedMembers.length > 0) {
-      csvContent += `\nVERIFIED BUYER CONTACTS SHARED (WHATSAPP & DIRECT INQUIRIES)\n`;
-      csvContent += `Buyer Name,Phone Number,Email,Venture,Action Taken,Date & Time,Dwell Time\n`;
+      addRow([]);
+      addRow(["VERIFIED BUYER CONTACTS SHARED (WHATSAPP & DIRECT INQUIRIES)"], true);
+      addRow(["Buyer Name", "Phone Number", "Email", "Venture", "Action Taken", "Date & Time", "Dwell Time"], true);
       realtimeReport.sharedMembers.forEach((m) => {
-        csvContent += [m.name, m.phone, m.email, m.projectName || builderName, m.action, m.date, m.dwellTime].map(cell).join(",") + "\n";
+        addRow([
+          m.name,
+          formatPhoneForExcel(m.phone),
+          m.email || "-",
+          m.projectName || builderName,
+          m.action,
+          m.date,
+          m.dwellTime,
+        ]);
       });
     }
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const xlsxBytes = buildXlsxBytes("Builder Report", rows, { boldFirstRow: true, boldRows });
+    const blob = new Blob([xlsxBytes.buffer as ArrayBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `ROAD_Builder_Report_${currentBuilder?.slug || "portal"}_${dateStr}.csv`);
+    link.setAttribute("download", `ROAD_Builder_Report_${currentBuilder?.slug || "portal"}_${dateStr}.xlsx`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

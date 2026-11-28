@@ -3,15 +3,9 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { projectAccess, portalError } from "@/lib/builder-access";
 import { ACTION_LABELS, type ContactAction } from "@/lib/listing-actions";
 import { getActivityStore, ProjectActivityRecord } from "../track/route";
+import { buildXlsxBytes, formatPhoneForExcel, type ExcelCellValue } from "@/lib/excel-export";
 
 export const dynamic = "force-dynamic";
-
-function escapeCsv(val: unknown): string {
-  if (val === null || val === undefined) return '""';
-  const str = String(val);
-  const safe = /^[=+\-@\t\r]/.test(str.trimStart()) ? "'" + str : str;
-  return '"' + safe.replace(/"/g, '""') + '"';
-}
 
 function formatDuration(seconds: number): string {
   if (!seconds || seconds <= 0) return "0s";
@@ -221,99 +215,102 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Generate Excel / CSV format with UTF-8 BOM
-    const lines: string[] = [];
+    // Generate real Excel (.xlsx) workbook with auto-sized columns and explicit string cells
+    const rows: ExcelCellValue[][] = [];
+    const boldRows: number[] = [];
+
+    const addRow = (row: ExcelCellValue[], bold = false) => {
+      if (bold) boldRows.push(rows.length);
+      rows.push(row);
+    };
 
     // Header Title
-    lines.push(escapeCsv("ROADFACING — PROJECT ACTIVITY & PERFORMANCE REPORT"));
-    lines.push(escapeCsv("Generated on: " + new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })));
-    lines.push("");
+    addRow(["ROADFACING — PROJECT ACTIVITY & PERFORMANCE REPORT"], true);
+    addRow(["Generated on", new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })]);
+    addRow([]);
 
     // Section 1: Project & Range Overview
-    lines.push([escapeCsv("PROJECT NAME"), escapeCsv(projectName)].join(","));
-    lines.push([escapeCsv("PROJECT SLUG"), escapeCsv(projectSlug || "-")].join(","));
-    lines.push([escapeCsv("REPORT DATE RANGE"), escapeCsv(`${startDateParam || "All Time"} to ${endDateParam || "Current Date"}`)].join(","));
-    lines.push("");
+    addRow(["PROJECT NAME", projectName], true);
+    addRow(["PROJECT SLUG", projectSlug || "-"]);
+    addRow(["REPORT DATE RANGE", `${startDateParam || "All Time"} to ${endDateParam || "Current Date"}`]);
+    addRow([]);
 
     // Section 2: Real Key Metrics
-    lines.push(escapeCsv("--- REAL TRACKED PERFORMANCE METRICS ---"));
-    lines.push([escapeCsv("Metric"), escapeCsv("Real Tracked Value")].join(","));
-    lines.push([escapeCsv("Today's Clicks (00:00 - 23:59 IST)"), escapeCsv(todayClicks)].join(","));
-    lines.push([escapeCsv("Total Clicks in Selected Range"), escapeCsv(totalClicks)].join(","));
-    lines.push([escapeCsv("Average Time Spent (Dwell Time)"), escapeCsv(formatDuration(avgDwellSeconds))].join(","));
-    lines.push([escapeCsv("Total Members Details Shared with Builder"), escapeCsv(detailsSharedCount)].join(","));
-    lines.push("");
+    addRow(["REAL TRACKED PERFORMANCE METRICS"], true);
+    addRow(["Metric", "Real Tracked Value"], true);
+    addRow(["Today's Clicks (00:00 - 23:59 IST)", todayClicks]);
+    addRow(["Total Clicks in Selected Range", totalClicks]);
+    addRow(["Average Time Spent (Dwell Time)", formatDuration(avgDwellSeconds)]);
+    addRow(["Total Members Details Shared with Builder", detailsSharedCount]);
+    addRow([]);
 
     // Section 3: Members Details Shared with Builder
-    lines.push(escapeCsv("--- MEMBERS DETAILS SHARED WITH BUILDER ---"));
-    lines.push(
+    addRow(["MEMBERS DETAILS SHARED WITH BUILDER"], true);
+    addRow(
       [
-        escapeCsv("S.No"),
-        escapeCsv("Date & Time (IST)"),
-        escapeCsv("Member Name"),
-        escapeCsv("WhatsApp Phone"),
-        escapeCsv("Email Address"),
-        escapeCsv("Action / Intent"),
-        escapeCsv("Time Spent Before Action"),
-      ].join(",")
+        "S.No",
+        "Date & Time (IST)",
+        "Member Name",
+        "WhatsApp Phone",
+        "Email Address",
+        "Action / Intent",
+        "Time Spent Before Action",
+      ],
+      true
     );
 
     if (sharedMembers.length === 0) {
-      lines.push(escapeCsv("No buyer details were shared with builder in the selected date range."));
+      addRow(["No buyer details were shared with builder in the selected date range."]);
     } else {
       sharedMembers.forEach((m) => {
-        lines.push(
-          [
-            escapeCsv(m.sNo),
-            escapeCsv(m.date),
-            escapeCsv(m.name),
-            escapeCsv(m.phone),
-            escapeCsv(m.email),
-            escapeCsv(m.action),
-            escapeCsv(m.dwellTime),
-          ].join(",")
-        );
+        addRow([
+          m.sNo,
+          m.date,
+          m.name,
+          formatPhoneForExcel(m.phone),
+          m.email || "-",
+          m.action,
+          m.dwellTime,
+        ]);
       });
     }
 
-    lines.push("");
+    addRow([]);
 
     // Section 4: All Visitor Session Logs
-    lines.push(escapeCsv("--- VISITOR SESSIONS & IMPRESSION LOGS ---"));
-    lines.push(
+    addRow(["VISITOR SESSIONS & IMPRESSION LOGS"], true);
+    addRow(
       [
-        escapeCsv("S.No"),
-        escapeCsv("Date & Time (IST)"),
-        escapeCsv("Session ID"),
-        escapeCsv("Time Spent (Seconds)"),
-        escapeCsv("Formatted Time"),
-        escapeCsv("Details Shared?"),
-      ].join(",")
+        "S.No",
+        "Date & Time (IST)",
+        "Session ID",
+        "Time Spent (Seconds)",
+        "Formatted Time",
+        "Details Shared?",
+      ],
+      true
     );
 
     filteredRecords.forEach((r, i) => {
-      lines.push(
-        [
-          escapeCsv(i + 1),
-          escapeCsv(new Date(r.createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })),
-          escapeCsv(r.sessionId),
-          escapeCsv(r.dwellSeconds || 0),
-          escapeCsv(formatDuration(r.dwellSeconds || 0)),
-          escapeCsv(r.detailsShared ? "YES" : "NO"),
-        ].join(",")
-      );
+      addRow([
+        i + 1,
+        new Date(r.createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+        r.sessionId,
+        r.dwellSeconds || 0,
+        formatDuration(r.dwellSeconds || 0),
+        r.detailsShared ? "YES" : "NO",
+      ]);
     });
 
-    // Prepend UTF-8 BOM so Excel opens with perfect UTF-8 characters and formatting
-    const csvContent = "\uFEFF" + lines.join("\r\n");
+    const xlsxBytes = buildXlsxBytes(projectName, rows, { boldFirstRow: true, boldRows });
     const sanitizedName = projectName.replace(/[^a-zA-Z0-9]/g, "_");
     const dateSlug = new Date().toISOString().slice(0, 10);
-    const filename = `ROAD_Activity_${sanitizedName}_${dateSlug}.csv`;
+    const filename = `ROAD_Activity_${sanitizedName}_${dateSlug}.xlsx`;
 
-    return new NextResponse(csvContent, {
+    return new NextResponse(Buffer.from(xlsxBytes), {
       status: 200,
       headers: {
-        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="${filename}"`,
         "Cache-Control": "no-store, no-cache, must-revalidate",
       },

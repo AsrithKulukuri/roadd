@@ -146,7 +146,7 @@ export function ProjectRealtimeActivity({
     const objectUrl = URL.createObjectURL(await response.blob());
     const link = document.createElement("a");
     link.href = objectUrl;
-    link.setAttribute("download", `ROAD_Activity_${project.name}.csv`);
+    link.setAttribute("download", `ROAD_Activity_${project.name}.xlsx`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

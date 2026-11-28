@@ -171,20 +171,22 @@ function buildZipStore(files: Array<{ name: string; content: string }>): Uint8Ar
 export function buildXlsxBytes(
   sheetName: string,
   rows: ExcelCellValue[][],
-  options: { boldFirstRow?: boolean } = { boldFirstRow: true }
+  options: { boldFirstRow?: boolean; boldRows?: number[] } = { boldFirstRow: true }
 ): Uint8Array {
   const safeSheetName = sanitizeSheetName(sheetName);
   const boldFirstRow = options.boldFirstRow !== false;
+  const boldRowSet = new Set<number>(options.boldRows || []);
+  if (boldFirstRow && rows.length > 0) boldRowSet.add(0);
 
   const maxCols = rows.reduce((max, row) => Math.max(max, row.length), 0);
-  const colWidths = new Array<number>(maxCols).fill(10);
+  const colWidths = new Array<number>(maxCols).fill(12);
 
   for (const row of rows) {
     for (let c = 0; c < row.length; c++) {
       const val = row[c];
       const len = val === null || val === undefined ? 0 : String(val).length;
-      if (len + 4 > colWidths[c]) {
-        colWidths[c] = Math.min(48, len + 4);
+      if (len + 5 > colWidths[c]) {
+        colWidths[c] = Math.min(54, Math.max(12, len + 5));
       }
     }
   }
@@ -199,7 +201,7 @@ export function buildXlsxBytes(
   const rowsXml = rows
     .map((row, rIdx) => {
       const rowNum = rIdx + 1;
-      const isHeader = boldFirstRow && rIdx === 0;
+      const isHeader = boldRowSet.has(rIdx);
       const styleAttr = isHeader ? ` s="1"` : "";
       const cellsXml = row
         .map((cell, cIdx) => {
