@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { projectAccess, portalError } from "@/lib/builder-access";
+import { ACTION_LABELS, type ContactAction } from "@/lib/listing-actions";
 import { getActivityStore, ProjectActivityRecord } from "../track/route";
 
 export const dynamic = "force-dynamic";
@@ -82,6 +83,35 @@ export async function GET(req: NextRequest) {
           });
         }
 
+        // Also query listing_action_leads so every click & buyer phone number is included in reports
+        let actionLeadQuery = supabaseAdmin
+          .from("listing_action_leads")
+          .select("*")
+          .eq("listing_type", "project");
+        if (projectId) actionLeadQuery = actionLeadQuery.eq("listing_id", projectId);
+        else if (projectSlug) actionLeadQuery = actionLeadQuery.eq("listing_slug", projectSlug);
+
+        const { data: dbActionLeads, error: actionLeadsError } = await actionLeadQuery;
+        if (!actionLeadsError && dbActionLeads && dbActionLeads.length > 0) {
+          dbActionLeads.forEach((lead: any) => {
+            allRecords.push({
+              id: lead.id || `action-lead-${Date.now()}`,
+              projectId: lead.listing_id || projectId,
+              projectSlug: lead.listing_slug || projectSlug,
+              projectName: lead.listing_name || projectName,
+              sessionId: `action-ses-${lead.id || Date.now()}`,
+              dwellSeconds: 0,
+              detailsShared: true,
+              action: lead.action,
+              viewerName: lead.buyer_name,
+              viewerPhone: lead.buyer_phone,
+              viewerEmail: lead.buyer_email,
+              createdAt: lead.created_at,
+              updatedAt: lead.created_at,
+            });
+          });
+        }
+
         // Also query project_leads to ensure all shared members are accounted for
         let leadQuery = supabaseAdmin.from("project_leads").select("*");
         if (projectId) leadQuery = leadQuery.eq("project_id", projectId);
@@ -92,7 +122,7 @@ export async function GET(req: NextRequest) {
         if (dbLeads && dbLeads.length > 0) {
           dbLeads.forEach((lead: any) => {
             const alreadyHas = allRecords.some(
-              (r) => r.detailsShared && r.viewerPhone === lead.viewer_phone
+              (r) => r.detailsShared && r.viewerPhone === lead.viewer_phone && r.createdAt === lead.created_at
             );
             if (!alreadyHas) {
               allRecords.push({
@@ -147,13 +177,14 @@ export async function GET(req: NextRequest) {
         phone: r.viewerPhone || "Provided on call",
         email: r.viewerEmail || "-",
         action:
-          r.action === "save"
+          (r.action && ACTION_LABELS[r.action as ContactAction]) ||
+          (r.action === "save"
             ? "Saved / Shortlisted Project"
             : r.action === "contact_builder"
             ? "Clicked WhatsApp Builder"
             : r.action === "site_visit"
             ? "Scheduled Site Visit"
-            : "Direct Inquiry",
+            : "Direct Inquiry"),
         dwellTime: formatDuration(r.dwellSeconds),
       }));
 

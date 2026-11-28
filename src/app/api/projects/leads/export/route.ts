@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { formatWhatsAppPhone } from "@/lib/whatsapp/whatsapp-share";
 import { authenticateServerRequest } from "@/lib/server-auth-guard";
+import { ACTION_LABELS, type ContactAction } from "@/lib/listing-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -88,23 +89,59 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(1000);
 
+    let actionQuery = supabase
+      .from("listing_action_leads")
+      .select("*")
+      .eq("listing_type", "project")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+
     if (projectId) {
       query = query.eq("project_id", projectId);
+      actionQuery = actionQuery.eq("listing_id", projectId);
     } else if (projectSlug) {
       query = query.eq("project_slug", projectSlug);
+      actionQuery = actionQuery.eq("listing_slug", projectSlug);
     } else if (builderPhone) {
       const cleanPhone = formatWhatsAppPhone(builderPhone);
       query = query.or(`builder_phone.ilike.%${cleanPhone}%,builder_phone.ilike.%${builderPhone}%`);
+      actionQuery = actionQuery.or(`recipient_phone.ilike.%${cleanPhone}%,recipient_phone.ilike.%${builderPhone}%`);
     }
 
-    const { data: leads, error } = await query;
+    const [{ data: leads, error }, { data: actionLeads, error: actionError }] = await Promise.all([
+      query,
+      actionQuery,
+    ]);
 
     if (error) {
       console.error("[LEADS EXPORT ERROR]:", error);
       return new NextResponse(`Failed to fetch leads: ${error.message}`, { status: 500 });
     }
+    if (actionError) {
+      console.error("[ACTION LEADS EXPORT ERROR]:", actionError);
+    }
 
-    const leadRows = leads || [];
+    const mappedActionLeads = (actionLeads || []).map((row: any) => ({
+      id: row.id,
+      created_at: row.created_at,
+      viewer_name: row.buyer_name || "Interested Buyer",
+      viewer_phone: row.buyer_phone || "-",
+      viewer_email: row.buyer_email || "-",
+      project_name: row.listing_name,
+      project_ref_id: "-",
+      builder_phone: row.recipient_phone || "-",
+      action_label: ACTION_LABELS[row.action as ContactAction] || row.action || "Direct Inquiry",
+      delivery_status: row.builder_notified ? "instant_sent" : "recorded",
+    }));
+
+    const mappedLegacyLeads = (leads || []).map((row: any) => ({
+      ...row,
+      action_label: "Direct Inquiry",
+    }));
+
+    const leadRows = [...mappedActionLeads, ...mappedLegacyLeads].sort((a: any, b: any) =>
+      String(b.created_at || "").localeCompare(String(a.created_at || ""))
+    );
     const projectName = verifiedDbProject?.name || leadRows[0]?.project_name || projectSlug || "Project";
 
     // CSV Header row
@@ -116,6 +153,8 @@ export async function GET(req: NextRequest) {
       "Email ID",
       "Project Name",
       "Project Ref ID",
+      "Action",
+      "Builder Phone",
       "Lead Status",
     ];
 
@@ -138,6 +177,8 @@ export async function GET(req: NextRequest) {
         lead.viewer_email && lead.viewer_email !== "Not provided" ? lead.viewer_email : "-",
         lead.project_name || projectName,
         lead.project_ref_id || "-",
+        lead.action_label || "Direct Inquiry",
+        lead.builder_phone || "-",
         lead.delivery_status === "instant_sent" ? "Instant Alert Sent" : "Verified View",
       ];
       csvRows.push(row.map(escapeCsvField).join(","));

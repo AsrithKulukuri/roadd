@@ -96,25 +96,60 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(1000);
 
+    let actionQuery = supabase
+      .from("listing_action_leads")
+      .select("*")
+      .eq("listing_type", "project")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+
     if (projectId) {
       query = query.eq("project_id", projectId);
+      actionQuery = actionQuery.eq("listing_id", projectId);
     } else if (projectSlug) {
       query = query.eq("project_slug", projectSlug);
+      actionQuery = actionQuery.eq("listing_slug", projectSlug);
     } else if (builderPhone) {
       const cleanPhone = formatWhatsAppPhone(builderPhone);
       query = query.or(`builder_phone.ilike.%${cleanPhone}%,builder_phone.ilike.%${builderPhone}%`);
+      actionQuery = actionQuery.or(`recipient_phone.ilike.%${cleanPhone}%,recipient_phone.ilike.%${builderPhone}%`);
     }
 
-    const { data: leads, error } = await query;
+    const [{ data: leads, error }, { data: actionLeads, error: actionError }] = await Promise.all([
+      query,
+      actionQuery,
+    ]);
 
     if (error) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
+    if (actionError) {
+      console.error("[ACTION LEADS LIST ERROR]:", actionError);
+    }
+
+    const mappedActionLeads = (actionLeads || []).map((row: any) => ({
+      id: row.id,
+      created_at: row.created_at,
+      viewer_name: row.buyer_name || "Interested Buyer",
+      viewer_phone: row.buyer_phone || "-",
+      viewer_email: row.buyer_email || "-",
+      project_id: row.listing_id,
+      project_slug: row.listing_slug,
+      project_name: row.listing_name,
+      project_ref_id: "-",
+      builder_phone: row.recipient_phone || "-",
+      action: row.action,
+      delivery_status: row.builder_notified ? "instant_sent" : "recorded",
+    }));
+
+    const combinedLeads = [...mappedActionLeads, ...(leads || [])].sort((a: any, b: any) =>
+      String(b.created_at || "").localeCompare(String(a.created_at || ""))
+    );
 
     return NextResponse.json({
       success: true,
-      count: leads?.length || 0,
-      leads: leads || [],
+      count: combinedLeads.length,
+      leads: combinedLeads,
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err?.message }, { status: 500 });

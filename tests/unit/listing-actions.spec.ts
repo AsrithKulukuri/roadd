@@ -83,12 +83,13 @@ test("storage failure does not reveal contact or send messages", async () => {
   expect((await response.json()).phone).toBeUndefined();
   expect(messages).toHaveLength(0);
 });
-test("duplicate daily action does not send another notification", async () => {
+test("repeated daily action still notifies builder and admin on every click", async () => {
   failure = "23505";
+  extraRows.listing_action_leads = [{ id: "existing-reveal", user_id: user.id, listing_type: "project", listing_id: project.id, action: "reveal_phone", action_day: new Date().toISOString().slice(0, 10) }];
   const response = await action(request(payload));
   expect(response.status).toBe(200);
   expect((await response.json()).duplicate).toBe(true);
-  expect(messages).toHaveLength(0);
+  expect(messages.map(message => message.phone)).toEqual(["919000000002", "919000000003"]);
 });
 test("public payload removes nested contacts and brochure links", async () => {
   const response = await listings(new Request("http://localhost/api/listings?type=project"));
@@ -145,12 +146,12 @@ test("builder send failure preserves the callback and still confirms to the buye
 });
 
 
-test("repeated callback retries missing notifications while skipping accepted recipients", async () => {
+test("repeated callback notifies builder and admin on every click while keeping buyer confirmation deduplicated", async () => {
   failure = "23505";
   extraRows.listing_action_leads = [{ id: "existing-callback", user_id: user.id, listing_type: "project", listing_id: project.id, action: "callback_request", action_day: new Date().toISOString().slice(0, 10) }];
-  extraRows.whatsapp_message_logs = [{ id: "accepted-builder", request_id: "existing-callback:callback-v2:919000000002", status: "accepted" }];
+  extraRows.whatsapp_message_logs = [{ id: "accepted-user", request_id: "existing-callback:callback:user", status: "accepted" }];
   const response = await action(request({ ...payload, action: "callback_request" }));
   expect(response.status).toBe(200);
-  expect(await response.json()).toMatchObject({ duplicate: true, notifications: { builderAccepted: true, userAccepted: true } });
-  expect(messages.map(m => m.phone)).toEqual(["919000000003", "919000000001"]);
+  expect(await response.json()).toMatchObject({ duplicate: true, notifications: { builderAccepted: true, adminAccepted: true, userAccepted: true } });
+  expect(messages.map(m => m.phone)).toEqual(["919000000002", "919000000003"]);
 });
