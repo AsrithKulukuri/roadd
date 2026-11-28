@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ActionAuthProvider } from "@/components/auth/action-auth-gate";
 import { Toaster } from "sonner";
@@ -10,11 +10,11 @@ import { readSiteFeatures } from "@/lib/site-features";
 import { SiteFeaturesProvider } from "@/components/providers/site-features-provider";
 import { CookieConsentBanner } from "@/components/shared/cookie-consent-banner";
 
-const inter = Inter({
-  subsets: ["latin"],
+const inter = localFont({
+  src: "./fonts/inter-latin-variable.woff2",
   display: "swap",
   variable: "--font-inter",
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  weight: "300 900",
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.roadfacing.com";
